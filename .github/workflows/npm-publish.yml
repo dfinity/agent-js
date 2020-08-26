@@ -20,7 +20,7 @@ jobs:
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/$GITHUB_REPOSITORY
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: npx lerna version --conventional-prerelease --yes
+      - run: npx lerna version --conventional-prerelease --create-release github --yes
 
       # - name: Install Packages
       #   run: npm install
