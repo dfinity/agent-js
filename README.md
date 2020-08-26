@@ -1,5 +1,5 @@
 # agent-js
-
+r
 Use an Agent to interact with the Internet Computer from your JavaScript program.
 
 This source code repository contains multiple npm packages, and [lerna](https://lerna.js.org/) provides tools for managing the monorepo. Currently we use lerna in ['fixed' mode](https://github.com/lerna/lerna#fixedlocked-mode-default), which means all packages are the same version. This may change in the future.
@@ -44,3 +44,9 @@ GitHub Actions for this repo are configured in [./.github/workflows](./.github/w
 * [commitlint.yml](./.github/workflows/commitlint.yml) - Run [commitlint](https://commitlint.js.org/#/) on every git commit message.
 
 When developing these configuration files, you may test with [nektos/act](https://github.com/nektos/act). Please do your best to keep all workflows working with act.
+
+### Master Branch Conventions and Mergify
+
+All commits in the master branch should come from squashed GitHub Pull Requests, and those commit messages should follow the [conventionalcommits.org](https://conventionalcommits.org) syntax.
+
+Mergify can take care of enforcing all of this. Just add the `automerge-squash` label to PRs that Mergify should merge. This policy is configured via [./.mergify.yml](./.mergify).
