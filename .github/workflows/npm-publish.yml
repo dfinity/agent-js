@@ -13,22 +13,23 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
+      - run: lerna publish --canary
 
-      - name: Install Packages
-        run: npm install
+      # - name: Install Packages
+      #   run: npm install
 
-      - name: Authenticate with Registry
-        run: |
-          echo "@dfinity:registry=http://registry.npmjs.org/" > .npmrc
-          echo "registry=http://registry.npmjs.org/" >> .npmrc
-          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
-          npm whoami
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # - name: Authenticate with Registry
+      #   run: |
+      #     echo "@dfinity:registry=http://registry.npmjs.org/" > .npmrc
+      #     echo "registry=http://registry.npmjs.org/" >> .npmrc
+      #     echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
+      #     npm whoami
+      #   env:
+      #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish package
-        run: lerna publish --yes --message 'chore: release new versions'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_PAT }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_PAT }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # - name: Publish package
+      #   run: lerna publish --yes --message 'chore: release new versions'
+      #   env:
+      #     GH_TOKEN: ${{ secrets.GITHUB_PAT }}
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_PAT }}
+      #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
