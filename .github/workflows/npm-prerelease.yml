@@ -1,12 +1,10 @@
-name: NPM Publishing
+name: NPM Prerelease Master
 
-on:
-  push:
-    branches:
-      - master
+on: 
+  workflow_dispatch: {}
 
 jobs:
-  version:
+  prerelease:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
