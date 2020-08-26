@@ -5,7 +5,7 @@
   "version": "0.7.0-alpha.0",
   "command": {
     "version": {
-      "message": "chore: release new versions",
+      "message": "chore: commit version %s",
       "conventionalCommits": true
     }
   }
