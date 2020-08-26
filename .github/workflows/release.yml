@@ -1,0 +1,31 @@
+name: NPM Release
+
+on: 
+  workflow_dispatch:
+    inputs:
+      canary:
+        default: 'true'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: git config identity
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/$GITHUB_REPOSITORY
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - if: ${{ inputs.canary }}
+        run: npx lerna publish --canary --yes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - if: ${{ ! inputs.canary }}
+        run: npx lerna publish --yes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
