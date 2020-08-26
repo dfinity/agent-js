@@ -10,8 +10,8 @@ jobs:
     strategy:
       matrix:
         node:
-        # - '10'
-        # - '12'
+        - '10'
+        - '12'
         - '14'
 
     steps:
