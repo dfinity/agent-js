@@ -1,0 +1,36 @@
+#!/usr/bin/env sh
+
+function help {
+msg="$(cat <<-EOF
+This repository is the new home for the @dfinity/bootstrap npm package.
+This script will take a path to its old home in the sdk, then copy it here to ./packages/bootstrap w/ any transformations required as part of the 'move'.
+
+Usage:
+    ./import-bootstrap-from ~/dfinity/sdk/src/bootstrap
+
+EOF)"
+    echo "$msg"
+}
+
+function main {
+    bootstrap_target="$(dirname $0)"/../packages/bootstrap
+    bootstrap_src="$1"
+    if [[ -z "$bootstrap_src" ]]; then
+        help
+        echo
+        echo "Error: Provide a path to the sdk bootstrap directory to import from there"
+        exit 1
+    fi
+
+    # Warning
+    rm -rf "$bootstrap_target"
+    
+    cp -a "$bootstrap_src" "$bootstrap_target"
+
+    # Remove files we dont want
+    find "$bootstrap_target" -name '*INTERNAL*' | xargs rm
+    find "$bootstrap_target" -name '*.nix' | xargs rm
+    echo "test.todo('@dfinity/bootstrap has tests');" > "$bootstrap_target"/src/index.test.ts
+}
+
+main $@
