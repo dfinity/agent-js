@@ -26,11 +26,6 @@ jobs:
       # The test beforehand won't do it if the relevant subpackge's ndoe_modules were already fetched.
       run: "[ -d packages/agent/node_modules ] || npm run postinstall"
     - run: npm run build --if-present
-    - run: ls node_modules
-    - run: ls node_modules/.bin
-    - run: ls packages
-    - run: ls packages/agent
-    # - run: (cd packages/)
     - run: npm test
       env:
         CI: true
