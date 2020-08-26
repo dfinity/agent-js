@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/agent",
-  "version": "0.7.0-alpha.0",
+  "version": "0.7.0-alpha.1",
   "main": "src/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
