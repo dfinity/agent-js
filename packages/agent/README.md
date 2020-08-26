@@ -1,7 +1,3 @@
-# JavaScript User Library
+# `@dfinity/agent`
 
-Package: `@dfinity/agent`
-
-## API
-
-TBD.
+JavaScript object that can interact with the Internet Computer.
