@@ -49,4 +49,4 @@ When developing these configuration files, you may test with [nektos/act](https:
 
 All commits in the master branch should come from squashed GitHub Pull Requests, and those commit messages should follow the [conventionalcommits.org](https://conventionalcommits.org) syntax.
 
-Mergify can take care of enforcing all of this. Just add the `automerge-squash` label to PRs that Mergify should merge. This policy is configured via [./.mergify.yml](./.mergify).
+Mergify can take care of enforcing all of this. Just add the `automerge-squash` label to Pull Request that Mergify should merge. This policy is configured via [./.mergify.yml](./.mergify).
