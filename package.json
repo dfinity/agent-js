@@ -1,0 +1,22 @@
+{
+  "name": "@dfinity/agent-monorepo",
+  "private": true,
+  "devDependencies": {
+    "lerna": "^3.22.1"
+  },
+  "description": "Monorepo for @dfinity/agent-js and related npm packages",
+  "version": "0.0.0",
+  "scripts": {
+    "postinstall": "lerna bootstrap",
+    "prepare": "lerna run prepare",
+    "test": "lerna run test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dfinity-lab/agent-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dfinity-lab/agent-js/issues"
+  },
+  "homepage": "https://github.com/dfinity-lab/agent-js#readme"
+}

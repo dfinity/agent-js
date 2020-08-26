@@ -1,0 +1,36 @@
+name: Node.js CI
+
+on: [push]
+
+jobs:
+  test:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node:
+        - '10'
+        - '12'
+        - '14'
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node }}
+    - run: npm install
+    - # I don't want to do this, but when devving with nektos/act, postinstall wasn't getting run.
+      # Then, the later `npm test` would fail because packages/* didn't have their devDependencies.
+      # The test beforehand won't do it if the relevant subpackge's ndoe_modules were already fetched.
+      run: "[ -d packages/agent/node_modules ] || npm run postinstall"
+    - run: npm run build --if-present
+    - run: ls node_modules
+    - run: ls node_modules/.bin
+    - run: ls packages
+    - run: ls packages/agent
+    # - run: (cd packages/)
+    - run: npm test
+      env:
+        CI: true
