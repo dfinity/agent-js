@@ -6,14 +6,21 @@ on:
       - master
 
 jobs:
-  build:
+  version:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - run: lerna publish --canary
+      - name: git config identity
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/$GITHUB_REPOSITORY
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: npx lerna version --conventional-prerelease --yes
 
       # - name: Install Packages
       #   run: npm install
