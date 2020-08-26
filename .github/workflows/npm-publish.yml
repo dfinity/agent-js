@@ -21,9 +21,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: npx lerna version --conventional-prerelease --create-release github --yes
-
-      # - name: Install Packages
-      #   run: npm install
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # - name: Authenticate with Registry
       #   run: |

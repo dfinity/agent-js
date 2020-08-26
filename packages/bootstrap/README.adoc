@@ -44,3 +44,4 @@ the MDN documentation])**.
 
 . Create a worker with `${workerHost}/worker.js` using the same protocol.
 . Get the canister's `/index.js` through the worker.
+
