@@ -2,6 +2,9 @@
   "name": "@dfinity/agent-monorepo",
   "private": true,
   "devDependencies": {
+    "@commitlint/cli": "^9.1.2",
+    "@commitlint/config-conventional": "^9.1.2",
+    "husky": "^4.2.5",
     "lerna": "^3.22.1"
   },
   "description": "Monorepo for @dfinity/agent-js and related npm packages",
@@ -18,5 +21,10 @@
   "bugs": {
     "url": "https://github.com/dfinity-lab/agent-js/issues"
   },
-  "homepage": "https://github.com/dfinity-lab/agent-js#readme"
+  "homepage": "https://github.com/dfinity-lab/agent-js#readme",
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
+  }
 }
