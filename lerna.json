@@ -2,11 +2,11 @@
   "packages": [
     "packages/*"
   ],
-  "version": "0.0.0",
+  "version": "0.7.0-alpha.0",
   "command": {
     "version": {
-       "message": "chore: release new versions",
-       "conventionalCommits": true
+      "message": "chore: release new versions",
+      "conventionalCommits": true
     }
   }
 }
