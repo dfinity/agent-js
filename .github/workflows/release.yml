@@ -1,10 +1,13 @@
 name: NPM Release
 
 on: 
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      canary:
+        default: 'true'
 
 jobs:
-  prerelease:
+  release:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -18,22 +21,11 @@ jobs:
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/$GITHUB_REPOSITORY
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: npx lerna publish --yes
+      - if: ${{ inputs.canary }}
+        run: npx lerna publish --canary --yes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # - name: Authenticate with Registry
-      #   run: |
-      #     echo "@dfinity:registry=http://registry.npmjs.org/" > .npmrc
-      #     echo "registry=http://registry.npmjs.org/" >> .npmrc
-      #     echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
-      #     npm whoami
-      #   env:
-      #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      # - name: Publish package
-      #   run: lerna publish --yes --message 'chore: release new versions'
-      #   env:
-      #     GH_TOKEN: ${{ secrets.GITHUB_PAT }}
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_PAT }}
-      #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - if: ${{ ! inputs.canary }}
+        run: npx lerna publish --yes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
