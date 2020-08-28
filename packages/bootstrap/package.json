@@ -2,7 +2,7 @@
   "name": "@dfinity/bootstrap",
   "version": "0.7.0-alpha.4",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -b",
     "bundle": "npm run build && webpack",
     "ci": "npm run prettier && npm run lint && npm run build",
     "lint": "tslint --project tsconfig.json --config tslint.json",
