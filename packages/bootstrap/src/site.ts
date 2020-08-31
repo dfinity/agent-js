@@ -193,9 +193,11 @@ export class SiteInfo {
   private async retrieve(name: string): Promise<string | undefined> {
     const maybeValue = await storage.retrieve(name);
     if (maybeValue === undefined) {
-      return localforage.getItem<string>(name);
+      const fromLocalStorage = await localforage.getItem<string>(name);
+      return (null === fromLocalStorage) ? undefined : fromLocalStorage;
     } else {
       return maybeValue;
     }
   }
 }
+

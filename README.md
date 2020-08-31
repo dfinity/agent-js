@@ -2,7 +2,7 @@
 
 Use an Agent to interact with the Internet Computer from your JavaScript program.
 
-This source code repository contains multiple npm packages, and [lerna](https://lerna.js.org/) provides tools for managing the monorepo. Currently we use lerna in ['fixed' mode](https://github.com/lerna/lerna#fixedlocked-mode-default), which means all packages are the same version. This may change in the future.
+This source code repository contains multiple npm packages, but it's primary export is at `./packages/agent`.
 
 ## Development
 
@@ -10,7 +10,6 @@ This source code repository contains multiple npm packages, and [lerna](https://
 
 1. Clone the git repository.
 2. Run `npm install`
-    * The npm postinstall script should automatically call `lerna bootstrap`, which will install/link all subpackages.
 
 After that, you probably want to dive into a specific package in [./packages](./packages).
 
