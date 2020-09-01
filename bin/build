@@ -3,11 +3,17 @@
 # exit on error
 set -e
 
+# Copy npm devtools into ./node_modules.
+# Because npm resolves tools in ancestor dirs' node_modules too,
+# this should make common devtools like jest/tsc be found when
+# run from npm runscripts inside ./packages/*/
+cp -R packages/agent-js-devtools/node_modules/{*,.bin} node_modules/
+
 for package in ./packages/*
 do
 	(
 		echo "building package: $package"
 		cd "$package"
-		npm install
+		npm run build --if-present
 	)
 done
