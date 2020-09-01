@@ -50,3 +50,4 @@ All commits in the master branch should come from squashed GitHub Pull Requests,
 
 Mergify can take care of enforcing all of this. Just add the `automerge-squash` label to each Pull Request that Mergify should merge. This policy is configured via [./.mergify.yml](./.mergify).
 
+
