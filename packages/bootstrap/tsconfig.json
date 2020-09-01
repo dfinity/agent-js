@@ -20,8 +20,5 @@
   "include": [
     "types/*",
     "src/**/*.ts"
-  ],
-  "references": [
-    { "path": "../agent" }
   ]
 }

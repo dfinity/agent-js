@@ -1,6 +1,5 @@
 {
   "name": "@dfinity/bootstrap",
-  "version": "0.7.0-alpha.1",
   "scripts": {
     "build": "npx typescript -b",
     "bundle": "npm run build && webpack",
