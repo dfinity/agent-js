@@ -15,7 +15,6 @@
   },
   "scripts": {
     "build": "bin/build",
-    "prepare": "npm run build",
     "test": "bin/test"
   }
 }
