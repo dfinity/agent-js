@@ -1,5 +1,6 @@
 {
   "name": "@dfinity/agent-js-devtools",
+  "version": "0.0.0",
   "scripts": {
     "test": ""
   },
