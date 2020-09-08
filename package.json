@@ -1,6 +1,7 @@
 {
   "name": "@dfinity/agent-monorepo",
-  "version": "0.7.0-dev.0",
+  "version": "0.0.0",
+  "private": true,
   "description": "Use an Agent to interact with the Internet Computer from your JavaScript program.",
   "dependencies": {
     "@dfinity/agent": "file://./packages/agent",
