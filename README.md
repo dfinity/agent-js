@@ -42,12 +42,19 @@ GitHub Actions for this repo are configured in [./.github/workflows](./.github/w
 * [nodejs-ci.yml](./.github/workflows/nodejs-ci.yml) - For every git push, do a build, test of all packages.
 * [commitlint.yml](./.github/workflows/commitlint.yml) - Run [commitlint](https://commitlint.js.org/#/) on every git commit message.
 
-When developing these configuration files, you may test with [nektos/act](https://github.com/nektos/act). Please do your best to keep all workflows working with act.
-
 ### Master Branch Conventions and Mergify
 
 All commits in the master branch should come from squashed GitHub Pull Requests, and those commit messages should follow the [conventionalcommits.org](https://conventionalcommits.org) syntax.
 
 Mergify can take care of enforcing all of this. Just add the `automerge-squash` label to each Pull Request that Mergify should merge. This policy is configured via [./.mergify.yml](./.mergify).
 
+### bin/* scripts
 
+The following scripts can be found in [./bin](./bin):
+
+Monorepo-related scripts run in this order, but are usually invoked by `npm install`:
+
+* npm-postinstall - Run with `npm run postinstall` in this monorepo package.
+  * It copies devtools dependencies from ./packages/agent-js-devtools/node_modules -> ./node_modules
+* build - Build (`npm run build`) each subpackage in ./packages/
+* test - Run `npm test` in each subpackage
