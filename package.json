@@ -17,8 +17,8 @@
     "type": "git",
     "url": "git+https://github.com/dfinity-lab/agent-js.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "DFINITY Stiftung <sdk@dfinity.org>",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/dfinity-lab/agent-js/issues"
   },
