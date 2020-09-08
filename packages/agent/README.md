@@ -1,3 +1,4 @@
 # `@dfinity/agent`
 
-JavaScript object that can interact with the Internet Computer.
+JavaScript and TypeScript library to interact with the Internet Computer
+
