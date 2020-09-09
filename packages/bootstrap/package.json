@@ -3,8 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "npx typescript -b",
-    "bundle": "npm run build && webpack",
+    "build": "npm run tsc && npm run webpack",
     "ci": "npm run prettier && npm run lint && npm run build",
     "lint": "tslint --project tsconfig.json --config tslint.json",
     "lint:fix": "npm run lint -- --fix",
@@ -12,6 +11,7 @@
     "prettier": "npx prettier --check \"src/**/*.ts\"",
     "prettier:write": "npm run prettier -- --write",
     "test": "jest --verbose",
+    "tsc": "tsc -b",
     "webpack": "webpack"
   },
   "devDependencies": {

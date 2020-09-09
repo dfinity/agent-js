@@ -1,4 +1,7 @@
 {
+    "compilerOptions": {
+        "rootDir": ".",
+    },
     "files": [],
     "references": [
         { "path": "packages/agent" },
