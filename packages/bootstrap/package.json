@@ -8,7 +8,7 @@
     "lint": "tslint --project tsconfig.json --config tslint.json",
     "lint:fix": "npm run lint -- --fix",
     "prepare": "npm run build",
-    "prettier": "npx prettier --check \"src/**/*.ts\"",
+    "prettier": "prettier --check \"src/**/*.ts\"",
     "prettier:write": "npm run prettier -- --write",
     "test": "jest --verbose",
     "tsc": "tsc -b",
