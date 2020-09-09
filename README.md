@@ -2,7 +2,7 @@
 
 Use an Agent to interact with the Internet Computer from your JavaScript program.
 
-This source code repository contains multiple npm packages, but it's primary export is at `./packages/agent`.
+This source code repository contains multiple npm packages, each under `./packages/`.
 
 ## Development
 
@@ -12,28 +12,6 @@ This source code repository contains multiple npm packages, but it's primary exp
 2. Run `npm install`
 
 After that, you probably want to dive into a specific package in [./packages](./packages).
-
-### Cross-Package Commands
-
-Use `npx` to fetch-and/or-invoke the `lerna` CLI (Note: the `lerna` cli is also usually at `./node_modules/.bin/lerna` after `npm install`).
-
-#### Run `npm run test` in all packages.
-
-```
-npx lerna run test
-```
-
-#### Run `npm run lint` in all packages.
-
-```
-npx lerna run lint
-```
-
-#### Add a new npm dependency to package '@dfinity/agent'
-
-```
-npx lerna add dependency-name --scope='@dfinity/agent'
-```
 
 ### GitHub Actions
 
