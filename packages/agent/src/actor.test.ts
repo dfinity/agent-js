@@ -3,7 +3,7 @@ import { makeActorFactory } from './actor';
 import { HttpAgent } from './agent';
 import { makeAuthTransform, SenderPubKey, SenderSecretKey, SenderSig } from './auth';
 import * as cbor from './cbor';
-import { makeNonceTransform } from './http_agent_transforms';
+import { Expiry, makeNonceTransform } from './http_agent_transforms';
 import { CallRequest, Signed, SubmitRequestType } from './http_agent_types';
 import * as IDL from './idl';
 import { Principal } from './principal';
@@ -94,6 +94,7 @@ test('makeActor', async () => {
       arg,
       nonce: nonces[0],
       sender,
+      ingress_expiry: new Expiry(300000),
     },
     sender_pubkey: senderPubKey,
     sender_sig: senderSig,
