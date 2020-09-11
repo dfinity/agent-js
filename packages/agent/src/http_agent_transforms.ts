@@ -5,7 +5,7 @@ import { Endpoint, HttpAgentRequest, HttpAgentRequestTransformFn } from './http_
 import { makeNonce, Nonce } from './types';
 import { lebEncode } from './utils/leb128';
 
-const NANOSECONDS_PER_MSECS = 1000000;
+const NANOSECONDS_PER_MILLISECONDS = 1000000;
 
 export class Expiry {
   private readonly _value: BigNumber;
@@ -14,7 +14,7 @@ export class Expiry {
     // Use BigNumber because it can overflow the maximum number allowed in a double float.
     this._value = new BigNumber(Date.now().valueOf())
       .plus(deltaInMSec)
-      .times(NANOSECONDS_PER_MSECS);
+      .times(NANOSECONDS_PER_MILLISECONDS);
   }
 
   public toCBOR(): cbor.CborValue {
@@ -42,10 +42,10 @@ export function makeNonceTransform(nonceFn: () => Nonce = makeNonce): HttpAgentR
 /**
  * Create a transform that adds a delay (by default 5 minutes) to the expiry.
  *
- * @param delayMSec The delay to add to the call time, in milliseconds.
+ * @param delayInMilliseconds The delay to add to the call time, in milliseconds.
  */
-export function makeExpiryTransform(delayMSec: number): HttpAgentRequestTransformFn {
+export function makeExpiryTransform(delayInMilliseconds: number): HttpAgentRequestTransformFn {
   return async (request: HttpAgentRequest) => {
-    request.body.ingress_expiry = new Expiry(delayMSec);
+    request.body.ingress_expiry = new Expiry(delayInMilliseconds);
   };
 }

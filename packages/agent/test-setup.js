@@ -10,5 +10,3 @@
 window.crypto = require("@trust/webcrypto");
 window.TextEncoder = require("text-encoding").TextEncoder;
 require("whatwg-fetch");
-
-global.Date.now = jest.fn(() => new Date(1000000).getTime());
