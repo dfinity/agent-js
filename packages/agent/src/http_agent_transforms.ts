@@ -5,7 +5,7 @@ import { Endpoint, HttpAgentRequest, HttpAgentRequestTransformFn } from './http_
 import { makeNonce, Nonce } from './types';
 import { lebEncode } from './utils/leb128';
 
-const NANOSECONDS_PER_MSECS = 1_000_000;
+const NANOSECONDS_PER_MSECS = 1000000;
 
 export class Expiry {
   private readonly _value: BigNumber;

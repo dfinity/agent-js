@@ -15,15 +15,6 @@ import { requestIdOf } from './request_id';
 import { BinaryBlob } from './types';
 import { Nonce } from './types';
 
-const originalDateNow = global.Date.now;
-beforeEach(() => {
-  global.Date.now = jest.fn(() => new Date(1_000_000).getTime());
-});
-afterEach(() => {
-  global.Date.now = originalDateNow;
-});
-
-
 test('call', async () => {
   const mockFetch: jest.Mock = jest.fn((resource, init) => {
     return Promise.resolve(
