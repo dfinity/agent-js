@@ -157,7 +157,8 @@ export type RequestStatusResponse =
   | RequestStatusResponseProcessing
   | RequestStatusResponseReplied
   | RequestStatusResponseRejected
-  | RequestStatusResponseUnknown;
+  | RequestStatusResponseUnknown
+  | RequestStatusResponseDone;
 
 export interface RequestStatusResponseReceived {
   status: RequestStatusResponseStatus.Received;
@@ -185,12 +186,17 @@ export interface RequestStatusResponseUnknown {
   status: RequestStatusResponseStatus.Unknown;
 }
 
+export interface RequestStatusResponseDone {
+  status: RequestStatusResponseStatus.Done;
+}
+
 export enum RequestStatusResponseStatus {
   Received = 'received',
   Processing = 'processing',
   Replied = 'replied',
   Rejected = 'rejected',
   Unknown = 'unknown',
+  Done = 'done',
 }
 
 export type ReadRequest = QueryRequest | RequestStatusRequest;
