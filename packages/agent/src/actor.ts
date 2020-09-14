@@ -326,6 +326,14 @@ async function _requestStatusAndLoop<T>(
           `  Reject code: ${status.reject_code}\n` +
           `  Reject text: ${status.reject_message}\n`,
       );
+
+    case RequestStatusResponseStatus.Done:
+      // This is _technically_ not an error, but we still didn't see the `Replied` status so
+      // we don't know the result and cannot decode it.
+      throw new Error(
+        `Call was marked as done but we never saw the reply:\n` +
+        `  Request ID: ${requestIdToHex(requestId)}\n`
+      );
   }
 }
 
