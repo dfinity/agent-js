@@ -1,3 +1,4 @@
+import { Expiry } from './http_agent_transforms';
 import { Principal } from './principal';
 import { RejectCode } from './reject_code';
 import { RequestId } from './request_id';
@@ -76,6 +77,7 @@ export interface CallRequest extends Record<string, any> {
   method_name: string;
   arg: BinaryBlob;
   sender: BinaryBlob;
+  ingress_expiry: Expiry;
 }
 export interface InstallCodeRequest extends Record<string, any> {
   request_type: SubmitRequestType.InstallCode;
@@ -83,10 +85,12 @@ export interface InstallCodeRequest extends Record<string, any> {
   module: BinaryBlob;
   arg?: BinaryBlob;
   sender: BinaryBlob;
+  ingress_expiry: Expiry;
 }
 export interface CreateCanisterRequest extends Record<string, any> {
   request_type: SubmitRequestType.CreateCanister;
   sender: BinaryBlob;
+  ingress_expiry: Expiry;
 }
 // tslint:enable:camel-case
 
@@ -143,6 +147,7 @@ export interface QueryRequest extends Record<string, any> {
   method_name: string;
   arg: BinaryBlob;
   sender: BinaryBlob;
+  ingress_expiry: Expiry;
 }
 
 // The fields in a "request_status" read request.

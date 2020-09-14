@@ -3,6 +3,7 @@ import { ActorFactory } from '../actor';
 import * as actor from '../actor';
 import { Agent } from '../agent';
 import * as cbor from '../cbor';
+import { Expiry } from '../http_agent_transforms';
 import {
   AuthHttpAgentRequestTransformFn,
   Endpoint,
@@ -149,6 +150,7 @@ export class HttpAgent implements Agent {
       method_name: fields.methodName,
       arg: fields.arg,
       sender: p.toBlob(),
+      ingress_expiry: new Expiry(300000),
     });
   }
 
@@ -172,6 +174,7 @@ export class HttpAgent implements Agent {
       module: fields.module,
       arg: fields.arg || blobFromHex(''),
       sender: p.toBlob(),
+      ingress_expiry: new Expiry(300000),
     });
   }
 
@@ -185,6 +188,7 @@ export class HttpAgent implements Agent {
     return this.submit({
       request_type: SubmitRequestType.CreateCanister,
       sender: p.toBlob(),
+      ingress_expiry: new Expiry(300000),
     });
   }
 
@@ -205,6 +209,7 @@ export class HttpAgent implements Agent {
       method_name: fields.methodName,
       arg: fields.arg,
       sender: p.toBlob(),
+      ingress_expiry: new Expiry(300000),
     }) as Promise<QueryResponse>;
   }
 

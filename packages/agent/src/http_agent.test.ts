@@ -2,7 +2,7 @@ import { Buffer } from 'buffer/';
 import { HttpAgent } from './agent';
 import { createKeyPairFromSeed, makeAuthTransform, SenderSig, sign, verify } from './auth';
 import * as cbor from './cbor';
-import { makeNonceTransform } from './http_agent_transforms';
+import { Expiry, makeNonceTransform } from './http_agent_transforms';
 import {
   CallRequest,
   ReadRequestType,
@@ -14,6 +14,14 @@ import { Principal } from './principal';
 import { requestIdOf } from './request_id';
 import { BinaryBlob } from './types';
 import { Nonce } from './types';
+
+const originalDateNowFn = global.Date.now;
+beforeEach(() => {
+  global.Date.now = jest.fn(() => new Date(1000000).getTime());
+});
+afterEach(() => {
+  global.Date.now = originalDateNowFn;
+});
 
 test('call', async () => {
   const mockFetch: jest.Mock = jest.fn((resource, init) => {
@@ -58,6 +66,7 @@ test('call', async () => {
     arg,
     nonce,
     sender: principal.toBlob(),
+    ingress_expiry: new Expiry(300000),
   };
 
   const mockPartialsRequestId = await requestIdOf(mockPartialRequest);
