@@ -2,6 +2,7 @@ import {
   Agent,
   HttpAgent,
   makeAuthTransform,
+  makeExpiryTransform,
   makeNonceTransform,
   Principal,
   ProxyAgent,
@@ -23,6 +24,7 @@ export async function createAgent(site: SiteInfo): Promise<Agent> {
       ...(creds && { credentials: { name: creds[0], password: creds[1] } }),
     });
     agent.addTransform(makeNonceTransform());
+    agent.addTransform(makeExpiryTransform(5 * 60 * 1000));
     agent.setAuthTransform(makeAuthTransform(keyPair));
 
     return agent;
