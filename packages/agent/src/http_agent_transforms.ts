@@ -7,6 +7,8 @@ import { lebEncode } from './utils/leb128';
 
 const NANOSECONDS_PER_MILLISECONDS = 1000000;
 
+const REPLICA_PERMITTED_DRIFT_MILLISECONDS = 60 * 1000;
+
 export class Expiry {
   private readonly _value: BigNumber;
 
@@ -14,6 +16,7 @@ export class Expiry {
     // Use BigNumber because it can overflow the maximum number allowed in a double float.
     this._value = new BigNumber(Date.now().valueOf())
       .plus(deltaInMSec)
+      .minus(REPLICA_PERMITTED_DRIFT_MILLISECONDS)
       .times(NANOSECONDS_PER_MILLISECONDS);
   }
 
