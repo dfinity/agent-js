@@ -193,10 +193,7 @@ export class Actor {
   }
 
   public static async fromCanister(canisterId: Principal, config: ActorConfig): Promise<ActorSubclass | undefined> {
-    const wasm = await fetch('./didc_wasm/didc_wasm_bg.wasm');
-    const { instance, module } = await WebAssembly.instantiate(await wasm.arrayBuffer(), {});
-    const exports = instance.exports;
-    
+    await init('./didc_wasm/didc_wasm_bg.wasm');
     const common_interface: IDL.InterfaceFactory = ({ IDL }) => IDL.Service({
       __get_candid_interface_tmp_hack: IDL.Func([], [IDL.Text], ['query']),
     });
@@ -207,7 +204,7 @@ export class Actor {
       return undefined;
     }
     const dataUri = 'data:text/javascript;charset=utf-8,' + encodeURIComponent(js);
-    const candid = await import(/* webpackIgnore: true */dataUri);
+    const candid = await eval('import("' + dataUri + '")');
     return this.createActor(candid.default, { ...config, canisterId });
   }
 
