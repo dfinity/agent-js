@@ -6,8 +6,7 @@
   "dependencies": {
     "@dfinity/agent": "file://./packages/agent",
     "@dfinity/agent-js-devtools": "file://./packages/agent-js-devtools",
-    "@dfinity/bootstrap": "file://./packages/bootstrap",
-    "jest-cli": "^24.9.0"
+    "@dfinity/bootstrap": "file://./packages/bootstrap"
   },
   "scripts": {
     "postinstall": "bin/npm-postinstall",

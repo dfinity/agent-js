@@ -20,7 +20,7 @@
     "base32.js": "^0.1.0",
     "bignumber.js": "^9.0.0",
     "borc": "^2.1.1",
-    "buffer": "^5.4.3",
+    "npm-buffer": "npm:buffer@^5.4.3",
     "buffer-pipe": "0.0.4",
     "crc": "3.8.0",
     "js-sha256": "0.9.0",

@@ -1,4 +1,4 @@
-import { Buffer } from 'buffer';
+import { Buffer } from 'npm-buffer';
 import { lebEncode } from './utils/leb128';
 
 export interface JsonArray extends Array<JsonValue> {}

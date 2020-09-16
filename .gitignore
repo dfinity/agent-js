@@ -104,3 +104,6 @@ dist
 
 # subpackages should not have package-lock.json
 /packages/*/package-lock.json
+
+# no .vscode
+.vscode

@@ -1,7 +1,7 @@
 // tslint:disable:max-classes-per-file
 import BigNumber from 'bignumber.js';
 import Pipe from 'buffer-pipe';
-import { Buffer } from 'buffer';
+import { Buffer } from 'npm-buffer';
 import { Principal as PrincipalId } from './principal';
 import { JsonValue } from './types';
 import { idlLabelToId } from './utils/hash';

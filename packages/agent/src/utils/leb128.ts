@@ -8,7 +8,7 @@
 //       Uint8Array which is standard.
 import BigNumber from 'bignumber.js';
 import Pipe from 'buffer-pipe';
-import { Buffer } from 'buffer';
+import { Buffer } from 'npm-buffer';
 
 export function safeRead(pipe: Pipe, num: number): Buffer {
   if (pipe.buffer.length < num) {

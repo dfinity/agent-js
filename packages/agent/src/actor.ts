@@ -1,4 +1,4 @@
-import { Buffer } from 'buffer';
+import { Buffer } from 'npm-buffer';
 import { Agent } from './agent';
 import { getManagementCanister } from './canisters/management';
 import {
