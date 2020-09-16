@@ -23,7 +23,7 @@ module.exports = {
   },
   resolve: {
     plugins: [new TsconfigPathsPlugin({ configFile: './tsconfig.json' })],
-    extensions: ['.tsx', '.ts', '.js'],
+    extensions: ['.tsx', '.ts', '.js', '.wasm'],
   },
   devtool: 'source-map',
   optimization: {
@@ -52,6 +52,10 @@ module.exports = {
         test: /\.tsx?$/,
         use: ['ts-loader'],
       },
+      {
+        test: /\.wasm$/,
+        type: "webassembly/experimental"
+      },      
     ],
   },
   plugins: [
@@ -81,5 +85,11 @@ module.exports = {
         to: 'favicon.ico',
       },
     ]),
+    new CopyWebpackPlugin([
+      {
+        from: '../agent/src/didc_wasm/didc_wasm_bg.wasm',
+        to: 'didc_wasm/didc_wasm_bg.wasm',
+      },
+    ]),    
   ],
 };

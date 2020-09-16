@@ -4,6 +4,7 @@ import {
   HttpAgent,
   IDL,
   Principal,
+  Actor,
 } from '@dfinity/agent';
 import { createAgent } from './host';
 import { SiteInfo } from './site';
@@ -60,9 +61,11 @@ async function _main() {
     document.body.replaceChild(div, document.body.getElementsByTagName('app').item(0)!);
   } else {
     if (window.location.pathname === '/candid') {
+      const canister = await Actor.fromCanister(canisterId, { canisterId });
       // Load candid.did.js from endpoint.
-      const candid = await _loadCandid(canisterId);
-      const canister = window.ic.agent.makeActorFactory(candid.default)({ canisterId });
+      if (typeof canister === 'undefined') {
+        throw new Error('Cannot get candid file for the canister');
+      }
       const render = await import('./candid/candid');
       render.render(canisterId, canister);
     } else {

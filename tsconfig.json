@@ -7,5 +7,5 @@
         { "path": "packages/agent" },
         { "path": "packages/agent-js-devtools" },
         { "path": "packages/bootstrap" }
-    ]
+    ],
 }

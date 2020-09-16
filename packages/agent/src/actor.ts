@@ -11,6 +11,7 @@ import { GlobalInternetComputer } from './index';
 import { Principal } from './principal';
 import { RequestId, toHex as requestIdToHex } from './request_id';
 import { BinaryBlob } from './types';
+import init, { did_to_js } from './didc_wasm/didc_wasm';
 
 declare const window: GlobalInternetComputer;
 declare const global: GlobalInternetComputer;
@@ -191,6 +192,25 @@ export class Actor {
     ) as unknown) as ActorSubclass<T>;
   }
 
+  public static async fromCanister(canisterId: Principal, config: ActorConfig): Promise<ActorSubclass | undefined> {
+    const wasm = await fetch('./didc_wasm/didc_wasm_bg.wasm');
+    const { instance, module } = await WebAssembly.instantiate(await wasm.arrayBuffer(), {});
+    const exports = instance.exports;
+    
+    const common_interface: IDL.InterfaceFactory = ({ IDL }) => IDL.Service({
+      __get_candid_interface_tmp_hack: IDL.Func([], [IDL.Text], ['query']),
+    });
+    const actor = this.createActor(common_interface, { ...config, canisterId }) as ActorSubclass<any>;
+    const candid_source = await actor.__get_candid_interface_tmp_hack();
+    const js = did_to_js(candid_source);
+    if (typeof js === 'undefined') {
+      return undefined;
+    }
+    const dataUri = 'data:text/javascript;charset=utf-8,' + encodeURIComponent(js);
+    const candid = await import(/* webpackIgnore: true */dataUri);
+    return this.createActor(candid.default, { ...config, canisterId });
+  }
+
   private [metadataSymbol]: ActorMetadata;
 
   protected constructor(metadata: ActorMetadata) {
@@ -358,3 +378,4 @@ export function makeActorFactory(actorInterfaceFactory: IDL.InterfaceFactory): A
     return Actor.createActor(actorInterfaceFactory, config);
   };
 }
+
