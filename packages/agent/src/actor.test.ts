@@ -1,4 +1,4 @@
-import { Buffer } from 'buffer/';
+import { Buffer } from 'buffer';
 import { makeActorFactory } from './actor';
 import { HttpAgent } from './agent';
 import { makeAuthTransform, SenderPubKey, SenderSecretKey, SenderSig } from './auth';

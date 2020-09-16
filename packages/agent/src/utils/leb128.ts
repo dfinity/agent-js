@@ -7,8 +7,8 @@
 // TODO: The best solution would be to have our own buffer type around
 //       Uint8Array which is standard.
 import BigNumber from 'bignumber.js';
-import Pipe = require('buffer-pipe');
-import { Buffer } from 'buffer/';
+import Pipe from 'buffer-pipe';
+import { Buffer } from 'buffer';
 
 export function safeRead(pipe: Pipe, num: number): Buffer {
   if (pipe.buffer.length < num) {

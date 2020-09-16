@@ -1,5 +1,5 @@
 import borc from 'borc';
-import { Buffer } from 'buffer/';
+import { Buffer } from 'buffer';
 import { BinaryBlob, blobToHex } from './types';
 import { lebEncode } from './utils/leb128';
 
