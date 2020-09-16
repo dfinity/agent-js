@@ -1,0 +1,15 @@
+{
+  "name": "didc-wasm",
+  "collaborators": [
+    "DFINITY Team"
+  ],
+  "version": "0.1.0",
+  "files": [
+    "didc_wasm_bg.wasm",
+    "didc_wasm.js",
+    "didc_wasm.d.ts"
+  ],
+  "module": "didc_wasm.js",
+  "types": "didc_wasm.d.ts",
+  "sideEffects": false
+}
