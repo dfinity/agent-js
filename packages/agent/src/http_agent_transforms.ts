@@ -18,7 +18,7 @@ export class Expiry {
   }
 
   public toCBOR(): cbor.CborValue {
-    return cbor.value.u64(this._value.toString(16));
+    return cbor.value.u64(this._value.toString(16), 16);
   }
 
   public toHash(): Buffer {
