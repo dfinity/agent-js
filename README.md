@@ -36,3 +36,4 @@ Monorepo-related scripts run in this order, but are usually invoked by `npm inst
   * It copies devtools dependencies from ./packages/agent-js-devtools/node_modules -> ./node_modules
 * build - Build (`npm run build`) each subpackage in ./packages/
 * test - Run `npm test` in each subpackage
+

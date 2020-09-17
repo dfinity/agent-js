@@ -1,5 +1,5 @@
 declare module 'borc' {
-  import { Buffer } from 'buffer/';
+  import { Buffer } from 'npm-buffer';
 
   class Decoder {
     constructor(opts: { size: Number; tags: Record<number, (val: any) => any> });

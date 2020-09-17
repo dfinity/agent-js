@@ -1,7 +1,7 @@
 {
   "name": "@dfinity/agent",
   "version": "0.6.8",
-  "main": "src/index.js",
+  "main": "ts-out/src/index.js",
   "scripts": {
     "build": "tsc -b",
     "bundle": "npm run build",
@@ -13,12 +13,14 @@
     "test": "jest --verbose"
   },
   "dependencies": {
+    "@babel/plugin-transform-modules-commonjs": "^7.10.4",
+    "@babel/preset-env": "^7.11.5",
     "@types/crc": "^3.4.0",
     "@types/jest": "^24.0.18",
     "base32.js": "^0.1.0",
     "bignumber.js": "^9.0.0",
     "borc": "^2.1.1",
-    "buffer": "^5.4.3",
+    "npm-buffer": "npm:buffer@^5.4.3",
     "buffer-pipe": "0.0.4",
     "crc": "3.8.0",
     "js-sha256": "0.9.0",
@@ -27,6 +29,7 @@
   },
   "devDependencies": {
     "@trust/webcrypto": "^0.9.2",
+    "babel-jest": "^26.3.0",
     "jest": "^24.9.0",
     "jest-expect-message": "^1.0.2",
     "node-fetch": "2.6.0",

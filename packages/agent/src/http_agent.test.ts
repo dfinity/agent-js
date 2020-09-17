@@ -1,4 +1,4 @@
-import { Buffer } from 'buffer/';
+import { Buffer } from 'npm-buffer';
 import { HttpAgent } from './agent';
 import { createKeyPairFromSeed, makeAuthTransform, SenderSig, sign, verify } from './auth';
 import * as cbor from './cbor';

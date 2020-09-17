@@ -1,6 +1,8 @@
 {
     "compilerOptions": {
         "rootDir": ".",
+        "module": "esnext",
+        "moduleResolution": "node"
     },
     "files": [],
     "references": [

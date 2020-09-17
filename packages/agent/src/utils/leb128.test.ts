@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
-import Pipe = require('buffer-pipe');
-import { Buffer } from 'buffer/';
+import Pipe from 'buffer-pipe';
+import { Buffer } from 'npm-buffer';
 import {
   lebDecode,
   lebEncode,
