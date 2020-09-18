@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import type { Buffer } from 'npm-buffer';
+import { Buffer } from 'buffer/';
 import * as cbor from 'simple-cbor';
 import { Endpoint, HttpAgentRequest, HttpAgentRequestTransformFn } from './http_agent_types';
 import { makeNonce, Nonce } from './types';

@@ -1,5 +1,5 @@
 declare module 'buffer-pipe' {
-  import { Buffer } from 'npm-buffer';
+  import { Buffer } from 'buffer/';
 
   class BufferPipe {
     readonly buffer: Buffer;

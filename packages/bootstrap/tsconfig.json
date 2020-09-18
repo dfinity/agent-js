@@ -6,6 +6,7 @@
     "allowJs": false,
     "outDir": "ts-out/",
     "target": "ES2017",
+    "module": "commonjs",
     "lib": [
       "dom",
       "es2017"

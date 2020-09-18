@@ -8,10 +8,9 @@ module.exports = {
   ],
   testPathIgnorePatterns: [
     "/node_modules/",
-    "/ts-out/"
+    "/out/",
   ],
   transform: {
     "^.+\\.ts$": "ts-jest"
-  },
-  preset: 'ts-jest/presets/js-with-ts',
+  }
 };

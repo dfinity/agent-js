@@ -1,4 +1,4 @@
-import { Buffer } from 'npm-buffer';
+import { Buffer } from 'buffer/';
 import * as tweetnacl from 'tweetnacl';
 import {
   AuthHttpAgentRequestTransformFn,
