@@ -1,4 +1,4 @@
-import { Buffer } from 'npm-buffer';
+import { Buffer } from 'buffer/';
 import { ActorFactory } from '../actor';
 import * as actor from '../actor';
 import { Agent } from '../agent';

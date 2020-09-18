@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { Buffer } from 'npm-buffer';
+import { Buffer } from 'buffer/';
 import { decode, encode } from './cbor';
 import { Principal } from './principal';
 import { BinaryBlob, blobFromHex, blobFromUint8Array, blobToHex } from './types';
