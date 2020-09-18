@@ -150,6 +150,7 @@ test('requestStatus', async () => {
     content: {
       request_type: ReadRequestType.RequestStatus,
       request_id: requestId,
+      ingress_expiry: new Expiry(300000),
     },
     sender_pubkey: senderPubKey,
     sender_sig: Buffer.from([0]) as SenderSig,

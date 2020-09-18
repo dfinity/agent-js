@@ -30,6 +30,9 @@ import { BinaryBlob, blobFromHex, JsonObject } from '../types';
 
 const API_VERSION = 'v1';
 
+// Default delta for ingress expiry is 5 minutes.
+const DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS = 5 * 60 * 1000;
+
 // HttpAgent options that can be used at construction.
 export interface HttpAgentOptions {
   // Another HttpAgent to inherit configuration (pipeline and fetch) of. This
@@ -150,7 +153,7 @@ export class HttpAgent implements Agent {
       method_name: fields.methodName,
       arg: fields.arg,
       sender: p.toBlob(),
-      ingress_expiry: new Expiry(300000),
+      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
     });
   }
 
@@ -174,7 +177,7 @@ export class HttpAgent implements Agent {
       module: fields.module,
       arg: fields.arg || blobFromHex(''),
       sender: p.toBlob(),
-      ingress_expiry: new Expiry(300000),
+      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
     });
   }
 
@@ -188,7 +191,7 @@ export class HttpAgent implements Agent {
     return this.submit({
       request_type: SubmitRequestType.CreateCanister,
       sender: p.toBlob(),
-      ingress_expiry: new Expiry(300000),
+      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
     });
   }
 
@@ -209,7 +212,7 @@ export class HttpAgent implements Agent {
       method_name: fields.methodName,
       arg: fields.arg,
       sender: p.toBlob(),
-      ingress_expiry: new Expiry(300000),
+      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
     }) as Promise<QueryResponse>;
   }
 
@@ -226,6 +229,7 @@ export class HttpAgent implements Agent {
     return this.read({
       request_type: ReadRequestType.RequestStatus,
       request_id: fields.requestId,
+      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
     }) as Promise<RequestStatusResponse>;
   }
 

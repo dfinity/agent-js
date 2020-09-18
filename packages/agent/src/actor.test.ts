@@ -158,6 +158,7 @@ test('makeActor', async () => {
         content: {
           request_type: 'request_status',
           request_id: expectedCallRequestId,
+          ingress_expiry: new Expiry(300000),
         },
         sender_pubkey: senderPubKey,
         sender_sig: senderSig,
@@ -175,6 +176,7 @@ test('makeActor', async () => {
       content: {
         request_type: 'request_status',
         request_id: expectedCallRequestId,
+        ingress_expiry: new Expiry(300000),
       },
       sender_pubkey: senderPubKey,
       sender_sig: senderSig,
@@ -191,6 +193,7 @@ test('makeActor', async () => {
       content: {
         request_type: 'request_status',
         request_id: expectedCallRequestId,
+        ingress_expiry: new Expiry(300000),
       },
       sender_pubkey: senderPubKey,
       sender_sig: senderSig,
@@ -207,6 +210,7 @@ test('makeActor', async () => {
       content: {
         request_type: 'request_status',
         request_id: expectedCallRequestId,
+        ingress_expiry: new Expiry(300000),
       },
       sender_pubkey: senderPubKey,
       sender_sig: senderSig,
