@@ -154,6 +154,7 @@ export interface QueryRequest extends Record<string, any> {
 export interface RequestStatusRequest extends Record<string, any> {
   request_type: ReadRequestType.RequestStatus;
   request_id: RequestId;
+  ingress_expiry: Expiry;
 }
 
 // An ADT that represents responses to a "request_status" read request.

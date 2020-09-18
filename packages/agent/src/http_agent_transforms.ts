@@ -21,6 +21,7 @@ export class Expiry {
   }
 
   public toCBOR(): cbor.CborValue {
+    // TODO: change this to take the minimum amount of space (it always takes 8 bytes now).
     return cbor.value.u64(this._value.toString(16), 16);
   }
 
