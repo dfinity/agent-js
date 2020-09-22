@@ -29,26 +29,31 @@ It should be
     npm ci
     ```
 
-2. Change directories into the `@dfinity/agent` package (the monorepo contains several npm packages)
+    * If you're reusing an long-lasting checkout of this repository, you skipped an earlier step. If you insist, you probably want to run `git clean -dfx .` here.
+
+3. Change directories into the `@dfinity/agent` package (the monorepo contains several npm packages)
     ```
     cd packages/agent
     ```
 
-3. Set the version number to something new:
+4. Set the version number. If you're releasing `@dfinity/agent` alongside `dfx` and the sdk, you should use the same version number for both.
     ```
+    # For testing, use something like:
     new_agent_js_version_number='0.0.0-dev.0'
-    # You may use new_agent_js_version=$NEW_DFX_VERSION
+
+    # When releasing alongside `dfx`/sdk, you should use (without leading '#'):
+    # new_agent_js_version=$NEW_DFX_VERSION
 
     npm version $new_agent_js_version
     ```
 
-4. Publish to npm registry:
+5. Publish to npm registry:
     ```
     # If you haven't yet, you may need to `npm login` or request permissions from @gobengo or @hansl
     npm publish
     ```
 
-5. Verify the new version appears at https://www.npmjs.com/package/@dfinity/agent?activeTab=versions
+6. Verify the new version appears at https://www.npmjs.com/package/@dfinity/agent?activeTab=versions
 
 Afterward:
 
