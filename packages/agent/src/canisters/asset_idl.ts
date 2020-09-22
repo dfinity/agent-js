@@ -7,5 +7,6 @@ export default ({ IDL }) => {
   return IDL.Service({
     retrieve: IDL.Func([IDL.Text], [IDL.Vec(IDL.Nat8)], ['query']),
     store: IDL.Func([IDL.Text, IDL.Vec(IDL.Nat8)], [], []),
+    list: IDL.Func([], [IDL.Vec(IDL.Text)], ['query']),
   });
 };

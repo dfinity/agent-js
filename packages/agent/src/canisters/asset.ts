@@ -5,6 +5,7 @@ import assetCanister from './asset_idl';
 export interface AssetCanisterRecord {
   store(path: string, content: number[]): Promise<void>;
   retrieve(path: string): Promise<number[]>;
+  list(): Promise<string[]>;
 }
 /* tslint:enable */
 
