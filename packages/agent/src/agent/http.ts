@@ -133,6 +133,10 @@ export class HttpAgent implements Agent {
     this._authTransform = fn;
   }
 
+  public getPrincipalId(): Promise<Principal | null> {
+    return Promise.resolve(this._principal);
+  }
+
   public async call(
     canisterId: Principal | string,
     fields: {

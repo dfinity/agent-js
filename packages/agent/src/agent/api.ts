@@ -12,6 +12,13 @@ import { BinaryBlob, JsonObject } from '../types';
 
 // An Agent able to make calls and queries to a Replica.
 export interface Agent {
+  /**
+   * Returns the principal ID associated with this agent (by default). This can be
+   * null if no principal is associated. It also only shows the default, which is
+   * the principal used when calls don't specify it.
+   */
+  getPrincipalId(): Promise<Principal | null>;
+
   requestStatus(fields: RequestStatusFields, principal?: Principal): Promise<RequestStatusResponse>;
 
   call(
