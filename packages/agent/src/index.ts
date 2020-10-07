@@ -26,10 +26,12 @@ import * as UICore from './candid/candid-core';
 import * as UI from './candid/candid-ui';
 export { UICore, UI };
 
+import { Principal } from './principal';
 export interface GlobalInternetComputer {
   ic: {
     agent: Agent;
     HttpAgent: typeof HttpAgent;
     IDL: typeof IDL;
+    canisterId: Principal,
   };
 }

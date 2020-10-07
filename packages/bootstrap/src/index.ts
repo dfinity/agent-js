@@ -47,10 +47,11 @@ async function _loadCandid(canisterId: Principal): Promise<any> {
 async function _main() {
   const site = await SiteInfo.fromWindow();
   const agent = await createAgent(site);
-  window.ic = { agent, HttpAgent, IDL };
 
   // Find the canister ID. Allow override from the url with 'canister_id=1234..'
   const canisterId = site.principal;
+  window.ic = { agent, HttpAgent, IDL, canisterId };
+
   if (!canisterId) {
     // Show an error.
     const div = document.createElement('div');
