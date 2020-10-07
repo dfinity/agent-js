@@ -32,6 +32,6 @@ export interface GlobalInternetComputer {
     agent: Agent;
     HttpAgent: typeof HttpAgent;
     IDL: typeof IDL;
-    canisterId: Principal,
+    canisterId: Principal | undefined,
   };
 }
