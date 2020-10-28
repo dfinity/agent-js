@@ -2,6 +2,8 @@ import { ActorFactory } from '../actor';
 import {
   QueryFields,
   QueryResponse,
+  ReadStateFields,
+  ReadStateResponse,
   RequestStatusFields,
   RequestStatusResponse,
   SubmitResponse,
@@ -13,6 +15,7 @@ import { BinaryBlob, JsonObject } from '../types';
 // An Agent able to make calls and queries to a Replica.
 export interface Agent {
   requestStatus(fields: RequestStatusFields, principal?: Principal): Promise<RequestStatusResponse>;
+  readState(fields: ReadStateFields): Promise<ReadStateResponse>;
 
   call(
     canisterId: Principal | string,

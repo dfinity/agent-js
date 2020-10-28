@@ -16,6 +16,8 @@ import {
   ReadRequest,
   ReadRequestType,
   ReadResponse,
+  ReadStateFields,
+  ReadStateResponse,
   RequestStatusFields,
   RequestStatusResponse,
   SignedHttpAgentRequest,
@@ -216,6 +218,14 @@ export class HttpAgent implements Agent {
     }) as Promise<QueryResponse>;
   }
 
+  public async readState(fields: ReadStateFields): Promise<ReadStateResponse> {
+    return this.read({
+      request_type: ReadRequestType.ReadState,
+      paths: fields.paths,
+      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+    }) as Promise<ReadStateResponse>;
+  }
+
   public async requestStatus(
     fields: RequestStatusFields,
     principal?: Principal,
@@ -224,7 +234,7 @@ export class HttpAgent implements Agent {
     if (!p) {
       throw new Error('No principal specified.');
     }
-    p = await Promise.resolve(p);
+    p = await Promise.resolve(p); // not used. why?
 
     return this.read({
       request_type: ReadRequestType.RequestStatus,

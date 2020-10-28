@@ -63,6 +63,9 @@ export interface QueryFields {
 export interface RequestStatusFields {
   requestId: RequestId;
 }
+export interface ReadStateFields {
+  paths: [[BinaryBlob]];
+}
 
 export interface CallFields {
   methodName: string;
@@ -138,6 +141,7 @@ export const enum QueryResponseStatus {
 export const enum ReadRequestType {
   Query = 'query',
   RequestStatus = 'request_status',
+  ReadState = 'read_state',
 }
 
 // The fields in a "query" read request.
@@ -156,6 +160,15 @@ export interface RequestStatusRequest extends Record<string, any> {
   request_id: RequestId;
   ingress_expiry: Expiry;
 }
+
+export interface ReadStateRequest extends Record<string, any> {
+  request_type: ReadRequestType.ReadState;
+  paths: [[BinaryBlob]];
+  ingress_expiry: Expiry;
+}
+
+export type ReadStateResponse = Certificate;
+export type Certificate = BinaryBlob;
 
 // An ADT that represents responses to a "request_status" read request.
 export type RequestStatusResponse =
@@ -205,5 +218,5 @@ export enum RequestStatusResponseStatus {
   Done = 'done',
 }
 
-export type ReadRequest = QueryRequest | RequestStatusRequest;
-export type ReadResponse = QueryResponse | RequestStatusResponse;
+export type ReadRequest = QueryRequest | RequestStatusRequest | ReadStateRequest;
+export type ReadResponse = QueryResponse | RequestStatusResponse | ReadStateResponse;

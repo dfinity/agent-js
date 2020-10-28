@@ -6,6 +6,8 @@ import {
   Principal,
   QueryFields,
   QueryResponse,
+  ReadStateFields,
+  ReadStateResponse,
   RequestStatusFields,
   RequestStatusResponse,
   SubmitResponse,
@@ -20,6 +22,8 @@ export enum ProxyMessageKind {
   QueryResponse = 'qr',
   Call = 'c',
   CallResponse = 'cr',
+  ReadState = 'rs',
+  ReadStateResponse = 'rsr',
   RequestStatus = 'r',
   RequestStatusResponse = 'rr',
   Status = 's',
@@ -39,6 +43,11 @@ export interface ProxyMessageQuery extends ProxyMessageBase {
 export interface ProxyMessageCall extends ProxyMessageBase {
   type: ProxyMessageKind.Call;
   args: [string, CallFields, Principal | undefined];
+}
+
+export interface ProxyMessageReadState extends ProxyMessageBase {
+  type: ProxyMessageKind.ReadState;
+  args: [ReadStateFields];
 }
 
 export interface ProxyMessageRequestStatus extends ProxyMessageBase {
@@ -61,6 +70,11 @@ export interface ProxyMessageCallResponse extends ProxyMessageBase {
   response: SubmitResponse;
 }
 
+export interface ProxyMessageReadStateResponse extends ProxyMessageBase {
+  type: ProxyMessageKind.ReadStateResponse;
+  response: ReadStateResponse;
+}
+
 export interface ProxyMessageRequestStatusResponse extends ProxyMessageBase {
   type: ProxyMessageKind.RequestStatusResponse;
   response: RequestStatusResponse;
@@ -79,9 +93,11 @@ export type ProxyMessage =
   | ProxyMessageError
   | ProxyMessageQueryResponse
   | ProxyMessageCallResponse
+  | ProxyMessageReadStateResponse
   | ProxyMessageRequestStatusResponse
   | ProxyMessageQuery
   | ProxyMessageCall
+  | ProxyMessageReadState
   | ProxyMessageRequestStatus
   | ProxyMessageStatus
   | ProxyMessageStatusResponse;
@@ -159,10 +175,19 @@ export class ProxyAgent implements Agent {
       case ProxyMessageKind.CallResponse:
       case ProxyMessageKind.QueryResponse:
       case ProxyMessageKind.RequestStatusResponse:
+      case ProxyMessageKind.ReadStateResponse:
         return resolve(msg.response);
       default:
         throw new Error(`Invalid message being sent to ProxyAgent: ${JSON.stringify(msg)}`);
     }
+  }
+
+  public readState(fields: ReadStateFields): Promise<ReadStateResponse> {
+    return this._sendAndWait({
+      id: this._nextId++,
+      type: ProxyMessageKind.ReadState,
+      args: [fields],
+    }) as Promise<ReadStateResponse>;
   }
 
   public requestStatus(
