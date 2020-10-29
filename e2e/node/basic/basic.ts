@@ -7,5 +7,6 @@ test('time', async () => {
   const response = await httpAgent.readState({ paths: [[blobFromText('time')]] }, principal);
   const cert = new Certificate(response);
   console.log(cert);
-  //console.log(blobToHex(cert.certificate));
+  console.log(cert.lookup([Buffer.from('time')]));
+  throw new Error('false');
 });
