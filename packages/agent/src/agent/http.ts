@@ -218,11 +218,21 @@ export class HttpAgent implements Agent {
     }) as Promise<QueryResponse>;
   }
 
-  public async readState(fields: ReadStateFields): Promise<ReadStateResponse> {
+  public async readState(
+    fields: ReadStateFields,
+    principal?: Principal,
+  ): Promise<ReadStateResponse> {
+    let p = this._principal || principal;
+    if (!p) {
+      throw new Error('No principal specified.');
+    }
+    p = await Promise.resolve(p);
+
     return this.read({
       request_type: ReadRequestType.ReadState,
       paths: fields.paths,
       ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+      sender: p.toBlob(),
     }) as Promise<ReadStateResponse>;
   }
 
@@ -234,7 +244,7 @@ export class HttpAgent implements Agent {
     if (!p) {
       throw new Error('No principal specified.');
     }
-    p = await Promise.resolve(p); // not used. why?
+    p = await Promise.resolve(p);
 
     return this.read({
       request_type: ReadRequestType.RequestStatus,

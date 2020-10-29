@@ -29,6 +29,8 @@ async function hashValue(value: unknown): Promise<Buffer> {
     return hash(new Uint8Array(value) as BinaryBlob);
   } else if (value instanceof Uint8Array || value instanceof ArrayBuffer) {
     return hash(new Uint8Array(value) as BinaryBlob);
+  } else if (Array.isArray(value)) {
+    return Promise.all(value.map(hashValue)).then(vals => hash(Buffer.concat(vals) as BinaryBlob));
   } else if (
     typeof value === 'object' &&
     value !== null &&

@@ -47,7 +47,7 @@ export interface ProxyMessageCall extends ProxyMessageBase {
 
 export interface ProxyMessageReadState extends ProxyMessageBase {
   type: ProxyMessageKind.ReadState;
-  args: [ReadStateFields];
+  args: [ReadStateFields, Principal | undefined];
 }
 
 export interface ProxyMessageRequestStatus extends ProxyMessageBase {
@@ -126,6 +126,15 @@ export class ProxyStubAgent {
           });
         });
         break;
+      case ProxyMessageKind.ReadState:
+        this._agent.readState(...msg.args).then(response => {
+          this._frontend({
+            id: msg.id,
+            type: ProxyMessageKind.ReadStateResponse,
+            response,
+          });
+        });
+        break;
       case ProxyMessageKind.RequestStatus:
         this._agent.requestStatus(...msg.args).then(response => {
           this._frontend({
@@ -182,11 +191,11 @@ export class ProxyAgent implements Agent {
     }
   }
 
-  public readState(fields: ReadStateFields): Promise<ReadStateResponse> {
+  public readState(fields: ReadStateFields, principal?: Principal): Promise<ReadStateResponse> {
     return this._sendAndWait({
       id: this._nextId++,
       type: ProxyMessageKind.ReadState,
-      args: [fields],
+      args: [fields, principal],
     }) as Promise<ReadStateResponse>;
   }
 

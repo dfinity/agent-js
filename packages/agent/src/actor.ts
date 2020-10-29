@@ -10,7 +10,7 @@ import * as IDL from './idl';
 import { GlobalInternetComputer } from './index';
 import { Principal } from './principal';
 import { RequestId, toHex as requestIdToHex } from './request_id';
-import { BinaryBlob } from './types';
+import { BinaryBlob, blobFromHex } from './types';
 
 declare const window: GlobalInternetComputer;
 declare const global: GlobalInternetComputer;
@@ -296,6 +296,8 @@ async function _requestStatusAndLoop<T>(
   maxAttempts: number,
   throttle: number,
 ): Promise<T> {
+  const tmp = await agent.readState({ paths: [[blobFromHex('time')]] });
+  // console.log(tmp);
   const status = await agent.requestStatus({ requestId });
 
   switch (status.status) {

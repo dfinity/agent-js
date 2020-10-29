@@ -165,6 +165,7 @@ export interface ReadStateRequest extends Record<string, any> {
   request_type: ReadRequestType.ReadState;
   paths: [[BinaryBlob]];
   ingress_expiry: Expiry;
+  sender: BinaryBlob;
 }
 
 export type ReadStateResponse = Certificate;
