@@ -7,7 +7,7 @@ import {
 } from '@dfinity/agent';
 
 const keyPair = generateKeyPair();
-const principal = Principal.selfAuthenticating(keyPair.publicKey);
+export const principal = Principal.selfAuthenticating(keyPair.publicKey);
 
 const agent = new HttpAgent({ host: 'http://127.0.0.1:8001', principal });
 agent.addTransform(makeNonceTransform());

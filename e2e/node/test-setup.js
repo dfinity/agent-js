@@ -10,4 +10,5 @@
 globalThis.crypto = require("@trust/webcrypto");
 globalThis.TextEncoder = require("text-encoding").TextEncoder;
 globalThis.XMLHttpRequest = require('xhr2');
-require("whatwg-fetch");
+globalThis.fetch = require('node-fetch');
+//require("whatwg-fetch");

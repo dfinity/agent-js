@@ -16,6 +16,10 @@ export function blobFromUint8Array(arr: Uint8Array): BinaryBlob {
   return Buffer.from(arr) as BinaryBlob;
 }
 
+export function blobFromText(text: string): BinaryBlob {
+  return Buffer.from(text) as BinaryBlob;
+}
+
 export function blobFromHex(hex: string): BinaryBlob {
   return Buffer.from(hex, 'hex') as BinaryBlob;
 }

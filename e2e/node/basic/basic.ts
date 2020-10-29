@@ -1,8 +1,8 @@
-import { Actor, Principal, blobFromHex } from '@dfinity/agent';
-import httpAgent from '../utils/agent';
+import { Actor, Principal, blobFromText } from '@dfinity/agent';
+import httpAgent, { principal } from '../utils/agent';
 
-test('cert', async () => {
+test('time', async () => {
   const principal = await Principal.fromHex('04');
-  const cert = await httpAgent.readState({ paths: [[blobFromHex('time')]] }, principal);
+  const cert = await httpAgent.readState({ paths: [[blobFromText('time')]] }, principal);
   console.log(cert);
 });

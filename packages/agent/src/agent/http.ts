@@ -371,7 +371,6 @@ export class HttpAgent implements Agent {
           `  Body: ${await response.text()}\n`,
       );
     }
-
     return cbor.decode(Buffer.from(await response.arrayBuffer()));
   }
 }
