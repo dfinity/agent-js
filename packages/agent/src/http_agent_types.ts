@@ -168,8 +168,9 @@ export interface ReadStateRequest extends Record<string, any> {
   sender: BinaryBlob;
 }
 
-export type ReadStateResponse = Certificate;
-export type Certificate = BinaryBlob;
+export interface ReadStateResponse {
+  certificate: BinaryBlob;
+}
 
 // An ADT that represents responses to a "request_status" read request.
 export type RequestStatusResponse =
