@@ -64,7 +64,7 @@ export interface RequestStatusFields {
   requestId: RequestId;
 }
 export interface ReadStateFields {
-  paths: [[BinaryBlob]];
+  paths: BinaryBlob[][];
 }
 
 export interface CallFields {
@@ -163,7 +163,7 @@ export interface RequestStatusRequest extends Record<string, any> {
 
 export interface ReadStateRequest extends Record<string, any> {
   request_type: ReadRequestType.ReadState;
-  paths: [[BinaryBlob]];
+  paths: BinaryBlob[][];
   ingress_expiry: Expiry;
   sender: BinaryBlob;
 }
@@ -178,7 +178,6 @@ export type RequestStatusResponse =
   | RequestStatusResponseProcessing
   | RequestStatusResponseReplied
   | RequestStatusResponseRejected
-  | RequestStatusResponseUnknown
   | RequestStatusResponseDone;
 
 export interface RequestStatusResponseReceived {
@@ -203,10 +202,6 @@ export interface RequestStatusResponseRejected {
   reject_message: string;
 }
 
-export interface RequestStatusResponseUnknown {
-  status: RequestStatusResponseStatus.Unknown;
-}
-
 export interface RequestStatusResponseDone {
   status: RequestStatusResponseStatus.Done;
 }
@@ -216,7 +211,6 @@ export enum RequestStatusResponseStatus {
   Processing = 'processing',
   Replied = 'replied',
   Rejected = 'rejected',
-  Unknown = 'unknown',
   Done = 'done',
 }
 

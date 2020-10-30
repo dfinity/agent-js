@@ -1,6 +1,7 @@
 import { Buffer } from 'buffer/';
 import { Agent } from './agent';
 import { getManagementCanister } from './canisters/management';
+import { Certificate } from './certificate';
 import {
   QueryResponseStatus,
   RequestStatusResponseReplied,
@@ -10,7 +11,7 @@ import * as IDL from './idl';
 import { GlobalInternetComputer } from './index';
 import { Principal } from './principal';
 import { RequestId, toHex as requestIdToHex } from './request_id';
-import { BinaryBlob, blobFromHex } from './types';
+import { BinaryBlob, blobFromText } from './types';
 
 declare const window: GlobalInternetComputer;
 declare const global: GlobalInternetComputer;
@@ -271,9 +272,9 @@ function _createActorMethod(
       return _requestStatusAndLoop(
         agent,
         requestId,
-        status => {
-          if (status.reply.arg !== undefined) {
-            return decodeReturnValue(func.retTypes, status.reply.arg);
+        _arg => {
+          if (_arg !== undefined) {
+            return decodeReturnValue(func.retTypes, _arg);
           } else if (func.retTypes.length === 0) {
             return undefined;
           } else {
@@ -291,28 +292,35 @@ function _createActorMethod(
 async function _requestStatusAndLoop<T>(
   agent: Agent,
   requestId: RequestId,
-  decoder: (response: RequestStatusResponseReplied) => T,
+  decoder: (response: BinaryBlob) => T,
   attempts: number,
   maxAttempts: number,
   throttle: number,
-): Promise<T> {
-  const tmp = await agent.readState({ paths: [[blobFromHex('time')]] });
-  // console.log(tmp);
-  const status = await agent.requestStatus({ requestId });
+): Promise<T | undefined> {
+  const prefix = [blobFromText('request_status'), requestId];
+  const paths = [
+    [...prefix, blobFromText('status')],
+    [...prefix, blobFromText('reply')],
+    [...prefix, blobFromText('reject_code')],
+    [...prefix, blobFromText('reject_message')],
+  ];
+  const state = await agent.readState({ paths });
+  const cert = new Certificate(state);
+  const status = cert.lookup([...prefix, blobFromText('status')])!.toString();
 
-  switch (status.status) {
+  switch (status) {
     case RequestStatusResponseStatus.Replied: {
-      return decoder(status);
+      const response = cert.lookup([...prefix, blobFromText('reply')]) as BinaryBlob;
+      return decoder(response);
     }
 
-    case RequestStatusResponseStatus.Unknown:
     case RequestStatusResponseStatus.Received:
     case RequestStatusResponseStatus.Processing:
       if (--attempts === 0) {
         throw new Error(
           `Failed to retrieve a reply for request after ${maxAttempts} attempts:\n` +
             `  Request ID: ${requestIdToHex(requestId)}\n` +
-            `  Request status: ${status.status}\n`,
+            `  Request status: ${status}\n`,
         );
       }
 
@@ -322,11 +330,13 @@ async function _requestStatusAndLoop<T>(
       );
 
     case RequestStatusResponseStatus.Rejected:
+      const rejectCode = cert.lookup([...prefix, blobFromText('reject_code')])!.toString();
+      const rejectMessage = cert.lookup([...prefix, blobFromText('reject_message')])!.toString();
       throw new Error(
         `Call was rejected:\n` +
           `  Request ID: ${requestIdToHex(requestId)}\n` +
-          `  Reject code: ${status.reject_code}\n` +
-          `  Reject text: ${status.reject_message}\n`,
+          `  Reject code: ${rejectCode}\n` +
+          `  Reject text: ${rejectMessage}\n`,
       );
 
     case RequestStatusResponseStatus.Done:

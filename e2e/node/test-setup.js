@@ -12,3 +12,7 @@ globalThis.TextEncoder = require("text-encoding").TextEncoder;
 globalThis.XMLHttpRequest = require('xhr2');
 globalThis.fetch = require('node-fetch');
 //require("whatwg-fetch");
+
+const { HttpAgent, IDL } = require("@dfinity/agent");
+const agent = require("./utils/agent").default;
+globalThis.ic = { agent, HttpAgent, IDL };
