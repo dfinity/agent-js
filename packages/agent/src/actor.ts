@@ -296,7 +296,7 @@ async function _requestStatusAndLoop<T>(
   attempts: number,
   maxAttempts: number,
   throttle: number,
-): Promise<T | undefined> {
+): Promise<T> {
   const prefix = [blobFromText('request_status'), requestId];
   const paths = [
     [...prefix, blobFromText('status')],
@@ -347,6 +347,7 @@ async function _requestStatusAndLoop<T>(
           `  Request ID: ${requestIdToHex(requestId)}\n`,
       );
   }
+  throw new Error('unreachable');
 }
 
 // Make an actor from an actor interface.

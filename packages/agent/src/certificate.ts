@@ -5,7 +5,7 @@ import { ReadStateResponse } from './http_agent_types';
 interface Cert extends Record<string, any> {
   tree: HashTree;
   signature: Buffer;
-  delegations?: Delegation;
+  delegation?: Delegation;
 }
 
 const enum NodeId {

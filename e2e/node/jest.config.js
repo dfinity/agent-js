@@ -17,6 +17,7 @@ module.exports = {
   testPathIgnorePatterns: [
     "/node_modules/",
     "/utils/",
+    "/canisters/",
   ],
   transform: {
     "^.+\\.ts$": "ts-jest"

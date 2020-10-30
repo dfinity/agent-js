@@ -13,5 +13,5 @@ test('time', async () => {
 
 test('createCanister', async () => {
   const cid = await getManagementCanister({}).create_canister();
-  console.log(cid);
+  console.log(cid.canister_id.toText());
 });
