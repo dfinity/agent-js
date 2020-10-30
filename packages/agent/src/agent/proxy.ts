@@ -8,8 +8,6 @@ import {
   QueryResponse,
   ReadStateFields,
   ReadStateResponse,
-  RequestStatusFields,
-  RequestStatusResponse,
   SubmitResponse,
 } from '@dfinity/agent';
 import * as actor from '../actor';
@@ -24,8 +22,6 @@ export enum ProxyMessageKind {
   CallResponse = 'cr',
   ReadState = 'rs',
   ReadStateResponse = 'rsr',
-  RequestStatus = 'r',
-  RequestStatusResponse = 'rr',
   Status = 's',
   StatusResponse = 'sr',
 }
@@ -50,11 +46,6 @@ export interface ProxyMessageReadState extends ProxyMessageBase {
   args: [ReadStateFields, Principal | undefined];
 }
 
-export interface ProxyMessageRequestStatus extends ProxyMessageBase {
-  type: ProxyMessageKind.RequestStatus;
-  args: [RequestStatusFields, Principal | undefined];
-}
-
 export interface ProxyMessageError extends ProxyMessageBase {
   type: ProxyMessageKind.Error;
   error: any;
@@ -75,11 +66,6 @@ export interface ProxyMessageReadStateResponse extends ProxyMessageBase {
   response: ReadStateResponse;
 }
 
-export interface ProxyMessageRequestStatusResponse extends ProxyMessageBase {
-  type: ProxyMessageKind.RequestStatusResponse;
-  response: RequestStatusResponse;
-}
-
 export interface ProxyMessageStatus extends ProxyMessageBase {
   type: ProxyMessageKind.Status;
 }
@@ -94,11 +80,9 @@ export type ProxyMessage =
   | ProxyMessageQueryResponse
   | ProxyMessageCallResponse
   | ProxyMessageReadStateResponse
-  | ProxyMessageRequestStatusResponse
   | ProxyMessageQuery
   | ProxyMessageCall
   | ProxyMessageReadState
-  | ProxyMessageRequestStatus
   | ProxyMessageStatus
   | ProxyMessageStatusResponse;
 
@@ -131,15 +115,6 @@ export class ProxyStubAgent {
           this._frontend({
             id: msg.id,
             type: ProxyMessageKind.ReadStateResponse,
-            response,
-          });
-        });
-        break;
-      case ProxyMessageKind.RequestStatus:
-        this._agent.requestStatus(...msg.args).then(response => {
-          this._frontend({
-            id: msg.id,
-            type: ProxyMessageKind.RequestStatusResponse,
             response,
           });
         });
@@ -183,7 +158,6 @@ export class ProxyAgent implements Agent {
         return reject(msg.error);
       case ProxyMessageKind.CallResponse:
       case ProxyMessageKind.QueryResponse:
-      case ProxyMessageKind.RequestStatusResponse:
       case ProxyMessageKind.ReadStateResponse:
         return resolve(msg.response);
       default:
@@ -197,17 +171,6 @@ export class ProxyAgent implements Agent {
       type: ProxyMessageKind.ReadState,
       args: [fields, principal],
     }) as Promise<ReadStateResponse>;
-  }
-
-  public requestStatus(
-    fields: RequestStatusFields,
-    principal?: Principal,
-  ): Promise<RequestStatusResponse> {
-    return this._sendAndWait({
-      id: this._nextId++,
-      type: ProxyMessageKind.RequestStatus,
-      args: [fields, principal],
-    }) as Promise<RequestStatusResponse>;
   }
 
   public call(

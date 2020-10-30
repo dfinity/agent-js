@@ -18,8 +18,6 @@ import {
   ReadResponse,
   ReadStateFields,
   ReadStateResponse,
-  RequestStatusFields,
-  RequestStatusResponse,
   SignedHttpAgentRequest,
   SubmitRequest,
   SubmitRequestType,
@@ -234,23 +232,6 @@ export class HttpAgent implements Agent {
       ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
       sender: p.toBlob(),
     }) as Promise<ReadStateResponse>;
-  }
-
-  public async requestStatus(
-    fields: RequestStatusFields,
-    principal?: Principal,
-  ): Promise<RequestStatusResponse> {
-    let p = this._principal || principal;
-    if (!p) {
-      throw new Error('No principal specified.');
-    }
-    p = await Promise.resolve(p);
-
-    return this.read({
-      request_type: ReadRequestType.RequestStatus,
-      request_id: fields.requestId,
-      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
-    }) as Promise<RequestStatusResponse>;
   }
 
   public async status(): Promise<JsonObject> {

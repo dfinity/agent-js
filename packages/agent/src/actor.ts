@@ -2,11 +2,7 @@ import { Buffer } from 'buffer/';
 import { Agent } from './agent';
 import { getManagementCanister } from './canisters/management';
 import { Certificate } from './certificate';
-import {
-  QueryResponseStatus,
-  RequestStatusResponseReplied,
-  RequestStatusResponseStatus,
-} from './http_agent_types';
+import { QueryResponseStatus, RequestStatusResponseStatus } from './http_agent_types';
 import * as IDL from './idl';
 import { GlobalInternetComputer } from './index';
 import { Principal } from './principal';

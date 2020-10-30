@@ -60,9 +60,6 @@ export interface QueryFields {
   methodName: string;
   arg: BinaryBlob;
 }
-export interface RequestStatusFields {
-  requestId: RequestId;
-}
 export interface ReadStateFields {
   paths: BinaryBlob[][];
 }
@@ -140,7 +137,6 @@ export const enum QueryResponseStatus {
 // The types of values allowed in the `request_type` field for read requests.
 export const enum ReadRequestType {
   Query = 'query',
-  RequestStatus = 'request_status',
   ReadState = 'read_state',
 }
 
@@ -151,13 +147,6 @@ export interface QueryRequest extends Record<string, any> {
   method_name: string;
   arg: BinaryBlob;
   sender: BinaryBlob;
-  ingress_expiry: Expiry;
-}
-
-// The fields in a "request_status" read request.
-export interface RequestStatusRequest extends Record<string, any> {
-  request_type: ReadRequestType.RequestStatus;
-  request_id: RequestId;
   ingress_expiry: Expiry;
 }
 
@@ -172,40 +161,6 @@ export interface ReadStateResponse {
   certificate: BinaryBlob;
 }
 
-// An ADT that represents responses to a "request_status" read request.
-export type RequestStatusResponse =
-  | RequestStatusResponseReceived
-  | RequestStatusResponseProcessing
-  | RequestStatusResponseReplied
-  | RequestStatusResponseRejected
-  | RequestStatusResponseDone;
-
-export interface RequestStatusResponseReceived {
-  status: RequestStatusResponseStatus.Received;
-}
-
-export interface RequestStatusResponseProcessing {
-  status: RequestStatusResponseStatus.Processing;
-}
-
-export interface RequestStatusResponseReplied {
-  status: RequestStatusResponseStatus.Replied;
-  reply: {
-    canister_id?: BinaryBlob;
-    arg?: BinaryBlob;
-  };
-}
-
-export interface RequestStatusResponseRejected {
-  status: RequestStatusResponseStatus.Rejected;
-  reject_code: RejectCode;
-  reject_message: string;
-}
-
-export interface RequestStatusResponseDone {
-  status: RequestStatusResponseStatus.Done;
-}
-
 export enum RequestStatusResponseStatus {
   Received = 'received',
   Processing = 'processing',
@@ -214,5 +169,5 @@ export enum RequestStatusResponseStatus {
   Done = 'done',
 }
 
-export type ReadRequest = QueryRequest | RequestStatusRequest | ReadStateRequest;
-export type ReadResponse = QueryResponse | RequestStatusResponse | ReadStateResponse;
+export type ReadRequest = QueryRequest | ReadStateRequest;
+export type ReadResponse = QueryResponse | ReadStateResponse;
