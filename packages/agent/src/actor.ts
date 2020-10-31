@@ -30,6 +30,10 @@ function getDefaultAgent(): Agent {
   return agent;
 }
 
+export async function getRootKey(): Promise<BinaryBlob> {
+  return ((await getDefaultAgent().status()) as any).root_key;
+}
+
 /**
  * Configuration to make calls to the Replica.
  */

@@ -1,4 +1,5 @@
 import { Buffer } from 'buffer/';
+import { getRootKey } from './actor';
 import * as cbor from './cbor';
 import { ReadStateResponse } from './http_agent_types';
 import { hash } from './request_id';
@@ -39,6 +40,7 @@ export class Certificate {
 
 export async function verify(t: HashTree) {
   const rootHash = await reconstruct(t);
+  const key = await getRootKey();
   return rootHash;
 }
 
@@ -74,8 +76,9 @@ async function reconstruct(t: HashTree): Promise<Buffer> {
 }
 
 function domain_sep(s: string): Buffer {
-  // TODO byte(|S|)
-  return Buffer.from(s);
+  const buf = Buffer.alloc(1);
+  buf.writeUInt8(s.length, 0);
+  return Buffer.concat([buf, Buffer.from(s)]);
 }
 
 function lookup_path(path: Buffer[], tree: HashTree): Buffer | undefined {
