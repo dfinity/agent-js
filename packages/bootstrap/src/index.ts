@@ -1,4 +1,5 @@
 import {
+  Actor,
   createAssetCanisterActor,
   GlobalInternetComputer,
   HttpAgent,
@@ -48,9 +49,14 @@ async function _main() {
   const site = await SiteInfo.fromWindow();
   const agent = await createAgent(site);
 
-  // Find the canister ID. Allow override from the url with 'canister_id=1234..'
+  // Find the canister ID. Allow override from the url with 'canister_id=1234..'.
   const canisterId = site.principal;
-  window.ic = { agent, HttpAgent, IDL, canisterId };
+  window.ic = {
+    agent,
+    canister: canisterId && Actor.createActor(({ IDL: IDL_ }) => IDL_.Service({}), { canisterId }),
+    HttpAgent,
+    IDL,
+  };
 
   if (!canisterId) {
     // Show an error.
