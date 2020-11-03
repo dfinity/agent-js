@@ -2,6 +2,7 @@ import { Buffer } from 'buffer/';
 import { ActorFactory } from '../actor';
 import * as actor from '../actor';
 import { Agent } from '../agent';
+import { makeAnonymousAuthTransform } from '../auth';
 import * as cbor from '../cbor';
 import { Expiry } from '../http_agent_transforms';
 import {
@@ -129,7 +130,7 @@ export class HttpAgent implements Agent {
     this._pipeline.splice(i >= 0 ? i : this._pipeline.length, 0, Object.assign(fn, { priority }));
   }
 
-  public setAuthTransform(fn: AuthHttpAgentRequestTransformFn) {
+  public setAuthTransform(fn: AuthHttpAgentRequestTransformFn | null) {
     this._authTransform = fn;
   }
 
@@ -145,11 +146,7 @@ export class HttpAgent implements Agent {
     },
     principal?: Principal | Promise<Principal>,
   ): Promise<SubmitResponse> {
-    let p = this._principal || principal;
-    if (!p) {
-      throw new Error('No principal specified.');
-    }
-    p = await Promise.resolve(p);
+    const p = await (principal || this._principal || Principal.anonymous());
 
     return this.submit({
       request_type: SubmitRequestType.Call,
@@ -169,11 +166,7 @@ export class HttpAgent implements Agent {
     },
     principal?: Principal,
   ): Promise<SubmitResponse> {
-    let p = this._principal || principal;
-    if (!p) {
-      throw new Error('No principal specified.');
-    }
-    p = await Promise.resolve(p);
+    const p = await (principal || this._principal || Principal.anonymous());
 
     return this.submit({
       request_type: SubmitRequestType.InstallCode,
@@ -186,11 +179,7 @@ export class HttpAgent implements Agent {
   }
 
   public async createCanister(principal?: Principal): Promise<SubmitResponse> {
-    let p = this._principal || principal;
-    if (!p) {
-      throw new Error('No principal specified.');
-    }
-    p = await Promise.resolve(p);
+    const p = await (principal || this._principal || Principal.anonymous());
 
     return this.submit({
       request_type: SubmitRequestType.CreateCanister,
@@ -204,11 +193,7 @@ export class HttpAgent implements Agent {
     fields: QueryFields,
     principal?: Principal,
   ): Promise<QueryResponse> {
-    let p = this._principal || principal;
-    if (!p) {
-      throw new Error('No principal specified.');
-    }
-    p = await Promise.resolve(p);
+    const p = await (principal || this._principal || Principal.anonymous());
 
     return this.read({
       request_type: ReadRequestType.Query,
@@ -220,16 +205,7 @@ export class HttpAgent implements Agent {
     }) as Promise<QueryResponse>;
   }
 
-  public async requestStatus(
-    fields: RequestStatusFields,
-    principal?: Principal,
-  ): Promise<RequestStatusResponse> {
-    let p = this._principal || principal;
-    if (!p) {
-      throw new Error('No principal specified.');
-    }
-    p = await Promise.resolve(p);
-
+  public async requestStatus(fields: RequestStatusFields): Promise<RequestStatusResponse> {
     return this.read({
       request_type: ReadRequestType.RequestStatus,
       request_id: fields.requestId,
@@ -276,8 +252,11 @@ export class HttpAgent implements Agent {
 
     if (this._authTransform != null) {
       return p.then(this._authTransform);
+    } else if (Principal.fromBlob(request.body.sender).isAnonymous()) {
+      // TODO(hansl): figure out how to properly not call the above function and constructor.
+      return p.then(makeAnonymousAuthTransform());
     } else {
-      return p;
+      throw new Error('Cannot make a request without an authentication transform function.');
     }
   }
 
