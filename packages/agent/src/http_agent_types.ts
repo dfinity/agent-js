@@ -31,14 +31,14 @@ export interface HttpAgentReadRequest extends HttpAgentBaseRequest {
 
 export type SignedHttpAgentRequest = SignedHttpAgentReadRequest | SignedHttpAgentSubmitRequest;
 
-export interface SignedHttpAgentSubmitRequest extends HttpAgentBaseRequest {
+interface SignedHttpAgentSubmitRequest extends HttpAgentBaseRequest {
   readonly endpoint: Endpoint.Submit;
-  body: Signed<SubmitRequest>;
+  body: Envelope<SubmitRequest>;
 }
 
-export interface SignedHttpAgentReadRequest extends HttpAgentBaseRequest {
+interface SignedHttpAgentReadRequest extends HttpAgentBaseRequest {
   readonly endpoint: Endpoint.Read;
-  body: Signed<ReadRequest>;
+  body: Envelope<ReadRequest>;
 }
 
 export interface Signed<T> {
@@ -46,6 +46,12 @@ export interface Signed<T> {
   sender_pubkey: BinaryBlob;
   sender_sig: BinaryBlob;
 }
+
+export interface UnSigned<T> {
+  content: T;
+}
+
+export type Envelope<T> = Signed<T> | UnSigned<T>;
 
 export interface HttpAgentRequestTransformFn {
   (args: HttpAgentRequest): Promise<HttpAgentRequest | undefined | void>;

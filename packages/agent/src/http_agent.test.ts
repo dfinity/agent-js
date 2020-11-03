@@ -5,6 +5,7 @@ import * as cbor from './cbor';
 import { Expiry, makeNonceTransform } from './http_agent_transforms';
 import {
   CallRequest,
+  Envelope,
   ReadRequestType,
   RequestStatusResponseReplied,
   Signed,
@@ -250,4 +251,63 @@ test('queries with the same content should have the same signature', async () =>
 
   expect(calls[2]).toEqual(calls[3]);
   expect(response3).toEqual(response4);
+});
+
+test('use anonymous principal if unspecified', async () => {
+  const mockFetch: jest.Mock = jest.fn((resource, init) => {
+    return Promise.resolve(
+      new Response(null, {
+        status: 200,
+      }),
+    );
+  });
+
+  const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+  const nonce = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
+  const principal = Principal.anonymous();
+
+  const httpAgent = new HttpAgent({ fetch: mockFetch });
+  httpAgent.addTransform(makeNonceTransform(() => nonce));
+
+  const methodName = 'greet';
+  const arg = Buffer.from([]) as BinaryBlob;
+
+  const { requestId } = await httpAgent.call(canisterId, {
+    methodName,
+    arg,
+  });
+
+  const mockPartialRequest: CallRequest = {
+    request_type: SubmitRequestType.Call,
+    canister_id: canisterId,
+    method_name: methodName,
+    // We need a request id for the signature and at the same time we
+    // are checking that signature does not impact the request id.
+    arg,
+    nonce,
+    sender: principal.toBlob(),
+    ingress_expiry: new Expiry(300000),
+  };
+
+  const mockPartialsRequestId = await requestIdOf(mockPartialRequest);
+
+  const expectedRequest: Envelope<CallRequest> = {
+    content: mockPartialRequest,
+  };
+
+  const expectedRequestId = await requestIdOf(expectedRequest.content);
+  expect(expectedRequestId).toEqual(mockPartialsRequestId);
+
+  const { calls, results } = mockFetch.mock;
+  expect(calls.length).toBe(1);
+  expect(requestId).toEqual(expectedRequestId);
+
+  expect(calls[0][0]).toBe('http://localhost/api/v1/submit');
+  expect(calls[0][1]).toEqual({
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/cbor',
+    },
+    body: cbor.encode(expectedRequest),
+  });
 });

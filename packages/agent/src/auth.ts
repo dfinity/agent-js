@@ -79,3 +79,17 @@ export function makeAuthTransform(
 
   return fn;
 }
+
+export function makeAnonymousAuthTransform(): AuthHttpAgentRequestTransformFn {
+  const fn = async (r: HttpAgentRequest) => {
+    const { body, ...fields } = r;
+    return {
+      ...fields,
+      body: {
+        content: body,
+      },
+    } as SignedHttpAgentRequest;
+  };
+
+  return fn;
+}
