@@ -105,7 +105,7 @@ export class ProxyStubAgent {
   public onmessage(msg: ProxyMessage): void {
     switch (msg.type) {
       case ProxyMessageKind.GetPrincipal:
-        this._agent.getPrincipalId().then(response => {
+        this._agent.getPrincipal().then(response => {
           this._frontend({
             id: msg.id,
             type: ProxyMessageKind.GetPrincipalResponse,
@@ -187,7 +187,7 @@ export class ProxyAgent implements Agent {
     }
   }
 
-  public getPrincipalId(): Promise<Principal | null> {
+  public getPrincipal(): Promise<Principal | null> {
     return this._sendAndWait({
       id: this._nextId++,
       type: ProxyMessageKind.GetPrincipal,

@@ -133,7 +133,7 @@ export class HttpAgent implements Agent {
     this._authTransform = fn;
   }
 
-  public getPrincipalId(): Promise<Principal | null> {
+  public getPrincipal(): Promise<Principal | null> {
     return Promise.resolve(this._principal);
   }
 

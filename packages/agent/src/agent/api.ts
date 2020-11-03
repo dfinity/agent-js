@@ -17,7 +17,7 @@ export interface Agent {
    * null if no principal is associated. It also only shows the default, which is
    * the principal used when calls don't specify it.
    */
-  getPrincipalId(): Promise<Principal | null>;
+  getPrincipal(): Promise<Principal | null>;
 
   requestStatus(fields: RequestStatusFields, principal?: Principal): Promise<RequestStatusResponse>;
 
