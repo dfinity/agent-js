@@ -4,6 +4,7 @@ import * as cbor from './cbor';
 import { ReadStateResponse } from './http_agent_types';
 import { hash } from './request_id';
 import { BinaryBlob } from './types';
+import { CTX } from 'amcl-js';
 
 interface Cert extends Record<string, any> {
   tree: HashTree;
@@ -33,15 +34,39 @@ export class Certificate {
   public lookup(path: Buffer[]): Buffer | undefined {
     return lookup_path(path, this.cert.tree);
   }
-  public getTree(): HashTree {
-    return this.cert.tree;
+  public verify(): Promise<boolean> {
+    return _verify(this.cert.tree, this.cert.signature, this.cert.delegation);
   }
 }
 
-export async function verify(t: HashTree) {
+async function _verify(t: HashTree, sig: Buffer, d?: Delegation): Promise<boolean> {
   const rootHash = await reconstruct(t);
-  const key = await getRootKey();
-  return rootHash;
+  const key = await checkDelegation(d);
+  const msg = Buffer.concat([domain_sep('ic-state-root'), rootHash]);
+  
+  const ctx = new CTX('BLS12381');
+  const init = ctx.BLS.init();
+  if (init !== 0) {
+    throw new Error('failed to initialize BLS');
+  }
+  //console.log(rootHash.length, key.length, msg.length);
+  const res = ctx.BLS.core_verify(bufferToArray(sig), bufferToArray(msg), bufferToArray(key));
+  return res === 0 ? true : false;
+}
+
+async function checkDelegation(d? : Delegation): Promise<Buffer> {
+  if (!d) {
+    return await getRootKey();
+  }
+  const cert: Certificate = new Certificate(d as any);
+  //console.log(await cert.verify());
+  const res = cert.lookup([Buffer.from('subnet'), d.subnet_id, Buffer.from('public_key')])!;
+  return Promise.resolve(res);
+}
+
+function bufferToArray(buf: Buffer): number[] {
+  const typedArray = new Uint8Array(buf.buffer, buf.byteOffset, buf.length);
+  return Array.from(typedArray);
 }
 
 async function reconstruct(t: HashTree): Promise<Buffer> {
