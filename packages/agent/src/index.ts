@@ -1,3 +1,5 @@
+import { ActorSubclass } from './actor';
+
 export * from './actor';
 export * from './agent';
 export {
@@ -31,5 +33,15 @@ export interface GlobalInternetComputer {
     agent: Agent;
     HttpAgent: typeof HttpAgent;
     IDL: typeof IDL;
+
+    /**
+     * The Actor for the canister being used for the frontend. Normally should correspond to the
+     * canister represented by the canister id in the URL.
+     *
+     * It does not have any functions configured.
+     *
+     * If a canister ID could not be found, no actor were created and this is undefined.
+     */
+    canister: ActorSubclass<{}> | undefined,
   };
 }

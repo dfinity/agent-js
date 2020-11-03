@@ -332,7 +332,7 @@ async function _requestStatusAndLoop<T>(
       // we don't know the result and cannot decode it.
       throw new Error(
         `Call was marked as done but we never saw the reply:\n` +
-        `  Request ID: ${requestIdToHex(requestId)}\n`
+        `  Request ID: ${requestIdToHex(requestId)}\n`,
       );
   }
 }
