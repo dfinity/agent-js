@@ -248,7 +248,8 @@ export class HttpAgent implements Agent {
 
     if (this._authTransform != null) {
       return p.then(this._authTransform);
-    } else if (request.body.sender.isAnonymous()) {
+    } else if (Principal.fromBlob(request.body.sender).isAnonymous()) {
+      // TODO(hansl): figure out how to properly not call the above function and constructor.
       return p.then(makeAnonymousAuthTransform());
     } else {
       throw new Error('Cannot make a request without an authentication transform function.');
