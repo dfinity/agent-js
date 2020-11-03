@@ -16,6 +16,8 @@ import { Agent } from './api';
 
 export enum ProxyMessageKind {
   Error = 'err',
+  GetPrincipal = 'gp',
+  GetPrincipalResponse = 'gpr',
   Query = 'q',
   QueryResponse = 'qr',
   Call = 'c',
@@ -31,24 +33,22 @@ export interface ProxyMessageBase {
   type: ProxyMessageKind;
 }
 
-export interface ProxyMessageQuery extends ProxyMessageBase {
-  type: ProxyMessageKind.Query;
-  args: [string, QueryFields, Principal | undefined];
-}
-
-export interface ProxyMessageCall extends ProxyMessageBase {
-  type: ProxyMessageKind.Call;
-  args: [string, CallFields, Principal | undefined];
-}
-
-export interface ProxyMessageRequestStatus extends ProxyMessageBase {
-  type: ProxyMessageKind.RequestStatus;
-  args: [RequestStatusFields, Principal | undefined];
-}
-
 export interface ProxyMessageError extends ProxyMessageBase {
   type: ProxyMessageKind.Error;
   error: any;
+}
+
+export interface ProxyMessageGetPrincipal extends ProxyMessageBase {
+  type: ProxyMessageKind.GetPrincipal;
+}
+export interface ProxyMessageGetPrincipalResponse extends ProxyMessageBase {
+  type: ProxyMessageKind.GetPrincipalResponse;
+  response: string | null;
+}
+
+export interface ProxyMessageQuery extends ProxyMessageBase {
+  type: ProxyMessageKind.Query;
+  args: [string, QueryFields, Principal | undefined];
 }
 
 export interface ProxyMessageQueryResponse extends ProxyMessageBase {
@@ -56,9 +56,19 @@ export interface ProxyMessageQueryResponse extends ProxyMessageBase {
   response: QueryResponse;
 }
 
+export interface ProxyMessageCall extends ProxyMessageBase {
+  type: ProxyMessageKind.Call;
+  args: [string, CallFields, Principal | undefined];
+}
+
 export interface ProxyMessageCallResponse extends ProxyMessageBase {
   type: ProxyMessageKind.CallResponse;
   response: SubmitResponse;
+}
+
+export interface ProxyMessageRequestStatus extends ProxyMessageBase {
+  type: ProxyMessageKind.RequestStatus;
+  args: [RequestStatusFields, Principal | undefined];
 }
 
 export interface ProxyMessageRequestStatusResponse extends ProxyMessageBase {
@@ -77,12 +87,14 @@ export interface ProxyMessageStatusResponse extends ProxyMessageBase {
 
 export type ProxyMessage =
   | ProxyMessageError
-  | ProxyMessageQueryResponse
-  | ProxyMessageCallResponse
-  | ProxyMessageRequestStatusResponse
+  | ProxyMessageGetPrincipal
+  | ProxyMessageGetPrincipalResponse
   | ProxyMessageQuery
+  | ProxyMessageQueryResponse
   | ProxyMessageCall
+  | ProxyMessageCallResponse
   | ProxyMessageRequestStatus
+  | ProxyMessageRequestStatusResponse
   | ProxyMessageStatus
   | ProxyMessageStatusResponse;
 
@@ -92,6 +104,15 @@ export class ProxyStubAgent {
 
   public onmessage(msg: ProxyMessage): void {
     switch (msg.type) {
+      case ProxyMessageKind.GetPrincipal:
+        this._agent.getPrincipal().then(response => {
+          this._frontend({
+            id: msg.id,
+            type: ProxyMessageKind.GetPrincipalResponse,
+            response: response ? response.toText() : null,
+          });
+        });
+        break;
       case ProxyMessageKind.Query:
         this._agent.query(...msg.args).then(response => {
           this._frontend({
@@ -156,6 +177,7 @@ export class ProxyAgent implements Agent {
     switch (msg.type) {
       case ProxyMessageKind.Error:
         return reject(msg.error);
+      case ProxyMessageKind.GetPrincipalResponse:
       case ProxyMessageKind.CallResponse:
       case ProxyMessageKind.QueryResponse:
       case ProxyMessageKind.RequestStatusResponse:
@@ -163,6 +185,19 @@ export class ProxyAgent implements Agent {
       default:
         throw new Error(`Invalid message being sent to ProxyAgent: ${JSON.stringify(msg)}`);
     }
+  }
+
+  public getPrincipal(): Promise<Principal | null> {
+    return this._sendAndWait({
+      id: this._nextId++,
+      type: ProxyMessageKind.GetPrincipal,
+    }).then(principalOrNull => {
+      if (typeof principalOrNull === 'string') {
+        return Principal.fromText(principalOrNull);
+      } else {
+        return null;
+      }
+    });
   }
 
   public requestStatus(
