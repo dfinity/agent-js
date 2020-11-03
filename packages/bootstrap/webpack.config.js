@@ -19,7 +19,7 @@ module.exports = {
     // webpack which may conflict with us.
     jsonpFunction: '__dfinityJsonp',
     path: path.resolve(__dirname, './dist'),
-    filename: '[name].js',
+    filename: '[name]-[hash].js',
   },
   resolve: {
     plugins: [new TsconfigPathsPlugin({ configFile: './tsconfig.json' })],
