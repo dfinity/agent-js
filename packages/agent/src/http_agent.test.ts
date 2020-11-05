@@ -1,6 +1,13 @@
 import { Buffer } from 'buffer/';
 import { HttpAgent } from './agent';
-import { createKeyPairFromSeed, makeAuthTransform, SenderSig, sign, verify } from './auth';
+import {
+  createKeyPairFromSeed,
+  derEncodeED25519PublicKey,
+  makeAuthTransform,
+  SenderSig,
+  sign,
+  verify,
+} from './auth';
 import * as cbor from './cbor';
 import { Expiry, makeNonceTransform } from './http_agent_transforms';
 import {
@@ -41,7 +48,8 @@ test('call', async () => {
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
   ]);
   const keyPair = createKeyPairFromSeed(seed);
-  const principal = await Principal.selfAuthenticating(keyPair.publicKey);
+  const derPublicKey = derEncodeED25519PublicKey(keyPair.publicKey);
+  const principal = await Principal.selfAuthenticating(derPublicKey);
 
   const httpAgent = new HttpAgent({
     fetch: mockFetch,
@@ -77,7 +85,7 @@ test('call', async () => {
 
   const expectedRequest: Signed<CallRequest> = {
     content: mockPartialRequest,
-    sender_pubkey: keyPair.publicKey,
+    sender_pubkey: derPublicKey,
     sender_sig: senderSig,
   } as Signed<CallRequest>;
 
@@ -124,8 +132,8 @@ test('requestStatus', async () => {
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
   ]);
   const keyPair = createKeyPairFromSeed(seed);
-  const senderPubKey = keyPair.publicKey;
-  const principal = await Principal.selfAuthenticating(senderPubKey);
+  const senderDerPubKey = derEncodeED25519PublicKey(keyPair.publicKey);
+  const principal = await Principal.selfAuthenticating(senderDerPubKey);
 
   const httpAgent = new HttpAgent({
     fetch: mockFetch,
@@ -153,7 +161,7 @@ test('requestStatus', async () => {
       request_id: requestId,
       ingress_expiry: new Expiry(300000),
     },
-    sender_pubkey: senderPubKey,
+    sender_pubkey: senderDerPubKey,
     sender_sig: Buffer.from([0]) as SenderSig,
   };
 
@@ -210,8 +218,8 @@ test('queries with the same content should have the same signature', async () =>
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
   ]);
   const keyPair = createKeyPairFromSeed(seed);
-  const senderPubKey = keyPair.publicKey;
-  const principal = await Principal.selfAuthenticating(senderPubKey);
+  const senderDerPubKey = derEncodeED25519PublicKey(keyPair.publicKey);
+  const principal = await Principal.selfAuthenticating(senderDerPubKey);
 
   const httpAgent = new HttpAgent({
     fetch: mockFetch,

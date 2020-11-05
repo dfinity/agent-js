@@ -1,7 +1,13 @@
 import { Buffer } from 'buffer/';
 import { makeActorFactory } from './actor';
 import { HttpAgent } from './agent';
-import { makeAuthTransform, SenderPubKey, SenderSecretKey, SenderSig } from './auth';
+import {
+  derEncodeED25519PublicKey,
+  makeAuthTransform,
+  SenderPubKey,
+  SenderSecretKey,
+  SenderSig,
+} from './auth';
 import * as cbor from './cbor';
 import { Expiry, makeNonceTransform } from './http_agent_transforms';
 import { CallRequest, Signed, SubmitRequestType } from './http_agent_types';
@@ -81,9 +87,10 @@ test('makeActor', async () => {
 
   const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
   const senderPubKey = Buffer.alloc(32, 0) as SenderPubKey;
+  const senderDerPubKey = derEncodeED25519PublicKey(senderPubKey);
   const senderSecretKey = Buffer.alloc(32, 0) as SenderSecretKey;
   const senderSig = Buffer.from([0]) as SenderSig;
-  const principal = await Principal.selfAuthenticating(senderPubKey);
+  const principal = await Principal.selfAuthenticating(senderDerPubKey);
   const sender = principal.toBlob();
 
   const nonces = [
@@ -104,7 +111,7 @@ test('makeActor', async () => {
       sender,
       ingress_expiry: new Expiry(300000),
     },
-    sender_pubkey: senderPubKey,
+    sender_pubkey: senderDerPubKey,
     sender_sig: senderSig,
   } as Signed<CallRequest>;
 
@@ -160,7 +167,7 @@ test('makeActor', async () => {
           request_id: expectedCallRequestId,
           ingress_expiry: new Expiry(300000),
         },
-        sender_pubkey: senderPubKey,
+        sender_pubkey: senderDerPubKey,
         sender_sig: senderSig,
       }),
     },
@@ -178,7 +185,7 @@ test('makeActor', async () => {
         request_id: expectedCallRequestId,
         ingress_expiry: new Expiry(300000),
       },
-      sender_pubkey: senderPubKey,
+      sender_pubkey: senderDerPubKey,
       sender_sig: senderSig,
     }),
   });
@@ -195,7 +202,7 @@ test('makeActor', async () => {
         request_id: expectedCallRequestId,
         ingress_expiry: new Expiry(300000),
       },
-      sender_pubkey: senderPubKey,
+      sender_pubkey: senderDerPubKey,
       sender_sig: senderSig,
     }),
   });
@@ -212,7 +219,7 @@ test('makeActor', async () => {
         request_id: expectedCallRequestId,
         ingress_expiry: new Expiry(300000),
       },
-      sender_pubkey: senderPubKey,
+      sender_pubkey: senderDerPubKey,
       sender_sig: senderSig,
     }),
   });

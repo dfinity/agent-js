@@ -12,6 +12,7 @@ const domainSeparator = Buffer.from('\x0Aic-request');
 
 export type SenderPubKey = BinaryBlob & { __senderPubKey__: void };
 export type SenderSecretKey = BinaryBlob & { __senderSecretKey__: void };
+export type SenderDerPubKey = BinaryBlob & { __senderDerPubKey__: void };
 export type SenderSig = BinaryBlob & { __senderSig__: void };
 
 export interface KeyPair {
@@ -71,7 +72,7 @@ export function makeAuthTransform(
       ...fields,
       body: {
         content: body,
-        sender_pubkey: publicKey,
+        sender_pubkey: derEncodeED25519PublicKey(publicKey),
         sender_sig: senderSigFn(requestId, secretKey),
       },
     } as SignedHttpAgentRequest;
@@ -92,4 +93,26 @@ export function makeAnonymousAuthTransform(): AuthHttpAgentRequestTransformFn {
   };
 
   return fn;
+}
+
+export function derEncodeED25519PublicKey(publicKey: SenderPubKey): SenderDerPubKey {
+  assertValidEd25519PublicKey(publicKey);
+  // https://github.com/dfinity/agent-js/issues/42#issuecomment-716356288
+  const derPublicKey = Uint8Array.from([
+    ...[48, 42], // SEQUENCE
+    ...[48, 5], // SEQUENCE
+    ...[6, 3], // OBJECT
+    ...[43, 101, 112], // Ed25519 OID
+    ...[3], // OBJECT
+    ...[publicKey.byteLength + 1], // BIT STRING
+    ...[0], // 'no padding'
+    ...new Uint8Array(publicKey),
+  ]);
+  return Buffer.from(derPublicKey) as SenderDerPubKey;
+}
+
+function assertValidEd25519PublicKey(publicKey: ArrayBuffer): void {
+  if (publicKey.byteLength !== 32) {
+    throw new TypeError(`ed25519 public key must be 32 bytes long`);
+  }
 }
