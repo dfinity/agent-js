@@ -17,7 +17,7 @@ export async function createAgent(site: SiteInfo): Promise<Agent> {
 
   if (!workerHost) {
     const keyPair = await site.getKeyPair();
-    const principal = Principal.selfAuthenticating(derEncodeED25519PublicKey(keyPair.publicKey));
+    const principal = Principal.selfAuthenticating(keyPair.publicKey);
     const creds = await site.getLogin();
     const agent = new HttpAgent({
       host,

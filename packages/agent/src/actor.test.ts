@@ -90,7 +90,7 @@ test('makeActor', async () => {
   const senderDerPubKey = derEncodeED25519PublicKey(senderPubKey);
   const senderSecretKey = Buffer.alloc(32, 0) as SenderSecretKey;
   const senderSig = Buffer.from([0]) as SenderSig;
-  const principal = await Principal.selfAuthenticating(senderDerPubKey);
+  const principal = await Principal.selfAuthenticating(senderPubKey);
   const sender = principal.toBlob();
 
   const nonces = [
