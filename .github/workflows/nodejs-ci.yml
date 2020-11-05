@@ -68,7 +68,6 @@ jobs:
         echo "::set-output name=IC_REF_PORT::$(cat $HOME/ic_ref_port)"
 
     - run: npx lerna bootstrap
-    - run: npx lerna run build
     - run: npx lerna run ci
       env:
         CI: true
