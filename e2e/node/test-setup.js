@@ -11,7 +11,6 @@ global.crypto = require("@trust/webcrypto");
 global.TextEncoder = require("text-encoding").TextEncoder;
 global.XMLHttpRequest = require("xhr2");
 global.fetch = require("node-fetch");
-//require("whatwg-fetch");
 
 const { HttpAgent, IDL } = require("@dfinity/agent");
 const agent = require("./utils/agent").default;

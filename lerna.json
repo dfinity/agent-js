@@ -4,5 +4,5 @@
     "e2e/*"
   ],
   "forceLocal": true,
-  "version": "independent"
+  "version": "0.0.0"
 }
