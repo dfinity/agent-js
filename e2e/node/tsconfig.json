@@ -1,5 +1,4 @@
 {
-  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "incremental": true,
     "target": "es2017",
@@ -10,16 +9,10 @@
     ],
     "declaration": true,
     "sourceMap": true,
-    "rootDir": "./",
-    "composite": true,
     "tsBuildInfoFile": "./build_info.json",
     "strict": true,
     "baseUrl": "./",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true
-  },
-  "include": [
-    "types/*",
-    "src/**/*.ts"
-  ]
+  }
 }
