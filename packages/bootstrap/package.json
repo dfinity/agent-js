@@ -14,7 +14,6 @@
     "webpack": "webpack"
   },
   "devDependencies": {
-    "@dfinity/agent": "0.0.0",
     "@trust/webcrypto": "^0.9.2",
     "@types/base64-js": "^1.2.5",
     "@types/jest": "^24.0.18",
@@ -37,7 +36,7 @@
     "worker-plugin": "^4.0.3"
   },
   "dependencies": {
-    "@dfinity/agent": "file://../agent",
+    "@dfinity/agent": "0.0.0",
     "bignumber.js": "^9.0.0",
     "buffer": "5.6.0",
     "css-loader": "^3.4.2",
