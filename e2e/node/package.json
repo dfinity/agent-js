@@ -15,7 +15,7 @@
     "buffer": "^5.4.3",
     "jest": "^24.9.0",
     "jest-expect-message": "^1.0.2",
-    "node-fetch": "2.6.0",
+    "node-fetch": "2.6.1",
     "prettier": "^1.19.1",
     "text-encoding": "^0.7.0",
     "ts-jest": "^24.2.0",
