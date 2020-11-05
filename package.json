@@ -3,11 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "description": "Use an Agent to interact with the Internet Computer from your JavaScript program.",
-  "dependencies": {
-    "@dfinity/agent": "file://./packages/agent",
-    "@dfinity/agent-js-devtools": "file://./packages/agent-js-devtools",
-    "@dfinity/bootstrap": "file://./packages/bootstrap"
-  },
   "scripts": {
     "postinstall": "bin/npm-postinstall",
     "prepare": "bin/build",
@@ -22,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/dfinity-lab/agent-js/issues"
   },
-  "homepage": "https://github.com/dfinity-lab/agent-js#readme"
+  "homepage": "https://github.com/dfinity-lab/agent-js#readme",
+  "devDependencies": {
+    "lerna": "^3.22.1"
+  }
 }

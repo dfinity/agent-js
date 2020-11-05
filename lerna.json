@@ -1,0 +1,8 @@
+{
+  "packages": [
+    "packages/*",
+    "e2e/*"
+  ],
+  "forceLocal": true,
+  "version": "independent"
+}
