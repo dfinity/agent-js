@@ -7,6 +7,7 @@ export {
   SenderPubKey,
   SenderSecretKey,
   SenderSig,
+  derEncodeED25519PublicKey,
   generateKeyPair,
   makeAuthTransform,
   makeKeyPair,
