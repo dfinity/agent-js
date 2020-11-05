@@ -15,6 +15,9 @@
     "strict": true,
     "baseUrl": "./",
     "esModuleInterop": true,
+    "paths": {
+      "@dfinity/agent": ["../agent"]
+    },
     "forceConsistentCasingInFileNames": true
   },
   "include": [
