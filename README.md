@@ -20,7 +20,9 @@ commands to keep in mind;
 - To run e2e tests, you can use `npx lerna run e2e`. **WARNING:** You need to have a running
   replica locally. In our CI runs, we use the `ic-ref` which is not (at this time) available
   publicly. Normally you can use a replica distributed with dfx (ie. dfx start in a project),
-  but there is no guarantee that master will work with the latest published dfx.
+  but there is no guarantee that master will work with the latest published dfx. Once you have
+  a replica running locally, you must pass the port to the e2e tests using the `IC_REF_PORT`
+  environment vairable. If that variable is not set, the tests will fail.
 - To run the entire ci, use `npx lerna run ci`. This will validate syntax and linting, as well
   as running tests (both unit and e2e).
 
