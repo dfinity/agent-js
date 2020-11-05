@@ -9,9 +9,23 @@ This source code repository contains multiple npm packages, each under `./packag
 ### Getting Started
 
 1. Clone the git repository.
-2. Run `npm install`
+2. Run `npx lerna bootstrap`
 
-After that, you probably want to dive into a specific package in [./packages](./packages).
+#### Lerna
+
+We use [lerna](https://github.com/lerna/lerna) to manage this repo and its packages. A few useful
+commands to keep in mind;
+
+- To run the unit tests locally, you can use `npx lerna run test`.
+- To run e2e tests, you can use `npx lerna run e2e`. **WARNING:** You need to have a running
+  replica locally. In our CI runs, we use the `ic-ref` which is not (at this time) available
+  publicly. Normally you can use a replica distributed with dfx (ie. dfx start in a project),
+  but there is no guarantee that master will work with the latest published dfx.
+- To run the entire ci, use `npx lerna run ci`. This will validate syntax and linting, as well
+  as running tests (both unit and e2e).
+
+You can also install lerna globally and not use `npx` if you wish; run `npm install -g lerna` then
+skip the `npx` part of the example commands.
 
 ### GitHub Actions
 
