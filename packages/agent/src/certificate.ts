@@ -44,9 +44,10 @@ export class Certificate {
 
 async function _verify(t: HashTree, sig: Buffer, d?: Delegation): Promise<boolean> {
   const rootHash = await reconstruct(t);
-  const key = await checkDelegation(d);
+  const derKey = await checkDelegation(d);
+  const key = extractDER(derKey);
   const msg = Buffer.concat([domain_sep('ic-state-root'), rootHash]);
-  
+
   /*const ctx = new CTX('BLS12381');
   const init = ctx.BLS.init();
   if (init !== 0) {
@@ -57,10 +58,6 @@ async function _verify(t: HashTree, sig: Buffer, d?: Delegation): Promise<boolea
   console.log('pk', key.toString('hex'));  
   const res = ctx.BLS.core_verify(bufferToArray(sig), bufferToArray(msg), bufferToArray(key));
 */
-  //const key1 = 'a7623a93cdb56c4d23d99c14216afaab3dfd6d4f9eb3db23d038280b6d5cb2caaee2a19dd92c9df7001dede23bf036bc0f33982dfb41e8fa9b8e96b5dc3e83d55ca4dd146c7eb2e8b6859cb5a5db815db86810b8d12cee1588b5dbf34a4dc9a5'
-  //const sig1 = 'b89e13a212c830586eaa9ad53946cd968718ebecc27eda849d9232673dcd4f440e8b5df39bf14a88048c15e16cbcaabe';
-  //const msg1 = Buffer.from('hello').toString('hex');
-  //const res = ctx.BLS.core_verify(bufferToArray(sig1), bufferToArray(msg1), bufferToArray(key1));  
   const m = await BLS();
   const verify = m.cwrap('verify', 'number', ['string', 'string', 'string']);
   //const res = verify(key1, sig1, msg1);
@@ -68,14 +65,20 @@ async function _verify(t: HashTree, sig: Buffer, d?: Delegation): Promise<boolea
   return res === 0 ? true : false;
 }
 
-async function checkDelegation(d? : Delegation): Promise<Buffer> {
+async function checkDelegation(d?: Delegation): Promise<Buffer> {
   if (!d) {
     return await getRootKey();
   }
   const cert: Certificate = new Certificate(d as any);
-  console.log(await cert.verify());
+  if (!(await cert.verify())) {
+    throw new Error('fail to verify delegation certificate');
+  }
   const res = cert.lookup([Buffer.from('subnet'), d.subnet_id, Buffer.from('public_key')])!;
   return Promise.resolve(res);
+}
+
+function extractDER(buf: Buffer): Buffer {
+  return buf.slice(37);
 }
 
 function bufferToHex(buf: Buffer): string {
