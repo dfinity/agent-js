@@ -77,7 +77,7 @@ test('call', async () => {
 
   const expectedRequest: Signed<CallRequest> = {
     content: mockPartialRequest,
-    sender_pubkey: keyPair.publicKey,
+    sender_pubkey: keyPair.publicKey.toDer(),
     sender_sig: senderSig,
   } as Signed<CallRequest>;
 
@@ -124,8 +124,7 @@ test('requestStatus', async () => {
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
   ]);
   const keyPair = createKeyPairFromSeed(seed);
-  const senderPubKey = keyPair.publicKey;
-  const principal = await Principal.selfAuthenticating(senderPubKey);
+  const principal = await Principal.selfAuthenticating(keyPair.publicKey);
 
   const httpAgent = new HttpAgent({
     fetch: mockFetch,
@@ -153,7 +152,7 @@ test('requestStatus', async () => {
       request_id: requestId,
       ingress_expiry: new Expiry(300000),
     },
-    sender_pubkey: senderPubKey,
+    sender_pubkey: keyPair.publicKey.toDer(),
     sender_sig: Buffer.from([0]) as SenderSig,
   };
 
@@ -210,8 +209,7 @@ test('queries with the same content should have the same signature', async () =>
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
   ]);
   const keyPair = createKeyPairFromSeed(seed);
-  const senderPubKey = keyPair.publicKey;
-  const principal = await Principal.selfAuthenticating(senderPubKey);
+  const principal = await Principal.selfAuthenticating(keyPair.publicKey);
 
   const httpAgent = new HttpAgent({
     fetch: mockFetch,

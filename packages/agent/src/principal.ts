@@ -12,7 +12,7 @@ export class Principal {
     return new this(blobFromUint8Array(new Uint8Array([ANONYMOUS_SUFFIX])));
   }
   public static selfAuthenticating(publicKey: SenderPubKey): Principal {
-    const sha = sha224(publicKey);
+    const sha = sha224(publicKey.toDer());
     return new this(blobFromUint8Array(new Uint8Array([...sha, SELF_AUTHENTICATING_SUFFIX])));
   }
 
