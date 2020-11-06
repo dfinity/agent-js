@@ -1,13 +1,6 @@
 import { Buffer } from 'buffer/';
 import { HttpAgent } from './agent';
-import {
-  createKeyPairFromSeed,
-  derEncodeED25519PublicKey,
-  makeAuthTransform,
-  SenderSig,
-  sign,
-  verify,
-} from './auth';
+import { createKeyPairFromSeed, makeAuthTransform, SenderSig, sign, verify } from './auth';
 import * as cbor from './cbor';
 import { Expiry, makeNonceTransform } from './http_agent_transforms';
 import {
@@ -84,7 +77,7 @@ test('call', async () => {
 
   const expectedRequest: Signed<CallRequest> = {
     content: mockPartialRequest,
-    sender_pubkey: derEncodeED25519PublicKey(keyPair.publicKey),
+    sender_pubkey: keyPair.publicKey.toDer(),
     sender_sig: senderSig,
   } as Signed<CallRequest>;
 
@@ -159,7 +152,7 @@ test('requestStatus', async () => {
       request_id: requestId,
       ingress_expiry: new Expiry(300000),
     },
-    sender_pubkey: derEncodeED25519PublicKey(keyPair.publicKey),
+    sender_pubkey: keyPair.publicKey.toDer(),
     sender_sig: Buffer.from([0]) as SenderSig,
   };
 

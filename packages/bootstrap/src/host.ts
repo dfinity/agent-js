@@ -1,6 +1,5 @@
 import {
   Agent,
-  derEncodeED25519PublicKey,
   HttpAgent,
   makeAuthTransform,
   makeExpiryTransform,

@@ -7,10 +7,9 @@ export {
   SenderPubKey,
   SenderSecretKey,
   SenderSig,
-  derEncodeED25519PublicKey,
-  generateKeyPair,
+  generateEd25519KeyPair as generateKeyPair,
   makeAuthTransform,
-  makeKeyPair,
+  makeEd25519KeyPair as makeKeyPair,
 } from './auth';
 export * from './http_agent_transforms';
 export * from './http_agent_types';
