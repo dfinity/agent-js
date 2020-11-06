@@ -4,8 +4,8 @@ import * as cbor from './cbor';
 import { ReadStateResponse } from './http_agent_types';
 import { hash } from './request_id';
 import { BinaryBlob } from './types';
-//import { CTX } from 'amcl-js';
-//import { verify } from './utils/bls';
+// import { CTX } from 'amcl-js';
+// import { verify } from './utils/bls';
 // @ts-ignore
 import BLS from './utils/bls_gen';
 
@@ -55,12 +55,12 @@ async function _verify(t: HashTree, sig: Buffer, d?: Delegation): Promise<boolea
   }*/
   /*console.log('sig', sig.toString('hex'));
   console.log('msg', msg.toString('hex'));
-  console.log('pk', key.toString('hex'));  
+  console.log('pk', key.toString('hex'));
   const res = ctx.BLS.core_verify(bufferToArray(sig), bufferToArray(msg), bufferToArray(key));
 */
   const m = await BLS();
   const verify = m.cwrap('verify', 'number', ['string', 'string', 'string']);
-  //const res = verify(key1, sig1, msg1);
+  // const res = verify(key1, sig1, msg1);
   const res = verify(bufferToHex(key), bufferToHex(sig), bufferToHex(msg));
   return res === 0 ? true : false;
 }
@@ -78,7 +78,7 @@ async function checkDelegation(d?: Delegation): Promise<Buffer> {
 }
 
 function extractDER(buf: Buffer): Buffer {
-  return buf.slice(37);
+  return buf.slice(buf.length - 96);
 }
 
 function bufferToHex(buf: Buffer): string {

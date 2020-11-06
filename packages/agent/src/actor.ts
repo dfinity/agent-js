@@ -306,6 +306,10 @@ async function _requestStatusAndLoop<T>(
   ];
   const state = await agent.readState({ paths });
   const cert = new Certificate(state);
+  const verified = await cert.verify();
+  if (!verified) {
+    throw new Error('Fail to verify certificate');
+  }
   const status = cert.lookup([...prefix, blobFromText('status')])!.toString();
 
   switch (status) {
