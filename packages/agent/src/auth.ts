@@ -146,8 +146,8 @@ export class Ed25519PublicKey implements SenderPubKey {
     const rawKey = key.subarray(Ed25519PublicKey.DER_PREFIX.length) as BinaryBlob;
     if (!this.derEncode(rawKey).equals(key)) {
       throw new TypeError(
-        `Ed25519 DER-encoded public key is invalid. \
-        A valid Ed25519 pbulic key must have the following prefix: ${Ed25519PublicKey.DER_PREFIX}`,
+        'Ed25519 DER-encoded public key is invalid. A valid Ed25519 DER-encoded public key ' +
+          `must have the following prefix: ${Ed25519PublicKey.DER_PREFIX}`,
       );
     }
 

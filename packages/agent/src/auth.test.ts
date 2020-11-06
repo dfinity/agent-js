@@ -41,3 +41,32 @@ test('DER encoding of invalid keys', async () => {
     Ed25519PublicKey.fromRaw(Buffer.alloc(33, 0) as BinaryBlob).toDer();
   }).toThrow();
 });
+
+test('DER decoding of invalid keys', async () => {
+  // Too short.
+  expect(() => {
+    Ed25519PublicKey.fromDer(
+      blobFromHex(
+        '302A300506032B6570032100B3997656BA51FF6DA37B61D8D549EC80717266ECF48FB5DA52B65441263484',
+      ),
+    );
+  }).toThrow();
+  // Too long.
+  expect(() => {
+    Ed25519PublicKey.fromDer(
+      blobFromHex(
+        '302A300506032B6570032100B3997656BA51FF6DA37B61D8D549EC8071726' +
+          '6ECF48FB5DA52B654412634844C00',
+      ),
+    );
+  }).toThrow();
+
+  // Invalid DER-encoding.
+  expect(() => {
+    Ed25519PublicKey.fromDer(
+      blobFromHex(
+        '002A300506032B6570032100B3997656BA51FF6DA37B61D8D549EC80717266ECF48FB5DA52B654412634844C',
+      ),
+    );
+  }).toThrow();
+});
