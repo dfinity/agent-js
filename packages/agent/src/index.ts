@@ -25,9 +25,9 @@ import * as IDL from './idl';
 export { IDL };
 
 // TODO The following modules will be a separate library for Candid
+import { makeAnonymousAuthTransform } from './auth';
 import * as UICore from './candid/candid-core';
 import * as UI from './candid/candid-ui';
-import { makeAnonymousAuthTransform } from './auth';
 export { UICore, UI };
 
 export interface GlobalInternetComputer {
