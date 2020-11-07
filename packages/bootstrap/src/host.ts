@@ -1,6 +1,8 @@
 import {
   Agent,
+  AuthHttpAgentRequestTransformFn,
   HttpAgent,
+  makeAnonymousAuthTransform,
   makeAuthTransform,
   makeExpiryTransform,
   makeNonceTransform,
@@ -10,13 +12,28 @@ import {
 } from '@dfinity/agent';
 import { SiteInfo } from './site';
 
+async function createPrincipal(
+  site: SiteInfo,
+): Promise<{ principal: Principal; authTransform: AuthHttpAgentRequestTransformFn }> {
+  let principal = Principal.anonymous();
+  let authTransform = makeAnonymousAuthTransform();
+
+  // Use anonymous principal if there isn't a login set yet.
+  if (await site.hasKeyPair()) {
+    const keyPair = await site.getKeyPair();
+    principal = Principal.selfAuthenticating(keyPair.publicKey);
+    authTransform = makeAuthTransform(keyPair);
+  }
+
+  return { principal, authTransform };
+}
+
 export async function createAgent(site: SiteInfo): Promise<Agent> {
   const workerHost = site.isUnknown() ? undefined : await site.getWorkerHost();
   const host = await site.getHost();
 
   if (!workerHost) {
-    const keyPair = await site.getKeyPair();
-    const principal = Principal.selfAuthenticating(keyPair.publicKey);
+    const { principal, authTransform } = await createPrincipal(site);
     const creds = await site.getLogin();
     const agent = new HttpAgent({
       host,
@@ -25,7 +42,7 @@ export async function createAgent(site: SiteInfo): Promise<Agent> {
     });
     agent.addTransform(makeNonceTransform());
     agent.addTransform(makeExpiryTransform(5 * 60 * 1000));
-    agent.setAuthTransform(makeAuthTransform(keyPair));
+    agent.setAuthTransform(authTransform);
 
     return agent;
   } else {

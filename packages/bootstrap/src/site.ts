@@ -110,6 +110,15 @@ export class SiteInfo {
     return maybeCreds !== undefined ? JSON.parse(maybeCreds) : undefined;
   }
 
+  public async hasKeyPair(): Promise<boolean> {
+    let k = await _getVariable('userIdentity', localStorageIdentityKey);
+    if (k === undefined) {
+      k = await this.retrieve(localStorageIdentityKey);
+    }
+
+    return !!k;
+  }
+
   public async getKeyPair(): Promise<KeyPair> {
     let k = await _getVariable('userIdentity', localStorageIdentityKey);
     if (k === undefined) {
