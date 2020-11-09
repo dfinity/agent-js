@@ -38,7 +38,7 @@
     "worker-plugin": "^4.0.3"
   },
   "dependencies": {
-    "@dfinity/agent": "*",
+    "@dfinity/agent": "file://../agent",
     "bignumber.js": "^9.0.0",
     "buffer": "5.6.0",
     "css-loader": "^3.4.2",

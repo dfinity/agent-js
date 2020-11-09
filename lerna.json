@@ -1,8 +1,0 @@
-{
-  "packages": [
-    "packages/*",
-    "e2e/*"
-  ],
-  "forceLocal": true,
-  "version": "0.0.0"
-}
