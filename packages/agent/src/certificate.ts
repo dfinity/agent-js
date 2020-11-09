@@ -57,10 +57,6 @@ export class Certificate {
         console.log('pk', key.toString('hex'));
         const res = ctx.BLS.core_verify(bufferToArray(sig), bufferToArray(msg), bufferToArray(key));
       */
-      /*const m = await BLS();
-      m._init();
-      const blsVerify = m.cwrap('verify', 'number', ['string', 'string', 'string']);
-      const res = blsVerify(bufferToHex(key), bufferToHex(sig), bufferToHex(msg)) === 0 ? true : false;*/
       const res = await BLS.blsVerify(bufferToHex(key), bufferToHex(sig), bufferToHex(msg));
       this.verified = res;
       return res;
