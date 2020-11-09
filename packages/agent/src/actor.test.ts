@@ -1,14 +1,20 @@
 import { Buffer } from 'buffer/';
 import { makeActorFactory } from './actor';
 import { HttpAgent } from './agent';
-import { makeAuthTransform, SenderPubKey, SenderSecretKey, SenderSig } from './auth';
+import {
+  Ed25519PublicKey,
+  makeAuthTransform,
+  SenderPubKey,
+  SenderSecretKey,
+  SenderSig,
+} from './auth';
 import * as cbor from './cbor';
 import { Expiry, makeNonceTransform } from './http_agent_transforms';
 import { CallRequest, Signed, SubmitRequestType } from './http_agent_types';
 import * as IDL from './idl';
 import { Principal } from './principal';
 import { requestIdOf } from './request_id';
-import { blobFromHex, Nonce } from './types';
+import { BinaryBlob, blobFromHex, Nonce } from './types';
 
 const originalDateNowFn = global.Date.now;
 beforeEach(() => {
@@ -72,7 +78,7 @@ test.skip('makeActor', async () => {
   const arg = blobFromHex(IDL.encode([IDL.Text], [argValue]).toString('hex'));
 
   const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
-  const senderPubKey = Buffer.alloc(32, 0) as SenderPubKey;
+  const senderPubKey = Ed25519PublicKey.fromRaw(Buffer.alloc(32, 0) as BinaryBlob);
   const senderSecretKey = Buffer.alloc(32, 0) as SenderSecretKey;
   const senderSig = Buffer.from([0]) as SenderSig;
   const principal = await Principal.selfAuthenticating(senderPubKey);
@@ -96,7 +102,7 @@ test.skip('makeActor', async () => {
       sender,
       ingress_expiry: new Expiry(300000),
     },
-    sender_pubkey: senderPubKey,
+    sender_pubkey: senderPubKey.toDer(),
     sender_sig: senderSig,
   } as Signed<CallRequest>;
 
@@ -152,7 +158,7 @@ test.skip('makeActor', async () => {
           request_id: expectedCallRequestId,
           ingress_expiry: new Expiry(300000),
         },
-        sender_pubkey: senderPubKey,
+        sender_pubkey: senderPubKey.toDer(),
         sender_sig: senderSig,
       }),
     },
@@ -170,7 +176,7 @@ test.skip('makeActor', async () => {
         request_id: expectedCallRequestId,
         ingress_expiry: new Expiry(300000),
       },
-      sender_pubkey: senderPubKey,
+      sender_pubkey: senderPubKey.toDer(),
       sender_sig: senderSig,
     }),
   });
@@ -187,7 +193,7 @@ test.skip('makeActor', async () => {
         request_id: expectedCallRequestId,
         ingress_expiry: new Expiry(300000),
       },
-      sender_pubkey: senderPubKey,
+      sender_pubkey: senderPubKey.toDer(),
       sender_sig: senderSig,
     }),
   });
@@ -204,7 +210,7 @@ test.skip('makeActor', async () => {
         request_id: expectedCallRequestId,
         ingress_expiry: new Expiry(300000),
       },
-      sender_pubkey: senderPubKey,
+      sender_pubkey: senderPubKey.toDer(),
       sender_sig: senderSig,
     }),
   });

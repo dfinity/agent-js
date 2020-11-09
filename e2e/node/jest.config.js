@@ -1,25 +1,10 @@
 module.exports = {
   bail: false,
-  testTimeout: 60000,
-  //globalSetup: './setup',
-  //globalTeardown: './teardown',
-  testEnvironment: 'node',
-  setupFiles: [
-    "./test-setup",
-  ],
-  setupFilesAfterEnv: [
-    "jest-expect-message",
-  ],
-  // Since we're running e2e tests, ALL typescript files are up for grab.
-  testMatch: [
-    "**/*.ts"
-  ],
-  testPathIgnorePatterns: [
-    "/node_modules/",
-    "/utils/",
-    "/canisters/",
-  ],
+  setupFiles: ["./test-setup"],
+  setupFilesAfterEnv: ["jest-expect-message"],
+  testPathIgnorePatterns: ["/node_modules/", "/out/"],
+  // testEnvironment: 'node',  
   transform: {
-    "^.+\\.ts$": "ts-jest"
-  }
+    "^.+\\.ts$": "ts-jest",
+  },
 };

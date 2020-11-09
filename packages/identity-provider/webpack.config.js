@@ -1,4 +1,3 @@
-const fs = require('fs');
 const path = require('path');
 const TerserPlugin = require('terser-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -8,15 +7,9 @@ const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 module.exports = {
   mode: 'production',
   entry: {
-    bootstrap: './src/index.ts',
-    candid: './src/candid/candid.ts',
-    login: './src/login.ts',
-    worker: './src/worker.ts',
+    'identity-provider': './src/identity-provider.ts',
   },
   target: 'web',
-  node: {
-    fs: 'empty'
-  },
   output: {
     // This is necessary to allow internal apps to bundle their own code with
     // webpack which may conflict with us.
@@ -40,7 +33,6 @@ module.exports = {
           ecma: 8,
           minimize: true,
           comments: false,
-          // https://github.com/webpack-contrib/terser-webpack-plugin#terseroptions
         },
       }),
     ],
@@ -61,22 +53,7 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: 'src/index.html',
       filename: 'index.html',
-      chunks: ['bootstrap'],
-    }),
-    new HtmlWebpackPlugin({
-      template: 'src/worker.html',
-      filename: 'worker.html',
-      chunks: ['worker'],
-    }),
-    new HtmlWebpackPlugin({
-      template: 'src/candid/candid.html',
-      filename: 'candid/index.html',
-      chunks: ['bootstrap', 'candid'],
-    }),
-    new HtmlWebpackPlugin({
-      template: 'src/login.html',
-      filename: 'login.html',
-      chunks: ['login'],
+      chunks: ['identity-provider'],
     }),
     new CopyWebpackPlugin([
       {

@@ -1,0 +1,4 @@
+# `@dfinity/identity-provider`
+
+HTML/JS/CSS to handle creation/delegation of webauthn keys
+

@@ -1,21 +1,22 @@
+import * as actor from '../actor';
+import { ActorFactory } from '../actor';
 import {
-  ActorFactory,
-  BinaryBlob,
   CallFields,
-  JsonObject,
-  Principal,
   QueryFields,
   QueryResponse,
   ReadStateFields,
   ReadStateResponse,
   SubmitResponse,
-} from '@dfinity/agent';
-import * as actor from '../actor';
+} from '../http_agent_types';
 import * as IDL from '../idl';
+import { Principal } from '../principal';
+import { BinaryBlob, JsonObject } from '../types';
 import { Agent } from './api';
 
 export enum ProxyMessageKind {
   Error = 'err',
+  GetPrincipal = 'gp',
+  GetPrincipalResponse = 'gpr',
   Query = 'q',
   QueryResponse = 'qr',
   Call = 'c',
@@ -31,14 +32,13 @@ export interface ProxyMessageBase {
   type: ProxyMessageKind;
 }
 
-export interface ProxyMessageQuery extends ProxyMessageBase {
-  type: ProxyMessageKind.Query;
-  args: [string, QueryFields, Principal | undefined];
+export interface ProxyMessageError extends ProxyMessageBase {
+  type: ProxyMessageKind.Error;
+  error: any;
 }
 
-export interface ProxyMessageCall extends ProxyMessageBase {
-  type: ProxyMessageKind.Call;
-  args: [string, CallFields, Principal | undefined];
+export interface ProxyMessageGetPrincipal extends ProxyMessageBase {
+  type: ProxyMessageKind.GetPrincipal;
 }
 
 export interface ProxyMessageReadState extends ProxyMessageBase {
@@ -46,14 +46,24 @@ export interface ProxyMessageReadState extends ProxyMessageBase {
   args: [ReadStateFields, Principal | undefined];
 }
 
-export interface ProxyMessageError extends ProxyMessageBase {
-  type: ProxyMessageKind.Error;
-  error: any;
+export interface ProxyMessageGetPrincipalResponse extends ProxyMessageBase {
+  type: ProxyMessageKind.GetPrincipalResponse;
+  response: string | null;
+}
+
+export interface ProxyMessageQuery extends ProxyMessageBase {
+  type: ProxyMessageKind.Query;
+  args: [string, QueryFields, Principal | undefined];
 }
 
 export interface ProxyMessageQueryResponse extends ProxyMessageBase {
   type: ProxyMessageKind.QueryResponse;
   response: QueryResponse;
+}
+
+export interface ProxyMessageCall extends ProxyMessageBase {
+  type: ProxyMessageKind.Call;
+  args: [string, CallFields, Principal | undefined];
 }
 
 export interface ProxyMessageCallResponse extends ProxyMessageBase {
@@ -80,9 +90,13 @@ export type ProxyMessage =
   | ProxyMessageQueryResponse
   | ProxyMessageCallResponse
   | ProxyMessageReadStateResponse
+  | ProxyMessageGetPrincipal
+  | ProxyMessageGetPrincipalResponse
   | ProxyMessageQuery
+  | ProxyMessageQueryResponse
   | ProxyMessageCall
   | ProxyMessageReadState
+  | ProxyMessageCallResponse
   | ProxyMessageStatus
   | ProxyMessageStatusResponse;
 
@@ -92,6 +106,15 @@ export class ProxyStubAgent {
 
   public onmessage(msg: ProxyMessage): void {
     switch (msg.type) {
+      case ProxyMessageKind.GetPrincipal:
+        this._agent.getPrincipal().then(response => {
+          this._frontend({
+            id: msg.id,
+            type: ProxyMessageKind.GetPrincipalResponse,
+            response: response ? response.toText() : null,
+          });
+        });
+        break;
       case ProxyMessageKind.Query:
         this._agent.query(...msg.args).then(response => {
           this._frontend({
@@ -156,6 +179,7 @@ export class ProxyAgent implements Agent {
     switch (msg.type) {
       case ProxyMessageKind.Error:
         return reject(msg.error);
+      case ProxyMessageKind.GetPrincipalResponse:
       case ProxyMessageKind.CallResponse:
       case ProxyMessageKind.QueryResponse:
       case ProxyMessageKind.ReadStateResponse:
@@ -165,6 +189,19 @@ export class ProxyAgent implements Agent {
     }
   }
 
+  public getPrincipal(): Promise<Principal | null> {
+    return this._sendAndWait({
+      id: this._nextId++,
+      type: ProxyMessageKind.GetPrincipal,
+    }).then(principalOrNull => {
+      if (typeof principalOrNull === 'string') {
+        return Principal.fromText(principalOrNull);
+      } else {
+        return null;
+      }
+    });
+  }
+  
   public readState(fields: ReadStateFields, principal?: Principal): Promise<ReadStateResponse> {
     return this._sendAndWait({
       id: this._nextId++,
