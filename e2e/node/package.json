@@ -6,8 +6,7 @@
     "ci": "npm run e2e",
     "e2e": "jest --verbose"
   },
-  "dependencies": {},
-  "devDependencies": {
+  "dependencies": {
     "@dfinity/agent": "*",
     "@trust/webcrypto": "^0.9.2",
     "@types/base64-js": "^1.2.5",
