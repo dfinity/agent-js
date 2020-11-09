@@ -1,6 +1,8 @@
 import { getQueryParams } from './identity-provider';
 import { CONSTANTS } from './utils/constants';
+let originalLocation: Location;
 beforeAll(() => {
+  originalLocation = window.location;
   const mockResponse = jest.fn();
   Object.defineProperty(window, 'location', {
     value: {
@@ -13,6 +15,10 @@ beforeAll(() => {
     },
     writable: true,
   });
+});
+
+afterAll(() => {
+  window.location = originalLocation;
 });
 describe('@dfinity/identity-provider', () => {
   test('identity provider should pull query parameters', () => {
