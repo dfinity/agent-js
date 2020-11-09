@@ -201,7 +201,7 @@ export class ProxyAgent implements Agent {
       }
     });
   }
-  
+
   public readState(fields: ReadStateFields, principal?: Principal): Promise<ReadStateResponse> {
     return this._sendAndWait({
       id: this._nextId++,
