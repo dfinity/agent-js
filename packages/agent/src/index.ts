@@ -8,6 +8,7 @@ export {
   SenderSecretKey,
   SenderSig,
   generateEd25519KeyPair as generateKeyPair,
+  makeAnonymousAuthTransform,
   makeAuthTransform,
   makeEd25519KeyPair as makeKeyPair,
 } from './auth';
@@ -24,6 +25,7 @@ import * as IDL from './idl';
 export { IDL };
 
 // TODO The following modules will be a separate library for Candid
+import { makeAnonymousAuthTransform } from './auth';
 import * as UICore from './candid/candid-core';
 import * as UI from './candid/candid-ui';
 export { UICore, UI };

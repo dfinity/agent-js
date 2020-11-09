@@ -18,6 +18,7 @@ async function _loadJs(
   onload = async () => {},
 ): Promise<any> {
   const actor = createAssetCanisterActor({ canisterId });
+  (console as any).log(await window.ic.agent.getPrincipal());
   const content = await actor.retrieve(filename);
   const js = new TextDecoder().decode(new Uint8Array(content));
   // const dataUri = new Function(js);
