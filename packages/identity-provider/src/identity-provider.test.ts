@@ -22,7 +22,7 @@ afterAll(() => {
   window.location = originalLocation;
 });
 describe('@dfinity/identity-provider', () => {
-  describe('getQueryParams', () => {
+  describe('getRequiredQueryParams', () => {
     test('identity provider should pull query parameters', () => {
       window.location.search = '?redirect=bar&public_key=fakekey';
       const queryParams = getRequiredQueryParams();
@@ -30,21 +30,21 @@ describe('@dfinity/identity-provider', () => {
       expect(queryParams.publicKey).toEqual('fakekey');
     });
 
-    test('getQueryParams should fail when redirect not found', () => {
+    test('should fail when redirect not found', () => {
       expect(() => {
         window.location.search = '?public_key=fakekey';
         getRequiredQueryParams();
       }).toThrowError(CONSTANTS.NO_REDIRECT);
     });
 
-    test('getQueryParams should fail when public_key not found', () => {
+    test('should fail when public_key not found', () => {
       expect(() => {
         window.location.search = '?redirect=true';
         getRequiredQueryParams();
       }).toThrowError(CONSTANTS.NO_PUBKEY);
     });
 
-    test('getQueryParams should handle URL encoding', () => {
+    test('should handle URL encoding', () => {
       const fancyURL = 'http://localhost:8080/?canisterId=12345';
       const keyParam = 'public_key=locked';
       const urlEncodedURL = encodeURIComponent(fancyURL);
