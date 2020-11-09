@@ -9,7 +9,7 @@ jobs:
       matrix:
         os: [ubuntu-18.04]
         ghc: ['8.8.4']
-        spec: ['release-0.12']
+        spec: ['release-0.13']
         node: [10, 12, 14]
 
     steps:
