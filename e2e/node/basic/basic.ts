@@ -7,9 +7,9 @@ test('time', async () => {
   const principal = await Principal.fromHex('04');
   const response = await httpAgent.readState({ paths: [path] }, principal);
   const cert = new Certificate(response);
+  expect(await cert.verify()).toBe(true);
   const time = cert.lookup(path);
   //console.log(time);
-  expect(await cert.verify()).toBe(true);
 });
 
 /*

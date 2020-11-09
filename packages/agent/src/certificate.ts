@@ -5,9 +5,7 @@ import { ReadStateResponse } from './http_agent_types';
 import { hash } from './request_id';
 import { BinaryBlob } from './types';
 // import { CTX } from 'amcl-js';
-// import { verify } from './utils/bls';
-// @ts-ignore
-import BLS from './utils/bls_gen';
+import { BLS } from './utils/bls';
 
 interface Cert extends Record<string, any> {
   tree: HashTree;
@@ -31,38 +29,43 @@ interface Delegation extends Record<string, any> {
 
 export class Certificate {
   private readonly cert: Cert;
+  private verified: boolean = false;
   constructor(response: ReadStateResponse) {
     this.cert = cbor.decode(response.certificate);
   }
   public lookup(path: Buffer[]): Buffer | undefined {
+    if (!this.verified) {
+      throw new Error('Cannot lookup unverified certificate');
+    }
     return lookup_path(path, this.cert.tree);
   }
   public verify(): Promise<boolean> {
-    return _verify(this.cert.tree, this.cert.signature, this.cert.delegation);
+    return (async () => {
+      const rootHash = await reconstruct(this.cert.tree);
+      const derKey = await checkDelegation(this.cert.delegation);
+      const sig = this.cert.signature;
+      const key = extractDER(derKey);
+      const msg = Buffer.concat([domain_sep('ic-state-root'), rootHash]);
+      /*
+        const ctx = new CTX('BLS12381');
+        const init = ctx.BLS.init();
+        if (init !== 0) {
+          throw new Error('failed to initialize BLS');
+        }
+        console.log('sig', sig.toString('hex'));
+        console.log('msg', msg.toString('hex'));
+        console.log('pk', key.toString('hex'));
+        const res = ctx.BLS.core_verify(bufferToArray(sig), bufferToArray(msg), bufferToArray(key));
+      */
+      /*const m = await BLS();
+      m._init();
+      const blsVerify = m.cwrap('verify', 'number', ['string', 'string', 'string']);
+      const res = blsVerify(bufferToHex(key), bufferToHex(sig), bufferToHex(msg)) === 0 ? true : false;*/
+      const res = await BLS.blsVerify(bufferToHex(key), bufferToHex(sig), bufferToHex(msg));
+      this.verified = res;
+      return res;
+    })();
   }
-}
-
-async function _verify(t: HashTree, sig: Buffer, d?: Delegation): Promise<boolean> {
-  const rootHash = await reconstruct(t);
-  const derKey = await checkDelegation(d);
-  const key = extractDER(derKey);
-  const msg = Buffer.concat([domain_sep('ic-state-root'), rootHash]);
-
-  /*const ctx = new CTX('BLS12381');
-  const init = ctx.BLS.init();
-  if (init !== 0) {
-    throw new Error('failed to initialize BLS');
-  }*/
-  /*console.log('sig', sig.toString('hex'));
-  console.log('msg', msg.toString('hex'));
-  console.log('pk', key.toString('hex'));
-  const res = ctx.BLS.core_verify(bufferToArray(sig), bufferToArray(msg), bufferToArray(key));
-*/
-  const m = await BLS();
-  const verify = m.cwrap('verify', 'number', ['string', 'string', 'string']);
-  // const res = verify(key1, sig1, msg1);
-  const res = verify(bufferToHex(key), bufferToHex(sig), bufferToHex(msg));
-  return res === 0 ? true : false;
 }
 
 async function checkDelegation(d?: Delegation): Promise<Buffer> {

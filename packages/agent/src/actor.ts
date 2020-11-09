@@ -297,24 +297,18 @@ async function _requestStatusAndLoop<T>(
   maxAttempts: number,
   throttle: number,
 ): Promise<T> {
-  const prefix = [blobFromText('request_status'), requestId];
-  const paths = [
-    [...prefix, blobFromText('status')],
-    [...prefix, blobFromText('reply')],
-    [...prefix, blobFromText('reject_code')],
-    [...prefix, blobFromText('reject_message')],
-  ];
-  const state = await agent.readState({ paths });
+  const path = [blobFromText('request_status'), requestId];
+  const state = await agent.readState({ paths: [path] });
   const cert = new Certificate(state);
   const verified = await cert.verify();
   if (!verified) {
     throw new Error('Fail to verify certificate');
   }
-  const status = cert.lookup([...prefix, blobFromText('status')])!.toString();
+  const status = cert.lookup([...path, blobFromText('status')])!.toString();
 
   switch (status) {
     case RequestStatusResponseStatus.Replied: {
-      const response = cert.lookup([...prefix, blobFromText('reply')]) as BinaryBlob;
+      const response = cert.lookup([...path, blobFromText('reply')]) as BinaryBlob;
       return decoder(response);
     }
 
@@ -334,8 +328,8 @@ async function _requestStatusAndLoop<T>(
       );
 
     case RequestStatusResponseStatus.Rejected:
-      const rejectCode = cert.lookup([...prefix, blobFromText('reject_code')])!.toString();
-      const rejectMessage = cert.lookup([...prefix, blobFromText('reject_message')])!.toString();
+      const rejectCode = cert.lookup([...path, blobFromText('reject_code')])!.toString();
+      const rejectMessage = cert.lookup([...path, blobFromText('reject_message')])!.toString();
       throw new Error(
         `Call was rejected:\n` +
           `  Request ID: ${requestIdToHex(requestId)}\n` +

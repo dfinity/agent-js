@@ -19,5 +19,5 @@ test('counter', async () => {
   await counter.inc();
   expect(+(await counter.read())).toEqual(1);  
   await counter.inc();  
-  expect(+(await counter.read())).toEqual(2);  
+  expect(+(await counter.read())).toEqual(2);
 });
