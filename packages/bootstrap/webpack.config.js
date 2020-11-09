@@ -15,6 +15,7 @@ module.exports = {
   },
   target: 'web',
   node: {
+    // This is needed for wasm loader from emscripten
     fs: 'empty'
   },
   output: {

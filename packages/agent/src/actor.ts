@@ -31,6 +31,7 @@ function getDefaultAgent(): Agent {
 }
 
 export async function getRootKey(): Promise<BinaryBlob> {
+  // TODO add the real root key for Mercury
   return ((await getDefaultAgent().status()) as any).root_key;
 }
 

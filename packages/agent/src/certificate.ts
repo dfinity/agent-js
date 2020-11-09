@@ -4,7 +4,6 @@ import * as cbor from './cbor';
 import { ReadStateResponse } from './http_agent_types';
 import { hash } from './request_id';
 import { BinaryBlob } from './types';
-// import { CTX } from 'amcl-js';
 import { BLS } from './utils/bls';
 
 interface Cert extends Record<string, any> {
@@ -46,17 +45,6 @@ export class Certificate {
       const sig = this.cert.signature;
       const key = extractDER(derKey);
       const msg = Buffer.concat([domain_sep('ic-state-root'), rootHash]);
-      /*
-        const ctx = new CTX('BLS12381');
-        const init = ctx.BLS.init();
-        if (init !== 0) {
-          throw new Error('failed to initialize BLS');
-        }
-        console.log('sig', sig.toString('hex'));
-        console.log('msg', msg.toString('hex'));
-        console.log('pk', key.toString('hex'));
-        const res = ctx.BLS.core_verify(bufferToArray(sig), bufferToArray(msg), bufferToArray(key));
-      */
       const res = await BLS.blsVerify(bufferToHex(key), bufferToHex(sig), bufferToHex(msg));
       this.verified = res;
       return res;
@@ -77,16 +65,12 @@ async function checkDelegation(d?: Delegation): Promise<Buffer> {
 }
 
 function extractDER(buf: Buffer): Buffer {
+  // TODO check prefix
   return buf.slice(buf.length - 96);
 }
 
 function bufferToHex(buf: Buffer): string {
   return buf.toString('hex');
-}
-
-function bufferToArray(buf: Buffer): number[] {
-  const typedArray = new Uint8Array(buf.buffer, buf.byteOffset, buf.length);
-  return Array.from(typedArray);
 }
 
 async function reconstruct(t: HashTree): Promise<Buffer> {

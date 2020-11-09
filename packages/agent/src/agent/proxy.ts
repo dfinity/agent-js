@@ -87,15 +87,13 @@ export interface ProxyMessageStatusResponse extends ProxyMessageBase {
 
 export type ProxyMessage =
   | ProxyMessageError
-  | ProxyMessageQueryResponse
-  | ProxyMessageCallResponse
-  | ProxyMessageReadStateResponse
   | ProxyMessageGetPrincipal
   | ProxyMessageGetPrincipalResponse
   | ProxyMessageQuery
   | ProxyMessageQueryResponse
   | ProxyMessageCall
   | ProxyMessageReadState
+  | ProxyMessageReadStateResponse
   | ProxyMessageCallResponse
   | ProxyMessageStatus
   | ProxyMessageStatusResponse;
