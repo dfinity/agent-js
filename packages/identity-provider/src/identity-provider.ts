@@ -1,26 +1,25 @@
-import { CONSTANTS } from './utils/constants';
+import * as CONSTANTS from './utils/constants';
 
-export function getQueryParams(): Array<Record<string, string>> {
+interface RequiredQueryParameters {
+  redirect: string;
+  publicKey: string;
+}
+
+export function getRequiredQueryParams(): RequiredQueryParameters {
   const { location } = window;
   const { search } = location;
 
-  const queryParameters = search
-    .substr(1)
-    .split('&')
-    .map(queryParameter => {
-      const [parameter, value] = queryParameter.split('=');
-      return { [parameter]: value };
-    });
+  const searchParams = new URLSearchParams(search.substr(1));
 
-  const redirect = queryParameters.find(qp => qp.redirect !== undefined);
-  const publicKey = queryParameters.find(qp => qp.public_key !== undefined);
-
-  if (!redirect) {
+  const redirect = searchParams.get('redirect');
+  if (redirect === null) {
     throw Error(CONSTANTS.NO_REDIRECT);
   }
-  if (!publicKey) {
+
+  const publicKey = searchParams.get('public_key');
+  if (publicKey === null) {
     throw Error(CONSTANTS.NO_PUBKEY);
   }
 
-  return queryParameters;
+  return { redirect, publicKey };
 }
