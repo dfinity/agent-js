@@ -10,7 +10,7 @@ jobs:
         os: [ubuntu-18.04]
         ghc: ['8.8.4']
         spec: ['release-0.13']
-        node: [10, 12, 14]
+        node: [12, 14]
 
     steps:
     - uses: actions/checkout@v2
