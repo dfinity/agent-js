@@ -1,3 +1,2 @@
-import { SenderPubKey } from '@dfinity/agent';
-
-
+// tslint:disable-next-line
+export interface Empty {}
