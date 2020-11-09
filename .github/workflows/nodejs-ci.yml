@@ -1,78 +1,83 @@
-test:
-  runs-on: ${{ matrix.os }}
-  strategy:
-    matrix:
-      os: [ubuntu-18.04]
-      ghc: ['8.8.4']
-      spec: ['release-0.12']
-      node: [10, 12, 14]
+name: Node.js CI
 
-  steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node }}
+on: [push]
 
-    # IC ref checkout and build.
-    - uses: actions/checkout@v2
-      with:
-        repository: 'dfinity-lab/ic-ref'
-        # Personal Read-only Access Token created by hans.larsen@dfinity.org
-        token: ${{ secrets.IC_REF_TOKEN }}
-        path: ic-ref
-        ref: ${{ matrix.spec }}
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04]
+        ghc: ['8.8.4']
+        spec: ['release-0.12']
+        node: [10, 12, 14]
 
-    - name: Cache ~/.cabal/store
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.cabal/store
-        key: ${{ runner.os }}-${{ matrix.ghc }}-cabal-store
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node }}
 
-    - uses: actions/setup-haskell@v1.1
-      with:
-        ghc-version: ${{ matrix.ghc }}
+      # IC ref checkout and build.
+      - uses: actions/checkout@v2
+        with:
+          repository: 'dfinity-lab/ic-ref'
+          # Personal Read-only Access Token created by hans.larsen@dfinity.org
+          token: ${{ secrets.IC_REF_TOKEN }}
+          path: ic-ref
+          ref: ${{ matrix.spec }}
 
-    - name: Cargo cache
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Cache ~/.cabal/store
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cabal/store
+          key: ${{ runner.os }}-${{ matrix.ghc }}-cabal-store
 
-    - name: Build ic-ref
-      run: |
-        ls -l /opt/ghc/
-        export PATH=/opt/ghc/bin:$PATH
-        cabal --version
-        ghc-${{ matrix.ghc }} --version
-        mkdir -p $HOME/bin
-        cd ic-ref/impl
-        cabal update
-        cabal install -w ghc-${{ matrix.ghc }} --overwrite-policy=always  --installdir=$HOME/bin
+      - uses: actions/setup-haskell@v1.1
+        with:
+          ghc-version: ${{ matrix.ghc }}
 
-    - name: Running ic-ref
-      id: ic_ref
-      run: |
-        set -ex
-        $HOME/bin/ic-ref --pick-port --write-port-to $HOME/ic_ref_port &
-        sleep 1
-        echo "::set-output name=IC_REF_PORT::$(cat $HOME/ic_ref_port)"
+      - name: Cargo cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-    - run: npm install
-    - # I don't want to do this, but when devving with nektos/act, postinstall wasn't getting run.
-      # Then, the later `npm test` would fail because packages/* didn't have their devDependencies.
-      # The test beforehand won't do it if the relevant subpackge's ndoe_modules were already fetched.
-      run: "[ -d packages/agent/node_modules ] || npm run postinstall"
-    - run: npm run build --if-present
-    - run: npm test
-      env:
-        CI: true
-    - run: npm e2e
-      env:
-        CI: true
-        IC_REF_PORT: ${{ steps.ic_ref.outputs.IC_REF_PORT }}
-    - run: killall ic-ref
+      - name: Build ic-ref
+        run: |
+          ls -l /opt/ghc/
+          export PATH=/opt/ghc/bin:$PATH
+          cabal --version
+          ghc-${{ matrix.ghc }} --version
+          mkdir -p $HOME/bin
+          cd ic-ref/impl
+          cabal update
+          cabal install -w ghc-${{ matrix.ghc }} --overwrite-policy=always  --installdir=$HOME/bin
+
+      - name: Running ic-ref
+        id: ic_ref
+        run: |
+          set -ex
+          $HOME/bin/ic-ref --pick-port --write-port-to $HOME/ic_ref_port &
+          sleep 1
+          echo "::set-output name=IC_REF_PORT::$(cat $HOME/ic_ref_port)"
+
+      - run: npm install
+      - # I don't want to do this, but when devving with nektos/act, postinstall wasn't getting run.
+        # Then, the later `npm test` would fail because packages/* didn't have their devDependencies.
+        # The test beforehand won't do it if the relevant subpackge's ndoe_modules were already fetched.
+        run: "[ -d packages/agent/node_modules ] || npm run postinstall"
+      - run: npm run build --if-present
+      - run: npm test
+        env:
+          CI: true
+      - run: npm e2e
+        env:
+          CI: true
+          IC_REF_PORT: ${{ steps.ic_ref.outputs.IC_REF_PORT }}
+      - run: killall ic-ref
