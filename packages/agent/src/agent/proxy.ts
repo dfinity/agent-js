@@ -1,16 +1,17 @@
-import * as actor from '../actor';
-import { ActorFactory } from '../actor';
 import {
+  ActorFactory,
+  BinaryBlob,
   CallFields,
+  JsonObject,
+  Principal,
   QueryFields,
   QueryResponse,
   RequestStatusFields,
   RequestStatusResponse,
   SubmitResponse,
-} from '../http_agent_types';
+} from '@dfinity/agent';
+import * as actor from '../actor';
 import * as IDL from '../idl';
-import { Principal } from '../principal';
-import { BinaryBlob, JsonObject } from '../types';
 import { Agent } from './api';
 
 export enum ProxyMessageKind {
