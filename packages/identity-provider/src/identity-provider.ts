@@ -1,7 +1,7 @@
 import * as CONSTANTS from './utils/constants';
 
 interface RequiredQueryParameters {
-  redirect: string;
+  redirectURI: string;
   publicKey: string;
 }
 
@@ -10,8 +10,8 @@ export function getRequiredQueryParams(search: string): RequiredQueryParameters 
 
   const searchParams = new URLSearchParams(search.substr(1));
 
-  const redirect = searchParams.get('redirect');
-  if (redirect === null) {
+  const redirectURI = searchParams.get('redirect_uri');
+  if (redirectURI === null) {
     throw Error(CONSTANTS.NO_REDIRECT);
   }
 
@@ -20,5 +20,5 @@ export function getRequiredQueryParams(search: string): RequiredQueryParameters 
     throw Error(CONSTANTS.NO_PUBKEY);
   }
 
-  return { redirect, publicKey };
+  return { redirectURI, publicKey };
 }

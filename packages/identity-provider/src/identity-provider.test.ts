@@ -13,13 +13,13 @@ afterEach(() => {
 describe('@dfinity/identity-provider', () => {
   describe('getRequiredQueryParams', () => {
     test('identity provider should pull query parameters', () => {
-      const search = '?redirect=bar&public_key=fakekey';
+      const search = '?redirect_uri=bar&public_key=fakekey';
       const queryParams = getRequiredQueryParams(search);
-      expect(queryParams.redirect).toEqual('bar');
+      expect(queryParams.redirectURI).toEqual('bar');
       expect(queryParams.publicKey).toEqual('fakekey');
     });
 
-    test('should fail when redirect not found', () => {
+    test('should fail when redirect_uri not found', () => {
       expect(() => {
         const search = '?public_key=fakekey';
         getRequiredQueryParams(search);
@@ -28,7 +28,7 @@ describe('@dfinity/identity-provider', () => {
 
     test('should fail when public_key not found', () => {
       expect(() => {
-        const search = '?redirect=true';
+        const search = '?redirect_uri=true';
         getRequiredQueryParams(search);
       }).toThrowError(CONSTANTS.NO_PUBKEY);
     });
@@ -37,9 +37,11 @@ describe('@dfinity/identity-provider', () => {
       const fancyURL = 'http://localhost:8080/?canisterId=12345';
       const keyParam = 'public_key=locked';
       const urlEncodedURL = encodeURIComponent(fancyURL);
-      const searchParams = '?redirect=' + urlEncodedURL + '&' + keyParam;
+      const searchParams = '?redirect_uri=' + urlEncodedURL + '&' + keyParam;
       const params = getRequiredQueryParams(searchParams);
-      expect(params.redirect).toEqual(fancyURL);
+      expect(params.redirectURI).toEqual(fancyURL);
+    });
+  });
     });
   });
 });
