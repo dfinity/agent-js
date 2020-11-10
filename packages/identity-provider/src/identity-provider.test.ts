@@ -1,10 +1,12 @@
-import { getRequiredQueryParams } from './identity-provider';
+import { getRequiredQueryParams, redirectToCanister } from './identity-provider';
 import * as CONSTANTS from './utils/constants';
 
 let originalLocation: Location;
+let mockResponse: jest.Mock<any, any>;
+
 beforeAll(() => {
   originalLocation = window.location;
-  const mockResponse = jest.fn();
+  mockResponse = jest.fn();
   Object.defineProperty(window, 'location', {
     value: {
       hash: {
@@ -12,10 +14,15 @@ beforeAll(() => {
         includes: mockResponse,
       },
       assign: mockResponse,
+      replace: mockResponse,
       search: '',
     },
     writable: true,
   });
+});
+
+afterEach(() => {
+  mockResponse.mockClear();
 });
 
 afterAll(() => {
@@ -52,6 +59,23 @@ describe('@dfinity/identity-provider', () => {
       window.location.search = searchParams;
       const params = getRequiredQueryParams();
       expect(params.redirect).toEqual(fancyURL);
+    });
+  });
+
+  describe('redirecttoCanister()', () => {
+    test('should handle redirect appending token param', () => {
+      window.location.search = '?redirect=http%3A%2F%2Flocalhost%3A8080&public_key=fakekey';
+      redirectToCanister('tokeny-token');
+      expect(mockResponse).toHaveBeenCalledWith('http://localhost:8080/?token=tokeny-token');
+    });
+
+    test('should handle redirect when params exist token param', () => {
+      window.location.search =
+        '?redirect=http%3A%2F%2Flocalhost%3A8080%2F%3FcanisterId%3Dcxeji-wacaa-aaaaa-aaaaa-aaaaa-aaaaa-aaaaa-q&public_key=fakekey';
+      redirectToCanister('tokeny-token');
+      expect(mockResponse).toHaveBeenCalledWith(
+        'http://localhost:8080/?canisterId=cxeji-wacaa-aaaaa-aaaaa-aaaaa-aaaaa-aaaaa-q&token=tokeny-token',
+      );
     });
   });
 });

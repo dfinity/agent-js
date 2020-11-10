@@ -23,3 +23,10 @@ export function getRequiredQueryParams(): RequiredQueryParameters {
 
   return { redirect, publicKey };
 }
+
+export function redirectToCanister(token: string): void {
+  const { redirect } = getRequiredQueryParams();
+  const url = new URL(redirect);
+  url.searchParams.append('token', token);
+  location.replace('' + url);
+}
