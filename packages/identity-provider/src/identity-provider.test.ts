@@ -1,46 +1,35 @@
 import { getRequiredQueryParams } from './identity-provider';
 import * as CONSTANTS from './utils/constants';
 
-let originalLocation: Location;
+let mockResponse: jest.Mock<any, any>;
 beforeAll(() => {
-  originalLocation = window.location;
-  const mockResponse = jest.fn();
-  Object.defineProperty(window, 'location', {
-    value: {
-      hash: {
-        endsWith: mockResponse,
-        includes: mockResponse,
-      },
-      assign: mockResponse,
-      search: '',
-    },
-    writable: true,
-  });
+  mockResponse = jest.fn();
 });
 
-afterAll(() => {
-  window.location = originalLocation;
+afterEach(() => {
+  mockResponse.mockClear();
 });
+
 describe('@dfinity/identity-provider', () => {
   describe('getRequiredQueryParams', () => {
     test('identity provider should pull query parameters', () => {
-      window.location.search = '?redirect=bar&public_key=fakekey';
-      const queryParams = getRequiredQueryParams();
+      const search = '?redirect=bar&public_key=fakekey';
+      const queryParams = getRequiredQueryParams(search);
       expect(queryParams.redirect).toEqual('bar');
       expect(queryParams.publicKey).toEqual('fakekey');
     });
 
     test('should fail when redirect not found', () => {
       expect(() => {
-        window.location.search = '?public_key=fakekey';
-        getRequiredQueryParams();
+        const search = '?public_key=fakekey';
+        getRequiredQueryParams(search);
       }).toThrowError(CONSTANTS.NO_REDIRECT);
     });
 
     test('should fail when public_key not found', () => {
       expect(() => {
-        window.location.search = '?redirect=true';
-        getRequiredQueryParams();
+        const search = '?redirect=true';
+        getRequiredQueryParams(search);
       }).toThrowError(CONSTANTS.NO_PUBKEY);
     });
 
@@ -49,8 +38,7 @@ describe('@dfinity/identity-provider', () => {
       const keyParam = 'public_key=locked';
       const urlEncodedURL = encodeURIComponent(fancyURL);
       const searchParams = '?redirect=' + urlEncodedURL + '&' + keyParam;
-      window.location.search = searchParams;
-      const params = getRequiredQueryParams();
+      const params = getRequiredQueryParams(searchParams);
       expect(params.redirect).toEqual(fancyURL);
     });
   });
