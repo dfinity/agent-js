@@ -64,9 +64,24 @@ async function checkDelegation(d?: Delegation): Promise<Buffer> {
   return Promise.resolve(res);
 }
 
+const DER_PREFIX = Buffer.from(
+  '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100',
+  'hex',
+);
+const KEY_LENGTH = 96;
+
 function extractDER(buf: Buffer): Buffer {
-  // TODO check prefix
-  return buf.slice(buf.length - 96);
+  const expectedLength = DER_PREFIX.length + KEY_LENGTH;
+  if (buf.length !== expectedLength) {
+    throw new TypeError(`BLS DER-encoded public key must be ${expectedLength} bytes long`);
+  }
+  const prefix = buf.slice(0, DER_PREFIX.length);
+  if (!prefix.equals(DER_PREFIX)) {
+    throw new TypeError(
+      `BLS DER-encoded public key is invalid. Expect the following prefix: ${DER_PREFIX}, but get ${prefix}`,
+    );
+  }
+  return buf.slice(DER_PREFIX.length);
 }
 
 function bufferToHex(buf: Buffer): string {
