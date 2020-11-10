@@ -5,9 +5,8 @@ interface RequiredQueryParameters {
   publicKey: string;
 }
 
-export function getRequiredQueryParams(): RequiredQueryParameters {
-  const { location } = window;
-  const { search } = location;
+// should look like window.location.search, i.e. ?key=value&secondKey=secondValue
+export function getRequiredQueryParams(search: string): RequiredQueryParameters {
 
   const searchParams = new URLSearchParams(search.substr(1));
 
