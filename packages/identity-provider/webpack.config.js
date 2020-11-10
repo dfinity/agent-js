@@ -8,6 +8,7 @@ module.exports = {
   mode: 'production',
   entry: {
     'identity-provider': './src/identity-provider.ts',
+    'index': './src/index.ts'
   },
   target: 'web',
   output: {
@@ -53,7 +54,7 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: 'src/index.html',
       filename: 'index.html',
-      chunks: ['identity-provider'],
+      chunks: ['identity-provider', 'index'],
     }),
     new CopyWebpackPlugin([
       {
