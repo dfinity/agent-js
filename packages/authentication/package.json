@@ -1,5 +1,5 @@
 {
-  "name": "@dfinity/auth",
+  "name": "@dfinity/authentication",
   "version": "0.0.0",
   "main": "src/index.js",
   "scripts": {
