@@ -8,6 +8,7 @@
       "dom",
       "es2017"
     ],
+    "outDir": ".tsc-out",
     "declaration": true,
     "sourceMap": true,
     "rootDir": "./",
