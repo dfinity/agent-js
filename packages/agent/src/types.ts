@@ -12,8 +12,16 @@ export type JsonValue = boolean | string | number | JsonArray | JsonObject;
 // https://developer.mozilla.org/en-US/docs/Web/API/Blob
 export type BinaryBlob = Buffer & { __BLOB: never };
 
+// A DER encoded blob. This just indicates that the blob is DER encoded.
+// It is still fully compatible with a regular BinaryBlob.
+export type DerEncodedBlob = BinaryBlob & { __DER_BLOB: never };
+
 export function blobFromUint8Array(arr: Uint8Array): BinaryBlob {
   return Buffer.from(arr) as BinaryBlob;
+}
+
+export function derBlobFromBlob(blob: BinaryBlob): DerEncodedBlob {
+  return blob as DerEncodedBlob;
 }
 
 export function blobFromHex(hex: string): BinaryBlob {

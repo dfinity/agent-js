@@ -1,6 +1,5 @@
 import { Buffer } from 'buffer/';
 import { HttpAgent } from './agent';
-import { createKeyPairFromSeed, makeAuthTransform, SenderSig, sign, verify } from './auth';
 import * as cbor from './cbor';
 import { Expiry, makeNonceTransform } from './http_agent_transforms';
 import {
@@ -8,7 +7,6 @@ import {
   Envelope,
   ReadRequestType,
   RequestStatusResponseReplied,
-  Signed,
   SubmitRequestType,
 } from './http_agent_types';
 import { Principal } from './principal';
@@ -35,20 +33,10 @@ test('call', async () => {
 
   const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
   const nonce = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
-  // prettier-ignore
-  const seed = Buffer.from([
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-  ]);
-  const keyPair = createKeyPairFromSeed(seed);
-  const principal = await Principal.selfAuthenticating(keyPair.publicKey);
+  const principal = Principal.anonymous();
 
-  const httpAgent = new HttpAgent({
-    fetch: mockFetch,
-    principal,
-  });
+  const httpAgent = new HttpAgent({ fetch: mockFetch });
   httpAgent.addTransform(makeNonceTransform(() => nonce));
-  httpAgent.setAuthTransform(makeAuthTransform(keyPair));
 
   const methodName = 'greet';
   const arg = Buffer.from([]) as BinaryBlob;
@@ -71,15 +59,10 @@ test('call', async () => {
   };
 
   const mockPartialsRequestId = await requestIdOf(mockPartialRequest);
-  const senderSig = sign(mockPartialsRequestId, keyPair.secretKey);
-  // Just sanity checking our life.
-  expect(verify(mockPartialsRequestId, senderSig, keyPair.publicKey)).toBe(true);
 
-  const expectedRequest: Signed<CallRequest> = {
+  const expectedRequest = {
     content: mockPartialRequest,
-    sender_pubkey: keyPair.publicKey.toDer(),
-    sender_sig: senderSig,
-  } as Signed<CallRequest>;
+  };
 
   const expectedRequestId = await requestIdOf(expectedRequest.content);
   expect(expectedRequestId).toEqual(mockPartialsRequestId);
@@ -118,20 +101,10 @@ test('requestStatus', async () => {
   const canisterIdent = '2chl6-4hpzw-vqaaa-aaaaa-c';
   const nonce = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
 
-  // prettier-ignore
-  const seed = Buffer.from([
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-  ]);
-  const keyPair = createKeyPairFromSeed(seed);
-  const principal = await Principal.selfAuthenticating(keyPair.publicKey);
+  const principal = await Principal.anonymous();
 
-  const httpAgent = new HttpAgent({
-    fetch: mockFetch,
-    principal,
-  });
+  const httpAgent = new HttpAgent({ fetch: mockFetch });
   httpAgent.addTransform(makeNonceTransform(() => nonce));
-  httpAgent.setAuthTransform(makeAuthTransform(keyPair, () => Buffer.from([0]) as SenderSig));
 
   const requestId = await requestIdOf({
     request_type: SubmitRequestType.Call,
@@ -152,8 +125,6 @@ test('requestStatus', async () => {
       request_id: requestId,
       ingress_expiry: new Expiry(300000),
     },
-    sender_pubkey: keyPair.publicKey.toDer(),
-    sender_sig: Buffer.from([0]) as SenderSig,
   };
 
   const { calls, results } = mockFetch.mock;
@@ -203,20 +174,10 @@ test('queries with the same content should have the same signature', async () =>
   const canisterIdent = '2chl6-4hpzw-vqaaa-aaaaa-c';
   const nonce = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
 
-  // prettier-ignore
-  const seed = Buffer.from([
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-  ]);
-  const keyPair = createKeyPairFromSeed(seed);
-  const principal = await Principal.selfAuthenticating(keyPair.publicKey);
+  const principal = await Principal.anonymous();
 
-  const httpAgent = new HttpAgent({
-    fetch: mockFetch,
-    principal,
-  });
+  const httpAgent = new HttpAgent({ fetch: mockFetch });
   httpAgent.addTransform(makeNonceTransform(() => nonce));
-  httpAgent.setAuthTransform(makeAuthTransform(keyPair));
 
   const methodName = 'greet';
   const arg = Buffer.from([]) as BinaryBlob;

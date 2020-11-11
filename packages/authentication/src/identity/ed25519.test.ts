@@ -1,6 +1,5 @@
-import { Buffer } from 'buffer/';
-import { Ed25519PublicKey } from './auth';
-import { BinaryBlob, blobFromHex } from './types';
+import { blobFromHex, blobFromUint8Array } from '@dfinity/agent';
+import { Ed25519PublicKey } from './ed25519';
 
 const testVectors: Array<[string, string]> = [
   [
@@ -35,10 +34,10 @@ test('DER decoding of ED25519 keys', async () => {
 
 test('DER encoding of invalid keys', async () => {
   expect(() => {
-    Ed25519PublicKey.fromRaw(Buffer.alloc(31, 0) as BinaryBlob).toDer();
+    Ed25519PublicKey.fromRaw(blobFromUint8Array(Buffer.alloc(31, 0))).toDer();
   }).toThrow();
   expect(() => {
-    Ed25519PublicKey.fromRaw(Buffer.alloc(33, 0) as BinaryBlob).toDer();
+    Ed25519PublicKey.fromRaw(blobFromUint8Array(Buffer.alloc(31, 0))).toDer();
   }).toThrow();
 });
 
