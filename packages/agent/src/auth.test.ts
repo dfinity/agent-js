@@ -134,10 +134,7 @@ test('BIP-39: Invalid inputs', async () => {
 
 
 test('BIP-39: Generate mnemonic', async () => {
-  testVectorsBip39.forEach(([entropy, mnemonic], i) => {
-
-    // Generate a randmon mnemonic, then convert it to entropy.
-    // The conversion should succeed and result in an entropy 32 bytes in length.
-    expect(bip39MnemonicToEntropy(bip39GenerateMnemonic()).length).toEqual(32)
-  });
+  // Generate a randmon mnemonic, then convert it to entropy.
+  // The conversion should succeed and result in an entropy 32 bytes in length.
+  expect(bip39MnemonicToEntropy(bip39GenerateMnemonic()).length).toEqual(32)
 });
