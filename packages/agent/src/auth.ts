@@ -6,7 +6,8 @@ import {
   SignedHttpAgentRequest,
 } from './http_agent_types';
 import { RequestId, requestIdOf } from './request_id';
-import { BinaryBlob } from './types';
+import { BinaryBlob, blobFromHex, blobFromUintArray } from './types';
+import { entropyToMnemonic, mnemonicToEntropy} from 'bip39';
 
 const domainSeparator = Buffer.from('\x0Aic-request');
 
@@ -183,4 +184,22 @@ export class Ed25519PublicKey implements SenderPubKey {
   public toRaw(): BinaryBlob {
     return this.rawKey;
   }
+}
+
+export function bip39MnemonicToEntropy(mnemonic: string): BinaryBlob {
+  return blobFromHex(mnemonicToEntropy(mnemonic));
+};
+
+export function bip39EntropyToMnemonic(seed: BinaryBlob): string {
+  if (seed.byteLength != 32) {
+    throw new Error("Entropy for BIP-39 must be 32 bytes");
+  }
+
+  return entropyToMnemonic(seed.toString('hex'));
+}
+
+export function bip39GenerateMnemonic(): string {
+  var entropy = new Uint32Array(32);
+  crypto.getRandomValues(entropy);
+  return bip39EntropyToMnemonic(blobFromUintArray(entropy));
 }

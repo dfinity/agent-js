@@ -1,5 +1,5 @@
 import { Buffer } from 'buffer/';
-import { Ed25519PublicKey, deriveEd25519KeyPairFromSeed } from './auth';
+import { Ed25519PublicKey, deriveEd25519KeyPairFromSeed, bip39GenerateMnemonic, bip39EntropyToMnemonic, bip39MnemonicToEntropy } from './auth';
 import { BinaryBlob, blobFromHex } from './types';
 
 const testVectors: Array<[string, string]> = [
@@ -96,4 +96,48 @@ test('derive Ed25519 via SLIP 0010', async () => {
       expect(keyPair.publicKey.toRaw()).toEqual(expectedPublicKey);
     }).catch(reason => console.log(reason));
   })
+});
+
+// Test vectors for BIP-39 [entropy, mnemonic]
+// Generated using https://coinomi.github.io/tools/bip39/
+const testVectorsBip39: Array<[string, string]> = [
+  [
+    'c626e2351db4af5d707f8601f087a5bf27ef6583c21261843bb04c1dc82e8c11',
+    'shiver damage minute derive enough push sea valid acid loud truly layer leave ready audit drastic ghost canyon ugly oblige symptom blanket core child',
+  ],
+  [
+    'b1050fedfaea6ad9ae9e69b90a533c343847bbdde980c4ac384c04574efd02e2',
+    'rain chronic window volume pluck holiday risk snake ribbon family someone half love target jeans copy seven gift basic anger insane leader argue file'
+  ]
+]; 
+
+test('BIP-39: Converting from entropy to mnemonic and vice versa', async () => {
+  testVectorsBip39.forEach(([entropy, mnemonic], i) => {
+    expect(bip39MnemonicToEntropy(mnemonic).toString('hex')).toEqual(entropy);
+    expect(bip39EntropyToMnemonic(blobFromHex(entropy))).toEqual(mnemonic);
+  });
+});
+
+test('BIP-39: Invalid inputs', async () => {
+  testVectorsBip39.forEach(([entropy, mnemonic], i) => {
+    expect(() => {
+      // entropy too short
+      bip39EntropyToMnemonic(blobFromHex('c626e2351db4af5d707f8601f087a5bf27ef6583c21261843bb04c1dc82e8c'))
+    }).toThrow();
+
+    expect(() => {
+      // entropy too long
+      bip39EntropyToMnemonic(blobFromHex('c626e2351db4af5d707f8601f087a5bf27ef6583c21261843bb04c1dc82e8c0000'))
+    }).toThrow();
+  });
+});
+
+
+test('BIP-39: Generate mnemonic', async () => {
+  testVectorsBip39.forEach(([entropy, mnemonic], i) => {
+
+    // Generate a randmon mnemonic, then convert it to entropy.
+    // The conversion should succeed and result in an entropy 32 bytes in length.
+    expect(bip39MnemonicToEntropy(bip39GenerateMnemonic()).length).toEqual(32)
+  });
 });
