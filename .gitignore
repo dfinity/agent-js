@@ -47,6 +47,9 @@ typings/
 *.tsbuildinfo
 build_info.json
 
+# TypeScript output
+.tsc-out/
+
 # Optional npm cache directory
 .npm
 

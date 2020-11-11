@@ -21,3 +21,10 @@ export function getRequiredQueryParams(search: string): RequiredQueryParameters 
 
   return { redirectURI, loginHint };
 }
+
+//  append the token query parameter and replace the current browser location
+export function appendTokenParameter(redirect: string, token: string): URL {
+  const url = new URL(redirect);
+  url.searchParams.append('token', token);
+  return url;
+}
