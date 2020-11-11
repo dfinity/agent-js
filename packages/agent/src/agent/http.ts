@@ -214,14 +214,18 @@ export class HttpAgent implements Agent {
     ) as Promise<QueryResponse>;
   }
 
-  public async requestStatus(fields: RequestStatusFields): Promise<RequestStatusResponse> {
+  public async requestStatus(
+    fields: RequestStatusFields,
+    identity?: Identity | Promise<Identity> | null,
+  ): Promise<RequestStatusResponse> {
+    const id = await (identity !== undefined ? identity : this._identity);
     return this.read(
       {
         request_type: ReadRequestType.RequestStatus,
         request_id: fields.requestId,
         ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
       },
-      null,
+      id,
     ) as Promise<RequestStatusResponse>;
   }
 
