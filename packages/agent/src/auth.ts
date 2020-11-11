@@ -46,7 +46,7 @@ export const createKeyPairFromSeed = (seed: Uint8Array): KeyPair => {
 };
 
 // Derive an Ed25519 key pair according to SLIP 0010: https://github.com/satoshilabs/slips/blob/master/slip-0010.md
-export const deriveKeyPairFromSeed = async (seed: Uint8Array): Promise<KeyPair> => {
+export const deriveEd25519KeyPairFromSeed = async (seed: Uint8Array): Promise<KeyPair> => {
   const encoder = new TextEncoder();
   const rawKey = encoder.encode("ed25519 seed");
   const key = await window.crypto.subtle.importKey("raw", rawKey, {

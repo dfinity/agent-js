@@ -1,5 +1,5 @@
 import { Buffer } from 'buffer/';
-import { Ed25519PublicKey, deriveKeyPairFromSeed } from './auth';
+import { Ed25519PublicKey, deriveEd25519KeyPairFromSeed } from './auth';
 import { BinaryBlob, blobFromHex } from './types';
 
 const testVectors: Array<[string, string]> = [
@@ -90,7 +90,7 @@ test('derive Ed25519 via SLIP 0010', async () => {
     const expectedPrivateKey = blobFromHex(privateKey);
     // The SLIP 0010 test vectors contain a leading 0-byte for now obvious reason, the remainder makes sense
     const expectedPublicKey = blobFromHex(publicKey).slice(1, 33);
-    deriveKeyPairFromSeed(blobFromHex(seed)).then((keyPair) => {
+    deriveEd25519KeyPairFromSeed(blobFromHex(seed)).then((keyPair) => {
       // TweetNacl appends the public key to the private key, we only want the raw private key which is 32 bytes.
       expect(keyPair.secretKey.slice(0, 32)).toEqual(expectedPrivateKey);
       expect(keyPair.publicKey.toRaw()).toEqual(expectedPublicKey);
