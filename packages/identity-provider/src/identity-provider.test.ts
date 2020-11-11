@@ -44,13 +44,13 @@ describe('@dfinity/identity-provider', () => {
   });
 
   describe('appendTokenParameter()', () => {
-    test('should handle redirect appending token param', () => {
+    test('should append token param when no query parameters exist in request_uri', () => {
       const redirect = 'http://localhost:8080';
       const result = appendTokenParameter(redirect, 'tokeny-token');
       expect(result.toString()).toEqual('http://localhost:8080/?token=tokeny-token');
     });
 
-    test('should handle redirect when params exist token param', () => {
+    test('should append token when query parameters already exist in redirect_uri', () => {
       const result = appendTokenParameter(
         'http://localhost:8080/?canisterId=cxeji-wacaa-aaaaa-aaaaa-aaaaa-aaaaa-aaaaa-q',
         'tokeny-token',
