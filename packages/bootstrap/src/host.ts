@@ -15,7 +15,7 @@ export async function createAgent(site: SiteInfo): Promise<Agent> {
   const host = await site.getHost();
 
   if (!workerHost) {
-    const identity = site.getOrCreateIdentity();
+    const identity = site.getOrCreateUserIdentity();
     const creds = await site.getLogin();
     const agent = new HttpAgent({
       host,

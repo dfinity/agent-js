@@ -111,7 +111,7 @@ export class SiteInfo {
     return maybeCreds !== undefined ? JSON.parse(maybeCreds) : undefined;
   }
 
-  public async hasIdentity(): Promise<boolean> {
+  public async hasUserIdentity(): Promise<boolean> {
     let k = await _getVariable('userIdentity', localStorageIdentityKey);
     if (k === undefined) {
       k = await this.retrieve(localStorageIdentityKey);
@@ -120,7 +120,10 @@ export class SiteInfo {
     return !!k;
   }
 
-  public async getOrCreateIdentity(): Promise<Identity> {
+  /**
+   * Get the identity from local storage if there is one, else create a new user identity.
+   */
+  public async getOrCreateUserIdentity(): Promise<Identity> {
     let k = await _getVariable('userIdentity', localStorageIdentityKey);
     if (k === undefined) {
       k = await this.retrieve(localStorageIdentityKey);

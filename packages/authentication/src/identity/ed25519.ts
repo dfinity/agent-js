@@ -12,7 +12,7 @@ import {
 } from '@dfinity/agent';
 import * as tweetnacl from 'tweetnacl';
 
-const domainSeparator = Buffer.from('\x0Aic-request');
+const domainSeparator = new TextEncoder().encode('\x0Aic-request');
 
 function sign(requestId: RequestId, secretKey: BinaryBlob): BinaryBlob {
   const bufA = Buffer.concat([domainSeparator, requestId]);
