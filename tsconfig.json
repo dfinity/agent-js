@@ -11,14 +11,9 @@
     },
     "files": [],
     "references": [
-<<<<<<< HEAD
       { "path": "packages/agent" },
-      { "path": "packages/agent-js-devtools" },
       { "path": "packages/authentication" },
-      { "path": "packages/bootstrap" }
-=======
-        { "path": "packages/agent" },
-        { "path": "packages/bootstrap" }
->>>>>>> parent of 19c2800... revert: Remove lerna (PR #47) (#59)
+      { "path": "packages/bootstrap" },
+      { "path": "packages/identity-provider" }
     ]
 }
