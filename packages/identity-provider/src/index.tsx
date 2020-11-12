@@ -19,20 +19,6 @@ const App = () => {
 };
 
 async function _main() {
-  // @TODO: remove below once we actually reassign
-  // tslint:disable-next-line: prefer-const
-  // let token = '';
-  // const masterKey = getMasterKey();
-  // if (masterKey) {
-  // authorize with WebAuthn
-  // Authorization (COSE)
-  // Setup delegations
-  // return Delegate Key
-  // } else {
-  // create new master key
-  // }
-  // we've been successful
-  // redirectToCanister(token);
   render(<App />, document.body.getElementsByTagName('app').item(0));
 }
 
