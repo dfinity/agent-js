@@ -38,17 +38,15 @@ export interface Identity {
   transformRequest(request: HttpAgentRequest): Promise<any>;
 }
 
-//
-// export function verify(
-//   requestId: RequestId,
-//   senderSig: SenderSig,
-//   senderPubKey: SenderPubKey,
-// ): boolean {
-//   const bufA = Buffer.concat([domainSeparator, requestId]);
-//   return tweetnacl.sign.detached.verify(bufA, senderSig, senderPubKey.toRaw());
-// }
-//
-// export const createKeyPairFromSeed = (seed: Uint8Array): KeyPair => {
-//   const { publicKey, secretKey } = tweetnacl.sign.keyPair.fromSeed(seed);
-//   return makeEd25519KeyPair(publicKey, secretKey);
-// };
+export class AnonymousIdentity implements Identity {
+  public getPrincipal(): Principal {
+    return Principal.anonymous();
+  }
+
+  public async transformRequest(request: HttpAgentRequest): Promise<any> {
+    return {
+      ...request,
+      body: { content: request.body },
+    };
+  }
+}

@@ -1,8 +1,7 @@
 import { Buffer } from 'buffer/';
 import { ActorFactory } from '../actor';
 import * as actor from '../actor';
-import { Agent } from '../agent';
-import { Identity } from '../auth';
+import { AnonymousIdentity, Identity } from '../auth';
 import * as cbor from '../cbor';
 import { Expiry } from '../http_agent_transforms';
 import {
@@ -17,7 +16,6 @@ import {
   ReadResponse,
   RequestStatusFields,
   RequestStatusResponse,
-  SignedHttpAgentRequest,
   SubmitRequest,
   SubmitRequestType,
   SubmitResponse,
@@ -26,6 +24,7 @@ import * as IDL from '../idl';
 import { Principal } from '../principal';
 import { requestIdOf } from '../request_id';
 import { BinaryBlob, blobFromHex, JsonObject } from '../types';
+import { Agent } from './api';
 
 const API_VERSION = 'v1';
 
@@ -87,7 +86,7 @@ function getDefaultFetch(): typeof fetch {
 // allowing extensions.
 export class HttpAgent implements Agent {
   private readonly _pipeline: HttpAgentRequestTransformFn[] = [];
-  private _identity: Promise<Identity> | null = null;
+  private readonly _identity: Promise<Identity>;
   private readonly _fetch: typeof fetch;
   private readonly _host: URL;
   private readonly _credentials: string | undefined;
@@ -115,9 +114,7 @@ export class HttpAgent implements Agent {
       const { name, password } = options.credentials;
       this._credentials = `${name}${password ? ':' + password : ''}`;
     }
-    if (options.identity) {
-      this._identity = Promise.resolve(options.identity);
-    }
+    this._identity = Promise.resolve(options.identity || new AnonymousIdentity());
   }
 
   public addTransform(fn: HttpAgentRequestTransformFn, priority = fn.priority || 0) {
@@ -136,7 +133,7 @@ export class HttpAgent implements Agent {
       methodName: string;
       arg: BinaryBlob;
     },
-    identity?: Identity | Promise<Identity> | null,
+    identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
     const id = await (identity !== undefined ? identity : this._identity);
     const sender = id?.getPrincipal() || Principal.anonymous();
@@ -160,9 +157,9 @@ export class HttpAgent implements Agent {
       module: BinaryBlob;
       arg?: BinaryBlob;
     },
-    identity?: Identity | Promise<Identity> | null,
+    identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
-    const id = await (identity !== undefined ? identity : this._identity);
+    const id = await (identity || this._identity);
     const sender = id?.getPrincipal() || Principal.anonymous();
     return this.submit(
       {
@@ -177,10 +174,8 @@ export class HttpAgent implements Agent {
     );
   }
 
-  public async createCanister(
-    identity?: Identity | Promise<Identity> | null,
-  ): Promise<SubmitResponse> {
-    const id = await (identity !== undefined ? identity : this._identity);
+  public async createCanister(identity?: Identity | Promise<Identity>): Promise<SubmitResponse> {
+    const id = await (identity || this._identity);
     const sender = id?.getPrincipal() || Principal.anonymous();
 
     return this.submit(
@@ -196,9 +191,9 @@ export class HttpAgent implements Agent {
   public async query(
     canisterId: Principal | string,
     fields: QueryFields,
-    identity?: Identity | Promise<Identity> | null,
+    identity?: Identity | Promise<Identity>,
   ): Promise<QueryResponse> {
-    const id = await (identity !== undefined ? identity : this._identity);
+    const id = await (identity || this._identity);
     const sender = id?.getPrincipal() || Principal.anonymous();
 
     return this.read(
@@ -216,9 +211,9 @@ export class HttpAgent implements Agent {
 
   public async requestStatus(
     fields: RequestStatusFields,
-    identity?: Identity | Promise<Identity> | null,
+    identity?: Identity | Promise<Identity>,
   ): Promise<RequestStatusResponse> {
-    const id = await (identity !== undefined ? identity : this._identity);
+    const id = await (identity || this._identity);
     return this.read(
       {
         request_type: ReadRequestType.RequestStatus,
@@ -267,10 +262,7 @@ export class HttpAgent implements Agent {
     return p;
   }
 
-  protected async submit(
-    submit: SubmitRequest,
-    identity: Identity | null,
-  ): Promise<SubmitResponse> {
+  protected async submit(submit: SubmitRequest, identity: Identity): Promise<SubmitResponse> {
     let transformedRequest: any = (await this._transform({
       request: {
         body: null,
@@ -285,15 +277,7 @@ export class HttpAgent implements Agent {
     })) as HttpAgentSubmitRequest;
 
     // Apply transform for identity.
-    // If anonymous (no identity), then just set the sender.
-    if (identity === null) {
-      transformedRequest = {
-        ...transformedRequest,
-        body: { content: transformedRequest.body },
-      };
-    } else {
-      transformedRequest = await identity.transformRequest(transformedRequest);
-    }
+    transformedRequest = await identity.transformRequest(transformedRequest);
 
     const body = cbor.encode(transformedRequest.body);
 
@@ -325,7 +309,7 @@ export class HttpAgent implements Agent {
     };
   }
 
-  protected async read(request: ReadRequest, identity: Identity | null): Promise<ReadResponse> {
+  protected async read(request: ReadRequest, identity: Identity): Promise<ReadResponse> {
     // TODO: remove this any. This can be a Signed or UnSigned request.
     let transformedRequest: any = await this._transform({
       request: {
@@ -340,15 +324,7 @@ export class HttpAgent implements Agent {
     });
 
     // Apply transform for identity.
-    // If anonymous (no identity), then just set the sender.
-    if (identity === null) {
-      transformedRequest = {
-        ...transformedRequest,
-        body: { content: transformedRequest.body },
-      } as SignedHttpAgentRequest;
-    } else {
-      transformedRequest = await identity.transformRequest(transformedRequest);
-    }
+    transformedRequest = await identity.transformRequest(transformedRequest);
 
     const body = cbor.encode(transformedRequest.body);
 
