@@ -48,7 +48,7 @@ export interface ProxyMessageGetPrincipalResponse extends ProxyMessageBase {
 
 export interface ProxyMessageQuery extends ProxyMessageBase {
   type: ProxyMessageKind.Query;
-  args: [string, QueryFields, Principal | undefined];
+  args: [string, QueryFields];
 }
 
 export interface ProxyMessageQueryResponse extends ProxyMessageBase {
@@ -58,7 +58,7 @@ export interface ProxyMessageQueryResponse extends ProxyMessageBase {
 
 export interface ProxyMessageCall extends ProxyMessageBase {
   type: ProxyMessageKind.Call;
-  args: [string, CallFields, Principal | undefined];
+  args: [string, CallFields];
 }
 
 export interface ProxyMessageCallResponse extends ProxyMessageBase {
@@ -68,7 +68,7 @@ export interface ProxyMessageCallResponse extends ProxyMessageBase {
 
 export interface ProxyMessageRequestStatus extends ProxyMessageBase {
   type: ProxyMessageKind.RequestStatus;
-  args: [RequestStatusFields, Principal | undefined];
+  args: [RequestStatusFields];
 }
 
 export interface ProxyMessageRequestStatusResponse extends ProxyMessageBase {
@@ -200,30 +200,23 @@ export class ProxyAgent implements Agent {
     });
   }
 
-  public requestStatus(
-    fields: RequestStatusFields,
-    principal?: Principal,
-  ): Promise<RequestStatusResponse> {
+  public requestStatus(fields: RequestStatusFields): Promise<RequestStatusResponse> {
     return this._sendAndWait({
       id: this._nextId++,
       type: ProxyMessageKind.RequestStatus,
-      args: [fields, principal],
+      args: [fields],
     }) as Promise<RequestStatusResponse>;
   }
 
-  public call(
-    canisterId: Principal | string,
-    fields: CallFields,
-    principal?: Principal,
-  ): Promise<SubmitResponse> {
+  public call(canisterId: Principal | string, fields: CallFields): Promise<SubmitResponse> {
     return this._sendAndWait({
       id: this._nextId++,
       type: ProxyMessageKind.Call,
-      args: [canisterId.toString(), fields, principal],
+      args: [canisterId.toString(), fields],
     }) as Promise<SubmitResponse>;
   }
 
-  public createCanister(principal?: Principal): Promise<SubmitResponse> {
+  public createCanister(): Promise<SubmitResponse> {
     throw new Error('unimplemented. This will be removed when we upgrade the spec to 0.8');
   }
 
@@ -240,20 +233,15 @@ export class ProxyAgent implements Agent {
       module: BinaryBlob;
       arg?: BinaryBlob;
     },
-    principal?: Principal,
   ): Promise<SubmitResponse> {
     throw new Error('unimplemented. This will be removed when we upgrade the spec to 0.8');
   }
 
-  public query(
-    canisterId: Principal | string,
-    fields: QueryFields,
-    principal?: Principal,
-  ): Promise<QueryResponse> {
+  public query(canisterId: Principal | string, fields: QueryFields): Promise<QueryResponse> {
     return this._sendAndWait({
       id: this._nextId++,
       type: ProxyMessageKind.Query,
-      args: [canisterId.toString(), fields, principal],
+      args: [canisterId.toString(), fields],
     }) as Promise<QueryResponse>;
   }
 
