@@ -6,9 +6,13 @@ const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
 module.exports = {
   mode: 'production',
+  devServer: {
+    contentBase: './dist',
+    hot: true,
+  },
   entry: {
     'identity-provider': './src/identity-provider.ts',
-    'index': './src/index.ts'
+    'index': './src/index.tsx'
   },
   target: 'web',
   output: {

@@ -4,10 +4,7 @@
     "incremental": true,
     "target": "es2017",
     "module": "commonjs",
-    "lib": [
-      "dom",
-      "es2017"
-    ],
+    "lib": ["dom", "es2017"],
     "outDir": ".tsc-out",
     "declaration": true,
     "sourceMap": true,
@@ -17,10 +14,8 @@
     "strict": true,
     "baseUrl": "./",
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "jsx": "react"
   },
-  "include": [
-    "types/*",
-    "src/**/*.ts"
-  ]
+  "include": ["types/*", "src/**/*.ts", "src/**/*.tsx"]
 }
