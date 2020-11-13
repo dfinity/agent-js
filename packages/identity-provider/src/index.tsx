@@ -3,7 +3,7 @@ import Container from '@material-ui/core/Container';
 import React, { lazy, Suspense } from 'react';
 import { render } from 'react-dom';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
-import theme from './Theme';
+import theme from './theme';
 
 const Home = lazy(() => import('./routes/Home'));
 const ImportKey = lazy(() => import('./routes/ImportKey'));
