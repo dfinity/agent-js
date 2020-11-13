@@ -273,9 +273,9 @@ function _createActorMethod(
       return _requestStatusAndLoop(
         agent,
         requestId,
-        _arg => {
-          if (_arg !== undefined) {
-            return decodeReturnValue(func.retTypes, _arg);
+        bytes => {
+          if (bytes !== undefined) {
+            return decodeReturnValue(func.retTypes, bytes);
           } else if (func.retTypes.length === 0) {
             return undefined;
           } else {
@@ -293,7 +293,7 @@ function _createActorMethod(
 async function _requestStatusAndLoop<T>(
   agent: Agent,
   requestId: RequestId,
-  decoder: (response: BinaryBlob) => T,
+  decoder: (response: BinaryBlob | undefined) => T,
   attempts: number,
   maxAttempts: number,
   throttle: number,
@@ -305,7 +305,14 @@ async function _requestStatusAndLoop<T>(
   if (!verified) {
     throw new Error('Fail to verify certificate');
   }
-  const status = cert.lookup([...path, blobFromText('status')])!.toString();
+  const maybeBuf = cert.lookup([...path, blobFromText('status')]);
+  let status;
+  if (typeof maybeBuf === 'undefined') {
+    // Missing requestId means we need to wait
+    status = RequestStatusResponseStatus.Unknown;
+  } else {
+    status = maybeBuf.toString();
+  }
 
   switch (status) {
     case RequestStatusResponseStatus.Replied: {
@@ -314,6 +321,7 @@ async function _requestStatusAndLoop<T>(
     }
 
     case RequestStatusResponseStatus.Received:
+    case RequestStatusResponseStatus.Unknown:
     case RequestStatusResponseStatus.Processing:
       if (--attempts === 0) {
         throw new Error(

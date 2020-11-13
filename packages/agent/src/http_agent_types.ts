@@ -172,6 +172,7 @@ export enum RequestStatusResponseStatus {
   Processing = 'processing',
   Replied = 'replied',
   Rejected = 'rejected',
+  Unknown = 'unknown',
   Done = 'done',
 }
 
