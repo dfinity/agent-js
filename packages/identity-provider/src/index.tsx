@@ -7,6 +7,7 @@ import theme from './theme';
 
 const Home = lazy(() => import('./routes/Home'));
 const ImportKey = lazy(() => import('./routes/ImportKey'));
+const GenerateKey = lazy(() => import('./routes/GenerateKey'));
 
 const App = () => {
   return (
@@ -18,6 +19,7 @@ const App = () => {
             <Switch>
               <Route exact path={'/'} component={Home} />
               <Route path={'/import'} component={ImportKey} />
+              <Route path={'/generate'} component={GenerateKey} />
             </Switch>
           </Suspense>
         </Router>
