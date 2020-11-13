@@ -13,7 +13,7 @@ const App = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Container maxWidth={'sm'}>
+      <Container maxWidth={'md'}>
         <Router>
           <Suspense fallback={<div>Loading...</div>}>
             <Switch>

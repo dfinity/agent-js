@@ -32,6 +32,13 @@ const sharpSansBold = {
     url(${SharpSansBold}) format('woff')`,
 };
 
+const primaryButton = {
+  background: 'linear-gradient(45deg, #ED1E79 30%, #522785 90%)',
+  fontWeight: 600,
+  boxShadow: '0 3px 5px 2px rgba(255, 105, 135, .3)',
+  color: 'white',
+  letterSpacing: '2px',
+};
 export const theme = createMuiTheme({
   typography: {
     fontFamily: [
@@ -46,6 +53,11 @@ export const theme = createMuiTheme({
     ].join(','),
   },
   overrides: {
+    MuiButton: {
+      textPrimary: { ...primaryButton },
+      outlinedPrimary: primaryButton,
+      containedPrimary: primaryButton,
+    },
     MuiCssBaseline: {
       '@global': {
         '@font-face': [sharpSansBlack, sharpSansMedium, sharpSansBold],

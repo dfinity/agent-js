@@ -44,7 +44,7 @@ export const Home = () => {
               {auth.webauthnId ? (
                 <span>webauthnId:{auth.webauthnId}</span>
               ) : (
-                <Button onClick={onRegister} style={{ marginTop: '50%' }}>
+                <Button color={'primary'} onClick={onRegister} style={{ marginTop: '50%' }}>
                   Register with the Internet Computer
                 </Button>
               )}
@@ -66,7 +66,7 @@ export const Home = () => {
             </DialogContentText>
             <Grid container justify={'space-between'}>
               <Grid item>
-                <Button color="secondary" onClick={handleImport}>
+                <Button color="secondary" variant={'outlined'} onClick={handleImport}>
                   Import
                 </Button>
               </Grid>
