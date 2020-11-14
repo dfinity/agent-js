@@ -1,5 +1,4 @@
 import base32 from 'base32.js';
-import { SenderPubKey } from './auth';
 import { BinaryBlob, blobFromHex, blobFromUint8Array, blobToHex } from './types';
 import { getCrc32 } from './utils/getCrc';
 import { sha224 } from './utils/sha224';
@@ -11,8 +10,9 @@ export class Principal {
   public static anonymous(): Principal {
     return new this(blobFromUint8Array(new Uint8Array([ANONYMOUS_SUFFIX])));
   }
-  public static selfAuthenticating(publicKey: SenderPubKey): Principal {
-    const sha = sha224(publicKey.toDer());
+
+  public static selfAuthenticating(publicKey: BinaryBlob): Principal {
+    const sha = sha224(publicKey);
     return new this(blobFromUint8Array(new Uint8Array([...sha, SELF_AUTHENTICATING_SUFFIX])));
   }
 

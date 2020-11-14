@@ -1,7 +1,7 @@
 import {
   Agent,
+  AuthHttpAgentRequestTransformFn,
   HttpAgent,
-  makeAuthTransform,
   makeExpiryTransform,
   makeNonceTransform,
   Principal,
@@ -15,17 +15,15 @@ export async function createAgent(site: SiteInfo): Promise<Agent> {
   const host = await site.getHost();
 
   if (!workerHost) {
-    const keyPair = await site.getKeyPair();
-    const principal = Principal.selfAuthenticating(keyPair.publicKey);
+    const identity = site.getOrCreateUserIdentity();
     const creds = await site.getLogin();
     const agent = new HttpAgent({
       host,
-      principal,
       ...(creds && { credentials: { name: creds[0], password: creds[1] } }),
+      identity,
     });
     agent.addTransform(makeNonceTransform());
     agent.addTransform(makeExpiryTransform(5 * 60 * 1000));
-    agent.setAuthTransform(makeAuthTransform(keyPair));
 
     return agent;
   } else {

@@ -1,0 +1,94 @@
+@startuml
+' Edit with something like: https://plantuml-editor.kkeisuke.com/
+autonumber
+
+actor user
+participant bootstrap as " *.ic0.app"
+participant canister as "Canister"
+participant identity as "identity.ic0.app"
+participant webauthn as "WebAuthn"
+participant ic as "Internet Computer"
+
+user -> bootstrap: Access /index.html
+bootstrap -> canister: retrieve("/index.js")
+opt if auth
+    bootstrap -> canister: use local storage key
+
+    user -> canister: click on sign out
+    canister -> bootstrap: delete local storage
+end
+opt else
+    bootstrap -> canister: use anonymous
+
+    user -> canister: click on sign in
+    canister -> bootstrap: ic.auth.createSession()
+
+    bootstrap -> bootstrap: Generate PrivateKey + PublicKey
+    bootstrap -> identity: Authorization Request
+    note right of bootstrap
+        session_key: bytes = PublicKey
+        redirect: string = "localhost:8080/?canisterId=...
+    end note
+
+    activate identity
+
+    identity -> identity: Lookup local storage for WebAuthn Id
+
+    opt if found
+        note right of identity
+            WebAuthnId = localStorage.webauthn_id
+        end note
+    end
+    opt else
+        opt new key
+            user -> identity: Create New Master Key
+            note right of identity
+                MasterKey = generateKeyPair()
+            end note
+            identity -> user: Show BIP-39
+        end
+        opt else if import
+            user -> identity: Enter BIP-39
+            note right of identity
+                MasterKey = decodeBip39()
+            end note
+        end
+        identity -> identity: Setup delegations
+        note right of identity
+            Master Key -> WebAuthn Key
+        end note
+        user -> identity: Approve WebAuthn
+        note right of identity
+            Set localStorage.webauthn_id
+        end note
+
+    end
+
+    identity -> webauthn: Authorize Session Key
+
+    user -> webauthn: Approve WebAuthn
+
+    webauthn -> identity: Authorization (COSE)
+
+    identity -> identity: Setup delegations
+    note right of identity
+        WebAuthn Key -> Session Key
+    end note
+
+    return Authorization Response
+    note right of bootstrap
+        token: bytes = Delegate Key
+    end note
+    bootstrap -> bootstrap: Save key to localStorage
+
+    bootstrap -> canister: retrieve("/index.js")
+end
+
+loop
+    canister -> ic: Calls with Public Key + Token
+    activate ic
+    ic -> canister: Return data
+    deactivate ic
+end
+
+@enduml

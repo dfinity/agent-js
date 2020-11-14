@@ -1,16 +1,17 @@
-import * as actor from '../actor';
-import { ActorFactory } from '../actor';
 import {
+  ActorFactory,
+  BinaryBlob,
   CallFields,
+  JsonObject,
+  Principal,
   QueryFields,
   QueryResponse,
   ReadStateFields,
   ReadStateResponse,
   SubmitResponse,
-} from '../http_agent_types';
+} from '@dfinity/agent';
+import * as actor from '../actor';
 import * as IDL from '../idl';
-import { Principal } from '../principal';
-import { BinaryBlob, JsonObject } from '../types';
 import { Agent } from './api';
 
 export enum ProxyMessageKind {
@@ -41,11 +42,6 @@ export interface ProxyMessageGetPrincipal extends ProxyMessageBase {
   type: ProxyMessageKind.GetPrincipal;
 }
 
-export interface ProxyMessageReadState extends ProxyMessageBase {
-  type: ProxyMessageKind.ReadState;
-  args: [ReadStateFields, Principal | undefined];
-}
-
 export interface ProxyMessageGetPrincipalResponse extends ProxyMessageBase {
   type: ProxyMessageKind.GetPrincipalResponse;
   response: string | null;
@@ -53,7 +49,7 @@ export interface ProxyMessageGetPrincipalResponse extends ProxyMessageBase {
 
 export interface ProxyMessageQuery extends ProxyMessageBase {
   type: ProxyMessageKind.Query;
-  args: [string, QueryFields, Principal | undefined];
+  args: [string, QueryFields];
 }
 
 export interface ProxyMessageQueryResponse extends ProxyMessageBase {
@@ -63,12 +59,17 @@ export interface ProxyMessageQueryResponse extends ProxyMessageBase {
 
 export interface ProxyMessageCall extends ProxyMessageBase {
   type: ProxyMessageKind.Call;
-  args: [string, CallFields, Principal | undefined];
+  args: [string, CallFields];
 }
 
 export interface ProxyMessageCallResponse extends ProxyMessageBase {
   type: ProxyMessageKind.CallResponse;
   response: SubmitResponse;
+}
+
+export interface ProxyMessageReadState extends ProxyMessageBase {
+  type: ProxyMessageKind.ReadState;
+  args: [ReadStateFields];
 }
 
 export interface ProxyMessageReadStateResponse extends ProxyMessageBase {
@@ -200,27 +201,23 @@ export class ProxyAgent implements Agent {
     });
   }
 
-  public readState(fields: ReadStateFields, principal?: Principal): Promise<ReadStateResponse> {
+  public readState(fields: ReadStateFields): Promise<ReadStateResponse> {
     return this._sendAndWait({
       id: this._nextId++,
       type: ProxyMessageKind.ReadState,
-      args: [fields, principal],
+      args: [fields],
     }) as Promise<ReadStateResponse>;
   }
 
-  public call(
-    canisterId: Principal | string,
-    fields: CallFields,
-    principal?: Principal,
-  ): Promise<SubmitResponse> {
+  public call(canisterId: Principal | string, fields: CallFields): Promise<SubmitResponse> {
     return this._sendAndWait({
       id: this._nextId++,
       type: ProxyMessageKind.Call,
-      args: [canisterId.toString(), fields, principal],
+      args: [canisterId.toString(), fields],
     }) as Promise<SubmitResponse>;
   }
 
-  public createCanister(principal?: Principal): Promise<SubmitResponse> {
+  public createCanister(): Promise<SubmitResponse> {
     throw new Error('unimplemented. This will be removed when we upgrade the spec to 0.8');
   }
 
@@ -237,20 +234,15 @@ export class ProxyAgent implements Agent {
       module: BinaryBlob;
       arg?: BinaryBlob;
     },
-    principal?: Principal,
   ): Promise<SubmitResponse> {
     throw new Error('unimplemented. This will be removed when we upgrade the spec to 0.8');
   }
 
-  public query(
-    canisterId: Principal | string,
-    fields: QueryFields,
-    principal?: Principal,
-  ): Promise<QueryResponse> {
+  public query(canisterId: Principal | string, fields: QueryFields): Promise<QueryResponse> {
     return this._sendAndWait({
       id: this._nextId++,
       type: ProxyMessageKind.Query,
-      args: [canisterId.toString(), fields, principal],
+      args: [canisterId.toString(), fields],
     }) as Promise<QueryResponse>;
   }
 

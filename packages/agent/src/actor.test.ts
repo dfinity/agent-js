@@ -1,20 +1,13 @@
 import { Buffer } from 'buffer/';
 import { makeActorFactory } from './actor';
 import { HttpAgent } from './agent';
-import {
-  Ed25519PublicKey,
-  makeAuthTransform,
-  SenderPubKey,
-  SenderSecretKey,
-  SenderSig,
-} from './auth';
 import * as cbor from './cbor';
 import { Expiry, makeNonceTransform } from './http_agent_transforms';
-import { CallRequest, Signed, SubmitRequestType } from './http_agent_types';
+import { CallRequest, SubmitRequestType, UnSigned } from './http_agent_types';
 import * as IDL from './idl';
 import { Principal } from './principal';
 import { requestIdOf } from './request_id';
-import { BinaryBlob, blobFromHex, Nonce } from './types';
+import { blobFromHex, Nonce } from './types';
 
 const originalDateNowFn = global.Date.now;
 beforeEach(() => {
@@ -78,10 +71,7 @@ test.skip('makeActor', async () => {
   const arg = blobFromHex(IDL.encode([IDL.Text], [argValue]).toString('hex'));
 
   const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
-  const senderPubKey = Ed25519PublicKey.fromRaw(Buffer.alloc(32, 0) as BinaryBlob);
-  const senderSecretKey = Buffer.alloc(32, 0) as SenderSecretKey;
-  const senderSig = Buffer.from([0]) as SenderSig;
-  const principal = await Principal.selfAuthenticating(senderPubKey);
+  const principal = await Principal.anonymous();
   const sender = principal.toBlob();
 
   const nonces = [
@@ -102,29 +92,14 @@ test.skip('makeActor', async () => {
       sender,
       ingress_expiry: new Expiry(300000),
     },
-    sender_pubkey: senderPubKey.toDer(),
-    sender_sig: senderSig,
-  } as Signed<CallRequest>;
+  } as UnSigned<CallRequest>;
 
   const expectedCallRequestId = await requestIdOf(expectedCallRequest.content);
 
   let nonceCount = 0;
 
-  const httpAgent = new HttpAgent({
-    fetch: mockFetch,
-    principal,
-  });
+  const httpAgent = new HttpAgent({ fetch: mockFetch });
   httpAgent.addTransform(makeNonceTransform(() => nonces[nonceCount++]));
-  httpAgent.setAuthTransform(
-    makeAuthTransform(
-      {
-        publicKey: senderPubKey,
-        secretKey: senderSecretKey,
-      },
-
-      () => Buffer.from([0]) as SenderSig,
-    ),
-  );
 
   const actor = makeActorFactory(actorInterface)({ canisterId, agent: httpAgent });
   const reply = await actor.greet(argValue);
@@ -158,8 +133,6 @@ test.skip('makeActor', async () => {
           request_id: expectedCallRequestId,
           ingress_expiry: new Expiry(300000),
         },
-        sender_pubkey: senderPubKey.toDer(),
-        sender_sig: senderSig,
       }),
     },
   ]);
@@ -176,8 +149,6 @@ test.skip('makeActor', async () => {
         request_id: expectedCallRequestId,
         ingress_expiry: new Expiry(300000),
       },
-      sender_pubkey: senderPubKey.toDer(),
-      sender_sig: senderSig,
     }),
   });
 
@@ -193,8 +164,6 @@ test.skip('makeActor', async () => {
         request_id: expectedCallRequestId,
         ingress_expiry: new Expiry(300000),
       },
-      sender_pubkey: senderPubKey.toDer(),
-      sender_sig: senderSig,
     }),
   });
 
@@ -210,8 +179,6 @@ test.skip('makeActor', async () => {
         request_id: expectedCallRequestId,
         ingress_expiry: new Expiry(300000),
       },
-      sender_pubkey: senderPubKey.toDer(),
-      sender_sig: senderSig,
     }),
   });
 });

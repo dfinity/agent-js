@@ -7,10 +7,6 @@
 // Note that we can use webpack configuration to make some features available to
 // Node.js in a similar way.
 
-global.crypto = require("@trust/webcrypto");
-global.TextEncoder = require("text-encoding").TextEncoder;
-global.fetch = require("node-fetch");
-
-const { HttpAgent, IDL } = require("@dfinity/agent");
-const agent = require("./utils/agent").default;
-global.ic = { agent, HttpAgent, IDL, canister: undefined };
+window.crypto = require("@trust/webcrypto");
+window.TextEncoder = require("text-encoding").TextEncoder;
+require("whatwg-fetch");

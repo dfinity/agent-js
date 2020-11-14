@@ -86,4 +86,9 @@ module.exports = {
       },
     ]),
   ],
+  devServer: {
+    proxy: {
+      '/api': 'http://localhost:' + (process.env['IC_REF_PORT'] || 8001),
+    },
+  },
 };

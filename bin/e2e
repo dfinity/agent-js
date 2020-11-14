@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# exit on error
+set -e
+
+for package in ./e2e/*
+do
+	(
+		echo "e2e: $package"
+		cd "$package"
+		npm run e2e
+	)
+done

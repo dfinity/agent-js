@@ -2,7 +2,6 @@
 // https://github.com/dfinity-lab/dfinity/blob/5fef1450c9ab16ccf18381379149e504b11c8218/docs/spec/public/index.adoc#request-ids
 
 import { Buffer } from 'buffer/';
-import { SenderPubKey, SenderSig } from './auth';
 import { hash, requestIdOf } from './request_id';
 import { BinaryBlob, blobToHex } from './types';
 
