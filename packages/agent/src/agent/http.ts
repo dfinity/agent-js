@@ -216,13 +216,14 @@ export class HttpAgent implements Agent {
     const id = await (identity || this._identity);
     const sender = id?.getPrincipal() || Principal.anonymous();
 
-    return this.read({
-      request_type: ReadRequestType.ReadState,
-      paths: fields.paths,
-      sender: sender.toBlob(),
-      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
-    },
-    id,
+    return this.read(
+      {
+        request_type: ReadRequestType.ReadState,
+        paths: fields.paths,
+        sender: sender.toBlob(),
+        ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+      },
+      id,
     ) as Promise<ReadStateResponse>;
   }
 

@@ -4,9 +4,9 @@ import {
   HttpAgentRequest,
   SignedHttpAgentRequest,
 } from './http_agent_types';
+import { Principal } from './principal';
 import { RequestId, requestIdOf } from './request_id';
 import { BinaryBlob, blobFromUint8Array, DerEncodedBlob } from './types';
-import { Principal } from './principal';
 
 /**
  * A Public Key implementation.

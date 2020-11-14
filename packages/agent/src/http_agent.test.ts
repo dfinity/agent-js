@@ -2,12 +2,7 @@ import { Buffer } from 'buffer/';
 import { HttpAgent } from './agent';
 import * as cbor from './cbor';
 import { Expiry, makeNonceTransform } from './http_agent_transforms';
-import {
-  CallRequest,
-  Envelope,
-  ReadRequestType,
-  SubmitRequestType,
-} from './http_agent_types';
+import { CallRequest, Envelope, ReadRequestType, SubmitRequestType } from './http_agent_types';
 import { Principal } from './principal';
 import { requestIdOf } from './request_id';
 import { BinaryBlob } from './types';

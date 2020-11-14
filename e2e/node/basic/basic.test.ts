@@ -1,11 +1,11 @@
 import { Actor, Principal, blobFromText, Certificate, getManagementCanister, IDL } from "@dfinity/agent";
-import httpAgent, { principal } from '../utils/agent';
+import httpAgent from '../utils/agent';
 import { Buffer } from 'buffer/';
 
 test('read_state', async () => {
   const now = Date.now()/1000;
   const path = [blobFromText('time')];
-  const response = await httpAgent.readState({ paths: [path] }, principal);
+  const response = await httpAgent.readState({ paths: [path] });
   const cert = new Certificate(response);
   
   expect(() => cert.lookup(path)).toThrow(/Cannot lookup unverified certificate/);
