@@ -19,7 +19,12 @@ const enum NodeId {
   Leaf = 3,
   Pruned = 4,
 }
-type HashTree = [0] | [1, HashTree, HashTree] | [2, Buffer, HashTree] | [3, Buffer] | [4, Buffer];
+export type HashTree =
+  | [0]
+  | [1, HashTree, HashTree]
+  | [2, ArrayBuffer, HashTree]
+  | [3, ArrayBuffer]
+  | [4, ArrayBuffer];
 
 interface Delegation extends Record<string, any> {
   subnet_id: Buffer;
@@ -88,21 +93,24 @@ function bufferToHex(buf: Buffer): string {
   return buf.toString('hex');
 }
 
-async function reconstruct(t: HashTree): Promise<Buffer> {
+export async function reconstruct(t: HashTree): Promise<Buffer> {
   switch (t[0]) {
     case NodeId.Empty:
       return hash(domain_sep('ic-hashtree-empty') as BinaryBlob);
     case NodeId.Pruned:
-      return t[1] as Buffer;
+      return Buffer.from(t[1] as ArrayBuffer);
     case NodeId.Leaf:
       return hash(
-        Buffer.concat([domain_sep('ic-hashtree-leaf'), Buffer.from(t[1] as Buffer)]) as BinaryBlob,
+        Buffer.concat([
+          domain_sep('ic-hashtree-leaf'),
+          Buffer.from(t[1] as ArrayBuffer),
+        ]) as BinaryBlob,
       );
     case NodeId.Labeled:
       return hash(
         Buffer.concat([
           domain_sep('ic-hashtree-labeled'),
-          Buffer.from(t[1] as Buffer),
+          Buffer.from(t[1] as ArrayBuffer),
           Buffer.from(await reconstruct(t[2] as HashTree)),
         ]) as BinaryBlob,
       );
@@ -125,11 +133,11 @@ function domain_sep(s: string): Buffer {
   return Buffer.concat([buf, Buffer.from(s)]);
 }
 
-function lookup_path(path: Buffer[], tree: HashTree): Buffer | undefined {
+export function lookup_path(path: Buffer[], tree: HashTree): Buffer | undefined {
   if (path.length === 0) {
     switch (tree[0]) {
       case NodeId.Leaf: {
-        return tree[1] as Buffer;
+        return Buffer.from(tree[1] as ArrayBuffer);
       }
       default: {
         return undefined;
@@ -157,7 +165,7 @@ function find_label(l: Buffer, trees: HashTree[]): HashTree | undefined {
   }
   for (const t of trees) {
     if (t[0] === NodeId.Labeled) {
-      const p = Buffer.from(t[1] as Buffer);
+      const p = Buffer.from(t[1] as ArrayBuffer);
       if (l.equals(p)) {
         return t[2];
       }
