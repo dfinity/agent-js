@@ -157,7 +157,7 @@ function find_label(l: Buffer, trees: HashTree[]): HashTree | undefined {
   }
   for (const t of trees) {
     if (t[0] === NodeId.Labeled) {
-      const p = Buffer.from(t[1] as Buffer); // why?
+      const p = Buffer.from(t[1] as Buffer);
       if (l.equals(p)) {
         return t[2];
       }
