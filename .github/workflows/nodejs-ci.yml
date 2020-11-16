@@ -38,7 +38,9 @@ jobs:
     - uses: actions/setup-haskell@v1.1
       with:
         ghc-version: ${{ matrix.ghc }}
-        cabal-version: '3.2.0.0' # Exact version of Cabal
+        cabal-version: '3.2'
+      env:
+        ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
     - name: Cargo cache
       uses: actions/cache@v2
