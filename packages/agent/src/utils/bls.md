@@ -35,8 +35,7 @@ bool verify(char *pk, char *sig, char *msg) {
   OCT_fromHex(&SIG, sig);
   OCT_fromHex(&M, msg);
   OCT_fromHex(&W, pk);
-  int res = BLS_BLS12381_INIT();
-  res = BLS_BLS12381_CORE_VERIFY(&SIG, &M, &W);
+  int res = BLS_BLS12381_CORE_VERIFY(&SIG, &M, &W);
   if (res == BLS_OK) return true;
   return false;
 }
