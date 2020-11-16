@@ -1,6 +1,6 @@
 import { Buffer } from 'buffer/';
-import { Ed25519PublicKey, deriveEd25519KeyPairFromSeed } from './auth';
-import { BinaryBlob, blobFromHex } from './types';
+import { blobFromHex, blobFromUint8Array } from '@dfinity/agent';
+import { Ed25519KeyIdentity, Ed25519PublicKey } from './ed25519';
 
 const testVectors: Array<[string, string]> = [
   [
@@ -35,10 +35,10 @@ test('DER decoding of ED25519 keys', async () => {
 
 test('DER encoding of invalid keys', async () => {
   expect(() => {
-    Ed25519PublicKey.fromRaw(Buffer.alloc(31, 0) as BinaryBlob).toDer();
+    Ed25519PublicKey.fromRaw(blobFromUint8Array(Buffer.alloc(31, 0))).toDer();
   }).toThrow();
   expect(() => {
-    Ed25519PublicKey.fromRaw(Buffer.alloc(33, 0) as BinaryBlob).toDer();
+    Ed25519PublicKey.fromRaw(blobFromUint8Array(Buffer.alloc(31, 0))).toDer();
   }).toThrow();
 });
 
@@ -71,8 +71,9 @@ test('DER decoding of invalid keys', async () => {
   }).toThrow();
 });
 
-// Test vectors consist of [hex seed, private key, public key], taken from https://github.com/satoshilabs/slips/blob/master/slip-0010.md
-const testVectorsSLIP10: Array<[string, string, string]> = [
+// Test vectors consist of [hex seed, private key, public key], taken from
+// https://github.com/satoshilabs/slips/blob/master/slip-0010.md
+const testVectorsSLIP10 = [
   [
     '000102030405060708090a0b0c0d0e0f',
     '2b4be7f19ee27bbf30c667b642d5f4aa69fd169872f8fc3059c08ebae2eb19e7',
@@ -83,17 +84,20 @@ const testVectorsSLIP10: Array<[string, string, string]> = [
     '171cb88b1b3c1db25add599712e36245d75bc65a1a5c9e18d76f9f2b1eab4012',
     '008fe9693f8fa62a4305a140b9764c5ee01e455963744fe18204b4fb948249308a',
   ],
-]
+];
 
 test('derive Ed25519 via SLIP 0010', async () => {
-  testVectorsSLIP10.forEach(([seed, privateKey, publicKey], i) => {
-    const expectedPrivateKey = blobFromHex(privateKey);
-    // The SLIP 0010 test vectors contain a leading 0-byte for now obvious reason, the remainder makes sense
-    const expectedPublicKey = blobFromHex(publicKey).slice(1, 33);
-    deriveEd25519KeyPairFromSeed(blobFromHex(seed)).then((keyPair) => {
-      // TweetNacl appends the public key to the private key, we only want the raw private key which is 32 bytes.
-      expect(keyPair.secretKey.slice(0, 32)).toEqual(expectedPrivateKey);
-      expect(keyPair.publicKey.toRaw()).toEqual(expectedPublicKey);
-    }).catch(reason => console.log(reason));
-  })
+  await Promise.all(
+    testVectorsSLIP10.map(([seed, privateKey, publicKey], i) => {
+      const expectedPrivateKey = blobFromHex(privateKey);
+      // The SLIP 0010 test vectors contain a leading 0-byte for now obvious reason, the remainder
+      // makes sense.
+      const expectedPublicKey = blobFromHex(publicKey).slice(1, 33);
+      return Ed25519KeyIdentity.fromSeedWithSlip0010(blobFromHex(seed)).then(identity => {
+        const keyPair = identity.getKeyPair();
+        expect(keyPair.secretKey.slice(0, 32)).toEqual(expectedPrivateKey);
+        expect(keyPair.publicKey.toRaw()).toEqual(expectedPublicKey);
+      });
+    }),
+  );
 });
