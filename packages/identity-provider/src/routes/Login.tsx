@@ -11,8 +11,9 @@ import { useHistory } from 'react-router-dom';
 import { Button } from 'src/components/Button';
 import { Modal } from 'src/components/Modal';
 import { useAuth } from 'src/hooks/use-auth';
+import { ROUTES } from 'src/utils/constants';
 
-export const Home = () => {
+export const Login = () => {
   const auth = useAuth();
 
   const [showModal, setShowModal] = useState(false);
@@ -21,11 +22,11 @@ export const Home = () => {
 
   const handleImport = () => {
     setShowModal(false);
-    history.push('/import');
+    history.push(ROUTES.KEY_IMPORT, { webauthnId: auth.webauthnId });
   };
   const handleGenerate = () => {
     setShowModal(false);
-    history.push('/generate');
+    history.push(ROUTES.KEY_GENERATION, { webauthnId: auth.webauthnId });
   };
 
   const onRegister = () => {
@@ -67,12 +68,12 @@ export const Home = () => {
             <Grid container justify={'space-between'}>
               <Grid item>
                 <Button color="secondary" variant={'outlined'} onClick={handleImport}>
-                  Import
+                  Import Existing Key
                 </Button>
               </Grid>
               <Grid item>
                 <Button color="primary" onClick={handleGenerate}>
-                  Register
+                  Generate New Key
                 </Button>
               </Grid>
             </Grid>
@@ -85,4 +86,4 @@ export const Home = () => {
   }
 };
 
-export default Home;
+export default Login;

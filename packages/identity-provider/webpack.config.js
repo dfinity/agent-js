@@ -9,6 +9,7 @@ module.exports = {
   devServer: {
     contentBase: './dist',
     hot: true,
+    historyApiFallback: true
   },
   entry: {
     'identity-provider': './src/identity-provider.ts',

@@ -1,16 +1,17 @@
 import { Container, Grid, TextField, Typography } from '@material-ui/core';
 import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import SendIcon from '@material-ui/icons/Send';
-import React, { useState, createRef } from 'react';
+import React, { createRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Button } from 'src/components/Button';
 
-export const ImportKey = () => {
+export const KeyImport = () => {
   const history = useHistory();
 
   const [textareaValue, setTextAreaValue] = useState('');
 
   const _ref = createRef<HTMLInputElement>();
+
   return (
     <Container maxWidth={'lg'}>
       <Typography variant={'h2'}>Import Existing Key</Typography>
@@ -24,7 +25,7 @@ export const ImportKey = () => {
               fullWidth
               multiline
               rows={6}
-              onChange={({ currentTarget: { value } }) => setTextAreaValue(value)}
+              onChange={({ currentTarget }) => setTextAreaValue(currentTarget?.value)}
               defaultValue={
                 'rain chronic window volume pluck holiday risk snake ribbon family someone half love target jeans copy seven gift basic anger insane leader argue file'
               }
@@ -75,4 +76,4 @@ export const ImportKey = () => {
   );
 };
 
-export default ImportKey;
+export default KeyImport;
