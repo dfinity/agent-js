@@ -5,13 +5,13 @@ import {
   DerEncodedBlob,
   HttpAgentRequest,
   Identity,
+  KeyPair,
   Principal,
   PublicKey,
   RequestId,
   requestIdOf,
 } from '@dfinity/agent';
 import * as tweetnacl from 'tweetnacl';
-import { KeyPair } from '@dfinity/agent/src';
 
 const domainSeparator = new TextEncoder().encode('\x0Aic-request');
 
