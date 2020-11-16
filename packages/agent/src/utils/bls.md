@@ -14,7 +14,7 @@ with these steps:
   * `bls_BLS12381.c`: Change the domain separator to `BLS_SIG_BLS12381G1_XMD:SHA-256_SSWU_RO_NUL_` (in `BLS_HASH_TO_POINT` function)
   * `bls_BLS12381.c`: Do not use the "new multi-pairing mechanism", but the alternative in `BLS_BLS12381_CORE_VERIFY` function.
   * Create `mainBLS.c`
-  ```
+```
 #include <emscripten.h>
 #include <string.h>
 #include "bls_BLS12381.h"
@@ -40,5 +40,5 @@ bool verify(char *pk, char *sig, char *msg) {
   if (res == BLS_OK) return true;
   return false;
 }
-  ```
+```
 * `emcc -O3 mainBLS.c core.a -s WASM=1 -s EXTRA_EXPORTED_RUNTIME_METHODS='["cwrap"]' -s MODULARIZE=1 -o bls.js`
