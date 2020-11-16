@@ -1,5 +1,5 @@
-// @ts-ignore
-import BLSModule from './bls_gen';
+// tslint:disable-next-line:no-var-requires
+const BLSModule = require('./bls_gen');
 
 export class BLS {
   public static async blsVerify(pk: string, sig: string, msg: string): Promise<boolean> {

@@ -2,7 +2,7 @@ import { Buffer } from 'buffer/';
 import * as cbor from './cbor';
 import * as Cert from './certificate';
 
-function buffer(str: string): ArrayBuffer {
+function label(str: string): ArrayBuffer {
   return Buffer.from(str).buffer;
 }
 
@@ -22,16 +22,12 @@ test('hash tree', async () => {
       1,
       [
         2,
-        buffer('a'),
-        [
-          1,
-          [1, [2, buffer('x'), [3, buffer('hello')]], [0]],
-          [2, buffer('y'), [3, buffer('world')]],
-        ],
+        label('a'),
+        [1, [1, [2, label('x'), [3, label('hello')]], [0]], [2, label('y'), [3, label('world')]]],
       ],
-      [2, buffer('b'), [3, buffer('good')]],
+      [2, label('b'), [3, label('good')]],
     ],
-    [1, [2, buffer('c'), [0]], [2, buffer('d'), [3, buffer('morning')]]],
+    [1, [2, label('c'), [0]], [2, label('d'), [3, label('morning')]]],
   ];
   const tree: Cert.HashTree = cbor.decode(cborEncode);
   expect(tree).toMatchObject(expected);
@@ -54,23 +50,23 @@ test('pruned hash tree', async () => {
       1,
       [
         2,
-        buffer('a'),
+        label('a'),
         [
           1,
           [4, pruned('1b4feff9bef8131788b0c9dc6dbad6e81e524249c879e9f10f71ce3749f5a638')],
-          [2, buffer('y'), [3, buffer('world')]],
+          [2, label('y'), [3, label('world')]],
         ],
       ],
       [
         2,
-        buffer('b'),
+        label('b'),
         [4, pruned('7b32ac0c6ba8ce35ac82c255fc7906f7fc130dab2a090f80fe12f9c2cae83ba6')],
       ],
     ],
     [
       1,
       [4, pruned('ec8324b8a1f1ac16bd2e806edba78006479c9877fed4eb464a25485465af601d')],
-      [2, buffer('d'), [3, buffer('morning')]],
+      [2, label('d'), [3, label('morning')]],
     ],
   ];
   const tree: Cert.HashTree = cbor.decode(cborEncode);
@@ -87,23 +83,23 @@ test('lookup', () => {
       1,
       [
         2,
-        buffer('a'),
+        label('a'),
         [
           1,
           [4, pruned('1b4feff9bef8131788b0c9dc6dbad6e81e524249c879e9f10f71ce3749f5a638')],
-          [2, buffer('y'), [3, buffer('world')]],
+          [2, label('y'), [3, label('world')]],
         ],
       ],
       [
         2,
-        buffer('b'),
+        label('b'),
         [4, pruned('7b32ac0c6ba8ce35ac82c255fc7906f7fc130dab2a090f80fe12f9c2cae83ba6')],
       ],
     ],
     [
       1,
       [4, pruned('ec8324b8a1f1ac16bd2e806edba78006479c9877fed4eb464a25485465af601d')],
-      [2, buffer('d'), [3, buffer('morning')]],
+      [2, label('d'), [3, label('morning')]],
     ],
   ];
   expect(Cert.lookup_path([Buffer.from('a'), Buffer.from('a')], tree)).toEqual(undefined);
