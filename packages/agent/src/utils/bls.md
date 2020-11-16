@@ -40,4 +40,5 @@ bool verify(char *pk, char *sig, char *msg) {
   return false;
 }
 ```
+* Run `python3 config32.py` again to get the patched `core.a`
 * `emcc -O3 mainBLS.c core.a -s WASM=1 -s EXTRA_EXPORTED_RUNTIME_METHODS='["cwrap"]' -s MODULARIZE=1 -o bls.js`
