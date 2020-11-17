@@ -2,7 +2,7 @@ import { Container, Typography } from '@material-ui/core';
 import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Button } from 'src/components/Button';
-import { Mnemonic } from 'src/components/MnemonicDisplay';
+import { Mnemonic } from 'src/components/Mnemonic';
 
 function bip39WordValidator(word: string): boolean {
   return word.length > 0;
@@ -32,13 +32,13 @@ export const KeyImport = () => {
 
   return (
     <Container maxWidth={'lg'}>
-      <Typography variant={'h2'}>Import Existing Key</Typography>
+      <Typography variant={'h2'} align={'center'}>
+        Import Existing Key
+      </Typography>
       <Button variant={'outlined'} onClick={() => history.goBack()}>
         Back
       </Button>
-      <div>
-        <Mnemonic wordList={wordList} mode="write" onSubmit={handleSubmit} />
-      </div>
+      <Mnemonic wordList={wordList} mode="write" onSubmit={handleSubmit} />
     </Container>
   );
 };

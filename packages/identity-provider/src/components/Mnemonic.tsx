@@ -2,9 +2,7 @@ import {
   Button,
   Container,
   createStyles,
-  FormHelperText,
   Grid,
-  Input,
   makeStyles,
   Paper,
   TextField,
@@ -38,7 +36,7 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 function InputWord(_word: string, i: number) {
-  const [_val, setVal] = useState('');
+  const [, setVal] = useState('');
   const [err, setErr] = useState(false);
   return (
     <Grid key={i} xs={6} sm={4} item>
@@ -51,9 +49,9 @@ function InputWord(_word: string, i: number) {
             setErr(true);
           }
         }}
-        label={i + '.'}
+        label={i + 1 + '.'}
         placeholder={'type word here'}
-        variant="outlined"
+        variant={'outlined'}
       />
     </Grid>
   );
