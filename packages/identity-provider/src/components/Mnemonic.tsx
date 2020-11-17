@@ -35,7 +35,7 @@ const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-function InputWord(_word: string, i: number) {
+function InputWord(word: string, i: number) {
   const [, setVal] = useState('');
   const [err, setErr] = useState(false);
   return (
@@ -53,6 +53,7 @@ function InputWord(_word: string, i: number) {
         }}
         label={i + 1 + '.'}
         placeholder={'type word here'}
+        defaultValue={word}
         variant={'outlined'}
       />
     </Grid>
@@ -107,7 +108,7 @@ export const Mnemonic = (props: PropsWithoutRef<MnemonicProps>) => {
             startIcon={<SendIcon />}
             className={classes.submit}
           >
-            Submit
+            Confirm
           </Button>
         </form>
       )}

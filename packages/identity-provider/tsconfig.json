@@ -1,21 +1,20 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "incremental": true,
-    "target": "es2017",
-    "module": "commonjs",
-    "lib": ["dom", "es2017"],
-    "outDir": ".tsc-out",
-    "declaration": true,
-    "sourceMap": true,
-    "rootDir": "./",
-    "composite": true,
-    "tsBuildInfoFile": "./build_info.json",
-    "strict": true,
+    "allowJs": false,
     "baseUrl": "./",
+    "composite": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "jsx": "react"
+    "incremental": true,
+    "jsx": "react",
+    "lib": ["dom", "es2017"],
+    "module": "commonjs",
+    "outDir": ".tsc-out",
+    "sourceMap": true,
+    "strict": true,
+    "target": "es2017",
+    "tsBuildInfoFile": "./build_info.json"
   },
   "include": ["types/*", "src/**/*.ts", "src/**/*.tsx"]
 }
