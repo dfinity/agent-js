@@ -11,6 +11,6 @@ module.exports = {
     "/out/",
   ],
   transform: {
-    "^.+\\.ts$": "ts-jest"
+    "^.+\\.tsx?$": "ts-jest"
   }
 };

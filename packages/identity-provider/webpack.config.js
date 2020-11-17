@@ -9,9 +9,9 @@ module.exports = {
   devServer: {
     contentBase: './dist',
     hot: true,
+    historyApiFallback: true
   },
   entry: {
-    'identity-provider': './src/identity-provider.ts',
     'index': './src/index.tsx'
   },
   target: 'web',
@@ -51,6 +51,10 @@ module.exports = {
       {
         test: /\.tsx?$/,
         use: ['ts-loader'],
+      },
+      {
+        test: /\.(woff|woff2|eot|ttf|otf)$/,
+        use: ['file-loader'],
       },
     ],
   },
