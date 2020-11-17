@@ -97,7 +97,7 @@ export const Mnemonic = (props: PropsWithoutRef<MnemonicProps>) => {
         </Grid>
       ) : (
         <form ref={_formRef} onSubmit={handleSubmit} className={classes.form}>
-          <Grid container spacing={6} style={{ counterSet: 'word-list 0' }}>
+          <Grid container spacing={6}>
             {wordList.map(InputWord)}
           </Grid>
           <Button
