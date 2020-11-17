@@ -12,7 +12,6 @@ module.exports = {
     historyApiFallback: true
   },
   entry: {
-    'identity-provider': './src/identity-provider.ts',
     'index': './src/index.tsx'
   },
   target: 'web',

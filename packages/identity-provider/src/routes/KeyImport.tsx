@@ -1,16 +1,34 @@
-import { Container, Grid, TextField, Typography } from '@material-ui/core';
-import CloudUploadIcon from '@material-ui/icons/CloudUpload';
-import SendIcon from '@material-ui/icons/Send';
-import React, { createRef, useState } from 'react';
+import { Container, Typography } from '@material-ui/core';
+import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Button } from 'src/components/Button';
+import { Mnemonic } from 'src/components/MnemonicDisplay';
+
+function bip39WordValidator(word: string): boolean {
+  return word.length > 0;
+}
 
 export const KeyImport = () => {
   const history = useHistory();
+  const [err, setErr] = useState('');
 
-  const [textareaValue, setTextAreaValue] = useState('');
+  const wordList = [];
+  for (let i = 0; i < 24; i++) {
+    wordList.push('');
+  }
 
-  const _ref = createRef<HTMLInputElement>();
+  function handleSubmit(formEl: HTMLFormElement): void {
+    const rawInputEls = formEl.querySelectorAll<HTMLInputElement>('input[type="text"]');
+    const texts = Array.from(rawInputEls).map(ch => ch?.value);
+    const validated = texts.every(bip39WordValidator);
+
+    if (validated) {
+      alert('GOOD JOB');
+      // @TODO: do something with the validated mnemonic
+    } else {
+      setErr('one or more words in mnemonic list is malformed');
+    }
+  }
 
   return (
     <Container maxWidth={'lg'}>
@@ -19,58 +37,7 @@ export const KeyImport = () => {
         Back
       </Button>
       <div>
-        <Grid container>
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              multiline
-              rows={6}
-              onChange={({ currentTarget }) => setTextAreaValue(currentTarget?.value)}
-              defaultValue={
-                'rain chronic window volume pluck holiday risk snake ribbon family someone half love target jeans copy seven gift basic anger insane leader argue file'
-              }
-              variant="outlined"
-            />
-            <Button
-              onClick={() => alert('submit: ' + textareaValue)}
-              variant="outlined"
-              color="secondary"
-              startIcon={<SendIcon />}
-            >
-              Submit
-            </Button>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Typography variant={'h3'}>OR</Typography>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Grid
-              container
-              justify="center"
-              alignContent="center"
-              alignItems="center"
-              direction="column"
-            >
-              <Grid item>
-                <input
-                  ref={_ref}
-                  id="mnemonic-import-by-file"
-                  hidden
-                  type="file"
-                  accept={'text/plain'}
-                />
-                <Button
-                  onClick={() => _ref.current?.click()}
-                  variant="outlined"
-                  color="secondary"
-                  startIcon={<CloudUploadIcon />}
-                >
-                  Upload
-                </Button>
-              </Grid>
-            </Grid>
-          </Grid>
-        </Grid>
+        <Mnemonic wordList={wordList} mode="write" onSubmit={handleSubmit} />
       </div>
     </Container>
   );
