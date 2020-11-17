@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { Buffer } from 'buffer/';
 import { decode, encode } from './cbor';
 import { Principal } from './principal';
-import { BinaryBlob, blobFromHex, blobFromUint8Array, blobToHex } from './types';
+import { BinaryBlob, blobToHex } from './types';
 
 test('round trip', () => {
   interface Data {

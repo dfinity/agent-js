@@ -1,6 +1,7 @@
-import { Buffer } from 'buffer/';
 import { blobFromHex, blobFromUint8Array } from '@dfinity/agent';
+import { Buffer } from 'buffer/';
 import { Ed25519KeyIdentity, Ed25519PublicKey } from './ed25519';
+import { bip39EntropyToMnemonic, bip39MnemonicToEntropy } from './bip39';
 
 const testVectors: Array<[string, string]> = [
   [
@@ -80,7 +81,8 @@ const testVectorsSLIP10 = [
     '00a4b2856bfec510abab89753fac1ac0e1112364e7d250545963f135f2a33188ed',
   ],
   [
-    'fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c999693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542',
+    'fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c999693908d8a8784817e' +
+      '7b7875726f6c696663605d5a5754514e4b484542',
     '171cb88b1b3c1db25add599712e36245d75bc65a1a5c9e18d76f9f2b1eab4012',
     '008fe9693f8fa62a4305a140b9764c5ee01e455963744fe18204b4fb948249308a',
   ],
