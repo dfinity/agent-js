@@ -47,6 +47,8 @@ function InputWord(_word: string, i: number) {
           setVal(target.value);
           if (target.value.length < 1) {
             setErr(true);
+          } else {
+            setErr(false);
           }
         }}
         label={i + 1 + '.'}
