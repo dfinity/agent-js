@@ -5,6 +5,7 @@ import { render } from 'react-dom';
 import { BrowserRouter as Router, Redirect, Route, Switch, useParams } from 'react-router-dom';
 import theme from './theme';
 import { ROUTES } from './utils/constants';
+import { IDPRootErrorBoundary } from './ErrorBoundary';
 
 const Login = lazy(() => import('./routes/Login'));
 const KeyImport = lazy(() => import('./routes/KeyImport'));
@@ -12,20 +13,22 @@ const KeyGeneration = lazy(() => import('./routes/KeyGeneration'));
 
 const App = () => {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Container maxWidth={'md'}>
-        <Router>
-          <Suspense fallback={<div>Loading...</div>}>
-            <Switch>
-              <Route path={ROUTES.LOGIN} component={Login} />
-              <Route path={ROUTES.KEY_IMPORT} component={KeyImport} />
-              <Route path={ROUTES.KEY_GENERATION} component={KeyGeneration} />
-            </Switch>
-          </Suspense>
-        </Router>
-      </Container>
-    </ThemeProvider>
+    <IDPRootErrorBoundary>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Container maxWidth={'md'}>
+          <Router>
+            <Suspense fallback={<div>Loading...</div>}>
+              <Switch>
+                <Route path={ROUTES.LOGIN} component={Login} />
+                <Route path={ROUTES.KEY_IMPORT} component={KeyImport} />
+                <Route path={ROUTES.KEY_GENERATION} component={KeyGeneration} />
+              </Switch>
+            </Suspense>
+          </Router>
+        </Container>
+      </ThemeProvider>
+    </IDPRootErrorBoundary>
   );
 };
 

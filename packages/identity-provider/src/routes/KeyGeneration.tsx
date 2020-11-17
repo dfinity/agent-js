@@ -5,12 +5,7 @@ import { Button } from 'src/components/Button';
 import { MnemonicDisplay } from 'src/components/MnemonicDisplay';
 import { demoWordList } from 'src/utils/constants';
 
-export interface KeyGenerationProps {
-  public_key?: Uint8Array;
-}
-
-export const KeyGeneration = (props: RouteProps) => {
-  console.log(props.location?.state);
+export const KeyGeneration = () => {
   const [mnemonic, setMnemonic] = useState<string[]>([]);
 
   function generateMnemonic() {

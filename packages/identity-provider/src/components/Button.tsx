@@ -4,7 +4,7 @@ import React from 'react';
 
 export const Button = (props: ButtonProps) => {
   return (
-    <MatButton {...props} color={props.color} onClick={props.onClick}>
+    <MatButton color={props.color} onClick={props.onClick} {...props}>
       {props.children}
     </MatButton>
   );
