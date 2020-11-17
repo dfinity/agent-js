@@ -1,11 +1,19 @@
 {
     "compilerOptions": {
-        "rootDir": "."
+      "target": "es2017",
+      "module": "commonjs",
+      "lib": [
+        "dom",
+        "es2015",
+        "es2017"
+      ],
+      "rootDir": "."
     },
     "files": [],
     "references": [
-        { "path": "packages/agent" },
-        { "path": "packages/agent-js-devtools" },
-        { "path": "packages/bootstrap" }
+      { "path": "packages/agent" },
+      { "path": "packages/agent-js-devtools" },
+      { "path": "packages/authentication" },
+      { "path": "packages/bootstrap" }
     ]
 }

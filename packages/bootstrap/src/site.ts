@@ -1,4 +1,5 @@
-import { generateKeyPair, KeyPair, makeKeyPair, Principal } from '@dfinity/agent';
+import { blobFromUint8Array, Identity, Principal } from '@dfinity/agent';
+import { Ed25519KeyIdentity } from '@dfinity/authentication';
 import localforage from 'localforage';
 import * as storage from './storage';
 
@@ -110,7 +111,7 @@ export class SiteInfo {
     return maybeCreds !== undefined ? JSON.parse(maybeCreds) : undefined;
   }
 
-  public async hasKeyPair(): Promise<boolean> {
+  public async hasUserIdentity(): Promise<boolean> {
     let k = await _getVariable('userIdentity', localStorageIdentityKey);
     if (k === undefined) {
       k = await this.retrieve(localStorageIdentityKey);
@@ -119,7 +120,10 @@ export class SiteInfo {
     return !!k;
   }
 
-  public async getKeyPair(): Promise<KeyPair> {
+  /**
+   * Get the identity from local storage if there is one, else create a new user identity.
+   */
+  public async getOrCreateUserIdentity(): Promise<Identity> {
     let k = await _getVariable('userIdentity', localStorageIdentityKey);
     if (k === undefined) {
       k = await this.retrieve(localStorageIdentityKey);
@@ -127,9 +131,12 @@ export class SiteInfo {
 
     if (k) {
       const kp = JSON.parse(k);
-      return makeKeyPair(new Uint8Array(kp.publicKey.data), new Uint8Array(kp.secretKey.data));
+      return Ed25519KeyIdentity.fromKeyPair(
+        blobFromUint8Array(new Uint8Array(kp.publicKey.data)),
+        blobFromUint8Array(new Uint8Array(kp.secretKey.data)),
+      );
     } else {
-      const kp = generateKeyPair();
+      const kp = Ed25519KeyIdentity.generate();
       await this.store(localStorageIdentityKey, JSON.stringify(kp));
 
       return kp;

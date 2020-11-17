@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@dfinity/agent": "file://../agent",
+    "@dfinity/authentication": "file://../authentication",
     "bignumber.js": "^9.0.0",
     "buffer": "5.6.0",
     "css-loader": "^3.4.2",

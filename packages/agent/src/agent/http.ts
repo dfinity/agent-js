@@ -1,14 +1,11 @@
 import { Buffer } from 'buffer/';
 import { ActorFactory } from '../actor';
 import * as actor from '../actor';
-import { Agent } from '../agent';
-import { makeAnonymousAuthTransform } from '../auth';
+import { AnonymousIdentity, Identity } from '../auth';
 import * as cbor from '../cbor';
 import { Expiry } from '../http_agent_transforms';
 import {
-  AuthHttpAgentRequestTransformFn,
   Endpoint,
-  HttpAgentReadRequest,
   HttpAgentRequest,
   HttpAgentRequestTransformFn,
   HttpAgentSubmitRequest,
@@ -19,7 +16,6 @@ import {
   ReadResponse,
   RequestStatusFields,
   RequestStatusResponse,
-  SignedHttpAgentRequest,
   SubmitRequest,
   SubmitRequestType,
   SubmitResponse,
@@ -28,6 +24,7 @@ import * as IDL from '../idl';
 import { Principal } from '../principal';
 import { requestIdOf } from '../request_id';
 import { BinaryBlob, blobFromHex, JsonObject } from '../types';
+import { Agent } from './api';
 
 const API_VERSION = 'v1';
 
@@ -49,7 +46,7 @@ export interface HttpAgentOptions {
 
   // The principal used to send messages. This cannot be empty at the request
   // time (will throw).
-  principal?: Principal | Promise<Principal>;
+  identity?: Identity | Promise<Identity>;
 
   credentials?: {
     name: string;
@@ -89,17 +86,15 @@ function getDefaultFetch(): typeof fetch {
 // allowing extensions.
 export class HttpAgent implements Agent {
   private readonly _pipeline: HttpAgentRequestTransformFn[] = [];
-  private _authTransform: AuthHttpAgentRequestTransformFn | null = null;
+  private readonly _identity: Promise<Identity>;
   private readonly _fetch: typeof fetch;
   private readonly _host: URL;
-  private readonly _principal: Promise<Principal> | null = null;
   private readonly _credentials: string | undefined;
 
   constructor(options: HttpAgentOptions = {}) {
     if (options.source) {
       this._pipeline = [...options.source._pipeline];
-      this._authTransform = options.source._authTransform;
-      this._principal = options.source._principal;
+      this._identity = options.source._identity;
     }
     this._fetch = options.fetch || getDefaultFetch() || fetch.bind(global);
     if (options.host) {
@@ -115,13 +110,11 @@ export class HttpAgent implements Agent {
       }
       this._host = new URL(location + '');
     }
-    if (options.principal) {
-      this._principal = Promise.resolve(options.principal);
-    }
     if (options.credentials) {
       const { name, password } = options.credentials;
       this._credentials = `${name}${password ? ':' + password : ''}`;
     }
+    this._identity = Promise.resolve(options.identity || new AnonymousIdentity());
   }
 
   public addTransform(fn: HttpAgentRequestTransformFn, priority = fn.priority || 0) {
@@ -130,12 +123,8 @@ export class HttpAgent implements Agent {
     this._pipeline.splice(i >= 0 ? i : this._pipeline.length, 0, Object.assign(fn, { priority }));
   }
 
-  public setAuthTransform(fn: AuthHttpAgentRequestTransformFn | null) {
-    this._authTransform = fn;
-  }
-
-  public getPrincipal(): Promise<Principal | null> {
-    return Promise.resolve(this._principal);
+  public async getPrincipal(): Promise<Principal | null> {
+    return this._identity ? (await this._identity).getPrincipal() : Principal.anonymous();
   }
 
   public async call(
@@ -144,18 +133,22 @@ export class HttpAgent implements Agent {
       methodName: string;
       arg: BinaryBlob;
     },
-    principal?: Principal | Promise<Principal>,
+    identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
-    const p = await (principal || this._principal || Principal.anonymous());
+    const id = await (identity !== undefined ? identity : this._identity);
+    const sender = id?.getPrincipal() || Principal.anonymous();
 
-    return this.submit({
-      request_type: SubmitRequestType.Call,
-      canister_id: typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId,
-      method_name: fields.methodName,
-      arg: fields.arg,
-      sender: p.toBlob(),
-      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
-    });
+    return this.submit(
+      {
+        request_type: SubmitRequestType.Call,
+        canister_id: typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId,
+        method_name: fields.methodName,
+        arg: fields.arg,
+        sender: sender.toBlob(),
+        ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+      },
+      id,
+    );
   }
 
   public async install(
@@ -164,53 +157,71 @@ export class HttpAgent implements Agent {
       module: BinaryBlob;
       arg?: BinaryBlob;
     },
-    principal?: Principal,
+    identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
-    const p = await (principal || this._principal || Principal.anonymous());
-
-    return this.submit({
-      request_type: SubmitRequestType.InstallCode,
-      canister_id: typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId,
-      module: fields.module,
-      arg: fields.arg || blobFromHex(''),
-      sender: p.toBlob(),
-      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
-    });
+    const id = await (identity || this._identity);
+    const sender = id?.getPrincipal() || Principal.anonymous();
+    return this.submit(
+      {
+        request_type: SubmitRequestType.InstallCode,
+        canister_id: typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId,
+        module: fields.module,
+        arg: fields.arg || blobFromHex(''),
+        sender: sender.toBlob(),
+        ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+      },
+      id,
+    );
   }
 
-  public async createCanister(principal?: Principal): Promise<SubmitResponse> {
-    const p = await (principal || this._principal || Principal.anonymous());
+  public async createCanister(identity?: Identity | Promise<Identity>): Promise<SubmitResponse> {
+    const id = await (identity || this._identity);
+    const sender = id?.getPrincipal() || Principal.anonymous();
 
-    return this.submit({
-      request_type: SubmitRequestType.CreateCanister,
-      sender: p.toBlob(),
-      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
-    });
+    return this.submit(
+      {
+        request_type: SubmitRequestType.CreateCanister,
+        sender: sender.toBlob(),
+        ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+      },
+      id,
+    );
   }
 
   public async query(
     canisterId: Principal | string,
     fields: QueryFields,
-    principal?: Principal,
+    identity?: Identity | Promise<Identity>,
   ): Promise<QueryResponse> {
-    const p = await (principal || this._principal || Principal.anonymous());
+    const id = await (identity || this._identity);
+    const sender = id?.getPrincipal() || Principal.anonymous();
 
-    return this.read({
-      request_type: ReadRequestType.Query,
-      canister_id: typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId,
-      method_name: fields.methodName,
-      arg: fields.arg,
-      sender: p.toBlob(),
-      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
-    }) as Promise<QueryResponse>;
+    return this.read(
+      {
+        request_type: ReadRequestType.Query,
+        canister_id: typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId,
+        method_name: fields.methodName,
+        arg: fields.arg,
+        sender: sender.toBlob(),
+        ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+      },
+      id,
+    ) as Promise<QueryResponse>;
   }
 
-  public async requestStatus(fields: RequestStatusFields): Promise<RequestStatusResponse> {
-    return this.read({
-      request_type: ReadRequestType.RequestStatus,
-      request_id: fields.requestId,
-      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
-    }) as Promise<RequestStatusResponse>;
+  public async requestStatus(
+    fields: RequestStatusFields,
+    identity?: Identity | Promise<Identity>,
+  ): Promise<RequestStatusResponse> {
+    const id = await (identity || this._identity);
+    return this.read(
+      {
+        request_type: ReadRequestType.RequestStatus,
+        request_id: fields.requestId,
+        ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+      },
+      id,
+    ) as Promise<RequestStatusResponse>;
   }
 
   public async status(): Promise<JsonObject> {
@@ -241,27 +252,18 @@ export class HttpAgent implements Agent {
     return actor.makeActorFactory(actorInterfaceFactory);
   }
 
-  protected _transform(
-    request: HttpAgentRequest,
-  ): Promise<HttpAgentRequest | SignedHttpAgentRequest> {
+  protected _transform(request: HttpAgentRequest): Promise<HttpAgentRequest> {
     let p = Promise.resolve(request);
 
     for (const fn of this._pipeline) {
       p = p.then(r => fn(r).then(r2 => r2 || r));
     }
 
-    if (this._authTransform != null) {
-      return p.then(this._authTransform);
-    } else if (Principal.fromBlob(request.body.sender).isAnonymous()) {
-      // TODO(hansl): figure out how to properly not call the above function and constructor.
-      return p.then(makeAnonymousAuthTransform());
-    } else {
-      throw new Error('Cannot make a request without an authentication transform function.');
-    }
+    return p;
   }
 
-  protected async submit(submit: SubmitRequest): Promise<SubmitResponse> {
-    const transformedRequest = (await this._transform({
+  protected async submit(submit: SubmitRequest, identity: Identity): Promise<SubmitResponse> {
+    let transformedRequest: any = (await this._transform({
       request: {
         body: null,
         method: 'POST',
@@ -273,6 +275,9 @@ export class HttpAgent implements Agent {
       endpoint: Endpoint.Submit,
       body: submit,
     })) as HttpAgentSubmitRequest;
+
+    // Apply transform for identity.
+    transformedRequest = await identity.transformRequest(transformedRequest);
 
     const body = cbor.encode(transformedRequest.body);
 
@@ -304,8 +309,9 @@ export class HttpAgent implements Agent {
     };
   }
 
-  protected async read(request: ReadRequest): Promise<ReadResponse> {
-    const transformedRequest = (await this._transform({
+  protected async read(request: ReadRequest, identity: Identity): Promise<ReadResponse> {
+    // TODO: remove this any. This can be a Signed or UnSigned request.
+    let transformedRequest: any = await this._transform({
       request: {
         method: 'POST',
         headers: {
@@ -315,7 +321,10 @@ export class HttpAgent implements Agent {
       },
       endpoint: Endpoint.Read,
       body: request,
-    })) as HttpAgentReadRequest;
+    });
+
+    // Apply transform for identity.
+    transformedRequest = await identity.transformRequest(transformedRequest);
 
     const body = cbor.encode(transformedRequest.body);
 

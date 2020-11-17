@@ -1,5 +1,7 @@
 import { ActorFactory } from '../actor';
+import { Identity } from '../auth';
 import {
+  CallFields,
   QueryFields,
   QueryResponse,
   RequestStatusFields,
@@ -14,25 +16,18 @@ import { BinaryBlob, JsonObject } from '../types';
 export interface Agent {
   /**
    * Returns the principal ID associated with this agent (by default). This can be
-   * null if no principal is associated. It also only shows the default, which is
-   * the principal used when calls don't specify it.
+   * null if no principal is associated. It only shows the principal of the default
+   * identity in the agent, which is the principal used when calls don't specify it.
    */
   getPrincipal(): Promise<Principal | null>;
 
-  requestStatus(fields: RequestStatusFields, principal?: Principal): Promise<RequestStatusResponse>;
+  requestStatus(fields: RequestStatusFields): Promise<RequestStatusResponse>;
 
-  call(
-    canisterId: Principal | string,
-    fields: {
-      methodName: string;
-      arg: BinaryBlob;
-    },
-    principal?: Principal | Promise<Principal>,
-  ): Promise<SubmitResponse>;
-
-  createCanister(principal?: Principal): Promise<SubmitResponse>;
+  call(canisterId: Principal | string, fields: CallFields): Promise<SubmitResponse>;
 
   status(): Promise<JsonObject>;
+
+  createCanister(): Promise<SubmitResponse>;
 
   install(
     canisterId: Principal | string,
@@ -40,14 +35,9 @@ export interface Agent {
       module: BinaryBlob;
       arg?: BinaryBlob;
     },
-    principal?: Principal,
   ): Promise<SubmitResponse>;
 
-  query(
-    canisterId: Principal | string,
-    fields: QueryFields,
-    principal?: Principal,
-  ): Promise<QueryResponse>;
+  query(canisterId: Principal | string, fields: QueryFields): Promise<QueryResponse>;
 
   makeActorFactory(actorInterfaceFactory: IDL.InterfaceFactory): ActorFactory;
 }
