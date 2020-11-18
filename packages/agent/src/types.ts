@@ -24,6 +24,10 @@ export function blobFromText(text: string): BinaryBlob {
   return Buffer.from(text) as BinaryBlob;
 }
 
+export function blobFromUint32Array(arr: Uint32Array): BinaryBlob {
+  return Buffer.from(arr) as BinaryBlob;
+}
+
 export function derBlobFromBlob(blob: BinaryBlob): DerEncodedBlob {
   return blob as DerEncodedBlob;
 }

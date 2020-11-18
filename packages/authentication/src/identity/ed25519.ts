@@ -5,6 +5,7 @@ import {
   DerEncodedBlob,
   HttpAgentRequest,
   Identity,
+  KeyPair,
   Principal,
   PublicKey,
   RequestId,
@@ -21,6 +22,10 @@ function sign(requestId: RequestId, secretKey: BinaryBlob): BinaryBlob {
 }
 
 export class Ed25519PublicKey implements PublicKey {
+  public static from(key: PublicKey) {
+    return new this(key.toRaw());
+  }
+
   public static fromRaw(rawKey: BinaryBlob): Ed25519PublicKey {
     return new Ed25519PublicKey(rawKey);
   }
@@ -77,8 +82,8 @@ export class Ed25519PublicKey implements PublicKey {
     return rawKey;
   }
 
-  private rawKey: BinaryBlob;
-  private derKey: DerEncodedBlob;
+  private readonly rawKey: BinaryBlob;
+  private readonly derKey: DerEncodedBlob;
 
   // `fromRaw` and `fromDer` should be used for instantiation, not this constructor.
   private constructor(key: BinaryBlob) {
@@ -99,18 +104,41 @@ export class Ed25519KeyIdentity implements Identity {
   public static generate(seed?: Uint8Array): Ed25519KeyIdentity {
     const { publicKey, secretKey } =
       seed === undefined ? tweetnacl.sign.keyPair() : tweetnacl.sign.keyPair.fromSeed(seed);
-    return new this(blobFromUint8Array(publicKey), blobFromUint8Array(secretKey));
+    return new this(
+      Ed25519PublicKey.fromRaw(blobFromUint8Array(publicKey)),
+      blobFromUint8Array(secretKey),
+    );
+  }
+
+  // Derive an Ed25519 key pair according to SLIP 0010:
+  // https://github.com/satoshilabs/slips/blob/master/slip-0010.md
+  public static async fromSeedWithSlip0010(seed: Uint8Array): Promise<Ed25519KeyIdentity> {
+    const encoder = new TextEncoder();
+    const rawKey = encoder.encode('ed25519 seed');
+    const key = await window.crypto.subtle.importKey(
+      'raw',
+      rawKey,
+      {
+        name: 'HMAC',
+        hash: { name: 'SHA-512' },
+      },
+      false,
+      ['sign'],
+    );
+    const result = await window.crypto.subtle.sign('HMAC', key, seed.buffer);
+    const slipSeed = new Uint8Array(result.slice(0, 32));
+    return this.generate(slipSeed);
   }
 
   public static fromKeyPair(publicKey: BinaryBlob, privateKey: BinaryBlob): Ed25519KeyIdentity {
-    return new Ed25519KeyIdentity(publicKey, privateKey);
+    return new Ed25519KeyIdentity(Ed25519PublicKey.fromRaw(publicKey), privateKey);
   }
 
-  private _publicKey: Ed25519PublicKey;
+  protected _publicKey: Ed25519PublicKey;
 
   // `fromRaw` and `fromDer` should be used for instantiation, not this constructor.
-  private constructor(private publicKey: BinaryBlob, private _privateKey: BinaryBlob) {
-    this._publicKey = Ed25519PublicKey.fromRaw(publicKey);
+  protected constructor(publicKey: PublicKey, protected _privateKey: BinaryBlob) {
+    this._publicKey = Ed25519PublicKey.from(publicKey);
   }
 
   /**
@@ -136,6 +164,16 @@ export class Ed25519KeyIdentity implements Identity {
         sender_pubkey: this.getDerEncodedPublicKey(),
         sender_sig: sign(requestId, this._privateKey),
       },
+    };
+  }
+
+  /**
+   * Return a copy of the key pair.
+   */
+  public getKeyPair(): KeyPair {
+    return {
+      secretKey: blobFromUint8Array(new Uint8Array(this._privateKey)),
+      publicKey: this._publicKey,
     };
   }
 
