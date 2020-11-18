@@ -9,7 +9,7 @@ import {
   Typography,
 } from '@material-ui/core';
 import SendIcon from '@material-ui/icons/Send';
-import React, { createRef, useState } from 'react';
+import React, { createRef, FormEvent, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Alert } from 'src/components/Alert';
 import { Button } from 'src/components/Button';
@@ -43,7 +43,8 @@ export const KeyGeneration = () => {
     setMnemonic(newMnemonic.split(' '));
     setHasMnemonic(true);
   }
-  function handleSubmit() {
+  function handleSubmit(ev: FormEvent) {
+    ev.preventDefault();
     const formEl = _formRef.current;
     if (formEl) {
       const rawInputEls = formEl.querySelectorAll<HTMLInputElement>('input[type="text"]');
