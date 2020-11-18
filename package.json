@@ -7,8 +7,7 @@
     "@dfinity/agent": "file://./packages/agent",
     "@dfinity/agent-js-devtools": "file://./packages/agent-js-devtools",
     "@dfinity/bootstrap": "file://./packages/bootstrap",
-    "@dfinity/identity-provider": "file://./packages/identity-provider",
-    "@material-ui/lab": "4.0.0-alpha.56"
+    "@dfinity/identity-provider": "file://./packages/identity-provider"
   },
   "scripts": {
     "postinstall": "bin/npm-postinstall",
