@@ -45,16 +45,16 @@ export const KeyImport = () => {
   };
 
   return (
-    <Container maxWidth={'lg'}>
-      <Typography variant={'h2'} align={'center'}>
+    <Container maxWidth='lg'>
+      <Typography variant='h2' align='center'>
         Import Existing Key
       </Typography>
-      <Button variant={'outlined'} onClick={() => history.goBack()}>
+      <Button variant='outlined' onClick={() => history.goBack()}>
         Back
       </Button>
       <form ref={_formRef} onSubmit={handleSubmit}>
         <Mnemonic wordList={wordList} mode="write" />
-        <Button variant={'outlined'} color={'secondary'} startIcon={<SendIcon />} type={'submit'}>
+        <Button variant='outlined' color='secondary' startIcon={<SendIcon />} type='submit'>
           Import
         </Button>
       </form>

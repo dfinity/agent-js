@@ -69,25 +69,25 @@ export const KeyGeneration = () => {
   const history = useHistory();
   return (
     <Container>
-      <Typography variant={'h2'}>Generate New Key</Typography>
+      <Typography variant='h2'>Generate New Key</Typography>
 
       <Snackbar open={snackError !== undefined} autoHideDuration={4000}>
-        <Alert onClose={handleClose} severity={'error'}>
+        <Alert onClose={handleClose} severity='error'>
           Error encountered: {snackError?.message}
         </Alert>
       </Snackbar>
-      <Button variant={'outlined'} onClick={() => history.goBack()}>
+      <Button variant='outlined' onClick={() => history.goBack()}>
         Back
       </Button>
-      <Button color="primary" onClick={generateMnemonic}>
+      <Button color='primary' onClick={generateMnemonic}>
         Generate Master Key
       </Button>
-      {hasMnemonic ? <Mnemonic wordList={mnemonic} mode="read" /> : null}
+      {hasMnemonic ? <Mnemonic wordList={mnemonic} mode='read' /> : null}
       {hasMnemonic ? (
         <Button
           hidden={!hasMnemonic}
-          color={'secondary'}
-          variant={'contained'}
+          color='secondary'
+          variant='contained'
           onClick={() => setShowConfirmModal(true)}
         >
           Continue
@@ -96,7 +96,7 @@ export const KeyGeneration = () => {
 
       <Modal
         fullWidth={true}
-        maxWidth={'lg'}
+        maxWidth='lg'
         open={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
       >
@@ -104,11 +104,11 @@ export const KeyGeneration = () => {
 
         <DialogContent>
           <form ref={_formRef} onSubmit={handleSubmit}>
-            <Mnemonic wordList={mnemonic} mode="write" />
+            <Mnemonic wordList={mnemonic} mode='write' />
             <Button
-              type={'submit'}
-              variant={'outlined'}
-              color={'secondary'}
+              type='submit'
+              variant='outlined'
+              color='secondary'
               startIcon={<SendIcon />}
               className={classes.submit}
             >

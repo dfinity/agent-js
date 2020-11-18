@@ -16,7 +16,7 @@ const App = () => {
     <IDPRootErrorBoundary>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <Container maxWidth={'md'}>
+        <Container maxWidth='md'>
           <Router>
             <Suspense fallback={<div>Loading...</div>}>
               <Switch>

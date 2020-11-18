@@ -42,7 +42,7 @@ function InputWord(word: string, i: number) {
         label={i + 1 + '.'}
         placeholder={'type word here'}
         defaultValue={word}
-        variant={'outlined'}
+        variant='outlined'
       />
     </Grid>
   );
