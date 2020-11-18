@@ -1,28 +1,40 @@
-import { blobFromUint8Array, Identity, Principal } from '@dfinity/agent';
-import { Bip39Ed25519KeyIdentity, Ed25519KeyIdentity } from '@dfinity/authentication';
+import { Bip39Ed25519KeyIdentity } from '@dfinity/authentication';
 import {
   Container,
-  Typography,
-  Dialog,
-  DialogTitle,
+  createStyles,
   DialogContent,
-  DialogContentText,
+  DialogTitle,
+  makeStyles,
   Snackbar,
+  Typography,
 } from '@material-ui/core';
-import React, { useState } from 'react';
+import SendIcon from '@material-ui/icons/Send';
+import React, { createRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
+import { Alert } from 'src/components/Alert';
 import { Button } from 'src/components/Button';
 import { Mnemonic } from 'src/components/Mnemonic';
 import { Modal } from 'src/components/Modal';
-import { Alert } from 'src/components/Alert';
+
+const useStyles = makeStyles(theme =>
+  createStyles({
+    submit: {
+      marginTop: theme.spacing(2),
+      alignSelf: 'flex-end',
+    },
+  }),
+);
 
 export const KeyGeneration = () => {
+  const classes = useStyles();
   const [mnemonic, setMnemonic] = useState<string[]>([]);
   const [hasMnemonic, setHasMnemonic] = useState<boolean>(false);
   const [keypair, setKeyPair] = useState<Bip39Ed25519KeyIdentity>();
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSnackError, setShowSnackError] = useState(false);
+
+  const _formRef = createRef<HTMLFormElement>();
 
   function generateMnemonic() {
     const bip = Bip39Ed25519KeyIdentity.generate();
@@ -31,16 +43,20 @@ export const KeyGeneration = () => {
     setMnemonic(newMnemonic.split(' '));
     setHasMnemonic(true);
   }
-  function handleSubmit(formEl: HTMLFormElement) {
-    const rawInputEls = formEl.querySelectorAll<HTMLInputElement>('input[type="text"]');
-    const texts = Array.from(rawInputEls).map(ch => ch?.value);
-    const valid = texts.join(' ') === mnemonic.join(' ');
-    if (valid) {
-      setShowConfirmModal(false);
-    } else {
-      setShowSnackError(true);
+  function handleSubmit() {
+    const formEl = _formRef.current;
+    if (formEl) {
+      const rawInputEls = formEl.querySelectorAll<HTMLInputElement>('input[type="text"]');
+      const texts = Array.from(rawInputEls).map(ch => ch?.value);
+      const valid = texts.join(' ') === mnemonic.join(' ');
+      if (valid && keypair) {
+        setShowConfirmModal(false);
+        const { publicKey, secretKey } = keypair.getKeyPair();
+        alert(JSON.stringify({ publicKey, secretKey }));
+      } else {
+        setShowSnackError(true);
+      }
     }
-    // @TODO what to do with actual keypair?
   }
 
   const handleClose = (event?: React.SyntheticEvent, reason?: string) => {
@@ -50,7 +66,6 @@ export const KeyGeneration = () => {
 
     setShowSnackError(false);
   };
-
   const history = useHistory();
   return (
     <Container>
@@ -88,7 +103,18 @@ export const KeyGeneration = () => {
         <DialogTitle>Confirm your Mnemonic</DialogTitle>
 
         <DialogContent>
-          <Mnemonic wordList={mnemonic} mode="write" onSubmit={handleSubmit} />
+          <form ref={_formRef} onSubmit={handleSubmit}>
+            <Mnemonic wordList={mnemonic} mode="write" />
+            <Button
+              type={'submit'}
+              variant={'outlined'}
+              color={'secondary'}
+              startIcon={<SendIcon />}
+              className={classes.submit}
+            >
+              Confirm
+            </Button>
+          </form>
         </DialogContent>
       </Modal>
     </Container>

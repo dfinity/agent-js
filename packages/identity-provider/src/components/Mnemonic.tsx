@@ -1,5 +1,4 @@
 import {
-  Button,
   Container,
   createStyles,
   Grid,
@@ -8,8 +7,7 @@ import {
   TextField,
   Theme,
 } from '@material-ui/core';
-import SendIcon from '@material-ui/icons/Send';
-import React, { createRef, FormEvent, PropsWithoutRef, useState } from 'react';
+import React, { PropsWithoutRef, useState } from 'react';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -21,16 +19,6 @@ const useStyles = makeStyles((theme: Theme) =>
       padding: theme.spacing(2),
       textAlign: 'center',
       color: theme.palette.text.secondary,
-    },
-    form: {
-      marginTop: theme.spacing(5),
-      marginBottom: theme.spacing(5),
-      display: 'flex',
-      flexDirection: 'column',
-    },
-    submit: {
-      marginTop: theme.spacing(2),
-      alignSelf: 'flex-end',
     },
   }),
 );
@@ -79,39 +67,12 @@ interface MnemonicProps {
 
 export const Mnemonic = (props: PropsWithoutRef<MnemonicProps>) => {
   const { wordList, mode } = props;
-  const _formRef = createRef<HTMLFormElement>();
-  const classes = useStyles();
-
-  function handleSubmit(ev: FormEvent<HTMLFormElement>) {
-    ev.preventDefault();
-    const { current } = _formRef;
-    if (current && props.onSubmit) {
-      props.onSubmit(current);
-    }
-  }
 
   return (
     <Container>
-      {mode === 'read' ? (
-        <Grid container spacing={4}>
-          {wordList.map(DisplayWord)}
-        </Grid>
-      ) : (
-        <form ref={_formRef} onSubmit={handleSubmit} className={classes.form}>
-          <Grid container spacing={6}>
-            {wordList.map(InputWord)}
-          </Grid>
-          <Button
-            type={'submit'}
-            variant={'outlined'}
-            color={'secondary'}
-            startIcon={<SendIcon />}
-            className={classes.submit}
-          >
-            Confirm
-          </Button>
-        </form>
-      )}
+      <Grid container spacing={6}>
+        {mode === 'read' ? wordList.map(DisplayWord) : wordList.map(InputWord)}
+      </Grid>
     </Container>
   );
 };

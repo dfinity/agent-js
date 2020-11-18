@@ -1,7 +1,8 @@
 import { Bip39Ed25519KeyIdentity } from '@dfinity/authentication';
 import * as bip39 from 'bip39';
 import { Container, Snackbar, Typography } from '@material-ui/core';
-import React, { useState } from 'react';
+import SendIcon from '@material-ui/icons/Send';
+import React, { createRef, FormEvent, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Button } from 'src/components/Button';
 import { Mnemonic } from 'src/components/Mnemonic';
@@ -11,15 +12,16 @@ const englishWords = bip39.wordlists.english;
 
 export const KeyImport = () => {
   const history = useHistory();
-  const [err, setErr] = useState('');
   const [open, setOpen] = useState(false);
-
+  const _formRef = createRef<HTMLFormElement>();
   const wordList = [];
   for (let i = 0; i < 24; i++) {
     wordList.push('');
   }
 
-  function handleSubmit(formEl: HTMLFormElement): void {
+  function handleSubmit(ev: FormEvent): void {
+    ev.preventDefault();
+    const formEl = _formRef.current!;
     const rawInputEls = formEl.querySelectorAll<HTMLInputElement>('input[type="text"]');
     const texts = Array.from(rawInputEls).map(ch => ch?.value);
     const validated = bip39.validateMnemonic(texts.join(' '), englishWords);
@@ -51,7 +53,12 @@ export const KeyImport = () => {
       <Button variant={'outlined'} onClick={() => history.goBack()}>
         Back
       </Button>
-      <Mnemonic wordList={wordList} mode="write" onSubmit={handleSubmit} />
+      <form ref={_formRef} onSubmit={handleSubmit}>
+        <Mnemonic wordList={wordList} mode="write" />
+        <Button variant={'outlined'} color={'secondary'} startIcon={<SendIcon />} type={'submit'}>
+          Import
+        </Button>
+      </form>
       <Snackbar open={open} autoHideDuration={4000} onClose={handleClose}>
         <Alert onClose={handleClose} severity="error">
           One or more words in mnemonic list is malformed
