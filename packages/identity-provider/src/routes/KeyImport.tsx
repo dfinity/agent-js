@@ -12,7 +12,7 @@ const englishWords = bip39.wordlists.english;
 
 export const KeyImport = () => {
   const history = useHistory();
-  const [open, setOpen] = useState(false);
+  const [snackError, setSnackError] = useState<Error>();
   const _formRef = createRef<HTMLFormElement>();
   const wordList = [];
   for (let i = 0; i < 24; i++) {
@@ -32,7 +32,7 @@ export const KeyImport = () => {
       alert(JSON.stringify({ publicKey, secretKey }));
       // @TODO: do something with the validated mnemonic
     } else {
-      setOpen(true);
+      setSnackError(Error(' One or more words in mnemonic list is malformed'));
     }
   }
 
@@ -41,7 +41,7 @@ export const KeyImport = () => {
       return;
     }
 
-    setOpen(false);
+    setSnackError(undefined);
   };
 
   return (
@@ -58,9 +58,9 @@ export const KeyImport = () => {
           Import
         </Button>
       </form>
-      <Snackbar open={open} autoHideDuration={4000} onClose={handleClose}>
+      <Snackbar open={snackError !== undefined}>
         <Alert onClose={handleClose} severity="error">
-          One or more words in mnemonic list is malformed
+          Error encountered: {snackError?.message}
         </Alert>
       </Snackbar>
     </Container>

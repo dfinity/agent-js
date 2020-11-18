@@ -32,8 +32,7 @@ export const KeyGeneration = () => {
   const [keypair, setKeyPair] = useState<Bip39Ed25519KeyIdentity>();
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [showSnackError, setShowSnackError] = useState(false);
-
+  const [snackError, setSnackError] = useState<Error>();
   const _formRef = createRef<HTMLFormElement>();
 
   function generateMnemonic() {
@@ -55,7 +54,7 @@ export const KeyGeneration = () => {
         const { publicKey, secretKey } = keypair.getKeyPair();
         alert(JSON.stringify({ publicKey, secretKey }));
       } else {
-        setShowSnackError(true);
+        setSnackError(Error('mnemonics do not match'));
       }
     }
   }
@@ -65,16 +64,16 @@ export const KeyGeneration = () => {
       return;
     }
 
-    setShowSnackError(false);
+    setSnackError(undefined);
   };
   const history = useHistory();
   return (
     <Container>
       <Typography variant={'h2'}>Generate New Key</Typography>
 
-      <Snackbar open={showSnackError} autoHideDuration={4000} onClose={handleClose}>
-        <Alert onClose={handleClose} severity="error">
-          One or more words in mnemonic list is malformed
+      <Snackbar open={snackError !== undefined} autoHideDuration={4000}>
+        <Alert onClose={handleClose} severity={'error'}>
+          Error encountered: {snackError?.message}
         </Alert>
       </Snackbar>
       <Button variant={'outlined'} onClick={() => history.goBack()}>
