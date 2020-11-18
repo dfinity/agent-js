@@ -27,7 +27,6 @@ export const KeyImport = () => {
     const validated = bip39.validateMnemonic(texts.join(' '), englishWords);
 
     if (validated) {
-      alert('GOOD JOB');
       const keypair = Bip39Ed25519KeyIdentity.fromBip39Mnemonic(texts.join(' '), englishWords);
       const { publicKey, secretKey } = keypair.getKeyPair();
       alert(JSON.stringify({ publicKey, secretKey }));
