@@ -4,8 +4,8 @@ import {
   CallFields,
   QueryFields,
   QueryResponse,
-  RequestStatusFields,
-  RequestStatusResponse,
+  ReadStateFields,
+  ReadStateResponse,
   SubmitResponse,
 } from '../http_agent_types';
 import * as IDL from '../idl';
@@ -21,7 +21,7 @@ export interface Agent {
    */
   getPrincipal(): Promise<Principal | null>;
 
-  requestStatus(fields: RequestStatusFields): Promise<RequestStatusResponse>;
+  readState(fields: ReadStateFields): Promise<ReadStateResponse>;
 
   call(canisterId: Principal | string, fields: CallFields): Promise<SubmitResponse>;
 

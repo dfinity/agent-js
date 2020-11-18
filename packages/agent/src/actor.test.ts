@@ -17,7 +17,7 @@ afterEach(() => {
   global.Date.now = originalDateNowFn;
 });
 
-test('makeActor', async () => {
+test.skip('makeActor', async () => {
   const actorInterface = () => {
     return IDL.Service({
       greet: IDL.Func([IDL.Text], [IDL.Text]),
@@ -32,14 +32,6 @@ test('makeActor', async () => {
       return Promise.resolve(
         new Response(null, {
           status: 202,
-        }),
-      );
-    })
-    .mockImplementationOnce((resource, init) => {
-      const body = cbor.encode({ status: 'unknown' });
-      return Promise.resolve(
-        new Response(body, {
-          status: 200,
         }),
       );
     })

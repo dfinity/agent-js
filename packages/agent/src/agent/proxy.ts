@@ -6,8 +6,8 @@ import {
   Principal,
   QueryFields,
   QueryResponse,
-  RequestStatusFields,
-  RequestStatusResponse,
+  ReadStateFields,
+  ReadStateResponse,
   SubmitResponse,
 } from '@dfinity/agent';
 import * as actor from '../actor';
@@ -22,8 +22,8 @@ export enum ProxyMessageKind {
   QueryResponse = 'qr',
   Call = 'c',
   CallResponse = 'cr',
-  RequestStatus = 'r',
-  RequestStatusResponse = 'rr',
+  ReadState = 'rs',
+  ReadStateResponse = 'rsr',
   Status = 's',
   StatusResponse = 'sr',
 }
@@ -41,6 +41,7 @@ export interface ProxyMessageError extends ProxyMessageBase {
 export interface ProxyMessageGetPrincipal extends ProxyMessageBase {
   type: ProxyMessageKind.GetPrincipal;
 }
+
 export interface ProxyMessageGetPrincipalResponse extends ProxyMessageBase {
   type: ProxyMessageKind.GetPrincipalResponse;
   response: string | null;
@@ -66,14 +67,14 @@ export interface ProxyMessageCallResponse extends ProxyMessageBase {
   response: SubmitResponse;
 }
 
-export interface ProxyMessageRequestStatus extends ProxyMessageBase {
-  type: ProxyMessageKind.RequestStatus;
-  args: [RequestStatusFields];
+export interface ProxyMessageReadState extends ProxyMessageBase {
+  type: ProxyMessageKind.ReadState;
+  args: [ReadStateFields];
 }
 
-export interface ProxyMessageRequestStatusResponse extends ProxyMessageBase {
-  type: ProxyMessageKind.RequestStatusResponse;
-  response: RequestStatusResponse;
+export interface ProxyMessageReadStateResponse extends ProxyMessageBase {
+  type: ProxyMessageKind.ReadStateResponse;
+  response: ReadStateResponse;
 }
 
 export interface ProxyMessageStatus extends ProxyMessageBase {
@@ -92,9 +93,9 @@ export type ProxyMessage =
   | ProxyMessageQuery
   | ProxyMessageQueryResponse
   | ProxyMessageCall
+  | ProxyMessageReadState
+  | ProxyMessageReadStateResponse
   | ProxyMessageCallResponse
-  | ProxyMessageRequestStatus
-  | ProxyMessageRequestStatusResponse
   | ProxyMessageStatus
   | ProxyMessageStatusResponse;
 
@@ -131,11 +132,11 @@ export class ProxyStubAgent {
           });
         });
         break;
-      case ProxyMessageKind.RequestStatus:
-        this._agent.requestStatus(...msg.args).then(response => {
+      case ProxyMessageKind.ReadState:
+        this._agent.readState(...msg.args).then(response => {
           this._frontend({
             id: msg.id,
-            type: ProxyMessageKind.RequestStatusResponse,
+            type: ProxyMessageKind.ReadStateResponse,
             response,
           });
         });
@@ -180,7 +181,7 @@ export class ProxyAgent implements Agent {
       case ProxyMessageKind.GetPrincipalResponse:
       case ProxyMessageKind.CallResponse:
       case ProxyMessageKind.QueryResponse:
-      case ProxyMessageKind.RequestStatusResponse:
+      case ProxyMessageKind.ReadStateResponse:
         return resolve(msg.response);
       default:
         throw new Error(`Invalid message being sent to ProxyAgent: ${JSON.stringify(msg)}`);
@@ -200,12 +201,12 @@ export class ProxyAgent implements Agent {
     });
   }
 
-  public requestStatus(fields: RequestStatusFields): Promise<RequestStatusResponse> {
+  public readState(fields: ReadStateFields): Promise<ReadStateResponse> {
     return this._sendAndWait({
       id: this._nextId++,
-      type: ProxyMessageKind.RequestStatus,
+      type: ProxyMessageKind.ReadState,
       args: [fields],
-    }) as Promise<RequestStatusResponse>;
+    }) as Promise<ReadStateResponse>;
   }
 
   public call(canisterId: Principal | string, fields: CallFields): Promise<SubmitResponse> {

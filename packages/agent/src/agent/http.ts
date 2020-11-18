@@ -14,8 +14,8 @@ import {
   ReadRequest,
   ReadRequestType,
   ReadResponse,
-  RequestStatusFields,
-  RequestStatusResponse,
+  ReadStateFields,
+  ReadStateResponse,
   SubmitRequest,
   SubmitRequestType,
   SubmitResponse,
@@ -209,19 +209,22 @@ export class HttpAgent implements Agent {
     ) as Promise<QueryResponse>;
   }
 
-  public async requestStatus(
-    fields: RequestStatusFields,
+  public async readState(
+    fields: ReadStateFields,
     identity?: Identity | Promise<Identity>,
-  ): Promise<RequestStatusResponse> {
+  ): Promise<ReadStateResponse> {
     const id = await (identity || this._identity);
+    const sender = id?.getPrincipal() || Principal.anonymous();
+
     return this.read(
       {
-        request_type: ReadRequestType.RequestStatus,
-        request_id: fields.requestId,
+        request_type: ReadRequestType.ReadState,
+        paths: fields.paths,
+        sender: sender.toBlob(),
         ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
       },
       id,
-    ) as Promise<RequestStatusResponse>;
+    ) as Promise<ReadStateResponse>;
   }
 
   public async status(): Promise<JsonObject> {
@@ -343,7 +346,6 @@ export class HttpAgent implements Agent {
           `  Body: ${await response.text()}\n`,
       );
     }
-
     return cbor.decode(Buffer.from(await response.arrayBuffer()));
   }
 }

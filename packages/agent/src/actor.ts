@@ -1,16 +1,13 @@
 import { Buffer } from 'buffer/';
 import { Agent } from './agent';
 import { getManagementCanister } from './canisters/management';
-import {
-  QueryResponseStatus,
-  RequestStatusResponseReplied,
-  RequestStatusResponseStatus,
-} from './http_agent_types';
+import { Certificate } from './certificate';
+import { QueryResponseStatus, RequestStatusResponseStatus } from './http_agent_types';
 import * as IDL from './idl';
 import { GlobalInternetComputer } from './index';
 import { Principal } from './principal';
 import { RequestId, toHex as requestIdToHex } from './request_id';
-import { BinaryBlob } from './types';
+import { BinaryBlob, blobFromText } from './types';
 
 declare const window: GlobalInternetComputer;
 declare const global: GlobalInternetComputer;
@@ -31,6 +28,11 @@ function getDefaultAgent(): Agent {
   }
 
   return agent;
+}
+
+export async function getRootKey(): Promise<BinaryBlob> {
+  // TODO add the real root key for Mercury
+  return ((await getDefaultAgent().status()) as any).root_key;
 }
 
 /**
@@ -271,9 +273,9 @@ function _createActorMethod(
       return _requestStatusAndLoop(
         agent,
         requestId,
-        status => {
-          if (status.reply.arg !== undefined) {
-            return decodeReturnValue(func.retTypes, status.reply.arg);
+        bytes => {
+          if (bytes !== undefined) {
+            return decodeReturnValue(func.retTypes, bytes);
           } else if (func.retTypes.length === 0) {
             return undefined;
           } else {
@@ -291,26 +293,41 @@ function _createActorMethod(
 async function _requestStatusAndLoop<T>(
   agent: Agent,
   requestId: RequestId,
-  decoder: (response: RequestStatusResponseReplied) => T,
+  decoder: (response: BinaryBlob | undefined) => T,
   attempts: number,
   maxAttempts: number,
   throttle: number,
 ): Promise<T> {
-  const status = await agent.requestStatus({ requestId });
+  const path = [blobFromText('request_status'), requestId];
+  const state = await agent.readState({ paths: [path] });
+  const cert = new Certificate(state);
+  const verified = await cert.verify();
+  if (!verified) {
+    throw new Error('Fail to verify certificate');
+  }
+  const maybeBuf = cert.lookup([...path, blobFromText('status')]);
+  let status;
+  if (typeof maybeBuf === 'undefined') {
+    // Missing requestId means we need to wait
+    status = RequestStatusResponseStatus.Unknown;
+  } else {
+    status = maybeBuf.toString();
+  }
 
-  switch (status.status) {
+  switch (status) {
     case RequestStatusResponseStatus.Replied: {
-      return decoder(status);
+      const response = cert.lookup([...path, blobFromText('reply')]) as BinaryBlob;
+      return decoder(response);
     }
 
-    case RequestStatusResponseStatus.Unknown:
     case RequestStatusResponseStatus.Received:
+    case RequestStatusResponseStatus.Unknown:
     case RequestStatusResponseStatus.Processing:
       if (--attempts === 0) {
         throw new Error(
           `Failed to retrieve a reply for request after ${maxAttempts} attempts:\n` +
             `  Request ID: ${requestIdToHex(requestId)}\n` +
-            `  Request status: ${status.status}\n`,
+            `  Request status: ${status}\n`,
         );
       }
 
@@ -320,11 +337,13 @@ async function _requestStatusAndLoop<T>(
       );
 
     case RequestStatusResponseStatus.Rejected:
+      const rejectCode = cert.lookup([...path, blobFromText('reject_code')])!.toString();
+      const rejectMessage = cert.lookup([...path, blobFromText('reject_message')])!.toString();
       throw new Error(
         `Call was rejected:\n` +
           `  Request ID: ${requestIdToHex(requestId)}\n` +
-          `  Reject code: ${status.reject_code}\n` +
-          `  Reject text: ${status.reject_message}\n`,
+          `  Reject code: ${rejectCode}\n` +
+          `  Reject text: ${rejectMessage}\n`,
       );
 
     case RequestStatusResponseStatus.Done:
@@ -332,9 +351,10 @@ async function _requestStatusAndLoop<T>(
       // we don't know the result and cannot decode it.
       throw new Error(
         `Call was marked as done but we never saw the reply:\n` +
-        `  Request ID: ${requestIdToHex(requestId)}\n`,
+          `  Request ID: ${requestIdToHex(requestId)}\n`,
       );
   }
+  throw new Error('unreachable');
 }
 
 // Make an actor from an actor interface.

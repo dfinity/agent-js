@@ -2,6 +2,7 @@ import { ActorSubclass } from './actor';
 
 export * from './actor';
 export * from './agent';
+export * from './certificate';
 export * from './auth';
 export * from './http_agent_transforms';
 export * from './http_agent_types';

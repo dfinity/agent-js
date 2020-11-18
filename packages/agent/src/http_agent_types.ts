@@ -66,8 +66,8 @@ export interface QueryFields {
   methodName: string;
   arg: BinaryBlob;
 }
-export interface RequestStatusFields {
-  requestId: RequestId;
+export interface ReadStateFields {
+  paths: BinaryBlob[][];
 }
 
 export interface CallFields {
@@ -143,7 +143,7 @@ export const enum QueryResponseStatus {
 // The types of values allowed in the `request_type` field for read requests.
 export const enum ReadRequestType {
   Query = 'query',
-  RequestStatus = 'request_status',
+  ReadState = 'read_state',
 }
 
 // The fields in a "query" read request.
@@ -156,50 +156,15 @@ export interface QueryRequest extends Record<string, any> {
   ingress_expiry: Expiry;
 }
 
-// The fields in a "request_status" read request.
-export interface RequestStatusRequest extends Record<string, any> {
-  request_type: ReadRequestType.RequestStatus;
-  request_id: RequestId;
+export interface ReadStateRequest extends Record<string, any> {
+  request_type: ReadRequestType.ReadState;
+  paths: BinaryBlob[][];
   ingress_expiry: Expiry;
+  sender: BinaryBlob;
 }
 
-// An ADT that represents responses to a "request_status" read request.
-export type RequestStatusResponse =
-  | RequestStatusResponseReceived
-  | RequestStatusResponseProcessing
-  | RequestStatusResponseReplied
-  | RequestStatusResponseRejected
-  | RequestStatusResponseUnknown
-  | RequestStatusResponseDone;
-
-export interface RequestStatusResponseReceived {
-  status: RequestStatusResponseStatus.Received;
-}
-
-export interface RequestStatusResponseProcessing {
-  status: RequestStatusResponseStatus.Processing;
-}
-
-export interface RequestStatusResponseReplied {
-  status: RequestStatusResponseStatus.Replied;
-  reply: {
-    canister_id?: BinaryBlob;
-    arg?: BinaryBlob;
-  };
-}
-
-export interface RequestStatusResponseRejected {
-  status: RequestStatusResponseStatus.Rejected;
-  reject_code: RejectCode;
-  reject_message: string;
-}
-
-export interface RequestStatusResponseUnknown {
-  status: RequestStatusResponseStatus.Unknown;
-}
-
-export interface RequestStatusResponseDone {
-  status: RequestStatusResponseStatus.Done;
+export interface ReadStateResponse {
+  certificate: BinaryBlob;
 }
 
 export enum RequestStatusResponseStatus {
@@ -211,5 +176,5 @@ export enum RequestStatusResponseStatus {
   Done = 'done',
 }
 
-export type ReadRequest = QueryRequest | RequestStatusRequest;
-export type ReadResponse = QueryResponse | RequestStatusResponse;
+export type ReadRequest = QueryRequest | ReadStateRequest;
+export type ReadResponse = QueryResponse | ReadStateResponse;
