@@ -87,6 +87,14 @@ const metadataSymbol = Symbol.for('ic-agent-metadata');
  */
 export class Actor {
   /**
+   * Get the Agent class this Actor would call, or undefined if the Actor would use
+   * the default agent (global.ic.agent).
+   */
+  public static agentOf(actor: Actor): Agent | undefined {
+    return actor[metadataSymbol].agent;
+  }
+
+  /**
    * Get the interface of an actor, in the form of an instance of a Service.
    * @param actor The actor to get the interface of.
    */
