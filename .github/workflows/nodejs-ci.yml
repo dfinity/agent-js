@@ -60,6 +60,12 @@ jobs:
         cabal update
         cabal install -w ghc-${{ matrix.ghc }} --overwrite-policy=always  --installdir=$HOME/bin
 
+    - name: Build universal-canister
+      run: |
+        cd ic-ref/universal-canister
+        cargo build --target wasm32-unknown-unknown --release
+        cp target/wasm32-unknown-unknown/release/universal_canister.wasm $HOME/canister.wasm
+
     - name: Running ic-ref
       id: ic_ref
       run: |
@@ -81,4 +87,5 @@ jobs:
       env:
         CI: true
         IC_REF_PORT: ${{ steps.ic_ref.outputs.IC_REF_PORT }}
+        IC_UNIVERSAL_CANISTER_PATH: $HOME/canister.wasm
     - run: killall ic-ref

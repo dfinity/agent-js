@@ -1,6 +1,7 @@
 import { Actor, blobFromUint8Array, IDL } from "@dfinity/agent";
 import * as path from "path";
 import { readFileSync } from "fs";
+import agent from "../utils/agent";
 
 test("counter", async () => {
   const wasm = readFileSync(path.join(__dirname, "../canisters/counter.wasm"));
@@ -15,7 +16,7 @@ test("counter", async () => {
     });
   };
 
-  const counter = Actor.createActor(counter_idl, { canisterId }) as any;
+  const counter = Actor.createActor(counter_idl, { canisterId, agent }) as any;
   expect(await counter.greet("counter")).toEqual("Hello, counter!");
   expect(+(await counter.read())).toEqual(0);
   await counter.inc();

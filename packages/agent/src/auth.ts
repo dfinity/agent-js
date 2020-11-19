@@ -14,9 +14,6 @@ export interface KeyPair {
  * A Public Key implementation.
  */
 export interface PublicKey {
-  // Get the public key bytes in its raw unencoded form.
-  toRaw(): BinaryBlob;
-
   // Get the public key bytes encoded with DER.
   toDer(): DerEncodedBlob;
 }

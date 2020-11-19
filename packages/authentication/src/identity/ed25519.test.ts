@@ -98,7 +98,7 @@ test('derive Ed25519 via SLIP 0010', async () => {
       return Ed25519KeyIdentity.fromSeedWithSlip0010(blobFromHex(seed)).then(identity => {
         const keyPair = identity.getKeyPair();
         expect(keyPair.secretKey.slice(0, 32)).toEqual(expectedPrivateKey);
-        expect(keyPair.publicKey.toRaw()).toEqual(expectedPublicKey);
+        expect(Ed25519PublicKey.from(keyPair.publicKey).toRaw()).toEqual(expectedPublicKey);
       });
     }),
   );

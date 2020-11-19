@@ -23,7 +23,7 @@ function sign(requestId: RequestId, secretKey: BinaryBlob): BinaryBlob {
 
 export class Ed25519PublicKey implements PublicKey {
   public static from(key: PublicKey) {
-    return new this(key.toRaw());
+    return this.fromDer(key.toDer());
   }
 
   public static fromRaw(rawKey: BinaryBlob): Ed25519PublicKey {

@@ -95,14 +95,21 @@ export class HttpAgent implements Agent {
     if (options.source) {
       this._pipeline = [...options.source._pipeline];
       this._identity = options.source._identity;
+      this._fetch = options.source._fetch;
+      this._host = options.source._host;
+      this._credentials = options.source._credentials;
+    } else {
+      this._fetch = options.fetch || getDefaultFetch() || fetch.bind(global);
     }
-    this._fetch = options.fetch || getDefaultFetch() || fetch.bind(global);
     if (options.host) {
       if (!options.host.match(/^[a-z]+:/) && typeof window !== 'undefined') {
         this._host = new URL(window.location.protocol + '//' + options.host);
       } else {
         this._host = new URL(options.host);
       }
+    } else if (options.source) {
+      // Safe to ignore here.
+      this._host = options.source._host;
     } else {
       const location = window?.location;
       if (!location) {
