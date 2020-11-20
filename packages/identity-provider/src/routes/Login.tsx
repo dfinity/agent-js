@@ -35,16 +35,16 @@ export const Login = () => {
 
   return (
     <Fragment>
-      <Typography variant={'h2'} style={{ textAlign: 'center' }}>
+      <Typography variant='h2' style={{ textAlign: 'center' }}>
         Identity Provider
       </Typography>
       <Paper elevation={1} style={{ height: '50vh' }}>
-        <Grid container spacing={2} justify={'center'}>
+        <Grid container spacing={2} justify='center'>
           <Grid item>
             {auth.webauthnId ? (
               <span>webauthnId:{auth.webauthnId}</span>
             ) : (
-              <Button color={'primary'} onClick={onRegister} style={{ marginTop: '50%' }}>
+              <Button color='primary' onClick={onRegister} style={{ marginTop: '50%' }}>
                 Register with the Internet Computer
               </Button>
             )}
@@ -52,7 +52,7 @@ export const Login = () => {
         </Grid>
       </Paper>
 
-      <Modal fullWidth={true} maxWidth={'sm'} open={showModal} onClose={() => setShowModal(false)}>
+      <Modal fullWidth={true} maxWidth='sm' open={showModal} onClose={() => setShowModal(false)}>
         <DialogTitle>Register Your Device</DialogTitle>
         <DialogContent>
           <DialogContentText>
@@ -61,7 +61,7 @@ export const Login = () => {
           </DialogContentText>
           <Grid container justify={'space-between'}>
             <Grid item>
-              <Button color="secondary" variant={'outlined'} onClick={handleImport}>
+              <Button color="secondary" variant='outlined' onClick={handleImport}>
                 Import Existing Key
               </Button>
             </Grid>
