@@ -6,7 +6,7 @@
     "build": "npm run tsc && npm run webpack",
     "bundle": "npm run build",
     "ci": "npm run prettier && npm run lint && npm run build && npm run test",
-    "dev": "webpack-dev-server",
+    "develop": "webpack-dev-server --config webpack.config.dev.js",
     "lint": "tslint --project tsconfig.json --config tslint.json",
     "lint:fix": "npm run lint -- --fix",
     "prettier": "prettier --check \"src/**/*.ts\"",
@@ -52,7 +52,9 @@
     "typescript": "^3.6.3",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.10",
+    "webpack-bundle-analyzer": "4.1.0",
     "webpack-dev-server": "3.11.0",
     "whatwg-fetch": "^3.0.0"
-  }
+  },
+  "devDependencies": {}
 }

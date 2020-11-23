@@ -6,11 +6,6 @@ const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
 module.exports = {
   mode: 'production',
-  devServer: {
-    contentBase: './dist',
-    hot: true,
-    historyApiFallback: true
-  },
   entry: {
     'index': './src/index.tsx'
   },
