@@ -6,32 +6,41 @@ import {
   Paper,
   Typography,
 } from '@material-ui/core';
-import React, { Fragment, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import React, { Fragment, useEffect, useState } from 'react';
+import { useHistory, useLocation } from 'react-router-dom';
 import { Button } from 'src/components/Button';
 import { Modal } from 'src/components/Modal';
 import { useAuth } from 'src/hooks/use-auth';
+import { getRequiredQueryParams } from 'src/identity-provider';
 import { ROUTES } from 'src/utils/constants';
 
-export const Login = () => {
+export function Login() {
   const auth = useAuth();
+  const history = useHistory();
+  const location = useLocation<any>();
 
   const [showModal, setShowModal] = useState(false);
 
-  const history = useHistory();
-
   const handleImport = () => {
     setShowModal(false);
-    history.push(ROUTES.KEY_IMPORT, { webauthnId: auth.webauthnId });
+    const state = auth ? { webauthnId: auth.webauthnId } : undefined;
+    history.push(ROUTES.KEY_IMPORT, state);
   };
   const handleGenerate = () => {
+    const state = auth ? { webauthnId: auth.webauthnId } : undefined;
     setShowModal(false);
-    history.push(ROUTES.KEY_GENERATION, { webauthnId: auth.webauthnId });
+    history.push(ROUTES.KEY_GENERATION, state);
   };
 
   const onRegister = () => {
     setShowModal(true);
   };
+  useEffect(() => {
+    try {
+      const { redirectURI } = getRequiredQueryParams(location.search);
+      auth?.setRedirectURI(redirectURI);
+    } catch (error) {}
+  }, []);
 
   return (
     <Fragment>
@@ -41,8 +50,13 @@ export const Login = () => {
       <Paper elevation={1} style={{ height: '50vh' }}>
         <Grid container spacing={2} justify='center'>
           <Grid item>
-            {auth.webauthnId ? (
-              <span>webauthnId:{auth.webauthnId}</span>
+            {auth && auth.masterId ? (
+              <Fragment>
+                <span>webauthnId:{JSON.stringify(auth.masterId)}</span>
+                <Button color='primary' onClick={() => auth.createDelegation()}>
+                  Create Delegation
+                </Button>
+              </Fragment>
             ) : (
               <Button color='primary' onClick={onRegister} style={{ marginTop: '50%' }}>
                 Register with the Internet Computer
@@ -75,6 +89,6 @@ export const Login = () => {
       </Modal>
     </Fragment>
   );
-};
+}
 
 export default Login;

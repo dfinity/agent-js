@@ -9,12 +9,14 @@ import {
   Typography,
 } from '@material-ui/core';
 import SendIcon from '@material-ui/icons/Send';
-import React, { createRef, FormEvent, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import React, { createRef, FormEvent, Fragment, useState } from 'react';
+import { Link, useHistory } from 'react-router-dom';
 import { Alert } from 'src/components/Alert';
 import { Button } from 'src/components/Button';
 import { Mnemonic } from 'src/components/Mnemonic';
 import { Modal } from 'src/components/Modal';
+import { useAuth } from 'src/hooks/use-auth';
+import { ROUTES } from 'src/utils/constants';
 
 const useStyles = makeStyles(theme =>
   createStyles({
@@ -25,11 +27,24 @@ const useStyles = makeStyles(theme =>
   }),
 );
 
-export const KeyGeneration = () => {
+const removeRandomWords = (wordList: string[], excludeCount = 4): string[] => {
+  let count = excludeCount;
+  const retArr = [...wordList];
+  while (count > 1) {
+    const index = parseInt((Math.random() * (retArr.length - 1)).toFixed(0), 10);
+    retArr[index] = '';
+    count--;
+  }
+  return retArr;
+};
+
+export function KeyGeneration() {
   const classes = useStyles();
+  const auth = useAuth();
+  const history = useHistory();
   const [mnemonic, setMnemonic] = useState<string[]>([]);
   const [hasMnemonic, setHasMnemonic] = useState<boolean>(false);
-  const [keypair, setKeyPair] = useState<Bip39Ed25519KeyIdentity>();
+  const [masterIdentity, setMasterIdentity] = useState<Bip39Ed25519KeyIdentity>();
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [snackError, setSnackError] = useState<Error>();
@@ -38,10 +53,11 @@ export const KeyGeneration = () => {
   function generateMnemonic() {
     const bip = Bip39Ed25519KeyIdentity.generate();
     const newMnemonic = bip.getBip39Mnemonic();
-    setKeyPair(bip);
+    setMasterIdentity(bip);
     setMnemonic(newMnemonic.split(' '));
     setHasMnemonic(true);
   }
+
   function handleSubmit(ev: FormEvent) {
     ev.preventDefault();
     const formEl = _formRef.current;
@@ -49,10 +65,10 @@ export const KeyGeneration = () => {
       const rawInputEls = formEl.querySelectorAll<HTMLInputElement>('input[type="text"]');
       const texts = Array.from(rawInputEls).map(ch => ch?.value);
       const valid = texts.join(' ') === mnemonic.join(' ');
-      if (valid && keypair) {
+      if (valid && masterIdentity) {
         setShowConfirmModal(false);
-        const { publicKey, secretKey } = keypair.getKeyPair();
-        alert(JSON.stringify({ publicKey, secretKey }));
+        auth?.setMasterId(masterIdentity);
+        history.push(ROUTES.LOGIN);
       } else {
         setSnackError(Error('mnemonics do not match'));
       }
@@ -63,10 +79,8 @@ export const KeyGeneration = () => {
     if (reason === 'clickaway') {
       return;
     }
-
     setSnackError(undefined);
   };
-  const history = useHistory();
   return (
     <Container>
       <Typography variant='h2'>Generate New Key</Typography>
@@ -76,22 +90,24 @@ export const KeyGeneration = () => {
           Error encountered: {snackError?.message}
         </Alert>
       </Snackbar>
-      <Button variant='outlined' onClick={() => history.goBack()}>
-        Back
+      <Button variant='outlined'>
+        <Link to={ROUTES.LOGIN}>Back</Link>
       </Button>
       <Button color='primary' onClick={generateMnemonic}>
         Generate Master Key
       </Button>
-      {hasMnemonic ? <Mnemonic wordList={mnemonic} mode='read' /> : null}
       {hasMnemonic ? (
-        <Button
-          hidden={!hasMnemonic}
-          color='secondary'
-          variant='contained'
-          onClick={() => setShowConfirmModal(true)}
-        >
-          Continue
-        </Button>
+        <Fragment>
+          <Mnemonic wordList={mnemonic} mode='read' />
+          <Button
+            hidden={!hasMnemonic}
+            color='secondary'
+            variant='contained'
+            onClick={() => setShowConfirmModal(true)}
+          >
+            Continue
+          </Button>
+        </Fragment>
       ) : null}
 
       <Modal
@@ -104,7 +120,7 @@ export const KeyGeneration = () => {
 
         <DialogContent>
           <form ref={_formRef} onSubmit={handleSubmit}>
-            <Mnemonic wordList={mnemonic} mode='write' />
+            <Mnemonic wordList={removeRandomWords(mnemonic)} mode='write' />
             <Button
               type='submit'
               variant='outlined'
@@ -119,6 +135,6 @@ export const KeyGeneration = () => {
       </Modal>
     </Container>
   );
-};
+}
 
 export default KeyGeneration;
