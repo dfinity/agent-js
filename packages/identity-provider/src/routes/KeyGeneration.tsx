@@ -120,7 +120,7 @@ export function KeyGeneration() {
 
         <DialogContent>
           <form ref={_formRef} onSubmit={handleSubmit}>
-            <Mnemonic wordList={removeRandomWords(mnemonic)} mode='write' />
+            <Mnemonic wordList={mnemonic} mode='write' />
             <Button
               type='submit'
               variant='outlined'
