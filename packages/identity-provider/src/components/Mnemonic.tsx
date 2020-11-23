@@ -27,7 +27,7 @@ function InputWord(word: string, i: number) {
   const [, setVal] = useState('');
   const [err, setErr] = useState(false);
   return (
-    <Grid key={i} xs={6} sm={4} item>
+    <Grid key={i} xs={6} sm={3} item>
       <TextField
         helperText={err ? 'Word cannot be empty' : null}
         error={err}
@@ -70,7 +70,7 @@ export const Mnemonic = (props: PropsWithoutRef<MnemonicProps>) => {
 
   return (
     <Container>
-      <Grid container spacing={6}>
+      <Grid container spacing={4}>
         {mode === 'read' ? wordList.map(DisplayWord) : wordList.map(InputWord)}
       </Grid>
     </Container>
