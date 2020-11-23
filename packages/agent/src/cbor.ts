@@ -7,7 +7,8 @@ import { Buffer } from 'buffer/';
 import * as cbor from 'simple-cbor';
 import { CborEncoder, SelfDescribeCborSerializer } from 'simple-cbor';
 import { Principal } from './principal';
-import { BinaryBlob } from './types';
+import { BinaryBlob, blobFromHex } from './types';
+import BigNumber from 'bignumber.js';
 
 // We are using hansl/simple-cbor for CBOR serialization, to avoid issues with
 // encoding the uint64 values that the HTTP handler of the client expects for
@@ -52,9 +53,33 @@ class BufferEncoder implements CborEncoder<Buffer> {
   }
 }
 
+class BigNumberEncoder implements CborEncoder<BigNumber> {
+  public get name() {
+    return 'BigNumber';
+  }
+
+  public get priority() {
+    return 1;
+  }
+
+  public match(value: any): boolean {
+    return value instanceof BigNumber;
+  }
+
+  public encode(v: BigNumber): cbor.CborValue {
+    // Always use a bignumber encoding.
+    if (v.isPositive() || v.isZero()) {
+      return cbor.value.tagged(2, cbor.value.bytes(blobFromHex(v.toString(16))));
+    } else {
+      return cbor.value.tagged(3, cbor.value.bytes(blobFromHex(v.multipliedBy(-1).toString(16))));
+    }
+  }
+}
+
 const serializer = SelfDescribeCborSerializer.withDefaultEncoders(true);
 serializer.addEncoder(new PrincipalEncoder());
 serializer.addEncoder(new BufferEncoder());
+serializer.addEncoder(new BigNumberEncoder());
 
 export enum CborTag {
   Uint64LittleEndian = 71,

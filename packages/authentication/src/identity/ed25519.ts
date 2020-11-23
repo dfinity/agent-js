@@ -3,23 +3,11 @@ import {
   blobFromUint8Array,
   derBlobFromBlob,
   DerEncodedBlob,
-  HttpAgentRequest,
-  Identity,
   KeyPair,
-  Principal,
   PublicKey,
-  RequestId,
-  requestIdOf,
+  SignIdentity,
 } from '@dfinity/agent';
 import * as tweetnacl from 'tweetnacl';
-
-const domainSeparator = new TextEncoder().encode('\x0Aic-request');
-
-function sign(requestId: RequestId, secretKey: BinaryBlob): BinaryBlob {
-  const bufA = Buffer.concat([domainSeparator, requestId]);
-  const signature = tweetnacl.sign.detached(bufA, secretKey);
-  return blobFromUint8Array(signature);
-}
 
 export class Ed25519PublicKey implements PublicKey {
   public static from(key: PublicKey) {
@@ -100,7 +88,7 @@ export class Ed25519PublicKey implements PublicKey {
   }
 }
 
-export class Ed25519KeyIdentity implements Identity {
+export class Ed25519KeyIdentity extends SignIdentity {
   public static generate(seed?: Uint8Array): Ed25519KeyIdentity {
     const { publicKey, secretKey } =
       seed === undefined ? tweetnacl.sign.keyPair() : tweetnacl.sign.keyPair.fromSeed(seed);
@@ -138,33 +126,8 @@ export class Ed25519KeyIdentity implements Identity {
 
   // `fromRaw` and `fromDer` should be used for instantiation, not this constructor.
   protected constructor(publicKey: PublicKey, protected _privateKey: BinaryBlob) {
+    super();
     this._publicKey = Ed25519PublicKey.from(publicKey);
-  }
-
-  /**
-   * Get the principal represented by this identity. Normally should be a
-   * `Principal.selfAuthenticating()`.
-   */
-  public getPrincipal(): Principal {
-    return Principal.selfAuthenticating(this.getDerEncodedPublicKey());
-  }
-
-  /**
-   * Transform a request into a signed version of the request. This is done last
-   * after the transforms on the body of a request. The returned object can be
-   * anything, but must be serializable to CBOR.
-   */
-  public async transformRequest(request: HttpAgentRequest): Promise<any> {
-    const { body, ...fields } = request;
-    const requestId = await requestIdOf(body);
-    return {
-      ...fields,
-      body: {
-        content: body,
-        sender_pubkey: this.getDerEncodedPublicKey(),
-        sender_sig: sign(requestId, this._privateKey),
-      },
-    };
   }
 
   /**
@@ -178,9 +141,17 @@ export class Ed25519KeyIdentity implements Identity {
   }
 
   /**
-   * Return the DER encoded public key.
+   * Return the public key.
    */
-  protected getDerEncodedPublicKey(): DerEncodedBlob {
-    return this._publicKey.toDer();
+  public getPublicKey(): PublicKey {
+    return this._publicKey;
+  }
+
+  /**
+   * Signs a blob of data, with this identity's private key.
+   */
+  public async sign(blob: BinaryBlob): Promise<BinaryBlob> {
+    const signature = tweetnacl.sign.detached(blob, this._privateKey);
+    return blobFromUint8Array(signature);
   }
 }

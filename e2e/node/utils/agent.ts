@@ -10,6 +10,7 @@ if (Number.isNaN(port)) {
 }
 
 const agent = new HttpAgent({ host: "http://127.0.0.1:" + port, identity });
+// const agent = new HttpAgent({ host: "https://gw.dfinity.network" });
 agent.addTransform(makeNonceTransform());
 
 export default agent;

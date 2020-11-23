@@ -14,4 +14,4 @@ test('verify', async () => {
   const msg = Buffer.from('hello').toString('hex');
   expect(await BLS.blsVerify(pk, sig, msg)).toBe(true);
   expect(await BLS.blsVerify(pk, sig, Buffer.from('hallo').toString('hex'))).toBe(false);
-});
+}, 10000); // Default timer is flaky with WASM.

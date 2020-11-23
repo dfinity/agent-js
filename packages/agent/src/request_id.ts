@@ -2,6 +2,7 @@ import borc from 'borc';
 import { Buffer } from 'buffer/';
 import { BinaryBlob, blobToHex } from './types';
 import { lebEncode } from './utils/leb128';
+import BigNumber from 'bignumber.js';
 
 export type RequestId = BinaryBlob & { __requestId__: void };
 export function toHex(requestId: RequestId): string {
@@ -23,6 +24,8 @@ async function hashValue(value: unknown): Promise<Buffer> {
     return hashValue(value.value);
   } else if (typeof value === 'string') {
     return hashString(value);
+  } else if (value instanceof BigNumber) {
+    return hash(lebEncode(value) as BinaryBlob);
   } else if (typeof value === 'number') {
     return hash(lebEncode(value) as BinaryBlob);
   } else if (Buffer.isBuffer(value)) {
@@ -30,7 +33,8 @@ async function hashValue(value: unknown): Promise<Buffer> {
   } else if (value instanceof Uint8Array || value instanceof ArrayBuffer) {
     return hash(new Uint8Array(value) as BinaryBlob);
   } else if (Array.isArray(value)) {
-    return Promise.all(value.map(hashValue)).then(vals => hash(Buffer.concat(vals) as BinaryBlob));
+    const vals = await Promise.all(value.map(hashValue));
+    return hash(Buffer.concat(vals) as BinaryBlob);
   } else if (
     typeof value === 'object' &&
     value !== null &&
@@ -57,14 +61,14 @@ const concat = (bs: BinaryBlob[]): BinaryBlob => {
 };
 
 export const requestIdOf = async (request: Record<string, any>): Promise<RequestId> => {
-  const hashed: Array<Promise<[BinaryBlob, BinaryBlob]>> = Object.entries(request).map(
-    async ([key, value]: [string, unknown]) => {
+  const hashed: Array<Promise<[BinaryBlob, BinaryBlob]>> = Object.entries(request)
+    .filter(([_, value]) => value !== undefined)
+    .map(async ([key, value]: [string, unknown]) => {
       const hashedKey = await hashString(key);
       const hashedValue = await hashValue(value);
 
       return [hashedKey, hashedValue] as [BinaryBlob, BinaryBlob];
-    },
-  );
+    });
 
   const traversed: Array<[BinaryBlob, BinaryBlob]> = await Promise.all(hashed);
 

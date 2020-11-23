@@ -249,7 +249,7 @@ export class HttpAgent implements Agent {
     if (!response.ok) {
       throw new Error(
         `Server returned an error:\n` +
-          `  Code: ${response.status} (${response.statusText}\n)` +
+          `  Code: ${response.status} (${response.statusText})\n` +
           `  Body: ${await response.text()}\n`,
       );
     }
@@ -304,7 +304,7 @@ export class HttpAgent implements Agent {
     if (!response.ok) {
       throw new Error(
         `Server returned an error:\n` +
-          `  Code: ${response.status} (${response.statusText}\n)` +
+          `  Code: ${response.status} (${response.statusText})\n` +
           `  Body: ${await response.text()}\n`,
       );
     }
@@ -349,7 +349,7 @@ export class HttpAgent implements Agent {
     if (!response.ok) {
       throw new Error(
         `Server returned an error:\n` +
-          `  Code: ${response.status} (${response.statusText}\n)` +
+          `  Code: ${response.status} (${response.statusText})\n` +
           `  Body: ${await response.text()}\n`,
       );
     }
