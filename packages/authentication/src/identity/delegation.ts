@@ -16,36 +16,35 @@ import { Buffer } from 'buffer/';
 const domainSeparator = new TextEncoder().encode('\x1Aic-request-auth-delegation');
 const requestDomainSeparator = Buffer.from(new TextEncoder().encode('\x0Aic-request'));
 
-export async function signDelegation(
-  innerDelegation: Delegation,
-  identity: SignIdentity,
-): Promise<BinaryBlob> {
-  // The signature is calculated by signing the concatenation of the domain separator
-  // and the message.
-  return await identity.sign(
-    blobFromUint8Array(
-      new Uint8Array([...domainSeparator, ...(await requestIdOf(innerDelegation))]),
-    ),
-  );
-}
-
-interface Delegation {
-  pubkey: BinaryBlob;
-  expiration: BigNumber;
-  targets?: Principal[];
-}
-
-interface SignedDelegation {
-  delegation: Delegation;
-  signature: BinaryBlob;
-}
-
-function parseBlob(value: unknown): BinaryBlob {
+function _parseBlob(value: unknown): BinaryBlob {
   if (typeof value !== 'string' || value.length < 64) {
     throw new Error('Invalid public key.');
   }
 
   return blobFromHex(value);
+}
+
+/**
+ * A single delegation object that is signed by a private key. This is constructed by
+ * `DelegationChain.create()`.
+ *
+ * {@see DelegationChain}
+ */
+export interface Delegation {
+  pubkey: BinaryBlob;
+  expiration: BigNumber;
+  targets?: Principal[];
+}
+
+/**
+ * A signed delegation, which lends its identity to the public key in the delegation
+ * object. This is constructed by `DelegationChain.create()`.
+ *
+ * {@see DelegationChain}
+ */
+export interface SignedDelegation {
+  delegation: Delegation;
+  signature: BinaryBlob;
 }
 
 /**
@@ -66,7 +65,12 @@ async function _createSingleDelegation(
     expiration: new BigNumber(+expiration).times(1000000), // In nanoseconds.
     ...(targets && { targets }),
   };
-  const signature = await signDelegation(delegation, from);
+
+  // The signature is calculated by signing the concatenation of the domain separator
+  // and the message.
+  const signature = await from.sign(
+    blobFromUint8Array(new Uint8Array([...domainSeparator, ...(await requestIdOf(delegation))])),
+  );
 
   return {
     delegation,
@@ -142,7 +146,7 @@ export class DelegationChain {
       }
       return {
         delegation: {
-          pubkey: parseBlob(pubkey),
+          pubkey: _parseBlob(pubkey),
           expiration: new BigNumber(expiration, 16),
           ...(targets && {
             targets: targets.map((t: unknown) => {
@@ -153,11 +157,11 @@ export class DelegationChain {
             }),
           }),
         },
-        signature: parseBlob(signature),
+        signature: _parseBlob(signature),
       };
     });
 
-    return new this(parsedDelegations, derBlobFromBlob(parseBlob(publicKey)));
+    return new this(parsedDelegations, derBlobFromBlob(_parseBlob(publicKey)));
   }
 
   protected constructor(
