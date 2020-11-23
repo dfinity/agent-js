@@ -7,57 +7,43 @@ function createIdentity(seed: number): SignIdentity {
   const s = new Uint8Array([seed, ...new Array(31).fill(0)]);
   return Ed25519KeyIdentity.generate(s);
 }
-export function seed32Bytes(input: Uint8Array): BinaryBlob {
-  const seed32 = new Uint8Array(32);
-  Object.assign(seed32, input.slice(0, 32));
-  return seed32 as BinaryBlob;
+
+function h(text: TemplateStringsArray): BinaryBlob {
+  return blobFromHex(text.join(''));
 }
 
 test('delegation signs with proper keys (3)', async () => {
-  const a = Ed25519KeyIdentity.generate(seed32Bytes(new Uint8Array([0])));
-  const b = Ed25519KeyIdentity.generate(seed32Bytes(new Uint8Array([1])));
-  const c = Ed25519KeyIdentity.generate(seed32Bytes(new Uint8Array([2])));
+  const root = createIdentity(2);
+  const middle = createIdentity(1);
+  const bottom = createIdentity(0);
 
-  const bToC = await createDelegation(b, c, {
+  const rootToMiddle = await createDelegation(root, middle, {
     expiration: new Date(1609459200000),
   });
-  const aToC = await createDelegation(a, b, {
+  const middleToBottom = await createDelegation(middle, bottom, {
     expiration: new Date(1609459200000),
-    previous: bToC,
+    previous: rootToMiddle,
   });
 
   const golden = {
     sender_delegation: [
       {
         delegation: {
-          pubkey: blobFromHex(
-            '302a300506032b6570032100cecc1507dc1ddd7295951c290888f095adb9044d1b73d696' +
-              'e6df065d683bd4fc',
-          ),
           expiration: new BigNumber('1609459200000000000'),
+          pubkey: h`302A300506032B6570032100CECC1507DC1DDD7295951C290888F095ADB9044D1B73D696E6DF065D683BD4FC`,
         },
-        signature: blobFromHex(
-          '94d7529165664c18d8fde890c07a24d2e9e77d898d1ab835805ca9ddf8e006587d74978c' +
-            'edc3e25b6520c0d0a867a3e465853c9b44a2e6e3621f3d9244cc0d0d',
-        ),
+        signature: h`B106D135E5AD7459DC67DB68A4946FDBE603E650DF4035957DB7F0FB54E7467BB463116A2AD025E1887CD1F29025E0F3607B09924ABBBBEBFAF921B675C8FF08`,
       },
       {
         delegation: {
-          pubkey: blobFromHex(
-            '302a300506032b65700321006b79c57e6a095239282c04818e96112f3f03a4001ba97a56' +
-              '4c23852a3f1ea5fc',
-          ),
           expiration: new BigNumber('1609459200000000000'),
+          pubkey: h`302A300506032B65700321003B6A27BCCEB6A42D62A3A8D02A6F0D73653215771DE243A63AC048A18B59DA29`,
         },
-        signature: blobFromHex(
-          '9c98f9ffe903f70823823b1d8d0b4b4c3a1c445565628118410bcd8a684b5c101caf520c94d6f9a620d2b49b1993a8f427d0f8a260bd44a94dc1ea52175f8d07',
-        ),
+        signature: h`5E40F3D171E499A691092E5B961B5447921091BCF8C6409CB5641541F4DC1390F501C5DFB16B10DF29D429CD153B9E396AF4E883ED3CFA090D28E214DB14C308`,
       },
     ],
-    sender_pubkey: blobFromHex(
-      '302a300506032b65700321003b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29',
-    ),
+    sender_pubkey: h`302A300506032B65700321006B79C57E6A095239282C04818E96112F3F03A4001BA97A564C23852A3F1EA5FC`,
   };
 
-  expect(aToC).toEqual(golden);
+  expect(middleToBottom).toEqual(golden);
 });
