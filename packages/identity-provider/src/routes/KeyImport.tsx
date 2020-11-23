@@ -1,17 +1,19 @@
 import { Bip39Ed25519KeyIdentity } from '@dfinity/authentication';
-import * as bip39 from 'bip39';
 import { Container, Snackbar, Typography } from '@material-ui/core';
 import SendIcon from '@material-ui/icons/Send';
+import { validateMnemonic, wordlists } from 'bip39';
 import React, { createRef, FormEvent, useState } from 'react';
 import { useHistory } from 'react-router-dom';
+import { Alert } from 'src/components/Alert';
 import { Button } from 'src/components/Button';
 import { Mnemonic } from 'src/components/Mnemonic';
-import { Alert } from 'src/components/Alert';
+import { useAuth } from 'src/hooks/use-auth';
 
-const englishWords = bip39.wordlists.english;
+const englishWords = wordlists.english;
 
-export const KeyImport = () => {
+export function KeyImport() {
   const history = useHistory();
+  const auth = useAuth();
   const [snackError, setSnackError] = useState<Error>();
   const _formRef = createRef<HTMLFormElement>();
   const wordList = [];
@@ -24,12 +26,13 @@ export const KeyImport = () => {
     const formEl = _formRef.current!;
     const rawInputEls = formEl.querySelectorAll<HTMLInputElement>('input[type="text"]');
     const texts = Array.from(rawInputEls).map(ch => ch?.value);
-    const validated = bip39.validateMnemonic(texts.join(' '), englishWords);
+    const fullMnemonic = texts.join(' ');
+    const validated = validateMnemonic(fullMnemonic, englishWords);
 
-    if (validated) {
-      const keypair = Bip39Ed25519KeyIdentity.fromBip39Mnemonic(texts.join(' '), englishWords);
-      const { publicKey, secretKey } = keypair.getKeyPair();
-      alert(JSON.stringify({ publicKey, secretKey }));
+    if (validated && auth) {
+      const identity = Bip39Ed25519KeyIdentity.fromBip39Mnemonic(fullMnemonic, englishWords);
+      auth.setMasterId(identity);
+
       // @TODO: do something with the validated mnemonic
     } else {
       setSnackError(Error(' One or more words in mnemonic list is malformed'));
@@ -65,6 +68,6 @@ export const KeyImport = () => {
       </Snackbar>
     </Container>
   );
-};
+}
 
 export default KeyImport;

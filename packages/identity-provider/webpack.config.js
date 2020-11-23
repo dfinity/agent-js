@@ -15,6 +15,10 @@ module.exports = {
     'index': './src/index.tsx'
   },
   target: 'web',
+  node: {
+    // This is needed for wasm loader from emscripten
+    fs: 'empty'
+  },
   output: {
     // This is necessary to allow internal apps to bundle their own code with
     // webpack which may conflict with us.
