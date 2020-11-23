@@ -1,20 +1,11 @@
-import {
-  Actor,
-  ActorSubclass,
-  blobFromUint8Array,
-  HttpAgent,
-  IDL,
-  Principal,
-  SignIdentity,
-} from "@dfinity/agent";
+import { Actor, HttpAgent, IDL, Principal, SignIdentity } from "@dfinity/agent";
 import {
   DelegationIdentity,
   Ed25519KeyIdentity,
 } from "@dfinity/authentication";
-import * as path from "path";
-import { readFileSync } from "fs";
 import agent from "../utils/agent";
 import { createDelegation } from "@dfinity/authentication/src/identity/delegation";
+import identityCanister from "../canisters/identity";
 
 function createIdentity(seed: number): SignIdentity {
   const seed1 = new Array(32).fill(0);
@@ -39,18 +30,10 @@ async function installIdentityCanister(): Promise<{
   canisterId: Principal;
   idl: IDL.InterfaceFactory;
 }> {
-  const wasm = readFileSync(path.join(__dirname, "../canisters/identity.wasm"));
-
-  const canisterId = await Actor.createCanister();
-  await Actor.install({ module: blobFromUint8Array(wasm) }, { canisterId });
+  const { canisterId, idl } = await identityCanister();
   return {
     canisterId,
-    idl: ({ IDL }) => {
-      return IDL.Service({
-        whoami: IDL.Func([], [IDL.Principal], []),
-        whoami_query: IDL.Func([], [IDL.Principal], ["query"]),
-      });
-    },
+    idl,
   };
 }
 
@@ -78,20 +61,19 @@ test("identity: two different Ed25519 keys should have a different principal", a
 test("delegation: principal is the same between delegated keys", async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
-  let id1 = createIdentity(0);
-  let id2 = createIdentity(1);
-  const id3 = DelegationIdentity.fromDelegation(
-    id2,
-    await createDelegation(id1, id2)
-  );
+  let masterKey = createIdentity(0);
+  let sessionKey = createIdentity(1);
+
+  let delegation = await createDelegation(masterKey, sessionKey);
+  const id3 = DelegationIdentity.fromDelegation(sessionKey, delegation);
 
   let identityActor1 = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: agent, identity: id1 }),
+    agent: new HttpAgent({ source: agent, identity: masterKey }),
   }) as any;
   let identityActor2 = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: agent, identity: id2 }),
+    agent: new HttpAgent({ source: agent, identity: sessionKey }),
   }) as any;
   const identityActor3 = Actor.createActor(idl, {
     canisterId,

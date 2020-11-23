@@ -3,7 +3,7 @@
 # exit on error
 set -e
 
-for package in ./packages/au*
+for package in ./packages/*
 do
 	(
 		echo "testing package: $package"
