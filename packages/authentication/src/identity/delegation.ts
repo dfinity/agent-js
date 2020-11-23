@@ -1,7 +1,9 @@
 import {
   BinaryBlob,
+  blobFromHex,
   blobFromUint8Array,
   derBlobFromBlob,
+  DerEncodedBlob,
   HttpAgentRequest,
   Principal,
   PublicKey,
@@ -9,9 +11,10 @@ import {
   SignIdentity,
 } from '@dfinity/agent';
 import BigNumber from 'bignumber.js';
+import { Buffer } from 'buffer/';
 
 const domainSeparator = new TextEncoder().encode('\x1Aic-request-auth-delegation');
-const requestDomainSeparator = new TextEncoder().encode('\x0Aic-request');
+const requestDomainSeparator = Buffer.from(new TextEncoder().encode('\x0Aic-request'));
 
 export async function signDelegation(
   innerDelegation: Delegation,
@@ -26,41 +29,6 @@ export async function signDelegation(
   );
 }
 
-// rootKey - which lends its public key to another key
-// sender_delegation:
-//
-//  2 keys:
-//  [
-//    senderDelegationA: {
-//      delegationA: {
-//        pubkey: middleKey.pubkey
-//        expiration: 123456
-//      }
-//      signature: rootKey.sign(delegationA)
-//    }
-// ], pubkey: rootKey.pubkey
-//
-//
-//  3 keys:
-//  [
-//    senderDelegationA: {
-//      delegationA: {
-//        pubkey: middleKey.pubkey
-//        expiration: 123456
-//      }
-//      signature: rootKey.sign(delegationA)
-//    },
-//    senderDelegationB: {
-//      delegationB: {
-//        pubkey: bottomKey.pubkey
-//        expiration: 123456
-//      },
-//      signature: middleKey.sign(DelegationB)
-//    }
-// ],
-// pubkey: rootKey.pubkey
-// signature: bottomKey.sign(envelope)
-
 interface Delegation {
   pubkey: BinaryBlob;
   expiration: BigNumber;
@@ -72,25 +40,29 @@ interface SignedDelegation {
   signature: BinaryBlob;
 }
 
-interface SenderDelegation {
-  sender_delegation: SignedDelegation[];
-  sender_pubkey: BinaryBlob;
+function parseBlob(value: unknown): BinaryBlob {
+  if (typeof value !== 'string' || value.length < 64) {
+    throw new Error('Invalid public key.');
+  }
+
+  return blobFromHex(value);
 }
 
 /**
- * Sign a delegation object for a period of time.
- * @param to The identity to lend the delegation to.
+ * Sign a single delegation object for a period of time.
+ * @param from The identity that lends its delegation.
+ * @param to The identity that receives the delegation.
  * @param expiration An expiration date for this delegation.
  * @param targets Limit this delegation to the target principals.
  */
-async function _createDelegation(
+async function _createSingleDelegation(
   from: SignIdentity,
-  to: SignIdentity,
+  to: PublicKey,
   expiration: Date,
   targets?: Principal[],
 ): Promise<SignedDelegation> {
   const delegation: Delegation = {
-    pubkey: to.getPublicKey().toDer(),
+    pubkey: to.toDer(),
     expiration: new BigNumber(+expiration).times(1000000), // In nanoseconds.
     ...(targets && { targets }),
   };
@@ -103,23 +75,112 @@ async function _createDelegation(
 }
 
 /**
- * Create a signed delegation between two keys, or a key and another delegation object.
+ * A chain of delegations. This is JSON Serializable.
+ * This is the object to serialize and pass to a DelegationIdentity. It does not keep any
+ * private keys.
  */
-export async function createDelegation(
-  from: SignIdentity,
-  to: SignIdentity,
-  options: {
-    expiration?: Date;
-    previous?: SenderDelegation;
-  } = {},
-): Promise<SenderDelegation> {
-  const expiration = options.expiration || new Date(1609459200000 /**/);
-  const delegation = await _createDelegation(from, to, expiration);
+export class DelegationChain {
+  /**
+   * Create a delegation chain between two (or more) keys. By default, the expiration time
+   * will be very short (15 minutes).
+   *
+   * To build a chain of more than 2 identities, this function needs to be called multiple times,
+   * passing the previous delegation chain into the options argument. For example:
+   *
+   * @example
+   * const rootKey = createKey();
+   * const middleKey = createKey();
+   * const bottomeKey = createKey();
+   *
+   * const rootToMiddle = await DelegationChain.create(
+   *   root, middle.getPublicKey(), Date.parse('2100-01-01'),
+   * );
+   * const middleToBottom = await DelegationChain.create(
+   *   middle, bottom.getPublicKey(), Date.parse('2100-01-01'), { previous: rootToMiddle },
+   * );
+   *
+   * // We can now use a delegation identity that uses the delegation above:
+   * const identity = DelegationIdentity.fromDelegation(bottomKey, middleToBottom);
+   *
+   * @param from The identity that will delegate.
+   * @param to The identity that gets delegated. It can now sign messages as if it was the
+   *           identity above.
+   * @param expiration The length the delegation is valid. By default, 15 minutes from calling
+   *                   this function.
+   * @param options A set of options for this delegation. expiration and previous
+   */
+  public static async create(
+    from: SignIdentity,
+    to: PublicKey,
+    expiration: Date = new Date(Date.now() + 15 * 60 * 1000),
+    options: { previous?: DelegationChain } = {},
+  ): Promise<DelegationChain> {
+    const delegation = await _createSingleDelegation(from, to, expiration);
 
-  return {
-    sender_delegation: [...(options.previous?.sender_delegation || []), delegation],
-    sender_pubkey: options.previous?.sender_pubkey || from.getPublicKey().toDer(),
-  };
+    return new DelegationChain(
+      [...(options.previous?.delegations || []), delegation],
+      options.previous?.publicKey || from.getPublicKey().toDer(),
+    );
+  }
+
+  /**
+   * Creates a DelegationChain object from a JSON string.
+   * @param json The JSON string to parse.
+   */
+  public static fromJSON(json: string): DelegationChain {
+    const { publicKey, delegations } = JSON.parse(json);
+
+    if (!Array.isArray(delegations)) {
+      throw new Error('Invalid delegations.');
+    }
+
+    const parsedDelegations: SignedDelegation[] = delegations.map(signedDelegation => {
+      const { delegation, signature } = signedDelegation;
+      const { pubkey, expiration, targets } = delegation;
+      if (targets !== undefined && !Array.isArray(targets)) {
+        throw new Error('Invalid targets.');
+      }
+      return {
+        delegation: {
+          pubkey: parseBlob(pubkey),
+          expiration: new BigNumber(expiration, 16),
+          ...(targets && {
+            targets: targets.map((t: unknown) => {
+              if (typeof t !== 'string') {
+                throw new Error('Invalid target.');
+              }
+              return Principal.fromText(t);
+            }),
+          }),
+        },
+        signature: parseBlob(signature),
+      };
+    });
+
+    return new this(parsedDelegations, derBlobFromBlob(parseBlob(publicKey)));
+  }
+
+  protected constructor(
+    public readonly delegations: SignedDelegation[],
+    public readonly publicKey: DerEncodedBlob,
+  ) {}
+
+  public toJSON(): any {
+    return {
+      delegations: this.delegations.map(signedDelegation => {
+        const { delegation, signature } = signedDelegation;
+        return {
+          delegation: {
+            expiration: delegation.expiration.toString(16),
+            pubkey: delegation.pubkey.toString('hex'),
+            ...(delegation.targets && delegation.targets.map(p => p.toText())),
+          },
+          signature: signature.toString('hex'),
+        };
+      }),
+      publicKey: this.publicKey.toString('hex'),
+    };
+  }
 }
 
 /**
@@ -134,24 +195,21 @@ export class DelegationIdentity extends SignIdentity {
    * @param key The key used to sign the reqyests.
    * @param delegation A delegation object created using `createDelegation`.
    */
-  public static fromDelegation(
-    key: SignIdentity,
-    delegation: SenderDelegation,
-  ): DelegationIdentity {
+  public static fromDelegation(key: SignIdentity, delegation: DelegationChain): DelegationIdentity {
     return new this(key, delegation);
   }
 
-  protected constructor(private _inner: SignIdentity, private _delegation: SenderDelegation) {
+  protected constructor(private _inner: SignIdentity, private _delegation: DelegationChain) {
     super();
   }
 
-  public getDelegation(): SenderDelegation {
+  public getDelegation(): DelegationChain {
     return this._delegation;
   }
 
   public getPublicKey(): PublicKey {
     return {
-      toDer: () => derBlobFromBlob(this._delegation.sender_pubkey),
+      toDer: () => this._delegation.publicKey,
     };
   }
   public sign(blob: BinaryBlob): Promise<BinaryBlob> {
@@ -168,7 +226,8 @@ export class DelegationIdentity extends SignIdentity {
         sender_sig: await this.sign(
           blobFromUint8Array(Buffer.concat([requestDomainSeparator, requestId])),
         ),
-        ...this._delegation,
+        sender_delegation: this._delegation.delegations,
+        sender_pubkey: this._delegation.publicKey,
       },
     };
   }

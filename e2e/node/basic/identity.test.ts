@@ -1,10 +1,10 @@
 import { Actor, HttpAgent, IDL, Principal, SignIdentity } from "@dfinity/agent";
 import {
+  DelegationChain,
   DelegationIdentity,
   Ed25519KeyIdentity,
 } from "@dfinity/authentication";
 import agent from "../utils/agent";
-import { createDelegation } from "@dfinity/authentication/src/identity/delegation";
 import identityCanister from "../canisters/identity";
 
 function createIdentity(seed: number): SignIdentity {
@@ -64,7 +64,10 @@ test("delegation: principal is the same between delegated keys", async () => {
   let masterKey = createIdentity(0);
   let sessionKey = createIdentity(1);
 
-  let delegation = await createDelegation(masterKey, sessionKey);
+  let delegation = await DelegationChain.create(
+    masterKey,
+    sessionKey.getPublicKey()
+  );
   const id3 = DelegationIdentity.fromDelegation(sessionKey, delegation);
 
   let identityActor1 = Actor.createActor(idl, {
@@ -95,10 +98,17 @@ test("delegation: works with 3 keys", async () => {
   let middleKey = createIdentity(1);
   let bottomKey = createIdentity(0);
 
-  const id1D2 = await createDelegation(rootKey, middleKey);
+  const id1D2 = await DelegationChain.create(rootKey, middleKey.getPublicKey());
   const idDelegated = DelegationIdentity.fromDelegation(
     bottomKey,
-    await createDelegation(middleKey, bottomKey, { previous: id1D2 })
+    await DelegationChain.create(
+      middleKey,
+      bottomKey.getPublicKey(),
+      undefined,
+      {
+        previous: id1D2,
+      }
+    )
   );
 
   let identityActorBottom = Actor.createActor(idl, {
@@ -136,13 +146,28 @@ test.skip("delegation: works with 4 keys", async () => {
   let middle2Key = createIdentity(1);
   let bottomKey = createIdentity(0);
 
-  const rootToMiddle = await createDelegation(rootKey, middleKey);
-  const middleToMiddle2 = await createDelegation(middleKey, middle2Key, {
-    previous: rootToMiddle,
-  });
+  const rootToMiddle = await DelegationChain.create(
+    rootKey,
+    middleKey.getPublicKey()
+  );
+  const middleToMiddle2 = await DelegationChain.create(
+    middleKey,
+    middle2Key.getPublicKey(),
+    undefined,
+    {
+      previous: rootToMiddle,
+    }
+  );
   const idDelegated = DelegationIdentity.fromDelegation(
     bottomKey,
-    await createDelegation(middleKey, bottomKey, { previous: middleToMiddle2 })
+    await DelegationChain.create(
+      middleKey,
+      bottomKey.getPublicKey(),
+      undefined,
+      {
+        previous: middleToMiddle2,
+      }
+    )
   );
 
   let identityActorBottom = Actor.createActor(idl, {

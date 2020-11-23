@@ -1,3 +1,3 @@
 export { Ed25519KeyIdentity, Ed25519PublicKey } from './identity/ed25519';
 export { Bip39Ed25519KeyIdentity } from './identity/bip39';
-export { DelegationIdentity } from './identity/delegation';
+export { DelegationIdentity, DelegationChain } from './identity/delegation';
