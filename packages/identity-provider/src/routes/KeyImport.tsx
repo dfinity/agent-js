@@ -31,7 +31,7 @@ export function KeyImport() {
 
     if (validated && auth) {
       const identity = Bip39Ed25519KeyIdentity.fromBip39Mnemonic(fullMnemonic, englishWords);
-      auth.setRootId(identity);
+      auth.setRootIdentity(identity);
 
       // @TODO: do something with the validated mnemonic
     } else {

@@ -1,3 +1,5 @@
+import { KeyPair } from '@dfinity/agent';
+import { DelegationChain } from '@dfinity/authentication';
 import {
   DialogContent,
   DialogContentText,
@@ -6,20 +8,27 @@ import {
   Paper,
   Typography,
 } from '@material-ui/core';
+import WarningIcon from '@material-ui/icons/WarningOutlined';
 import React, { Fragment, useEffect, useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import { Button } from 'src/components/Button';
 import { Modal } from 'src/components/Modal';
 import { useAuth } from 'src/hooks/use-auth';
+import { useDeviceDelegation } from 'src/hooks/use-deviceDelegation';
 import { getRequiredQueryParams } from 'src/identity-provider';
 import { ROUTES } from 'src/utils/constants';
 
 export function Login() {
+  console.log('render')
   const auth = useAuth();
+  let deviceDelegation: any;
+  deviceDelegation = useDeviceDelegation(auth);
   const history = useHistory();
   const location = useLocation<any>();
 
   const [showModal, setShowModal] = useState(false);
+  const [rootKeys, setRootKeys] = useState<KeyPair>();
+  const [rootDelegationChain, setRootDelegationChain] = useState<DelegationChain>();
 
   const handleImport = () => {
     setShowModal(false);
@@ -35,12 +44,25 @@ export function Login() {
   const onRegister = () => {
     setShowModal(true);
   };
+
   useEffect(() => {
     try {
       const { redirectURI } = getRequiredQueryParams(location.search);
       auth?.setRedirectURI(redirectURI);
     } catch (error) {}
   }, []);
+
+  useEffect(() => {
+    if (auth?.rootKeyPair) {
+      setRootKeys(auth.rootKeyPair);
+    }
+  }, [auth?.rootKeyPair]);
+
+  useEffect(() => {
+    if (auth?.rootDelegationChain) {
+      setRootDelegationChain(auth.rootDelegationChain);
+    }
+  }, [auth?.rootDelegationChain]);
 
   return (
     <Fragment>
@@ -50,17 +72,24 @@ export function Login() {
       <Paper elevation={1} style={{ height: '50vh' }}>
         <Grid container spacing={2} justify='center'>
           <Grid item>
-            {auth && auth.rootId ? (
-              <Fragment>
-                <Button color='primary' onClick={() => auth.createDelegation()}>
-                  Redirect
-                </Button>
-              </Fragment>
-            ) : (
-              <Button color='primary' onClick={onRegister} style={{ marginTop: '50%' }}>
-                Register with the Internet Computer
-              </Button>
-            )}
+            {rootDelegationChain ? (
+              rootKeys ? (
+                <Fragment>
+                  <Typography variant='body1'>
+                    Looks like we've found an existing set of credentials for you. Would you like to
+                    authorize this device with those credentials?
+                    <Button color='primary'>Authorize this device</Button>
+                    <Button color='secondary' variant='outlined' startIcon={<WarningIcon />}>
+                      Clear credentials
+                    </Button>
+                  </Typography>
+                </Fragment>
+              ) : (
+                <Typography variant='h2'>
+                  Looks like we have Root Delegation Chain and Root Keys :D{' '}
+                </Typography>
+              )
+            ) : null}
           </Grid>
         </Grid>
       </Paper>
@@ -74,12 +103,12 @@ export function Login() {
           </DialogContentText>
           <Grid container justify={'space-between'}>
             <Grid item>
-              <Button color="secondary" variant='outlined' onClick={handleImport}>
+              <Button color='secondary' variant='outlined' onClick={handleImport}>
                 Import Existing Key
               </Button>
             </Grid>
             <Grid item>
-              <Button color="primary" onClick={handleGenerate}>
+              <Button color='primary' onClick={handleGenerate}>
                 Generate New Key
               </Button>
             </Grid>

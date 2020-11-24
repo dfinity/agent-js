@@ -1,24 +1,22 @@
 import { Identity, KeyPair } from '@dfinity/agent';
 import {
   Bip39Ed25519KeyIdentity,
+  DelegationChain,
   Ed25519KeyIdentity,
   Ed25519PublicKey,
 } from '@dfinity/authentication';
 import localforage from 'localforage';
 import React, { ComponentProps, createContext, useContext, useEffect, useState } from 'react';
-import { appendTokenParameter } from '../../src/identity-provider';
-import {
-  LOCAL_STORAGE_ROOT_CREDENTIAL,
-  LOCAL_STORAGE_REDIRECT_URI,
-  LOCAL_STORAGE_WEBAUTHN_ID,
-} from '../utils/constants';
+import { LOCAL_STORAGE_ROOT_CREDENTIAL, LOCAL_STORAGE_WEBAUTHN_ID } from '../utils/constants';
 
-interface UseAuthContext {
+export interface UseAuthContext {
+  rootIdentity?: Bip39Ed25519KeyIdentity;
+  rootKeyPair?: KeyPair;
+  rootDelegationChain?: DelegationChain;
+  deviceIdentity?: Bip39Ed25519KeyIdentity;
   webauthnId?: Ed25519KeyIdentity;
-  rootId?: Bip39Ed25519KeyIdentity;
+  setRootIdentity: (identity: Bip39Ed25519KeyIdentity) => void;
   setWebauthnId: (id: Ed25519KeyIdentity) => void;
-  getRootId: (identity: Bip39Ed25519KeyIdentity) => void;
-  setRootId: (identity: Bip39Ed25519KeyIdentity) => void;
   getWebauthnID: () => Promise<Ed25519KeyIdentity | null>;
   createDelegation: () => any;
   setRedirectURI: (uri: string) => any;
@@ -33,6 +31,22 @@ function useProvideAuth(): UseAuthContext {
   const [rootKeys, setRootKeys] = useState<KeyPair>();
   const [delegation, setDelegation] = useState<Ed25519PublicKey | null>(null);
   const [redirectURI, setRedirectURI] = useState<string | null>(null);
+
+  // once, get items from localforage.
+  useEffect(() => {
+    localforage
+      .ready()
+      .then(() => {
+        localforage.getItem<KeyPair>(LOCAL_STORAGE_ROOT_CREDENTIAL).then(val => {
+          if (val) {
+            setRootKeys(val);
+          }
+        });
+      })
+      .catch(err => {
+        // error handle
+      });
+  }, []);
 
   // every time we get a new root ID, put it in localstorage
   useEffect(() => {
@@ -85,10 +99,11 @@ function useProvideAuth(): UseAuthContext {
   return {
     setRedirectURI: uri => setRedirectURI(uri),
     webauthnId,
-    rootId: rootIdentity,
+    rootIdentity,
+    rootKeyPair: rootKeys,
     getWebauthnID,
     setWebauthnId: id => setWebauthnId(id),
-    setRootId: id => setRootIdentity(id),
+    setRootIdentity: id => setRootIdentity(id),
     createDelegation: () => {
       if (rootIdentity && rootKeys) {
         const keyPair: KeyPair = {
