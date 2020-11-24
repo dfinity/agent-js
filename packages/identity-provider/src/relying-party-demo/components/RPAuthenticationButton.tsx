@@ -1,6 +1,19 @@
-import { PublicKey } from "@dfinity/agent";
+import { Identity, PublicKey } from "@dfinity/agent";
 import * as React from "react";
 import { hexEncodeUintArray } from "src/bytes";
+import { IDPAuthenticationRequest } from "src/protocol/ic-id-protocol";
+import { OAuth2AuthorizationRequest } from "src/protocol/oauth2";
+
+/** Convert an ic-id-protocol request to an OAuth 2.0 compliant request (just syntax transformation really) */
+export function toOauth(idpRequest: IDPAuthenticationRequest): OAuth2AuthorizationRequest {
+    const login_hint: string = hexEncodeUintArray(new Uint8Array(idpRequest.sessionIdentity.toDer()));
+    const redirect_uri: string = idpRequest.redirectUri.toString();
+    const oauthRequest: OAuth2AuthorizationRequest = {
+        login_hint,
+        redirect_uri,
+    }
+    return oauthRequest;
+}
 
 export default function RPAuthenticationButton(props: {
     children?: React.ReactNode;
@@ -13,19 +26,13 @@ export default function RPAuthenticationButton(props: {
     const onClickAuthenticate = React.useCallback(
       (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
-        const derPublicKeyHex: string = hexEncodeUintArray(
-          new Uint8Array(props.delegateTo.toDer())
-        );
-        const authenticationRequest: Record<
-          "login_hint" | "redirect_uri",
-          string
-        > = {
-          login_hint: derPublicKeyHex,
-          redirect_uri: globalThis.location.toString(),
+        const authenticationRequest: IDPAuthenticationRequest = {
+          sessionIdentity: props.delegateTo,
+          redirectUri: new URL(globalThis.location.href),
         };
         const authenticationRequestUrl = (() => {
           const url = new URL(`${idpBaseUrl}/authorization`, globalThis.location.href);
-          for (const [key, value] of Object.entries(authenticationRequest)) {
+          for (const [key, value] of Object.entries(toOauth(authenticationRequest))) {
             url.searchParams.set(key, value);
           }
           return url;
