@@ -8,7 +8,7 @@ import localforage from 'localforage';
 import React, { ComponentProps, createContext, useContext, useEffect, useState } from 'react';
 import { appendTokenParameter } from '../../src/identity-provider';
 import {
-  LOCAL_STORAGE_ROOT_ID,
+  LOCAL_STORAGE_ROOT_CREDENTIAL,
   LOCAL_STORAGE_REDIRECT_URI,
   LOCAL_STORAGE_WEBAUTHN_ID,
 } from '../utils/constants';
@@ -17,6 +17,7 @@ interface UseAuthContext {
   webauthnId?: Ed25519KeyIdentity;
   rootId?: Bip39Ed25519KeyIdentity;
   setWebauthnId: (id: Ed25519KeyIdentity) => void;
+  getRootId: (identity: Bip39Ed25519KeyIdentity) => void;
   setRootId: (identity: Bip39Ed25519KeyIdentity) => void;
   getWebauthnID: () => Promise<Ed25519KeyIdentity | null>;
   createDelegation: () => any;
@@ -39,7 +40,7 @@ function useProvideAuth(): UseAuthContext {
       const rootKeyPair = rootIdentity.getKeyPair();
       if (rootKeyPair) {
         setRootKeys(rootKeyPair);
-        localforage.setItem<KeyPair>(LOCAL_STORAGE_ROOT_ID, rootKeyPair);
+        localforage.setItem<KeyPair>(LOCAL_STORAGE_ROOT_CREDENTIAL, rootKeyPair);
       }
     }
   }, [rootIdentity]);
@@ -54,8 +55,8 @@ function useProvideAuth(): UseAuthContext {
   // if we get a new delegation, redirect to the URL?
   useEffect(() => {
     if (delegation !== null && redirectURI !== null) {
-      const url = appendTokenParameter(redirectURI, delegation);
-      window.location.assign(url.toString());
+      // const url = appendTokenParameter(redirectURI, delegation);
+      // window.location.assign(url.toString());
     }
   }, [delegation]);
 
@@ -94,7 +95,7 @@ function useProvideAuth(): UseAuthContext {
           publicKey: rootKeys.publicKey,
           secretKey: rootKeys.secretKey,
         };
-        setDelegation(createDelegation(keyPair, [rootIdentity]));
+        // setDelegation(createDelegation(keyPair, [rootIdentity]));
       }
     },
   };
