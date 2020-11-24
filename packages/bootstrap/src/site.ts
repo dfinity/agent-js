@@ -34,7 +34,9 @@ async function _getVariable(
   return defaultValue;
 }
 
-function getCanisterId(s: string | undefined): Principal | undefined {
+async function _parseCanisterId(s: string | undefined): Promise<Principal | undefined> {
+  s = s || (await _getVariable('canisterId', localStorageCanisterIdKey));
+
   if (s === undefined) {
     return undefined;
   } else {
@@ -44,6 +46,57 @@ function getCanisterId(s: string | undefined): Principal | undefined {
       return undefined;
     }
   }
+}
+
+const ic0AppHostRe = /(?:(?<subdomain>.*)\.)?(?<canisterId>[^.]*)\.(?<domain>ic0\.app)$/;
+const sdkTestHostRe = /(?:(?<subdomain>.*)\.)?(?<canisterId>[^.]*)\.(?<domain>sdk-test\.dfinity\.network)$/;
+const lvhMeHostRe = /(?<subdomain>.*)\.([^.]*)\.(?<domain>lvh\.me)$/;
+const localhostHostRe = /(?<subdomain>(.*))\.(?<domain>localhost)$/;
+
+interface LocationInfo {
+  domain: string;
+  subdomain: string[];
+  canisterId: Principal | null;
+  kind: DomainKind;
+  secure: boolean;
+}
+
+async function _createLocationInfo(
+  meta: { subdomain?: string; canisterId?: string; domain?: string },
+  location: URL,
+  kind: DomainKind,
+): Promise<LocationInfo> {
+  const subdomain = meta.subdomain?.split('.') || [];
+  const canisterId = (await _parseCanisterId(meta.canisterId)) || null;
+  const port = location.port;
+
+  return {
+    domain: (meta.domain || 'ic0.app') + (port ? `:${port}` : ''),
+    subdomain,
+    canisterId,
+    kind,
+    secure: location.protocol === 'https:' || kind === DomainKind.Localhost,
+  };
+}
+
+async function _parseLocation(location: URL): Promise<LocationInfo> {
+  const maybeIc0 = ic0AppHostRe.exec(location.hostname) || sdkTestHostRe.exec(location.hostname);
+
+  if (maybeIc0) {
+    return await _createLocationInfo(maybeIc0.groups!, location, DomainKind.Ic0);
+  }
+
+  const maybeLocalhost = localhostHostRe.exec(location.hostname);
+  if (maybeLocalhost) {
+    return await _createLocationInfo(maybeLocalhost.groups!, location, DomainKind.Localhost);
+  }
+
+  const maybeLvh = lvhMeHostRe.exec(location.hostname);
+  if (maybeLvh) {
+    return await _createLocationInfo(maybeLvh.groups!, location, DomainKind.Lvh);
+  }
+
+  return await _createLocationInfo({}, location, DomainKind.Unknown);
 }
 
 export enum DomainKind {
@@ -63,44 +116,39 @@ export class SiteInfo {
 
   public static async unknown(): Promise<SiteInfo> {
     const principal = await _getVariable('canisterId', localStorageCanisterIdKey);
-    return new SiteInfo(
-      DomainKind.Unknown,
-      principal !== undefined ? Principal.fromText(principal) : undefined,
-    );
+    return new SiteInfo({
+      domain: '',
+      subdomain: [],
+      kind: DomainKind.Unknown,
+      canisterId: principal !== undefined ? Principal.fromText(principal) : null,
+      secure: false,
+    });
   }
 
   public static async fromWindow(): Promise<SiteInfo> {
-    const { hostname } = window.location;
-    const components = hostname.split('.');
-    const [maybeCId, maybeIc0, maybeApp] = components.slice(-3);
-    const subdomain = components.slice(0, -3).join('.');
-
-    if (maybeIc0 === 'ic0' && maybeApp === 'app') {
-      return new SiteInfo(DomainKind.Ic0, getCanisterId(maybeCId), subdomain);
-    } else if (maybeIc0 === 'lvh' && maybeApp === 'me') {
-      return new SiteInfo(DomainKind.Lvh, getCanisterId(maybeCId), subdomain);
-    } else if (maybeIc0 === 'localhost' && maybeApp === undefined) {
-      /// Allow subdomain of localhost.
-      return new SiteInfo(DomainKind.Localhost, getCanisterId(maybeCId), subdomain);
-    } else if (maybeApp === 'localhost') {
-      /// Allow subdomain of localhost, but maybeIc0 is the canister ID.
-      return new SiteInfo(
-        DomainKind.Localhost,
-        getCanisterId(maybeIc0),
-        `${maybeCId}.${subdomain}`,
-      );
-    } else {
-      return this.unknown();
-    }
+    const locationInfo = await _parseLocation(new URL(window.location.toString()));
+    return new SiteInfo(locationInfo);
   }
 
   private _isWorker = false;
 
-  constructor(
-    public readonly kind: DomainKind,
-    public readonly principal?: Principal,
-    public readonly subdomain = '',
-  ) {}
+  constructor(private readonly _info: LocationInfo) {}
+
+  public get kind(): DomainKind {
+    return this._info.kind;
+  }
+  public get secure(): boolean {
+    return this._info.secure;
+  }
+  public get principal(): Principal | undefined {
+    return this._info.canisterId || undefined;
+  }
+  public get domain(): string {
+    return this._info.domain;
+  }
+  public get subdomain(): string[] {
+    return this._info.subdomain;
+  }
 
   public async setLogin(username: string, password: string): Promise<void> {
     await this.store(localStorageLoginKey, JSON.stringify([username, password]));
@@ -130,11 +178,7 @@ export class SiteInfo {
     }
 
     if (k) {
-      const kp = JSON.parse(k);
-      return Ed25519KeyIdentity.fromKeyPair(
-        blobFromUint8Array(new Uint8Array(kp.publicKey.data)),
-        blobFromUint8Array(new Uint8Array(kp.secretKey.data)),
-      );
+      return Ed25519KeyIdentity.fromJSON(k);
     } else {
       const kp = Ed25519KeyIdentity.generate();
       await this.store(localStorageIdentityKey, JSON.stringify(kp));
@@ -152,17 +196,15 @@ export class SiteInfo {
       return '';
     }
 
-    const { port, protocol } = window.location;
+    const protocol = this.secure ? 'https:' : 'http:';
 
     switch (this.kind) {
       case DomainKind.Unknown:
         throw new Error('Cannot get worker host inside a worker.');
       case DomainKind.Ic0:
-        return `${protocol}//z.ic0.app${port ? ':' + port : ''}`;
       case DomainKind.Lvh:
-        return `${protocol}//z.lvh.me${port ? ':' + port : ''}`;
       case DomainKind.Localhost:
-        return `${protocol}//z.localhost${port ? ':' + port : ''}`;
+        return `${protocol}//z.${this.domain}`;
     }
   }
 
@@ -183,18 +225,17 @@ export class SiteInfo {
         return host;
       }
     } else {
-      const { port, protocol } = window.location;
+      const protocol = this.secure ? 'https:' : 'http:';
 
       switch (this.kind) {
         case DomainKind.Unknown:
           return '';
         case DomainKind.Ic0:
           // TODO: think if we want to have this hard coded here. We might.
-          return `${protocol}//gw.dfinity.network${port ? ':' + port : ''}`;
+          return `${protocol}//gw.dfinity.network`;
         case DomainKind.Lvh:
-          return `${protocol}//r.lvh.me${port ? ':' + port : ''}`;
         case DomainKind.Localhost:
-          return `${protocol}//r.localhost${port ? ':' + port : ''}`;
+          return `${protocol}//z.${this.domain}`;
         default:
           return host || '';
       }

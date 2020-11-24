@@ -1,6 +1,8 @@
 import {
   BinaryBlob,
+  blobFromHex,
   blobFromUint8Array,
+  blobToHex,
   derBlobFromBlob,
   DerEncodedBlob,
   KeyPair,
@@ -39,8 +41,9 @@ export class Ed25519PublicKey implements PublicKey {
 
   private static derEncode(publicKey: BinaryBlob): DerEncodedBlob {
     if (publicKey.byteLength !== Ed25519PublicKey.RAW_KEY_LENGTH) {
+      const bl = publicKey.byteLength;
       throw new TypeError(
-        `ed25519 public key must be ${Ed25519PublicKey.RAW_KEY_LENGTH} bytes long`,
+        `ed25519 public key must be ${Ed25519PublicKey.RAW_KEY_LENGTH} bytes long (is ${bl})`,
       );
     }
 
@@ -56,10 +59,13 @@ export class Ed25519PublicKey implements PublicKey {
   private static derDecode(key: BinaryBlob): BinaryBlob {
     const expectedLength = Ed25519PublicKey.DER_PREFIX.length + Ed25519PublicKey.RAW_KEY_LENGTH;
     if (key.byteLength !== expectedLength) {
-      throw new TypeError(`Ed25519 DER-encoded public key must be ${expectedLength} bytes long`);
+      const bl = key.byteLength;
+      throw new TypeError(
+        `Ed25519 DER-encoded public key must be ${expectedLength} bytes long (is ${bl})`,
+      );
     }
 
-    const rawKey = key.subarray(Ed25519PublicKey.DER_PREFIX.length) as BinaryBlob;
+    const rawKey = blobFromUint8Array(key.subarray(Ed25519PublicKey.DER_PREFIX.length));
     if (!this.derEncode(rawKey).equals(key)) {
       throw new TypeError(
         'Ed25519 DER-encoded public key is invalid. A valid Ed25519 DER-encoded public key ' +
@@ -118,6 +124,33 @@ export class Ed25519KeyIdentity extends SignIdentity {
     return this.generate(slipSeed);
   }
 
+  public static fromJSON(json: string): Ed25519KeyIdentity {
+    const parsed = JSON.parse(json);
+    if (Array.isArray(parsed)) {
+      const [publicKeyDer, privateKeyRaw] = parsed;
+      if (typeof publicKeyDer === 'string' && typeof privateKeyRaw === 'string') {
+        return new Ed25519KeyIdentity(
+          Ed25519PublicKey.fromDer(blobFromHex(publicKeyDer)),
+          blobFromHex(privateKeyRaw),
+        );
+      } else {
+        throw new Error('Deserialization error: JSON must have at least 2 items.');
+      }
+    } else if (typeof parsed === 'object' && parsed !== null) {
+      const { publicKey, _publicKey, secretKey, _privateKey } = parsed;
+      const pk = publicKey
+        ? Ed25519PublicKey.fromRaw(blobFromUint8Array(new Uint8Array(publicKey.data)))
+        : Ed25519PublicKey.fromDer(blobFromUint8Array(new Uint8Array(_publicKey.data)));
+
+      if (publicKey && secretKey && secretKey.data) {
+        return new Ed25519KeyIdentity(pk, blobFromUint8Array(new Uint8Array(secretKey.data)));
+      } else if (_publicKey && _privateKey && _privateKey.data) {
+        return new Ed25519KeyIdentity(pk, blobFromUint8Array(new Uint8Array(_privateKey.data)));
+      }
+    }
+    throw new Error(`Deserialization error: Invalid JSON type for string: ${JSON.stringify(json)}`);
+  }
+
   public static fromKeyPair(publicKey: BinaryBlob, privateKey: BinaryBlob): Ed25519KeyIdentity {
     return new Ed25519KeyIdentity(Ed25519PublicKey.fromRaw(publicKey), privateKey);
   }
@@ -128,6 +161,13 @@ export class Ed25519KeyIdentity extends SignIdentity {
   protected constructor(publicKey: PublicKey, protected _privateKey: BinaryBlob) {
     super();
     this._publicKey = Ed25519PublicKey.from(publicKey);
+  }
+
+  /**
+   * Serialize this key to JSON.
+   */
+  public toJSON(): any {
+    return [blobToHex(this._publicKey.toDer()), blobToHex(this._privateKey)];
   }
 
   /**
