@@ -5,7 +5,7 @@ export const LOGIN_HINT_PARAM = 'login_hint';
 export const LOCAL_STORAGE_REDIRECT_URI = 'ic_redirect_uri';
 export const LOCAL_STORAGE_LOGIN_HINT = 'ic_login_hint';
 export const LOCAL_STORAGE_WEBAUTHN_ID = 'ic_webauthn_id';
-export const LOCAL_STORAGE_MASTER_ID = 'ic_master_id';
+export const LOCAL_STORAGE_ROOT_ID = 'ic_root_id';
 
 export const ROUTES = {
   LOGIN: '/authorization',

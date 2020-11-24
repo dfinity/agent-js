@@ -50,11 +50,10 @@ export function Login() {
       <Paper elevation={1} style={{ height: '50vh' }}>
         <Grid container spacing={2} justify='center'>
           <Grid item>
-            {auth && auth.masterId ? (
+            {auth && auth.rootId ? (
               <Fragment>
-                <span>webauthnId:{JSON.stringify(auth.masterId)}</span>
                 <Button color='primary' onClick={() => auth.createDelegation()}>
-                  Create Delegation
+                  Redirect
                 </Button>
               </Fragment>
             ) : (

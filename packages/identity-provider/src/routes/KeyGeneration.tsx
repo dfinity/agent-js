@@ -67,7 +67,7 @@ export function KeyGeneration() {
       const valid = texts.join(' ') === mnemonic.join(' ');
       if (valid && masterIdentity) {
         setShowConfirmModal(false);
-        auth?.setMasterId(masterIdentity);
+        auth?.setRootId(masterIdentity);
         history.push(ROUTES.LOGIN);
       } else {
         setSnackError(Error('mnemonics do not match'));

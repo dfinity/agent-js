@@ -1,19 +1,23 @@
 import { Identity, KeyPair } from '@dfinity/agent';
-import { Bip39Ed25519KeyIdentity, Ed25519KeyIdentity } from '@dfinity/authentication';
+import {
+  Bip39Ed25519KeyIdentity,
+  Ed25519KeyIdentity,
+  Ed25519PublicKey,
+} from '@dfinity/authentication';
 import localforage from 'localforage';
 import React, { ComponentProps, createContext, useContext, useEffect, useState } from 'react';
 import { appendTokenParameter } from '../../src/identity-provider';
 import {
-  LOCAL_STORAGE_MASTER_ID,
+  LOCAL_STORAGE_ROOT_ID,
   LOCAL_STORAGE_REDIRECT_URI,
   LOCAL_STORAGE_WEBAUTHN_ID,
 } from '../utils/constants';
 
 interface UseAuthContext {
   webauthnId?: Ed25519KeyIdentity;
-  masterId?: Bip39Ed25519KeyIdentity;
+  rootId?: Bip39Ed25519KeyIdentity;
   setWebauthnId: (id: Ed25519KeyIdentity) => void;
-  setMasterId: (identity: Bip39Ed25519KeyIdentity) => void;
+  setRootId: (identity: Bip39Ed25519KeyIdentity) => void;
   getWebauthnID: () => Promise<Ed25519KeyIdentity | null>;
   createDelegation: () => any;
   setRedirectURI: (uri: string) => any;
@@ -23,21 +27,27 @@ const authContext = createContext<UseAuthContext | null>(null);
 
 function useProvideAuth(): UseAuthContext {
   const [webauthnId, setWebauthnId] = useState<Ed25519KeyIdentity>();
-  const [masterId, setMasterId] = useState<Bip39Ed25519KeyIdentity>();
-  const [delegation, setDelegation] = useState<any | null>(null);
+  const [rootIdentity, setRootIdentity] = useState<Bip39Ed25519KeyIdentity>();
+  const [webauthnKeys, setWebauthnKeys] = useState<KeyPair>();
+  const [rootKeys, setRootKeys] = useState<KeyPair>();
+  const [delegation, setDelegation] = useState<Ed25519PublicKey | null>(null);
   const [redirectURI, setRedirectURI] = useState<string | null>(null);
 
-  // every time we get a new masterId, put it in localstorage
+  // every time we get a new root ID, put it in localstorage
   useEffect(() => {
-    if (masterId !== undefined && history !== undefined) {
-      localforage.setItem<Bip39Ed25519KeyIdentity>(LOCAL_STORAGE_MASTER_ID, masterId);
+    if (rootIdentity !== undefined && history !== undefined) {
+      const rootKeyPair = rootIdentity.getKeyPair();
+      if (rootKeyPair) {
+        setRootKeys(rootKeyPair);
+        localforage.setItem<KeyPair>(LOCAL_STORAGE_ROOT_ID, rootKeyPair);
+      }
     }
-  }, [masterId]);
+  }, [rootIdentity]);
 
   // every time we get a new webauthnId, put it in localstorage
   useEffect(() => {
     if (webauthnId !== undefined) {
-      localforage.setItem(LOCAL_STORAGE_WEBAUTHN_ID, webauthnId);
+      localforage.setItem<KeyPair>(LOCAL_STORAGE_WEBAUTHN_ID, webauthnId.getKeyPair());
     }
   }, [webauthnId]);
 
@@ -50,9 +60,10 @@ function useProvideAuth(): UseAuthContext {
   }, [delegation]);
 
   async function getWebauthnID(): Promise<Ed25519KeyIdentity> {
-    const lsValue = await localforage.getItem<Ed25519KeyIdentity>(LOCAL_STORAGE_WEBAUTHN_ID);
-    if (lsValue) {
-      return lsValue;
+    const localSTorageIdentity = await localforage.getItem<KeyPair>(LOCAL_STORAGE_WEBAUTHN_ID);
+    if (localSTorageIdentity) {
+      const { publicKey, secretKey } = localSTorageIdentity;
+      return Ed25519KeyIdentity.fromKeyPair(publicKey.toDer(), secretKey);
     } else {
       // @TODO - use WebAuthIdentity.generate(); (TBD)
       const id = Ed25519KeyIdentity.generate();
@@ -65,28 +76,25 @@ function useProvideAuth(): UseAuthContext {
     sessionKey: KeyPair,
     ids: Identity[],
     config: { expiration: number } = { expiration: 15 * 60 },
-  ): string {
+  ): Ed25519PublicKey {
     // delegation.toCBOR().toBase64Url()
-    return 'lolok';
+    return Ed25519PublicKey.fromDer(sessionKey.publicKey.toDer());
   }
 
   return {
     setRedirectURI: uri => setRedirectURI(uri),
     webauthnId,
-    masterId,
+    rootId: rootIdentity,
     getWebauthnID,
     setWebauthnId: id => setWebauthnId(id),
-    setMasterId: id => setMasterId(id),
+    setRootId: id => setRootIdentity(id),
     createDelegation: () => {
-      // delegation.toCBOR().toBase64Url()
-      if (masterId) {
+      if (rootIdentity && rootKeys) {
         const keyPair: KeyPair = {
-          // @ts-ignore
-          publicKey: masterId._publicKey,
-          // @ts-ignore
-          secretKey: masterId._privateKey,
+          publicKey: rootKeys.publicKey,
+          secretKey: rootKeys.secretKey,
         };
-        setDelegation(createDelegation(keyPair, [masterId]));
+        setDelegation(createDelegation(keyPair, [rootIdentity]));
       }
     },
   };
