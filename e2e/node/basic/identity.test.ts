@@ -138,6 +138,7 @@ test("delegation: works with 3 keys", async () => {
   expect(principalRoot).toEqual(principalDelegated);
 });
 
+// TODO: https://github.com/dfinity/agent-js/issues/84
 test.skip("delegation: works with 4 keys", async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
