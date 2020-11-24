@@ -11,6 +11,7 @@ import { ROUTES } from './utils/constants';
 const Login = lazy(() => import('./routes/Login'));
 const KeyImport = lazy(() => import('./routes/KeyImport'));
 const KeyGeneration = lazy(() => import('./routes/KeyGeneration'));
+const RelyingPartyDemo = lazy(() => import('./routes/RelyingPartyDemo'))
 
 const App = () => {
   return (
@@ -25,6 +26,7 @@ const App = () => {
                   <Route path={ROUTES.LOGIN} component={Login} />
                   <Route path={ROUTES.KEY_IMPORT} component={KeyImport} />
                   <Route path={ROUTES.KEY_GENERATION} component={KeyGeneration} />
+                  <Route path={ROUTES.RELYING_PARTY_DEMO} component={RelyingPartyDemo} />
                 </Switch>
               </Suspense>
             </Router>
