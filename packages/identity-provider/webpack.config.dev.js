@@ -16,7 +16,10 @@ module.exports = {
     historyApiFallback: true
   },
   plugins: [
-    new BundleAnalyzerPlugin({openAnalyzer: false}),
+    new BundleAnalyzerPlugin({
+      analyzerPort: 'auto',
+      openAnalyzer: false,
+    }),
     new HtmlWebpackPlugin({
       template: 'src/index.html',
       filename: 'index.html',

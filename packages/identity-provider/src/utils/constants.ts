@@ -13,4 +13,5 @@ export const ROUTES = {
   LOGIN: '/authorization',
   KEY_GENERATION: '/key-generation',
   KEY_IMPORT: '/key-import',
+  RELYING_PARTY_DEMO: '/relying-party-demo',
 };
