@@ -27,7 +27,6 @@ import { ROUTES } from 'src/utils/constants';
  *    6. Prompt the user to redirect now that the delegation chains exist
  */
 export function AuthorizationRoute() {
-  console.log('render');
   const auth = useAuth();
   const history = useHistory();
 
