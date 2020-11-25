@@ -1,5 +1,6 @@
 import { CssBaseline, ThemeProvider } from '@material-ui/core';
 import Container from '@material-ui/core/Container';
+import HomeRoute from './routes/Home';
 import React, { lazy, Suspense } from 'react';
 import { render } from 'react-dom';
 import { BrowserRouter as Router, Route, Switch  } from 'react-router-dom';
@@ -27,6 +28,7 @@ const App = () => {
                   <Route path={ROUTES.KEY_IMPORT} component={KeyImport} />
                   <Route path={ROUTES.KEY_GENERATION} component={KeyGeneration} />
                   <Route path={ROUTES.RELYING_PARTY_DEMO} component={RPDemo} />
+                  <Route path={ROUTES.HOME} component={HomeRoute} />
                 </Switch>
               </Suspense>
             </Router>
