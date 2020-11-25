@@ -1,17 +1,24 @@
 import { Bip39Ed25519KeyIdentity } from '@dfinity/authentication';
-import { Container, Snackbar, Typography } from '@material-ui/core';
+import { Container, Typography } from '@material-ui/core';
 import SendIcon from '@material-ui/icons/Send';
 import { validateMnemonic, wordlists } from 'bip39';
 import React, { createRef, FormEvent, useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import { Alert } from 'src/components/Alert';
 import { Button } from 'src/components/Button';
 import { Mnemonic } from 'src/components/Mnemonic';
 import { useAuth } from 'src/hooks/use-auth';
+import { KeyImportSnackbar } from '../components/KeyImportSnackbar';
 
 const englishWords = wordlists.english;
 
-export function KeyImport() {
+/**
+ * This component is used when the user has indicated that they want to import their own root key
+ * It provides a grid of input elements into which the user must enter their BIP39 mnemonic.
+ * Upon submission of this form, it updates the shared context's state (via `useAuth`) with
+ * the new root key.
+ *
+ */
+export function KeyImportContainer() {
   const history = useHistory();
   const auth = useAuth();
   const [snackError, setSnackError] = useState<Error>();
@@ -32,20 +39,18 @@ export function KeyImport() {
     if (validated && auth) {
       const identity = Bip39Ed25519KeyIdentity.fromBip39Mnemonic(fullMnemonic, englishWords);
       auth.setRootIdentity(identity);
-
-      // @TODO: do something with the validated mnemonic
     } else {
       setSnackError(Error(' One or more words in mnemonic list is malformed'));
     }
   }
 
-  const handleClose = (event?: React.SyntheticEvent, reason?: string) => {
+  function handleClose(event?: React.SyntheticEvent, reason?: string) {
     if (reason === 'clickaway') {
       return;
     }
 
     setSnackError(undefined);
-  };
+  }
 
   return (
     <Container maxWidth='lg'>
@@ -56,18 +61,14 @@ export function KeyImport() {
         Back
       </Button>
       <form ref={_formRef} onSubmit={handleSubmit}>
-        <Mnemonic wordList={wordList} mode="write" />
+        <Mnemonic wordList={wordList} mode='write' />
         <Button variant='outlined' color='secondary' startIcon={<SendIcon />} type='submit'>
           Import
         </Button>
       </form>
-      <Snackbar open={snackError !== undefined}>
-        <Alert onClose={handleClose} severity="error">
-          Error encountered: {snackError?.message}
-        </Alert>
-      </Snackbar>
+      <KeyImportSnackbar handleClose={handleClose} snackError={snackError} />
     </Container>
   );
 }
 
-export default KeyImport;
+export default KeyImportContainer;

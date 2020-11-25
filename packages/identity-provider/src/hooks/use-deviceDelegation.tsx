@@ -30,16 +30,13 @@ export function useDeviceDelegation(auth: UseAuthContext | null) {
     let deviceIdentity;
 
     if (!rootDelegationChain) {
-      console.log('has no root delegation chain');
       // prompt user to authorize IDP to create root delegation
       const mnemonic = bip39GenerateMnemonic();
       const rootSeed = bip39MnemonicToEntropy(mnemonic);
       const rootIdentity = Ed25519KeyIdentity.generate(rootSeed);
       const rootKey = rootIdentity.getKeyPair();
-      console.log('setting local storage root credential: ', rootKey);
       setItem(LOCAL_STORAGE_ROOT_CREDENTIAL, rootKey).then(() => {
         deviceIdentity = Ed25519KeyIdentity.generate();
-        console.log({ deviceIdentity });
 
         const from = rootIdentity;
         const to = deviceIdentity.getKeyPair().publicKey;
@@ -54,7 +51,6 @@ export function useDeviceDelegation(auth: UseAuthContext | null) {
       });
     } else {
       // has root delegation, so we just need device delegation
-      console.log('we have root, create device');
       const from = deviceIdentity || Ed25519KeyIdentity.generate();
       let to;
       try {
