@@ -10,6 +10,12 @@ import { useAuth } from 'src/hooks/use-auth';
 import { getRequiredQueryParams } from 'src/identity-provider';
 import { LOCAL_STORAGE_ROOT_DELEGATION_CHAIN, LOCAL_STORAGE_WEBAUTHN_ID } from './constants';
 
+/**
+ * This function is simply a simplification of the authentication flow.
+ * It is NOT TO BE USED, but simply as guidance for how the flow could work.
+ * @todo(codelemur) extract the relevant components into a controller
+ */
+
 export async function flow() {
   const auth = useAuth();
   if (auth) {
