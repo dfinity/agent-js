@@ -11,15 +11,12 @@ import { LOCAL_STORAGE_ROOT_CREDENTIAL, LOCAL_STORAGE_WEBAUTHN_ID } from '../uti
 
 export interface UseAuthContext {
   rootIdentity?: Bip39Ed25519KeyIdentity;
-  rootKeyPair?: KeyPair;
   rootDelegationChain?: DelegationChain;
-  deviceIdentity?: Bip39Ed25519KeyIdentity;
   webauthnId?: Ed25519KeyIdentity;
   setRootIdentity: (identity: Bip39Ed25519KeyIdentity) => void;
   setWebauthnId: (id: Ed25519KeyIdentity) => void;
+  setRootDelegationChain: (id: DelegationChain) => void;
   getWebauthnID: () => Promise<Ed25519KeyIdentity | null>;
-  createDelegation: () => any;
-  setRedirectURI: (uri: string) => any;
 }
 
 const authContext = createContext<UseAuthContext | null>(null);
@@ -27,57 +24,12 @@ const authContext = createContext<UseAuthContext | null>(null);
 function useProvideAuth(): UseAuthContext {
   const [webauthnId, setWebauthnId] = useState<Ed25519KeyIdentity>();
   const [rootIdentity, setRootIdentity] = useState<Bip39Ed25519KeyIdentity>();
-  const [webauthnKeys, setWebauthnKeys] = useState<KeyPair>();
-  const [rootKeys, setRootKeys] = useState<KeyPair>();
-  const [delegation, setDelegation] = useState<Ed25519PublicKey | null>(null);
-  const [redirectURI, setRedirectURI] = useState<string | null>(null);
-
-  // once, get items from localforage.
-  useEffect(() => {
-    localforage
-      .ready()
-      .then(() => {
-        localforage.getItem<KeyPair>(LOCAL_STORAGE_ROOT_CREDENTIAL).then(val => {
-          if (val) {
-            setRootKeys(val);
-          }
-        });
-      })
-      .catch(err => {
-        // error handle
-      });
-  }, []);
-
-  // every time we get a new root ID, put it in localstorage
-  useEffect(() => {
-    if (rootIdentity !== undefined && history !== undefined) {
-      const rootKeyPair = rootIdentity.getKeyPair();
-      if (rootKeyPair) {
-        setRootKeys(rootKeyPair);
-        localforage.setItem<KeyPair>(LOCAL_STORAGE_ROOT_CREDENTIAL, rootKeyPair);
-      }
-    }
-  }, [rootIdentity]);
-
-  // every time we get a new webauthnId, put it in localstorage
-  useEffect(() => {
-    if (webauthnId !== undefined) {
-      localforage.setItem<KeyPair>(LOCAL_STORAGE_WEBAUTHN_ID, webauthnId.getKeyPair());
-    }
-  }, [webauthnId]);
-
-  // if we get a new delegation, redirect to the URL?
-  useEffect(() => {
-    if (delegation !== null && redirectURI !== null) {
-      // const url = appendTokenParameter(redirectURI, delegation);
-      // window.location.assign(url.toString());
-    }
-  }, [delegation]);
+  const [rootDelegationChain, setRootDelegationChain] = useState<DelegationChain>();
 
   async function getWebauthnID(): Promise<Ed25519KeyIdentity> {
-    const localSTorageIdentity = await localforage.getItem<KeyPair>(LOCAL_STORAGE_WEBAUTHN_ID);
-    if (localSTorageIdentity) {
-      const { publicKey, secretKey } = localSTorageIdentity;
+    const localStorageIdentity = await localforage.getItem<KeyPair>(LOCAL_STORAGE_WEBAUTHN_ID);
+    if (localStorageIdentity) {
+      const { publicKey, secretKey } = localStorageIdentity;
       return Ed25519KeyIdentity.fromKeyPair(publicKey.toDer(), secretKey);
     } else {
       // @TODO - use WebAuthIdentity.generate(); (TBD)
@@ -87,32 +39,14 @@ function useProvideAuth(): UseAuthContext {
     }
   }
 
-  function createDelegation(
-    sessionKey: KeyPair,
-    ids: Identity[],
-    config: { expiration: number } = { expiration: 15 * 60 },
-  ): Ed25519PublicKey {
-    // delegation.toCBOR().toBase64Url()
-    return Ed25519PublicKey.fromDer(sessionKey.publicKey.toDer());
-  }
-
   return {
-    setRedirectURI: uri => setRedirectURI(uri),
     webauthnId,
     rootIdentity,
-    rootKeyPair: rootKeys,
+    rootDelegationChain,
     getWebauthnID,
     setWebauthnId: id => setWebauthnId(id),
+    setRootDelegationChain: chain => setRootDelegationChain(chain),
     setRootIdentity: id => setRootIdentity(id),
-    createDelegation: () => {
-      if (rootIdentity && rootKeys) {
-        const keyPair: KeyPair = {
-          publicKey: rootKeys.publicKey,
-          secretKey: rootKeys.secretKey,
-        };
-        // setDelegation(createDelegation(keyPair, [rootIdentity]));
-      }
-    },
   };
 }
 

@@ -9,22 +9,27 @@ import {
   Typography,
 } from '@material-ui/core';
 import WarningIcon from '@material-ui/icons/WarningOutlined';
-import React, { Fragment, useEffect, useState } from 'react';
-import { useHistory, useLocation } from 'react-router-dom';
+import React, { Fragment, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import { Button } from 'src/components/Button';
 import { Modal } from 'src/components/Modal';
 import { useAuth } from 'src/hooks/use-auth';
-import { useDeviceDelegation } from 'src/hooks/use-deviceDelegation';
-import { getRequiredQueryParams } from 'src/identity-provider';
 import { ROUTES } from 'src/utils/constants';
 
-export function Login() {
-  console.log('render')
+/**
+ * This component is responsible for handling the top-level authentication flow.
+ * What should it do?
+ *    1. Check whether or not the user has an existing Root Delegation Key
+ *    2. If not, offer to either generate or import a Root Identity
+ *    3. Create a Root Delegation based on the now-definitely-existing Root Identity
+ *    4. Prompt the user to create a Session Delegation Key
+ *    5. Use the `login_hint` query parameter to create the session delegation Key
+ *    6. Prompt the user to redirect now that the delegation chains exist
+ */
+export function AuthorizationRoute() {
+  console.log('render');
   const auth = useAuth();
-  let deviceDelegation: any;
-  deviceDelegation = useDeviceDelegation(auth);
   const history = useHistory();
-  const location = useLocation<any>();
 
   const [showModal, setShowModal] = useState(false);
   const [rootKeys, setRootKeys] = useState<KeyPair>();
@@ -44,25 +49,6 @@ export function Login() {
   const onRegister = () => {
     setShowModal(true);
   };
-
-  useEffect(() => {
-    try {
-      const { redirectURI } = getRequiredQueryParams(location.search);
-      auth?.setRedirectURI(redirectURI);
-    } catch (error) {}
-  }, []);
-
-  useEffect(() => {
-    if (auth?.rootKeyPair) {
-      setRootKeys(auth.rootKeyPair);
-    }
-  }, [auth?.rootKeyPair]);
-
-  useEffect(() => {
-    if (auth?.rootDelegationChain) {
-      setRootDelegationChain(auth.rootDelegationChain);
-    }
-  }, [auth?.rootDelegationChain]);
 
   return (
     <Fragment>
@@ -119,4 +105,4 @@ export function Login() {
   );
 }
 
-export default Login;
+export default AuthorizationRoute;

@@ -3,16 +3,16 @@ import Container from '@material-ui/core/Container';
 import HomeRoute from './routes/Home';
 import React, { lazy, Suspense } from 'react';
 import { render } from 'react-dom';
-import { BrowserRouter as Router, Route, Switch  } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import { IDPRootErrorBoundary } from './ErrorBoundary';
 import { ProvideAuth } from './hooks/use-auth';
 import theme from './theme';
 import { ROUTES } from './utils/constants';
 
-const Login = lazy(() => import('./routes/Login'));
-const KeyImport = lazy(() => import('./routes/KeyImport'));
-const KeyGeneration = lazy(() => import('./routes/KeyGeneration'));
-const RPDemo = lazy(() => import('./relying-party-demo/routes/RPDemo'))
+const Login = lazy(() => import('./routes/Authorization'));
+const KeyImport = lazy(() => import('./key-mgmt/key-import/routes/KeyImport'));
+const KeyGeneration = lazy(() => import('./key-mgmt/key-generation/routes/KeyGeneration'));
+const RPDemo = lazy(() => import('./relying-party-demo/routes/RPDemo'));
 
 const App = () => {
   return (
