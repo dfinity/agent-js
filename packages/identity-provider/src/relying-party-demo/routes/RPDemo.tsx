@@ -15,13 +15,16 @@ export interface RelyingPartyAuthenticationSession {
  * * Show a button that the end-user can click to initiate the authentication flow (i.e. redirect to /authorization + AuthenticationRequest)
  * * @todo(bengo) - include a redirect_uri in the AuthenticationRequest that, when redirected back to with an AuthenticationResponse, does realistic things (i.e. shows the user the AuthenticationResponse that the RP redirct_uri receives)
  */
-export default function RelyingPartyDemo() {
+export default function RelyingPartyDemo(props: {
+    redirectUrl: URL;
+}) {
     const [session, setSession] = React.useState<RelyingPartyAuthenticationSession>({
         identity: Ed25519KeyIdentity.generate(),
     });
     return <>
         <h1>Relying Party Demo</h1>
         <RPAuthenticationButton
+            redirectUrl={props.redirectUrl}
             delegateTo={session.identity.getPublicKey()}
         />
     </>
