@@ -16,6 +16,10 @@ export type BinaryBlob = Buffer & { __BLOB: never };
 // It is still fully compatible with a regular BinaryBlob.
 export type DerEncodedBlob = BinaryBlob & { __DER_BLOB: never };
 
+export function blobFromBuffer(b: Buffer): BinaryBlob {
+  return b as BinaryBlob;
+}
+
 export function blobFromUint8Array(arr: Uint8Array): BinaryBlob {
   return Buffer.from(arr) as BinaryBlob;
 }
