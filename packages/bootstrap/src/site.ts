@@ -48,16 +48,30 @@ async function _parseCanisterId(s: string | undefined): Promise<Principal | unde
   }
 }
 
+// A regex that matches `SUBDOMAIN.CANISTER_ID.ic0.app` (the prod URL).
 const ic0AppHostRe = /(?:(?<subdomain>.*)\.)?(?<canisterId>[^.]*)\.(?<domain>ic0\.app)$/;
+// A regex that matches `SUBDOMAIN.CANISTER_ID.sdk-test.dfinity.network` (the staging URL).
 const sdkTestHostRe = /(?:(?<subdomain>.*)\.)?(?<canisterId>[^.]*)\.(?<domain>sdk-test\.dfinity\.network)$/;
-const lvhMeHostRe = /(?<subdomain>.*)\.([^.]*)\.(?<domain>lvh\.me)$/;
+// Matches `SUBDOMAIN.lvh.me`, which always resolves to 127.0.0.1 (old localhost staging).
+const lvhMeHostRe = /(?<subdomain>.*)\.(?<canisterId>[^.]*)\.(?<domain>lvh\.me)$/;
+// Localhost (development environment).
 const localhostHostRe = /(?<subdomain>(.*))\.(?<domain>localhost)$/;
 
+/**
+ * Internal data structure for the location informations.
+ * @internal
+ */
 interface LocationInfo {
+  // The domain of the request, which is where the worker domain name should be.
   domain: string;
-  subdomain: string[];
-  canisterId: Principal | null;
+  // The kind of domain we're using (e.g. localhost or Ic0).
   kind: DomainKind;
+  // Any subdomains that are before the canister id.
+  subdomain: string[];
+  // The canister ID in the location.
+  canisterId: Principal | null;
+  // Whether the location is considered secure (ie. "https"). This is used when building
+  // the URL for the replica.
   secure: boolean;
 }
 
@@ -75,7 +89,7 @@ async function _createLocationInfo(
     subdomain,
     canisterId,
     kind,
-    secure: location.protocol === 'https:' || kind === DomainKind.Localhost,
+    secure: location.protocol === 'https:',
   };
 }
 
