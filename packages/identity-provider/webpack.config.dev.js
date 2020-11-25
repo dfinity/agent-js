@@ -15,6 +15,9 @@ module.exports = {
     hot: true,
     historyApiFallback: true
   },
+  output: {
+    publicPath: '/',
+  },
   plugins: [
     new BundleAnalyzerPlugin({
       analyzerPort: 'auto',
