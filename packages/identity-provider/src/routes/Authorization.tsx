@@ -18,13 +18,17 @@ import { ROUTES } from 'src/utils/constants';
 
 /**
  * This component is responsible for handling the top-level authentication flow.
- * What should it do?
+ * What should it do? (happy path, assuming consent at each stage)
  *    1. Check whether or not the user has an existing Root Delegation Key
  *    2. If not, offer to either generate or import a Root Identity
  *    3. Create a Root Delegation based on the now-definitely-existing Root Identity
- *    4. Prompt the user to create a Session Delegation Key
- *    5. Use the `login_hint` query parameter to create the session delegation Key
- *    6. Prompt the user to redirect now that the delegation chains exist
+ *    4. Use the `login_hint` query parameter to create the Session Ed25519KeyIdentity
+ *    5. Ask the end-user's consent to delegate from their rootDelegationChain to this
+ *       RP's sessionIdentity (If no, redirect back with error per oauth2).
+ *    6. Build a new sessionDelegationChain = rootDelegationChain + sessionKeyIdentity
+ *    7. Use that to build an AuthenticationResponse
+ *    8. (debugging: log or render the AuthenticationResponse?)
+ *    9. Redirect back to RP redirect_uri with AuthenticationResponse (as query params, see oauth)
  */
 export function AuthorizationRoute() {
   const auth = useAuth();

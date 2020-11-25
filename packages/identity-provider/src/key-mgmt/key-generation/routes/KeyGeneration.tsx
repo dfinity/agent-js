@@ -22,7 +22,6 @@ export function KeyGeneration() {
   const auth = useAuth();
   const history = useHistory();
   const [mnemonic, setMnemonic] = useState<string[]>([]);
-  const [hasMnemonic, setHasMnemonic] = useState<boolean>(false);
   const [masterIdentity, setMasterIdentity] = useState<Bip39Ed25519KeyIdentity>();
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -34,7 +33,6 @@ export function KeyGeneration() {
     const newMnemonic = bip.getBip39Mnemonic();
     setMasterIdentity(bip);
     setMnemonic(newMnemonic.split(' '));
-    setHasMnemonic(true);
   }
 
   const handleSubmit = useCallback(
@@ -67,6 +65,7 @@ export function KeyGeneration() {
     setSnackError(undefined);
   },
   []);
+  const hasMnemonic = mnemonic.length === 24;
   return (
     <Container>
       <Typography variant='h2'>Generate New Key</Typography>
