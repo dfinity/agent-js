@@ -6,3 +6,7 @@ export function hexEncodeUintArray(array: Uint8Array | Uint16Array) {
     .call(array, (x) => ("00" + x.toString(16)).slice(-2))
     .join("");
 }
+
+export function hexDecodeStr(str: string) {
+
+}

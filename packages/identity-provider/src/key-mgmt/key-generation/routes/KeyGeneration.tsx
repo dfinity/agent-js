@@ -1,6 +1,14 @@
 import { Bip39Ed25519KeyIdentity } from '@dfinity/authentication';
 import { Container, Snackbar, Typography } from '@material-ui/core';
-import React, { createRef, FormEvent, Fragment, useCallback, useState } from 'react';
+import React, {
+  ComponentProps,
+  createRef,
+  FormEvent,
+  Fragment,
+  PropsWithoutRef,
+  useCallback,
+  useState,
+} from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import { Alert } from 'src/components/Alert';
 import { Button } from 'src/components/Button';
@@ -8,6 +16,11 @@ import { Mnemonic } from 'src/components/Mnemonic';
 import { useAuth } from 'src/hooks/use-auth';
 import { ROUTES } from 'src/utils/constants';
 import { KeyGenModal } from '../components/KeyGenModal';
+
+interface KeyGenProps {
+  onSuccess: (identity: Bip39Ed25519KeyIdentity) => void;
+  onBack: () => void;
+}
 
 /**
  * This component is to be used when the user has indicated that they want to create a new
@@ -18,7 +31,8 @@ import { KeyGenModal } from '../components/KeyGenModal';
  *    with the new identity that was generated.
  *
  */
-export function KeyGeneration() {
+export function KeyGeneration(props: PropsWithoutRef<KeyGenProps>) {
+  const { onBack, onSuccess } = props;
   const auth = useAuth();
   const history = useHistory();
   const [mnemonic, setMnemonic] = useState<string[]>([]);
@@ -30,9 +44,7 @@ export function KeyGeneration() {
 
   function generateMnemonic() {
     const bip = Bip39Ed25519KeyIdentity.generate();
-    const newMnemonic = bip.getBip39Mnemonic();
-    setMasterIdentity(bip);
-    setMnemonic(newMnemonic.split(' '));
+    onSuccess(bip);
   }
 
   const handleSubmit = useCallback(
@@ -75,33 +87,10 @@ export function KeyGeneration() {
           Error encountered: {snackError?.message}
         </Alert>
       </Snackbar>
-      <Button variant='outlined'>
-        <Link to={ROUTES.LOGIN}>Back</Link>
-      </Button>
       <Button color='primary' onClick={generateMnemonic}>
         Generate Master Key
       </Button>
-      {hasMnemonic ? (
-        <Fragment>
-          <Mnemonic wordList={mnemonic} mode='read' />
-          <Button
-            hidden={!hasMnemonic}
-            color='secondary'
-            variant='contained'
-            onClick={() => setShowConfirmModal(true)}
-          >
-            Continue
-          </Button>
-        </Fragment>
-      ) : null}
-
-      <KeyGenModal
-        showConfirmModal={showConfirmModal}
-        setShowConfirmModal={setShowConfirmModal}
-        _formRef={_formRef}
-        handleSubmit={handleSubmit}
-        mnemonic={mnemonic}
-      />
+      <Mnemonic wordList={mnemonic} mode='read' />
     </Container>
   );
 }

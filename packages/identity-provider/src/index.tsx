@@ -20,7 +20,7 @@ const App = () => {
       <ProvideAuth>
         <ThemeProvider theme={theme}>
           <CssBaseline />
-          <Container maxWidth='md'>
+          <Container maxWidth='xl'>
             <Router>
               <Suspense fallback={<div>Loading...</div>}>
                 <Switch>
