@@ -1,4 +1,4 @@
-import { blobFromText, PublicKey } from '@dfinity/agent';
+import { blobFromHex, PublicKey } from '@dfinity/agent';
 import { Ed25519PublicKey } from '@dfinity/authentication';
 import { setItem } from 'localforage';
 import * as CONSTANTS from './utils/constants';
@@ -23,7 +23,8 @@ export function getRequiredQueryParams(search: string): RequiredQueryParameters 
     throw Error(CONSTANTS.NO_PUBKEY);
   }
 
-  const loginHint: PublicKey = Ed25519PublicKey.fromDer(blobFromText(loginHintRaw));
+  const loginHintBlob = blobFromHex(loginHintRaw);
+  const loginHint: PublicKey = Ed25519PublicKey.fromDer(loginHintBlob);
   setItem(CONSTANTS.LOCAL_STORAGE_LOGIN_HINT, loginHint);
 
   return { redirectURI, loginHint };

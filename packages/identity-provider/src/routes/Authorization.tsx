@@ -14,7 +14,7 @@ import { Button } from 'src/components/Button';
 import { useAuth } from 'src/hooks/use-auth';
 import KeyGeneration from 'src/key-mgmt/key-generation/routes/KeyGeneration';
 import KeyImportContainer from 'src/key-mgmt/key-import/routes/KeyImport';
-import { getRequiredQueryParams } from 'src/identity-provider';
+import { appendTokenParameter, getRequiredQueryParams } from 'src/identity-provider';
 import { ICAuthenticationResponse } from 'types/responses';
 
 /**
@@ -43,26 +43,39 @@ export function AuthorizationRoute() {
   >();
 
   React.useEffect(() => {
-    const accessToken = auth.sessionDelegationChain?.publicKey.toString() || '';
-    const expiresIn =
-      auth.sessionDelegationChain?.delegations[0].delegation.expiration.toNumber() || 1;
-    const tokenType = 'bearer';
-    setICAuthorizationResponse({
-      accessToken,
-      expiresIn,
-      redirectURI,
-      tokenType,
-    });
-  }, [auth.setSessionDelegationChain]);
+    if (auth.sessionDelegationChain) {
+      const accessToken = auth.sessionDelegationChain?.publicKey.toString() || '';
+      const expiresIn =
+        auth.sessionDelegationChain?.delegations[0].delegation.expiration.toNumber() || 1;
+      const tokenType = 'bearer';
+      setICAuthorizationResponse({
+        accessToken,
+        expiresIn,
+        redirectURI,
+        tokenType,
+      });
+    }
+  }, [auth.sessionDelegationChain]);
+
+  React.useEffect(() => {
+    console.debug('new authorization response: ');
+    console.debug(JSON.stringify(icAuthorizationResponse, null, 2));
+  }, [icAuthorizationResponse]);
   React.useEffect(() => {
     try {
       const params = getRequiredQueryParams(location.search);
       setLoginHint(params.loginHint);
       setRedirectURI(params.redirectURI);
     } catch (error) {
-      // do nothing
+      console.error(error);
     }
   }, [location.search]);
+
+  React.useEffect(() => {
+    if (loginHint) {
+      auth.setSessionKey(loginHint);
+    }
+  }, [loginHint]);
 
   function handleGenerationSuccess(v: Bip39Ed25519KeyIdentity): void {
     if (auth) {
@@ -75,6 +88,17 @@ export function AuthorizationRoute() {
     if (auth) {
       auth.setRootIdentity(v);
       setActiveStep(activeStep + 2);
+    }
+  }
+
+  function handleRedirect() {
+    if (redirectURI && auth.sessionDelegationChain && icAuthorizationResponse) {
+      const query = new URLSearchParams();
+      for (const key of Object.keys(icAuthorizationResponse)) {
+        // if (ObjecticAuthorizationResponse)
+      }
+      const url = appendTokenParameter(redirectURI, auth.sessionDelegationChain.toJSON().publicKey);
+      window.location.assign(url.href);
     }
   }
 
@@ -98,14 +122,15 @@ export function AuthorizationRoute() {
     const to = loginHint;
     const previous = auth.rootDelegationChain;
     if (!from || !to) {
-      return;
+      console.error('no from or to found: ', { from, to });
+    } else {
+      const options = {
+        previous,
+      };
+      const tomorrow = new Date(Date.now() + 15 * 60 * 1000);
+      const sessionChain = await DelegationChain.create(from, to, tomorrow, options);
+      auth.setSessionDelegationChain(sessionChain);
     }
-    const options = {
-      previous,
-    };
-    const tomorrow = new Date(Date.now() + 15 * 60 * 1000);
-    const sessionChain = await DelegationChain.create(from, to, tomorrow, options);
-    auth.setSessionDelegationChain(sessionChain);
   }
 
   const steps: Array<{ label: string; component: JSX.Element }> = [
@@ -199,13 +224,13 @@ export function AuthorizationRoute() {
       ),
     },
     {
-      label: '(debugging: log or render the AuthenticationResponse?)',
-      component: <div></div>,
-    },
-    {
       label:
         'Redirect back to RP redirect_uri with AuthenticationResponse (as query params, see oauth)',
-      component: <div></div>,
+      component: (
+        <div>
+          <Button onClick={handleRedirect}>Redirect</Button>
+        </div>
+      ),
     },
   ];
 
