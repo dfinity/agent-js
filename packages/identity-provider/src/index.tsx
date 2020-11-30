@@ -10,7 +10,7 @@ import theme from './theme';
 import { ROUTES } from './utils/constants';
 
 const Login = lazy(() => import('./routes/Authorization'));
-const KeyImport = lazy(() => import('./key-mgmt/key-import/routes/KeyImport'));
+const KeyImport = lazy(() => import('./key-mgmt/key-import/components/KeyImport'));
 const KeyGeneration = lazy(() => import('./key-mgmt/key-generation/routes/KeyGeneration'));
 const RPDemo = lazy(() => import('./relying-party-demo/routes/RPDemo'));
 

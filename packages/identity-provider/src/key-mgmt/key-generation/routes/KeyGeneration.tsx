@@ -80,8 +80,6 @@ export function KeyGeneration(props: PropsWithoutRef<KeyGenProps>) {
   const hasMnemonic = mnemonic.length === 24;
   return (
     <Container>
-      <Typography variant='h2'>Generate New Key</Typography>
-
       <Snackbar open={snackError !== undefined} autoHideDuration={4000}>
         <Alert onClose={handleClose} severity='error'>
           Error encountered: {snackError?.message}

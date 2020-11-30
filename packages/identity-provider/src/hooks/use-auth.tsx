@@ -13,14 +13,18 @@ const noop = () => {};
 
 export interface UseAuthContext {
   rootIdentity?: Bip39Ed25519KeyIdentity;
+  deviceIdentity?: Ed25519KeyIdentity;
   sessionKey?: PublicKey;
   rootDelegationChain?: DelegationChain;
+  deviceDelegationChain?: DelegationChain;
   sessionDelegationChain?: DelegationChain;
   webauthnId?: Ed25519KeyIdentity;
   setRootIdentity: (identity: Bip39Ed25519KeyIdentity) => void;
+  setDeviceIdentity: (identity: Ed25519KeyIdentity) => void;
   setSessionKey: (key: PublicKey) => void;
   setWebauthnId: (id: Ed25519KeyIdentity) => void;
   setRootDelegationChain: (id: DelegationChain) => void;
+  setDeviceDelegationChain: (id: DelegationChain) => void;
   setSessionDelegationChain: (id: DelegationChain) => void;
   getWebauthnID: () => Promise<Ed25519KeyIdentity | null>;
 }
@@ -29,6 +33,8 @@ const authContext = createContext<UseAuthContext>({
   setRootIdentity: noop,
   setWebauthnId: noop,
   setRootDelegationChain: noop,
+  setDeviceDelegationChain: noop,
+  setDeviceIdentity: noop,
   setSessionDelegationChain: noop,
   setSessionKey: noop,
   getWebauthnID: () => Promise.resolve(null),
@@ -37,7 +43,9 @@ const authContext = createContext<UseAuthContext>({
 function useProvideAuth(): UseAuthContext {
   const [webauthnId, setWebauthnId] = useState<Ed25519KeyIdentity>();
   const [rootIdentity, setRootIdentity] = useState<Bip39Ed25519KeyIdentity>();
+  const [deviceIdentity, setDeviceIdentity] = useState<Ed25519KeyIdentity>();
   const [rootDelegationChain, setRootDelegationChain] = useState<DelegationChain>();
+  const [deviceDelegationChain, setDeviceDelegationChain] = useState<DelegationChain>();
   const [sessionDelegationChain, setSessionDelegationChain] = useState<DelegationChain>();
   const [sessionKey, setSessionKey] = useState<PublicKey>();
 
@@ -57,14 +65,18 @@ function useProvideAuth(): UseAuthContext {
   return {
     webauthnId,
     rootIdentity,
+    deviceIdentity,
+    deviceDelegationChain,
     rootDelegationChain,
     sessionDelegationChain,
     getWebauthnID,
     sessionKey,
     setWebauthnId: id => setWebauthnId(id),
     setRootDelegationChain: chain => setRootDelegationChain(chain),
+    setDeviceDelegationChain: chain => setDeviceDelegationChain(chain),
     setSessionDelegationChain: chain => setSessionDelegationChain(chain),
     setRootIdentity: id => setRootIdentity(id),
+    setDeviceIdentity: id => setDeviceIdentity(id),
     setSessionKey: key => setSessionKey(key),
   };
 }

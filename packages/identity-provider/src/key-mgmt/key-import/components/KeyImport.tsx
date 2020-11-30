@@ -7,7 +7,7 @@ import { useHistory } from 'react-router-dom';
 import { Button } from 'src/components/Button';
 import { Mnemonic } from 'src/components/Mnemonic';
 import { useAuth } from 'src/hooks/use-auth';
-import { KeyImportSnackbar } from '../components/KeyImportSnackbar';
+import { KeyImportSnackbar } from './KeyImportSnackbar';
 
 const englishWords = wordlists.english;
 
