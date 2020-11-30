@@ -8,6 +8,7 @@ import { IDPRootErrorBoundary } from './ErrorBoundary';
 import { ProvideAuth } from './hooks/use-auth';
 import theme from './theme';
 import { ROUTES } from './utils/constants';
+import NotFoundRoute from "./routes/NotFound";
 
 const Login = lazy(() => import('./routes/Authorization'));
 const KeyImport = lazy(() => import('./key-mgmt/key-import/routes/KeyImport'));
@@ -24,11 +25,12 @@ const App = () => {
             <Router>
               <Suspense fallback={<div>Loading...</div>}>
                 <Switch>
-                  <Route path={ROUTES.LOGIN} component={Login} />
-                  <Route path={ROUTES.KEY_IMPORT} component={KeyImport} />
-                  <Route path={ROUTES.KEY_GENERATION} component={KeyGeneration} />
+                  <Route exact path={ROUTES.LOGIN} component={Login} />
+                  <Route exact path={ROUTES.KEY_IMPORT} component={KeyImport} />
+                  <Route exact path={ROUTES.KEY_GENERATION} component={KeyGeneration} />
                   <Route path={ROUTES.RELYING_PARTY_DEMO} component={RelyingPartyDemo} />
-                  <Route path={ROUTES.HOME} component={HomeRoute} />
+                  <Route exact path={ROUTES.HOME} component={HomeRoute} />
+                  <Route component={NotFoundRoute} />
                 </Switch>
               </Suspense>
             </Router>
