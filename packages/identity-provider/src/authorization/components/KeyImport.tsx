@@ -3,7 +3,6 @@ import { Container, Typography } from '@material-ui/core';
 import SendIcon from '@material-ui/icons/Send';
 import { validateMnemonic, wordlists } from 'bip39';
 import React, { createRef, FormEvent, PropsWithoutRef, useState } from 'react';
-import { useHistory } from 'react-router-dom';
 import { Button } from 'src/components/Button';
 import { Mnemonic } from 'src/components/Mnemonic';
 import { useAuth } from 'src/hooks/use-auth';
@@ -21,11 +20,10 @@ const englishWords = wordlists.english;
 
 interface KeyImportProps {
   onSkip: () => void;
-  onSuccess: (identity: Bip39Ed25519KeyIdentity) => void;
+  onSuccess: () => void;
 }
 
 export function KeyImportContainer(props: PropsWithoutRef<KeyImportProps>) {
-  const history = useHistory();
   const auth = useAuth();
   const [snackError, setSnackError] = useState<Error>();
   const _formRef = createRef<HTMLFormElement>();
@@ -44,7 +42,9 @@ export function KeyImportContainer(props: PropsWithoutRef<KeyImportProps>) {
 
     if (validated && auth) {
       const identity = Bip39Ed25519KeyIdentity.fromBip39Mnemonic(fullMnemonic, englishWords);
-      props.onSuccess(identity);
+      if (auth) {
+        auth.setRootIdentity(identity);
+      }
     } else {
       setSnackError(Error(' One or more words in mnemonic list is malformed'));
     }

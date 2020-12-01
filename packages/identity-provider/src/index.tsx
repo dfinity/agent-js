@@ -9,9 +9,7 @@ import { ProvideAuth } from './hooks/use-auth';
 import theme from './theme';
 import { ROUTES } from './utils/constants';
 
-const Login = lazy(() => import('./routes/Authorization'));
-const KeyImport = lazy(() => import('./key-mgmt/key-import/components/KeyImport'));
-const KeyGeneration = lazy(() => import('./key-mgmt/key-generation/routes/KeyGeneration'));
+const Authorization = lazy(() => import('./authorization/routes/Authorization'));
 const RPDemo = lazy(() => import('./relying-party-demo/routes/RPDemo'));
 
 const App = () => {
@@ -24,9 +22,7 @@ const App = () => {
             <Router>
               <Suspense fallback={<div>Loading...</div>}>
                 <Switch>
-                  <Route path={ROUTES.LOGIN} component={Login} />
-                  <Route path={ROUTES.KEY_IMPORT} component={KeyImport} />
-                  <Route path={ROUTES.KEY_GENERATION} component={KeyGeneration} />
+                  <Route path={ROUTES.AUTHORIZATION} component={Authorization} />
                   <Route path={ROUTES.RELYING_PARTY_DEMO} component={RPDemo} />
                   <Route path={ROUTES.HOME} component={HomeRoute} />
                 </Switch>

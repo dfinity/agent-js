@@ -6,7 +6,7 @@ import {
   Ed25519PublicKey,
 } from '@dfinity/authentication';
 import localforage from 'localforage';
-import React, { ComponentProps, createContext, useContext, useEffect, useState } from 'react';
+import React, { ComponentProps, createContext, useContext, useState } from 'react';
 import { LOCAL_STORAGE_ROOT_CREDENTIAL, LOCAL_STORAGE_WEBAUTHN_ID } from '../utils/constants';
 
 const noop = () => {};

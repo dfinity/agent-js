@@ -12,10 +12,13 @@ import React, { Fragment } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Button } from 'src/components/Button';
 import { useAuth } from 'src/hooks/use-auth';
-import KeyGeneration from 'src/key-mgmt/key-generation/routes/KeyGeneration';
-import KeyImportContainer from 'src/key-mgmt/key-import/components/KeyImport';
+import KeyGeneration from 'src/authorization/components/KeyGeneration';
+import KeyImportContainer from 'src/authorization/components/KeyImport';
 import { appendTokenParameter, getRequiredQueryParams } from 'src/identity-provider';
 import { ICAuthenticationResponse } from 'types/responses';
+import RootDelegationChainCreation from 'src/authorization/components/RootDelegationChainCreation';
+import DeviceAuthorization from 'src/authorization/components/DeviceAuthorization';
+import SessionAuthorization from 'src/authorization/components/SessionAuthorization';
 
 /**
  * This component is responsible for handling the top-level authentication flow.
@@ -35,14 +38,13 @@ export function AuthorizationRoute() {
   const auth = useAuth();
   const location = useLocation();
 
-  const [loginHint, setLoginHint] = React.useState<PublicKey>();
   const [redirectURI, setRedirectURI] = React.useState('');
   const [activeStep, setActiveStep] = React.useState(0);
 
-  // every time we get a new session delegation chain, we redirect to the relying party
-  React.useEffect(() => {
-    if (auth.sessionDelegationChain && auth.sessionDelegationChain.publicKey) {
-      const accessToken = auth.sessionDelegationChain?.publicKey.toString() || '';
+  // Redirect to relying party with proper query parameters
+  function handleRedirect() {
+    if (auth && auth.sessionDelegationChain) {
+      const accessToken = auth.sessionDelegationChain.publicKey.toString() || '';
       const expiresIn =
         auth.sessionDelegationChain?.delegations[0].delegation.expiration.toNumber() || 1;
       const tokenType = 'bearer';
@@ -65,137 +67,49 @@ export function AuthorizationRoute() {
       const url = appendTokenParameter(redirectURI + '?' + queryParams, accessToken);
       window.location.assign(url.href);
     }
-  }, [auth.sessionDelegationChain]);
+  }
 
   // every time our query parameters change, we should try to get login hint and redirect from them
   React.useEffect(() => {
     try {
       const params = getRequiredQueryParams(location.search);
-      setLoginHint(params.loginHint);
       setRedirectURI(params.redirectURI);
     } catch (error) {
       console.error(error);
     }
   }, [location.search]);
 
-  function handleGenerationSuccess(v: Bip39Ed25519KeyIdentity): void {
-    if (auth) {
-      auth.setRootIdentity(v);
-      handleNext();
-    }
-  }
-
-  // skips the generate phase if we import
-  function handleImportSuccess(v: Bip39Ed25519KeyIdentity): void {
-    if (auth) {
-      auth.setRootIdentity(v);
-      setActiveStep(activeStep + 2);
-    }
-  }
-
-  async function handleCreateRootChain() {
-    const from = auth.rootIdentity;
-    const to = Ed25519KeyIdentity.generate().getPublicKey();
-    if (!from || !to) {
-      return;
-    }
-    const chain = await DelegationChain.create(from, to, new Date(2099));
-    auth.setRootDelegationChain(chain);
-    handleNext();
-  }
-
-  async function handleCreateDeviceChain() {
-    const deviceIdentity = Ed25519KeyIdentity.generate();
-    const from = auth.rootIdentity;
-    const to = deviceIdentity.getPublicKey();
-    const previous = auth.rootDelegationChain;
-    if (!from) {
-      return;
-    }
-    const chain = await DelegationChain.create(from, to, new Date(2099), { previous });
-    auth.setDeviceIdentity(deviceIdentity);
-    auth.setDeviceDelegationChain(chain);
-    handleNext();
-  }
-  async function handleCreateSessionChain() {
-    const from = auth.deviceIdentity;
-    const to = loginHint;
-    const previous = auth.rootDelegationChain;
-    if (!from || !to) {
-      console.error('no from or to found: ', { from, to });
-    } else {
-      const options = {
-        previous,
-      };
-      const tomorrow = new Date(Date.now() + 15 * 60 * 1000);
-      const sessionChain = await DelegationChain.create(from, to, tomorrow, options);
-      auth.setSessionDelegationChain(sessionChain);
-    }
-  }
-
   function handleDecline() {
-    // handle declining device authorization
+    // handle declining authorization at any step
+    // @todo(andrew): handle different scenarios with different descriptions
+    const redirect = new URL(redirectURI);
+    redirect.searchParams.append('error', 'access_denied');
+    redirect.searchParams.append('error_description', 'User denied authorization');
+    window.location.assign(redirect.href);
   }
 
   const steps: Array<{ label: string; component: JSX.Element }> = [
     {
       label: 'Import a Root Identity? [optional]',
       component: (
-        <KeyImportContainer
-          key='Offer to either generate or import a Root Identity'
-          onSkip={handleNext}
-          onSuccess={handleImportSuccess}
-        />
+        <KeyImportContainer onSkip={handleNext} onSuccess={() => setActiveStep(activeStep + 2)} />
       ),
     },
     {
       label: 'Generate new Root Identity',
-      component: (
-        <Fragment>
-          <Typography variant='body1'>
-            It looks like we don't have an identity for you. Would you like to generate one?
-          </Typography>
-          <KeyGeneration
-            key='Key Generation'
-            onBack={handlePrevious}
-            onSuccess={handleGenerationSuccess}
-          />
-        </Fragment>
-      ),
+      component: <KeyGeneration key='Key Generation' onSuccess={handleNext} />,
     },
     {
       label: `Create Root Delegation Chain`,
-      component: (
-        <div>
-          <Typography variant='h4'>Do you consent to creating a root Delegation Chain?</Typography>
-          <Button onClick={handleDecline}>Decline</Button>
-          <Button color='primary' onClick={handleCreateRootChain}>Create Root Chain</Button>
-        </div>
-      ),
+      component: <RootDelegationChainCreation onRejection={handleDecline} onSuccess={handleNext} />,
     },
     {
       label: `Authorize Device`,
-      component: (
-        <div>
-          <Typography variant='h4'>
-            Do you want to authorize this device using your identity?
-          </Typography>
-          <Button onClick={handleDecline}>Decline</Button>
-          <Button color='primary' onClick={handleCreateDeviceChain}>Authorize Device</Button>
-        </div>
-      ),
+      component: <DeviceAuthorization onRejection={handleDecline} onSuccess={handleNext} />,
     },
     {
       label: 'Authorize Session',
-      component: (
-        <div>
-          <Typography variant='h4'>
-            Do you want to authorize this app using your identity?
-          </Typography>
-          <Button onClick={handleDecline}>Decline</Button>
-          <Button color='primary' onClick={handleCreateSessionChain}>Authorize Session</Button>
-        </div>
-      ),
+      component: <SessionAuthorization onRejection={handleDecline} onSuccess={handleRedirect} />,
     },
   ];
 
