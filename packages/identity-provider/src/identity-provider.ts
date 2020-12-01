@@ -8,7 +8,9 @@ interface RequiredQueryParameters {
   loginHint: PublicKey;
 }
 
-// should look like window.location.search, i.e. ?key=value&secondKey=secondValue
+/*
+ *  should look like window.location.search, i.e. ?key=value&secondKey=secondValue
+ */
 export function getRequiredQueryParams(search: string): RequiredQueryParameters {
   const searchParams = new URLSearchParams(search.substr(1));
 
