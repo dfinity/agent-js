@@ -1,9 +1,10 @@
+import { Buffer } from 'buffer/';
 import { HttpAgentRequest } from './http_agent_types';
 import { Principal } from './principal';
-import { BinaryBlob, blobFromUint8Array, DerEncodedBlob } from './types';
 import { requestIdOf } from './request_id';
+import { BinaryBlob, blobFromBuffer, blobFromUint8Array, DerEncodedBlob } from './types';
 
-const domainSeparator = new TextEncoder().encode('\x0Aic-request');
+const domainSeparator = Buffer.from(new TextEncoder().encode('\x0Aic-request'));
 
 /**
  * A Key Pair, containing a secret and public key.
@@ -75,9 +76,7 @@ export abstract class SignIdentity implements Identity {
       body: {
         content: body,
         sender_pubkey: this.getPublicKey().toDer(),
-        sender_sig: await this.sign(
-          blobFromUint8Array(Buffer.concat([domainSeparator, requestId])),
-        ),
+        sender_sig: await this.sign(blobFromBuffer(Buffer.concat([domainSeparator, requestId]))),
       },
     };
   }
