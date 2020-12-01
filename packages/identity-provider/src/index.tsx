@@ -28,7 +28,7 @@ const App = () => {
                   <Route exact path={ROUTES.LOGIN} component={Login} />
                   <Route exact path={ROUTES.KEY_IMPORT} component={KeyImport} />
                   <Route exact path={ROUTES.KEY_GENERATION} component={KeyGeneration} />
-                  <Route path={ROUTES.RELYING_PARTY_DEMO} component={RelyingPartyDemo} />
+                  <Route exact path={ROUTES.RELYING_PARTY_DEMO} component={RelyingPartyDemo} />
                   <Route exact path={ROUTES.HOME} component={HomeRoute} />
                   <Route component={NotFoundRoute} />
                 </Switch>
