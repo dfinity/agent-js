@@ -10,7 +10,8 @@ import theme from './theme';
 import { ROUTES } from './utils/constants';
 
 const Authorization = lazy(() => import('./authorization/routes/Authorization'));
-const RPDemo = lazy(() => import('./relying-party-demo/routes/RPDemo'));
+const RelyingPartyDemo = lazy(() => import('./relying-party-demo/routes'))
+
 
 const App = () => {
   return (
@@ -23,7 +24,7 @@ const App = () => {
               <Suspense fallback={<div>Loading...</div>}>
                 <Switch>
                   <Route path={ROUTES.AUTHORIZATION} component={Authorization} />
-                  <Route path={ROUTES.RELYING_PARTY_DEMO} component={RPDemo} />
+                  <Route path={ROUTES.RELYING_PARTY_DEMO} component={RelyingPartyDemo} />
                   <Route path={ROUTES.HOME} component={HomeRoute} />
                 </Switch>
               </Suspense>

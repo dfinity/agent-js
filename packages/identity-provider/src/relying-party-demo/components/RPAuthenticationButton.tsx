@@ -19,6 +19,7 @@ export default function RPAuthenticationButton(props: {
     children?: React.ReactNode;
     delegateTo: PublicKey;
     idpBaseUrl?: string;
+    redirectUrl: URL;
   }) {
     // default to empty string, which should resolve everything relative to wherever this is used
     // (via relative HTML URLs like `/authorization` instead of absolute URLs like `https://id.ic0.app/authorization`)
@@ -28,7 +29,7 @@ export default function RPAuthenticationButton(props: {
         event.preventDefault();
         const authenticationRequest: IDPAuthenticationRequest = {
           sessionIdentity: props.delegateTo,
-          redirectUri: new URL(globalThis.location.href),
+          redirectUri: props.redirectUrl,
         };
         const authenticationRequestUrl = (() => {
           const url = new URL(`${idpBaseUrl}/authorization`, globalThis.location.href);
