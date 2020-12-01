@@ -1,12 +1,11 @@
-import { Identity, KeyPair, PublicKey } from '@dfinity/agent';
+import { KeyPair, PublicKey } from '@dfinity/agent';
 import {
   Bip39Ed25519KeyIdentity,
   DelegationChain,
   Ed25519KeyIdentity,
-  Ed25519PublicKey,
 } from '@dfinity/authentication';
 import localforage from 'localforage';
-import React, { ComponentProps, createContext, useContext, useState } from 'react';
+import React, { ComponentProps, createContext, useContext, useEffect, useState } from 'react';
 import { LOCAL_STORAGE_ROOT_CREDENTIAL, LOCAL_STORAGE_WEBAUTHN_ID } from '../utils/constants';
 
 const noop = () => {};
@@ -61,6 +60,12 @@ function useProvideAuth(): UseAuthContext {
       return id;
     }
   }
+
+  useEffect(() => {
+    if (rootIdentity) {
+      localforage.setItem(LOCAL_STORAGE_ROOT_CREDENTIAL, rootIdentity.getKeyPair());
+    }
+  }, [rootIdentity]);
 
   return {
     webauthnId,
