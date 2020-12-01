@@ -10,10 +10,9 @@ import theme from './theme';
 import { ROUTES } from './utils/constants';
 import NotFoundRoute from "./routes/NotFound";
 
-const Login = lazy(() => import('./routes/Authorization'));
-const KeyImport = lazy(() => import('./key-mgmt/key-import/routes/KeyImport'));
-const KeyGeneration = lazy(() => import('./key-mgmt/key-generation/routes/KeyGeneration'));
+const Authorization = lazy(() => import('./authorization/routes/Authorization'));
 const RelyingPartyDemo = lazy(() => import('./relying-party-demo/routes'))
+
 
 const App = () => {
   return (
@@ -21,13 +20,11 @@ const App = () => {
       <ProvideAuth>
         <ThemeProvider theme={theme}>
           <CssBaseline />
-          <Container maxWidth='md'>
+          <Container maxWidth='xl'>
             <Router>
               <Suspense fallback={<div>Loading...</div>}>
                 <Switch>
-                  <Route exact path={ROUTES.LOGIN} component={Login} />
-                  <Route exact path={ROUTES.KEY_IMPORT} component={KeyImport} />
-                  <Route exact path={ROUTES.KEY_GENERATION} component={KeyGeneration} />
+                  <Route exact path={ROUTES.AUTHORIZATION} component={Authorization} />
                   <Route exact path={ROUTES.RELYING_PARTY_DEMO} component={RelyingPartyDemo} />
                   <Route exact path={ROUTES.HOME} component={HomeRoute} />
                   <Route component={NotFoundRoute} />

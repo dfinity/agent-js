@@ -2,12 +2,11 @@ import { Bip39Ed25519KeyIdentity } from '@dfinity/authentication';
 import { Container, Typography } from '@material-ui/core';
 import SendIcon from '@material-ui/icons/Send';
 import { validateMnemonic, wordlists } from 'bip39';
-import React, { createRef, FormEvent, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import React, { createRef, FormEvent, PropsWithoutRef, useState } from 'react';
 import { Button } from 'src/components/Button';
 import { Mnemonic } from 'src/components/Mnemonic';
 import { useAuth } from 'src/hooks/use-auth';
-import { KeyImportSnackbar } from '../components/KeyImportSnackbar';
+import { KeyImportSnackbar } from './KeyImportSnackbar';
 
 const englishWords = wordlists.english;
 
@@ -18,8 +17,13 @@ const englishWords = wordlists.english;
  * the new root key.
  *
  */
-export function KeyImportContainer() {
-  const history = useHistory();
+
+interface KeyImportProps {
+  onSkip: () => void;
+  onSuccess: () => void;
+}
+
+export function KeyImportContainer(props: PropsWithoutRef<KeyImportProps>) {
   const auth = useAuth();
   const [snackError, setSnackError] = useState<Error>();
   const _formRef = createRef<HTMLFormElement>();
@@ -38,7 +42,9 @@ export function KeyImportContainer() {
 
     if (validated && auth) {
       const identity = Bip39Ed25519KeyIdentity.fromBip39Mnemonic(fullMnemonic, englishWords);
-      auth.setRootIdentity(identity);
+      if (auth) {
+        auth.setRootIdentity(identity);
+      }
     } else {
       setSnackError(Error(' One or more words in mnemonic list is malformed'));
     }
@@ -57,15 +63,15 @@ export function KeyImportContainer() {
       <Typography variant='h2' align='center'>
         Import Existing Key
       </Typography>
-      <Button variant='outlined' onClick={() => history.goBack()}>
-        Back
-      </Button>
       <form ref={_formRef} onSubmit={handleSubmit}>
         <Mnemonic wordList={wordList} mode='write' />
         <Button variant='outlined' color='secondary' startIcon={<SendIcon />} type='submit'>
           Import
         </Button>
       </form>
+      <Button variant='outlined' onClick={props.onSkip}>
+        Skip
+      </Button>
       <KeyImportSnackbar handleClose={handleClose} snackError={snackError} />
     </Container>
   );

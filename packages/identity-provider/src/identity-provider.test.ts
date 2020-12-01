@@ -1,3 +1,5 @@
+import { Ed25519KeyIdentity } from '@dfinity/authentication';
+import { hexEncodeUintArray } from './bytes';
 import { appendTokenParameter, getRequiredQueryParams } from './identity-provider';
 import * as CONSTANTS from './utils/constants';
 
@@ -13,10 +15,15 @@ afterEach(() => {
 describe('@dfinity/identity-provider', () => {
   describe('getRequiredQueryParams', () => {
     test('identity provider should pull query parameters', () => {
-      const search = '?redirect_uri=bar&login_hint=fakekey';
+      const loginHint = hexEncodeUintArray(
+        new Uint8Array(Ed25519KeyIdentity.generate().getPublicKey().toDer()),
+      );
+      const keyParam = `login_hint=${loginHint}`;
+      const search = '?redirect_uri=bar&' + keyParam;
       const queryParams = getRequiredQueryParams(search);
       expect(queryParams.redirectURI).toEqual('bar');
-      expect(queryParams.loginHint).toEqual('fakekey');
+      const keyAsString = hexEncodeUintArray(new Uint8Array(queryParams.loginHint.toDer()));
+      expect(keyAsString).toEqual(loginHint);
     });
 
     test('should fail when redirect_uri not found', () => {
@@ -35,7 +42,10 @@ describe('@dfinity/identity-provider', () => {
 
     test('should handle URL encoding', () => {
       const fancyURL = 'http://localhost:8080/?canisterId=12345';
-      const keyParam = 'login_hint=locked';
+      const loginHint = hexEncodeUintArray(
+        new Uint8Array(Ed25519KeyIdentity.generate().getPublicKey().toDer()),
+      );
+      const keyParam = `login_hint=${loginHint}`;
       const urlEncodedURL = encodeURIComponent(fancyURL);
       const searchParams = '?redirect_uri=' + urlEncodedURL + '&' + keyParam;
       const params = getRequiredQueryParams(searchParams);
