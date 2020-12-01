@@ -8,6 +8,7 @@ import { IDPRootErrorBoundary } from './ErrorBoundary';
 import { ProvideAuth } from './hooks/use-auth';
 import theme from './theme';
 import { ROUTES } from './utils/constants';
+import NotFoundRoute from "./routes/NotFound";
 
 const Authorization = lazy(() => import('./authorization/routes/Authorization'));
 const RelyingPartyDemo = lazy(() => import('./relying-party-demo/routes'))
@@ -23,9 +24,10 @@ const App = () => {
             <Router>
               <Suspense fallback={<div>Loading...</div>}>
                 <Switch>
-                  <Route path={ROUTES.AUTHORIZATION} component={Authorization} />
-                  <Route path={ROUTES.RELYING_PARTY_DEMO} component={RelyingPartyDemo} />
-                  <Route path={ROUTES.HOME} component={HomeRoute} />
+                  <Route exact path={ROUTES.AUTHORIZATION} component={Authorization} />
+                  <Route exact path={ROUTES.RELYING_PARTY_DEMO} component={RelyingPartyDemo} />
+                  <Route exact path={ROUTES.HOME} component={HomeRoute} />
+                  <Route component={NotFoundRoute} />
                 </Switch>
               </Suspense>
             </Router>

@@ -20,6 +20,7 @@ module.exports = {
     jsonpFunction: '__dfinityJsonp',
     path: path.resolve(__dirname, './dist'),
     filename: '[name]-[hash].js',
+    publicPath: '/',
   },
   resolve: {
     plugins: [new TsconfigPathsPlugin({ configFile: './tsconfig.json' })],
