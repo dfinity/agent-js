@@ -15,10 +15,12 @@ import { useAuth } from 'src/hooks/use-auth';
 import KeyGeneration from 'src/authorization/components/KeyGeneration';
 import KeyImportContainer from 'src/authorization/components/KeyImport';
 import { appendTokenParameter, getRequiredQueryParams } from 'src/identity-provider';
-import { ICAuthenticationResponse } from 'types/responses';
+import { ICAuthenticationResponse, OAuthAuthenticationResponse } from 'types/responses';
 import RootDelegationChainCreation from 'src/authorization/components/RootDelegationChainCreation';
 import DeviceAuthorization from 'src/authorization/components/DeviceAuthorization';
 import SessionAuthorization from 'src/authorization/components/SessionAuthorization';
+import { toOAuth2 } from "../oauth2";
+import { hexEncodeUintArray } from 'src/bytes';
 
 /**
  * This component is responsible for handling the top-level authentication flow.
@@ -44,27 +46,27 @@ export function AuthorizationRoute() {
   // Redirect to relying party with proper query parameters
   function handleRedirect() {
     if (auth && auth.sessionDelegationChain) {
-      const accessToken = auth.sessionDelegationChain.publicKey.toString() || '';
+      // @TODO(bengo) - make this a hex(cborEncode(ICAuthenticationResponse))
+      // where ICAuthenticationResponse({ sender_delegation, ... })
+      const accessToken = hexEncodeUintArray(new Uint8Array(auth.sessionDelegationChain.publicKey));
       const expiresIn =
         auth.sessionDelegationChain?.delegations[0].delegation.expiration.toNumber() || 1;
       const tokenType = 'bearer';
-      const authResponse: ICAuthenticationResponse = {
+      const icAuthResponse: ICAuthenticationResponse = {
         accessToken,
         expiresIn,
         redirectURI,
         tokenType,
       };
+      const oauth2AcessTokenResponse = toOAuth2(icAuthResponse)
 
-      console.debug('new authorization response: ');
-      console.debug(JSON.stringify(authResponse, null, 2));
+      console.debug('new AccessTokenResponse: ', JSON.stringify(oauth2AcessTokenResponse, null, 2));
 
       const queryParams = new URLSearchParams();
-      Object.keys(authResponse).forEach(key => {
-        // @ts-ignore
-        const value = authResponse[key];
+      for (const [key, value] of Object.entries(oauth2AcessTokenResponse)) {
         queryParams.append(key, value);
-      });
-      const url = appendTokenParameter(redirectURI + '?' + queryParams, accessToken);
+      }
+      const url = new URL(`?${queryParams}`, redirectURI)
       window.location.assign(url.href);
     }
   }
