@@ -1,9 +1,9 @@
 import { BinaryBlob, blobFromHex, blobFromUint32Array } from '@dfinity/agent';
-import * as bip39 from 'bip39';
+import { entropyToMnemonic, mnemonicToEntropy } from 'bip39';
 import { Ed25519KeyIdentity } from './ed25519';
 
 export function bip39MnemonicToEntropy(mnemonic: string, wordlist?: string[]): BinaryBlob {
-  return blobFromHex(bip39.mnemonicToEntropy(mnemonic, wordlist));
+  return blobFromHex(mnemonicToEntropy(mnemonic, wordlist));
 }
 
 export function bip39EntropyToMnemonic(seed: BinaryBlob): string {
@@ -11,7 +11,7 @@ export function bip39EntropyToMnemonic(seed: BinaryBlob): string {
     throw new Error('Entropy for BIP-39 must be 32 bytes');
   }
 
-  return bip39.entropyToMnemonic(seed.toString('hex'));
+  return entropyToMnemonic(seed.toString('hex'));
 }
 
 export function bip39GenerateMnemonic(): string {

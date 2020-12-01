@@ -3,6 +3,7 @@ const TerserPlugin = require('terser-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
+const IgnorePlugin = require('webpack').IgnorePlugin
 
 module.exports = {
   mode: 'production',
@@ -58,6 +59,7 @@ module.exports = {
     ],
   },
   plugins: [
+    new IgnorePlugin(/^\.\/wordlists\/(?!english)/, /bip39\/src$/),
     new HtmlWebpackPlugin({
       template: 'src/index.html',
       filename: 'index.html',
