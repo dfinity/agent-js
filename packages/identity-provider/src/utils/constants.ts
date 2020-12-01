@@ -10,9 +10,7 @@ export const LOCAL_STORAGE_ROOT_CREDENTIAL = 'ic_root_credentials';
 export const LOCAL_STORAGE_ROOT_DELEGATION_CHAIN = 'ic_root_delegation_chain';
 
 export const ROUTES = {
-  LOGIN: '/authorization',
-  KEY_GENERATION: '/key-generation',
-  KEY_IMPORT: '/key-import',
+  AUTHORIZATION: '/authorization',
   RELYING_PARTY_DEMO: '/relying-party-demo',
   HOME: '/',
 };
