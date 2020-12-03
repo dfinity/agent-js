@@ -15,12 +15,11 @@ import { useAuth } from 'src/hooks/use-auth';
 import KeyGeneration from 'src/authorization/components/KeyGeneration';
 import KeyImportContainer from 'src/authorization/components/KeyImport';
 import { appendTokenParameter, getRequiredQueryParams } from 'src/identity-provider';
-import { ICAuthenticationResponse, OAuthAuthenticationResponse } from 'types/responses';
 import RootDelegationChainCreation from 'src/authorization/components/RootDelegationChainCreation';
 import DeviceAuthorization from 'src/authorization/components/DeviceAuthorization';
 import SessionAuthorization from 'src/authorization/components/SessionAuthorization';
-import { toOAuth2 } from "../oauth2";
 import { hexEncodeUintArray } from 'src/bytes';
+import { ICAuthenticationResponse, toOAuth2 } from 'src/protocol/ic-id-protocol';
 
 /**
  * This component is responsible for handling the top-level authentication flow.
