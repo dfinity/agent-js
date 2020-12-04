@@ -7,7 +7,6 @@ export default function OAuthRedirectUriRoute(props: {
 }) {
     const { url, path } = useRouteMatch()
     const location = useLocation()
-    const oauthAccessTokenResponse = oauth2.fromQueryString(new URLSearchParams(location.search))
     const icAuthenticationResponse = icid.fromQueryString(new URLSearchParams(location.search))
     const parsedBearerToken = icid.parseBearerToken(icAuthenticationResponse.accessToken)
     return <>
@@ -21,14 +20,6 @@ export default function OAuthRedirectUriRoute(props: {
                 <pre>{JSON.stringify(parsedBearerToken, null, 2)}</pre>
             </dd>
         </dl>
-        <details>
-            <summary>Debug Info</summary>
-            <dl>
-                <dt>OAuth2 AccessTokenResponse</dt><dd>
-                    <pre>{JSON.stringify(oauthAccessTokenResponse, null, 2)}</pre>
-                </dd>
-            </dl>
-        </details>
         <a href={props.backToRpDemoUrl}>Restart Relying Party Demo</a>
     </>
 }
