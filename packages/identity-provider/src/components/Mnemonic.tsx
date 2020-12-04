@@ -1,12 +1,8 @@
-import {
-  Container,
-  createStyles,
-  Grid,
-  makeStyles,
-  Paper,
-  TextField,
-  Theme,
-} from '@material-ui/core';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import Container from '@material-ui/core/Container';
+import Grid from '@material-ui/core/Grid';
+import Paper from '@material-ui/core/Paper';
+import TextField from '@material-ui/core/TextField';
 import React, { PropsWithoutRef, useState } from 'react';
 
 const useStyles = makeStyles((theme: Theme) =>

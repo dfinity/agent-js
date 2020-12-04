@@ -1,5 +1,6 @@
 import { Bip39Ed25519KeyIdentity } from '@dfinity/authentication';
-import { Container, Typography } from '@material-ui/core';
+import Container from '@material-ui/core/Container';
+import Typography from '@material-ui/core/Typography';
 import SendIcon from '@material-ui/icons/Send';
 import { validateMnemonic, wordlists } from 'bip39';
 import React, { createRef, FormEvent, PropsWithoutRef, useState } from 'react';

@@ -1,13 +1,9 @@
 import { Bip39Ed25519KeyIdentity } from '@dfinity/authentication';
-import { Container, Snackbar, Typography } from '@material-ui/core';
-import React, {
-  createRef,
-  FormEvent,
-  PropsWithoutRef,
-  useCallback,
-  useState,
-} from 'react';
-import {  useHistory } from 'react-router-dom';
+import Container from '@material-ui/core/Container';
+import Snackbar from '@material-ui/core/Snackbar';
+import Typography from '@material-ui/core/Typography';
+import React, { createRef, FormEvent, PropsWithoutRef, useCallback, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import { Alert } from 'src/components/Alert';
 import { Button } from 'src/components/Button';
 import { Mnemonic } from 'src/components/Mnemonic';

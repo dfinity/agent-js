@@ -4,7 +4,7 @@ import {
   DelegationChain,
   Ed25519KeyIdentity,
 } from '@dfinity/authentication';
-import { Typography } from '@material-ui/core';
+import Typography from '@material-ui/core/Typography';
 import Stepper from '@material-ui/core/Stepper';
 import Step from '@material-ui/core/Step';
 import StepLabel from '@material-ui/core/StepLabel';
@@ -14,12 +14,12 @@ import { Button } from 'src/components/Button';
 import { useAuth } from 'src/hooks/use-auth';
 import KeyGeneration from 'src/authorization/components/KeyGeneration';
 import KeyImportContainer from 'src/authorization/components/KeyImport';
-import { appendTokenParameter, getRequiredQueryParams } from 'src/identity-provider';
+import { getRequiredQueryParams } from 'src/identity-provider';
 import RootDelegationChainCreation from 'src/authorization/components/RootDelegationChainCreation';
 import DeviceAuthorization from 'src/authorization/components/DeviceAuthorization';
 import SessionAuthorization from 'src/authorization/components/SessionAuthorization';
-import { hexEncodeUintArray } from 'src/bytes';
 import * as icid from '../../protocol/ic-id-protocol';
+
 /**
  * This component is responsible for handling the top-level authentication flow.
  * What should it do? (happy path, assuming consent at each stage)
@@ -56,7 +56,7 @@ export function AuthorizationRoute() {
         redirectURI,
         tokenType,
       };
-      const oauth2AcessTokenResponse = icid.toOAuth2(icAuthResponse)
+      const oauth2AcessTokenResponse = icid.toOAuth2(icAuthResponse);
 
       console.debug('new AccessTokenResponse: ', JSON.stringify(oauth2AcessTokenResponse, null, 2));
 
@@ -64,7 +64,7 @@ export function AuthorizationRoute() {
       for (const [key, value] of Object.entries(oauth2AcessTokenResponse)) {
         queryParams.append(key, value);
       }
-      const url = new URL(`?${queryParams}`, redirectURI)
+      const url = new URL(`?${queryParams}`, redirectURI);
       window.location.assign(url.href);
     }
   }
@@ -79,6 +79,21 @@ export function AuthorizationRoute() {
     }
   }, [location.search]);
 
+  React.useEffect(() => {
+    if (auth.rootIdentity) {
+      // if root identity, then check root chain
+      if (auth.rootDelegationChain) {
+        // if they have a root chain, that means this device is already authorized
+        // continue to authorize session
+        setActiveStep(STEPS.SESSION_AUTHORIZATION);
+      } else {
+        // they've just imported or created, so let's prompt for device authorization
+        // @TODO create new delegation chain
+        setActiveStep(STEPS.DEVICE_AUTHORIATION);
+      }
+    }
+  }, [auth.rootIdentity]);
+
   function handleDecline() {
     // handle declining authorization at any step
     // @todo(andrew): handle different scenarios with different descriptions
@@ -88,12 +103,31 @@ export function AuthorizationRoute() {
     window.location.assign(redirect.href);
   }
 
-  const steps: Array<{ label: string; component: JSX.Element }> = [
+  interface CustomStep {
+    label: string;
+    component: JSX.Element;
+    optional?: boolean;
+  }
+
+  // this is directly tied to `steps`, but a way to be a little more explicit!
+  enum STEPS {
+    IMPORT = 0,
+    GENERATE = 1,
+    ROOT_DELEGATION = 2,
+    DEVICE_AUTHORIATION = 3,
+    SESSION_AUTHORIZATION = 4,
+  }
+
+  const steps: CustomStep[] = [
     {
-      label: 'Import a Root Identity? [optional]',
+      label: 'Import a Root Identity?',
       component: (
-        <KeyImportContainer onSkip={handleNext} onSuccess={() => setActiveStep(activeStep + 2)} />
+        <KeyImportContainer
+          onSkip={handleNext}
+          onSuccess={() => setActiveStep(STEPS.ROOT_DELEGATION)}
+        />
       ),
+      optional: true,
     },
     {
       label: 'Generate new Root Identity',
@@ -127,9 +161,12 @@ export function AuthorizationRoute() {
         Identity Provider
       </Typography>
       <Stepper activeStep={activeStep}>
-        {steps.map(({ label }) => {
+        {steps.map(({ label, optional }) => {
           const stepProps: { completed?: boolean } = {};
           const labelProps: { optional?: React.ReactNode } = {};
+          if (optional) {
+            labelProps.optional = <Typography variant='caption'>Optional</Typography>;
+          }
           return (
             <Step key={label} {...stepProps}>
               <StepLabel {...labelProps}>{label}</StepLabel>
