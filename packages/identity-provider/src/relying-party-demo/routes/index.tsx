@@ -1,7 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Route, Switch, useRouteMatch, useLocation  } from 'react-router-dom';
 import RelyingPartyDemo from './RPDemo';
-import OAuthRedirectUriRoute from './OAuthRedirectUri';
+import AuthnRedirectUri from './AuthnRedirectUri';
 
 export default function RelyingPartyDemoRoute(props: {
     NotFoundRoute: React.ComponentType
@@ -20,7 +20,7 @@ export default function RelyingPartyDemoRoute(props: {
                     />
             </Route>
             <Route exact path={redirectUriPath}>
-                <OAuthRedirectUriRoute
+                <AuthnRedirectUri
                     backToRpDemoUrl={path}
                 />
             </Route>

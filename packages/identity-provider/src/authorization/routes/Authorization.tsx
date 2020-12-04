@@ -15,13 +15,11 @@ import { useAuth } from 'src/hooks/use-auth';
 import KeyGeneration from 'src/authorization/components/KeyGeneration';
 import KeyImportContainer from 'src/authorization/components/KeyImport';
 import { appendTokenParameter, getRequiredQueryParams } from 'src/identity-provider';
-import { ICAuthenticationResponse, OAuthAuthenticationResponse } from 'types/responses';
 import RootDelegationChainCreation from 'src/authorization/components/RootDelegationChainCreation';
 import DeviceAuthorization from 'src/authorization/components/DeviceAuthorization';
 import SessionAuthorization from 'src/authorization/components/SessionAuthorization';
-import { toOAuth2 } from "../oauth2";
 import { hexEncodeUintArray } from 'src/bytes';
-
+import * as icid from '../../protocol/ic-id-protocol';
 /**
  * This component is responsible for handling the top-level authentication flow.
  * What should it do? (happy path, assuming consent at each stage)
@@ -48,17 +46,17 @@ export function AuthorizationRoute() {
     if (auth && auth.sessionDelegationChain) {
       // @TODO(bengo) - make this a hex(cborEncode(ICAuthenticationResponse))
       // where ICAuthenticationResponse({ sender_delegation, ... })
-      const accessToken = hexEncodeUintArray(new Uint8Array(auth.sessionDelegationChain.publicKey));
+      const accessToken = icid.createBearerToken({ delegationChain: auth.sessionDelegationChain });
       const expiresIn =
         auth.sessionDelegationChain?.delegations[0].delegation.expiration.toNumber() || 1;
       const tokenType = 'bearer';
-      const icAuthResponse: ICAuthenticationResponse = {
+      const icAuthResponse: icid.ICAuthenticationResponse = {
         accessToken,
         expiresIn,
         redirectURI,
         tokenType,
       };
-      const oauth2AcessTokenResponse = toOAuth2(icAuthResponse)
+      const oauth2AcessTokenResponse = icid.toOAuth2(icAuthResponse)
 
       console.debug('new AccessTokenResponse: ', JSON.stringify(oauth2AcessTokenResponse, null, 2));
 
