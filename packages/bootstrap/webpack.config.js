@@ -85,6 +85,12 @@ module.exports = {
         to: 'favicon.ico',
       },
     ]),
+    new CopyWebpackPlugin([
+      {
+        from: '../agent/src/utils/bls.wasm',
+        to: 'bls.wasm',
+      },
+    ]),    
   ],
   devServer: {
     proxy: {
