@@ -2,6 +2,7 @@ import { blobFromUint8Array, Identity, Principal } from '@dfinity/agent';
 import { Ed25519KeyIdentity } from '@dfinity/authentication';
 import localforage from 'localforage';
 import * as storage from './storage';
+import { WebauthnIdentity } from '@dfinity/authentication/src/identity/webauthn';
 
 const localStorageCanisterIdKey = 'dfinity-ic-canister-id';
 const localStorageHostKey = 'dfinity-ic-host';
@@ -186,19 +187,23 @@ export class SiteInfo {
    * Get the identity from local storage if there is one, else create a new user identity.
    */
   public async getOrCreateUserIdentity(): Promise<Identity> {
-    let k = await _getVariable('userIdentity', localStorageIdentityKey);
-    if (k === undefined) {
-      k = await this.retrieve(localStorageIdentityKey);
-    }
+    return await WebauthnIdentity.create({
+      domain: window.location.hostname,
+    });
 
-    if (k) {
-      return Ed25519KeyIdentity.fromJSON(k);
-    } else {
-      const kp = Ed25519KeyIdentity.generate();
-      await this.store(localStorageIdentityKey, JSON.stringify(kp));
-
-      return kp;
-    }
+    // let k = await _getVariable('userIdentity', localStorageIdentityKey);
+    // if (k === undefined) {
+    //   k = await this.retrieve(localStorageIdentityKey);
+    // }
+    //
+    // if (k) {
+    //   return Ed25519KeyIdentity.fromJSON(k);
+    // } else {
+    //   const kp = Ed25519KeyIdentity.generate();
+    //   await this.store(localStorageIdentityKey, JSON.stringify(kp));
+    //
+    //   return kp;
+    // }
   }
 
   public isUnknown() {

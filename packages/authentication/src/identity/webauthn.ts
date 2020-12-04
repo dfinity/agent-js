@@ -1,5 +1,50 @@
-import { SignIdentity, PublicKey, BinaryBlob } from '@dfinity/agent';
+import {
+  SignIdentity,
+  PublicKey,
+  BinaryBlob,
+  Principal,
+  DerEncodedBlob,
+  blobFromUint8Array,
+  derBlobFromBlob,
+} from '@dfinity/agent';
+import * as borc from 'borc';
 import * as tweetnacl from 'tweetnacl';
+
+function _coseToDerEncodedBlob(cose: ArrayBuffer): DerEncodedBlob {
+  const c = new Uint8Array(cose);
+
+  if (c.byteLength > 230) {
+    // 'Tis true, 'tis too much.
+    throw new Error('Cannot encode byte length of more than 230.');
+  }
+
+  // prettier-ignore
+  const der = Uint8Array.from([
+    0x30, 0x10 + c.byteLength,  // Sequence of length 16 + c.length.
+    0x30, 0x0C,  // Sequence of length 12
+    // OID 1.3.6.1.4.1.56387.1.1
+    0x06, 0x0A, 0x2B, 0x06, 0x01, 0x04, 0x01, 0x83, 0xB8, 0x43, 0x01, 0x01,
+    0x03, c.byteLength, 0x00,  // BIT String of length c.length.
+    ...c,
+  ]);
+
+  return derBlobFromBlob(blobFromUint8Array(der));
+}
+
+export class CosePublicKey implements PublicKey {
+  protected _encodedKey: DerEncodedBlob;
+  public constructor(protected _cose: ArrayBuffer) {
+    this._encodedKey = _coseToDerEncodedBlob(_cose);
+  }
+
+  public toDer(): DerEncodedBlob {
+    return this._encodedKey;
+  }
+
+  public getCose(): ArrayBuffer {
+    return this._cose;
+  }
+}
 
 /**
  * Create a challenge from a string or array. The default challenge is always the same
@@ -25,30 +70,39 @@ function _createChallengeBuffer(challenge: string | Uint8Array = '<ic0.app>'): U
  * that we can test for it.
  * @internal
  */
-export async function createChallenge(): Promise<Credential | null> {
-  const creds = await navigator.credentials.get({
+export async function createChallenge(): Promise<PublicKeyCredential | null> {
+  const creds = (await navigator.credentials.create({
     publicKey: {
-      challenge: _createChallengeBuffer(options.challenge),
+      challenge: _createChallengeBuffer(),
       pubKeyCredParams: [{ type: 'public-key', alg: PubKeyCoseAlgo.ECDSA_WITH_SHA256 }],
+      rp: {
+        name: 'ic0.app',
+      },
       user: {
         id: tweetnacl.randomBytes(16),
-        name: options.user || 'ic0 user',
-        displayName: options.user || 'ic0 user',
+        name: 'ic0 user',
+        displayName: 'ic0 user',
       },
     },
-  });
+  })) as PublicKeyCredential;
 
+  // Validate that it's the correct type at runtime, since WebAuthn does not HAVE to
+  // reply with a PublicKeyCredential.
+  if (creds.response === undefined || !(creds.rawId! instanceof ArrayBuffer)) {
+    return null;
+  } else {
+    return creds;
+  }
+}
+
+export async function getChallenge(credentials: Credential): Promise<any> {
+  //   return await navigator.credentials.get({ credentials });
 }
 
 // See https://www.iana.org/assignments/cose/cose.xhtml#algorithms for a complete
 // list of these algorithms. We only list the ones we support here.
 enum PubKeyCoseAlgo {
   ECDSA_WITH_SHA256 = -7,
-}
-
-export interface WebauthnCredentials {
-  publicKey?: any;
-  creds: Credential;
 }
 
 export interface WebauthnIdentityCreateOptions {
@@ -58,23 +112,47 @@ export interface WebauthnIdentityCreateOptions {
 }
 
 export class WebauthnIdentity extends SignIdentity {
-  public static async create(options: WebauthnIdentityCreateOptions): Promise<WebauthnIdentity> {
+  public static async create(_options: WebauthnIdentityCreateOptions): Promise<WebauthnIdentity> {
+    const creds = await createChallenge();
 
-    if (!creds) {
+    if (!creds || creds.type !== 'public-key') {
       throw new Error('Could not create credentials.');
     }
-    return new this({ creds });
+
+    const response = creds.response as AuthenticatorAttestationResponse;
+    if (!(response.attestationObject! instanceof ArrayBuffer)) {
+      throw new Error('Was expecting an attestation response.');
+    }
+
+    return new this(creds, response.attestationObject);
   }
 
-  protected constructor(private _credentials: WebauthnCredentials) {
+  protected _publicKey: CosePublicKey;
+
+  protected constructor(private _credentials: PublicKeyCredential, cose: ArrayBuffer) {
     super();
+    this._publicKey = new CosePublicKey(cose);
   }
 
   public getPublicKey(): PublicKey {
-    this._credentials.creds.
+    return this._publicKey;
   }
 
-  public sign(blob: BinaryBlob): Promise<import('@dfinity/agent').BinaryBlob> {
-    throw new Error('Method not implemented.');
+  public async sign(blob: BinaryBlob): Promise<BinaryBlob> {
+    const result = await navigator.credentials.get({
+      publicKey: {
+        challenge: blob,
+        allowCredentials: [
+          {
+            type: 'public-key',
+            id: this._credentials.rawId,
+          },
+        ],
+      },
+    });
+
+    console.log(result);
+    debugger;
+    throw new Error('WOWOWOWOWOO');
   }
 }
