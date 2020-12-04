@@ -9,13 +9,18 @@ export default function OAuthRedirectUriRoute(props: {
     const location = useLocation()
     const oauthAccessTokenResponse = oauth2.fromQueryString(new URLSearchParams(location.search))
     const icAuthenticationResponse = icid.fromQueryString(new URLSearchParams(location.search))
+    const parsedBearerToken = icid.parseBearerToken(icAuthenticationResponse.accessToken)
     return <>
         <h1>Creating Internet Computer Session&hellip;</h1>
         <p>(#todo) This RP page should handle the oauth AuthorizationResponse, create/store the session credential, and redirect to the final destination</p>
-        <details open>
-            <summary>Internet Computer AuthenticationResponse</summary>
-            <pre>{JSON.stringify(icAuthenticationResponse, null, 2)}</pre>
-        </details>
+        <dl>
+            <dt>AuthenticationResponse</dt><dd>
+                <pre>{JSON.stringify(icAuthenticationResponse, null, 2)}</pre>
+            </dd>
+            <dt>Parsed Bearer Token</dt><dd>
+                <pre>{JSON.stringify(parsedBearerToken, null, 2)}</pre>
+            </dd>
+        </dl>
         <details>
             <summary>Debug Info</summary>
             <dl>
