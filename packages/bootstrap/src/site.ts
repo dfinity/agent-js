@@ -1,5 +1,5 @@
 import { blobFromUint8Array, Identity, Principal } from '@dfinity/agent';
-import { Ed25519KeyIdentity } from '@dfinity/authentication';
+import { Ed25519KeyIdentity, DelegationChain, DelegationIdentity } from '@dfinity/authentication';
 import localforage from 'localforage';
 import * as storage from './storage';
 import { WebauthnIdentity } from '@dfinity/authentication/src/identity/webauthn';
@@ -187,9 +187,14 @@ export class SiteInfo {
    * Get the identity from local storage if there is one, else create a new user identity.
    */
   public async getOrCreateUserIdentity(): Promise<Identity> {
-    return await WebauthnIdentity.create({
-      domain: window.location.hostname,
-    });
+    const masterKey = await WebauthnIdentity.create();
+    const sessionKey = Ed25519KeyIdentity.generate();
+    const delegated = await DelegationChain.create(
+      masterKey,
+      sessionKey.getPublicKey(),
+      new Date(1609459200000),
+    );
+    return DelegationIdentity.fromDelegation(sessionKey, delegated);
 
     // let k = await _getVariable('userIdentity', localStorageIdentityKey);
     // if (k === undefined) {

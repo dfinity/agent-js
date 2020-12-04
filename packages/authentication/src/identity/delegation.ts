@@ -12,6 +12,7 @@ import {
 } from '@dfinity/agent';
 import BigNumber from 'bignumber.js';
 import { Buffer } from 'buffer/';
+import * as cbor from 'simple-cbor';
 
 const domainSeparator = new TextEncoder().encode('\x1Aic-request-auth-delegation');
 const requestDomainSeparator = Buffer.from(new TextEncoder().encode('\x0Aic-request'));
@@ -34,6 +35,8 @@ export interface Delegation {
   pubkey: BinaryBlob;
   expiration: BigNumber;
   targets?: Principal[];
+
+  toCBOR?(): cbor.CborValue;
 }
 
 /**
@@ -223,6 +226,19 @@ export class DelegationIdentity extends SignIdentity {
   public async transformRequest(request: HttpAgentRequest): Promise<any> {
     const { body, ...fields } = request;
     const requestId = await requestIdOf(body);
+
+    // Expiration field needs to be encoded as a u64 specifically.
+    const delegations = this._delegation.delegations;
+    for (const d of delegations) {
+      d.delegation.toCBOR = function () {
+        return cbor.value.map({
+          pubkey: cbor.value.bytes(this.pubkey),
+          expiration: cbor.value.u64(this.expiration.toString(16), 16),
+          ...(this.targets && { targets: this.targets.map(t => cbor.value.bytes(t.toBlob())) }),
+        } as any);
+      };
+    }
+
     return {
       ...fields,
       body: {
@@ -230,7 +246,7 @@ export class DelegationIdentity extends SignIdentity {
         sender_sig: await this.sign(
           blobFromUint8Array(Buffer.concat([requestDomainSeparator, requestId])),
         ),
-        sender_delegation: this._delegation.delegations,
+        sender_delegation: delegations,
         sender_pubkey: this._delegation.publicKey,
       },
     };

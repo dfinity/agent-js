@@ -7,8 +7,10 @@ import {
   blobFromUint8Array,
   derBlobFromBlob,
 } from '@dfinity/agent';
-import * as borc from 'borc';
+import cbor from 'simple-cbor';
 import * as tweetnacl from 'tweetnacl';
+
+const borc = require!('borc') as any;
 
 function _coseToDerEncodedBlob(cose: ArrayBuffer): DerEncodedBlob {
   const c = new Uint8Array(cose);
@@ -19,16 +21,36 @@ function _coseToDerEncodedBlob(cose: ArrayBuffer): DerEncodedBlob {
   }
 
   // prettier-ignore
-  const der = Uint8Array.from([
-    0x30, 0x10 + c.byteLength,  // Sequence of length 16 + c.length.
+  const der = new Uint8Array([
+    0x30, 0x10 + c.byteLength + 1,  // Sequence of length 16 + c.length.
     0x30, 0x0C,  // Sequence of length 12
     // OID 1.3.6.1.4.1.56387.1.1
     0x06, 0x0A, 0x2B, 0x06, 0x01, 0x04, 0x01, 0x83, 0xB8, 0x43, 0x01, 0x01,
-    0x03, c.byteLength, 0x00,  // BIT String of length c.length.
+    0x03, 1 + c.byteLength, 0x00,  // BIT String of length c.length.
     ...c,
   ]);
 
   return derBlobFromBlob(blobFromUint8Array(der));
+}
+
+/**
+ * From the documentation;
+ * The authData is a byte array described in the spec. Parsing it will involve slicing bytes from
+ * the array and converting them into usable objects.
+ *
+ * See https://webauthn.guide/#registration (subsection "Example: Parsing the authenticator data").
+ *
+ * @param authData The authData field of the attestation response.
+ * @returns The COSE key of the authData.
+ */
+function _authDataToCose(authData: ArrayBuffer): ArrayBuffer {
+  const dataView = new DataView(new ArrayBuffer(2));
+  const idLenBytes = authData.slice(53, 55);
+  [...new Uint8Array(idLenBytes)].forEach((v, i) => dataView.setUint8(i, v));
+  const credentialIdLength = dataView.getUint16(0);
+
+  // Get the public key object.
+  return authData.slice(55 + credentialIdLength);
 }
 
 export class CosePublicKey implements PublicKey {
@@ -95,10 +117,6 @@ export async function createChallenge(): Promise<PublicKeyCredential | null> {
   }
 }
 
-export async function getChallenge(credentials: Credential): Promise<any> {
-  //   return await navigator.credentials.get({ credentials });
-}
-
 // See https://www.iana.org/assignments/cose/cose.xhtml#algorithms for a complete
 // list of these algorithms. We only list the ones we support here.
 enum PubKeyCoseAlgo {
@@ -112,7 +130,7 @@ export interface WebauthnIdentityCreateOptions {
 }
 
 export class WebauthnIdentity extends SignIdentity {
-  public static async create(_options: WebauthnIdentityCreateOptions): Promise<WebauthnIdentity> {
+  public static async create(_options?: WebauthnIdentityCreateOptions): Promise<WebauthnIdentity> {
     const creds = await createChallenge();
 
     if (!creds || creds.type !== 'public-key') {
@@ -124,7 +142,10 @@ export class WebauthnIdentity extends SignIdentity {
       throw new Error('Was expecting an attestation response.');
     }
 
-    return new this(creds, response.attestationObject);
+    // Parse the attestationObject as CBOR.
+    const attObject = borc.decodeFirst(new Uint8Array(response.attestationObject));
+
+    return new this(creds, _authDataToCose(attObject.authData));
   }
 
   protected _publicKey: CosePublicKey;
@@ -139,7 +160,7 @@ export class WebauthnIdentity extends SignIdentity {
   }
 
   public async sign(blob: BinaryBlob): Promise<BinaryBlob> {
-    const result = await navigator.credentials.get({
+    const result = (await navigator.credentials.get({
       publicKey: {
         challenge: blob,
         allowCredentials: [
@@ -149,10 +170,19 @@ export class WebauthnIdentity extends SignIdentity {
           },
         ],
       },
-    });
+    })) as PublicKeyCredential;
 
-    console.log(result);
-    debugger;
-    throw new Error('WOWOWOWOWOO');
+    const response = result.response as AuthenticatorAssertionResponse;
+    return blobFromUint8Array(
+      new Uint8Array(
+        borc.encode(
+          new borc.Tagged(55799, {
+            authenticator_data: new Uint8Array((result as any).response.authenticatorData),
+            client_data_json: new TextDecoder().decode(response.clientDataJSON),
+            signature: new Uint8Array(response.signature),
+          }),
+        ),
+      ),
+    );
   }
 }
