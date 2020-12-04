@@ -1,5 +1,5 @@
 import { DelegationChain, Ed25519KeyIdentity } from '@dfinity/authentication';
-import { Typography } from '@material-ui/core';
+import Typography from '@material-ui/core/Typography';
 import React, { Fragment, PropsWithoutRef } from 'react';
 import { Button } from 'src/components/Button';
 import { useAuth } from 'src/hooks/use-auth';

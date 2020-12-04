@@ -1,4 +1,5 @@
-import { CssBaseline, ThemeProvider } from '@material-ui/core';
+import { ThemeProvider } from '@material-ui/core/styles';
+import CssBaseline from '@material-ui/core/CssBaseline';
 import Container from '@material-ui/core/Container';
 import HomeRoute from './routes/Home';
 import React, { lazy, Suspense } from 'react';
@@ -8,14 +9,14 @@ import { IDPRootErrorBoundary } from './ErrorBoundary';
 import { ProvideAuth } from './hooks/use-auth';
 import theme from './theme';
 import { ROUTES } from './utils/constants';
-import NotFound from "./routes/NotFound";
-import RelyingPartyDemoRoute from "./relying-party-demo/routes";
+import NotFound from './routes/NotFound';
+import RelyingPartyDemoRoute from './relying-party-demo/routes';
 
 const Authorization = lazy(() => import('./authorization/routes/Authorization'));
 
 const NotFoundRoute = () => {
-  return <Route component={NotFound} />
-}
+  return <Route component={NotFound} />;
+};
 
 const App = () => {
   return (
@@ -29,8 +30,7 @@ const App = () => {
                 <Switch>
                   <Route exact path={ROUTES.AUTHORIZATION} component={Authorization} />
                   <Route path={ROUTES.RELYING_PARTY_DEMO}>
-                      <RelyingPartyDemoRoute
-                        NotFoundRoute={NotFoundRoute} />
+                    <RelyingPartyDemoRoute NotFoundRoute={NotFoundRoute} />
                   </Route>
                   <Route exact path={ROUTES.HOME} component={HomeRoute} />
                   <NotFoundRoute />

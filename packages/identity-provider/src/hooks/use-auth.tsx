@@ -1,24 +1,21 @@
 import { KeyPair, PublicKey } from '@dfinity/agent';
-import {
-  Bip39Ed25519KeyIdentity,
-  DelegationChain,
-  Ed25519KeyIdentity,
-} from '@dfinity/authentication';
+import { DelegationChain, Ed25519KeyIdentity } from '@dfinity/authentication';
 import localforage from 'localforage';
 import React, { ComponentProps, createContext, useContext, useEffect, useState } from 'react';
-import { LOCAL_STORAGE_ROOT_CREDENTIAL, LOCAL_STORAGE_WEBAUTHN_ID } from '../utils/constants';
+import { AuthStore } from 'src/authorization/authStorage';
+import { LOCAL_STORAGE_WEBAUTHN_ID } from '../utils/constants';
 
 const noop = () => {};
 
 export interface UseAuthContext {
-  rootIdentity?: Bip39Ed25519KeyIdentity;
+  rootIdentity?: Ed25519KeyIdentity;
   deviceIdentity?: Ed25519KeyIdentity;
   sessionKey?: PublicKey;
   rootDelegationChain?: DelegationChain;
   deviceDelegationChain?: DelegationChain;
   sessionDelegationChain?: DelegationChain;
   webauthnId?: Ed25519KeyIdentity;
-  setRootIdentity: (identity: Bip39Ed25519KeyIdentity) => void;
+  setRootIdentity: (identity: Ed25519KeyIdentity) => void;
   setDeviceIdentity: (identity: Ed25519KeyIdentity) => void;
   setSessionKey: (key: PublicKey) => void;
   setWebauthnId: (id: Ed25519KeyIdentity) => void;
@@ -41,12 +38,14 @@ const authContext = createContext<UseAuthContext>({
 
 function useProvideAuth(): UseAuthContext {
   const [webauthnId, setWebauthnId] = useState<Ed25519KeyIdentity>();
-  const [rootIdentity, setRootIdentity] = useState<Bip39Ed25519KeyIdentity>();
+  const [rootIdentity, setRootIdentity] = useState<Ed25519KeyIdentity>();
   const [deviceIdentity, setDeviceIdentity] = useState<Ed25519KeyIdentity>();
   const [rootDelegationChain, setRootDelegationChain] = useState<DelegationChain>();
   const [deviceDelegationChain, setDeviceDelegationChain] = useState<DelegationChain>();
   const [sessionDelegationChain, setSessionDelegationChain] = useState<DelegationChain>();
   const [sessionKey, setSessionKey] = useState<PublicKey>();
+
+  const authStore = new AuthStore(localforage);
 
   async function getWebauthnID(): Promise<Ed25519KeyIdentity> {
     const localStorageIdentity = await localforage.getItem<KeyPair>(LOCAL_STORAGE_WEBAUTHN_ID);
@@ -61,9 +60,19 @@ function useProvideAuth(): UseAuthContext {
     }
   }
 
+  // this should only be run once (on initialization of the hook)
+  useEffect(() => {
+    localforage.ready(async () => {
+      const maybeIdentity = await authStore.getRootIdentity();
+      if (maybeIdentity) {
+        setRootIdentity(maybeIdentity);
+      }
+    });
+  }, []);
+
   useEffect(() => {
     if (rootIdentity) {
-      localforage.setItem(LOCAL_STORAGE_ROOT_CREDENTIAL, rootIdentity.getKeyPair());
+      authStore.saveRootIdentity(rootIdentity);
     }
   }, [rootIdentity]);
 

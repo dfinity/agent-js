@@ -1,4 +1,4 @@
-import { createMuiTheme } from '@material-ui/core';
+import { createMuiTheme } from '@material-ui/core/styles';
 import SharpSansBlack from './assets/fonts/SharpSansDispNo1-Black.woff';
 import SharpSansBold from './assets/fonts/SharpSansDispNo1-Bold.woff';
 import SharpSansMedium from './assets/fonts/SharpSansDispNo1-Medium.woff';

@@ -1,4 +1,4 @@
-import { Snackbar } from '@material-ui/core';
+import Snackbar from '@material-ui/core/Snackbar';
 import Alert from '@material-ui/lab/Alert';
 import React, { PropsWithoutRef } from 'react';
 
