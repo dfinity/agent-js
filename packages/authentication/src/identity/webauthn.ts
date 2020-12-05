@@ -92,6 +92,9 @@ function _createChallengeBuffer(challenge: string | Uint8Array = '<ic0.app>'): U
 export async function createChallenge(): Promise<PublicKeyCredential | null> {
   const creds = (await navigator.credentials.create({
     publicKey: {
+      authenticatorSelection: {
+        userVerification: 'preferred',
+      },
       challenge: _createChallengeBuffer(),
       pubKeyCredParams: [{ type: 'public-key', alg: PubKeyCoseAlgo.ECDSA_WITH_SHA256 }],
       rp: {
@@ -153,13 +156,14 @@ export class WebAuthnIdentity extends SignIdentity {
   public async sign(blob: BinaryBlob): Promise<BinaryBlob> {
     const result = (await navigator.credentials.get({
       publicKey: {
-        challenge: blob,
         allowCredentials: [
           {
             type: 'public-key',
             id: this._credentials.rawId,
           },
         ],
+        challenge: blob,
+        userVerification: 'preferred',
       },
     })) as PublicKeyCredential;
 
