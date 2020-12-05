@@ -47,7 +47,7 @@ export class Delegation {
     } as any);
   }
 
-  public toJson(): any {
+  public toJSON(): any {
     return {
       expiration: this.expiration.toString(16),
       pubkey: this.pubkey.toString('hex'),

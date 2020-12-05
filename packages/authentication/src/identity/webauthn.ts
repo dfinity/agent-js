@@ -85,11 +85,9 @@ function _createChallengeBuffer(challenge: string | Uint8Array = '<ic0.app>'): U
  * Create a credentials to authenticate with a server. This is necessary in order in
  * WebAuthn to get credentials IDs (which give us the public key and allow us to
  * sign), but in the case of the Internet Computer, we don't actually need to register
- * it, so we don't. This is exported from this file, but not the package index, so
- * that we can test for it.
- * @internal
+ * it, so we don't.
  */
-export async function createChallenge(): Promise<PublicKeyCredential | null> {
+async function _createCredential(): Promise<PublicKeyCredential | null> {
   const creds = (await navigator.credentials.create({
     publicKey: {
       authenticatorSelection: {
@@ -123,9 +121,15 @@ enum PubKeyCoseAlgo {
   ECDSA_WITH_SHA256 = -7,
 }
 
+/**
+ * A SignIdentity that uses `navigator.credentials`.
+ */
 export class WebAuthnIdentity extends SignIdentity {
+  /**
+   * Create an identity.
+   */
   public static async create(): Promise<WebAuthnIdentity> {
-    const creds = await createChallenge();
+    const creds = await _createCredential();
 
     if (!creds || creds.type !== 'public-key') {
       throw new Error('Could not create credentials.');
@@ -139,12 +143,12 @@ export class WebAuthnIdentity extends SignIdentity {
     // Parse the attestationObject as CBOR.
     const attObject = borc.decodeFirst(new Uint8Array(response.attestationObject));
 
-    return new this(creds, _authDataToCose(attObject.authData));
+    return new this(creds.rawId, _authDataToCose(attObject.authData));
   }
 
   protected _publicKey: CosePublicKey;
 
-  protected constructor(private _credentials: PublicKeyCredential, cose: ArrayBuffer) {
+  protected constructor(private _rawId: ArrayBuffer, cose: ArrayBuffer) {
     super();
     this._publicKey = new CosePublicKey(cose);
   }
@@ -159,7 +163,7 @@ export class WebAuthnIdentity extends SignIdentity {
         allowCredentials: [
           {
             type: 'public-key',
-            id: this._credentials.rawId,
+            id: this._rawId,
           },
         ],
         challenge: blob,
