@@ -1,5 +1,10 @@
 import { blobFromUint8Array, Identity, Principal } from '@dfinity/agent';
-import { Ed25519KeyIdentity } from '@dfinity/authentication';
+import {
+  Ed25519KeyIdentity,
+  DelegationChain,
+  DelegationIdentity,
+  WebAuthnIdentity,
+} from '@dfinity/authentication';
 import localforage from 'localforage';
 import * as storage from './storage';
 
@@ -7,6 +12,8 @@ const localStorageCanisterIdKey = 'dfinity-ic-canister-id';
 const localStorageHostKey = 'dfinity-ic-host';
 const localStorageIdentityKey = 'dfinity-ic-user-identity';
 const localStorageLoginKey = 'dfinity-ic-login';
+const localStorageIdTypeKey = 'dfinity-ic-webauthn';
+const localStorageMainKey = 'dfinity-ic-main-key';
 
 async function _getVariable(name: string, localStorageName: string): Promise<string | undefined>;
 async function _getVariable(
@@ -186,18 +193,70 @@ export class SiteInfo {
    * Get the identity from local storage if there is one, else create a new user identity.
    */
   public async getOrCreateUserIdentity(): Promise<Identity> {
-    let k = await _getVariable('userIdentity', localStorageIdentityKey);
-    if (k === undefined) {
-      k = await this.retrieve(localStorageIdentityKey);
-    }
+    // If the user is requesting a webauthn identity, then create a session key and use the
+    // webauthn identity to delegate to it.
+    const maybeIdType = await _getVariable('_identity', localStorageIdTypeKey);
+    switch (maybeIdType) {
+      /**
+       * Creates a basic webauthn identity. Will need to interact with the user for
+       * each signatures.
+       */
+      case 'webauthn':
+        return await WebAuthnIdentity.create();
+      /**
+       * Create a delegated webauthn identity to a session key. The user will need
+       * to interact twice (create and delegate) then uses the session key everywhere.
+       */
+      case 'delegate': {
+        const mainKey = await WebAuthnIdentity.create();
+        const sessionKey = Ed25519KeyIdentity.generate();
+        const delegated = await DelegationChain.create(
+          mainKey,
+          sessionKey.getPublicKey(),
+          new Date(1609459200000),
+        );
+        return DelegationIdentity.fromDelegation(sessionKey, delegated);
+      }
+      /**
+       * Creates a delegated webauthn identity like above, but try to reuse and save
+       * the delegation and webauthn object. The first time the user will interact twice,
+       * but after the first time the user should only interact once to sign the
+       * session key.
+       */
+      case 'save': {
+        const maybeWebAuthnData = await this.retrieve(localStorageMainKey);
+        const mainKey =
+          maybeWebAuthnData !== undefined
+            ? WebAuthnIdentity.fromJSON(maybeWebAuthnData)
+            : await (async () => {
+                const id = await WebAuthnIdentity.create();
+                await this.store(localStorageMainKey, JSON.stringify(id));
+                return id;
+              })();
 
-    if (k) {
-      return Ed25519KeyIdentity.fromJSON(k);
-    } else {
-      const kp = Ed25519KeyIdentity.generate();
-      await this.store(localStorageIdentityKey, JSON.stringify(kp));
+        const sessionKey = Ed25519KeyIdentity.generate();
+        const delegated = await DelegationChain.create(
+          mainKey,
+          sessionKey.getPublicKey(),
+          new Date(1609459200000),
+        );
+        return DelegationIdentity.fromDelegation(sessionKey, delegated);
+      }
+      default: {
+        let k = await _getVariable('userIdentity', localStorageIdentityKey);
+        if (k === undefined) {
+          k = await this.retrieve(localStorageIdentityKey);
+        }
 
-      return kp;
+        if (k) {
+          return Ed25519KeyIdentity.fromJSON(k);
+        } else {
+          const kp = Ed25519KeyIdentity.generate();
+          await this.store(localStorageIdentityKey, JSON.stringify(kp));
+
+          return kp;
+        }
+      }
     }
   }
 
