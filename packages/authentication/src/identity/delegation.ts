@@ -31,12 +31,29 @@ function _parseBlob(value: unknown): BinaryBlob {
  *
  * {@see DelegationChain}
  */
-export interface Delegation {
-  pubkey: BinaryBlob;
-  expiration: BigNumber;
-  targets?: Principal[];
+export class Delegation {
+  constructor(
+    public readonly pubkey: BinaryBlob,
+    public readonly expiration: BigNumber,
+    public readonly targets?: Principal[],
+  ) {}
 
-  toCBOR?(): cbor.CborValue;
+  public toCBOR(): cbor.CborValue {
+    // Expiration field needs to be encoded as a u64 specifically.
+    return cbor.value.map({
+      pubkey: cbor.value.bytes(this.pubkey),
+      expiration: cbor.value.u64(this.expiration.toString(16), 16),
+      ...(this.targets && { targets: this.targets.map(t => cbor.value.bytes(t.toBlob())) }),
+    } as any);
+  }
+
+  public toJson(): any {
+    return {
+      expiration: this.expiration.toString(16),
+      pubkey: this.pubkey.toString('hex'),
+      ...(this.targets && this.targets.map(p => p.toText())),
+    };
+  }
 }
 
 /**
@@ -63,11 +80,11 @@ async function _createSingleDelegation(
   expiration: Date,
   targets?: Principal[],
 ): Promise<SignedDelegation> {
-  const delegation: Delegation = {
-    pubkey: to.toDer(),
-    expiration: new BigNumber(+expiration).times(1000000), // In nanoseconds.
-    ...(targets && { targets }),
-  };
+  const delegation: Delegation = new Delegation(
+    to.toDer(),
+    new BigNumber(+expiration).times(1000000), // In nanoseconds.
+    targets,
+  );
 
   // The signature is calculated by signing the concatenation of the domain separator
   // and the message.
@@ -148,18 +165,17 @@ export class DelegationChain {
         throw new Error('Invalid targets.');
       }
       return {
-        delegation: {
-          pubkey: _parseBlob(pubkey),
-          expiration: new BigNumber(expiration, 16),
-          ...(targets && {
-            targets: targets.map((t: unknown) => {
+        delegation: new Delegation(
+          _parseBlob(pubkey),
+          new BigNumber(expiration, 16),
+          targets &&
+            targets.map((t: unknown) => {
               if (typeof t !== 'string') {
                 throw new Error('Invalid target.');
               }
               return Principal.fromText(t);
             }),
-          }),
-        },
+        ),
         signature: _parseBlob(signature),
       };
     });
@@ -176,14 +192,7 @@ export class DelegationChain {
     return {
       delegations: this.delegations.map(signedDelegation => {
         const { delegation, signature } = signedDelegation;
-        return {
-          delegation: {
-            expiration: delegation.expiration.toString(16),
-            pubkey: delegation.pubkey.toString('hex'),
-            ...(delegation.targets && delegation.targets.map(p => p.toText())),
-          },
-          signature: signature.toString('hex'),
-        };
+        return { delegation, signature: signature.toString('hex') };
       }),
       publicKey: this.publicKey.toString('hex'),
     };
@@ -227,18 +236,6 @@ export class DelegationIdentity extends SignIdentity {
     const { body, ...fields } = request;
     const requestId = await requestIdOf(body);
 
-    // Expiration field needs to be encoded as a u64 specifically.
-    const delegations = this._delegation.delegations;
-    for (const d of delegations) {
-      d.delegation.toCBOR = function () {
-        return cbor.value.map({
-          pubkey: cbor.value.bytes(this.pubkey),
-          expiration: cbor.value.u64(this.expiration.toString(16), 16),
-          ...(this.targets && { targets: this.targets.map(t => cbor.value.bytes(t.toBlob())) }),
-        } as any);
-      };
-    }
-
     return {
       ...fields,
       body: {
@@ -246,7 +243,7 @@ export class DelegationIdentity extends SignIdentity {
         sender_sig: await this.sign(
           blobFromUint8Array(Buffer.concat([requestDomainSeparator, requestId])),
         ),
-        sender_delegation: delegations,
+        sender_delegation: this._delegation.delegations,
         sender_pubkey: this._delegation.publicKey,
       },
     };

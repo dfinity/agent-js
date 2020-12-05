@@ -1,16 +1,13 @@
 import {
-  SignIdentity,
-  PublicKey,
   BinaryBlob,
-  Principal,
-  DerEncodedBlob,
   blobFromUint8Array,
   derBlobFromBlob,
+  DerEncodedBlob,
+  PublicKey,
+  SignIdentity,
 } from '@dfinity/agent';
-import cbor from 'simple-cbor';
+import borc = require('borc');
 import * as tweetnacl from 'tweetnacl';
-
-const borc = require!('borc') as any;
 
 function _coseToDerEncodedBlob(cose: ArrayBuffer): DerEncodedBlob {
   const c = new Uint8Array(cose);
@@ -123,14 +120,8 @@ enum PubKeyCoseAlgo {
   ECDSA_WITH_SHA256 = -7,
 }
 
-export interface WebauthnIdentityCreateOptions {
-  domain: string;
-  user?: string;
-  challenge?: string | Uint8Array;
-}
-
-export class WebauthnIdentity extends SignIdentity {
-  public static async create(_options?: WebauthnIdentityCreateOptions): Promise<WebauthnIdentity> {
+export class WebAuthnIdentity extends SignIdentity {
+  public static async create(): Promise<WebAuthnIdentity> {
     const creds = await createChallenge();
 
     if (!creds || creds.type !== 'public-key') {
@@ -173,16 +164,21 @@ export class WebauthnIdentity extends SignIdentity {
     })) as PublicKeyCredential;
 
     const response = result.response as AuthenticatorAssertionResponse;
-    return blobFromUint8Array(
-      new Uint8Array(
-        borc.encode(
-          new borc.Tagged(55799, {
-            authenticator_data: new Uint8Array((result as any).response.authenticatorData),
-            client_data_json: new TextDecoder().decode(response.clientDataJSON),
-            signature: new Uint8Array(response.signature),
-          }),
-        ),
-      ),
-    );
+    if (
+      response.signature! instanceof ArrayBuffer &&
+      response.authenticatorData! instanceof ArrayBuffer
+    ) {
+      const cbor = borc.encode(
+        new borc.Tagged(55799, {
+          authenticator_data: new Uint8Array(response.authenticatorData),
+          client_data_json: new TextDecoder().decode(response.clientDataJSON),
+          signature: new Uint8Array(response.signature),
+        }),
+      );
+
+      return blobFromUint8Array(new Uint8Array(cbor));
+    } else {
+      throw new Error('Invalid response from WebAuthn.');
+    }
   }
 }

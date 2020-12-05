@@ -1,7 +1,7 @@
 import { blobFromHex, blobFromUint8Array } from '@dfinity/agent';
 import { Buffer } from 'buffer/';
-import { Ed25519KeyIdentity, Ed25519PublicKey } from './ed25519';
 import { bip39EntropyToMnemonic, bip39MnemonicToEntropy } from './bip39';
+import { Ed25519KeyIdentity, Ed25519PublicKey } from './ed25519';
 
 const testVectors: Array<[string, string]> = [
   [
