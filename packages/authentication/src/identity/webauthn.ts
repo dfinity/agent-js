@@ -1,5 +1,6 @@
 import {
   BinaryBlob,
+  blobFromHex,
   blobFromUint8Array,
   derBlobFromBlob,
   DerEncodedBlob,
@@ -52,7 +53,7 @@ function _authDataToCose(authData: ArrayBuffer): ArrayBuffer {
 
 export class CosePublicKey implements PublicKey {
   protected _encodedKey: DerEncodedBlob;
-  public constructor(protected _cose: ArrayBuffer) {
+  public constructor(protected _cose: BinaryBlob) {
     this._encodedKey = _coseToDerEncodedBlob(_cose);
   }
 
@@ -60,7 +61,7 @@ export class CosePublicKey implements PublicKey {
     return this._encodedKey;
   }
 
-  public getCose(): ArrayBuffer {
+  public getCose(): BinaryBlob {
     return this._cose;
   }
 }
@@ -122,9 +123,23 @@ enum PubKeyCoseAlgo {
 }
 
 /**
- * A SignIdentity that uses `navigator.credentials`.
+ * A SignIdentity that uses `navigator.credentials`. See https://webauthn.guide/ for
+ * more information about WebAuthentication.
  */
 export class WebAuthnIdentity extends SignIdentity {
+  /**
+   * Create an identity from a JSON serialization.
+   */
+  public static fromJSON(json: string): WebAuthnIdentity {
+    const { publicKey, rawId } = JSON.parse(json);
+
+    if (typeof publicKey !== 'string' || typeof rawId !== 'string') {
+      throw new Error('Invalid JSON string.');
+    }
+
+    return new this(blobFromHex(rawId), blobFromHex(publicKey));
+  }
+
   /**
    * Create an identity.
    */
@@ -143,12 +158,15 @@ export class WebAuthnIdentity extends SignIdentity {
     // Parse the attestationObject as CBOR.
     const attObject = borc.decodeFirst(new Uint8Array(response.attestationObject));
 
-    return new this(creds.rawId, _authDataToCose(attObject.authData));
+    return new this(
+      blobFromUint8Array(new Uint8Array(creds.rawId)),
+      blobFromUint8Array(new Uint8Array(_authDataToCose(attObject.authData))),
+    );
   }
 
   protected _publicKey: CosePublicKey;
 
-  protected constructor(private _rawId: ArrayBuffer, cose: ArrayBuffer) {
+  protected constructor(private _rawId: BinaryBlob, cose: BinaryBlob) {
     super();
     this._publicKey = new CosePublicKey(cose);
   }
@@ -188,5 +206,15 @@ export class WebAuthnIdentity extends SignIdentity {
     } else {
       throw new Error('Invalid response from WebAuthn.');
     }
+  }
+
+  /**
+   * Allow for JSON serialization of all information needed to reuse this identity.
+   */
+  public toJSON(): any {
+    return {
+      publicKey: this._publicKey.getCose().toString('hex'),
+      rawId: this._rawId.toString('hex'),
+    };
   }
 }
