@@ -5,7 +5,7 @@ import { PublicKey } from '@dfinity/agent';
 import { OAuth2AccessTokenResponse } from './oauth2';
 import * as oauth2 from './oauth2';
 import * as assert from 'assert';
-import { hexEncodeUintArray } from '../bytes';
+import { hexEncodeUintArray, hexToBytes } from '../bytes';
 import { DelegationChain } from '@dfinity/authentication';
 
 export interface ICAuthenticationResponse {
@@ -109,16 +109,6 @@ export function parseBearerToken(icIdpBearerToken: string): IParsedBearerToken {
     delegations: delegations as IParsedBearerToken['delegations'],
   };
   return parsed;
-}
-
-/** Parse a hex-string to Uint8Array of bytes */
-function hexToBytes(hex: string): Uint8Array {
-  const octetStringsMatch = hex.match(/.{2}/g);
-  assert.ok(octetStringsMatch, 'Expected hex string to match octet pattern, but it didnt');
-  const octetStrings = octetStringsMatch.map(s => s.padStart(2, '0'));
-  const bytes = octetStrings.map(s => parseInt(s, 16));
-  return Uint8Array.from(bytes);
-  // JSON.parse((new TextDecoder).decode(Uint8Array.from(t.match(/.{2}/g).map(s => s.padStart('0', 2)).map(h => parseInt(h, 16)))))
 }
 
 /**

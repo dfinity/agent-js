@@ -9,8 +9,9 @@ import { IDPRootErrorBoundary } from './ErrorBoundary';
 import { ProvideAuth } from './hooks/use-auth';
 import theme from './theme';
 import { ROUTES } from './utils/constants';
-import NotFound from './routes/NotFound';
-import RelyingPartyDemoRoute from './relying-party-demo/routes';
+import NotFound from "./routes/NotFound";
+import RelyingPartyDemoRoute from "./relying-party-demo/routes";
+import { IdentityChangedEvent, IdentityChangedEventIdentifier } from './relying-party-demo/events';
 
 const Authorization = lazy(() => import('./authorization/routes/Authorization'));
 
@@ -45,6 +46,10 @@ const App = () => {
 };
 
 async function _main() {
+  // Example of
+  document.body.addEventListener(IdentityChangedEventIdentifier, (event) => {
+    console.log(IdentityChangedEventIdentifier, event)
+  })
   render(<App />, document.body.getElementsByTagName('app').item(0));
 }
 
