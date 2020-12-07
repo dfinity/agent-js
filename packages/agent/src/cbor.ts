@@ -2,13 +2,13 @@
 // This file is based on:
 // tslint:disable-next-line: max-line-length
 // https://github.com/dfinity-lab/dfinity/blob/9bca65f8edd65701ea6bdb00e0752f9186bbc893/docs/spec/public/index.adoc#cbor-encoding-of-requests-and-responses
+import BigNumber from 'bignumber.js';
 import borc from 'borc';
 import { Buffer } from 'buffer/';
 import * as cbor from 'simple-cbor';
 import { CborEncoder, SelfDescribeCborSerializer } from 'simple-cbor';
 import { Principal } from './principal';
-import { BinaryBlob, blobFromHex } from './types';
-import BigNumber from 'bignumber.js';
+import { BinaryBlob, blobFromBuffer, blobFromHex } from './types';
 
 // We are using hansl/simple-cbor for CBOR serialization, to avoid issues with
 // encoding the uint64 values that the HTTP handler of the client expects for
@@ -87,7 +87,7 @@ export enum CborTag {
 }
 
 export const encode = (value: any): BinaryBlob => {
-  return Buffer.from(serializer.serialize(value)) as BinaryBlob;
+  return blobFromBuffer(Buffer.from(serializer.serialize(value)));
 };
 
 export function decode<T>(input: Uint8Array): T {

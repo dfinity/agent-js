@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import Pipe = require('buffer-pipe');
 import { Buffer } from 'buffer/';
 import { Principal as PrincipalId } from './principal';
-import { JsonValue } from './types';
+import { BinaryBlob, blobFromBuffer, JsonValue } from './types';
 import { idlLabelToId } from './utils/hash';
 import { lebDecode, lebEncode, safeRead, slebDecode, slebEncode } from './utils/leb128';
 import { readIntLE, readUIntLE, writeIntLE, writeUIntLE } from './utils/leb128';
@@ -1296,7 +1296,7 @@ export class ServiceClass extends ConstructType<PrincipalId> {
  * Encode a array of values
  * @returns {Buffer} serialised value
  */
-export function encode(argTypes: Array<Type<any>>, args: any[]) {
+export function encode(argTypes: Array<Type<any>>, args: any[]): BinaryBlob {
   if (args.length < argTypes.length) {
     throw Error('Wrong number of message arguments');
   }
@@ -1318,7 +1318,7 @@ export function encode(argTypes: Array<Type<any>>, args: any[]) {
     }),
   );
 
-  return Buffer.concat([magic, table, len, typs, vals]);
+  return blobFromBuffer(Buffer.concat([magic, table, len, typs, vals]));
 }
 
 /**

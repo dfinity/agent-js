@@ -12,8 +12,8 @@
     "files": [],
     "references": [
       { "path": "packages/agent" },
-      { "path": "packages/agent-js-devtools" },
       { "path": "packages/authentication" },
-      { "path": "packages/bootstrap" }
+      { "path": "packages/bootstrap" },
+      { "path": "packages/identity-provider" }
     ]
 }

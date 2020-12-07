@@ -16,5 +16,10 @@
     "target": "es2017",
     "tsBuildInfoFile": "./build_info.json"
   },
-  "include": ["types/*", "src/**/*.ts", "src/**/*.tsx"]
+  "include": ["types/*", "src/**/*.ts", "src/**/*.tsx"],
+  "references": [
+    { "path": "../agent" },
+    { "path": "../authentication" },
+    { "path": "../bootstrap" }
+  ]
 }

@@ -1,5 +1,10 @@
 import { blobFromUint8Array, Identity, Principal } from '@dfinity/agent';
-import { Ed25519KeyIdentity } from '@dfinity/authentication';
+import {
+  Ed25519KeyIdentity,
+  DelegationChain,
+  DelegationIdentity,
+  WebAuthnIdentity,
+} from '@dfinity/authentication';
 import localforage from 'localforage';
 import * as storage from './storage';
 
@@ -7,6 +12,8 @@ const localStorageCanisterIdKey = 'dfinity-ic-canister-id';
 const localStorageHostKey = 'dfinity-ic-host';
 const localStorageIdentityKey = 'dfinity-ic-user-identity';
 const localStorageLoginKey = 'dfinity-ic-login';
+const localStorageIdTypeKey = 'dfinity-ic-webauthn';
+const localStorageMainKey = 'dfinity-ic-main-key';
 
 async function _getVariable(name: string, localStorageName: string): Promise<string | undefined>;
 async function _getVariable(
@@ -34,7 +41,9 @@ async function _getVariable(
   return defaultValue;
 }
 
-function getCanisterId(s: string | undefined): Principal | undefined {
+async function _parseCanisterId(s: string | undefined): Promise<Principal | undefined> {
+  s = s || (await _getVariable('canisterId', localStorageCanisterIdKey));
+
   if (s === undefined) {
     return undefined;
   } else {
@@ -44,6 +53,71 @@ function getCanisterId(s: string | undefined): Principal | undefined {
       return undefined;
     }
   }
+}
+
+// A regex that matches `SUBDOMAIN.CANISTER_ID.ic0.app` (the prod URL).
+const ic0AppHostRe = /(?:(?<subdomain>.*)\.)?(?<canisterId>[^.]*)\.(?<domain>ic0\.app)$/;
+// A regex that matches `SUBDOMAIN.CANISTER_ID.sdk-test.dfinity.network` (the staging URL).
+const sdkTestHostRe = /(?:(?<subdomain>.*)\.)?(?<canisterId>[^.]*)\.(?<domain>sdk-test\.dfinity\.network)$/;
+// Matches `SUBDOMAIN.lvh.me`, which always resolves to 127.0.0.1 (old localhost staging).
+const lvhMeHostRe = /(?<subdomain>.*)\.(?<canisterId>[^.]*)\.(?<domain>lvh\.me)$/;
+// Localhost (development environment).
+const localhostHostRe = /(?<subdomain>(.*))\.(?<domain>localhost)$/;
+
+/**
+ * Internal data structure for the location informations.
+ * @internal
+ */
+interface LocationInfo {
+  // The domain of the request, which is where the worker domain name should be.
+  domain: string;
+  // The kind of domain we're using (e.g. localhost or Ic0).
+  kind: DomainKind;
+  // Any subdomains that are before the canister id.
+  subdomain: string[];
+  // The canister ID in the location.
+  canisterId: Principal | null;
+  // Whether the location is considered secure (ie. "https"). This is used when building
+  // the URL for the replica.
+  secure: boolean;
+}
+
+async function _createLocationInfo(
+  meta: { subdomain?: string; canisterId?: string; domain?: string },
+  location: URL,
+  kind: DomainKind,
+): Promise<LocationInfo> {
+  const subdomain = meta.subdomain?.split('.') || [];
+  const canisterId = (await _parseCanisterId(meta.canisterId)) || null;
+  const port = location.port;
+
+  return {
+    domain: (meta.domain || 'ic0.app') + (port ? `:${port}` : ''),
+    subdomain,
+    canisterId,
+    kind,
+    secure: location.protocol === 'https:',
+  };
+}
+
+async function _parseLocation(location: URL): Promise<LocationInfo> {
+  const maybeIc0 = ic0AppHostRe.exec(location.hostname) || sdkTestHostRe.exec(location.hostname);
+
+  if (maybeIc0) {
+    return await _createLocationInfo(maybeIc0.groups!, location, DomainKind.Ic0);
+  }
+
+  const maybeLocalhost = localhostHostRe.exec(location.hostname);
+  if (maybeLocalhost) {
+    return await _createLocationInfo(maybeLocalhost.groups!, location, DomainKind.Localhost);
+  }
+
+  const maybeLvh = lvhMeHostRe.exec(location.hostname);
+  if (maybeLvh) {
+    return await _createLocationInfo(maybeLvh.groups!, location, DomainKind.Lvh);
+  }
+
+  return await _createLocationInfo({}, location, DomainKind.Unknown);
 }
 
 export enum DomainKind {
@@ -63,44 +137,39 @@ export class SiteInfo {
 
   public static async unknown(): Promise<SiteInfo> {
     const principal = await _getVariable('canisterId', localStorageCanisterIdKey);
-    return new SiteInfo(
-      DomainKind.Unknown,
-      principal !== undefined ? Principal.fromText(principal) : undefined,
-    );
+    return new SiteInfo({
+      domain: '',
+      subdomain: [],
+      kind: DomainKind.Unknown,
+      canisterId: principal !== undefined ? Principal.fromText(principal) : null,
+      secure: false,
+    });
   }
 
   public static async fromWindow(): Promise<SiteInfo> {
-    const { hostname } = window.location;
-    const components = hostname.split('.');
-    const [maybeCId, maybeIc0, maybeApp] = components.slice(-3);
-    const subdomain = components.slice(0, -3).join('.');
-
-    if (maybeIc0 === 'ic0' && maybeApp === 'app') {
-      return new SiteInfo(DomainKind.Ic0, getCanisterId(maybeCId), subdomain);
-    } else if (maybeIc0 === 'lvh' && maybeApp === 'me') {
-      return new SiteInfo(DomainKind.Lvh, getCanisterId(maybeCId), subdomain);
-    } else if (maybeIc0 === 'localhost' && maybeApp === undefined) {
-      /// Allow subdomain of localhost.
-      return new SiteInfo(DomainKind.Localhost, getCanisterId(maybeCId), subdomain);
-    } else if (maybeApp === 'localhost') {
-      /// Allow subdomain of localhost, but maybeIc0 is the canister ID.
-      return new SiteInfo(
-        DomainKind.Localhost,
-        getCanisterId(maybeIc0),
-        `${maybeCId}.${subdomain}`,
-      );
-    } else {
-      return this.unknown();
-    }
+    const locationInfo = await _parseLocation(new URL(window.location.toString()));
+    return new SiteInfo(locationInfo);
   }
 
   private _isWorker = false;
 
-  constructor(
-    public readonly kind: DomainKind,
-    public readonly principal?: Principal,
-    public readonly subdomain = '',
-  ) {}
+  constructor(private readonly _info: LocationInfo) {}
+
+  public get kind(): DomainKind {
+    return this._info.kind;
+  }
+  public get secure(): boolean {
+    return this._info.secure;
+  }
+  public get principal(): Principal | undefined {
+    return this._info.canisterId || undefined;
+  }
+  public get domain(): string {
+    return this._info.domain;
+  }
+  public get subdomain(): string[] {
+    return this._info.subdomain;
+  }
 
   public async setLogin(username: string, password: string): Promise<void> {
     await this.store(localStorageLoginKey, JSON.stringify([username, password]));
@@ -124,22 +193,70 @@ export class SiteInfo {
    * Get the identity from local storage if there is one, else create a new user identity.
    */
   public async getOrCreateUserIdentity(): Promise<Identity> {
-    let k = await _getVariable('userIdentity', localStorageIdentityKey);
-    if (k === undefined) {
-      k = await this.retrieve(localStorageIdentityKey);
-    }
+    // If the user is requesting a webauthn identity, then create a session key and use the
+    // webauthn identity to delegate to it.
+    const maybeIdType = await _getVariable('_identity', localStorageIdTypeKey);
+    switch (maybeIdType) {
+      /**
+       * Creates a basic webauthn identity. Will need to interact with the user for
+       * each signatures.
+       */
+      case 'webauthn':
+        return await WebAuthnIdentity.create();
+      /**
+       * Create a delegated webauthn identity to a session key. The user will need
+       * to interact twice (create and delegate) then uses the session key everywhere.
+       */
+      case 'delegate': {
+        const mainKey = await WebAuthnIdentity.create();
+        const sessionKey = Ed25519KeyIdentity.generate();
+        const delegated = await DelegationChain.create(
+          mainKey,
+          sessionKey.getPublicKey(),
+          new Date(1609459200000),
+        );
+        return DelegationIdentity.fromDelegation(sessionKey, delegated);
+      }
+      /**
+       * Creates a delegated webauthn identity like above, but try to reuse and save
+       * the delegation and webauthn object. The first time the user will interact twice,
+       * but after the first time the user should only interact once to sign the
+       * session key.
+       */
+      case 'save': {
+        const maybeWebAuthnData = await this.retrieve(localStorageMainKey);
+        const mainKey =
+          maybeWebAuthnData !== undefined
+            ? WebAuthnIdentity.fromJSON(maybeWebAuthnData)
+            : await (async () => {
+                const id = await WebAuthnIdentity.create();
+                await this.store(localStorageMainKey, JSON.stringify(id));
+                return id;
+              })();
 
-    if (k) {
-      const kp = JSON.parse(k);
-      return Ed25519KeyIdentity.fromKeyPair(
-        blobFromUint8Array(new Uint8Array(kp.publicKey.data)),
-        blobFromUint8Array(new Uint8Array(kp.secretKey.data)),
-      );
-    } else {
-      const kp = Ed25519KeyIdentity.generate();
-      await this.store(localStorageIdentityKey, JSON.stringify(kp));
+        const sessionKey = Ed25519KeyIdentity.generate();
+        const delegated = await DelegationChain.create(
+          mainKey,
+          sessionKey.getPublicKey(),
+          new Date(1609459200000),
+        );
+        return DelegationIdentity.fromDelegation(sessionKey, delegated);
+      }
+      default: {
+        let k = await _getVariable('userIdentity', localStorageIdentityKey);
+        if (k === undefined) {
+          k = await this.retrieve(localStorageIdentityKey);
+        }
 
-      return kp;
+        if (k) {
+          return Ed25519KeyIdentity.fromJSON(k);
+        } else {
+          const kp = Ed25519KeyIdentity.generate();
+          await this.store(localStorageIdentityKey, JSON.stringify(kp));
+
+          return kp;
+        }
+      }
     }
   }
 
@@ -152,17 +269,15 @@ export class SiteInfo {
       return '';
     }
 
-    const { port, protocol } = window.location;
+    const protocol = this.secure ? 'https:' : 'http:';
 
     switch (this.kind) {
       case DomainKind.Unknown:
         throw new Error('Cannot get worker host inside a worker.');
       case DomainKind.Ic0:
-        return `${protocol}//z.ic0.app${port ? ':' + port : ''}`;
       case DomainKind.Lvh:
-        return `${protocol}//z.lvh.me${port ? ':' + port : ''}`;
       case DomainKind.Localhost:
-        return `${protocol}//z.localhost${port ? ':' + port : ''}`;
+        return `${protocol}//z.${this.domain}`;
     }
   }
 
@@ -183,18 +298,17 @@ export class SiteInfo {
         return host;
       }
     } else {
-      const { port, protocol } = window.location;
+      const protocol = this.secure ? 'https:' : 'http:';
 
       switch (this.kind) {
         case DomainKind.Unknown:
           return '';
         case DomainKind.Ic0:
           // TODO: think if we want to have this hard coded here. We might.
-          return `${protocol}//gw.dfinity.network${port ? ':' + port : ''}`;
+          return `${protocol}//gw.dfinity.network`;
         case DomainKind.Lvh:
-          return `${protocol}//r.lvh.me${port ? ':' + port : ''}`;
         case DomainKind.Localhost:
-          return `${protocol}//r.localhost${port ? ':' + port : ''}`;
+          return `${protocol}//z.${this.domain}`;
         default:
           return host || '';
       }
