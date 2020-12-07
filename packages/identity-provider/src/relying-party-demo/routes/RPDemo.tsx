@@ -24,7 +24,7 @@ export default function RelyingPartyDemo(props: {
     });
     // Whenever session changes, serialize it and save to localStorage
     React.useEffect(() => {
-        sessionStorage.set(session)
+        props.sessionStorage.set(session)
     }, [session])
     return <>
         <h1>Relying Party Demo</h1>
