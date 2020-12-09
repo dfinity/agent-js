@@ -28,7 +28,15 @@ export interface ActorConfig extends CallConfig {
 /**
  * A subclass of an actor. Actor class itself is meant to be a based class.
  */
-export type ActorSubclass<T = Record<string, (...args: unknown[]) => Promise<unknown>>> = Actor & T;
+export type ActorSubclass<T = Record<string, ActorMethod>> = Actor & T;
+
+/**
+ * An actor method type, defined for each methods of the actor service.
+ */
+export interface ActorMethod<Args extends unknown[] = [], Ret extends unknown = unknown> {
+  (...args: Args): Promise<Ret>;
+  withOptions(options: CallConfig): (...args: Args) => Promise<Ret>;
+}
 
 /**
  * The mode used when installing a canister.
@@ -143,7 +151,7 @@ export class Actor {
     const service = interfaceFactory({ IDL });
 
     class CanisterActor extends Actor {
-      [x: string]: (...args: unknown[]) => Promise<unknown>;
+      [x: string]: ActorMethod;
 
       constructor(config: ActorConfig) {
         const canisterId =
@@ -157,19 +165,20 @@ export class Actor {
           canisterId,
           service,
         });
-      }
-    }
 
-    for (const [methodName, func] of service._fields) {
-      CanisterActor.prototype[methodName] = _createActorMethod(methodName, func);
+        for (const [methodName, func] of service._fields) {
+          this[methodName] = _createActorMethod(this, methodName, func);
+        }
+      }
     }
 
     return CanisterActor;
   }
 
-  public static createActor<
-    T = Record<string, Record<string, (...args: unknown[]) => Promise<unknown>>>
-  >(interfaceFactory: IDL.InterfaceFactory, configuration: ActorConfig): ActorSubclass<T> {
+  public static createActor<T = Record<string, ActorMethod>>(
+    interfaceFactory: IDL.InterfaceFactory,
+    configuration: ActorConfig,
+  ): ActorSubclass<T> {
     return (new (this.createActorClass(interfaceFactory))(
       configuration,
     ) as unknown) as ActorSubclass<T>;
@@ -206,14 +215,12 @@ const DEFAULT_ACTOR_CONFIG = {
 export type ActorConstructor = new (config: ActorConfig) => ActorSubclass;
 export type ActorFactory = (config: ActorConfig) => ActorSubclass;
 
-function _createActorMethod(
-  methodName: string,
-  func: IDL.FuncClass,
-): (...args: unknown[]) => Promise<unknown> {
+function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClass): ActorMethod {
+  let caller: (options: CallConfig, ...args: unknown[]) => Promise<unknown>;
   if (func.annotations.includes('query')) {
-    return async function (this: Actor, ...args: unknown[]) {
-      const agent = this[metadataSymbol].agent || getDefaultAgent();
-      const cid = this[metadataSymbol].canisterId;
+    caller = async (options: CallConfig, ...args: unknown[]) => {
+      const agent = options.agent || actor[metadataSymbol].agent || getDefaultAgent();
+      const cid = actor[metadataSymbol].canisterId;
       const arg = IDL.encode(func.argTypes, args) as BinaryBlob;
 
       const result = await agent.query(cid, { methodName, arg });
@@ -231,11 +238,11 @@ function _createActorMethod(
       }
     };
   } else {
-    return async function (this: Actor, ...args: unknown[]) {
-      const agent = this[metadataSymbol].agent || getDefaultAgent();
-      const cid = this[metadataSymbol].canisterId;
+    caller = async (options: CallConfig, ...args: unknown[]) => {
+      const agent = options.agent || actor[metadataSymbol].agent || getDefaultAgent();
+      const cid = actor[metadataSymbol].canisterId;
 
-      const { maxAttempts, throttleDurationInMSecs } = this[metadataSymbol];
+      const { maxAttempts, throttleDurationInMSecs } = { ...options, ...actor[metadataSymbol] };
       const arg = IDL.encode(func.argTypes, args) as BinaryBlob;
       const { requestId, response } = await agent.call(cid, { methodName, arg });
 
@@ -270,6 +277,12 @@ function _createActorMethod(
       );
     };
   }
+
+  const handler = (...args: unknown[]) => caller({}, ...args);
+  handler.withOptions = (options: CallConfig) => {
+    return (...args: unknown[]) => caller(options, ...args);
+  };
+  return handler as ActorMethod;
 }
 
 async function _requestStatusAndLoop<T>(
