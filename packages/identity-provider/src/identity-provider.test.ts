@@ -1,6 +1,6 @@
 import { Ed25519KeyIdentity } from '@dfinity/authentication';
 import { hexEncodeUintArray } from './bytes';
-import {  getRequiredQueryParams } from './identity-provider';
+import { getRequiredQueryParams } from './identity-provider';
 import * as CONSTANTS from './utils/constants';
 
 let mockResponse: jest.Mock<any, any>;

@@ -60,12 +60,14 @@ export function AuthorizationRoute() {
 
       console.debug('new AccessTokenResponse: ', JSON.stringify(oauth2AcessTokenResponse, null, 2));
 
-      const queryParams = new URLSearchParams();
-      for (const [key, value] of Object.entries(oauth2AcessTokenResponse)) {
-        queryParams.append(key, value);
-      }
-      const url = new URL(`?${queryParams}`, redirectURI);
-      window.location.assign(url.href);
+      const finalRedirectUri = (() => {
+        const _finalRedirectUri = new URL(redirectURI);
+        for (const [key, value] of Object.entries(oauth2AcessTokenResponse)) {
+          _finalRedirectUri.searchParams.append(key, value);
+        }
+        return _finalRedirectUri;
+      })();
+      window.location.assign(finalRedirectUri.toString());
     }
   }
 
