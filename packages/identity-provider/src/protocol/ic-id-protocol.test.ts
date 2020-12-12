@@ -40,9 +40,6 @@ describe('ic-id-protocol', () => {
     );
     expect(authenticationResponse.accessToken).toStrictEqual('accessTokenValue');
     expect(authenticationResponse.tokenType).toStrictEqual('bearer');
-    expect(authenticationResponse.redirectURI).toStrictEqual(
-      'http://localhost:8080/relying-party-demo/oauth/redirect_uri',
-    );
     expect(authenticationResponse.expiresIn).toStrictEqual(2099000000);
   });
   it('can create a bearer token', () => {

@@ -41,7 +41,7 @@ export default function SessionAuthorization(props: PropsWithoutRef<SessionAutho
       const options = {
         previous,
       };
-      const tomorrow = new Date(Date.now() + 15 * 60 * 1000);
+      const tomorrow = new Date(Date.now() + (1000 * 60 * 60 * 24))
       const sessionChain = await DelegationChain.create(from, to, tomorrow, options);
       auth.setSessionDelegationChain(sessionChain);
     }

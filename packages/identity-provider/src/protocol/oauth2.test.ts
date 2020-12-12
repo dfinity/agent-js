@@ -9,9 +9,6 @@ describe('oauth2', () => {
     );
     expect(accessTokenResponse.access_token).toStrictEqual('accessTokenValue');
     expect(accessTokenResponse.token_type).toStrictEqual('bearer');
-    expect(accessTokenResponse.redirect_uri).toStrictEqual(
-      'http://localhost:8080/relying-party-demo/oauth/redirect_uri',
-    );
     expect(accessTokenResponse.expires_in).toStrictEqual(2099000000);
   });
 });
