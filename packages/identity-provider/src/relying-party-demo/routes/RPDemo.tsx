@@ -1,7 +1,6 @@
 import { Ed25519KeyIdentity } from "@dfinity/authentication";
 import * as React from "react";
 import RPAuthenticationButton from "../components/RPAuthenticationButton";
-import { hexEncodeUintArray, hexToBytes } from "src/bytes";
 import { IRelyingPartyAuthenticationSession, RelyingPartyAuthenticationSessionSerializer, RelyingPartyAuthenticationSessionStorage } from "../session";
 import { IStorage } from "../storage";
 

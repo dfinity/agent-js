@@ -10,9 +10,11 @@ export interface IRelyingPartyAuthenticationSession {
 
 export const RelyingPartyAuthenticationSessionSerializer = {
   toJSON(session: IRelyingPartyAuthenticationSession) {
+    console.debug('RelyingPartyAuthenticationSessionSerializer.toJSON', { session });
     return JSON.stringify(session, toJSONReplacer, 2);
   },
   fromJSON(serialiedSession: string) {
+    console.debug('RelyingPartyAuthenticationSessionSerializer.fromJSON', { serialiedSession });
     const parsed = JSON.parse(serialiedSession);
     const publicKey = Uint8Array.from(hexToBytes(parsed.identity.publicKey.hex));
     const secretKey = Uint8Array.from(hexToBytes(parsed.identity.secretKey.hex));
@@ -46,19 +48,39 @@ export function RelyingPartyAuthenticationSessionStorage(
 }
 
 /** Replacer function for JSON.stringify that will encode Buffers as hex */
-function toJSONReplacer<
-  T extends { [P in keyof T]?: undefined | { [key: string]: any } },
-  K extends keyof T = keyof T,
-  V extends T[K] = T[K]
->(this: T | undefined, key: K, value: V): any {
-  if (value instanceof Ed25519KeyIdentity) {
-    const publicKeyDer = value.getKeyPair().publicKey.toDer();
-    return {
-      type: 'Ed25519KeyIdentity',
-      // un-DER by taking only last 32 bytes (raw)
-      publicKey: publicKeyDer.slice(publicKeyDer.length - 32),
-      secretKey: value.getKeyPair().secretKey,
-    };
+function toJSONReplacer(this: unknown, key: unknown, value: unknown) {
+  // handle objects with a 'type' property
+  if (typeof value === 'object' && value && hasOwnProperty(value, 'type')) {
+    switch (value.type) {
+      case 'Buffer':
+        if (!(hasOwnProperty(value, 'data') && Array.isArray(value?.data))) {
+          break;
+        }
+        return {
+          type: 'Buffer',
+          hex: hexEncodeUintArray(Uint8Array.from(value.data)),
+        };
+      case 'RelyingPartyAuthenticationSession':
+        const identity =
+          hasOwnProperty(value, 'identity') && value.identity instanceof Ed25519KeyIdentity
+            ? value.identity
+            : undefined;
+        if (!identity) {
+          break;
+        }
+        const { publicKey, secretKey } = identity.getKeyPair();
+        const publicKeyDer = publicKey.toDer();
+        return {
+          ...value,
+          // replace identity with POJO,
+          identity: {
+            type: 'Ed25519KeyIdentity',
+            // un-DER by taking only last 32 bytes (raw)
+            publicKey: publicKeyDer.slice(publicKeyDer.length - 32),
+            secretKey,
+          },
+        };
+    }
   }
   if (value instanceof Uint8Array) {
     return {
@@ -66,11 +88,13 @@ function toJSONReplacer<
       hex: hexEncodeUintArray(value),
     };
   }
-  if (value?.type === 'Buffer' && Array.isArray(value?.data)) {
-    return {
-      type: 'Buffer',
-      hex: hexEncodeUintArray(Uint8Array.from(value.data)),
-    };
-  }
   return value;
+}
+
+/** Helper to check/assert object has prop */
+function hasOwnProperty<X extends {}, Y extends PropertyKey>(
+  obj: X,
+  prop: Y,
+): obj is X & Record<Y, unknown> {
+  return obj.hasOwnProperty(prop);
 }

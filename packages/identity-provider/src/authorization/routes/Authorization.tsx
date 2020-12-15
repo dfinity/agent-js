@@ -53,7 +53,6 @@ export function AuthorizationRoute() {
       const icAuthResponse: icid.ICAuthenticationResponse = {
         accessToken,
         expiresIn,
-        redirectURI,
         tokenType,
       };
       const oauth2AcessTokenResponse = icid.toOAuth2(icAuthResponse);

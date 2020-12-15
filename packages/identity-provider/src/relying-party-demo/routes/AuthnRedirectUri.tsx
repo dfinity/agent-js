@@ -21,6 +21,7 @@ export default function OAuthRedirectUriRoute(props: {
     // @TODO(bengo): This Ed25519KeyIdentity needs to correspond to the sender_pubkey sent as login_hint
     // otherwise sigs won't actually be accepted by replica when `delegationIdentity.sign` is used by HttpAgent to sign each ic request id
     const session = props.sessionStorage.get()
+    console.log('AuthnRedirectUri session', {session, delegationChain})
     const identity = session?.identity
     const delegationIdentity = identity && DelegationIdentity.fromDelegation(identity, delegationChain)
     React.useEffect(
