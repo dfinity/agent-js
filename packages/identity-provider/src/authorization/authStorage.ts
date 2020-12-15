@@ -40,8 +40,8 @@ export class AuthStore {
       // storage can't handle buffers, just UIntArrays, so we must transform!
       const rawKeyBlob = blobFromUint8Array(storedKeyPair.publicKey);
       const pubKeyRaw = Ed25519PublicKey.fromDer(rawKeyBlob).toRaw();
-
-      return Ed25519KeyIdentity.fromKeyPair(pubKeyRaw, storedKeyPair.secretKey);
+      const identity = Ed25519KeyIdentity.fromKeyPair(pubKeyRaw, storedKeyPair.secretKey);
+      return identity;
     } else {
       return Promise.resolve(undefined);
     }

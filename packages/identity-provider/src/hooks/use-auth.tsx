@@ -64,6 +64,7 @@ function useProvideAuth(): UseAuthContext {
   useEffect(() => {
     localforage.ready(async () => {
       const maybeIdentity = await authStore.getRootIdentity();
+      console.debug('use-auth first boot rootIdentity from authStore', { maybeIdentity })
       if (maybeIdentity) {
         setRootIdentity(maybeIdentity);
       }
