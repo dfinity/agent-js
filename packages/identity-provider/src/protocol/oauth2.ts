@@ -35,9 +35,6 @@ export function fromQueryString(searchParams: URLSearchParams): OAuth2AccessToke
     throw new Error(`unexpected oauth2 token_type: ${token_type}`);
   }
 
-  const redirect_uri = searchParams.get('redirect_uri');
-  assert.ok(redirect_uri);
-
   const response: OAuth2AccessTokenResponse = {
     access_token,
     expires_in,
