@@ -1,8 +1,9 @@
-import { PublicKey } from '@dfinity/agent';
+import { PublicKey, blobFromHex } from '@dfinity/agent';
 import {
   Bip39Ed25519KeyIdentity,
   DelegationChain,
   Ed25519KeyIdentity,
+  Ed25519PublicKey,
 } from '@dfinity/authentication';
 import Typography from '@material-ui/core/Typography';
 import Stepper from '@material-ui/core/Stepper';
@@ -37,13 +38,12 @@ import * as icid from '../../protocol/ic-id-protocol';
 export function AuthorizationRoute() {
   const auth = useAuth();
   const location = useLocation();
-
-  const [redirectURI, setRedirectURI] = React.useState('');
+  const [authenticationRequest, setAuthenticationRequest] = React.useState<icid.IDPAuthenticationRequest>()
   const [activeStep, setActiveStep] = React.useState(0);
 
   // Redirect to relying party with proper query parameters
   function handleRedirect() {
-    if (auth && auth.sessionDelegationChain) {
+    if (auth && auth.sessionDelegationChain && authenticationRequest) {
       // @TODO(bengo) - make this a hex(cborEncode(ICAuthenticationResponse))
       // where ICAuthenticationResponse({ sender_delegation, ... })
       const accessToken = icid.createBearerToken({ delegationChain: auth.sessionDelegationChain });
@@ -54,15 +54,18 @@ export function AuthorizationRoute() {
         accessToken,
         expiresIn,
         tokenType,
+        ...(authenticationRequest?.state && {
+          state: authenticationRequest.state,
+        }),
       };
       const oauth2AcessTokenResponse = icid.toOAuth2(icAuthResponse);
 
       console.debug('new AccessTokenResponse: ', JSON.stringify(oauth2AcessTokenResponse, null, 2));
 
       const finalRedirectUri = (() => {
-        const _finalRedirectUri = new URL(redirectURI);
+        const _finalRedirectUri = new URL(authenticationRequest.redirectUri.toString());
         for (const [key, value] of Object.entries(oauth2AcessTokenResponse)) {
-          _finalRedirectUri.searchParams.append(key, value);
+          _finalRedirectUri.searchParams.set(key, value);
         }
         return _finalRedirectUri;
       })();
@@ -71,14 +74,27 @@ export function AuthorizationRoute() {
   }
 
   // every time our query parameters change, we should try to get login hint and redirect from them
-  React.useEffect(() => {
-    try {
-      const params = getRequiredQueryParams(location.search);
-      setRedirectURI(params.redirectURI);
-    } catch (error) {
-      console.error(error);
-    }
-  }, [location.search]);
+  React.useEffect(
+    () => {
+      const searchParams = new URLSearchParams(location.search);
+      const redirectUriString = searchParams.get('redirect_uri');
+      const redirectUri = redirectUriString && new URL(redirectUriString)
+      const loginHintString = searchParams.get('login_hint');
+      const sessionIdentity = loginHintString && Ed25519PublicKey.fromDer(blobFromHex(loginHintString))
+      const state = searchParams.get('state');
+      if (redirectUri && sessionIdentity) {
+        const authenticationRequest: icid.IDPAuthenticationRequest = {
+          redirectUri,
+          sessionIdentity,
+          ...(state && { state }),
+        }
+        setAuthenticationRequest(authenticationRequest)
+      } else {
+        setAuthenticationRequest(undefined);
+      }
+    },
+    [location.search]
+  )
 
   React.useEffect(() => {
     if (auth.rootIdentity) {
@@ -98,7 +114,11 @@ export function AuthorizationRoute() {
   function handleDecline() {
     // handle declining authorization at any step
     // @todo(andrew): handle different scenarios with different descriptions
-    const redirect = new URL(redirectURI);
+    if ( ! authenticationRequest) {
+      console.warn('handleDecline called without an authenticationRequest. Returning early.')
+      return;
+    }
+    const redirect = new URL(authenticationRequest.redirectUri.toString());
     redirect.searchParams.append('error', 'access_denied');
     redirect.searchParams.append('error_description', 'User denied authorization');
     window.location.assign(redirect.href);

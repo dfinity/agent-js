@@ -24,6 +24,7 @@ export interface ICAuthenticationResponse {
 export interface IDPAuthenticationRequest {
   sessionIdentity: PublicKey;
   redirectUri: URL;
+  state?: string;
 }
 
 /**
@@ -31,11 +32,17 @@ export interface IDPAuthenticationRequest {
  * (e.g. to snake_case keys instead of JS-conventional camelCase)
  */
 export function toOAuth2(message: ICAuthenticationResponse) {
-  const { accessToken: access_token, expiresIn: expires_in, tokenType: token_type } = message;
+  const {
+    accessToken: access_token,
+    expiresIn: expires_in,
+    tokenType: token_type,
+    state,
+  } = message;
   const oauth2AccessTokenResponse: OAuth2AccessTokenResponse = {
     access_token,
     expires_in,
     token_type,
+    state,
   };
   return oauth2AccessTokenResponse;
 }
