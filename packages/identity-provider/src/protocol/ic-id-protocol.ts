@@ -9,7 +9,6 @@ import { hexEncodeUintArray, hexToBytes } from '../bytes';
 import { DelegationChain } from '@dfinity/authentication';
 
 export interface ICAuthenticationResponse {
-  redirectURI: string;
   accessToken: string;
   tokenType: 'bearer';
   expiresIn: number;
@@ -25,6 +24,7 @@ export interface ICAuthenticationResponse {
 export interface IDPAuthenticationRequest {
   sessionIdentity: PublicKey;
   redirectUri: URL;
+  state?: string;
 }
 
 /**
@@ -36,13 +36,13 @@ export function toOAuth2(message: ICAuthenticationResponse) {
     accessToken: access_token,
     expiresIn: expires_in,
     tokenType: token_type,
-    redirectURI: redirect_uri,
+    state,
   } = message;
   const oauth2AccessTokenResponse: OAuth2AccessTokenResponse = {
     access_token,
     expires_in,
     token_type,
-    redirect_uri,
+    state,
   };
   return oauth2AccessTokenResponse;
 }
@@ -60,7 +60,6 @@ export function fromOAuth2(message: OAuth2AccessTokenResponse) {
     accessToken: message.access_token,
     expiresIn: message.expires_in,
     tokenType: message.token_type,
-    redirectURI: message.redirect_uri,
   };
   return authenticationResponse;
 }

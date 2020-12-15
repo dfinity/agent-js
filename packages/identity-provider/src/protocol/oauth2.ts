@@ -2,7 +2,6 @@ import * as assert from 'assert';
 
 // https://tools.ietf.org/html/rfc6749#section-4.2.2
 export interface OAuth2AccessTokenResponse {
-  redirect_uri: string;
   access_token: string; // REQUIRED.  The access token issued by the authorization server.
   token_type: 'bearer' | 'mac'; // default 'bearer' REQUIRED.  The type of the token issued as described in Section 7.1.
   expires_in: number; // The lifetime in seconds of the access token.
@@ -43,7 +42,6 @@ export function fromQueryString(searchParams: URLSearchParams): OAuth2AccessToke
     access_token,
     expires_in,
     token_type,
-    redirect_uri,
   };
   return response;
 }
