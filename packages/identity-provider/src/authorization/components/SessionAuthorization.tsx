@@ -32,19 +32,17 @@ export default function SessionAuthorization(props: PropsWithoutRef<SessionAutho
   }, [auth.sessionDelegationChain]);
 
   async function handleCreateSessionChain() {
-    const from = auth.deviceIdentity;
-    const to = loginHint;
-    const previous = auth.rootDelegationChain;
-    if (!from || !to) {
-      console.error('no from or to found: ', { from, to });
-    } else {
-      const options = {
-        previous,
-      };
-      const tomorrow = new Date(Date.now() + (1000 * 60 * 60 * 24))
-      const sessionChain = await DelegationChain.create(from, to, tomorrow, options);
-      auth.setSessionDelegationChain(sessionChain);
+    const { rootIdentity } = auth;
+    if ( ! rootIdentity) {
+      throw new Error('Cannot create session DelegationChain. No rootIdentity found.')
     }
+    if ( ! loginHint) {
+      throw new Error('Cannot create session DelegationChain. No loginHint found.')
+    }
+    const sessionPublicKey = loginHint
+    const tomorrow = new Date(Date.now() + (1000 * 60 * 60 * 24))
+    const sessionChain = await DelegationChain.create(rootIdentity, sessionPublicKey, tomorrow);
+    auth.setSessionDelegationChain(sessionChain);
   }
 
   return (
