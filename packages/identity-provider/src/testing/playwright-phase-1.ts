@@ -13,34 +13,22 @@ async function testIdentityProviderRelyingPartyDemo(options: {
 }) {
   const { page, screenshotsDirectory } = options;
   const initialUrl = page.url();
+  const altAuthorizationUrl = new URL('/design-phase-1', initialUrl);
+  const relyingPartyDemoUrl = new URL('/relying-party-demo', initialUrl);
+  relyingPartyDemoUrl.searchParams.set('idp', altAuthorizationUrl.toString());
   // Go to /relying-party-demo
-  await page.goto(new URL('/relying-party-demo', initialUrl).toString());
+  await page.goto(relyingPartyDemoUrl.toString());
   await page.screenshot({ path: path.join(screenshotsDirectory, `0-rp-start.png`) });
   // click 'authenticate' button
-  await page.click('text="Authenticate"');
+  //   await page.click('text="Authenticate"')
   // wait to see 'Identity Provider' (waiting for @dfinity/bootstrap to fetch from asset canister)
-  await page.waitForSelector('text="Identity Provider"');
-
-  // Mnemonic import. Skip it
-  await page.screenshot({ path: path.join(screenshotsDirectory, `1-idp.png`) });
-  await page.click('text="Skip"');
-  await page.screenshot({ path: path.join(screenshotsDirectory, `2-idp.png`) });
-  await page.click('text="Generate Master Key"');
-  // @TODO(bengo) Make work with less specific selector
-  await page.screenshot({ path: path.join(screenshotsDirectory, `3-idp.png`) });
-  await page.click("//button[2]/span[1][normalize-space(.)='Authorize Device']");
-  // @TODO(bengo) Make work with less specific selector
-  await page.screenshot({ path: path.join(screenshotsDirectory, `4-idp.png`) });
-  await page.click("//button[2]/span[1][normalize-space(.)='Authorize Session']");
-  /** user will be redirected back to /relying-party-demo redirect_uri */
-  await page.waitForSelector('text="AuthenticationResponse"');
-  await page.screenshot({ path: path.join(screenshotsDirectory, `5-rp-redirect-uri.png`) });
+  //   await page.waitForSelector('text="Identity Provider"')
+  //   await page.screenshot({ path: path.join(screenshotsDirectory, `1-idp.png`) });
 }
 
 // main module
 (() => {
   const identityProviderUrl = process.argv[2];
-  console.debug({ identityProviderUrl });
   if (typeof identityProviderUrl !== 'string') {
     throw new Error('Provide identityProviderUrl as first argument.');
   }
@@ -59,9 +47,11 @@ async function testIdentityProviderRelyingPartyDemo(options: {
       screenshotsDirectory,
     });
     await browser.close();
-    console.log({
-      identityProviderUrl,
-      screenshotsDirectory,
-    });
+    console.log(
+      JSON.stringify({
+        identityProviderUrl,
+        screenshotsDirectory,
+      }),
+    );
   })();
 })();

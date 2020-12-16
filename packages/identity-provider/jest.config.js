@@ -5,6 +5,8 @@ module.exports = {
   ],
   setupFilesAfterEnv: [
     "jest-expect-message",
+    "./node_modules/jest-enzyme/lib/index.js",
+    "./src/testing/jest/setupAfterEnv.js",
   ],
   testPathIgnorePatterns: [
     "/node_modules/",
