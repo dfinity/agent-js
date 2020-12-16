@@ -39,6 +39,7 @@ interface Delegation extends Record<string, any> {
 export class Certificate {
   private readonly cert: Cert;
   private verified: boolean = false;
+  private _key: Buffer | null = null;
   constructor(response: ReadStateResponse, private _agent: Agent = getDefaultAgent()) {
     this.cert = cbor.decode(response.certificate);
   }
@@ -48,17 +49,19 @@ export class Certificate {
     }
     return lookup_path(path, this.cert.tree);
   }
-  public verify(): Promise<boolean> {
-    return (async () => {
-      const rootHash = await reconstruct(this.cert.tree);
-      const derKey = await checkDelegation(this._agent, this.cert.delegation);
-      const sig = this.cert.signature;
-      const key = extractDER(derKey);
-      const msg = Buffer.concat([domain_sep('ic-state-root'), rootHash]);
-      const res = await BLS.blsVerify(bufferToHex(key), bufferToHex(sig), bufferToHex(msg));
-      this.verified = res;
-      return res;
-    })();
+  public async verify(): Promise<boolean> {
+    const rootHash = await reconstruct(this.cert.tree);
+    let derKey = this._key;
+    if (!derKey) {
+      derKey = await checkDelegation(this._agent, this.cert.delegation);
+      this._key = derKey;
+    }
+    const sig = this.cert.signature;
+    const key = extractDER(derKey);
+    const msg = Buffer.concat([domain_sep('ic-state-root'), rootHash]);
+    const res = await BLS.blsVerify(bufferToHex(key), bufferToHex(sig), bufferToHex(msg));
+    this.verified = res;
+    return res;
   }
 }
 
