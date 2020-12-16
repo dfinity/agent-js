@@ -34,7 +34,7 @@ async function testIdentityProviderRelyingPartyDemo(options: {
   await page.click('//button[2]/span[1][normalize-space(.)=\'Authorize Session\']');
   /** user will be redirected back to /relying-party-demo redirect_uri */
   await page.waitForSelector('text="AuthenticationResponse"')
-  await page.screenshot({ path: path.join(screenshotsDirectory, `rp-redirect-uri.png`) });
+  await page.screenshot({ path: path.join(screenshotsDirectory, `5-rp-redirect-uri.png`) });
 }
 
 // main module
