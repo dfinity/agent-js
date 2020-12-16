@@ -1,10 +1,15 @@
 import { Buffer } from 'buffer/';
-import { getRootKey } from './actor';
+import { Agent, getDefaultAgent } from './agent';
 import * as cbor from './cbor';
 import { ReadStateResponse } from './http_agent_types';
 import { hash } from './request_id';
 import { BinaryBlob } from './types';
 import { BLS } from './utils/bls';
+
+async function getRootKey(agent: Agent): Promise<BinaryBlob> {
+  // TODO add the real root key for Mercury
+  return ((await agent.status()) as any).root_key;
+}
 
 interface Cert extends Record<string, any> {
   tree: HashTree;
@@ -34,7 +39,7 @@ interface Delegation extends Record<string, any> {
 export class Certificate {
   private readonly cert: Cert;
   private verified: boolean = false;
-  constructor(response: ReadStateResponse) {
+  constructor(response: ReadStateResponse, private _agent: Agent = getDefaultAgent()) {
     this.cert = cbor.decode(response.certificate);
   }
   public lookup(path: Buffer[]): Buffer | undefined {
@@ -46,7 +51,7 @@ export class Certificate {
   public verify(): Promise<boolean> {
     return (async () => {
       const rootHash = await reconstruct(this.cert.tree);
-      const derKey = await checkDelegation(this.cert.delegation);
+      const derKey = await checkDelegation(this._agent, this.cert.delegation);
       const sig = this.cert.signature;
       const key = extractDER(derKey);
       const msg = Buffer.concat([domain_sep('ic-state-root'), rootHash]);
@@ -57,11 +62,11 @@ export class Certificate {
   }
 }
 
-async function checkDelegation(d?: Delegation): Promise<Buffer> {
+async function checkDelegation(agent: Agent, d?: Delegation): Promise<Buffer> {
   if (!d) {
-    return await getRootKey();
+    return await getRootKey(agent);
   }
-  const cert: Certificate = new Certificate(d as any);
+  const cert: Certificate = new Certificate(d as any, agent);
   if (!(await cert.verify())) {
     throw new Error('fail to verify delegation certificate');
   }
