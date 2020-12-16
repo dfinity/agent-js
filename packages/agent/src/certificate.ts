@@ -39,23 +39,22 @@ interface Delegation extends Record<string, any> {
 export class Certificate {
   private readonly cert: Cert;
   private verified: boolean = false;
-  private _key: Buffer | null = null;
+  private _rootKey: BinaryBlob | null = null;
+
   constructor(response: ReadStateResponse, private _agent: Agent = getDefaultAgent()) {
     this.cert = cbor.decode(response.certificate);
   }
+
   public lookup(path: Buffer[]): Buffer | undefined {
     if (!this.verified) {
       throw new Error('Cannot lookup unverified certificate');
     }
     return lookup_path(path, this.cert.tree);
   }
+
   public async verify(): Promise<boolean> {
     const rootHash = await reconstruct(this.cert.tree);
-    let derKey = this._key;
-    if (!derKey) {
-      derKey = await checkDelegation(this._agent, this.cert.delegation);
-      this._key = derKey;
-    }
+    const derKey = await this._checkDelegation(this.cert.delegation);
     const sig = this.cert.signature;
     const key = extractDER(derKey);
     const msg = Buffer.concat([domain_sep('ic-state-root'), rootHash]);
@@ -63,18 +62,21 @@ export class Certificate {
     this.verified = res;
     return res;
   }
-}
 
-async function checkDelegation(agent: Agent, d?: Delegation): Promise<Buffer> {
-  if (!d) {
-    return await getRootKey(agent);
+  private async _checkDelegation(d?: Delegation): Promise<Buffer> {
+    if (!d) {
+      if (!this._rootKey) {
+        this._rootKey = await getRootKey(this._agent);
+      }
+      return this._rootKey;
+    }
+    const cert: Certificate = new Certificate(d as any, this._agent);
+    if (!(await cert.verify())) {
+      throw new Error('fail to verify delegation certificate');
+    }
+    const res = cert.lookup([Buffer.from('subnet'), d.subnet_id, Buffer.from('public_key')])!;
+    return Promise.resolve(res);
   }
-  const cert: Certificate = new Certificate(d as any, agent);
-  if (!(await cert.verify())) {
-    throw new Error('fail to verify delegation certificate');
-  }
-  const res = cert.lookup([Buffer.from('subnet'), d.subnet_id, Buffer.from('public_key')])!;
-  return Promise.resolve(res);
 }
 
 const DER_PREFIX = Buffer.from(
