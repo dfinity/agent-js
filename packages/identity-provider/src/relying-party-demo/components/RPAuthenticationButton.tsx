@@ -18,12 +18,12 @@ export function toOauth(idpRequest: IDPAuthenticationRequest): OAuth2Authorizati
 export default function RPAuthenticationButton(props: {
     children?: React.ReactNode;
     delegateTo: PublicKey;
-    idpBaseUrl?: string;
+    identityProviderUrl?: URL;
     redirectUrl: URL;
   }) {
     // default to empty string, which should resolve everything relative to wherever this is used
     // (via relative HTML URLs like `/authorization` instead of absolute URLs like `https://id.ic0.app/authorization`)
-    const { idpBaseUrl = "" } = props;
+    const { identityProviderUrl = new URL('/authorization', new URL(globalThis.location.toString())) } = props;
     const onClickAuthenticate = React.useCallback(
       (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
@@ -32,7 +32,7 @@ export default function RPAuthenticationButton(props: {
           redirectUri: props.redirectUrl,
         };
         const authenticationRequestUrl = (() => {
-          const url = new URL(`${idpBaseUrl}/authorization`, globalThis.location.href);
+          const url = new URL(identityProviderUrl.toString());
           for (const [key, value] of Object.entries(toOauth(authenticationRequest))) {
             url.searchParams.set(key, value);
           }
@@ -40,12 +40,12 @@ export default function RPAuthenticationButton(props: {
         })();
         globalThis.location.assign(authenticationRequestUrl.toString());
       },
-      [props.delegateTo, props.idpBaseUrl]
+      [props.delegateTo, identityProviderUrl]
     );
     return (
       <>
         <button onClick={onClickAuthenticate}>
-          {props.children || "Authenticate"}
+          {props.children || `Authenticate with ${identityProviderUrl.toString()}`}
         </button>
       </>
     );

@@ -17,6 +17,8 @@ export default function RelyingPartyDemo(props: {
     redirectUrl: URL;
     sessionStorage: IStorage<IRelyingPartyAuthenticationSession>
 }) {
+    const identityProviderUrl = new URL(
+        (new URLSearchParams(globalThis.location.search)).get('idp') || (new URL('/authorization', new URL(globalThis.location.toString()))).toString() )
     const [session, setSession] = React.useState<IRelyingPartyAuthenticationSession>({
         type: "RelyingPartyAuthenticationSession",
         identity: Ed25519KeyIdentity.generate(),
@@ -29,9 +31,12 @@ export default function RelyingPartyDemo(props: {
         <h1>Relying Party Demo</h1>
         <p>Click the button below to authenticate with the Internet Computer, authorizing the following session identity:</p>
         <pre>{RelyingPartyAuthenticationSessionSerializer.toJSON(session)}</pre>
-        <RPAuthenticationButton
-            redirectUrl={props.redirectUrl}
-            delegateTo={session.identity.getPublicKey()}
-        />
+        <span data-test-id="authenticate">
+            <RPAuthenticationButton
+                redirectUrl={props.redirectUrl}
+                delegateTo={session.identity.getPublicKey()}
+                identityProviderUrl={identityProviderUrl}
+            />
+        </span>
     </>
 }

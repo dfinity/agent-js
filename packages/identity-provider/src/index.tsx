@@ -12,6 +12,7 @@ import { ROUTES } from './utils/constants';
 import NotFound from "./routes/NotFound";
 import RelyingPartyDemoRoute from "./relying-party-demo/routes";
 import { IdentityChangedEvent, IdentityChangedEventIdentifier } from './relying-party-demo/events';
+import { Route as DesignPhase1Route } from "./design-phase-1";
 
 const Authorization = lazy(() => import('./authorization/routes/Authorization'));
 
@@ -34,6 +35,9 @@ const App = () => {
                     <RelyingPartyDemoRoute NotFoundRoute={NotFoundRoute} />
                   </Route>
                   <Route exact path={ROUTES.HOME} component={HomeRoute} />
+                  <Route path="/design-phase-1">
+                    <DesignPhase1Route NotFoundRoute={NotFoundRoute} />
+                  </Route>
                   <NotFoundRoute />
                 </Switch>
               </Suspense>

@@ -20,10 +20,26 @@ async function testIdentityProviderRelyingPartyDemo(options: {
   await page.goto(relyingPartyDemoUrl.toString());
   await page.screenshot({ path: path.join(screenshotsDirectory, `0-rp-start.png`) });
   // click 'authenticate' button
-  //   await page.click('text="Authenticate"')
-  // wait to see 'Identity Provider' (waiting for @dfinity/bootstrap to fetch from asset canister)
-  //   await page.waitForSelector('text="Identity Provider"')
-  //   await page.screenshot({ path: path.join(screenshotsDirectory, `1-idp.png`) });
+  await page.click('data-test-id=authenticate');
+  // wait for next screen
+  await page.waitForSelector('text="Getting Started"');
+  // This is now the 'WelcomeScreen'
+  await page.screenshot({ path: path.join(screenshotsDirectory, `1-welcome.png`) });
+  await page.click('data-test-id=next');
+
+  // Should now get to IdentityConfirmationScreen
+  await page.waitForSelector('data-test-id=identity-confirmation-screen');
+  await page.screenshot({ path: path.join(screenshotsDirectory, `2-identity-confirmation.png`) });
+  await page.click('data-test-id=next');
+
+  await page.waitForSelector('data-test-id=session-consent-screen');
+  await page.screenshot({ path: path.join(screenshotsDirectory, `3-session-consent.png`) });
+  await page.click('data-test-id=allow-authorize-session');
+
+  await page.waitForSelector('data-test-id=authentication-response-confirmation-screen');
+  await page.screenshot({
+    path: path.join(screenshotsDirectory, `4-authentication-response-confirmation.png`),
+  });
 }
 
 // main module
