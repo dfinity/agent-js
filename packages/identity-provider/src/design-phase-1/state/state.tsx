@@ -3,7 +3,17 @@ import { JsonCompatible, Jsonnable } from "./json";
 
 export const IdentityProviderStateType = t.type({
     type: t.literal("IdentityProviderState"),
-    loginHint: t.union([t.undefined, t.string])
+    loginHint: t.union([t.undefined, t.string]),
+    identities: t.type({
+        root: t.type({
+            publicKey: t.union([
+                t.undefined,
+                t.type({
+                    hex: t.string,
+                })
+            ])
+        })
+    })
 })
 
 export type IdentityProviderState = t.TypeOf<typeof IdentityProviderStateType>

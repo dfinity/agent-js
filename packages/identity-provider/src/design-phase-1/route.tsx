@@ -9,6 +9,7 @@ import { SerializedStorage, IStorage, LocalStorageKey, NotFoundError } from './s
 import { useStateStorage } from './state/state-storage-react';
 import { StateToStringCodec } from './state/state-serialization';
 import { useState } from './state/state-react';
+import { hexToBytes } from 'src/bytes';
 
 const stateStorage = SerializedStorage(
     LocalStorageKey('design-phase-1'),
@@ -55,7 +56,23 @@ export default function DesignPhase0Route(props: {
             payload: {
                 loginHint: Math.random().toString().slice(2),
             }
-        })
+        });
+    }
+    const idpController = {
+        createProfile() {
+            dispatch({
+                type: "ProfileCreated",
+                payload: {
+                    publicKey: Uint8Array.from(hexToBytes("302a300506032b65700321006f060234ec1dcf08e4fedf8d0a52f9842cc7a96b79ed37f323cb2798264203cb"))
+                }
+            });
+            dispatch({
+                type: "Navigate",
+                payload: {
+                    href: urls.identity.confirmation
+                }
+            });
+        }
     }
     return <>
         <Switch>
@@ -64,7 +81,7 @@ export default function DesignPhase0Route(props: {
             </Route>
             <Route exact path={`${path}/welcome`}>
                 <WelcomeScreen
-                    next={urls.identity.confirmation}
+                    createProfile={idpController.createProfile}
                 />
             </Route>
             <Route exact path={urls.identity.confirmation}>

@@ -1,6 +1,6 @@
 import { shallow, mount } from 'enzyme';
 import * as React from 'react';
-import { useReducer } from './reducer';
+import { useReducer, init } from './reducer';
 import { IdentityProviderState, JsonnableIdentityProviderState } from './state';
 import { StateToStringCodec } from './state-serialization';
 
@@ -11,6 +11,13 @@ describe('@dfinity/identity-provider/design-phase-0/state-serialization', () => 
     const sampleState: IdentityProviderState = {
       type: 'IdentityProviderState',
       loginHint: sampleLoginHint,
+      identities: {
+        root: {
+          publicKey: {
+            hex: sampleLoginHint,
+          },
+        },
+      },
     };
     const codec = StateToStringCodec();
     expect(codec.decode(codec.encode(sampleState))).toStrictEqual(sampleState);
