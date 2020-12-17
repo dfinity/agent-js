@@ -4,8 +4,13 @@ module.exports = {
     "./test-setup",
   ],
   setupFilesAfterEnv: [
-    "jest-expect-message",
+    // "jest-expect-message",
+    "jest-enzyme",
   ],
+  testEnvironment: "enzyme",
+  testEnvironmentOptions: {
+    enzymeAdapter: "react16"
+  },
   testPathIgnorePatterns: [
     "/node_modules/",
     "/out/",
