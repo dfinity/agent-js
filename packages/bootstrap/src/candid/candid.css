@@ -222,8 +222,7 @@ textarea:focus {
 #console-output {
     font-family: 'Vremena Grotesk', 'Roboto Mono', monospace;
     height: 0;
-    padding: var(--pad-md);
-    padding-left: 0;
+    padding: 0 0 3rem;
     margin-right: calc(-1 * var(--pad-md));
     overflow-y: auto;
 }
@@ -279,6 +278,7 @@ textarea:focus {
     }
     #console {
         display: flex;
+        flex-direction: row-reverse;
         align-items: stretch;
         width: var(--header-height);
         height: calc(100vh - var(--header-height));
@@ -313,13 +313,12 @@ textarea:focus {
         background-color: var(--white);
         border-bottom: 1px solid var(--lighter);
         top: 0;
-        left: var(--header-height);
+        right: var(--header-height);
     }
     
     #console-output {
         height: calc(100vh - (2 * var(--header-height)));
         width: 0;
-        padding: 0 0 3rem;
         margin: var(--header-height) 0 0;
         transition: width .2s ease-in-out;
     }
