@@ -1,39 +1,12 @@
 import { Buffer } from 'buffer/';
-import { Agent } from './agent';
+import { Agent, getDefaultAgent } from './agent';
 import { getManagementCanister } from './canisters/management';
 import { Certificate } from './certificate';
 import { QueryResponseStatus, RequestStatusResponseStatus } from './http_agent_types';
 import * as IDL from './idl';
-import { GlobalInternetComputer } from './index';
 import { Principal } from './principal';
 import { RequestId, toHex as requestIdToHex } from './request_id';
 import { BinaryBlob, blobFromText } from './types';
-
-declare const window: GlobalInternetComputer;
-declare const global: GlobalInternetComputer;
-declare const self: GlobalInternetComputer;
-
-function getDefaultAgent(): Agent {
-  const agent =
-    typeof window === 'undefined'
-      ? typeof global === 'undefined'
-        ? typeof self === 'undefined'
-          ? undefined
-          : self.ic.agent
-        : global.ic.agent
-      : window.ic.agent;
-
-  if (!agent) {
-    throw new Error('No Agent could be found.');
-  }
-
-  return agent;
-}
-
-export async function getRootKey(): Promise<BinaryBlob> {
-  // TODO add the real root key for Mercury
-  return ((await getDefaultAgent().status()) as any).root_key;
-}
 
 /**
  * Configuration to make calls to the Replica.
@@ -308,7 +281,7 @@ async function _requestStatusAndLoop<T>(
 ): Promise<T> {
   const path = [blobFromText('request_status'), requestId];
   const state = await agent.readState({ paths: [path] });
-  const cert = new Certificate(state);
+  const cert = new Certificate(state, agent);
   const verified = await cert.verify();
   if (!verified) {
     throw new Error('Fail to verify certificate');
