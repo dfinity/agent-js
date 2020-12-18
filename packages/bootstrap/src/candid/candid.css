@@ -239,7 +239,7 @@ textarea:focus {
     background-color: #fff;
 }
 
-@media only screen and (min-width: 600px) {
+@media only screen and (min-width: 800px) {
     :root {
         --header-height: 4rem;
         --console-width: clamp(28rem, 30vw, 40rem);
