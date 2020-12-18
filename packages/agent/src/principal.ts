@@ -1,4 +1,5 @@
 import base32 from 'base32.js';
+import { Buffer } from 'buffer/';
 import { BinaryBlob, blobFromHex, blobFromUint8Array, blobToHex } from './types';
 import { getCrc32 } from './utils/getCrc';
 import { sha224 } from './utils/sha224';
