@@ -38,6 +38,7 @@
     "file-loader": "6.2.0",
     "fp-ts": "^2.9.1",
     "html-webpack-plugin": "^3.2.0",
+    "immer": "^8.0.0",
     "io-ts": "^2.2.13",
     "jest": "^24.9.0",
     "jest-environment-enzyme": "^7.1.2",

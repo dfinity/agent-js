@@ -22,7 +22,6 @@ describe('@dfinity/identity-provider/design-phase-0/state-storage', () => {
     );
     const state0: IdentityProviderState = {
       type: 'IdentityProviderState',
-      loginHint: 'foo',
       identities: {
         root: {
           publicKey: undefined,
@@ -31,7 +30,6 @@ describe('@dfinity/identity-provider/design-phase-0/state-storage', () => {
     };
     storage.set(state0);
     expect(str).toContain(state0.type);
-    expect(str).toContain(state0.loginHint);
     expect(storage.get()).toEqual(state0);
   });
 });

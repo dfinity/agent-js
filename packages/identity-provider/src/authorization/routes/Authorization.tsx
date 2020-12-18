@@ -20,6 +20,7 @@ import RootDelegationChainCreation from 'src/authorization/components/RootDelega
 import DeviceAuthorization from 'src/authorization/components/DeviceAuthorization';
 import SessionAuthorization from 'src/authorization/components/SessionAuthorization';
 import * as icid from '../../protocol/ic-id-protocol';
+import { hexEncodeUintArray } from 'src/bytes';
 
 /**
  * This component is responsible for handling the top-level authentication flow.
@@ -38,7 +39,7 @@ import * as icid from '../../protocol/ic-id-protocol';
 export function AuthorizationRoute() {
   const auth = useAuth();
   const location = useLocation();
-  const [authenticationRequest, setAuthenticationRequest] = React.useState<icid.IDPAuthenticationRequest>()
+  const [authenticationRequest, setAuthenticationRequest] = React.useState<icid.AuthenticationRequest>()
   const [activeStep, setActiveStep] = React.useState(0);
 
   // Redirect to relying party with proper query parameters
@@ -50,7 +51,8 @@ export function AuthorizationRoute() {
       const expiresIn =
         auth.sessionDelegationChain?.delegations[0].delegation.expiration.toNumber() || 1;
       const tokenType = 'bearer';
-      const icAuthResponse: icid.ICAuthenticationResponse = {
+      const icAuthResponse: icid.AuthenticationResponse = {
+        type: "AuthenticationResponse",
         accessToken,
         expiresIn,
         tokenType,
@@ -78,14 +80,17 @@ export function AuthorizationRoute() {
     () => {
       const searchParams = new URLSearchParams(location.search);
       const redirectUriString = searchParams.get('redirect_uri');
-      const redirectUri = redirectUriString && new URL(redirectUriString)
+      const redirectUri = redirectUriString && new URL(redirectUriString).toString()
       const loginHintString = searchParams.get('login_hint');
-      const sessionIdentity = loginHintString && Ed25519PublicKey.fromDer(blobFromHex(loginHintString))
+      const sessionIdentityPublicKey = loginHintString && Ed25519PublicKey.fromDer(blobFromHex(loginHintString))
       const state = searchParams.get('state');
-      if (redirectUri && sessionIdentity) {
-        const authenticationRequest: icid.IDPAuthenticationRequest = {
+      if (redirectUri && sessionIdentityPublicKey) {
+        const authenticationRequest: icid.AuthenticationRequest = {
+          type: "AuthenticationRequest",
           redirectUri,
-          sessionIdentity,
+          sessionIdentity: {
+            hex: hexEncodeUintArray(sessionIdentityPublicKey.toDer())
+          },
           ...(state && { state }),
         }
         setAuthenticationRequest(authenticationRequest)

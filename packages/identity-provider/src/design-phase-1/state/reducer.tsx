@@ -1,7 +1,8 @@
 import * as React from "react";
 import { IdentityProviderState as State } from "./state";
 import { IdentityProviderAction as Action, IdentityProviderAction } from "./action";
-import { hexEncodeUintArray } from "src/bytes";
+import { hexEncodeUintArray } from "../../bytes";
+import produce from "immer";
 
 /**
  * Wraps a dispatch into a new dispatch with side effects.
@@ -27,18 +28,41 @@ export function effector(dispatch: React.Dispatch<IdentityProviderAction>): Reac
 export function reduce(state: State=init(), action: Action): State {
     switch (action.type) {
         case "AuthenticationRequestReceived":
-            return {
-                ...state,
-                loginHint: action.payload.loginHint,
-            }
+            return produce(state, newState => {
+                Object.assign(newState, {
+                    authenticationRequest: action.payload,
+                    delegation: {
+                        target: {
+                            publicKey: {
+                                hex: action.payload.sessionIdentity.hex,
+                            }
+                        }
+                    }
+                })
+            });
         case "ProfileCreated":
             return {...state,
                 identities: {
                     ...state.identities,
                     root: {
-                        ...state.identities.root,
+                        ...state.identities?.root,
                         publicKey: {
-                            hex: hexEncodeUintArray(new Uint8Array(action.payload.publicKey))
+                            hex: action.payload.publicKey.hex,
+                        }
+                    }
+                }
+            }
+        case "DelegationRootSignerChanged":
+            return {
+                ...state,
+                identities: {
+                    ...state.identities,
+                    root: {
+                        ...state?.identities?.root,
+                        sign: {
+                            secretKey: {
+                                hex: action.payload.secretKey.hex
+                            }
                         }
                     }
                 }
@@ -46,7 +70,6 @@ export function reduce(state: State=init(), action: Action): State {
         case "reset":
             return init();
         case "StateStored":
-            return state;
         case "Navigate":
             return state;
         default:
@@ -60,7 +83,6 @@ export function init(initialState?: State): State {
     if (initialState) return initialState;
     return {
         type: 'IdentityProviderState',
-        loginHint: undefined,
         identities: {
             root: {
                 publicKey: undefined

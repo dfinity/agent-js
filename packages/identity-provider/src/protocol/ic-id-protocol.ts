@@ -1,14 +1,27 @@
 /**
  * @fileoverview tools for implementing the HTTP-based Internet Computer Identity Protocol, which is mostly a profile of OpenID Connect (OIDC), which is a profile of OAuth2.
  */
-import { PublicKey } from '@dfinity/agent';
+import { PublicKey, derBlobFromBlob, blobFromHex } from '@dfinity/agent';
 import { OAuth2AccessTokenResponse } from './oauth2';
 import * as oauth2 from './oauth2';
 import * as assert from 'assert';
 import { hexEncodeUintArray, hexToBytes } from '../bytes';
 import { DelegationChain } from '@dfinity/authentication';
 
-export interface ICAuthenticationResponse {
+/**
+ * RP's build this, then (logically) send it to the Identity Provider, then hope for an AuthenticationResponse in return.
+ */
+export type AuthenticationRequest = {
+  type: 'AuthenticationRequest';
+  sessionIdentity: {
+    hex: string;
+  };
+  redirectUri: string;
+  state?: string;
+};
+
+export interface AuthenticationResponse {
+  type: 'AuthenticationResponse';
   accessToken: string;
   tokenType: 'bearer';
   expiresIn: number;
@@ -19,19 +32,10 @@ export interface ICAuthenticationResponse {
 }
 
 /**
- * RP's build this, then (logically) send it to the Identity Provider, then hope for an AuthenticationResponse in return.
- */
-export interface IDPAuthenticationRequest {
-  sessionIdentity: PublicKey;
-  redirectUri: URL;
-  state?: string;
-}
-
-/**
  * Convert an IC-IDP-internal message to an OAuth2-compliant one.e
  * (e.g. to snake_case keys instead of JS-conventional camelCase)
  */
-export function toOAuth2(message: ICAuthenticationResponse) {
+export function toOAuth2(message: AuthenticationResponse) {
   const {
     accessToken: access_token,
     expiresIn: expires_in,
@@ -47,30 +51,50 @@ export function toOAuth2(message: ICAuthenticationResponse) {
   return oauth2AccessTokenResponse;
 }
 
-/**
- * Create an ic-id message from a corresponding OAuth2 message
- */
-export function fromOAuth2(message: OAuth2AccessTokenResponse) {
-  if (message.token_type !== 'bearer') {
-    throw new Error(
-      `Cannot create ICAuthenticationResponse from non-Bearer token_type OAuth2AccessTokenResponse`,
-    );
-  }
-  const authenticationResponse: ICAuthenticationResponse = {
-    accessToken: message.access_token,
-    expiresIn: message.expires_in,
-    tokenType: message.token_type,
+type OAuthTypeToIdpType<T> = T extends oauth2.OAuth2AuthorizationRequest
+  ? AuthenticationResponse
+  : T extends oauth2.OAuth2AccessTokenResponse
+  ? AuthenticationRequest
+  : never;
+
+type OAuth2Mesage = oauth2.OAuth2AccessTokenResponse | oauth2.OAuth2AuthorizationRequest;
+
+function AuthenticationResponse(input: oauth2.OAuth2AccessTokenResponse): AuthenticationResponse {
+  const response: AuthenticationResponse = {
+    type: 'AuthenticationResponse',
+    accessToken: input.access_token,
+    tokenType: input.token_type || 'bearer',
+    expiresIn: input.expires_in,
+    state: input.state,
+    scope: input.scope,
   };
-  return authenticationResponse;
+  return response;
+}
+
+function AuthenticationRequest(input: oauth2.OAuth2AuthorizationRequest): AuthenticationRequest {
+  const request: AuthenticationRequest = {
+    type: 'AuthenticationRequest',
+    sessionIdentity: {
+      hex: input.login_hint,
+    },
+    redirectUri: new URL(input.redirect_uri).toString(),
+    state: input.state,
+  };
+  return request;
 }
 
 /**
  * Parse a ICAuthenticationResponse from an OAuth2 redirect_uri-targeted querystring.
  */
-export function fromQueryString(searchParams: URLSearchParams): ICAuthenticationResponse {
-  const oauth2AccessTokenResponse = oauth2.fromQueryString(searchParams);
-  const response: ICAuthenticationResponse = fromOAuth2(oauth2AccessTokenResponse);
-  return response;
+export function fromQueryString(
+  searchParams: URLSearchParams,
+): undefined | AuthenticationRequest | AuthenticationResponse {
+  const oauth2Message = oauth2.fromQueryString(searchParams);
+  if (!oauth2Message) return;
+  if ('access_token' in oauth2Message) {
+    return AuthenticationResponse(oauth2Message);
+  }
+  return AuthenticationRequest(oauth2Message);
 }
 
 function decodeUtf8(bytes: Uint8Array): string {

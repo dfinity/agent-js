@@ -1,10 +1,12 @@
 import { shallow, mount } from 'enzyme';
 import * as React from "react";
 import { useReducer } from "./reducer";
+import { Ed25519KeyIdentity } from '@dfinity/authentication';
+import { hexEncodeUintArray } from '../../bytes';
 
 describe('@dfinity/identity-provider/design-phase-0/reducer', () => {
     it('works', () => {
-        const sampleLoginHint: string = "302a300506032b65700321006f060234ec1dcf08e4fedf8d0a52f9842cc7a96b79ed37f323cb2798264203cb"
+        const sessionId = Ed25519KeyIdentity.generate();
         const Component = () => {
             const [state, dispatch] = useReducer();
             React.useEffect(
@@ -12,7 +14,11 @@ describe('@dfinity/identity-provider/design-phase-0/reducer', () => {
                     dispatch({
                         type: "AuthenticationRequestReceived",
                         payload: {
-                            loginHint: sampleLoginHint,
+                            type: "AuthenticationRequest",
+                            sessionIdentity: {
+                                hex: hexEncodeUintArray(sessionId.getPublicKey().toDer())
+                            },
+                            redirectUri: new URL("https://identity-provider.sdk-test.dfinity.network/relying-party-demo/oauth/redirect_uri").toString(),
                         }
                     })
                 },
@@ -20,12 +26,12 @@ describe('@dfinity/identity-provider/design-phase-0/reducer', () => {
             )
             return <>
                 <span data-test-id="type">{state.type}</span>
-                <span data-test-id="loginHint">{state.loginHint}</span>
+                <span data-test-id="loginHint">{state.delegation?.target?.publicKey.hex}</span>
             </>
             return <pre>{JSON.stringify(state)}</pre>
         }
         const el = mount(<Component />)
         expect(el.find('[data-test-id="type"]').text()).toContain('IdentityProviderState')
-        expect(el.find('[data-test-id="loginHint"]').text()).toContain(sampleLoginHint)
+        expect(el.find('[data-test-id="loginHint"]').text()).toContain(hexEncodeUintArray(sessionId.getPublicKey().toDer()))
     })
 });

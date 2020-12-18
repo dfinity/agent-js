@@ -15,8 +15,16 @@ export default function OAuthRedirectUriRoute(props: {
 }) {
     const { url, path } = useRouteMatch()
     const location = useLocation()
-    const icAuthenticationResponse = icid.fromQueryString(new URLSearchParams(location.search))
-    const parsedBearerToken = icid.parseBearerToken(icAuthenticationResponse.accessToken)
+    const icAuthenticationResponse = React.useMemo(
+        () => {
+            const message = icid.fromQueryString(new URLSearchParams(location.search));
+            if (message && (message.type === "AuthenticationResponse")) {
+                return message;
+            }
+        },
+        [location.search]
+    )
+    const parsedBearerToken = icAuthenticationResponse && icid.parseBearerToken(icAuthenticationResponse.accessToken)
     const delegationChain = DelegationChain.fromJSON(JSON.stringify(parsedBearerToken))
     // @TODO(bengo): This Ed25519KeyIdentity needs to correspond to the sender_pubkey sent as login_hint
     // otherwise sigs won't actually be accepted by replica when `delegationIdentity.sign` is used by HttpAgent to sign each ic request id

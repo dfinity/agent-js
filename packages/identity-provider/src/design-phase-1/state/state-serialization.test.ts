@@ -10,7 +10,6 @@ describe('@dfinity/identity-provider/design-phase-0/state-serialization', () => 
       '302a300506032b65700321006f060234ec1dcf08e4fedf8d0a52f9842cc7a96b79ed37f323cb2798264203cb';
     const sampleState: IdentityProviderState = {
       type: 'IdentityProviderState',
-      loginHint: sampleLoginHint,
       identities: {
         root: {
           publicKey: {
