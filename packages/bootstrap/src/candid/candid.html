@@ -2,15 +2,47 @@
 <head>
     <meta charset="UTF-8">
     <title>DFINITY Canister Candid UI</title>
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-reboot@4.5.4/reboot.css">
+  <link rel="preconnect" href="https://fonts.gstatic.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;500&display=swap"
+    rel="stylesheet"
+  />
 </head>
 <body>
   <app id="app">
-    <h1 id="title">Service</h1>
-    <div>
-      This service has the following methods:
-      <ul id="methods">
-      </ul>
+    <div id="header">Canister ID:&nbsp;<span id="canisterId"></span></div>
+    <div id="container">
+      <div id="main-content">
+        <div id="title-card">
+          <h1 id="title">Candid UI</h1>
+          Browse and test your data with our visual web interface.
+        </div>
+        <ul id="methods"></ul>
+      </div>
+      <div id="console">
+        <div id="console-header">
+          <span class="collapse">&lt;</span>
+          <span class="console-label">Output Log</span>
+        </div>
+        <div id="console-output"></div>
+      </div>
     </div>
   </app>
+  <script>
+    // Attach click event to console-header
+    const consoleEl = document.getElementById('console')
+    const header = document.getElementById('console-header')
+    
+    header.addEventListener('click', () => {
+      if (consoleEl.classList.contains('open')) {
+        consoleEl.classList.remove('open')
+      } else {
+        consoleEl.classList.add('open')
+      }
+    })
+  </script>
 </body>
 </html>

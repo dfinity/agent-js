@@ -73,29 +73,25 @@ export class InputBox {
     }
     return null;
   }
-  public render(dom: HTMLElement | DocumentFragment): void {
-    const fragment = document.createElement('div');
+  public render(dom: HTMLElement): void {
+    const container = document.createElement('div');
     const label = document.createElement('label');
     if (this.label) {
       label.innerText = this.label;
-      fragment.appendChild(label);
+      container.appendChild(label);
     }
     if (this.ui.input) {
       if (this.label) {
         label.className = 'small';
-        label.appendChild(this.ui.input);
-      } else {
-        fragment.appendChild(this.ui.input);
       }
-      fragment.appendChild(this.status);
+      container.appendChild(this.ui.input);
+      container.appendChild(this.status);
     }
 
     if (this.ui.form) {
-      const formFragment = document.createDocumentFragment();
-      this.ui.form.render(formFragment);
-      fragment.append(formFragment);
+      this.ui.form.render(container);
     }
-    dom.appendChild(fragment);
+    dom.appendChild(container);
   }
 }
 
@@ -105,7 +101,7 @@ export abstract class InputForm {
 
   public abstract parse(config: ParseConfig): any;
   public abstract generateForm(): any;
-  public renderForm(dom: HTMLElement | DocumentFragment): void {
+  public renderForm(dom: HTMLElement): void {
     if (this.ui.container) {
       this.form.forEach(e => e.render(this.ui.container!));
       dom.appendChild(this.ui.container);
@@ -113,7 +109,7 @@ export abstract class InputForm {
       this.form.forEach(e => e.render(dom));
     }
   }
-  public render(dom: HTMLElement | DocumentFragment): void {
+  public render(dom: HTMLElement): void {
     if (this.ui.open && this.ui.event) {
       dom.appendChild(this.ui.open);
       const form = this;

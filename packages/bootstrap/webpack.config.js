@@ -6,7 +6,8 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
 module.exports = {
-  mode: 'production',
+  // mode: 'production',
+  mode: 'development',
   entry: {
     bootstrap: './src/index.ts',
     candid: './src/candid/candid.ts',
@@ -29,23 +30,23 @@ module.exports = {
     plugins: [new TsconfigPathsPlugin({ configFile: './tsconfig.json' })],
     extensions: ['.tsx', '.ts', '.js'],
   },
-  devtool: 'source-map',
-  optimization: {
-    minimize: true,
-    minimizer: [
-      new TerserPlugin({
-        cache: true,
-        parallel: true,
-        sourceMap: true, // Must be set to true if using source-maps in production
-        terserOptions: {
-          ecma: 8,
-          minimize: true,
-          comments: false,
-          // https://github.com/webpack-contrib/terser-webpack-plugin#terseroptions
-        },
-      }),
-    ],
-  },
+  // devtool: 'source-map',
+  // optimization: {
+  //   minimize: true,
+  //   minimizer: [
+  //     new TerserPlugin({
+  //       cache: true,
+  //       parallel: true,
+  //       sourceMap: true, // Must be set to true if using source-maps in production
+  //       terserOptions: {
+  //         ecma: 8,
+  //         minimize: true,
+  //         comments: false,
+  //         // https://github.com/webpack-contrib/terser-webpack-plugin#terseroptions
+  //       },
+  //     }),
+  //   ],
+  // },
   module: {
     rules: [
       {
