@@ -4,7 +4,6 @@ import WelcomeScreen from './screens/WelcomeScreen';
 import IdentityConfirmationScreen from './screens/IdentityConfirmationScreen';
 import SessionConsentScreen from './screens/SessionConsentScreen';
 import AuthenticationResponseConfirmationScreen from './screens/AuthenticationResponseConfirmationScreen';
-import { useReducer } from './state/reducer';
 import { SerializedStorage, IStorage, LocalStorageKey, NotFoundError } from './state/state-storage';
 import { useStateStorage } from './state/state-storage-react';
 import { StateToStringCodec } from './state/state-serialization';
@@ -188,11 +187,12 @@ export default function DesignPhase0Route(props: {
             <Route exact path={urls.response.confirmation}>
                 <AuthenticationResponseConfirmationScreen
                     redirectWithResponse={async () => {
-                        const { authenticationRequest } = state;
-                        if ( ! authenticationRequest) {
+                        const { authentication } = state;
+                        const { request } = authentication
+                        if ( ! request) {
                             throw new Error('authenticationRequest not set')
                         }
-                        const responseRedirectUrl = await idpController.createResponseRedirectUrl(authenticationRequest)
+                        const responseRedirectUrl = await idpController.createResponseRedirectUrl(request)
                         globalThis.location.assign(responseRedirectUrl.toString())
                     }}
                 />

@@ -1,6 +1,5 @@
 import { shallow, mount } from 'enzyme';
 import * as React from 'react';
-import { useReducer } from './reducer';
 import { StateToStringCodec, Codec } from './state-serialization';
 import { IdentityProviderState } from './state';
 import { IStorage } from 'src/relying-party-demo/storage';
@@ -21,15 +20,20 @@ describe('@dfinity/identity-provider/design-phase-0/state-storage', () => {
       StateToStringCodec(),
     );
     const state0: IdentityProviderState = {
-      type: 'IdentityProviderState',
+      authentication: {
+        request: undefined,
+      },
       identities: {
         root: {
           publicKey: undefined,
+          sign: undefined,
         },
+      },
+      delegation: {
+        target: undefined,
       },
     };
     storage.set(state0);
-    expect(str).toContain(state0.type);
     expect(storage.get()).toEqual(state0);
   });
 });

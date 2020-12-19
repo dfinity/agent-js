@@ -1,8 +1,12 @@
 import * as React from "react";
-import { IdentityProviderState as State } from "./state";
+import { IdentityProviderState as State, IdentityProviderState } from "./state";
 import { IdentityProviderAction as Action, IdentityProviderAction } from "./action";
 import { hexEncodeUintArray } from "../../bytes";
 import produce from "immer";
+import { combineReducers } from "redux";
+import * as authenticationReducer from "./reducers/authentication";
+import * as delegationReducer from "./reducers/delegation";
+import * as rootIdentityReducer from "./reducers/rootIdentity";
 
 /**
  * Wraps a dispatch into a new dispatch with side effects.
@@ -24,78 +28,20 @@ export function effector(dispatch: React.Dispatch<IdentityProviderAction>): Reac
     }
 }
 
-/** Reduce a new action + old state into a new state */
-export function reduce(state: State=init(), action: Action): State {
-    switch (action.type) {
-        case "AuthenticationRequestReceived":
-            return produce(state, newState => {
-                Object.assign(newState, {
-                    authenticationRequest: action.payload,
-                    delegation: {
-                        target: {
-                            publicKey: {
-                                hex: action.payload.sessionIdentity.hex,
-                            }
-                        }
-                    }
-                })
-            });
-        case "ProfileCreated":
-            return {...state,
-                identities: {
-                    ...state.identities,
-                    root: {
-                        ...state.identities?.root,
-                        publicKey: {
-                            hex: action.payload.publicKey.hex,
-                        }
-                    }
-                }
-            }
-        case "DelegationRootSignerChanged":
-            return {
-                ...state,
-                identities: {
-                    ...state.identities,
-                    root: {
-                        ...state?.identities?.root,
-                        sign: {
-                            secretKey: {
-                                hex: action.payload.secretKey.hex
-                            }
-                        }
-                    }
-                }
-            }
-        case "reset":
-            return init();
-        case "StateStored":
-        case "Navigate":
-            return state;
-        default:
-            let x: never = action;
-    }
-    throw new Error(`unexpected action`)
-}
+export const reduce = combineReducers({
+    authentication: authenticationReducer.reduce,
+    delegation: delegationReducer.reduce,
+    identities: combineReducers({
+        root: rootIdentityReducer.reduce,
+    })
+})
 
-/** Produce initial State */
 export function init(initialState?: State): State {
-    if (initialState) return initialState;
-    return {
-        type: 'IdentityProviderState',
+    return initialState||{
+        authentication: authenticationReducer.init(),
+        delegation: delegationReducer.init(),
         identities: {
-            root: {
-                publicKey: undefined
-            },
+            root: rootIdentityReducer.init(),
         }
-    } 
-}
-
-export function useReducer(initialState?: State): [State, React.Dispatch<Action>] {
-    const [state, dispatch] = React.useReducer(
-        reduce,
-        initialState,
-        init,
-    );
-    return [state, dispatch];
+    }
 }

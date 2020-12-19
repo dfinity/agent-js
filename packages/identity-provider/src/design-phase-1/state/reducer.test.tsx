@@ -1,14 +1,15 @@
 import { shallow, mount } from 'enzyme';
 import * as React from "react";
-import { useReducer } from "./reducer";
 import { Ed25519KeyIdentity } from '@dfinity/authentication';
 import { hexEncodeUintArray } from '../../bytes';
+import * as reducer from "./reducer";
 
 describe('@dfinity/identity-provider/design-phase-0/reducer', () => {
     it('works', () => {
         const sessionId = Ed25519KeyIdentity.generate();
         const Component = () => {
-            const [state, dispatch] = useReducer();
+            const initialState = reducer.init()
+            const [state, dispatch] = React.useReducer(reducer.reduce, initialState, reducer.init);
             React.useEffect(
                 () => {
                     dispatch({
@@ -25,13 +26,11 @@ describe('@dfinity/identity-provider/design-phase-0/reducer', () => {
                 [],
             )
             return <>
-                <span data-test-id="type">{state.type}</span>
                 <span data-test-id="loginHint">{state.delegation?.target?.publicKey.hex}</span>
             </>
             return <pre>{JSON.stringify(state)}</pre>
         }
         const el = mount(<Component />)
-        expect(el.find('[data-test-id="type"]').text()).toContain('IdentityProviderState')
         expect(el.find('[data-test-id="loginHint"]').text()).toContain(hexEncodeUintArray(sessionId.getPublicKey().toDer()))
     })
 });
