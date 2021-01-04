@@ -1,6 +1,7 @@
 import * as icid from './ic-id-protocol';
 import { DelegationChain } from '@dfinity/authentication';
 import { hexEncodeUintArray } from '../bytes';
+import * as assert from 'assert';
 
 const delegationChainSample = {
   json: {
@@ -38,9 +39,23 @@ describe('ic-id-protocol', () => {
         '?access_token=accessTokenValue&expires_in=2099000000&token_type=bearer&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Frelying-party-demo%2Foauth%2Fredirect_uri',
       ),
     );
+    assert.ok(authenticationResponse);
+    assert.ok('accessToken' in authenticationResponse);
     expect(authenticationResponse.accessToken).toStrictEqual('accessTokenValue');
     expect(authenticationResponse.tokenType).toStrictEqual('bearer');
     expect(authenticationResponse.expiresIn).toStrictEqual(2099000000);
+  });
+  it('can parse AuthenticationRequest fromQueryString', async () => {
+    const req = icid.fromQueryString(
+      new URLSearchParams(
+        '?response_type=token&client_id=s6BhdRkqt3&state=xyz&redirect_uri=https%3A%2F%2Fclient%2Eexample%2Ecom%2Fcb&login_hint=302a300506032b65700321009d0559b47dc4e8443fad89df3d090ad861315e2fa0cc139e625523e24665b244',
+      ),
+    );
+    assert.ok(req);
+    assert.ok('sessionIdentity' in req);
+    expect(req.sessionIdentity.hex).toEqual(
+      '302a300506032b65700321009d0559b47dc4e8443fad89df3d090ad861315e2fa0cc139e625523e24665b244',
+    );
   });
   it('can create a bearer token', () => {
     const delegationChain = DelegationChain.fromJSON(JSON.stringify(delegationChainSample.json));

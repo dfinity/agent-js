@@ -36,6 +36,7 @@ export default function RelyingPartyDemo(props: {
                 redirectUrl={props.redirectUrl}
                 delegateTo={session.identity.getPublicKey()}
                 identityProviderUrl={identityProviderUrl}
+                state="RPDemo-sample-state"
             />
         </span>
     </>
