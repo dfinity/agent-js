@@ -1,1 +1,1 @@
-export { default as Route } from "./route";
+export { default as Route } from "./ui/route";

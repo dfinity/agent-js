@@ -1,4 +1,4 @@
-import { createMuiTheme } from '@material-ui/core/styles';
+import { createMuiTheme, responsiveFontSizes } from '@material-ui/core/styles';
 import SharpSansBlack from './assets/fonts/SharpSansDispNo1-Black.woff';
 import SharpSansBold from './assets/fonts/SharpSansDispNo1-Bold.woff';
 import SharpSansMedium from './assets/fonts/SharpSansDispNo1-Medium.woff';
@@ -39,7 +39,7 @@ const primaryButton = {
   color: 'white',
   letterSpacing: '2px',
 };
-export const theme = createMuiTheme({
+export const theme = responsiveFontSizes(createMuiTheme({
   typography: {
     fontFamily: [
       '"Sharp Sans"',
@@ -64,6 +64,6 @@ export const theme = createMuiTheme({
       },
     },
   },
-});
+}));
 
 export default theme;

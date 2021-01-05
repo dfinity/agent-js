@@ -4,13 +4,13 @@ import WelcomeScreen from './screens/WelcomeScreen';
 import IdentityConfirmationScreen from './screens/IdentityConfirmationScreen';
 import SessionConsentScreen from './screens/SessionConsentScreen';
 import AuthenticationResponseConfirmationScreen from './screens/AuthenticationResponseConfirmationScreen';
-import { SerializedStorage, IStorage, LocalStorageKey, NotFoundError } from './state/state-storage';
-import { useStateStorage } from './state/state-storage-react';
-import { StateToStringCodec } from './state/state-serialization';
-import { useState } from './state/state-react';
+import { SerializedStorage, IStorage, LocalStorageKey, NotFoundError } from '../state/state-storage';
+import { useStateStorage } from '../state/state-storage-react';
+import { StateToStringCodec } from '../state/state-serialization';
+import { useState } from '../state/state-react';
 import { hexToBytes, hexEncodeUintArray } from 'src/bytes';
 import { Ed25519PublicKey , Ed25519KeyIdentity, DelegationChain} from '@dfinity/authentication';
-import * as icid from "../protocol/ic-id-protocol"
+import * as icid from "../../protocol/ic-id-protocol"
 import { PublicKey, blobFromHex, derBlobFromBlob, SignIdentity, blobFromUint8Array } from '@dfinity/agent';
 const stateStorage = SerializedStorage(
     LocalStorageKey('design-phase-1'),
@@ -18,9 +18,11 @@ const stateStorage = SerializedStorage(
 )
 import tweetnacl from "tweetnacl";
 import AuthenticationScreenLayout from './layout/AuthenticationScreenLayout';
+import { ThemeProvider, Theme } from '@material-ui/core';
 
 export default function DesignPhase0Route(props: {
     NotFoundRoute: React.ComponentType
+    theme?: Theme
 }) {
     const NotFoundRoute = props.NotFoundRoute;
     const location = useLocation()
@@ -146,7 +148,11 @@ export default function DesignPhase0Route(props: {
         },
         [location.search]
     )
-    return <>
+    function MaybeTheme(props: { theme?: Theme, children: React.ReactNode }) {
+        if ( ! props.theme) { return <>{props.children}</> }
+        return <ThemeProvider theme={props.theme}>{props.children}</ThemeProvider>
+    }
+    return <><MaybeTheme theme={props.theme}>
         <AuthenticationScreenLayout>
 
             <Switch>
@@ -213,5 +219,5 @@ export default function DesignPhase0Route(props: {
                 <a href={path}>start over</a>
             </p>
         </details>
-    </>
+    </MaybeTheme></>
 }
