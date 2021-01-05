@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Route, Switch, useRouteMatch, useLocation  } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Switch, useRouteMatch, useLocation, Redirect  } from 'react-router-dom';
 import RelyingPartyDemo from './RPDemo';
 import AuthnRedirectUri from './AuthnRedirectUri';
 import { RelyingPartyAuthenticationSessionStorage } from '../session';
@@ -20,13 +20,17 @@ export default function RelyingPartyDemoRoute(props: {
     const publishIdentity = (identity: SignIdentity) => {
         globalThis.document.body.dispatchEvent(IdentityChangedEvent(identity))
     }
+    const identityProviderUrl = new URL(
+        (new URLSearchParams(globalThis.location.search)).get('idp') || (new URL('/authorization', new URL(globalThis.location.toString()))).toString(),
+        globalThis.location.href,
+    );
     return <>
         <Switch>
             <Route exact path={`${path}`}>
-                <RelyingPartyDemo
-                    redirectUrl={redirectUrl}
-                    sessionStorage={sessionStorage}
-                    />
+                <RelyingPartyDemo {...{identityProviderUrl, redirectUrl, sessionStorage}} />
+            </Route>
+            <Route exact path={`${path}/design-phase-1`}>
+                <Redirect to={`${path}/?idp=/design-phase-1`} />
             </Route>
             <Route exact path={redirectUriPath}>
                 <AuthnRedirectUri

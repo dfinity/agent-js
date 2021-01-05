@@ -16,9 +16,9 @@ import { IStorage } from "../storage";
 export default function RelyingPartyDemo(props: {
     redirectUrl: URL;
     sessionStorage: IStorage<IRelyingPartyAuthenticationSession>
+    identityProviderUrl: URL;
 }) {
-    const identityProviderUrl = new URL(
-        (new URLSearchParams(globalThis.location.search)).get('idp') || (new URL('/authorization', new URL(globalThis.location.toString()))).toString() )
+    const identityProviderUrl = props.identityProviderUrl
     const [session, setSession] = React.useState<IRelyingPartyAuthenticationSession>({
         type: "RelyingPartyAuthenticationSession",
         identity: Ed25519KeyIdentity.generate(),

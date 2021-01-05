@@ -17,6 +17,7 @@ const stateStorage = SerializedStorage(
     StateToStringCodec(),
 )
 import tweetnacl from "tweetnacl";
+import AuthenticationScreenLayout from './layout/AuthenticationScreenLayout';
 
 export default function DesignPhase0Route(props: {
     NotFoundRoute: React.ComponentType
@@ -146,9 +147,9 @@ export default function DesignPhase0Route(props: {
         [location.search]
     )
     return <>
-        <div style={{minHeight: '100vh'}}>
+        <AuthenticationScreenLayout>
 
-        <Switch>
+            <Switch>
             <Route exact path={`${path}`}>
                 <Redirect to={`${path}/welcome${location.search}`} />
             </Route>
@@ -199,7 +200,8 @@ export default function DesignPhase0Route(props: {
             </Route>
             <NotFoundRoute />
         </Switch>
-        </div>
+        </AuthenticationScreenLayout>
+
 
         <hr />
         <details open>

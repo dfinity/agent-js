@@ -13,7 +13,8 @@ export default function HomeRoute() {
         <h1>Internet Computer Identity Provider</h1>
         <p>This is a work in progress. You probably want to try out.</p>
         <ul>
-            <li><a href={ROUTES.RELYING_PARTY_DEMO}>Relying Party Demo</a></li>
+            <li><a href={ROUTES.RELYING_PARTY_DEMO}>Relying Party Demo</a> - pre-design</li>
+            <li><a href={`${ROUTES.RELYING_PARTY_DEMO}/design-phase-1`}>Relying Party Demo</a> - design-phase-1</li>
         </ul>
     </>
 }
