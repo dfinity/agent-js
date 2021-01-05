@@ -28,8 +28,6 @@ export default function SimpleScreenLayout(props: {
         <Container>
             <ContainerBlock>
                 <div className={styles.heroImage}><HeroImage /></div>
-            </ContainerBlock>
-            <ContainerBlock>
                 <Typography variant="h2" gutterBottom>
                     <Title />
                 </Typography>

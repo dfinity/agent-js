@@ -53,8 +53,8 @@ async function testIdentityProviderRelyingPartyDemo(options: {
     const browser = await playwright.webkit.launch();
     const page = await browser.newPage({
       viewport: {
-        width: 1920,
-        height: 1080,
+        width: 1168,
+        height: 792,
       },
     });
     await page.goto(identityProviderUrl);

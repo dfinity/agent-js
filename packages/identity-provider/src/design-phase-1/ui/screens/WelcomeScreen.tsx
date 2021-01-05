@@ -4,6 +4,7 @@ import { styled } from "@material-ui/core/styles"
 import { Box, makeStyles, Typography } from "@material-ui/core";
 import Skeleton from "@material-ui/lab/Skeleton";
 import SimpleScreenLayout from "../layout/SimpleScreenLayout";
+import LockIcon from '@material-ui/icons/Lock';
 
 const styler = () => {
     return {
@@ -45,6 +46,6 @@ function Body() {
 function HeroImage() {
     const styles = makeStyles(styler)();
     return <>
-        <Skeleton variant="rect" height="10em" width="16.8em" animation={false} />
-    </>
+        <LockIcon style={{fontSize: '4em'}} />
+    </>;
 }
