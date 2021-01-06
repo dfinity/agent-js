@@ -5,6 +5,7 @@ import SimpleScreenLayout from "../layout/SimpleScreenLayout";
 import { Typography, makeStyles } from "@material-ui/core";
 import Skeleton from "@material-ui/lab/Skeleton";
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
+import VerifiedUserIcon from '@material-ui/icons/VerifiedUser';
 
 export default function (props: {
     redirectWithResponse(): void;
@@ -45,6 +46,6 @@ function CallToAction(props: {
 function HeroImage() {
     const styles = makeStyles(styler)();
     return <>
-        <CheckCircleIcon style={{fontSize: '4em'}} />
+        <VerifiedUserIcon style={{fontSize: '4em'}} />
     </>
 }

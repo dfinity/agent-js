@@ -59,7 +59,7 @@ function CallToAction(props: {
 }
 
 function Title() {
-    return <>Your Profile Identity</>
+    return <>Your Profile</>
 }
 
 function Body(props: {
@@ -71,8 +71,8 @@ function Body(props: {
         {
             identity
             ? <>
-                <Typography variant="subtitle1" gutterBottom>Your profile address</Typography>
-                <Typography gutterBottom>
+                <Typography variant="subtitle1" gutterBottom>Profile ID</Typography>
+                <Typography paragraph>
                     <code className={styles.overflowBreakWords}>
                     {hexEncodeUintArray(new Uint8Array(identity.toDer()))}
                     </code>

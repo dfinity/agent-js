@@ -180,16 +180,23 @@ export default function DesignPhase0Route(props: {
                     }
                 />
             </Route>
-            <Route exact path={urls.session.consent}>
-                <SessionConsentScreen
+            <Route exact path={urls.session.consent}>{
+                state.identities.root.publicKey
+                ?   <><SessionConsentScreen
                     next={urls.response.confirmation}
+                    profile={{id: state.identities.root.publicKey}}
                     session={{
                         toDer() {
                             const delegationTarget = state?.delegation?.target
                             return delegationTarget ? Uint8Array.from(hexToBytes(delegationTarget.publicKey.hex)) : undefined
                         }
                     }}
-                />
+                    /></>
+                :   <>
+                    No Profile Found. Please <a href="/">start over</a>
+                    </>
+            }
+                
             </Route>
             <Route exact path={urls.response.confirmation}>
                 <AuthenticationResponseConfirmationScreen

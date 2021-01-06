@@ -5,6 +5,7 @@ import { Box, makeStyles, Typography } from "@material-ui/core";
 import Skeleton from "@material-ui/lab/Skeleton";
 import SimpleScreenLayout from "../layout/SimpleScreenLayout";
 import LockIcon from '@material-ui/icons/Lock';
+import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 
 const styler = () => {
     return {
@@ -39,7 +40,7 @@ function Title() {
 
 function Body() {
     return <Typography variant="body1" gutterBottom>
-    Wos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum dele.
+    Create a Profile to use this <a target="_blank" href="https://internetcomputer.org">Internet Computer</a> Canister.
     </Typography>
 }
 
