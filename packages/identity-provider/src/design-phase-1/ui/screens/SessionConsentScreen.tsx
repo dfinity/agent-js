@@ -33,7 +33,6 @@ export default function (props: {
 const styler = function() {
     return createStyles({
         consentTable: {
-            padding: '0 5em',
             '& td': {
                 textAlign: 'left',
                 overflowWrap: 'anywhere',

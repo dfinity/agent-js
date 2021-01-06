@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Box, makeStyles, Typography, Grid } from "@material-ui/core";
+import { Box, makeStyles, Typography, Grid, styled } from "@material-ui/core";
 
 const styler = () => ({
     heroImage: {
@@ -24,6 +24,10 @@ export default function SimpleScreenLayout(props: {
     const ContainerBlock: React.ComponentType = ({ children }) => <>
         <Grid item xs={12}>{ children }</Grid>
     </>
+    const BodyPadder = styled('div')({
+        maxWidth: '80%',
+        margin: '0 auto',
+    })
     return <>
         <Container>
             <ContainerBlock>
@@ -31,9 +35,13 @@ export default function SimpleScreenLayout(props: {
                 <Typography variant="h2" gutterBottom>
                     <Title />
                 </Typography>
-                <Typography variant="body1" component="div">
-                    <Body />
-                </Typography>
+                
+                <BodyPadder>
+                    <Typography variant="body1" component="div">
+                        <Body />
+                    </Typography>
+                </BodyPadder>
+
             </ContainerBlock>
 
             <ContainerBlock>
