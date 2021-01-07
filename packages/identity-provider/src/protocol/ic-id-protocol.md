@@ -213,6 +213,36 @@ Prefer terms defined here before defining new ones:
         <td><pre>https://agujh-y3paa-aaaaa-aaaaa-aaaaa-aaaaa-aaaaa-q.ic0.app/.well-known/ic-id-protocol/redirect_uri</pre></td>
     </tr>
     <tr>
+        <td><a href="https://tools.ietf.org/html/rfc6749#section-4.2.1">OAuth2</a></td>
+        <td>scope</td>
+        <td>&#x2611;</td>
+        <td>
+                <blockquote>
+                The scope of the access request as described by <a href="https://tools.ietf.org/html/rfc6749#section-3.3">[OAuth2#]Section 3.3</a>
+                </blockquote>
+            <p>
+                This parameter is required in ic-id-protocol, and furthermore has the following restrictions (which may be removed/ammended over time):
+            </p>
+            <ul>
+                <li>Each space-delimited scope must be
+                    <ul>
+                        <li>A Canister Principal ID, encoded using <a href="https://docs.dfinity.systems/public/#textual-ids">Principal Textual Representation</a>. This may be called a "Canister Scope"</li>
+                    </ul>
+                </li>
+                <li>
+                There must be at least 1 Canister Scope.
+                </li>
+                <li>
+                There must be no more than 2 Canister Scopes.
+                </li>
+                <li>
+                If the AuthenticationRequest#redirect_uri is an Internet Computer Canister URL (e.g. `https://{canister.principal}.ic0.app`), then the Canister Scope corresponding to that URL must be in the requested <code>scope</code> value.
+                </li>
+            </ul>
+        </td>
+        <td><pre>token</pre></td>
+    </tr>
+    <tr>
         <td><a href="https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest">OIDC</a></td>
         <td>login_hint</td>
         <td>&#x2611;</td>
@@ -232,7 +262,7 @@ Prefer terms defined here before defining new ones:
                     state between the request and callback.  The authorization
                     server includes this value when redirecting the user-agent back
                     to the client.  The parameter SHOULD be used for preventing
-                    cross-site request forgery as described in <cite><a href="https://tools.ietf.org/html/rfc6749#section-10.12">Section 10.12 [of OAuth2]</a></cite>.</blockquote>
+                    cross-site request forgery as described in <cite><a href="https://tools.ietf.org/html/rfc6749#section-10.12">Section [OAuth2#]10.12</a></cite>.</blockquote>
                 </p>
                 <p>
                     One additional common use case for <code>state</code> is to encode the intended destination of the end-user within the RP. This can be used by the RP when handling the AuthenticationResponse. After otherwise fully receiving the AuthenticationResponse, the RP can parse the intended destination out of the echoed <code>state</code>, then redirect the user to their destination with an authentication session. This pattern is described <a href="https://auth0.com/docs/protocols/state-parameters">here</a>.
@@ -349,6 +379,11 @@ Relying Party
 
 Other Tools
 * none yet
+
+## Known Issues
+
+* [Canister A Phishing for credentials to interact with Canister B](https://github.com/dfinity/agent-js/issues/117#issuecomment-746739323)
+    * mitigation: in the future, we may add restrictions to `AuthenticationRequest#scope` to prevent requesting an access_token scoped to canisters that do not explicitly trust each other.
 
 ## Acknowledgements
 
