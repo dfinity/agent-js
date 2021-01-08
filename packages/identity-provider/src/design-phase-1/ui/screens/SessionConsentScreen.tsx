@@ -12,7 +12,7 @@ interface IDerEncodable {
     toDer(): ArrayBuffer|undefined
 }
 
-interface AuthenticationResponseConsentProposal {
+export interface AuthenticationResponseConsentProposal {
     session: IDerEncodable;
     profile: { id: {hex: string}}
     scope: {
@@ -21,11 +21,10 @@ interface AuthenticationResponseConsentProposal {
 }
 
 export default function (props: {
-    next: string;
     consentProposal: AuthenticationResponseConsentProposal
+    consent(): void
 }) {
-    const { next, consentProposal } = props
-
+    const { consentProposal } = props
     return <>
         <div data-test-id="session-consent-screen">
             <SimpleScreenLayout {...{
@@ -33,7 +32,7 @@ export default function (props: {
                 Title,
                 Body: () =>
                     <Body {...{consentProposal}} />,
-                CallToAction: () => <CallToAction nextHref={next} />,
+                CallToAction: () => <CallToAction consent={props.consent} />,
             }} />
         </div>
     </>
@@ -68,11 +67,14 @@ const styler = function() {
 }
 
 function CallToAction(props: {
-    nextHref: string;
+    consent(): void;
 }) {
+    async function onClickAllow() {
+        await props.consent();
+    }
     return <>
         <Button role="button" data-test-id="deny-authorize-session">Deny</Button>
-        <Button role="button" variant="outlined" color="primary" data-test-id="allow-authorize-session" href={props.nextHref}>Allow</Button>
+        <Button role="button" variant="outlined" color="primary" data-test-id="allow-authorize-session" onClick={onClickAllow}>Allow</Button>
     </>
 }
 function Title() {

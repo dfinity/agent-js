@@ -2,8 +2,8 @@ import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Route, Switch, useRouteMatch, useLocation, Redirect  } from 'react-router-dom';
 import WelcomeScreen from './screens/WelcomeScreen';
 import IdentityConfirmationScreen from './screens/IdentityConfirmationScreen';
-import SessionConsentScreen from './screens/SessionConsentScreen';
-import AuthenticationResponseConfirmationScreen from './screens/AuthenticationResponseConfirmationScreen';
+import {default as SessionConsentScreen, AuthenticationResponseConsentProposal} from './screens/SessionConsentScreen';
+import {default as AuthenticationResponseConfirmationScreen} from './screens/AuthenticationResponseConfirmationScreen';
 import { SerializedStorage, IStorage, LocalStorageKey, NotFoundError } from '../state/state-storage';
 import { useStateStorage } from '../state/state-storage-react';
 import { StateToStringCodec } from '../state/state-serialization';
@@ -70,6 +70,7 @@ export default function DesignPhase0Route(props: {
         });
     }
     const idpController = {
+        /** Called when the end-user wants to create a brand new root identity. i.e. when they log in for first time */
         createProfile() {
             const profileSignIdentity = Ed25519KeyIdentity.generate()
             dispatch({
@@ -133,6 +134,15 @@ export default function DesignPhase0Route(props: {
             }
             return redirectUrl
         },
+        consentToAuthenticationResponseProposal: function consent (consentProposal: AuthenticationResponseConsentProposal) {
+            console.debug('consentToAuthenticationResponseProposal', { consentProposal})
+            dispatch({
+                type: "Navigate",
+                payload: {
+                    href: urls.identity.confirmation
+                }
+            });
+        }
     }
     React.useEffect(
         () => {
@@ -153,6 +163,16 @@ export default function DesignPhase0Route(props: {
         if ( ! props.theme) { return <>{props.children}</> }
         return <ThemeProvider theme={props.theme}>{props.children}</ThemeProvider>
     }
+    const consentProposal: undefined|AuthenticationResponseConsentProposal = (state.identities.root.publicKey && state.authentication.request) && {
+        profile: { id: state.identities.root.publicKey },
+        session: {
+            toDer() {
+                const delegationTarget = state?.delegation?.target
+                return delegationTarget ? Uint8Array.from(hexToBytes(delegationTarget.publicKey.hex)) : undefined
+            }
+        },
+        scope: icid.parseScopeString(state.authentication.request.scope)
+    };
     return <><MaybeTheme theme={props.theme}>
         <AuthenticationScreenLayout>
 
@@ -190,18 +210,13 @@ export default function DesignPhase0Route(props: {
                     ? <>
                         No AuthenticationRequest Found. Please <a href="/">start over</a>
                     </>
+                : ( ! consentProposal)
+                    ? <>
+                        No consentProposal Found. Please <a href="/">start over</a>
+                    </>
                 :   <><SessionConsentScreen
-                    next={urls.response.confirmation}
-                    consentProposal={{
-                        profile: { id: state.identities.root.publicKey },
-                        session: {
-                            toDer() {
-                                const delegationTarget = state?.delegation?.target
-                                return delegationTarget ? Uint8Array.from(hexToBytes(delegationTarget.publicKey.hex)) : undefined
-                            }
-                        },
-                        scope: icid.parseScopeString(state.authentication.request?.scope)
-                    }}
+                    consentProposal={consentProposal}
+                    consent={() => idpController.consentToAuthenticationResponseProposal(consentProposal)}
                     /></>
             }
                 
