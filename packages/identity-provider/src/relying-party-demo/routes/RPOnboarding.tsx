@@ -8,6 +8,7 @@ import { css } from '@emotion/css';
 import { Grid } from '@material-ui/core';
 import ProgressBlobs from '../components/ProgressBlobs';
 import { Link } from 'react-router-dom';
+import Container from '@dfinity/identity-provider/src/relying-party-demo/components/Container';
 /**
  * Demo Route for testing out the Identity Provider functionality as a relying party.
  * In the wild, the RP should almost always be an entirely separate codebase.
@@ -18,7 +19,7 @@ import { Link } from 'react-router-dom';
  * * @todo(bengo) - include a redirect_uri in the AuthenticationRequest that, when redirected back to with an AuthenticationResponse, does realistic things (i.e. shows the user the AuthenticationResponse that the RP redirct_uri receives)
  */
 
-export default function RelyingPartyDemo(props: {
+export default function RPOnboarding(props: {
   redirectUrl: URL;
   sessionStorage: IStorage<IRelyingPartyAuthenticationSession>;
   identityProviderUrl: URL;
@@ -36,63 +37,46 @@ export default function RelyingPartyDemo(props: {
   }, [session]);
 
   return (
-    <Grid component='main' justify='center' spacing={2} className={mainCSS}>
-      <picture className={pictureCSS}></picture>
-      <Trans i18nKey='RPHome-title'>
-        <h1>Identity Account</h1>
-      </Trans>
-      <Trans i18nKey='RPHome-description'>
-        The application you are attempting to use requires a secure identity profile to proceed. To
-        authenticate this browser on the Internet Computer, please click the link below.
-      </Trans>
-      <ProgressBlobs />
-      <RPAuthenticationButton
-        redirectUrl={props.redirectUrl}
-        delegateTo={session.identity.getPublicKey()}
-        identityProviderUrl={identityProviderUrl}
-        state='RPDemo-sample-state'
-      >
-        {t('generate')}
-      </RPAuthenticationButton>
+    <Container>
+      <section className='content'>
+        <picture className={pictureCSS}></picture>
+        <Trans i18nKey='RPHome-title'>
+          <h1>Identity Account</h1>
+        </Trans>
+        <Trans i18nKey='RPHome-description'>
+          The application you are attempting to use requires a secure identity profile to proceed.
+          To authenticate this browser on the Internet Computer, please click the link below.
+        </Trans>
+        <ProgressBlobs />
+        <RPAuthenticationButton
+          redirectUrl={props.redirectUrl}
+          delegateTo={session.identity.getPublicKey()}
+          identityProviderUrl={identityProviderUrl}
+          state='RPDemo-sample-state'
+        >
+          {t('generate')}
+        </RPAuthenticationButton>
 
-      <p>
-        <Trans i18nKey='have-key'>Already have an identity key?</Trans>{' '}
-        <Link to='/sign-in'>{t('sign-in')}</Link>
-      </p>
-    </Grid>
+        <p>
+          <Trans i18nKey='have-key'>Already have an identity key?</Trans>{' '}
+          <Link to='/sign-in'>
+            <Trans i18nKey='sign-in'>Sign in</Trans>
+          </Link>
+        </p>
+      </section>
+    </Container>
   );
 }
-
-const mainCSS = css`
-  padding: 124px 24px 0;
-  display: flex;
-  flex-direction: column;
-  text-align: center;
-  align-items: center;
-
-  h1 {
-    font-family: Roboto;
-    font-style: normal;
-    font-weight: normal;
-    font-size: 24px;
-    line-height: 28px;
-    text-align: center;
-  }
-  p {
-    font-family: Roboto;
-    font-style: normal;
-    font-weight: normal;
-    font-size: 14px;
-    line-height: 16px;
-    text-align: center;
-  }
-`;
 
 const pictureCSS = css`
   min-height: 188px;
   width: 100%;
   display: flex;
   background-color: #acacac;
+
+  @media (min-width: 767px) {
+    min-height: 208px;
+  }
 
   img {
     max-width: 100%;
