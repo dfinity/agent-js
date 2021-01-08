@@ -12,13 +12,15 @@ import { hexToBytes, hexEncodeUintArray } from 'src/bytes';
 import { Ed25519PublicKey , Ed25519KeyIdentity, DelegationChain} from '@dfinity/authentication';
 import * as icid from "../../protocol/ic-id-protocol"
 import { PublicKey, blobFromHex, derBlobFromBlob, SignIdentity, blobFromUint8Array } from '@dfinity/agent';
-const stateStorage = SerializedStorage(
-    LocalStorageKey('design-phase-1'),
-    StateToStringCodec(),
-)
 import tweetnacl from "tweetnacl";
 import AuthenticationScreenLayout from './layout/AuthenticationScreenLayout';
 import { ThemeProvider, Theme } from '@material-ui/core';
+import { IdentityProviderStateType } from '../state/state';
+
+const stateStorage = SerializedStorage(
+    LocalStorageKey('design-phase-1'),
+    StateToStringCodec(IdentityProviderStateType),
+)
 
 export default function DesignPhase0Route(props: {
     NotFoundRoute: React.ComponentType
@@ -134,12 +136,27 @@ export default function DesignPhase0Route(props: {
             }
             return redirectUrl
         },
-        consentToAuthenticationResponseProposal: function consent (consentProposal: AuthenticationResponseConsentProposal) {
+        consentToAuthenticationResponseProposal: function consent (spec: {
+            consentProposal: AuthenticationResponseConsentProposal,
+            consenter: {
+                publicKey: {
+                    hex: string
+                }
+            }
+        }) {
+            const { consentProposal } = spec;
             console.debug('consentToAuthenticationResponseProposal', { consentProposal})
             dispatch({
-                type: "Navigate",
+                type: "AuthenticationRequestConsentReceived",
                 payload: {
-                    href: urls.identity.confirmation
+                    consent: {
+                        type: "AuthenticationRequestConsent",
+                        proposal: {
+                            request: consentProposal.request,
+                            attributedTo: spec.consenter
+                        },
+                        createdAt: { iso8601: (new Date).toISOString() },
+                    }
                 }
             });
         }
@@ -171,8 +188,10 @@ export default function DesignPhase0Route(props: {
                 return delegationTarget ? Uint8Array.from(hexToBytes(delegationTarget.publicKey.hex)) : undefined
             }
         },
-        scope: icid.parseScopeString(state.authentication.request.scope)
+        scope: icid.parseScopeString(state.authentication.request.scope),
+        request: state.authentication.request,
     };
+    const rootIdentityPublicKey = state.identities.root.publicKey;
     return <><MaybeTheme theme={props.theme}>
         <AuthenticationScreenLayout>
 
@@ -185,42 +204,63 @@ export default function DesignPhase0Route(props: {
                     createProfile={idpController.createProfile}
                 />
             </Route>
-            <Route exact path={urls.identity.confirmation}>
-                <IdentityConfirmationScreen
-                    next={urls.session.consent}
-                    identity={state?.identities?.root?.publicKey
-                        ?
-                        {
-                            toDer() {
-                                const publicKeyHex = state?.identities?.root?.publicKey?.hex
-                                const publicKey = publicKeyHex && Uint8Array.from(hexToBytes(publicKeyHex))
-                                return publicKey || Uint8Array.from([])
+            <Route exact path={urls.identity.confirmation} component={() => {
+                return <>
+                    <IdentityConfirmationScreen
+                        next={urls.session.consent}
+                        identity={state?.identities?.root?.publicKey
+                            ?
+                            {
+                                toDer() {
+                                    const publicKeyHex = state?.identities?.root?.publicKey?.hex
+                                    const publicKey = publicKeyHex && Uint8Array.from(hexToBytes(publicKeyHex))
+                                    return publicKey || Uint8Array.from([])
+                                }
                             }
+                            : undefined
                         }
-                        : undefined
-                    }
-                />
-            </Route>
-            <Route exact path={urls.session.consent}>{
-                ( ! state.identities.root.publicKey)
-                    ? <>
-                        No Profile Found. Please <a href="/">start over</a>
-                    </>
-                : ( ! state.authentication.request)
-                    ? <>
-                        No AuthenticationRequest Found. Please <a href="/">start over</a>
-                    </>
-                : ( ! consentProposal)
-                    ? <>
-                        No consentProposal Found. Please <a href="/">start over</a>
-                    </>
-                :   <><SessionConsentScreen
-                    consentProposal={consentProposal}
-                    consent={() => idpController.consentToAuthenticationResponseProposal(consentProposal)}
-                    /></>
-            }
-                
-            </Route>
+                    />
+                </>
+            }} />
+            <Route exact path={urls.session.consent} component={() => {
+                const authenticationRequestHasConsent = React.useMemo(
+                    () => {
+                        const {request, consent} = state.authentication;
+                        if ( ! consent) return false;
+                        return JSON.stringify(request) === JSON.stringify(consent.proposal.request);
+                    },
+                    [state.authentication],
+                );
+                /** If the we've already consented to this request, redirect to next screen. */
+                if (authenticationRequestHasConsent) {
+                    return <Redirect to={urls.response.confirmation} />
+                }
+                return <>
+                {
+                    ( ! rootIdentityPublicKey)
+                        ? <>
+                            No Profile Found. Please <a href="/">start over</a>
+                        </>
+                    : ( ! state.authentication.request)
+                        ? <>
+                            No AuthenticationRequest Found. Please <a href="/">start over</a>
+                        </>
+                    : ( ! consentProposal)
+                        ? <>
+                            No consentProposal Found. Please <a href="/">start over</a>
+                        </>
+                    :   <><SessionConsentScreen
+                        consentProposal={consentProposal}
+                        consent={() => idpController.consentToAuthenticationResponseProposal({
+                            consentProposal,
+                            consenter: {
+                                publicKey: { hex: rootIdentityPublicKey.hex },
+                            }
+                        })}
+                        /></>
+                }
+                </>
+            }} />
             <Route exact path={urls.response.confirmation}>
                 <AuthenticationResponseConfirmationScreen
                     redirectWithResponse={async () => {

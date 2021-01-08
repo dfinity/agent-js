@@ -7,6 +7,7 @@ import Skeleton from "@material-ui/lab/Skeleton";
 import EnhancedEncryptionIcon from '@material-ui/icons/EnhancedEncryption';
 import withStyles, { Styles, StyleRulesCallback } from "@material-ui/core/styles/withStyles";
 import { Principal } from "@dfinity/agent";
+import { AuthenticationRequest } from "src/protocol/ic-id-protocol";
 
 interface IDerEncodable {
     toDer(): ArrayBuffer|undefined
@@ -18,6 +19,7 @@ export interface AuthenticationResponseConsentProposal {
     scope: {
         canisters: Array<{ principal: Principal }>
     }
+    request: AuthenticationRequest
 }
 
 export default function (props: {
