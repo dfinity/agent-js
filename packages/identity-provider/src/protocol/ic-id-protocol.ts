@@ -1,7 +1,7 @@
 /**
  * @fileoverview tools for implementing the HTTP-based Internet Computer Identity Protocol, which is mostly a profile of OpenID Connect (OIDC), which is a profile of OAuth2.
  */
-import { PublicKey, derBlobFromBlob, blobFromHex } from '@dfinity/agent';
+import { PublicKey, derBlobFromBlob, blobFromHex, Principal } from '@dfinity/agent';
 import { OAuth2AccessTokenResponse } from './oauth2';
 import * as oauth2 from './oauth2';
 import * as assert from 'assert';
@@ -18,6 +18,7 @@ export type AuthenticationRequest = {
   };
   redirectUri: string;
   state?: string;
+  scope: string;
 };
 
 export interface AuthenticationResponse {
@@ -72,6 +73,7 @@ function AuthenticationResponse(input: oauth2.OAuth2AccessTokenResponse): Authen
 }
 
 function AuthenticationRequest(input: oauth2.OAuth2AuthorizationRequest): AuthenticationRequest {
+  console.log('AuthenticationRequest', input);
   const request: AuthenticationRequest = {
     type: 'AuthenticationRequest',
     sessionIdentity: {
@@ -79,6 +81,7 @@ function AuthenticationRequest(input: oauth2.OAuth2AuthorizationRequest): Authen
     },
     redirectUri: new URL(input.redirect_uri).toString(),
     state: input.state,
+    scope: input.scope || '',
   };
   return request;
 }
@@ -143,4 +146,67 @@ export function createBearerToken(spec: { delegationChain: DelegationChain }): s
     new TextEncoder().encode(JSON.stringify(spec.delegationChain)),
   );
   return bearerToken;
+}
+
+/** Convert an ic-id-protocol request to an OAuth 2.0 compliant request (just syntax transformation really) */
+export function toOauth(idpRequest: AuthenticationRequest): oauth2.OAuth2AuthorizationRequest {
+  const login_hint: string = idpRequest.sessionIdentity.hex;
+  const redirect_uri: string = idpRequest.redirectUri.toString();
+  const oauthRequest: oauth2.OAuth2AuthorizationRequest = {
+    response_type: 'token',
+    login_hint,
+    redirect_uri,
+    scope: idpRequest.scope,
+    state: idpRequest.state,
+  };
+  return oauthRequest;
+}
+
+/**
+ * Create a full URL to submit an AuthenticationRequest to an Identity Provider
+ */
+export function createAuthenticationRequestUrl(spec: {
+  identityProviderUrl: URL;
+  authenticationRequest: AuthenticationRequest;
+}): URL {
+  const url = new URL(spec.identityProviderUrl.toString());
+  for (const [key, value] of Object.entries(toOauth(spec.authenticationRequest))) {
+    url.searchParams.set(key, value);
+  }
+  return url;
+}
+
+export interface ICanisterScope {
+  principal: Principal;
+}
+export interface IParsedScopeString {
+  canisters: Array<ICanisterScope>;
+}
+
+/**
+ * Parse an ic-id-protocol AuthenticationRequest.scope string.
+ * Per-OAuth2, it's a space-delimited array of strings.
+ * This should split on space, then look for certain allowed kinds of strings,
+ * and return objects that represent our decoding/interpretation of the strings.
+ *
+ * The original motivation for this is that a scope string can be 'canisterAPrincipalText canisterBPrincipalText',
+ * and we want this to parse that into an array of two 'CanisterScope' objects.
+ *
+ * @todo(bengo): This should ensure there are exactly one or two CanisterScopes,
+ *   (see spec for more restrictions on 'scope')
+ */
+export function parseScopeString(scope: string): IParsedScopeString {
+  const scopeSegments = scope.split(' ').filter(Boolean);
+  const canisters = scopeSegments.map(principalText => {
+    const principal: Principal = (() => {
+      try {
+        return Principal.fromText(principalText);
+      } catch (error) {
+        console.error('Error decoding scope segment as Principal Text', error);
+        throw error;
+      }
+    })();
+    return { principal };
+  });
+  return { canisters };
 }

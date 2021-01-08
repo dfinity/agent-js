@@ -14,6 +14,7 @@ export const StateCodec = t.type({
       sessionIdentity: t.type({
         hex: t.string,
       }),
+      scope: t.string,
     }),
   ]),
 });

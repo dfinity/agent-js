@@ -2,6 +2,7 @@ import * as icid from './ic-id-protocol';
 import { DelegationChain } from '@dfinity/authentication';
 import { hexEncodeUintArray } from '../bytes';
 import * as assert from 'assert';
+import { Principal } from '@dfinity/agent/src/idl';
 
 const delegationChainSample = {
   json: {
@@ -36,7 +37,7 @@ describe('ic-id-protocol', () => {
   it('can parse AuthenticationResponse fromQueryString', async () => {
     const authenticationResponse = icid.fromQueryString(
       new URLSearchParams(
-        '?access_token=accessTokenValue&expires_in=2099000000&token_type=bearer&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Frelying-party-demo%2Foauth%2Fredirect_uri',
+        '?scope=a%20b&access_token=accessTokenValue&expires_in=2099000000&token_type=bearer&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Frelying-party-demo%2Foauth%2Fredirect_uri',
       ),
     );
     assert.ok(authenticationResponse);
@@ -72,5 +73,48 @@ describe('ic-id-protocol', () => {
     expect(hexEncodeUintArray(delegationChain.publicKey)).toEqual(
       delegationChainSample.json.publicKey,
     );
+  });
+});
+
+describe('ic-id-protocol createAuthenticationRequestUrl', () => {
+  it('preserves scope', () => {
+    const authenticationRequest: icid.AuthenticationRequest = {
+      type: 'AuthenticationRequest',
+      sessionIdentity: {
+        hex:
+          '302a300506032b65700321009d0559b47dc4e8443fad89df3d090ad861315e2fa0cc139e625523e24665b244',
+      },
+      redirectUri: 'https://rp/redirect_uri',
+      scope: 'a b',
+    };
+    const identityProviderUrl = new URL('https://id.ic0.app');
+    const authenticationRequestUrl = icid.createAuthenticationRequestUrl({
+      authenticationRequest,
+      identityProviderUrl,
+    });
+    expect(authenticationRequestUrl.searchParams.get('scope')).toEqual('a b');
+  });
+});
+
+describe('ic-id-protocol parseScopeString', () => {
+  it('allows old-style principal texts', () => {
+    // bengo: I'm not sure whether it's a good idea to allow these or not.
+    // The test passes, so I'lle ave it for now, but this is just a unit test.
+    // It may best best to explicitly reject these old-style principal texts, or to parse/reserialize them as the new, shorter ones?
+    const oldStyleCanisterPrincipalText = 'ccgce-babaa-aaaaa-aaaaa-caaaa-aaaaa-aaaaa-q';
+    const parsed = icid.parseScopeString(oldStyleCanisterPrincipalText);
+    const [canisterScope] = parsed.canisters;
+    expect(canisterScope.principal.toText()).toEqual(oldStyleCanisterPrincipalText);
+  });
+  it('parses space-delimited scope string', () => {
+    const canisterA = 'u76ha-lyaaa-aaaab-aacha-cai';
+    const canisterB = 'jyi7r-7aaaa-aaaab-aaabq-cai';
+    const scope = [canisterA, canisterB].join(' ');
+    const parsedScope = icid.parseScopeString(scope);
+    expect(parsedScope.canisters.length).toEqual(2);
+    const parsedScopeCanisterPrincipalTextSet = new Set(
+      parsedScope.canisters.map(cs => cs.principal.toText()),
+    );
+    expect(parsedScopeCanisterPrincipalTextSet).toStrictEqual(new Set([canisterA, canisterB]));
   });
 });
