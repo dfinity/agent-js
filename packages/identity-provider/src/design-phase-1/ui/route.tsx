@@ -182,20 +182,27 @@ export default function DesignPhase0Route(props: {
                 />
             </Route>
             <Route exact path={urls.session.consent}>{
-                state.identities.root.publicKey
-                ?   <><SessionConsentScreen
+                ( ! state.identities.root.publicKey)
+                    ? <>
+                        No Profile Found. Please <a href="/">start over</a>
+                    </>
+                : ( ! state.authentication.request)
+                    ? <>
+                        No AuthenticationRequest Found. Please <a href="/">start over</a>
+                    </>
+                :   <><SessionConsentScreen
                     next={urls.response.confirmation}
-                    profile={{id: state.identities.root.publicKey}}
-                    session={{
-                        toDer() {
-                            const delegationTarget = state?.delegation?.target
-                            return delegationTarget ? Uint8Array.from(hexToBytes(delegationTarget.publicKey.hex)) : undefined
-                        }
+                    consentProposal={{
+                        profile: { id: state.identities.root.publicKey },
+                        session: {
+                            toDer() {
+                                const delegationTarget = state?.delegation?.target
+                                return delegationTarget ? Uint8Array.from(hexToBytes(delegationTarget.publicKey.hex)) : undefined
+                            }
+                        },
+                        scope: icid.parseScopeString(state.authentication.request?.scope)
                     }}
                     /></>
-                :   <>
-                    No Profile Found. Please <a href="/">start over</a>
-                    </>
             }
                 
             </Route>

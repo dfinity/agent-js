@@ -6,24 +6,33 @@ import { Typography, makeStyles, Divider, Theme, createStyles, styled } from "@m
 import Skeleton from "@material-ui/lab/Skeleton";
 import EnhancedEncryptionIcon from '@material-ui/icons/EnhancedEncryption';
 import withStyles, { Styles, StyleRulesCallback } from "@material-ui/core/styles/withStyles";
+import { Principal } from "@dfinity/agent";
 
 interface IDerEncodable {
     toDer(): ArrayBuffer|undefined
 }
 
-export default function (props: {
-    next: string;
+interface AuthenticationResponseConsentProposal {
     session: IDerEncodable;
     profile: { id: {hex: string}}
+    scope: {
+        canisters: Array<{ principal: Principal }>
+    }
+}
+
+export default function (props: {
+    next: string;
+    consentProposal: AuthenticationResponseConsentProposal
 }) {
-    const { next } = props
+    const { next, consentProposal } = props
 
     return <>
         <div data-test-id="session-consent-screen">
             <SimpleScreenLayout {...{
                 HeroImage,
                 Title,
-                Body: () => <Body session={props.session} profile={props.profile} />,
+                Body: () =>
+                    <Body {...{consentProposal}} />,
                 CallToAction: () => <CallToAction nextHref={next} />,
             }} />
         </div>
@@ -33,7 +42,7 @@ export default function (props: {
 const styler = function() {
     return createStyles({
         consentTable: {
-            '& td': {
+            '& th,td': {
                 textAlign: 'left',
                 overflowWrap: 'anywhere',
                 '&:first-child': {
@@ -89,22 +98,19 @@ function HexFormatter(props: {
 }
 
 function Body(props: {
-    profile: {
-        id: {
-            hex: string
-        }
-    }
-    session: IDerEncodable
+    consentProposal: AuthenticationResponseConsentProposal
 }) {
     const styles = makeStyles(styler)()
+    const { consentProposal } = props;
+    const { session } = consentProposal;
     const sessionDerHex: string|undefined = React.useMemo(
         () => {
-            const der = props.session.toDer()
+            const der = session.toDer()
             if (!der) return;
             const hex = hexEncodeUintArray(new Uint8Array(der));
             return hex;
         },
-        [props.session]
+        [session]
     )
     return <>
         <Typography variant="subtitle1" gutterBottom>
@@ -112,34 +118,34 @@ function Body(props: {
         </Typography>
         <Typography component="div" gutterBottom>
             <table className={styles.consentTable}>
-                <tr>
-                    <td>Profile ID</td>
-                    <td>
-                        <HexFormatter hex={props.profile.id.hex} />
-                    </td>
-                </tr>
-                <tr>
-                    <td>Session ID</td>
-                    <td>
-                        {
-                        sessionDerHex
-                        ? <HexFormatter hex={sessionDerHex} />
-                        : "(not set)"
-                        }
-                    </td>
-                </tr>
-                <tr>
-                    <td>Canisters</td>
-                    <td>
-                        <ul>
-                            <li>Canister A</li>
-                            <li>Canister B</li>
-                            <li>
-                                #TODO(bengo): ic-idp protocol needs to support RP requesting 1-2 canisters as 'targets', then those IDs can be shown here.
-                            </li>
-                        </ul>
-                    </td>
-                </tr>
+                <tbody>
+                    <tr>
+                        <th scope="row">Profile ID</th>
+                        <td>
+                            <HexFormatter hex={consentProposal.profile.id.hex} />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Session ID</th>
+                        <td>
+                            {
+                            sessionDerHex
+                            ? <HexFormatter hex={sessionDerHex} />
+                            : "(not set)"
+                            }
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Canisters</th>
+                        <td>
+                            <ul>
+                                {props.consentProposal.scope.canisters.map(({principal}, i) => {
+                                    return <li key={i}>{principal.toText()}</li>
+                                })}
+                            </ul>
+                        </td>
+                    </tr>
+                </tbody>
             </table>
         </Typography>
         <br />

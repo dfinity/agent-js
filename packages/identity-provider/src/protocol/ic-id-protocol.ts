@@ -1,7 +1,7 @@
 /**
  * @fileoverview tools for implementing the HTTP-based Internet Computer Identity Protocol, which is mostly a profile of OpenID Connect (OIDC), which is a profile of OAuth2.
  */
-import { PublicKey, derBlobFromBlob, blobFromHex } from '@dfinity/agent';
+import { PublicKey, derBlobFromBlob, blobFromHex, Principal } from '@dfinity/agent';
 import { OAuth2AccessTokenResponse } from './oauth2';
 import * as oauth2 from './oauth2';
 import * as assert from 'assert';
@@ -174,4 +174,39 @@ export function createAuthenticationRequestUrl(spec: {
     url.searchParams.set(key, value);
   }
   return url;
+}
+
+export interface ICanisterScope {
+  principal: Principal;
+}
+export interface IParsedScopeString {
+  canisters: Array<ICanisterScope>;
+}
+
+/**
+ * Parse an ic-id-protocol AuthenticationRequest.scope string.
+ * Per-OAuth2, it's a space-delimited array of strings.
+ * This should split on space, then look for certain allowed kinds of strings,
+ * and return objects that represent our decoding/interpretation of the strings.
+ *
+ * The original motivation for this is that a scope string can be 'canisterAPrincipalText canisterBPrincipalText',
+ * and we want this to parse that into an array of two 'CanisterScope' objects.
+ *
+ * @todo(bengo): This should ensure there are exactly one or two CanisterScopes,
+ *   (see spec for more restrictions on 'scope')
+ */
+export function parseScopeString(scope: string): IParsedScopeString {
+  const scopeSegments = scope.split(' ').filter(Boolean);
+  const canisters = scopeSegments.map(principalText => {
+    const principal: Principal = (() => {
+      try {
+        return Principal.fromText(principalText);
+      } catch (error) {
+        console.error('Error decoding scope segment as Principal Text', error);
+        throw error;
+      }
+    })();
+    return { principal };
+  });
+  return { canisters };
 }
