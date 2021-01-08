@@ -1,4 +1,5 @@
 import { Ed25519KeyIdentity } from "@dfinity/authentication";
+import { TextField } from "@material-ui/core";
 import * as React from "react";
 import RPAuthenticationButton from "../components/RPAuthenticationButton";
 import { IRelyingPartyAuthenticationSession, RelyingPartyAuthenticationSessionSerializer, RelyingPartyAuthenticationSessionStorage } from "../session";
@@ -23,6 +24,7 @@ export default function RelyingPartyDemo(props: {
         type: "RelyingPartyAuthenticationSession",
         identity: Ed25519KeyIdentity.generate(),
     });
+    const [goalScope, setGoalScope] = React.useState<string>("canisterAPrincipalText canisterBPrincipalText");
     // Whenever session changes, serialize it and save to localStorage
     React.useEffect(() => {
         props.sessionStorage.set(session)
@@ -31,12 +33,23 @@ export default function RelyingPartyDemo(props: {
         <h1>Relying Party Demo</h1>
         <p>Click the button below to authenticate with the Internet Computer, authorizing the following session identity:</p>
         <pre>{RelyingPartyAuthenticationSessionSerializer.toJSON(session)}</pre>
+        <form>
+            <TextField
+                helperText="Scope your AuthenticationRequest to ensure least privelege (only the Canisters you need to use now)"
+                label="scope"
+                fullWidth
+                defaultValue="canisterAPrincipalText canisterBPrincipalText"
+                onChange={(e) => setGoalScope(e.target.value)}
+                />
+        </form>
         <span data-test-id="authenticate">
             <RPAuthenticationButton
+                fullWidth
                 redirectUrl={props.redirectUrl}
                 delegateTo={session.identity.getPublicKey()}
                 identityProviderUrl={identityProviderUrl}
                 state="RPDemo-sample-state"
+                scope={goalScope}
             />
         </span>
     </>

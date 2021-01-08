@@ -65,6 +65,7 @@ export default function DesignPhase0Route(props: {
                     hex: hexEncodeUintArray(sessionId.getPublicKey().toDer()),
                 },
                 redirectUri: new URL('/relying-party-demo/oauth/redirect_uri', globalThis.location.href).toString(),
+                scope: "canisterAPrincipalText canisterBPrincipalText",
             }
         });
     }

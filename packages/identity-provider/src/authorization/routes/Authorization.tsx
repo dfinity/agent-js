@@ -91,6 +91,7 @@ export function AuthorizationRoute() {
           sessionIdentity: {
             hex: hexEncodeUintArray(sessionIdentityPublicKey.toDer())
           },
+          scope: "",
           ...(state && { state }),
         }
         setAuthenticationRequest(authenticationRequest)

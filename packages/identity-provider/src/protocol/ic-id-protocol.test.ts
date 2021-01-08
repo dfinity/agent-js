@@ -36,7 +36,7 @@ describe('ic-id-protocol', () => {
   it('can parse AuthenticationResponse fromQueryString', async () => {
     const authenticationResponse = icid.fromQueryString(
       new URLSearchParams(
-        '?access_token=accessTokenValue&expires_in=2099000000&token_type=bearer&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Frelying-party-demo%2Foauth%2Fredirect_uri',
+        '?scope=a%20b&access_token=accessTokenValue&expires_in=2099000000&token_type=bearer&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Frelying-party-demo%2Foauth%2Fredirect_uri',
       ),
     );
     assert.ok(authenticationResponse);
@@ -72,5 +72,25 @@ describe('ic-id-protocol', () => {
     expect(hexEncodeUintArray(delegationChain.publicKey)).toEqual(
       delegationChainSample.json.publicKey,
     );
+  });
+});
+
+describe('ic-id-protocol createAuthenticationRequestUrl', () => {
+  it('preserves scope', () => {
+    const authenticationRequest: icid.AuthenticationRequest = {
+      type: 'AuthenticationRequest',
+      sessionIdentity: {
+        hex:
+          '302a300506032b65700321009d0559b47dc4e8443fad89df3d090ad861315e2fa0cc139e625523e24665b244',
+      },
+      redirectUri: 'https://rp/redirect_uri',
+      scope: 'a b',
+    };
+    const identityProviderUrl = new URL('https://id.ic0.app');
+    const authenticationRequestUrl = icid.createAuthenticationRequestUrl({
+      authenticationRequest,
+      identityProviderUrl,
+    });
+    expect(authenticationRequestUrl.searchParams.get('scope')).toEqual('a b');
   });
 });
