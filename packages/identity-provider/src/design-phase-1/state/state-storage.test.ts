@@ -5,6 +5,8 @@ import { IdentityProviderState } from './state';
 import { IStorage } from 'src/relying-party-demo/storage';
 import { SerializedStorage } from './state-storage';
 
+import { IdentityProviderStateType } from './state';
+
 describe('@dfinity/identity-provider/design-phase-0/state-storage', () => {
   it('works', () => {
     let str: string = 'init';
@@ -17,11 +19,13 @@ describe('@dfinity/identity-provider/design-phase-0/state-storage', () => {
           str = input;
         },
       },
-      StateToStringCodec(),
+      StateToStringCodec(IdentityProviderStateType),
     );
     const state0: IdentityProviderState = {
       authentication: {
+        consent: undefined,
         request: undefined,
+        foo: 'state-storage.test.ts foo',
       },
       identities: {
         root: {

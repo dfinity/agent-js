@@ -2,8 +2,8 @@ import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Route, Switch, useRouteMatch, useLocation, Redirect  } from 'react-router-dom';
 import WelcomeScreen from './screens/WelcomeScreen';
 import IdentityConfirmationScreen from './screens/IdentityConfirmationScreen';
-import SessionConsentScreen from './screens/SessionConsentScreen';
-import AuthenticationResponseConfirmationScreen from './screens/AuthenticationResponseConfirmationScreen';
+import {default as SessionConsentScreen, AuthenticationResponseConsentProposal} from './screens/SessionConsentScreen';
+import {default as AuthenticationResponseConfirmationScreen} from './screens/AuthenticationResponseConfirmationScreen';
 import { SerializedStorage, IStorage, LocalStorageKey, NotFoundError } from '../state/state-storage';
 import { useStateStorage } from '../state/state-storage-react';
 import { StateToStringCodec } from '../state/state-serialization';
@@ -12,13 +12,15 @@ import { hexToBytes, hexEncodeUintArray } from 'src/bytes';
 import { Ed25519PublicKey , Ed25519KeyIdentity, DelegationChain} from '@dfinity/authentication';
 import * as icid from "../../protocol/ic-id-protocol"
 import { PublicKey, blobFromHex, derBlobFromBlob, SignIdentity, blobFromUint8Array } from '@dfinity/agent';
-const stateStorage = SerializedStorage(
-    LocalStorageKey('design-phase-1'),
-    StateToStringCodec(),
-)
 import tweetnacl from "tweetnacl";
 import AuthenticationScreenLayout from './layout/AuthenticationScreenLayout';
 import { ThemeProvider, Theme } from '@material-ui/core';
+import { IdentityProviderStateType } from '../state/state';
+
+const stateStorage = SerializedStorage(
+    LocalStorageKey('design-phase-1'),
+    StateToStringCodec(IdentityProviderStateType),
+)
 
 export default function DesignPhase0Route(props: {
     NotFoundRoute: React.ComponentType
@@ -70,6 +72,7 @@ export default function DesignPhase0Route(props: {
         });
     }
     const idpController = {
+        /** Called when the end-user wants to create a brand new root identity. i.e. when they log in for first time */
         createProfile() {
             const profileSignIdentity = Ed25519KeyIdentity.generate()
             dispatch({
@@ -133,6 +136,30 @@ export default function DesignPhase0Route(props: {
             }
             return redirectUrl
         },
+        consentToAuthenticationResponseProposal: function consent (spec: {
+            consentProposal: AuthenticationResponseConsentProposal,
+            consenter: {
+                publicKey: {
+                    hex: string
+                }
+            }
+        }) {
+            const { consentProposal } = spec;
+            console.debug('consentToAuthenticationResponseProposal', { consentProposal})
+            dispatch({
+                type: "AuthenticationRequestConsentReceived",
+                payload: {
+                    consent: {
+                        type: "AuthenticationRequestConsent",
+                        proposal: {
+                            request: consentProposal.request,
+                            attributedTo: spec.consenter
+                        },
+                        createdAt: { iso8601: (new Date).toISOString() },
+                    }
+                }
+            });
+        }
     }
     React.useEffect(
         () => {
@@ -153,6 +180,18 @@ export default function DesignPhase0Route(props: {
         if ( ! props.theme) { return <>{props.children}</> }
         return <ThemeProvider theme={props.theme}>{props.children}</ThemeProvider>
     }
+    const consentProposal: undefined|AuthenticationResponseConsentProposal = (state.identities.root.publicKey && state.authentication.request) && {
+        profile: { id: state.identities.root.publicKey },
+        session: {
+            toDer() {
+                const delegationTarget = state?.delegation?.target
+                return delegationTarget ? Uint8Array.from(hexToBytes(delegationTarget.publicKey.hex)) : undefined
+            }
+        },
+        scope: icid.parseScopeString(state.authentication.request.scope),
+        request: state.authentication.request,
+    };
+    const rootIdentityPublicKey = state.identities.root.publicKey;
     return <><MaybeTheme theme={props.theme}>
         <AuthenticationScreenLayout>
 
@@ -165,47 +204,63 @@ export default function DesignPhase0Route(props: {
                     createProfile={idpController.createProfile}
                 />
             </Route>
-            <Route exact path={urls.identity.confirmation}>
-                <IdentityConfirmationScreen
-                    next={urls.session.consent}
-                    identity={state?.identities?.root?.publicKey
-                        ?
-                        {
-                            toDer() {
-                                const publicKeyHex = state?.identities?.root?.publicKey?.hex
-                                const publicKey = publicKeyHex && Uint8Array.from(hexToBytes(publicKeyHex))
-                                return publicKey || Uint8Array.from([])
+            <Route exact path={urls.identity.confirmation} component={() => {
+                return <>
+                    <IdentityConfirmationScreen
+                        next={urls.session.consent}
+                        identity={state?.identities?.root?.publicKey
+                            ?
+                            {
+                                toDer() {
+                                    const publicKeyHex = state?.identities?.root?.publicKey?.hex
+                                    const publicKey = publicKeyHex && Uint8Array.from(hexToBytes(publicKeyHex))
+                                    return publicKey || Uint8Array.from([])
+                                }
                             }
+                            : undefined
                         }
-                        : undefined
-                    }
-                />
-            </Route>
-            <Route exact path={urls.session.consent}>{
-                ( ! state.identities.root.publicKey)
-                    ? <>
-                        No Profile Found. Please <a href="/">start over</a>
-                    </>
-                : ( ! state.authentication.request)
-                    ? <>
-                        No AuthenticationRequest Found. Please <a href="/">start over</a>
-                    </>
-                :   <><SessionConsentScreen
-                    next={urls.response.confirmation}
-                    consentProposal={{
-                        profile: { id: state.identities.root.publicKey },
-                        session: {
-                            toDer() {
-                                const delegationTarget = state?.delegation?.target
-                                return delegationTarget ? Uint8Array.from(hexToBytes(delegationTarget.publicKey.hex)) : undefined
+                    />
+                </>
+            }} />
+            <Route exact path={urls.session.consent} component={() => {
+                const authenticationRequestHasConsent = React.useMemo(
+                    () => {
+                        const {request, consent} = state.authentication;
+                        if ( ! consent) return false;
+                        return JSON.stringify(request) === JSON.stringify(consent.proposal.request);
+                    },
+                    [state.authentication],
+                );
+                /** If the we've already consented to this request, redirect to next screen. */
+                if (authenticationRequestHasConsent) {
+                    return <Redirect to={urls.response.confirmation} />
+                }
+                return <>
+                {
+                    ( ! rootIdentityPublicKey)
+                        ? <>
+                            No Profile Found. Please <a href="/">start over</a>
+                        </>
+                    : ( ! state.authentication.request)
+                        ? <>
+                            No AuthenticationRequest Found. Please <a href="/">start over</a>
+                        </>
+                    : ( ! consentProposal)
+                        ? <>
+                            No consentProposal Found. Please <a href="/">start over</a>
+                        </>
+                    :   <><SessionConsentScreen
+                        consentProposal={consentProposal}
+                        consent={() => idpController.consentToAuthenticationResponseProposal({
+                            consentProposal,
+                            consenter: {
+                                publicKey: { hex: rootIdentityPublicKey.hex },
                             }
-                        },
-                        scope: icid.parseScopeString(state.authentication.request?.scope)
-                    }}
-                    /></>
-            }
-                
-            </Route>
+                        })}
+                        /></>
+                }
+                </>
+            }} />
             <Route exact path={urls.response.confirmation}>
                 <AuthenticationResponseConfirmationScreen
                     redirectWithResponse={async () => {
