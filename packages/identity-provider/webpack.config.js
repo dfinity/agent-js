@@ -3,17 +3,17 @@ const TerserPlugin = require('terser-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
-const IgnorePlugin = require('webpack').IgnorePlugin
+const IgnorePlugin = require('webpack').IgnorePlugin;
 
 module.exports = {
   mode: 'production',
   entry: {
-    'index': './src/index.tsx'
+    index: './src/index.tsx',
   },
   target: 'web',
   node: {
     // This is needed for wasm loader from emscripten
-    fs: 'empty'
+    fs: 'empty',
   },
   output: {
     // This is necessary to allow internal apps to bundle their own code with
@@ -56,6 +56,10 @@ module.exports = {
       {
         test: /\.(woff|woff2|eot|ttf|otf)$/,
         use: ['file-loader'],
+      },
+      {
+        test: /\.svg$/,
+        use: ['@svgr/webpack'],
       },
     ],
   },
