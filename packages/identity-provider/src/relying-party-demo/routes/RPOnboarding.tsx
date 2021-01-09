@@ -53,6 +53,7 @@ export default function RPOnboarding(props: {
           delegateTo={session.identity.getPublicKey()}
           identityProviderUrl={identityProviderUrl}
           state='RPDemo-sample-state'
+          scope='token'
         >
           {t('generate')}
         </RPAuthenticationButton>

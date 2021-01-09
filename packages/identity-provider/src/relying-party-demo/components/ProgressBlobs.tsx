@@ -25,7 +25,7 @@ function ProgressBlobs(props: Props) {
 
 const spacerStyles = css`
   display: flex;
-  margin: 40px auto 0;
+  margin: 40px auto;
 `;
 
 export default ProgressBlobs;
