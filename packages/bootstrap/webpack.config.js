@@ -6,8 +6,7 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
 module.exports = {
-  mode: 'development',
-  // mode: 'production',
+  mode: 'production',
   entry: {
     bootstrap: './src/index.ts',
     candid: './src/candid/candid.ts',
@@ -17,7 +16,7 @@ module.exports = {
   target: 'web',
   node: {
     // This is needed for wasm loader from emscripten
-    fs: 'empty'
+    fs: 'empty',
   },
   output: {
     // This is necessary to allow internal apps to bundle their own code with
@@ -30,23 +29,23 @@ module.exports = {
     plugins: [new TsconfigPathsPlugin({ configFile: './tsconfig.json' })],
     extensions: ['.tsx', '.ts', '.js'],
   },
-  // devtool: 'source-map',
-  // optimization: {
-  //   minimize: true,
-  //   minimizer: [
-  //     new TerserPlugin({
-  //       cache: true,
-  //       parallel: true,
-  //       sourceMap: true, // Must be set to true if using source-maps in production
-  //       terserOptions: {
-  //         ecma: 8,
-  //         minimize: true,
-  //         comments: false,
-  //         // https://github.com/webpack-contrib/terser-webpack-plugin#terseroptions
-  //       },
-  //     }),
-  //   ],
-  // },
+  devtool: 'source-map',
+  optimization: {
+    minimize: true,
+    minimizer: [
+      new TerserPlugin({
+        cache: true,
+        parallel: true,
+        sourceMap: true, // Must be set to true if using source-maps in production
+        terserOptions: {
+          ecma: 8,
+          minimize: true,
+          comments: false,
+          // https://github.com/webpack-contrib/terser-webpack-plugin#terseroptions
+        },
+      }),
+    ],
+  },
   module: {
     rules: [
       {
@@ -91,7 +90,7 @@ module.exports = {
         from: '../agent/src/utils/bls.wasm',
         to: 'bls.wasm',
       },
-    ]),    
+    ]),
   ],
   devServer: {
     proxy: {
