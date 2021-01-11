@@ -14,11 +14,19 @@ export function render(id: Principal, canister: CanisterActor) {
 
 function renderMethod(canister: CanisterActor, name: string, idlFunc: IDL.FuncClass) {
   const item = document.createElement('li');
+  item.id = name;
 
   const sig = document.createElement('div');
   sig.className = 'signature';
-  sig.innerHTML = `${name}: ${idlFunc.display()}`;
+  sig.innerHTML = `<b>${name}</b>: ${idlFunc.display()}`;
   item.appendChild(sig);
+
+  const methodListItem = document.createElement('li');
+  const methodLink = document.createElement('a');
+  methodLink.innerText = name;
+  methodLink.href = `#${name}`;
+  methodListItem.appendChild(methodLink);
+  document.getElementById('methods-list')!.appendChild(methodListItem);
 
   const inputContainer = document.createElement('div');
   inputContainer.className = 'input-container';
@@ -34,19 +42,19 @@ function renderMethod(canister: CanisterActor, name: string, idlFunc: IDL.FuncCl
   const buttonContainer = document.createElement('div');
   buttonContainer.className = 'button-container';
 
-  const button = document.createElement('button');
-  button.className = 'btn';
+  const buttonQuery = document.createElement('button');
+  buttonQuery.className = 'btn';
   if (idlFunc.annotations.includes('query')) {
-    button.innerText = 'Query';
+    buttonQuery.innerText = 'Query';
   } else {
-    button.innerText = 'Call';
+    buttonQuery.innerText = 'Call';
   }
-  buttonContainer.appendChild(button);
+  buttonContainer.appendChild(buttonQuery);
 
-  const random = document.createElement('button');
-  random.className = 'btn random';
-  random.innerText = 'Random';
-  buttonContainer.appendChild(random);
+  const buttonRandom = document.createElement('button');
+  buttonRandom.className = 'btn random';
+  buttonRandom.innerText = 'Random';
+  buttonContainer.appendChild(buttonRandom);
   item.appendChild(buttonContainer);
 
   const resultDiv = document.createElement('div');
@@ -55,6 +63,21 @@ function renderMethod(canister: CanisterActor, name: string, idlFunc: IDL.FuncCl
   left.className = 'left';
   const right = document.createElement('div');
   right.className = 'right';
+
+  const resultButtons = document.createElement('span');
+  resultButtons.className = 'result-buttons';
+  const buttonText = document.createElement('button');
+  buttonText.className = 'btn text-btn active';
+  buttonText.innerText = 'Text';
+  const buttonUI = document.createElement('button');
+  buttonUI.className = 'btn ui-btn';
+  buttonUI.innerText = 'UI';
+  const buttonJSON = document.createElement('button');
+  buttonJSON.className = 'btn json-btn';
+  buttonJSON.innerText = 'JSON';
+  const buttonsArray = [buttonText, buttonUI, buttonJSON];
+
+  resultDiv.appendChild(resultButtons);
   resultDiv.appendChild(left);
   resultDiv.appendChild(right);
   item.appendChild(resultDiv);
@@ -75,6 +98,7 @@ function renderMethod(canister: CanisterActor, name: string, idlFunc: IDL.FuncCl
     return result;
   }
 
+  const containers: HTMLDivElement[] = [];
   function callAndRender(args: any[]) {
     (async () => {
       const callResult = await call(args);
@@ -88,17 +112,18 @@ function renderMethod(canister: CanisterActor, name: string, idlFunc: IDL.FuncCl
       }
       left.innerHTML = '';
 
-      const containers: HTMLDivElement[] = [];
       const textContainer = document.createElement('div');
+      textContainer.className = 'text-result';
       containers.push(textContainer);
       left.appendChild(textContainer);
       const text = encodeStr(IDL.FuncClass.argsToString(idlFunc.retTypes, result));
-      textContainer.innerHTML = text;
+      textContainer.innerHTML = text.replace(/&nbsp;/g, ' ');
       const showArgs = encodeStr(IDL.FuncClass.argsToString(idlFunc.argTypes, args));
       log(`› ${name}${showArgs}`);
       log(text);
 
       const uiContainer = document.createElement('div');
+      uiContainer.className = 'ui-result';
       containers.push(uiContainer);
       uiContainer.style.display = 'none';
       left.appendChild(uiContainer);
@@ -109,26 +134,45 @@ function renderMethod(canister: CanisterActor, name: string, idlFunc: IDL.FuncCl
       });
 
       const jsonContainer = document.createElement('div');
+      jsonContainer.className = 'json-result';
       containers.push(jsonContainer);
       jsonContainer.style.display = 'none';
       left.appendChild(jsonContainer);
       jsonContainer.innerText = JSON.stringify(callResult);
-
-      let i = 0;
-      left.addEventListener('click', () => {
-        containers[i].style.display = 'none';
-        i = (i + 1) % 3;
-        containers[i].style.display = 'flex';
-      });
     })().catch(err => {
-      left.className += ' error';
+      left.classList.add('error');
       left.innerText = err.message;
       throw err;
     });
   }
 
-  random.addEventListener('click', () => {
-    const args = inputs.map(arg => arg.parse({ random: true }));
+  function selectResultDisplay(event: MouseEvent) {
+    const { target } = event;
+    // @ts-ignore
+    const displayType = target!.classList.value.replace(/btn (.*)-btn.*/g, '$1');
+    buttonsArray.forEach(button => button.classList.remove('active'));
+    containers.forEach(container => (container.style.display = 'none'));
+    // @ts-ignore
+    target!.classList.add('active');
+    // @ts-ignore
+    left.querySelector(`.${displayType}-result`)!.style.display = 'flex';
+  }
+  buttonsArray.forEach(button => {
+    button.addEventListener('click', selectResultDisplay);
+    resultButtons.appendChild(button);
+  });
+
+  buttonRandom.addEventListener('click', () => {
+    const args = inputs.map(arg => {
+      // TODO: Figure this out
+      const value = arg.parse({ random: true });
+      try {
+        // @ts-ignore
+        arg.ui.input.placeholder = value;
+        // tslint:disable-next-line:no-empty
+      } catch (e) {}
+      return value;
+    });
     const isReject = inputs.some(arg => arg.isRejected());
     if (isReject) {
       return;
@@ -136,7 +180,7 @@ function renderMethod(canister: CanisterActor, name: string, idlFunc: IDL.FuncCl
     callAndRender(args);
   });
 
-  button.addEventListener('click', () => {
+  buttonQuery.addEventListener('click', () => {
     const args = inputs.map(arg => arg.parse());
     const isReject = inputs.some(arg => arg.isRejected());
     if (isReject) {
@@ -148,25 +192,27 @@ function renderMethod(canister: CanisterActor, name: string, idlFunc: IDL.FuncCl
 
 function encodeStr(str: string) {
   const escapeChars: Record<string, string> = {
+    ' ': '&nbsp;',
     '<': '&lt;',
     '>': '&gt;',
     '\n': '<br>',
   };
-  const regex = new RegExp('[<>\n]', 'g');
+  const regex = new RegExp('[ <>\n]', 'g');
   return str.replace(regex, m => {
     return escapeChars[m];
   });
 }
 
 function log(content: Element | string) {
-  const consoleEl = document.getElementById('console-output');
+  const outputEl = document.getElementById('output-list')!;
   const line = document.createElement('div');
-  line.className = 'console-line';
+  line.className = 'output-line';
   if (content instanceof Element) {
     line.appendChild(content);
   } else {
     line.innerHTML = content;
   }
-  // @ts-ignore
-  consoleEl.appendChild(line);
+
+  outputEl.appendChild(line);
+  line.scrollIntoView();
 }

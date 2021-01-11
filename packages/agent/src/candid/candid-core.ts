@@ -26,7 +26,7 @@ export class InputBox {
   public value: any = undefined;
 
   constructor(public idl: IDL.Type, public ui: UIConfig) {
-    const status = document.createElement('div');
+    const status = document.createElement('span');
     status.className = 'status';
     this.status = status;
 
@@ -74,16 +74,14 @@ export class InputBox {
     return null;
   }
   public render(dom: HTMLElement): void {
-    const container = document.createElement('div');
+    const container = document.createElement('span');
+    container.style.position = 'relative';
     const label = document.createElement('label');
     if (this.label) {
       label.innerText = this.label;
       container.appendChild(label);
     }
     if (this.ui.input) {
-      if (this.label) {
-        label.className = 'small';
-      }
       container.appendChild(this.ui.input);
       container.appendChild(this.status);
     }
