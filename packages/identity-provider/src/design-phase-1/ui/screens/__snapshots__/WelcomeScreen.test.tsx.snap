@@ -1,0 +1,77 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`@dfinity/identity-provider/design-phase-0/WelcomeScren renders with without crashing 1`] = `
+<div>
+  <div
+    class="MuiGrid-root MuiGrid-container MuiGrid-spacing-xs-2 MuiGrid-justify-xs-center"
+  >
+    <div
+      class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12"
+    >
+      <div
+        class="makeStyles-heroImage-1"
+      >
+        <svg
+          aria-hidden="true"
+          class="MuiSvgIcon-root"
+          focusable="false"
+          style="font-size: 4em;"
+          viewBox="0 0 24 24"
+        >
+          <path
+            d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"
+          />
+        </svg>
+      </div>
+      <h2
+        class="MuiTypography-root MuiTypography-h2 MuiTypography-gutterBottom"
+        data-test-id="title"
+      >
+        Getting Started
+      </h2>
+      <div
+        class="div-root-3"
+      >
+        <div
+          class="MuiTypography-root MuiTypography-body1"
+        >
+          <p
+            class="MuiTypography-root MuiTypography-body1 MuiTypography-gutterBottom"
+          >
+            Create a Profile to use this
+             
+            <a
+              href="https://internetcomputer.org"
+              target="_blank"
+            >
+              Internet Computer
+            </a>
+             
+            Canister.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div
+      class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12"
+    >
+      <button
+        class="MuiButtonBase-root MuiButton-root MuiButton-contained create-profile MuiButton-containedPrimary"
+        data-test-id="next"
+        role="button"
+        tabindex="0"
+        type="button"
+      >
+        <span
+          class="MuiButton-label"
+        >
+          Create Profile
+        </span>
+        <span
+          class="MuiTouchRipple-root"
+        />
+      </button>
+    </div>
+  </div>
+</div>
+`;

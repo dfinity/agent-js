@@ -13,6 +13,3 @@ dist/
 !webpack.config.dev.js
 !jest.config.js
 !test-setup.js
-
-# Used for smoke testing during development, a pain to git commit
-__snapshots__

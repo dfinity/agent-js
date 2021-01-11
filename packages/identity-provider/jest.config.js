@@ -1,22 +1,18 @@
 module.exports = {
   bail: false,
-  setupFiles: [
-    "./test-setup",
-  ],
+  setupFiles: ['./test-setup'],
   setupFilesAfterEnv: [
     // "jest-expect-message",
-    "jest-enzyme",
+    'jest-enzyme',
   ],
-  testEnvironment: "enzyme",
+  snapshotSerializers: ['@emotion/jest/serializer'],
+  testEnvironment: 'enzyme',
   testEnvironmentOptions: {
-    enzymeAdapter: "react16"
+    enzymeAdapter: 'react16',
   },
-  testPathIgnorePatterns: [
-    "/node_modules/",
-    "/out/",
-  ],
+  testPathIgnorePatterns: ['/node_modules/', '/out/'],
   transform: {
-    "^.+\\.tsx?$": "ts-jest"
+    '^.+\\.tsx?$': 'ts-jest',
   },
-  testRegex: "((\\.|/)(test|spec))\\.(tsx?)$",
+  testRegex: '((\\.|/)(test|spec))\\.(tsx?)$',
 };
