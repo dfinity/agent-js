@@ -51,7 +51,7 @@ export class Delegation {
     return {
       expiration: this.expiration.toString(16),
       pubkey: this.pubkey.toString('hex'),
-      ...(this.targets && this.targets.map(p => p.toText())),
+      ...(this.targets && { targets: this.targets.map(p => p.toText()) }),
     };
   }
 }
@@ -137,10 +137,12 @@ export class DelegationChain {
     from: SignIdentity,
     to: PublicKey,
     expiration: Date = new Date(Date.now() + 15 * 60 * 1000),
-    options: { previous?: DelegationChain } = {},
+    options: {
+      previous?: DelegationChain;
+      targets?: Array<Principal>;
+    } = {},
   ): Promise<DelegationChain> {
-    const delegation = await _createSingleDelegation(from, to, expiration);
-
+    const delegation = await _createSingleDelegation(from, to, expiration, options.targets);
     return new DelegationChain(
       [...(options.previous?.delegations || []), delegation],
       options.previous?.publicKey || from.getPublicKey().toDer(),
