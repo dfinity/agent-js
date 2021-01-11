@@ -97,6 +97,7 @@ export default function DesignPhase0Route(props: {
             });
         },
         async createAuthenticationResponse(spec: {
+            request: icid.AuthenticationRequest
             delegationTail: PublicKey,
         }): Promise<icid.AuthenticationResponse> {
             const signerSecretKeyHex = state.identities?.root?.sign?.secretKey.hex;
@@ -108,12 +109,17 @@ export default function DesignPhase0Route(props: {
                 blobFromUint8Array(rootSignerKeyPair.publicKey),
                 blobFromUint8Array(rootSignerKeyPair.secretKey),
             );
+            const parsedScope = icid.parseScopeString(spec.request.scope)
             const response: icid.AuthenticationResponse = {
                 type: "AuthenticationResponse",
                 accessToken: icid.createBearerToken({
                     delegationChain: await DelegationChain.create(
                         rootSignIdentity,
                         spec.delegationTail,
+                        new Date(Date.now() + Number(days(1))) /* 24hr expiry */,
+                        {
+                            targets: parsedScope.canisters.map(({principal}) => principal),
+                        }
                     )
                 }),
                 expiresIn: 10000000,
@@ -123,6 +129,7 @@ export default function DesignPhase0Route(props: {
         },
         async createResponseRedirectUrl(request: icid.AuthenticationRequest): Promise<URL> {
             const authResponse = await this.createAuthenticationResponse({
+                request,
                 delegationTail: {
                     toDer() {
                         return derBlobFromBlob(blobFromHex(request.sessionIdentity.hex))
@@ -290,4 +297,10 @@ export default function DesignPhase0Route(props: {
             </p>
         </details>
     </MaybeTheme></>
+}
+
+/** return days since epoch as js Date object */
+function days(count: number) {
+    const msInOneDay = 1000 * 60 * 60 * 24
+    return new Date(msInOneDay * count);
 }
