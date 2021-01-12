@@ -7,7 +7,10 @@ class CanisterActor extends Actor {
 
 export function render(id: Principal, canister: CanisterActor) {
   document.getElementById('canisterId')!.innerText = `${id}`;
-  for (const [name, func] of Actor.interfaceOf(canister)._fields) {
+  const sortedMethods = Actor.interfaceOf(canister)._fields.sort(([a], [b]) =>
+    a > b ? 1 : a < b ? -1 : 0,
+  );
+  for (const [name, func] of sortedMethods) {
     renderMethod(canister, name, func);
   }
 }
