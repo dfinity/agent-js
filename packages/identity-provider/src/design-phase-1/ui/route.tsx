@@ -21,6 +21,7 @@ const stateStorage = SerializedStorage(
     LocalStorageKey('design-phase-1'),
     StateToStringCodec(IdentityProviderStateType),
 )
+import AuthenticationController from '../AuthenticationController';
 
 export default function DesignPhase0Route(props: {
     NotFoundRoute: React.ComponentType
@@ -57,117 +58,26 @@ export default function DesignPhase0Route(props: {
             confirmation: `${path}/response/confirmation`,
         }
     };
-    function onClickAuthenticationRequestReceived() {
-        const sessionId = Ed25519KeyIdentity.generate();
-        dispatch({
-            type: "AuthenticationRequestReceived",
-            payload: {
-                type: "AuthenticationRequest",
-                sessionIdentity: {
-                    hex: hexEncodeUintArray(sessionId.getPublicKey().toDer()),
-                },
-                redirectUri: new URL('/relying-party-demo/oauth/redirect_uri', globalThis.location.href).toString(),
-                scope: "canisterAPrincipalText canisterBPrincipalText",
-            }
-        });
-    }
-    const idpController = {
-        /** Called when the end-user wants to create a brand new root identity. i.e. when they log in for first time */
-        createProfile() {
-            const profileSignIdentity = Ed25519KeyIdentity.generate()
-            dispatch({
-                type: "ProfileCreated",
-                payload: {
-                    publicKey: { hex: hexEncodeUintArray(new Uint8Array(profileSignIdentity.getPublicKey().toDer())) }
-                }
-            });
-            dispatch({
-                type: "DelegationRootSignerChanged",
-                payload: {
-                    secretKey: {
-                        hex: hexEncodeUintArray(profileSignIdentity.getKeyPair().secretKey)
-                    }
-                }
-            })
-            dispatch({
-                type: "Navigate",
-                payload: {
-                    href: urls.identity.confirmation
-                }
-            });
-        },
-        async createAuthenticationResponse(spec: {
-            request: icid.AuthenticationRequest
-            delegationTail: PublicKey,
-        }): Promise<icid.AuthenticationResponse> {
-            const signerSecretKeyHex = state.identities?.root?.sign?.secretKey.hex;
-            if ( ! signerSecretKeyHex) {
-                throw new Error("can't create DelegationChain without root signerSecretKeyHex")
-            }
-            const rootSignerKeyPair = tweetnacl.sign.keyPair.fromSecretKey(Uint8Array.from(hexToBytes(signerSecretKeyHex)))
-            const rootSignIdentity: SignIdentity = Ed25519KeyIdentity.fromKeyPair(
-                blobFromUint8Array(rootSignerKeyPair.publicKey),
-                blobFromUint8Array(rootSignerKeyPair.secretKey),
-            );
-            const parsedScope = icid.parseScopeString(spec.request.scope)
-            const response: icid.AuthenticationResponse = {
-                type: "AuthenticationResponse",
-                accessToken: icid.createBearerToken({
-                    delegationChain: await DelegationChain.create(
-                        rootSignIdentity,
-                        spec.delegationTail,
-                        new Date(Date.now() + Number(days(1))) /* 24hr expiry */,
-                        {
-                            targets: parsedScope.canisters.map(({principal}) => principal),
-                        }
-                    )
-                }),
-                expiresIn: 10000000,
-                tokenType: "bearer",
-            }
-            return response;
-        },
-        async createResponseRedirectUrl(request: icid.AuthenticationRequest): Promise<URL> {
-            const authResponse = await this.createAuthenticationResponse({
-                request,
-                delegationTail: {
-                    toDer() {
-                        return derBlobFromBlob(blobFromHex(request.sessionIdentity.hex))
-                    }
-                }
-            });
-            const oauth2Response = icid.toOAuth2(authResponse)
-            const redirectUrl = new URL(request.redirectUri);
-            for (const [key, value] of Object.entries(oauth2Response)) {
-                redirectUrl.searchParams.set(key, value);
-            }
-            return redirectUrl
-        },
-        consentToAuthenticationResponseProposal: function consent (spec: {
-            consentProposal: AuthenticationResponseConsentProposal,
-            consenter: {
-                publicKey: {
-                    hex: string
-                }
-            }
-        }) {
-            const { consentProposal } = spec;
-            console.debug('consentToAuthenticationResponseProposal', { consentProposal})
-            dispatch({
-                type: "AuthenticationRequestConsentReceived",
-                payload: {
-                    consent: {
-                        type: "AuthenticationRequestConsent",
-                        proposal: {
-                            request: consentProposal.request,
-                            attributedTo: spec.consenter
-                        },
-                        createdAt: { iso8601: (new Date).toISOString() },
-                    }
-                }
-            });
-        }
-    }
+    const rootIdentity = React.useMemo(
+      () => {
+        if ( ! state.identities.root.sign) { return; }
+        const rootSignerKeyPair = tweetnacl.sign.keyPair.fromSecretKey(
+          Uint8Array.from(hexToBytes(state.identities.root.sign.secretKey.hex)),
+        );
+        const rootSignIdentity: SignIdentity = Ed25519KeyIdentity.fromKeyPair(
+          blobFromUint8Array(rootSignerKeyPair.publicKey),
+          blobFromUint8Array(rootSignerKeyPair.secretKey),
+        );
+        return rootSignIdentity
+      },
+      [state.identities.root.sign],
+    )
+    const authenticationController = AuthenticationController({ urls });
+    /**
+     * Whenever there is a new location.search on this page, it might be an oauth2 AuthenticaitonRequest.
+     * For each new value of location.search, try to parse it as an AuthenticationRequest.
+     * If successful, dispatch AuthenticationRequestReceived so all state is updated for the new request.
+     */
     React.useEffect(
         () => {
             const searchParams = new URLSearchParams(location.search);
@@ -183,10 +93,6 @@ export default function DesignPhase0Route(props: {
         },
         [location.search]
     )
-    function MaybeTheme(props: { theme?: Theme, children: React.ReactNode }) {
-        if ( ! props.theme) { return <>{props.children}</> }
-        return <ThemeProvider theme={props.theme}>{props.children}</ThemeProvider>
-    }
     const consentProposal: undefined|AuthenticationResponseConsentProposal = (state.identities.root.publicKey && state.authentication.request) && {
         profile: { id: state.identities.root.publicKey },
         session: {
@@ -199,6 +105,7 @@ export default function DesignPhase0Route(props: {
         request: state.authentication.request,
     };
     const rootIdentityPublicKey = state.identities.root.publicKey;
+    const rootIdentitySign = state.identities.root.sign
     return <><MaybeTheme theme={props.theme}>
         <AuthenticationScreenLayout>
 
@@ -208,7 +115,7 @@ export default function DesignPhase0Route(props: {
             </Route>
             <Route exact path={`${path}/welcome`}>
                 <WelcomeScreen
-                    createProfile={idpController.createProfile}
+                    createProfile={() => authenticationController.createProfile().forEach(dispatch)}
                 />
             </Route>
             <Route exact path={urls.identity.confirmation} component={() => {
@@ -258,17 +165,23 @@ export default function DesignPhase0Route(props: {
                         </>
                     :   <><SessionConsentScreen
                         consentProposal={consentProposal}
-                        consent={() => idpController.consentToAuthenticationResponseProposal({
+                        consent={() => authenticationController.consentToAuthenticationResponseProposal({
                             consentProposal,
                             consenter: {
                                 publicKey: { hex: rootIdentityPublicKey.hex },
                             }
-                        })}
+                        }).forEach(dispatch)}
                         /></>
                 }
                 </>
             }} />
             <Route exact path={urls.response.confirmation}>
+                {
+                (! rootIdentity)
+                ? <>
+                  No session found. Please <a href="/">start over</a>
+                  </>
+                : <>
                 <AuthenticationResponseConfirmationScreen
                     redirectWithResponse={async () => {
                         const { authentication } = state;
@@ -276,10 +189,25 @@ export default function DesignPhase0Route(props: {
                         if ( ! request) {
                             throw new Error('authenticationRequest not set')
                         }
-                        const responseRedirectUrl = await idpController.createResponseRedirectUrl(request)
+                        const response = await authenticationController.createAuthenticationResponse({
+                            request,
+                            delegationTail: {
+                                toDer() {
+                                    return derBlobFromBlob(blobFromHex(request.sessionIdentity.hex))
+                                }
+                            },
+                            rootIdentity,
+                        })
+                        const responseRedirectUrl = icid.createResponseRedirectUrl(
+                          response,
+                          request.redirectUri,
+                        )
                         globalThis.location.assign(responseRedirectUrl.toString())
                     }}
                 />
+                  </>
+                }
+
             </Route>
             <NotFoundRoute />
         </Switch>
@@ -290,7 +218,6 @@ export default function DesignPhase0Route(props: {
         <details open>
             <summary>debug tools</summary>
             <pre>{JSON.stringify(state, null, 2)}</pre>
-            <button onClick={onClickAuthenticationRequestReceived}>AuthenticationRequestReceived</button>
             <button onClick={() => dispatch({ type: "reset" })}>reset state</button>
             <p>
                 <a href={path}>start over</a>
@@ -299,8 +226,11 @@ export default function DesignPhase0Route(props: {
     </MaybeTheme></>
 }
 
-/** return days since epoch as js Date object */
-function days(count: number) {
-    const msInOneDay = 1000 * 60 * 60 * 24
-    return new Date(msInOneDay * count);
+/**
+ * Wrap children in a material-ui ThemeProvider if a theme prop is provided,
+ * otherwise just render children.
+ */
+function MaybeTheme(props: { theme?: Theme, children: React.ReactNode }) {
+  if ( ! props.theme) { return <>{props.children}</> }
+  return <ThemeProvider theme={props.theme}>{props.children}</ThemeProvider>
 }

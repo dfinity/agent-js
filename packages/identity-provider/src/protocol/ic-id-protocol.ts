@@ -42,12 +42,14 @@ export function toOAuth2(message: AuthenticationResponse) {
     expiresIn: expires_in,
     tokenType: token_type,
     state,
+    scope,
   } = message;
   const oauth2AccessTokenResponse: OAuth2AccessTokenResponse = {
     access_token,
     expires_in,
     token_type,
     state,
+    scope,
   };
   return oauth2AccessTokenResponse;
 }
@@ -209,4 +211,32 @@ export function parseScopeString(scope: string): IParsedScopeString {
     return { principal };
   });
   return { canisters };
+}
+
+/**
+ * Convert an IParsedScopeString back to a space-delimited string like that used in AuthenticationResponse
+ */
+export function stringifyScope(scopeDescription: IParsedScopeString): string {
+  const scopeSegments = [...scopeDescription.canisters.map(cs => cs.principal.toText())];
+  return scopeSegments.join(' ');
+}
+
+/**
+ * Given a redirect_uri from an AuthenticationRequest, and the corresponding AuthenticationResponse,
+ * return a new URL that, when GET, sends AuthenticationResponse to redirect_uri.
+ */
+export function createResponseRedirectUrl(
+  authResponse: AuthenticationResponse,
+  requestRedirectUri: string,
+): URL {
+  const oauth2Response = toOAuth2(authResponse);
+  const redirectUrl = new URL(requestRedirectUri);
+  for (let [key, value] of Object.entries(oauth2Response)) {
+    if (typeof value === 'undefined') {
+      redirectUrl.searchParams.delete(key);
+    } else {
+      redirectUrl.searchParams.set(key, value);
+    }
+  }
+  return redirectUrl;
 }
