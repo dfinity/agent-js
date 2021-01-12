@@ -166,10 +166,10 @@ function renderMethod(canister: CanisterActor, name: string, idlFunc: IDL.FuncCl
 
   function selectResultDisplay(event: MouseEvent) {
     const target = event.target as HTMLButtonElement;
-    const displayType = target!.classList.value.replace(/btn (.*)-btn.*/g, '$1');
+    const displayType = target.classList.value.replace(/btn (.*)-btn.*/g, '$1');
     buttonsArray.forEach(button => button.classList.remove('active'));
     containers.forEach(container => (container.style.display = 'none'));
-    target!.classList.add('active');
+    target.classList.add('active');
     (left.querySelector(`.${displayType}-result`) as HTMLDivElement).style.display = 'flex';
   }
   buttonsArray.forEach(button => {

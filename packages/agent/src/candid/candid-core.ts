@@ -37,7 +37,8 @@ export class InputBox {
         }
         this.parse();
       });
-      ui.input.addEventListener('focus', () => {
+      ui.input.addEventListener('input', () => {
+        status.style.display = 'none';
         ui.input!.classList.remove('reject');
       });
     }
