@@ -86,7 +86,7 @@ export class Render extends IDL.Visitor<null, InputBox> {
     len.type = 'number';
     len.min = '0';
     len.max = '100';
-    len.style.width = '4rem';
+    len.style.width = '8rem';
     len.placeholder = 'len';
     len.classList.add('open');
     const container = document.createElement('div');
