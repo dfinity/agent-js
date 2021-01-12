@@ -211,7 +211,7 @@ textarea:focus {
   top: -0.1rem;
   right: 0;
 }
-.result:hover .result-buttons {
+.result:not(.error):hover .result-buttons {
   display: block;
 }
 .result-buttons .btn {

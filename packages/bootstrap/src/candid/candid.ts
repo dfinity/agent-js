@@ -7,9 +7,7 @@ class CanisterActor extends Actor {
 
 export function render(id: Principal, canister: CanisterActor) {
   document.getElementById('canisterId')!.innerText = `${id}`;
-  const sortedMethods = Actor.interfaceOf(canister)._fields.sort(([a], [b]) =>
-    a > b ? 1 : a < b ? -1 : 0,
-  );
+  const sortedMethods = Actor.interfaceOf(canister)._fields.sort(([a], [b]) => (a > b ? 1 : -1));
   for (const [name, func] of sortedMethods) {
     renderMethod(canister, name, func);
   }
@@ -160,22 +158,19 @@ function renderMethod(canister: CanisterActor, name: string, idlFunc: IDL.FuncCl
       left.appendChild(jsonContainer);
       jsonContainer.innerText = JSON.stringify(callResult);
     })().catch(err => {
-      left.classList.add('error');
+      resultDiv.classList.add('error');
       left.innerText = err.message;
       throw err;
     });
   }
 
   function selectResultDisplay(event: MouseEvent) {
-    const { target } = event;
-    // @ts-ignore
+    const target = event.target as HTMLButtonElement;
     const displayType = target!.classList.value.replace(/btn (.*)-btn.*/g, '$1');
     buttonsArray.forEach(button => button.classList.remove('active'));
     containers.forEach(container => (container.style.display = 'none'));
-    // @ts-ignore
     target!.classList.add('active');
-    // @ts-ignore
-    left.querySelector(`.${displayType}-result`)!.style.display = 'flex';
+    (left.querySelector(`.${displayType}-result`) as HTMLDivElement).style.display = 'flex';
   }
   buttonsArray.forEach(button => {
     button.addEventListener('click', selectResultDisplay);
@@ -183,16 +178,7 @@ function renderMethod(canister: CanisterActor, name: string, idlFunc: IDL.FuncCl
   });
 
   buttonRandom.addEventListener('click', () => {
-    const args = inputs.map(arg => {
-      const value = arg.parse({ random: true });
-      // TODO: Figure this out
-      // try {
-      //   // @ts-ignore
-      //   arg.ui.input.placeholder = value;
-      //   // tslint:disable-next-line:no-empty
-      // } catch (e) {}
-      return value;
-    });
+    const args = inputs.map(arg => arg.parse({ random: true }));
     const isReject = inputs.some(arg => arg.isRejected());
     if (isReject) {
       return;
