@@ -75,7 +75,6 @@ export class InputBox {
   }
   public render(dom: HTMLElement): void {
     const container = document.createElement('span');
-    container.style.position = 'relative';
     const label = document.createElement('label');
     if (this.label) {
       label.innerText = this.label;

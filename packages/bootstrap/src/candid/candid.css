@@ -120,10 +120,12 @@ label.small {
 input[type='checkbox'] ~ .popup-form {
   padding-left: var(--pad-md);
 }
-.input-container > span > .popup-form {
+.input-container > span > .popup-form,
+.ui-result > span > .popup-form {
   padding-left: 0;
 }
-.input-container span:not(.status) {
+.input-container span:not(.status),
+.ui-result span:not(.status) {
   position: relative;
   overflow-clip: none;
   overflow-y: visible;
@@ -355,7 +357,8 @@ textarea:focus {
     padding: var(--pad-sm) var(--pad-md);
   }
 
-  .input-container span:not(:first-child):not(.status) {
+  .input-container span:not(:first-child):not(.status),
+  .ui-result span:not(:first-child):not(.status) {
     margin-left: var(--pad-md);
   }
   input:not([type='checkbox']),

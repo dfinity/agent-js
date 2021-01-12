@@ -115,20 +115,37 @@ function renderMethod(canister: CanisterActor, name: string, idlFunc: IDL.FuncCl
       }
       left.innerHTML = '';
 
+      let activeDisplayType = '';
+      buttonsArray.forEach(button => {
+        if (button.classList.contains('active')) {
+          activeDisplayType = button.classList.value.replace(/btn (.*)-btn.*/g, '$1');
+        }
+      });
+      function setContainerVisibility(displayType: string) {
+        if (displayType === activeDisplayType) {
+          return 'flex';
+        }
+        return 'none';
+      }
+      function decodeSpace(str: string) {
+        return str.replace(/&nbsp;/g, ' ');
+      }
+
       const textContainer = document.createElement('div');
       textContainer.className = 'text-result';
       containers.push(textContainer);
+      textContainer.style.display = setContainerVisibility('text');
       left.appendChild(textContainer);
       const text = encodeStr(IDL.FuncClass.argsToString(idlFunc.retTypes, result));
-      textContainer.innerHTML = text.replace(/&nbsp;/g, ' ');
+      textContainer.innerHTML = decodeSpace(text);
       const showArgs = encodeStr(IDL.FuncClass.argsToString(idlFunc.argTypes, args));
-      log(`› ${name}${showArgs}`);
-      log(text);
+      log(decodeSpace(`› ${name}${showArgs}`));
+      log(decodeSpace(text));
 
       const uiContainer = document.createElement('div');
       uiContainer.className = 'ui-result';
       containers.push(uiContainer);
-      uiContainer.style.display = 'none';
+      uiContainer.style.display = setContainerVisibility('ui');
       left.appendChild(uiContainer);
       idlFunc.retTypes.forEach((arg, ind) => {
         const box = UI.renderInput(arg);
@@ -139,7 +156,7 @@ function renderMethod(canister: CanisterActor, name: string, idlFunc: IDL.FuncCl
       const jsonContainer = document.createElement('div');
       jsonContainer.className = 'json-result';
       containers.push(jsonContainer);
-      jsonContainer.style.display = 'none';
+      jsonContainer.style.display = setContainerVisibility('json');
       left.appendChild(jsonContainer);
       jsonContainer.innerText = JSON.stringify(callResult);
     })().catch(err => {
@@ -167,13 +184,13 @@ function renderMethod(canister: CanisterActor, name: string, idlFunc: IDL.FuncCl
 
   buttonRandom.addEventListener('click', () => {
     const args = inputs.map(arg => {
-      // TODO: Figure this out
       const value = arg.parse({ random: true });
-      try {
-        // @ts-ignore
-        arg.ui.input.placeholder = value;
-        // tslint:disable-next-line:no-empty
-      } catch (e) {}
+      // TODO: Figure this out
+      // try {
+      //   // @ts-ignore
+      //   arg.ui.input.placeholder = value;
+      //   // tslint:disable-next-line:no-empty
+      // } catch (e) {}
       return value;
     });
     const isReject = inputs.some(arg => arg.isRejected());
