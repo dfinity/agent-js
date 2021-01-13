@@ -6,6 +6,8 @@ import {
   IdentityProviderStateType,
 } from './state';
 import { StateToStringCodec } from './state-serialization';
+import { fold } from 'fp-ts/lib/Either';
+import { pipe } from 'fp-ts/lib/function';
 
 describe('@dfinity/identity-provider/design-phase-0/state-serialization', () => {
   it('works', () => {
@@ -30,6 +32,17 @@ describe('@dfinity/identity-provider/design-phase-0/state-serialization', () => 
       },
     };
     const codec = StateToStringCodec(IdentityProviderStateType);
-    expect(codec.decode(codec.encode(sampleState))).toStrictEqual(sampleState);
+    const encoded = codec.encode(sampleState);
+    expect(
+      pipe(
+        codec.decode(encoded),
+        fold(
+          errors => {
+            throw errors;
+          },
+          s => s,
+        ),
+      ),
+    ).toStrictEqual(sampleState);
   });
 });

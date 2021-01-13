@@ -21,16 +21,14 @@ export type AuthenticationRequest = {
   scope: string;
 };
 
-export interface AuthenticationResponse {
+export type AuthenticationResponse = {
   type: 'AuthenticationResponse';
   accessToken: string;
   tokenType: 'bearer';
   expiresIn: number;
-  // @TODO - implement
   state?: string;
-  // @TODO - implement
   scope?: string;
-}
+};
 
 /**
  * Convert an IC-IDP-internal message to an OAuth2-compliant one.e

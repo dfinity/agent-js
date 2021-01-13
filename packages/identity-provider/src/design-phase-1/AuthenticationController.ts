@@ -2,28 +2,45 @@ import { IdentityProviderAction } from './state/action';
 import { Ed25519KeyIdentity, DelegationChain } from '@dfinity/authentication';
 import { hexEncodeUintArray, hexToBytes } from 'src/bytes';
 import * as icid from '../protocol/ic-id-protocol';
-import { PublicKey, SignIdentity, blobFromUint8Array } from '@dfinity/agent';
+import {
+  PublicKey,
+  SignIdentity,
+  blobFromUint8Array,
+  derBlobFromBlob,
+  blobFromHex,
+} from '@dfinity/agent';
 import tweetnacl from 'tweetnacl';
-import { AuthenticationResponseConsentProposal } from './ui/screens/SessionConsentScreen';
+import { AuthenticationResponseConsentProposal } from './state/reducers/authentication';
 
-interface IAuthenticationController {
+/**
+ * 'Controllers' can be useful as an Abstraction for state mutations that all have to do with a common use case or business requirement.
+ * A Controller method can be be thought of as taking a request and returning some Effects. Here we define 'EffectCreator' to refer to this pattern.
+ * A controller with many methods is a map of names to EffectCreators, i.e. an EffectCreatorMap.
+ * This separates concerns of creating effects and publishing them.
+ * Assert that 'controller objects' extend EffectCreatorMap to be sure that all controller methods return effects (instead of having untyped side-effects of the invocation, e.g. a dispatch())
+ */
+type EffectCreator<Effect> = (...args: any[]) => Promise<Effect[]>;
+type EffectCreatorMap<EffectCreatorNames extends string, Effect extends { type: string }> = {
+  [key in EffectCreatorNames]: EffectCreator<Effect>;
+};
+
+interface IAuthenticationController extends EffectCreatorMap<string, IdentityProviderAction> {
   /**
    * Create a brand new root profile for a new end-user
    */
-  createProfile(): IdentityProviderAction[];
-  createAuthenticationResponse(spec: {
-    request: icid.AuthenticationRequest;
-    delegationTail: PublicKey;
-    rootIdentity: SignIdentity;
-  }): Promise<icid.AuthenticationResponse>;
+  createProfile(): Promise<IdentityProviderAction[]>;
+  /**
+   * Respond to the AuthenticationRequest with an AuthenticationResponse.
+   * Send the AuthenticationResponse to redirect_uri via Navigate effect
+   */
+  respond(spec: {
+    request: Pick<icid.AuthenticationRequest, 'redirectUri'>;
+    response: icid.AuthenticationResponse;
+  }): Promise<IdentityProviderAction[]>;
   consentToAuthenticationResponseProposal(spec: {
-      consentProposal: AuthenticationResponseConsentProposal,
-      consenter: {
-          publicKey: {
-              hex: string
-          }
-      }
-  }): IdentityProviderAction[]
+    consentProposal: AuthenticationResponseConsentProposal;
+    consenter: SignIdentity;
+  }): Promise<IdentityProviderAction[]>;
 }
 
 export default function AuthenticationController(options: {
@@ -35,7 +52,7 @@ export default function AuthenticationController(options: {
 }): IAuthenticationController {
   const { urls } = options;
   const idpController: IAuthenticationController = {
-    createProfile() {
+    async createProfile() {
       const profileSignIdentity = Ed25519KeyIdentity.generate();
       const profileCreated: IdentityProviderAction = {
         type: 'ProfileCreated',
@@ -62,18 +79,40 @@ export default function AuthenticationController(options: {
       const effects = [profileCreated, delegationRootSignerChanged, navigate];
       return effects;
     },
-    async createAuthenticationResponse(spec: {
-      request: icid.AuthenticationRequest;
-      delegationTail: PublicKey;
-      rootIdentity: SignIdentity;
-    }): Promise<icid.AuthenticationResponse> {
-      const parsedScope = icid.parseScopeString(spec.request.scope);
+    async respond(spec: {
+      request: Pick<icid.AuthenticationRequest, 'redirectUri'>;
+      response: icid.AuthenticationResponse;
+    }): Promise<IdentityProviderAction[]> {
+      const responseRedirectUrl = icid.createResponseRedirectUrl(
+        spec.response,
+        spec.request.redirectUri,
+      );
+      const navigateToRedirectUriWithResponse: IdentityProviderAction = {
+        type: 'Navigate',
+        payload: {
+          href: responseRedirectUrl.toString(),
+        },
+      };
+      return [navigateToRedirectUriWithResponse];
+    },
+    consentToAuthenticationResponseProposal: async function consent(spec: {
+      consentProposal: AuthenticationResponseConsentProposal;
+      consenter: SignIdentity;
+    }) {
+      const { consentProposal } = spec;
+      console.debug('consentToAuthenticationResponseProposal', { consentProposal });
+      const parsedScope = icid.parseScopeString(spec.consentProposal.request.scope);
+      const delegationTail: PublicKey = {
+        toDer() {
+          return derBlobFromBlob(blobFromHex(spec.consentProposal.request.sessionIdentity.hex));
+        },
+      };
       const response: icid.AuthenticationResponse = {
         type: 'AuthenticationResponse',
         accessToken: icid.createBearerToken({
           delegationChain: await DelegationChain.create(
-            spec.rootIdentity,
-            spec.delegationTail,
+            spec.consenter,
+            delegationTail,
             new Date(Date.now() + Number(days(1))) /* 24hr expiry */,
             {
               targets: parsedScope.canisters.map(({ principal }) => principal),
@@ -84,33 +123,28 @@ export default function AuthenticationController(options: {
         tokenType: 'bearer',
         scope: icid.stringifyScope(parsedScope),
       };
-      return response;
-    },
-    consentToAuthenticationResponseProposal: function consent (spec: {
-      consentProposal: AuthenticationResponseConsentProposal,
-      consenter: {
-          publicKey: {
-              hex: string
-          }
-      }
-  }) {
-      const { consentProposal } = spec;
-      console.debug('consentToAuthenticationResponseProposal', { consentProposal})
       const consentReceivedAction: IdentityProviderAction = {
-        type: "AuthenticationRequestConsentReceived",
+        type: 'AuthenticationRequestConsentReceived',
         payload: {
-            consent: {
-                type: "AuthenticationRequestConsent",
-                proposal: {
-                    request: consentProposal.request,
-                    attributedTo: spec.consenter
-                },
-                createdAt: { iso8601: (new Date).toISOString() },
-            }
-        }
-    }
-    return [consentReceivedAction]
-  }
+          consent: {
+            type: 'AuthenticationRequestConsent',
+            proposal: spec.consentProposal,
+            createdAt: { iso8601: new Date().toISOString() },
+            attributedTo: {
+              publicKey: {
+                hex: hexEncodeUintArray(spec.consenter.getPublicKey().toDer()),
+              },
+            },
+          },
+        },
+      };
+
+      const responsePreparedAction: IdentityProviderAction = {
+        type: 'AuthenticationResponsePrepared',
+        payload: response,
+      };
+      return [consentReceivedAction];
+    },
   };
   return idpController;
 }

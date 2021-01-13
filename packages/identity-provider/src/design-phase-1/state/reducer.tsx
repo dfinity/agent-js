@@ -1,6 +1,6 @@
 import * as React from "react";
 import { IdentityProviderState as State, IdentityProviderState } from "./state";
-import { IdentityProviderAction as Action, IdentityProviderAction } from "./action";
+import { IdentityProviderAction as Action } from "./action";
 import { hexEncodeUintArray } from "../../bytes";
 import produce from "immer";
 import { combineReducers } from "redux";
@@ -13,10 +13,9 @@ import * as rootIdentityReducer from "./reducers/rootIdentity";
  * Put everything here that should happen as a side effect to an action.
  * @param dispatch 
  */
-export function effector(dispatch: React.Dispatch<IdentityProviderAction>): React.Dispatch<IdentityProviderAction> {
-    return (action) => {
-        dispatch(action);
-        console.log('effector', action)
+export function effector(forwardDispatch: React.Dispatch<Action>): React.Dispatch<Action> {
+    function dispatch (action: Action) {
+        console.log('main reducer effector', action)
         switch(action.type) {
             case "Navigate":
                 globalThis.location.assign(action.payload.href)
@@ -24,8 +23,28 @@ export function effector(dispatch: React.Dispatch<IdentityProviderAction>): Reac
             case "StateStored":
                 console.debug('StateStored', action);
                 break;
+            case "AuthenticationRequestReceived":
+            case "AuthenticationResponsePrepared":
+            case "AuthenticationRequestConsentReceived":
+                authenticationReducer.effector(innerDispatch)(action);
+                break;
+            case "ProfileCreated":
+            case "reset":
+            case "DelegationRootSignerChanged":
+                break;
+            default:
+                let x: never = action
         }
     }
+    /**
+     * Dispatch actions back through `dispatch` + forward to `forwardDispatch`
+     * This is meant to be provided to delegee dispatchers.
+     */
+    function innerDispatch (action: Action) {
+        forwardDispatch(action);
+        dispatch(action);
+    }
+    return dispatch
 }
 
 export const reduce = combineReducers({

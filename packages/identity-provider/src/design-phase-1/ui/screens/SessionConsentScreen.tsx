@@ -1,26 +1,12 @@
 import * as React from "react";
 import { Button } from "src/components/Button";
-import { hexEncodeUintArray } from "src/bytes";
 import SimpleScreenLayout from "../layout/SimpleScreenLayout";
 import { Typography, makeStyles, Divider, Theme, createStyles, styled } from "@material-ui/core";
-import Skeleton from "@material-ui/lab/Skeleton";
 import EnhancedEncryptionIcon from '@material-ui/icons/EnhancedEncryption';
-import withStyles, { Styles, StyleRulesCallback } from "@material-ui/core/styles/withStyles";
-import { Principal } from "@dfinity/agent";
-import { AuthenticationRequest } from "src/protocol/ic-id-protocol";
-
-interface IDerEncodable {
-    toDer(): ArrayBuffer|undefined
-}
-
-export interface AuthenticationResponseConsentProposal {
-    session: IDerEncodable;
-    profile: { id: {hex: string}}
-    scope: {
-        canisters: Array<{ principal: Principal }>
-    }
-    request: AuthenticationRequest
-}
+import { parseScopeString } from "src/protocol/ic-id-protocol";
+import { AuthenticationResponseConsentProposal, Signer } from "src/design-phase-1/state/reducers/authentication";
+import { hexToBytes, hexEncodeUintArray } from "src/bytes";
+import tweetnacl from "tweetnacl";
 
 export default function (props: {
     consentProposal: AuthenticationResponseConsentProposal
@@ -101,21 +87,27 @@ function HexFormatter(props: {
     </>
 }
 
+/**
+ * Given a 'Signer' (description of how to sign delegations), return
+ * the publicKey of the Signer.
+ */
+function signerToPublicKey(signer: Signer): ArrayBuffer {
+    switch (signer.type) {
+        case "Ed25519Signer":
+            const secretKey = Uint8Array.from(hexToBytes(signer.secretKey.hex))
+            const keyPair = tweetnacl.sign.keyPair.fromSecretKey(secretKey)
+            return keyPair.publicKey
+    }
+    throw new Error('Unexpected signer.type')
+}
+
 function Body(props: {
     consentProposal: AuthenticationResponseConsentProposal
 }) {
     const styles = makeStyles(styler)()
     const { consentProposal } = props;
-    const { session } = consentProposal;
-    const sessionDerHex: string|undefined = React.useMemo(
-        () => {
-            const der = session.toDer()
-            if (!der) return;
-            const hex = hexEncodeUintArray(new Uint8Array(der));
-            return hex;
-        },
-        [session]
-    )
+    const sessionDerHex = consentProposal.request.sessionIdentity.hex
+    const signerPublicKey = signerToPublicKey(consentProposal.signer);
     return <>
         <Typography variant="subtitle1" gutterBottom>
             You have chosen to Sign In with
@@ -126,7 +118,7 @@ function Body(props: {
                     <tr>
                         <th scope="row">Profile ID</th>
                         <td>
-                            <HexFormatter hex={consentProposal.profile.id.hex} />
+                            <HexFormatter hex={hexEncodeUintArray(new Uint8Array(signerPublicKey))} />
                         </td>
                     </tr>
                     <tr>
@@ -143,7 +135,7 @@ function Body(props: {
                         <th scope="row">Canisters</th>
                         <td>
                             <ul>
-                                {props.consentProposal.scope.canisters.map(({principal}, i) => {
+                                {parseScopeString(props.consentProposal.request.scope).canisters.map(({principal}, i) => {
                                     return <li key={i}>{principal.toText()}</li>
                                 })}
                             </ul>

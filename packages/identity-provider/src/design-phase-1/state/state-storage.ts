@@ -1,4 +1,9 @@
 import { Codec } from './state-serialization';
+import { ValidationError } from 'io-ts';
+import { PathReporter } from 'io-ts/lib/PathReporter';
+import { pipe } from 'fp-ts/lib/function';
+import * as t from 'io-ts';
+import { fold, left } from 'fp-ts/lib/Either';
 
 export interface IStorage<T> {
   get(): T;
@@ -9,7 +14,18 @@ export function SerializedStorage<A, O>(oStorage: IStorage<O>, codec: Codec<A, u
   return Object.freeze({ get, set });
   function get() {
     const stored = oStorage.get();
-    const decoded = codec.decode(stored);
+    if (!stored) {
+      throw new NotFoundError();
+    }
+    const decoded = pipe(
+      codec.decode(stored),
+      fold(
+        errors => {
+          throw new SerializedStateDecodingError('error decoding SerializedStorage', errors);
+        },
+        state => state,
+      ),
+    );
     console.debug('SerializedStorage.get', { stored, decoded });
     return decoded;
   }
@@ -21,6 +37,15 @@ export function SerializedStorage<A, O>(oStorage: IStorage<O>, codec: Codec<A, u
 }
 
 export class NotFoundError extends Error {}
+/** Error decoding SerializedState back to State */
+export class SerializedStateDecodingError extends Error {
+  constructor(message: string, public validationErrors: ValidationError[]) {
+    super();
+  }
+  reportErrors(): string[] {
+    return PathReporter.report(left(this.validationErrors));
+  }
+}
 
 export function LocalStorageKey(
   key: string,

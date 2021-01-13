@@ -2,7 +2,7 @@ import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Route, Switch, useRouteMatch, useLocation, Redirect  } from 'react-router-dom';
 import WelcomeScreen from './screens/WelcomeScreen';
 import IdentityConfirmationScreen from './screens/IdentityConfirmationScreen';
-import {default as SessionConsentScreen, AuthenticationResponseConsentProposal} from './screens/SessionConsentScreen';
+import {default as SessionConsentScreen} from './screens/SessionConsentScreen';
 import {default as AuthenticationResponseConfirmationScreen} from './screens/AuthenticationResponseConfirmationScreen';
 import { SerializedStorage, IStorage, LocalStorageKey, NotFoundError } from '../state/state-storage';
 import { useStateStorage } from '../state/state-storage-react';
@@ -22,6 +22,7 @@ const stateStorage = SerializedStorage(
     StateToStringCodec(IdentityProviderStateType),
 )
 import AuthenticationController from '../AuthenticationController';
+import { AuthenticationResponseConsentProposal } from '../state/reducers/authentication';
 
 export default function DesignPhase0Route(props: {
     NotFoundRoute: React.ComponentType
@@ -93,19 +94,16 @@ export default function DesignPhase0Route(props: {
         },
         [location.search]
     )
-    const consentProposal: undefined|AuthenticationResponseConsentProposal = (state.identities.root.publicKey && state.authentication.request) && {
-        profile: { id: state.identities.root.publicKey },
-        session: {
-            toDer() {
-                const delegationTarget = state?.delegation?.target
-                return delegationTarget ? Uint8Array.from(hexToBytes(delegationTarget.publicKey.hex)) : undefined
-            }
+    const consentProposal: undefined|AuthenticationResponseConsentProposal = (state.identities.root.sign && state.authentication.request) && {
+        signer: {
+            type: "Ed25519Signer",
+            secretKey: state.identities.root.sign.secretKey
         },
-        scope: icid.parseScopeString(state.authentication.request.scope),
         request: state.authentication.request,
     };
     const rootIdentityPublicKey = state.identities.root.publicKey;
     const rootIdentitySign = state.identities.root.sign
+    const authenticationRequest = state.authentication.request
     return <><MaybeTheme theme={props.theme}>
         <AuthenticationScreenLayout>
 
@@ -115,7 +113,7 @@ export default function DesignPhase0Route(props: {
             </Route>
             <Route exact path={`${path}/welcome`}>
                 <WelcomeScreen
-                    createProfile={() => authenticationController.createProfile().forEach(dispatch)}
+                    createProfile={async () => (await authenticationController.createProfile()).forEach(dispatch)}
                 />
             </Route>
             <Route exact path={urls.identity.confirmation} component={() => {
@@ -151,9 +149,9 @@ export default function DesignPhase0Route(props: {
                 }
                 return <>
                 {
-                    ( ! rootIdentityPublicKey)
+                    ( ! rootIdentity)
                         ? <>
-                            No Profile Found. Please <a href="/">start over</a>
+                            No rootIdentity Found. Please <a href="/">start over</a>
                         </>
                     : ( ! state.authentication.request)
                         ? <>
@@ -165,12 +163,10 @@ export default function DesignPhase0Route(props: {
                         </>
                     :   <><SessionConsentScreen
                         consentProposal={consentProposal}
-                        consent={() => authenticationController.consentToAuthenticationResponseProposal({
+                        consent={async () => (await authenticationController.consentToAuthenticationResponseProposal({
                             consentProposal,
-                            consenter: {
-                                publicKey: { hex: rootIdentityPublicKey.hex },
-                            }
-                        }).forEach(dispatch)}
+                            consenter: rootIdentity
+                        })).forEach(dispatch)}
                         /></>
                 }
                 </>
@@ -181,33 +177,29 @@ export default function DesignPhase0Route(props: {
                 ? <>
                   No session found. Please <a href="/">start over</a>
                   </>
+                : (!state.authentication.request)
+                ? <>
+                  No AuthenticationRequest found. Please <a href="/">start over</a>
+                  </>
+                : (!state.authentication.response)
+                ? <>
+                No AuthenticationResponse found. Please <a href="/">start over</a>
+                </>
                 : <>
                 <AuthenticationResponseConfirmationScreen
-                    redirectWithResponse={async () => {
-                        const { authentication } = state;
-                        const { request } = authentication
-                        if ( ! request) {
-                            throw new Error('authenticationRequest not set')
-                        }
-                        const response = await authenticationController.createAuthenticationResponse({
+                    request={state.authentication.request}
+                    response={state.authentication.response}
+                    redirectWithResponse={async ({request, response}) => {
+                        for (const action of await authenticationController.respond({
                             request,
-                            delegationTail: {
-                                toDer() {
-                                    return derBlobFromBlob(blobFromHex(request.sessionIdentity.hex))
-                                }
-                            },
-                            rootIdentity,
-                        })
-                        const responseRedirectUrl = icid.createResponseRedirectUrl(
-                          response,
-                          request.redirectUri,
-                        )
-                        globalThis.location.assign(responseRedirectUrl.toString())
+                            response,
+                        })) {
+                          dispatch(action);
+                        }
                     }}
                 />
                   </>
                 }
-
             </Route>
             <NotFoundRoute />
         </Switch>

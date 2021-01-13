@@ -6,11 +6,17 @@ import { Typography, makeStyles } from "@material-ui/core";
 import Skeleton from "@material-ui/lab/Skeleton";
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import VerifiedUserIcon from '@material-ui/icons/VerifiedUser';
-
+import * as icid from "../../../protocol/ic-id-protocol"
 export default function (props: {
-    redirectWithResponse(): void;
+    request: icid.AuthenticationRequest
+    response: icid.AuthenticationResponse
+    redirectWithResponse(spec: {
+        request: icid.AuthenticationRequest
+        response: icid.AuthenticationResponse
+    }): void;
 }) {
-
+    const { request, response } = props;
+    console.log('AuthenticationResponseConfirmationScreen', { request, response })
     return <>
         <div data-test-id="authentication-response-confirmation-screen">
             <SimpleScreenLayout {...{
@@ -21,7 +27,7 @@ export default function (props: {
                 </>,
                 CallToAction: () => <>
                     <Button href="/">Start over</Button>
-                    <Button role="button" variant="outlined" color="primary" data-test-id="redirect-with-response" onClick={props.redirectWithResponse}>Finish</Button>
+                    <Button role="button" variant="outlined" color="primary" data-test-id="redirect-with-response" onClick={() => props.redirectWithResponse({ request, response })}>Finish</Button>
                 </>,
             }} />
         </div>
