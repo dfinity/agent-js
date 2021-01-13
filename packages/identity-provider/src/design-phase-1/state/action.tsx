@@ -2,10 +2,18 @@ import { StateStoredAction } from "./state-storage-react";
 import * as icid from "../../protocol/ic-id-protocol";
 import { Jsonnable } from "./json";
 import { Action as AuthenticationAction } from "./reducers/authentication";
+import { Action as WebAuthnAction } from "./reducers/webauthn.reducer";
+import { EffectRequested, EffectLifecycleAction } from "./reducer-effects";
 
-export type IdentityProviderAction =
+export type AnyStandardAction = {
+    type: string;
+    payload?: any;
+}
+
+export type IdentityProviderActionSync =
 | AuthenticationAction
 | StateStoredAction
+| WebAuthnAction
 | { type: "ProfileCreated",
     payload: {
         publicKey: {
@@ -26,4 +34,9 @@ export type IdentityProviderAction =
     }
 }
 
-export type JsonnableAction = Jsonnable<IdentityProviderAction>
+export type JsonnableAction = Jsonnable<IdentityProviderActionSync>
+
+export type IdentityProviderAction =
+| IdentityProviderActionSync
+| EffectLifecycleAction
+| EffectRequested<IdentityProviderActionSync>

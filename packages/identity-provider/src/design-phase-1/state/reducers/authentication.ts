@@ -11,6 +11,7 @@ import {
 } from '@dfinity/agent';
 import tweetnacl from 'tweetnacl';
 import { hexToBytes } from '../../../bytes';
+import { EffectRequested } from '../reducer-effects';
 
 const AuthenticationRequestCodec = t.type({
   type: t.literal('AuthenticationRequest'),
@@ -131,35 +132,26 @@ export function init(): State {
   };
 }
 
-function AuthenticationRequestResponder(spec: { delegationChain: DelegationChain }) {
-  return (request: icid.AuthenticationRequest): icid.AuthenticationResponse => {
-    const accessToken = icid.createBearerToken({
-      delegationChain: spec.delegationChain,
-    });
-    const expiresIn = (() => {
-      const delegationChainExpirations = spec.delegationChain.delegations.map(({ delegation }) =>
-        BigInt(delegation.expiration.toString()),
-      );
-      const minExpirationNanoseconds = delegationChainExpirations.reduce((prev, delegation) => {
-        if (!prev) {
-          return delegation;
-        }
-        // return min;
-        return prev < delegation ? prev : delegation;
-      });
-      const nowNanoseconds = BigInt(Date.now()) * BigInt(1e9);
-      const expiresInNanoseconds = minExpirationNanoseconds - nowNanoseconds;
-      const expiresInSeconds = expiresInNanoseconds / BigInt(1e9);
-      return Number(expiresInSeconds);
-    })();
-    const response: icid.AuthenticationResponse = {
-      type: 'AuthenticationResponse',
-      accessToken,
-      tokenType: 'bearer',
-      expiresIn,
-    };
-    return response;
-  };
+export function effect(action: Action): undefined | EffectRequested<Action> {
+  switch (action.type) {
+    case 'AuthenticationRequestConsentReceived':
+      return {
+        type: 'EffectRequested',
+        payload: {
+          async effect() {
+            const consent = action.payload.consent;
+            const authenticationResponse = await respond({
+              consent: action.payload.consent,
+            });
+            const responsePrepared: Action = {
+              type: 'AuthenticationResponsePrepared',
+              payload: authenticationResponse,
+            };
+            return [responsePrepared];
+          },
+        },
+      };
+  }
 }
 
 /**

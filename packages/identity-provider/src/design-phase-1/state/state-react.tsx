@@ -1,61 +1,29 @@
 import * as React from "react";
-import * as reducer from "./reducer";
-import { IdentityProviderState } from "./state";
-import { IdentityProviderAction } from "./action";
-
-/**
- * React Hook to useState for IdentityProvider, with async effects + reducer.
- * @todo(bengo): Make this delegate to the more-generic useReducer below.
- */
-export function useState(initialState?: IdentityProviderState) {
-    const [state, reducerDispatch] = React.useReducer(reducer.reduce, initialState, reducer.init)
-    const dispatch: React.Dispatch<IdentityProviderAction> = (action) => {
-        reducerDispatch(action);
-        reducer.effector(dispatch)(action);
-    }
-    return [state, dispatch] as const;
-}
-
-export interface IReducerObject<State, Action> {
-    init(): State
-    reduce(state: State, action: Action): State
-    effect(action: Action): undefined|Promise<Action[]>
-  }
-  
-type EffectAction<T=any> =
-| { type: "EffectStart", payload: { id: string, promise: Promise<T> }}
-| { type: "EffectEnd", payload: { id: string, promise: Promise<T> }}
+import { IEffectiveReducer, handleEffect, EffectRequested, EffectLifecycleAction } from "./reducer-effects";
+import { AnyStandardAction } from "./action";
 
 /**
  * Use a reducer that also has init() and effect()
  * @param reducer 
  */
-export function useReducer<S, A>(reducer: IReducerObject<S, A|EffectAction>): [S, React.Dispatch<A>] {
-    const [state, reducerDispatch] = React.useReducer(reducer.reduce, undefined, reducer.init);
-    async function dispatch (action: A|EffectAction): Promise<void> {
+export function useReducer<
+  K extends string,
+  S extends Record<K,any>,
+  SyncAction extends AnyStandardAction,
+>(
+  reducer: IEffectiveReducer<S, (EffectLifecycleAction|SyncAction)>,
+  initArg?: S|undefined
+): [S, React.Dispatch<(EffectLifecycleAction|SyncAction)>] {
+    const [state, reducerDispatch] = React.useReducer(reducer.reduce, initArg || reducer.init());
+    async function dispatch(action: EffectLifecycleAction|SyncAction): Promise<void> {
       reducerDispatch(action);
-      const effectPromise = reducer.effect(action);
-      const effectId = Math.random().toString().slice(2)
-      if (effectPromise) {
-        dispatch({
-          type: "EffectStart",
-          payload: {
-            id: effectId,
-            promise: effectPromise
-          }
-        });
-        for (const effect of (await effectPromise)) {
-          dispatch(effect);
+      const effect = reducer.effect(action);
+      if (effect) {
+        switch (effect.type) {
+          case "EffectRequested":
+            await handleEffect(reducerDispatch, effect as EffectRequested<SyncAction>)
         }
-        dispatch({
-          type: "EffectEnd",
-          payload: {
-            id: effectId,
-            promise: effectPromise
-          }
-        })
       }
     }
     return [state, dispatch]
   }
-  

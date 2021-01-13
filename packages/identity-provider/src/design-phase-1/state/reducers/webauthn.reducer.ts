@@ -1,5 +1,5 @@
 import { WebAuthnIdentity } from '@dfinity/authentication';
-import { IReducerObject } from '../state-react';
+import { IEffectiveReducer, EffectRequested } from '../reducer-effects';
 import { hexEncodeUintArray, hexToBytes } from '../../../bytes';
 
 export interface State {}
@@ -7,7 +7,6 @@ export interface State {}
 export type Action =
   | {
       type: 'WebAuthn/reset';
-      payload: undefined;
     }
   | {
       type: 'WebAuthn/publicKeyCredentialRequested';
@@ -30,7 +29,7 @@ export default function WebAuthnReducer(spec: {
   WebAuthn: {
     create(): Promise<WebAuthnIdentity>;
   };
-}): IReducerObject<State, Action> {
+}): IEffectiveReducer<State, Action> {
   return Object.freeze({ init, reduce, effect });
   function init(): State {
     return {};
@@ -43,25 +42,31 @@ export default function WebAuthnReducer(spec: {
     }
     return state;
   }
-  function effect(action: Action): undefined | Promise<Action[]> {
+  function effect(action: Action): undefined | EffectRequested<Action> {
     switch (action.type) {
       case 'WebAuthn/publicKeyCredentialRequested':
-        return (async () => {
-          const webAuthnIdentity = await spec.WebAuthn.create();
-          const publicKeyCredentialCreated: Action = {
-            type: 'WebAuthn/publicKeyCredentialCreated' as const,
-            payload: {
-              credential: {
-                id: { hex: 'todoCredentialId' },
-                publicKey: {
-                  hex: hexEncodeUintArray(webAuthnIdentity.getPublicKey().toDer()),
+        return {
+          type: 'EffectRequested',
+          payload: {
+            async effect() {
+              const webAuthnIdentity = await spec.WebAuthn.create();
+              const publicKeyCredentialCreated: Action = {
+                type: 'WebAuthn/publicKeyCredentialCreated' as const,
+                payload: {
+                  credential: {
+                    id: { hex: 'todoCredentialId' },
+                    publicKey: {
+                      hex: hexEncodeUintArray(webAuthnIdentity.getPublicKey().toDer()),
+                    },
+                  },
                 },
-              },
+              };
+              return [publicKeyCredentialCreated];
             },
-          };
-          return [publicKeyCredentialCreated];
-        })();
+          },
+        };
       default:
     }
+    return;
   }
 }

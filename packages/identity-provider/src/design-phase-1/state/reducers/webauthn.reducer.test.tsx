@@ -16,6 +16,7 @@ describe('@dfinity/identity-provider/design-phase-1/reducers/webauthn.reducer', 
         // store for assertions
         actions.push(action);
       },
+      // Stub this so it can be usd in node.js (which has no `globalThis.navigator.credentials`)
       WebAuthn: {
         async create() {
           return WebAuthnIdentity.fromJSON(JSON.stringify({

@@ -7,15 +7,15 @@ import {default as AuthenticationResponseConfirmationScreen} from './screens/Aut
 import { SerializedStorage, IStorage, LocalStorageKey, NotFoundError } from '../state/state-storage';
 import { useStateStorage } from '../state/state-storage-react';
 import { StateToStringCodec } from '../state/state-serialization';
-import { useState } from '../state/state-react';
 import { hexToBytes, hexEncodeUintArray } from 'src/bytes';
-import { Ed25519PublicKey , Ed25519KeyIdentity, DelegationChain} from '@dfinity/authentication';
+import { Ed25519PublicKey , Ed25519KeyIdentity, DelegationChain, WebAuthnIdentity} from '@dfinity/authentication';
 import * as icid from "../../protocol/ic-id-protocol"
 import { PublicKey, blobFromHex, derBlobFromBlob, SignIdentity, blobFromUint8Array } from '@dfinity/agent';
 import tweetnacl from "tweetnacl";
 import AuthenticationScreenLayout from './layout/AuthenticationScreenLayout';
 import { ThemeProvider, Theme } from '@material-ui/core';
 import { IdentityProviderStateType } from '../state/state';
+import IdentityProviderReducer, * as reducer from "../state/reducer";
 
 const stateStorage = SerializedStorage(
     LocalStorageKey('design-phase-1'),
@@ -23,6 +23,18 @@ const stateStorage = SerializedStorage(
 )
 import AuthenticationController from '../AuthenticationController';
 import { AuthenticationResponseConsentProposal } from '../state/reducers/authentication';
+import { useReducer } from '../state/state-react';
+
+function StubbedWebAuthn() {
+    return {
+        async create() {
+            return WebAuthnIdentity.fromJSON(JSON.stringify({
+                publicKey: hexEncodeUintArray(Uint8Array.from([])),
+                rawId: hexEncodeUintArray(Uint8Array.from([])),
+              }));
+        }
+    }
+}
 
 export default function DesignPhase0Route(props: {
     NotFoundRoute: React.ComponentType
@@ -46,7 +58,9 @@ export default function DesignPhase0Route(props: {
         },
         [stateStorage],
     )
-    const [state, dispatch] = useState(initialState)
+    const [state, dispatch] = useReducer(IdentityProviderReducer({
+        WebAuthn: StubbedWebAuthn(),
+    }), initialState)
     useStateStorage(stateStorage, state, dispatch);
     const urls = {
         identity: {
@@ -166,7 +180,10 @@ export default function DesignPhase0Route(props: {
                         consent={async () => (await authenticationController.consentToAuthenticationResponseProposal({
                             consentProposal,
                             consenter: rootIdentity
-                        })).forEach(dispatch)}
+                        })).forEach(action => {
+                            console.log('action from consent()', action)
+                            dispatch(action);
+                        })}
                         /></>
                 }
                 </>
