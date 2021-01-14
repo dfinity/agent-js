@@ -3,6 +3,7 @@ import { Jsonnable } from "./json";
 import { StateCodec as DelegationStateCodec } from "./reducers/delegation"
 import { StateCodec as RootIdentityStateCodec } from "./reducers/rootIdentity"
 import { StateCodec as AuthenticationStateCodec } from "./reducers/authentication"
+import { StateCodec as WebAuthnStateCodec } from "./reducers/webauthn.reducer"
 
 export const IdentityProviderStateType = t.type({
     authentication: AuthenticationStateCodec,
@@ -10,6 +11,7 @@ export const IdentityProviderStateType = t.type({
     identities: t.type({
         root: RootIdentityStateCodec,
     }),
+    webAuthn: WebAuthnStateCodec,
 })
 
 export type IdentityProviderState = t.TypeOf<typeof IdentityProviderStateType>

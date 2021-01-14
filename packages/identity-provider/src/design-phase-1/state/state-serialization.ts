@@ -1,10 +1,10 @@
 import { pipe } from 'fp-ts/lib/function';
-import { left, fold } from 'fp-ts/lib/Either';
+import { left, fold, Either } from 'fp-ts/lib/Either';
 import * as t from 'io-ts';
 
 export interface Codec<A, I, O> {
   encode(value: A): O;
-  decode(input: I): A;
+  decode(input: I): Either<t.Errors, A>;
 }
 
 /**
@@ -17,19 +17,11 @@ export function StateToStringCodec<State>(
   function encode(state: State): string {
     return JSON.stringify(state);
   }
-  function decode(input: unknown): State {
+  function decode(input: unknown) {
     if (typeof input !== 'string') {
       throw new TypeError('input must be a string');
     }
-    return pipe(
-      StateCodec.decode(JSON.parse(input)),
-      fold(
-        errors => {
-          throw errors;
-        },
-        s => s,
-      ),
-    );
+    return StateCodec.decode(JSON.parse(input));
   }
 }
 

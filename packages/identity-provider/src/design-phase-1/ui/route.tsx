@@ -2,25 +2,39 @@ import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Route, Switch, useRouteMatch, useLocation, Redirect  } from 'react-router-dom';
 import WelcomeScreen from './screens/WelcomeScreen';
 import IdentityConfirmationScreen from './screens/IdentityConfirmationScreen';
-import {default as SessionConsentScreen, AuthenticationResponseConsentProposal} from './screens/SessionConsentScreen';
+import {default as SessionConsentScreen} from './screens/SessionConsentScreen';
 import {default as AuthenticationResponseConfirmationScreen} from './screens/AuthenticationResponseConfirmationScreen';
 import { SerializedStorage, IStorage, LocalStorageKey, NotFoundError } from '../state/state-storage';
 import { useStateStorage } from '../state/state-storage-react';
 import { StateToStringCodec } from '../state/state-serialization';
-import { useState } from '../state/state-react';
 import { hexToBytes, hexEncodeUintArray } from 'src/bytes';
-import { Ed25519PublicKey , Ed25519KeyIdentity, DelegationChain} from '@dfinity/authentication';
+import { Ed25519PublicKey , Ed25519KeyIdentity, DelegationChain, WebAuthnIdentity} from '@dfinity/authentication';
 import * as icid from "../../protocol/ic-id-protocol"
 import { PublicKey, blobFromHex, derBlobFromBlob, SignIdentity, blobFromUint8Array } from '@dfinity/agent';
 import tweetnacl from "tweetnacl";
 import AuthenticationScreenLayout from './layout/AuthenticationScreenLayout';
 import { ThemeProvider, Theme } from '@material-ui/core';
 import { IdentityProviderStateType } from '../state/state';
+import IdentityProviderReducer, * as reducer from "../state/reducer";
 
 const stateStorage = SerializedStorage(
     LocalStorageKey('design-phase-1'),
     StateToStringCodec(IdentityProviderStateType),
 )
+import AuthenticationController from '../AuthenticationController';
+import { AuthenticationResponseConsentProposal, createSignIdentity } from '../state/reducers/authentication';
+import { useReducer } from '../state/state-react';
+
+function StubbedWebAuthn() {
+    return {
+        async create() {
+            return WebAuthnIdentity.fromJSON(JSON.stringify({
+                publicKey: hexEncodeUintArray(Uint8Array.from([])),
+                rawId: hexEncodeUintArray(Uint8Array.from([])),
+              }));
+        }
+    }
+}
 
 export default function DesignPhase0Route(props: {
     NotFoundRoute: React.ComponentType
@@ -44,7 +58,9 @@ export default function DesignPhase0Route(props: {
         },
         [stateStorage],
     )
-    const [state, dispatch] = useState(initialState)
+    const [state, dispatch] = useReducer(IdentityProviderReducer({
+        WebAuthn: StubbedWebAuthn(),
+    }), initialState)
     useStateStorage(stateStorage, state, dispatch);
     const urls = {
         identity: {
@@ -57,110 +73,19 @@ export default function DesignPhase0Route(props: {
             confirmation: `${path}/response/confirmation`,
         }
     };
-    function onClickAuthenticationRequestReceived() {
-        const sessionId = Ed25519KeyIdentity.generate();
-        dispatch({
-            type: "AuthenticationRequestReceived",
-            payload: {
-                type: "AuthenticationRequest",
-                sessionIdentity: {
-                    hex: hexEncodeUintArray(sessionId.getPublicKey().toDer()),
-                },
-                redirectUri: new URL('/relying-party-demo/oauth/redirect_uri', globalThis.location.href).toString(),
-                scope: "canisterAPrincipalText canisterBPrincipalText",
-            }
-        });
-    }
-    const idpController = {
-        /** Called when the end-user wants to create a brand new root identity. i.e. when they log in for first time */
-        createProfile() {
-            const profileSignIdentity = Ed25519KeyIdentity.generate()
-            dispatch({
-                type: "ProfileCreated",
-                payload: {
-                    publicKey: { hex: hexEncodeUintArray(new Uint8Array(profileSignIdentity.getPublicKey().toDer())) }
-                }
-            });
-            dispatch({
-                type: "DelegationRootSignerChanged",
-                payload: {
-                    secretKey: {
-                        hex: hexEncodeUintArray(profileSignIdentity.getKeyPair().secretKey)
-                    }
-                }
-            })
-            dispatch({
-                type: "Navigate",
-                payload: {
-                    href: urls.identity.confirmation
-                }
-            });
-        },
-        async createAuthenticationResponse(spec: {
-            delegationTail: PublicKey,
-        }): Promise<icid.AuthenticationResponse> {
-            const signerSecretKeyHex = state.identities?.root?.sign?.secretKey.hex;
-            if ( ! signerSecretKeyHex) {
-                throw new Error("can't create DelegationChain without root signerSecretKeyHex")
-            }
-            const rootSignerKeyPair = tweetnacl.sign.keyPair.fromSecretKey(Uint8Array.from(hexToBytes(signerSecretKeyHex)))
-            const rootSignIdentity: SignIdentity = Ed25519KeyIdentity.fromKeyPair(
-                blobFromUint8Array(rootSignerKeyPair.publicKey),
-                blobFromUint8Array(rootSignerKeyPair.secretKey),
-            );
-            const response: icid.AuthenticationResponse = {
-                type: "AuthenticationResponse",
-                accessToken: icid.createBearerToken({
-                    delegationChain: await DelegationChain.create(
-                        rootSignIdentity,
-                        spec.delegationTail,
-                    )
-                }),
-                expiresIn: 10000000,
-                tokenType: "bearer",
-            }
-            return response;
-        },
-        async createResponseRedirectUrl(request: icid.AuthenticationRequest): Promise<URL> {
-            const authResponse = await this.createAuthenticationResponse({
-                delegationTail: {
-                    toDer() {
-                        return derBlobFromBlob(blobFromHex(request.sessionIdentity.hex))
-                    }
-                }
-            });
-            const oauth2Response = icid.toOAuth2(authResponse)
-            const redirectUrl = new URL(request.redirectUri);
-            for (const [key, value] of Object.entries(oauth2Response)) {
-                redirectUrl.searchParams.set(key, value);
-            }
-            return redirectUrl
-        },
-        consentToAuthenticationResponseProposal: function consent (spec: {
-            consentProposal: AuthenticationResponseConsentProposal,
-            consenter: {
-                publicKey: {
-                    hex: string
-                }
-            }
-        }) {
-            const { consentProposal } = spec;
-            console.debug('consentToAuthenticationResponseProposal', { consentProposal})
-            dispatch({
-                type: "AuthenticationRequestConsentReceived",
-                payload: {
-                    consent: {
-                        type: "AuthenticationRequestConsent",
-                        proposal: {
-                            request: consentProposal.request,
-                            attributedTo: spec.consenter
-                        },
-                        createdAt: { iso8601: (new Date).toISOString() },
-                    }
-                }
-            });
-        }
-    }
+    const rootIdentity = React.useMemo(
+      () => {
+        if ( ! state.identities.root.sign) { return; }
+        return createSignIdentity(state.identities.root.sign.signer)
+      },
+      [state.identities.root.sign],
+    )
+    const authenticationController = AuthenticationController({ urls });
+    /**
+     * Whenever there is a new location.search on this page, it might be an oauth2 AuthenticaitonRequest.
+     * For each new value of location.search, try to parse it as an AuthenticationRequest.
+     * If successful, dispatch AuthenticationRequestReceived so all state is updated for the new request.
+     */
     React.useEffect(
         () => {
             const searchParams = new URLSearchParams(location.search);
@@ -176,22 +101,15 @@ export default function DesignPhase0Route(props: {
         },
         [location.search]
     )
-    function MaybeTheme(props: { theme?: Theme, children: React.ReactNode }) {
-        if ( ! props.theme) { return <>{props.children}</> }
-        return <ThemeProvider theme={props.theme}>{props.children}</ThemeProvider>
-    }
-    const consentProposal: undefined|AuthenticationResponseConsentProposal = (state.identities.root.publicKey && state.authentication.request) && {
-        profile: { id: state.identities.root.publicKey },
-        session: {
-            toDer() {
-                const delegationTarget = state?.delegation?.target
-                return delegationTarget ? Uint8Array.from(hexToBytes(delegationTarget.publicKey.hex)) : undefined
-            }
-        },
-        scope: icid.parseScopeString(state.authentication.request.scope),
+    const consentProposal: undefined|AuthenticationResponseConsentProposal = (state.identities.root.sign && state.authentication.request) && {
+        signer: state.identities.root.sign.signer,
         request: state.authentication.request,
     };
-    const rootIdentityPublicKey = state.identities.root.publicKey;
+    const rootIdentitySigner = state.identities.root.sign?.signer
+    const rootSignIdentity = React.useMemo(
+        () => rootIdentitySigner && createSignIdentity(rootIdentitySigner),
+        [rootIdentitySigner]
+    )
     return <><MaybeTheme theme={props.theme}>
         <AuthenticationScreenLayout>
 
@@ -201,7 +119,18 @@ export default function DesignPhase0Route(props: {
             </Route>
             <Route exact path={`${path}/welcome`}>
                 <WelcomeScreen
-                    createProfile={idpController.createProfile}
+                    identity={rootSignIdentity}
+                    useIdentity={async (identity) => {
+                        for (const effect of (await authenticationController.useIdentityAndConfirm({identity}))) {
+                            dispatch(effect);
+                        }
+                    }}
+                    createProfile={async () => {
+                        const identity = await WebAuthnIdentity.create();
+                        for (const effect of (await authenticationController.useIdentityAndConfirm({identity}))) {
+                            dispatch(effect);
+                        }
+                    }}
                 />
             </Route>
             <Route exact path={urls.identity.confirmation} component={() => {
@@ -237,9 +166,9 @@ export default function DesignPhase0Route(props: {
                 }
                 return <>
                 {
-                    ( ! rootIdentityPublicKey)
+                    ( ! rootIdentity)
                         ? <>
-                            No Profile Found. Please <a href="/">start over</a>
+                            No rootIdentity Found. Please <a href="/">start over</a>
                         </>
                     : ( ! state.authentication.request)
                         ? <>
@@ -251,28 +180,45 @@ export default function DesignPhase0Route(props: {
                         </>
                     :   <><SessionConsentScreen
                         consentProposal={consentProposal}
-                        consent={() => idpController.consentToAuthenticationResponseProposal({
+                        consent={async () => (await authenticationController.consentToAuthenticationResponseProposal({
                             consentProposal,
-                            consenter: {
-                                publicKey: { hex: rootIdentityPublicKey.hex },
-                            }
+                            consenter: rootIdentity
+                        })).forEach(action => {
+                            dispatch(action);
                         })}
                         /></>
                 }
                 </>
             }} />
             <Route exact path={urls.response.confirmation}>
+                {
+                (! rootIdentity)
+                ? <>
+                  No session found. Please <a href="/">start over</a>
+                  </>
+                : (!state.authentication.request)
+                ? <>
+                  No AuthenticationRequest found. Please <a href="/">start over</a>
+                  </>
+                : (!state.authentication.response)
+                ? <>
+                No AuthenticationResponse found. Please <a href="/">start over</a>
+                </>
+                : <>
                 <AuthenticationResponseConfirmationScreen
-                    redirectWithResponse={async () => {
-                        const { authentication } = state;
-                        const { request } = authentication
-                        if ( ! request) {
-                            throw new Error('authenticationRequest not set')
+                    request={state.authentication.request}
+                    response={state.authentication.response}
+                    redirectWithResponse={async ({request, response}) => {
+                        for (const action of await authenticationController.respond({
+                            request,
+                            response,
+                        })) {
+                          dispatch(action);
                         }
-                        const responseRedirectUrl = await idpController.createResponseRedirectUrl(request)
-                        globalThis.location.assign(responseRedirectUrl.toString())
                     }}
                 />
+                  </>
+                }
             </Route>
             <NotFoundRoute />
         </Switch>
@@ -283,11 +229,19 @@ export default function DesignPhase0Route(props: {
         <details open>
             <summary>debug tools</summary>
             <pre>{JSON.stringify(state, null, 2)}</pre>
-            <button onClick={onClickAuthenticationRequestReceived}>AuthenticationRequestReceived</button>
             <button onClick={() => dispatch({ type: "reset" })}>reset state</button>
             <p>
-                <a href={path}>start over</a>
+                <a href={`${path}/../`}>start over</a>
             </p>
         </details>
     </MaybeTheme></>
+}
+
+/**
+ * Wrap children in a material-ui ThemeProvider if a theme prop is provided,
+ * otherwise just render children.
+ */
+function MaybeTheme(props: { theme?: Theme, children: React.ReactNode }) {
+  if ( ! props.theme) { return <>{props.children}</> }
+  return <ThemeProvider theme={props.theme}>{props.children}</ThemeProvider>
 }

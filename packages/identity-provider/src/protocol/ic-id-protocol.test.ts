@@ -117,4 +117,14 @@ describe('ic-id-protocol parseScopeString', () => {
     );
     expect(parsedScopeCanisterPrincipalTextSet).toStrictEqual(new Set([canisterA, canisterB]));
   });
+  it('can parse and restringify', () => {
+    const examples = [
+      'u76ha-lyaaa-aaaab-aacha-cai',
+      'u76ha-lyaaa-aaaab-aacha-cai jyi7r-7aaaa-aaaab-aaabq-cai',
+      'jyi7r-7aaaa-aaaab-aaabq-cai u76ha-lyaaa-aaaab-aacha-cai',
+    ];
+    for (const scope of examples) {
+      expect(icid.stringifyScope(icid.parseScopeString(scope))).toEqual(scope);
+    }
+  });
 });

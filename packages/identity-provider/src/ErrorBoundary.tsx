@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
 
 export class IDPRootErrorBoundary extends Component<{}, { hasError: boolean }> {
-  public static getDerivedStateFromError() {
+  public static getDerivedStateFromError(error: Error) {
+    console.error('IDPRootErrorBoundary', error)
     // Update state so the next render will show the fallback UI.
-    return { hasError: true };
+    return { hasError: Boolean(error) };
   }
   constructor(props: any) {
     super(props);

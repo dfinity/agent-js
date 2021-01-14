@@ -89,10 +89,15 @@ export function accessTokenResponseFromQueryString(
     throw new Error(`unexpected oauth2 token_type: ${token_type}`);
   }
 
+  const scope = searchParams.get('scope');
+  const state = searchParams.get('state');
+
   const response: OAuth2AccessTokenResponse = {
     access_token,
     expires_in,
     token_type,
+    scope,
+    state,
   };
   return response;
 }

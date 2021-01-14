@@ -3,7 +3,7 @@ import { IStorage } from "./state-storage";
 
 export type StateStoredAction = {
     type: "StateStored",
-    state: any,
+    payload: { state: any }
 }
 
 export function useStateStorage<State>(
@@ -16,7 +16,7 @@ export function useStateStorage<State>(
             storage.set(state)
             dispatch({
                 type: "StateStored",
-                state,
+                payload: { state },
             })
         },
         [state]

@@ -1,22 +1,34 @@
 import * as icid from '../../../protocol/ic-id-protocol';
 import * as t from 'io-ts';
+import { createSignIdentity } from './authentication';
+import { hexEncodeUintArray } from '../../../bytes';
+
+const Ed25519SignerCodec = t.type({
+  type: t.literal('Ed25519Signer'),
+  credential: t.type({
+    secretKey: t.type({
+      hex: t.string,
+    }),
+  }),
+});
+type Ed25519Signer = t.TypeOf<typeof Ed25519SignerCodec>;
+
+const WebAuthnIdentitySignerCodec = t.type({
+  type: t.literal('WebAuthnIdentitySigner'),
+  json: t.string,
+});
+type WebAuthnIdentitySigner = t.TypeOf<typeof WebAuthnIdentitySignerCodec>;
 
 export type Action =
   | { type: 'reset' }
   | {
-      type: 'ProfileCreated';
-      payload: {
-        publicKey: {
-          hex: string;
-        };
-      };
-    }
-  | {
       type: 'DelegationRootSignerChanged';
       payload: {
-        secretKey: { hex: string };
+        signer: Ed25519Signer | WebAuthnIdentitySigner;
       };
     };
+
+const SignerCodec = t.union([Ed25519SignerCodec, WebAuthnIdentitySignerCodec]);
 
 export const StateCodec = t.type({
   publicKey: t.union([
@@ -28,33 +40,25 @@ export const StateCodec = t.type({
   sign: t.union([
     t.undefined,
     t.type({
-      secretKey: t.type({
-        hex: t.string,
-      }),
+      signer: SignerCodec,
     }),
   ]),
 });
 
 export type State = t.TypeOf<typeof StateCodec>;
 
-export function reduce(state: State = init(), action: Action) {
+export function reduce(state: State | undefined = init(), action: Action): State {
   switch (action.type) {
     case 'reset':
       return init();
-    case 'ProfileCreated':
-      return {
-        ...state,
-        publicKey: {
-          hex: action.payload.publicKey.hex,
-        },
-      };
     case 'DelegationRootSignerChanged':
       return {
         ...state,
+        publicKey: {
+          hex: hexEncodeUintArray(createSignIdentity(action.payload.signer).getPublicKey().toDer()),
+        },
         sign: {
-          secretKey: {
-            hex: action.payload.secretKey.hex,
-          },
+          signer: action.payload.signer,
         },
       };
   }
