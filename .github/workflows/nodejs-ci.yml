@@ -67,7 +67,6 @@ jobs:
         $HOME/bin/ic-ref --pick-port --write-port-to $HOME/ic_ref_port &
         sleep 1
         echo "::set-output name=IC_REF_PORT::$(cat $HOME/ic_ref_port)"
-
     - run: npm install
     - # I don't want to do this, but when devving with nektos/act, postinstall wasn't getting run.
       # Then, the later `npm test` would fail because packages/* didn't have their devDependencies.
@@ -81,4 +80,13 @@ jobs:
       env:
         CI: true
         IC_REF_PORT: ${{ steps.ic_ref.outputs.IC_REF_PORT }}
+    - name: mitmproxy e2e
+      env:
+        CI: true
+        IC_REF_PORT: 8888
+      run: |
+        mitmproxy -p 8888 --mode reverse:http://localhost:${{ steps.ic_ref.outputs.IC_REF_PORT }} --modify-body '/Hello/Hullo'&
+        sleep 1
+        npm run e2e
+        killall mitmproxy
     - run: killall ic-ref
