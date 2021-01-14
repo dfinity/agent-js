@@ -11,6 +11,7 @@ import {
 } from '@dfinity/agent';
 import tweetnacl from 'tweetnacl';
 import { AuthenticationResponseConsentProposal } from './state/reducers/authentication';
+import { Signer } from './state/codecs/sign';
 
 /**
  * 'Controllers' can be useful as an Abstraction for state mutations that all have to do with a common use case or business requirement.
@@ -26,10 +27,6 @@ type EffectCreatorMap<EffectCreatorNames extends string, Effect extends { type: 
 
 interface IAuthenticationController extends EffectCreatorMap<string, IdentityProviderAction> {
   /**
-   * Create a brand new root profile for a new end-user
-   */
-  createProfile(): Promise<IdentityProviderAction[]>;
-  /**
    * Respond to the AuthenticationRequest with an AuthenticationResponse.
    * Send the AuthenticationResponse to redirect_uri via Navigate effect
    */
@@ -40,6 +37,9 @@ interface IAuthenticationController extends EffectCreatorMap<string, IdentityPro
   consentToAuthenticationResponseProposal(spec: {
     consentProposal: AuthenticationResponseConsentProposal;
     consenter: SignIdentity;
+  }): Promise<IdentityProviderAction[]>;
+  useIdentityAndConfirm(spec: {
+    identity: Ed25519KeyIdentity | WebAuthnIdentity;
   }): Promise<IdentityProviderAction[]>;
 }
 
@@ -52,26 +52,6 @@ export default function AuthenticationController(options: {
 }): IAuthenticationController {
   const { urls } = options;
   const idpController: IAuthenticationController = {
-    async createProfile() {
-      const webAuthnIdentity = await WebAuthnIdentity.create();
-      const delegationRootSignerChangedWebAuthn: IdentityProviderAction = {
-        type: 'DelegationRootSignerChanged',
-        payload: {
-          signer: {
-            type: 'WebAuthnIdentitySigner',
-            json: JSON.stringify(webAuthnIdentity.toJSON()),
-          },
-        },
-      };
-      const navigate: IdentityProviderAction = {
-        type: 'Navigate',
-        payload: {
-          href: urls.identity.confirmation,
-        },
-      };
-      const effects = [delegationRootSignerChangedWebAuthn, navigate];
-      return effects;
-    },
     async respond(spec: {
       request: Pick<icid.AuthenticationRequest, 'redirectUri'>;
       response: icid.AuthenticationResponse;
@@ -138,6 +118,22 @@ export default function AuthenticationController(options: {
       };
       return [consentReceivedAction];
     },
+    async useIdentityAndConfirm(spec) {
+      const signer = describeSignIdentity(spec.identity);
+      const delegationRootSignerChangedWebAuthn: IdentityProviderAction = {
+        type: 'DelegationRootSignerChanged',
+        payload: {
+          signer,
+        },
+      };
+      const navigateToConfirm: IdentityProviderAction = {
+        type: 'Navigate',
+        payload: {
+          href: urls.identity.confirmation,
+        },
+      };
+      return [delegationRootSignerChangedWebAuthn, navigateToConfirm];
+    },
   };
   return idpController;
 }
@@ -146,4 +142,26 @@ export default function AuthenticationController(options: {
 function days(count: number) {
   const msInOneDay = 1000 * 60 * 60 * 24;
   return new Date(msInOneDay * count);
+}
+
+export function describeSignIdentity(identity: WebAuthnIdentity | Ed25519KeyIdentity): Signer {
+  if (identity instanceof WebAuthnIdentity) {
+    return {
+      type: 'WebAuthnIdentitySigner',
+      json: JSON.stringify(identity.toJSON()),
+    };
+  }
+  if (identity instanceof Ed25519KeyIdentity) {
+    return {
+      type: 'Ed25519Signer',
+      credential: {
+        secretKey: {
+          hex: hexEncodeUintArray(identity.getKeyPair().secretKey),
+        },
+      },
+    };
+  }
+  // exhaust
+  let x: never = identity;
+  throw new Error('unexpected identity prototype');
 }

@@ -105,9 +105,11 @@ export default function DesignPhase0Route(props: {
         signer: state.identities.root.sign.signer,
         request: state.authentication.request,
     };
-    const rootIdentityPublicKey = state.identities.root.publicKey;
-    const rootIdentitySign = state.identities.root.sign
-    const authenticationRequest = state.authentication.request
+    const rootIdentitySigner = state.identities.root.sign?.signer
+    const rootSignIdentity = React.useMemo(
+        () => rootIdentitySigner && createSignIdentity(rootIdentitySigner),
+        [rootIdentitySigner]
+    )
     return <><MaybeTheme theme={props.theme}>
         <AuthenticationScreenLayout>
 
@@ -117,7 +119,18 @@ export default function DesignPhase0Route(props: {
             </Route>
             <Route exact path={`${path}/welcome`}>
                 <WelcomeScreen
-                    createProfile={async () => (await authenticationController.createProfile()).forEach((effect) => dispatch(effect))}
+                    identity={rootSignIdentity}
+                    useIdentity={async (identity) => {
+                        for (const effect of (await authenticationController.useIdentityAndConfirm({identity}))) {
+                            dispatch(effect);
+                        }
+                    }}
+                    createProfile={async () => {
+                        const identity = await WebAuthnIdentity.create();
+                        for (const effect of (await authenticationController.useIdentityAndConfirm({identity}))) {
+                            dispatch(effect);
+                        }
+                    }}
                 />
             </Route>
             <Route exact path={urls.identity.confirmation} component={() => {

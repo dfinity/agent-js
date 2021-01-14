@@ -12,7 +12,7 @@ import {
 import tweetnacl from 'tweetnacl';
 import { hexToBytes } from '../../../bytes';
 import { EffectRequested } from '../reducer-effects';
-import { SignerCodec, Signer } from '../codecs/sign';
+import { SignerCodec, Signer, Ed25519Signer, WebAuthnIdentitySigner } from '../codecs/sign';
 
 const AuthenticationRequestCodec = t.type({
   type: t.literal('AuthenticationRequest'),
@@ -180,7 +180,8 @@ async function respond(spec: {
       return derBlobFromBlob(blobFromHex(request.sessionIdentity.hex));
     },
   };
-  const signIdentity: SignIdentity = createSignIdentity(spec.consent.proposal.signer);
+  const signer = spec.consent.proposal.signer;
+  const signIdentity = createSignIdentity(signer);
   const _24hrsInMs = 1000 * 60 * 60 * 24;
   const response: icid.AuthenticationResponse = {
     type: 'AuthenticationResponse',
@@ -201,7 +202,12 @@ async function respond(spec: {
   return response;
 }
 
-export function createSignIdentity(signer: Signer): SignIdentity {
+/**
+ * Given a declarative 'Signer' object, return the appropriate SignIdentity instance froM @dfinity/authentication
+ */
+export function createSignIdentity(
+  signer: WebAuthnIdentitySigner | Ed25519Signer,
+): WebAuthnIdentity | Ed25519KeyIdentity {
   switch (signer.type) {
     case 'Ed25519Signer':
       const keyPair = tweetnacl.sign.keyPair.fromSecretKey(
