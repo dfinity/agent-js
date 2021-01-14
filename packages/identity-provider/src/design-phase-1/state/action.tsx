@@ -3,6 +3,7 @@ import * as icid from "../../protocol/ic-id-protocol";
 import { Jsonnable } from "./json";
 import { Action as AuthenticationAction } from "./reducers/authentication";
 import { Action as WebAuthnAction } from "./reducers/webauthn.reducer";
+import { Action as RootIdentityAction } from "./reducers/rootIdentity";
 import { EffectRequested, EffectLifecycleAction } from "./reducer-effects";
 
 export type AnyStandardAction = {
@@ -10,16 +11,13 @@ export type AnyStandardAction = {
     payload?: any;
 }
 
+
+
 export type IdentityProviderActionSync =
+| RootIdentityAction
 | AuthenticationAction
 | StateStoredAction
 | WebAuthnAction
-| { type: "ProfileCreated",
-    payload: {
-        publicKey: {
-            hex: string
-        }
-    }}
 | { type: "reset" }
 | { type: "AuthenticationRequestReceived",
     payload: icid.AuthenticationRequest }
@@ -27,12 +25,7 @@ export type IdentityProviderActionSync =
     payload: {
         href: string,
     }}
-| {
-    type: "DelegationRootSignerChanged",
-    payload: {
-        secretKey: { hex: string }
-    }
-}
+
 
 export type JsonnableAction = Jsonnable<IdentityProviderActionSync>
 

@@ -59,10 +59,10 @@ export function effect(state: State, action: Action): undefined | EffectRequeste
         case "WebAuthn/publicKeyCredentialCreated":
             return webAuthnReducer.effect(state.webAuthn, action);
         case "reset":
-        case "ProfileCreated":
         case "DelegationRootSignerChanged":
             break;
         default:
+            // Intentionally exhaustive. If compiler complains, add more cases above to explicitly handle.
             let x: never = action;
     }
     return;

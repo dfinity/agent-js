@@ -22,7 +22,7 @@ const stateStorage = SerializedStorage(
     StateToStringCodec(IdentityProviderStateType),
 )
 import AuthenticationController from '../AuthenticationController';
-import { AuthenticationResponseConsentProposal } from '../state/reducers/authentication';
+import { AuthenticationResponseConsentProposal, createSignIdentity } from '../state/reducers/authentication';
 import { useReducer } from '../state/state-react';
 
 function StubbedWebAuthn() {
@@ -76,14 +76,7 @@ export default function DesignPhase0Route(props: {
     const rootIdentity = React.useMemo(
       () => {
         if ( ! state.identities.root.sign) { return; }
-        const rootSignerKeyPair = tweetnacl.sign.keyPair.fromSecretKey(
-          Uint8Array.from(hexToBytes(state.identities.root.sign.secretKey.hex)),
-        );
-        const rootSignIdentity: SignIdentity = Ed25519KeyIdentity.fromKeyPair(
-          blobFromUint8Array(rootSignerKeyPair.publicKey),
-          blobFromUint8Array(rootSignerKeyPair.secretKey),
-        );
-        return rootSignIdentity
+        return createSignIdentity(state.identities.root.sign.signer)
       },
       [state.identities.root.sign],
     )
@@ -109,10 +102,7 @@ export default function DesignPhase0Route(props: {
         [location.search]
     )
     const consentProposal: undefined|AuthenticationResponseConsentProposal = (state.identities.root.sign && state.authentication.request) && {
-        signer: {
-            type: "Ed25519Signer",
-            secretKey: state.identities.root.sign.secretKey
-        },
+        signer: state.identities.root.sign.signer,
         request: state.authentication.request,
     };
     const rootIdentityPublicKey = state.identities.root.publicKey;
@@ -228,7 +218,7 @@ export default function DesignPhase0Route(props: {
             <pre>{JSON.stringify(state, null, 2)}</pre>
             <button onClick={() => dispatch({ type: "reset" })}>reset state</button>
             <p>
-                <a href={path}>start over</a>
+                <a href={`${path}/../`}>start over</a>
             </p>
         </details>
     </MaybeTheme></>

@@ -4,9 +4,10 @@ import SimpleScreenLayout from "../layout/SimpleScreenLayout";
 import { Typography, makeStyles, Divider, Theme, createStyles, styled } from "@material-ui/core";
 import EnhancedEncryptionIcon from '@material-ui/icons/EnhancedEncryption';
 import { parseScopeString } from "src/protocol/ic-id-protocol";
-import { AuthenticationResponseConsentProposal, Signer } from "src/design-phase-1/state/reducers/authentication";
+import { AuthenticationResponseConsentProposal, createSignIdentity } from "src/design-phase-1/state/reducers/authentication";
 import { hexToBytes, hexEncodeUintArray } from "src/bytes";
 import tweetnacl from "tweetnacl";
+import { Signer } from "src/design-phase-1/state/codecs/sign";
 
 export default function (props: {
     consentProposal: AuthenticationResponseConsentProposal
@@ -87,27 +88,13 @@ function HexFormatter(props: {
     </>
 }
 
-/**
- * Given a 'Signer' (description of how to sign delegations), return
- * the publicKey of the Signer.
- */
-function signerToPublicKey(signer: Signer): ArrayBuffer {
-    switch (signer.type) {
-        case "Ed25519Signer":
-            const secretKey = Uint8Array.from(hexToBytes(signer.secretKey.hex))
-            const keyPair = tweetnacl.sign.keyPair.fromSecretKey(secretKey)
-            return keyPair.publicKey
-    }
-    throw new Error('Unexpected signer.type')
-}
-
 function Body(props: {
     consentProposal: AuthenticationResponseConsentProposal
 }) {
     const styles = makeStyles(styler)()
     const { consentProposal } = props;
     const sessionDerHex = consentProposal.request.sessionIdentity.hex
-    const signerPublicKey = signerToPublicKey(consentProposal.signer);
+    const signerPublicKey: ArrayBuffer = createSignIdentity(consentProposal.signer).getPublicKey().toDer()
     return <>
         <Typography variant="subtitle1" gutterBottom>
             You have chosen to Sign In with

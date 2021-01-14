@@ -1,5 +1,5 @@
 import { IdentityProviderAction } from './state/action';
-import { Ed25519KeyIdentity, DelegationChain } from '@dfinity/authentication';
+import { Ed25519KeyIdentity, DelegationChain, WebAuthnIdentity } from '@dfinity/authentication';
 import { hexEncodeUintArray, hexToBytes } from 'src/bytes';
 import * as icid from '../protocol/ic-id-protocol';
 import {
@@ -53,20 +53,13 @@ export default function AuthenticationController(options: {
   const { urls } = options;
   const idpController: IAuthenticationController = {
     async createProfile() {
-      const profileSignIdentity = Ed25519KeyIdentity.generate();
-      const profileCreated: IdentityProviderAction = {
-        type: 'ProfileCreated',
-        payload: {
-          publicKey: {
-            hex: hexEncodeUintArray(new Uint8Array(profileSignIdentity.getPublicKey().toDer())),
-          },
-        },
-      };
-      const delegationRootSignerChanged: IdentityProviderAction = {
+      const webAuthnIdentity = await WebAuthnIdentity.create();
+      const delegationRootSignerChangedWebAuthn: IdentityProviderAction = {
         type: 'DelegationRootSignerChanged',
         payload: {
-          secretKey: {
-            hex: hexEncodeUintArray(profileSignIdentity.getKeyPair().secretKey),
+          signer: {
+            type: 'WebAuthnIdentitySigner',
+            json: JSON.stringify(webAuthnIdentity.toJSON()),
           },
         },
       };
@@ -76,7 +69,7 @@ export default function AuthenticationController(options: {
           href: urls.identity.confirmation,
         },
       };
-      const effects = [profileCreated, delegationRootSignerChanged, navigate];
+      const effects = [delegationRootSignerChangedWebAuthn, navigate];
       return effects;
     },
     async respond(spec: {

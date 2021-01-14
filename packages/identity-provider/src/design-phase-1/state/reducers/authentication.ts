@@ -1,6 +1,6 @@
 import * as icid from '../../../protocol/ic-id-protocol';
 import * as t from 'io-ts';
-import { DelegationChain, Ed25519KeyIdentity } from '@dfinity/authentication';
+import { DelegationChain, Ed25519KeyIdentity, WebAuthnIdentity } from '@dfinity/authentication';
 import { withDefault } from '../state-serialization';
 import {
   PublicKey,
@@ -12,6 +12,7 @@ import {
 import tweetnacl from 'tweetnacl';
 import { hexToBytes } from '../../../bytes';
 import { EffectRequested } from '../reducer-effects';
+import { SignerCodec, Signer } from '../codecs/sign';
 
 const AuthenticationRequestCodec = t.type({
   type: t.literal('AuthenticationRequest'),
@@ -21,15 +22,6 @@ const AuthenticationRequestCodec = t.type({
   }),
   scope: t.string,
 });
-
-const SignerCodec = t.type({
-  type: t.literal('Ed25519Signer'),
-  secretKey: t.type({
-    hex: t.string,
-  }),
-});
-
-export type Signer = t.TypeOf<typeof SignerCodec>;
 
 const ConsentProposalCodec = t.type({
   request: AuthenticationRequestCodec,
@@ -209,19 +201,22 @@ async function respond(spec: {
   return response;
 }
 
-function createSignIdentity(signer: {
-  type: 'Ed25519Signer';
-  secretKey: { hex: string };
-}): SignIdentity {
+export function createSignIdentity(signer: Signer): SignIdentity {
   switch (signer.type) {
     case 'Ed25519Signer':
       const keyPair = tweetnacl.sign.keyPair.fromSecretKey(
-        Uint8Array.from(hexToBytes(signer.secretKey.hex)),
+        Uint8Array.from(hexToBytes(signer.credential.secretKey.hex)),
       );
       return Ed25519KeyIdentity.fromKeyPair(
         blobFromUint8Array(keyPair.publicKey),
         blobFromUint8Array(keyPair.secretKey),
       );
+    case 'WebAuthnIdentitySigner':
+      return (() => {
+        console.log('about to WebAuthnIdentity.fromJSON', signer);
+        const webAuthnIdentity = WebAuthnIdentity.fromJSON(signer.json);
+        return webAuthnIdentity;
+      })();
     default:
   }
   throw new Error('Unexpected consent.signer.type');
