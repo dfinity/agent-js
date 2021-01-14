@@ -30,6 +30,9 @@ describe('@dfinity/identity-provider/design-phase-0/state-serialization', () => 
       delegation: {
         target: undefined,
       },
+      webAuthn: {
+        webAuthnWorks: true,
+      },
     };
     const codec = StateToStringCodec(IdentityProviderStateType);
     const encoded = codec.encode(sampleState);

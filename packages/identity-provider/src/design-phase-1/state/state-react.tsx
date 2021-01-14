@@ -1,27 +1,27 @@
 import * as React from "react";
 import { IEffectiveReducer, handleEffect, EffectRequested, EffectLifecycleAction } from "./reducer-effects";
 import { AnyStandardAction } from "./action";
+import { AnyAction } from "redux";
 
 /**
  * Use a reducer that also has init() and effect()
  * @param reducer 
  */
 export function useReducer<
-  K extends string,
-  S extends Record<K,any>,
-  SyncAction extends AnyStandardAction,
+  S,
+  A extends AnyStandardAction,
 >(
-  reducer: IEffectiveReducer<S, (EffectLifecycleAction|SyncAction)>,
+  reducer: IEffectiveReducer<S, A|EffectLifecycleAction>,
   initArg?: S|undefined
-): [S, React.Dispatch<(EffectLifecycleAction|SyncAction)>] {
-    const [state, reducerDispatch] = React.useReducer(reducer.reduce, initArg || reducer.init());
-    async function dispatch(action: EffectLifecycleAction|SyncAction): Promise<void> {
+): [S, React.Dispatch<A>] {
+    const [state, reducerDispatch] = React.useReducer(reducer.reduce, initArg, reducer.init);
+    async function dispatch(action: A): Promise<void> {
       reducerDispatch(action);
-      const effect = reducer.effect(action);
+      const effect = reducer.effect(state, action);
       if (effect) {
         switch (effect.type) {
           case "EffectRequested":
-            await handleEffect(reducerDispatch, effect as EffectRequested<SyncAction>)
+            await handleEffect(reducerDispatch, effect as EffectRequested<A>)
         }
       }
     }

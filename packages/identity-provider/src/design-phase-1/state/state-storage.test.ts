@@ -36,6 +36,9 @@ describe('@dfinity/identity-provider/design-phase-0/state-storage', () => {
       delegation: {
         target: undefined,
       },
+      webAuthn: {
+        webAuthnWorks: true,
+      },
     };
     storage.set(state0);
     expect(storage.get()).toEqual(state0);

@@ -38,5 +38,4 @@ export type JsonnableAction = Jsonnable<IdentityProviderActionSync>
 
 export type IdentityProviderAction =
 | IdentityProviderActionSync
-| EffectLifecycleAction
 | EffectRequested<IdentityProviderActionSync>

@@ -37,7 +37,7 @@ export const StateCodec = t.type({
 
 export type State = t.TypeOf<typeof StateCodec>;
 
-export function reduce(state: State = init(), action: Action) {
+export function reduce(state: State | undefined = init(), action: Action): State {
   switch (action.type) {
     case 'reset':
       return init();

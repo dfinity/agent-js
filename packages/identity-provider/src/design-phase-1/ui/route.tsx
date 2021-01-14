@@ -127,7 +127,7 @@ export default function DesignPhase0Route(props: {
             </Route>
             <Route exact path={`${path}/welcome`}>
                 <WelcomeScreen
-                    createProfile={async () => (await authenticationController.createProfile()).forEach(dispatch)}
+                    createProfile={async () => (await authenticationController.createProfile()).forEach((effect) => dispatch(effect))}
                 />
             </Route>
             <Route exact path={urls.identity.confirmation} component={() => {

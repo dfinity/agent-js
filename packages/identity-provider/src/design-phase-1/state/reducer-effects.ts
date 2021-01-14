@@ -1,9 +1,9 @@
 import { AnyStandardAction } from './action';
 
-export interface IEffectiveReducer<State, Action extends AnyStandardAction, InitArg = undefined> {
-  init(...args: InitArg[]): State;
+export interface IEffectiveReducer<State, Action extends AnyStandardAction> {
+  init(initialState?: State | undefined): State;
   reduce(state: State, action: Action): State;
-  effect(action: Action): undefined | EffectRequested<Action>;
+  effect(state: State, action: Action): undefined | EffectRequested<Action>;
 }
 
 export type EffectLifecycleAction =
