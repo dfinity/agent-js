@@ -7,7 +7,7 @@ import SimpleScreenLayout from "../layout/SimpleScreenLayout";
 import LockIcon from '@material-ui/icons/Lock';
 import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import { SignIdentity } from "@dfinity/agent";
-import { hexEncodeUintArray } from "src/bytes";
+import { hexEncodeUintArray } from "../../../bytes";
 import { Ed25519KeyIdentity, WebAuthnIdentity } from "@dfinity/authentication";
 
 const styler = () => {

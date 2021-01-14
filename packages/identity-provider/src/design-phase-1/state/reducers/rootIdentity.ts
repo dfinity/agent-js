@@ -1,7 +1,7 @@
 import * as icid from '../../../protocol/ic-id-protocol';
 import * as t from 'io-ts';
 import { createSignIdentity } from './authentication';
-import { hexEncodeUintArray } from 'src/bytes';
+import { hexEncodeUintArray } from '../../../bytes';
 
 const Ed25519SignerCodec = t.type({
   type: t.literal('Ed25519Signer'),
