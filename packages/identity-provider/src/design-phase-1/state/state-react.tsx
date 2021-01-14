@@ -21,7 +21,9 @@ export function useReducer<
       if (effect) {
         switch (effect.type) {
           case "EffectRequested":
-            await handleEffect(reducerDispatch, effect as EffectRequested<A>)
+            await handleEffect((action) => {
+              reducerDispatch(action);
+            }, effect as EffectRequested<A>)
         }
       }
     }

@@ -35,6 +35,7 @@ export async function handleEffect<A extends AnyStandardAction>(
         for (const innerEffect of (await doEffect()) || []) {
           switch (innerEffect.type) {
             case 'EffectRequested':
+              // unwind nested EffectRequests
               await handleEffect(dispatch, innerEffect as EffectRequested<A>);
               break;
             default:

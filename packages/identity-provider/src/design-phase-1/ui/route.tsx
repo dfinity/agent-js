@@ -181,7 +181,6 @@ export default function DesignPhase0Route(props: {
                             consentProposal,
                             consenter: rootIdentity
                         })).forEach(action => {
-                            console.log('action from consent()', action)
                             dispatch(action);
                         })}
                         /></>

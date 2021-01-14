@@ -1,12 +1,29 @@
 import { WebAuthnIdentity } from '@dfinity/authentication';
 import { IEffectiveReducer, EffectRequested } from '../reducer-effects';
 import { hexEncodeUintArray, hexToBytes } from '../../../bytes';
-import { StubbedWebAuthn } from 'src/webauthn/StubbedWebAuthn';
+import { StubbedWebAuthn } from '../../../webauthn/StubbedWebAuthn';
 import * as t from 'io-ts';
+import { withDefault } from '../state-serialization';
 
-export const StateCodec = t.type({
-  webAuthnWorks: t.boolean,
-});
+export const StateCodec = t.intersection([
+  t.type({
+    webAuthnWorks: t.boolean,
+  }),
+  t.partial({
+    publicKeyCredential: withDefault(
+      t.union([
+        t.undefined,
+        t.type({
+          publicKey: t.type({
+            hex: t.string,
+          }),
+        }),
+      ]),
+      undefined,
+    ),
+  }),
+]);
+
 export type State = t.TypeOf<typeof StateCodec>;
 
 export type Action =
@@ -55,6 +72,13 @@ export function init(): State {
 
 export function reduce(state: State | undefined = init(), action: Action): State {
   switch (action.type) {
+    case 'WebAuthn/publicKeyCredentialCreated':
+      return {
+        ...state,
+        publicKeyCredential: {
+          publicKey: action.payload.credential.publicKey,
+        },
+      };
   }
   return state;
 }
