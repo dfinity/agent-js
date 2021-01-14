@@ -19,6 +19,11 @@ jobs:
       with:
         node-version: ${{ matrix.node }}
 
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+      run: pip3 install mitmproxy
+
     # IC ref checkout and build.
     - uses: actions/checkout@v2
       with:
