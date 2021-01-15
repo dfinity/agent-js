@@ -91,7 +91,7 @@ jobs:
         IC_REF_PORT: 8888
       run: |
         mitmdump -p 8888 --mode reverse:http://localhost:${{ steps.ic_ref.outputs.IC_REF_PORT }} \
-           --replace '/~s/Hello/Hullo' \
+           --replacements '/~s/Hello/Hullo' \
            --setheaders '/~s/Transfer-Encoding/' \
            &
         sleep 1
