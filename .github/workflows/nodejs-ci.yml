@@ -96,7 +96,6 @@ jobs:
            --modify-headers '/~s/Transfer-Encoding/' \
            &
         sleep 1
-        cd e2e/node
         npm run mitm
         killall mitmproxy
     - run: killall ic-ref
