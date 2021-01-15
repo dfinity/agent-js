@@ -97,5 +97,5 @@ jobs:
            &
         sleep 1
         npm run mitm
-        killall mitmproxy
+        killall mitmdump
     - run: killall ic-ref
