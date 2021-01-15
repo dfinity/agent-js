@@ -85,7 +85,7 @@ jobs:
       env:
         CI: true
         IC_REF_PORT: ${{ steps.ic_ref.outputs.IC_REF_PORT }}
-    - name: mitmproxy e2e
+    - name: mitm e2e
       env:
         CI: true
         IC_REF_PORT: 8888
@@ -96,6 +96,7 @@ jobs:
            --modify-headers '/~s/Transfer-Encoding/' \
            &
         sleep 1
+        cd e2e/node
         npm run mitm
         killall mitmproxy
     - run: killall ic-ref
