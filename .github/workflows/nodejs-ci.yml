@@ -91,8 +91,8 @@ jobs:
         IC_REF_PORT: 8888
       run: |
         mitmdump -p 8888 --mode reverse:http://localhost:${{ steps.ic_ref.outputs.IC_REF_PORT }} \
-           --replacements '/~s/Hello/Hullo' \
-           --setheaders '/~s/Transfer-Encoding/' \
+           --modify-body '/~s/Hello/Hullo' \
+           --modify-headers '/~s/Transfer-Encoding/' \
            &
         sleep 1
         npm run e2e
