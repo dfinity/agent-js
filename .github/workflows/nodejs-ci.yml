@@ -22,7 +22,7 @@ jobs:
     - uses: actions/setup-python@v2
       with:
         python-version: '3.x'
-    - run: pip3 install mitmproxy
+    - run: pip3 install mitmproxy~=3.0.0
 
     # IC ref checkout and build.
     - uses: actions/checkout@v2
@@ -90,7 +90,7 @@ jobs:
         CI: true
         IC_REF_PORT: 8888
       run: |
-        mitmdump -p 8888 --mode reverse:http://localhost:${{ steps.ic_ref.outputs.IC_REF_PORT }} --modify-body '/Hello/Hullo'&
+        mitmdump -p 8888 --mode reverse:http://localhost:${{ steps.ic_ref.outputs.IC_REF_PORT }} --replace '/~s/Hello/Hullo'&
         sleep 1
         npm run e2e
         killall mitmproxy
