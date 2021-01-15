@@ -73,6 +73,16 @@ jobs:
         sleep 1
         echo "::set-output name=IC_REF_PORT::$(cat $HOME/ic_ref_port)"
 
+    - name: Running mitmdump
+      id: mitmdump
+      run: |
+        set -ex
+        mitmdump -p 8888 --mode reverse:http://localhost:${{ steps.ic_ref.outputs.IC_REF_PORT }} \
+           --modify-body '/~s/Hello/Hullo' \
+           --modify-headers '/~s/Transfer-Encoding/' \
+           &
+        sleep 1
+
     - run: npm install
     - # I don't want to do this, but when devving with nektos/act, postinstall wasn't getting run.
       # Then, the later `npm test` would fail because packages/* didn't have their devDependencies.
@@ -94,13 +104,9 @@ jobs:
         CI: true
         IC_REF_PORT: 8888
         MITM: true
-      run: |
-        mitmdump -p 8888 --mode reverse:http://localhost:${{ steps.ic_ref.outputs.IC_REF_PORT }} \
-           --modify-body '/~s/Hello/Hullo' \
-           --modify-headers '/~s/Transfer-Encoding/' \
-           &
-        sleep 1
-        npm run mitm
-        killall mitmdump
+      run: npm run mitm
 
-    - run: killall ic-ref
+    - name: clean up
+      run: |
+        killall mitmdump
+        killall ic-ref
