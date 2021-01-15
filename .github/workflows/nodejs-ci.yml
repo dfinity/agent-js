@@ -90,7 +90,10 @@ jobs:
         CI: true
         IC_REF_PORT: 8888
       run: |
-        mitmdump -p 8888 --mode reverse:http://localhost:${{ steps.ic_ref.outputs.IC_REF_PORT }} --replace '/~s/Hello/Hullo'&
+        mitmdump -p 8888 --mode reverse:http://localhost:${{ steps.ic_ref.outputs.IC_REF_PORT }} \
+           --replace '/~s/Hello/Hullo' \
+           --setheaders '/~s/Transfer-Encoding/' \
+           &
         sleep 1
         npm run e2e
         killall mitmproxy
