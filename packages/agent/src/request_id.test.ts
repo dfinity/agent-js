@@ -3,7 +3,8 @@
 
 import { Buffer } from 'buffer/';
 import { hash, requestIdOf } from './request_id';
-import { BinaryBlob, blobToHex } from './types';
+import { BinaryBlob, blobToHex, blobFromHex, blobFromBuffer, blobFromUint8Array } from './types';
+import BigNumber from 'bignumber.js';
 
 const testHashOfBlob = async (input: BinaryBlob, expected: string) => {
   const hashed = await hash(input);
@@ -77,3 +78,52 @@ test('requestIdOf', async () => {
     '8781291c347db32a9d8c10eb62b710fce5a93be676474c42babc74c51858f94b',
   );
 });
+
+test('requestIdOf for sender_delegation signature', async () => {
+  // {
+  //   "delegation": {
+  //     "expiration": {
+  //       "type": "BigInt",
+  //       "string": "1611173458605000000"
+  //     },
+  //     "pubkey": {
+  //       "type": "Uint8Array",
+  //       "hex": "302a300506032b6570032100a70b8132011dc81cb3f7ea16e2074a3c177e73a9374a26ab41a0d26d23ca792d",
+  //       "base64": "MCowBQYDK2VwAyEApwuBMgEdyByz9+oW4gdKPBd+c6k3SiarQaDSbSPKeS0=",
+  //       "utf8": "0*0\u0005\u0006\u0003+ep\u0003!\u0000�\u000b�2\u0001\u001d�\u001c���\u0016�\u0007J<\u0017~s�7J&�A��m#�y-"
+  //     },
+  //     "targets": [
+  //       "kt247-naaaa-aaaab-qabgq-cai",
+  //       "pbh67-jaaaa-aaaab-aaavq-cai"
+  //     ]
+  //   },
+  //   "signature": {
+  //     "type": "Uint8Array",
+  //     "hex": "d9d9f7a3697369676e617475726558473045022100aee1313c0ae440d5a838bd3979df26f00aa8b7a16bec2482aa456390d24b80e702202d3fb8db1fd6331c45972c32f463ba7e4c169941161dd28ca54dcf7b0982c32a70636c69656e745f646174615f6a736f6e78e37b226368616c6c656e6765223a22476d6c6a4c584a6c6358566c63335174595856306143316b5a57786c5a324630615739756c717147584c5543793043532d2d624d4e6d52634c673374346c7576566b7442345a647a454b7269447163222c22636c69656e74457874656e73696f6e73223a7b7d2c2268617368416c676f726974686d223a225348412d323536222c226f726967696e223a2268747470733a2f2f6964656e746974792d70726f76696465722e73646b2d746573742e6466696e6974792e6e6574776f726b222c2274797065223a22776562617574686e2e676574227d7261757468656e74696361746f725f646174615825961c53806e2aa548714bec77ab09b7d0d2aa837710a7945a1e72949bc3a07e3d0100000006",
+  //     "base64": "2dn3o2lzaWduYXR1cmVYRzBFAiEAruExPArkQNWoOL05ed8m8Aqot6Fr7CSCqkVjkNJLgOcCIC0/uNsf1jMcRZcsMvRjun5MFplBFh3SjKVNz3sJgsMqcGNsaWVudF9kYXRhX2pzb25443siY2hhbGxlbmdlIjoiR21sakxYSmxjWFZsYzNRdFlYVjBhQzFrWld4bFoyRjBhVzl1bHFxR1hMVUN5MENTLS1iTU5tUmNMZzN0NGx1dlZrdEI0WmR6RUtyaURxYyIsImNsaWVudEV4dGVuc2lvbnMiOnt9LCJoYXNoQWxnb3JpdGhtIjoiU0hBLTI1NiIsIm9yaWdpbiI6Imh0dHBzOi8vaWRlbnRpdHktcHJvdmlkZXIuc2RrLXRlc3QuZGZpbml0eS5uZXR3b3JrIiwidHlwZSI6IndlYmF1dGhuLmdldCJ9cmF1dGhlbnRpY2F0b3JfZGF0YVgllhxTgG4qpUhxS+x3qwm30NKqg3cQp5RaHnKUm8Ogfj0BAAAABg==",
+  //     "utf8": "����isignatureXG0E\u0002!\u0000��1<\n�@ը8�9y�&�\n���k�$��Ec��K��\u0002 -?��\u001f�3\u001cE�,2�c�~L\u0016�A\u0016\u001dҌ�M�{\t��*pclient_data_jsonx�{\"challenge\":\"GmljLXJlcXVlc3QtYXV0aC1kZWxlZ2F0aW9ulqqGXLUCy0CS--bMNmRcLg3t4luvVktB4ZdzEKriDqc\",\"clientExtensions\":{},\"hashAlgorithm\":\"SHA-256\",\"origin\":\"https://identity-provider.sdk-test.dfinity.network\",\"type\":\"webauthn.get\"}rauthenticator_dataX%�\u001cS�n*�HqK�w�\t��Ҫ�w\u0010��Z\u001er��à~=\u0001\u0000\u0000\u0000\u0006"
+  //   }
+  // }
+  const delegation1 = {
+    expiration: BigInt("1611173458605000000"),
+    pubkey: blobFromHex("302a300506032b6570032100a70b8132011dc81cb3f7ea16e2074a3c177e73a9374a26ab41a0d26d23ca792d"),
+    targets: [
+      "kt247-naaaa-aaaab-qabgq-cai",
+      "pbh67-jaaaa-aaaab-aaavq-cai",
+    ]
+  };
+  // Note: this uses `BigNumber`, which the rest of this lib uses too. Make sure this works before `delegation1` above (with BigInt)
+  const delegation2 = {
+    expiration: new BigNumber("1611173458605000000"),
+    pubkey: blobFromHex("302a300506032b6570032100a70b8132011dc81cb3f7ea16e2074a3c177e73a9374a26ab41a0d26d23ca792d"),
+    targets: [
+      "kt247-naaaa-aaaab-qabgq-cai",
+      "pbh67-jaaaa-aaaab-aaavq-cai",
+    ]
+  };
+  const actualHashBytes = await requestIdOf(delegation2);
+  const expectedHashBytes = Uint8Array.from("Ìx\u001e\u0010\u0003\u001f\u009f\u008f·F\\Ò\u007f.\u009cá\u001f®¸ÄË¸ê,pGMj:<Îh", s => s.charCodeAt(0))
+  // actual   -> a97e981d9525c72a25e4c71d98b1762e213d8cb14b9a5d52968822f5f4ae2a98
+  // expected -> cc781e10031f9f8fb7465cd27f2e9ce11faeb8c4cbb8ea2c70474d6a3a3cce68
+  expect(blobToHex(actualHashBytes)).toEqual(blobToHex(blobFromUint8Array(expectedHashBytes)))
+})
