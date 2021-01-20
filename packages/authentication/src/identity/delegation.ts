@@ -43,11 +43,11 @@ export class Delegation {
     return cbor.value.map({
       pubkey: cbor.value.bytes(this.pubkey),
       expiration: cbor.value.u64(this.expiration.toString(16), 16),
-      ...(this.targets && { targets: this.targets.map(t => cbor.value.bytes(t.toBlob())) }),
-    } as any);
+      ...(this.targets && { targets: cbor.value.array(this.targets.map(t => cbor.value.bytes(t.toBlob()))) }),
+    });
   }
 
-  public toJSON(): any {
+  public toJSON() {
     return {
       expiration: this.expiration.toString(16),
       pubkey: this.pubkey.toString('hex'),
