@@ -88,10 +88,9 @@ async function _createSingleDelegation(
 
   // The signature is calculated by signing the concatenation of the domain separator
   // and the message.
-  const signature = await from.sign(
-    blobFromUint8Array(new Uint8Array([...domainSeparator, ...(await requestIdOf(delegation))])),
-  );
-
+  const challenge = new Uint8Array([...domainSeparator, ...(await requestIdOf(delegation))]);
+  const signature = await from.sign(blobFromUint8Array(challenge));
+  console.debug('@dfinity/authentication _createSingleDelegation', { challenge, signature, delegation })
   return {
     delegation,
     signature,
