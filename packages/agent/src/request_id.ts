@@ -24,6 +24,12 @@ async function hashValue(value: unknown): Promise<BinaryBlob> {
     return hashValue(value.value);
   } else if (typeof value === 'string') {
     return hashString(value);
+  } else if (
+    typeof value === 'bigint' ||
+    // In some odd cases, e.g. `Object.assign(BigInt("1"), { a: 1 })` on node@v14.13.1, the result has typeof === 'object', but is still also a BigInt, so also check `instanceof`
+    value instanceof BigInt
+  ) {
+    return hash(lebEncode(value));
   } else if (value instanceof BigNumber) {
     return hash(lebEncode(value) as BinaryBlob);
   } else if (typeof value === 'number') {
