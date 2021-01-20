@@ -5,6 +5,7 @@ import { Buffer } from 'buffer/';
 import { hash, requestIdOf } from './request_id';
 import { BinaryBlob, blobToHex, blobFromHex, blobFromBuffer, blobFromUint8Array } from './types';
 import BigNumber from 'bignumber.js';
+import { Principal } from './principal';
 
 const testHashOfBlob = async (input: BinaryBlob, expected: string) => {
   const hashed = await hash(input);
@@ -80,6 +81,11 @@ test('requestIdOf', async () => {
 });
 
 test('requestIdOf for sender_delegation signature', async () => {
+  // this is what replica wants
+  const expectedHashBytes = Uint8Array.from(
+    'Ìx\u001e\u0010\u0003\u001f\u009f\u008f·F\\Ò\u007f.\u009cá\u001f®¸ÄË¸ê,pGMj:<Îh',
+    s => s.charCodeAt(0),
+  );
   const delegation1 = {
     expiration: BigInt('1611173458605000000'),
     pubkey: blobFromHex(
@@ -87,25 +93,64 @@ test('requestIdOf for sender_delegation signature', async () => {
     ),
     targets: ['kt247-naaaa-aaaab-qabgq-cai', 'pbh67-jaaaa-aaaab-aaavq-cai'],
   };
-  // Note: this uses `BigNumber`, which the rest of this lib uses too. Make sure this works before `delegation1` above (with BigInt)
-  const delegation2 = {
-    ...delegation1,
-    expiration: new BigNumber('1611173458605000000'),
-  };
   const delegation1ActualHashBytes = await requestIdOf(delegation1);
-  const delegation2ActualHashBytes = await requestIdOf(delegation2);
-  const expectedHashBytes = Uint8Array.from(
-    'Ìx\u001e\u0010\u0003\u001f\u009f\u008f·F\\Ò\u007f.\u009cá\u001f®¸ÄË¸ê,pGMj:<Îh',
-    s => s.charCodeAt(0),
-  );
-  expect(blobToHex(delegation1ActualHashBytes)).toEqual(
-    blobToHex(blobFromUint8Array(delegation2ActualHashBytes)),
-  );
-
   // actual   -> a97e981d9525c72a25e4c71d98b1762e213d8cb14b9a5d52968822f5f4ae2a98
   // expected -> cc781e10031f9f8fb7465cd27f2e9ce11faeb8c4cbb8ea2c70474d6a3a3cce68
   //   (according to replica error message https://github.com/dfinity/webauthn_tester/issues/105)
   expect(blobToHex(delegation1ActualHashBytes)).toEqual(
     blobToHex(blobFromUint8Array(expectedHashBytes)),
   );
+
+
+  // Note: this uses `BigNumber`, which the rest of this lib uses too. Make sure this works before `delegation1` above (with BigInt)
+  const delegation2 = {
+    ...delegation1,
+    expiration: new BigNumber(delegation1.expiration.toString(10), 10),
+  };
+  const delegation2ActualHashBytes = await requestIdOf(delegation2);
+  expect(blobToHex(delegation2ActualHashBytes)).toEqual(
+    blobToHex(blobFromUint8Array(delegation1ActualHashBytes)),
+  );
+
+
+  const delegation3 = {
+    ...delegation1,
+    targets: delegation1.targets.map(t => (Principal.fromText(t).toBlob())),
+  }
+  /**
+  delegation3 = {
+    expiration: 1611173458605000000n,
+    pubkey: <Buffer 30 2a 30 05 06 03 2b 65 70 03 21 00 a7 0b 81 32 01 1d c8 1c b3 f7 ea 16 e2 07 4a 3c 17 7e 73 a9 37 4a 26 ab 41 a0 d2 6d 23 ca 79 2d>,
+    targets: [
+      <Buffer 00 00 00 00 00 30 00 4d 01 01>,
+      <Buffer 00 00 00 00 00 20 00 2b 01 01>
+    ]
+  }
+   */
+  const delegation3ActualHashBytes = await requestIdOf(delegation3)
+  // actual: 96aa865cb502cb4092fbe6cc36645c2e0dede25baf564b41e1977310aae20ea7
+  expect(blobToHex(delegation3ActualHashBytes)).toEqual(blobToHex(blobFromUint8Array(expectedHashBytes)))
+
+  
+  const delegation4 = {
+    ...delegation3,
+    pubkey: Uint8Array.from(delegation3.pubkey),
+    targets: delegation3.targets.map(buf => Uint8Array.from(buf))
+  };
+  /**
+  delegation4 = {
+      expiration: 1611173458605000000n,
+      pubkey: Uint8Array(44) [
+          48,  42,  48,  5,   6,   3, 43, 101, 112,   3,
+          33,   0, 167, 11, 129,  50,  1,  29, 200,  28,
+        179, 247, 234, 22, 226,   7, 74,  60,  23, 126,
+        115, 169,  55, 74,  38, 171, 65, 160, 210, 109,
+          35, 202, 121, 45
+      ],
+      targets: [ [Uint8Array], [Uint8Array] ]
+  }
+  */
+  const delegation4ActualHashBytes = await requestIdOf(delegation4)
+  // actual: 96aa865cb502cb4092fbe6cc36645c2e0dede25baf564b41e1977310aae20ea7
+  expect(blobToHex(delegation4ActualHashBytes)).toEqual(blobToHex(blobFromUint8Array(expectedHashBytes)))
 });

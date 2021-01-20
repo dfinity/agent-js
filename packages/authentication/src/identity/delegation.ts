@@ -85,10 +85,28 @@ async function _createSingleDelegation(
     new BigNumber(+expiration).times(1000000), // In nanoseconds.
     targets,
   );
-
+  type IHashableDelegation = {
+    pubkey: ArrayBuffer,
+    expiration: BigInt,
+    targets?: Array<ArrayBuffer>
+  }
+  function SignableDelegation(delegation: Delegation): IHashableDelegation {
+    const hashableDelegation: IHashableDelegation = {
+      pubkey: Uint8Array.from(delegation.pubkey),
+      expiration: BigInt(delegation.expiration.toString(10)),
+      ...(delegation.targets && {
+        targets: delegation.targets.map(p => Uint8Array.from(p.toBlob()))
+      }),
+    }
+    console.debug('SignableDelegation', {
+      delegationWithPrototype: delegation,
+      hashableDelegation,
+    })
+    return hashableDelegation;
+  }
   // The signature is calculated by signing the concatenation of the domain separator
   // and the message.
-  const challenge = new Uint8Array([...domainSeparator, ...(await requestIdOf(delegation))]);
+  const challenge = new Uint8Array([...domainSeparator, ...(await requestIdOf(SignableDelegation(delegation)))]);
   const signature = await from.sign(blobFromUint8Array(challenge));
   console.debug('@dfinity/authentication _createSingleDelegation', { challenge, signature, delegation })
   return {
