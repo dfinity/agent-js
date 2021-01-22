@@ -80,22 +80,6 @@ export default function AuthenticationController(options: {
           return derBlobFromBlob(blobFromHex(spec.consentProposal.request.sessionIdentity.hex));
         },
       };
-      const response: icid.AuthenticationResponse = {
-        type: 'AuthenticationResponse',
-        accessToken: icid.createBearerToken({
-          delegationChain: await DelegationChain.create(
-            spec.consenter,
-            delegationTail,
-            new Date(Date.now() + Number(days(1))) /* 24hr expiry */,
-            {
-              targets: parsedScope.canisters.map(({ principal }) => principal),
-            },
-          ),
-        }),
-        expiresIn: 10000000,
-        tokenType: 'bearer',
-        scope: icid.stringifyScope(parsedScope),
-      };
       const consentReceivedAction: IdentityProviderAction = {
         type: 'AuthenticationRequestConsentReceived',
         payload: {
@@ -110,11 +94,6 @@ export default function AuthenticationController(options: {
             },
           },
         },
-      };
-
-      const responsePreparedAction: IdentityProviderAction = {
-        type: 'AuthenticationResponsePrepared',
-        payload: response,
       };
       return [consentReceivedAction];
     },

@@ -48,10 +48,13 @@ export class Delegation {
   }
 
   public toJSON() {
+    // every string should be hex and once-de-hexed,
+    // discoverable what it is (e.g. de-hex to get JSON with a 'type' property, or de-hex to DER with an OID)
+    // After de-hex, if it's not obvious what it is, it's an ArrayBuffer.
     return {
       expiration: this.expiration.toString(16),
       pubkey: this.pubkey.toString('hex'),
-      ...(this.targets && { targets: this.targets.map(p => p.toText()) }),
+      ...(this.targets && { targets: this.targets.map(p => p.toBlob().toString('hex')) }),
     };
   }
 }
@@ -98,10 +101,6 @@ async function _createSingleDelegation(
         targets: delegation.targets.map(p => Uint8Array.from(p.toBlob()))
       }),
     }
-    console.debug('SignableDelegation', {
-      delegationWithPrototype: delegation,
-      hashableDelegation,
-    })
     return hashableDelegation;
   }
   // The signature is calculated by signing the concatenation of the domain separator
@@ -192,7 +191,7 @@ export class DelegationChain {
               if (typeof t !== 'string') {
                 throw new Error('Invalid target.');
               }
-              return Principal.fromText(t);
+              return Principal.fromHex(t);
             }),
         ),
         signature: _parseBlob(signature),

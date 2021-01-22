@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Route, Switch, useRouteMatch, useLocation, Redirect  } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Switch, useRouteMatch, useLocation, Redirect, useHistory  } from 'react-router-dom';
 import WelcomeScreen from './screens/WelcomeScreen';
 import IdentityConfirmationScreen from './screens/IdentityConfirmationScreen';
 import {default as SessionConsentScreen} from './screens/SessionConsentScreen';
@@ -58,8 +58,10 @@ export default function DesignPhase0Route(props: {
         },
         [stateStorage],
     )
+    const history = useHistory();
     const [state, dispatch] = useReducer(IdentityProviderReducer({
         WebAuthn: StubbedWebAuthn(),
+        history,
     }), initialState)
     useStateStorage(stateStorage, state, dispatch);
     const urls = {
@@ -180,12 +182,14 @@ export default function DesignPhase0Route(props: {
                         </>
                     :   <><SessionConsentScreen
                         consentProposal={consentProposal}
-                        consent={async () => (await authenticationController.consentToAuthenticationResponseProposal({
-                            consentProposal,
-                            consenter: rootIdentity
-                        })).forEach(action => {
-                            dispatch(action);
-                        })}
+                        consent={async () => {
+                            for (const action1 of await authenticationController.consentToAuthenticationResponseProposal({
+                                consentProposal,
+                                consenter: rootIdentity
+                            })) {
+                                dispatch(action1);
+                            }
+                        }}
                         /></>
                 }
                 </>
