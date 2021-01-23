@@ -43,7 +43,9 @@ export class Delegation {
     return cbor.value.map({
       pubkey: cbor.value.bytes(this.pubkey),
       expiration: cbor.value.u64(this.expiration.toString(16), 16),
-      ...(this.targets && { targets: cbor.value.array(this.targets.map(t => cbor.value.bytes(t.toBlob()))) }),
+      ...(this.targets && {
+        targets: cbor.value.array(this.targets.map(t => cbor.value.bytes(t.toBlob()))),
+      }),
     });
   }
 
@@ -88,26 +90,15 @@ async function _createSingleDelegation(
     new BigNumber(+expiration).times(1000000), // In nanoseconds.
     targets,
   );
-  type IHashableDelegation = {
-    pubkey: ArrayBuffer,
-    expiration: BigInt,
-    targets?: Array<ArrayBuffer>
-  }
-  function SignableDelegation(delegation: Delegation): IHashableDelegation {
-    const hashableDelegation: IHashableDelegation = {
-      pubkey: Uint8Array.from(delegation.pubkey),
-      expiration: BigInt(delegation.expiration.toString(10)),
-      ...(delegation.targets && {
-        targets: delegation.targets.map(p => Uint8Array.from(p.toBlob()))
-      }),
-    }
-    return hashableDelegation;
-  }
   // The signature is calculated by signing the concatenation of the domain separator
   // and the message.
-  const challenge = new Uint8Array([...domainSeparator, ...(await requestIdOf(SignableDelegation(delegation)))]);
+  const challenge = new Uint8Array([...domainSeparator, ...(await requestIdOf(delegation))]);
   const signature = await from.sign(blobFromUint8Array(challenge));
-  console.debug('@dfinity/authentication _createSingleDelegation', { challenge, signature, delegation })
+  console.debug('@dfinity/authentication _createSingleDelegation', {
+    challenge,
+    signature,
+    delegation,
+  });
   return {
     delegation,
     signature,
