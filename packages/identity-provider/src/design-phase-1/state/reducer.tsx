@@ -10,6 +10,7 @@ import * as rootIdentityReducer from "./reducers/rootIdentity";
 import * as webAuthnReducer from "./reducers/webauthn.reducer";
 import { EffectRequested, IEffectiveReducer } from "./reducer-effects";
 import { WebAuthnIdentity } from "@dfinity/authentication";
+import { History } from "history";
 
 export default function IdentityProviderReducer(spec: {
     /** Useful for logging effects */
@@ -17,55 +18,66 @@ export default function IdentityProviderReducer(spec: {
     WebAuthn: {
       create(): Promise<WebAuthnIdentity>;
     };
+    history: History
   }): IEffectiveReducer<State, Action> {
     return Object.freeze({
-        effect,
+        effect: Effector(spec),
         init,
         reduce,
     })
 }
 
-export function effect(state: State, action: Action): undefined | EffectRequested<Action> {
-    switch (action.type) {
-        case "EffectRequested":
-            console.log('design-phase-1/reducer/Effector EffectRequested (term)', action)
-            break;
-        case "Navigate":
-            const navigateViaLocationAssignEffect: EffectRequested<Action> = {
-                type: "EffectRequested" as const,
-                payload: {
-                    async effect(): Promise<void> {
-                        const { href } = action.payload;
-                        globalThis.location.assign(href);
+export function Effector(spec: {
+    history: History;
+}): IEffectiveReducer<State, Action>['effect'] {
+    return (state: State, action: Action): undefined | EffectRequested<Action> => {
+        switch (action.type) {
+            case "EffectRequested":
+                console.log('design-phase-1/reducer/Effector EffectRequested (term)', action)
+                break;
+            case "Navigate":
+                const navigateViaLocationAssignEffect: EffectRequested<Action> = {
+                    type: "EffectRequested" as const,
+                    payload: {
+                        async effect(): Promise<void> {
+                            const { href } = action.payload;
+                            const isRelativeHref = (() => {
+                                try {
+                                    // if href is relative, this will throw because no second param
+                                    new URL(href);
+                                } catch (error) {
+                                    return true;
+                                }
+                                return false;
+                            })();
+                            if (isRelativeHref) {
+                                spec.history.push(href);
+                            } else {
+                                globalThis.location.assign(href)
+                            }
+                        }
                     }
                 }
-            }
-            return navigateViaLocationAssignEffect;
-        case "StateStored":
-            return {
-                type: "EffectRequested",
-                payload: {
-                    async effect() {
-                        console.debug('StateStored', action)
-                    }
-                }
-            }
-        case "AuthenticationRequestReceived":
-        case "AuthenticationResponsePrepared":
-        case "AuthenticationRequestConsentReceived":
-            return authenticationReducer.effect(action);
-        case "WebAuthn/reset":
-        case "WebAuthn/publicKeyCredentialRequested":
-        case "WebAuthn/publicKeyCredentialCreated":
-            return webAuthnReducer.effect(state.webAuthn, action);
-        case "reset":
-        case "DelegationRootSignerChanged":
-            break;
-        default:
-            // Intentionally exhaustive. If compiler complains, add more cases above to explicitly handle.
-            let x: never = action;
+                return navigateViaLocationAssignEffect;
+            case "StateStored":
+                return;
+            case "AuthenticationRequestReceived":
+            case "AuthenticationResponsePrepared":
+            case "AuthenticationRequestConsentReceived":
+                return authenticationReducer.effect(action);
+            case "WebAuthn/reset":
+            case "WebAuthn/publicKeyCredentialRequested":
+            case "WebAuthn/publicKeyCredentialCreated":
+                return webAuthnReducer.effect(state.webAuthn, action);
+            case "reset":
+            case "DelegationRootSignerChanged":
+                break;
+            default:
+                // Intentionally exhaustive. If compiler complains, add more cases above to explicitly handle.
+                let x: never = action;
+        }
+        return;
     }
-    return;
 }
 
 export const reduce = function (state: State|undefined, action: Action): State {

@@ -43,15 +43,20 @@ export class Delegation {
     return cbor.value.map({
       pubkey: cbor.value.bytes(this.pubkey),
       expiration: cbor.value.u64(this.expiration.toString(16), 16),
-      ...(this.targets && { targets: this.targets.map(t => cbor.value.bytes(t.toBlob())) }),
-    } as any);
+      ...(this.targets && {
+        targets: cbor.value.array(this.targets.map(t => cbor.value.bytes(t.toBlob()))),
+      }),
+    });
   }
 
-  public toJSON(): any {
+  public toJSON() {
+    // every string should be hex and once-de-hexed,
+    // discoverable what it is (e.g. de-hex to get JSON with a 'type' property, or de-hex to DER with an OID)
+    // After de-hex, if it's not obvious what it is, it's an ArrayBuffer.
     return {
       expiration: this.expiration.toString(16),
       pubkey: this.pubkey.toString('hex'),
-      ...(this.targets && { targets: this.targets.map(p => p.toText()) }),
+      ...(this.targets && { targets: this.targets.map(p => p.toBlob().toString('hex')) }),
     };
   }
 }
@@ -85,13 +90,15 @@ async function _createSingleDelegation(
     new BigNumber(+expiration).times(1000000), // In nanoseconds.
     targets,
   );
-
   // The signature is calculated by signing the concatenation of the domain separator
   // and the message.
-  const signature = await from.sign(
-    blobFromUint8Array(new Uint8Array([...domainSeparator, ...(await requestIdOf(delegation))])),
-  );
-
+  const challenge = new Uint8Array([...domainSeparator, ...(await requestIdOf(delegation))]);
+  const signature = await from.sign(blobFromUint8Array(challenge));
+  console.debug('@dfinity/authentication _createSingleDelegation', {
+    challenge,
+    signature,
+    delegation,
+  });
   return {
     delegation,
     signature,
@@ -175,7 +182,7 @@ export class DelegationChain {
               if (typeof t !== 'string') {
                 throw new Error('Invalid target.');
               }
-              return Principal.fromText(t);
+              return Principal.fromHex(t);
             }),
         ),
         signature: _parseBlob(signature),

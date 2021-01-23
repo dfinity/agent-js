@@ -78,6 +78,16 @@ test('DelegationChain can be serialized to and from JSON', async () => {
   );
 
   const rootToMiddleJson = JSON.stringify(rootToMiddle);
+  // All strings in the JSON should be hex so it is clear how to decode this as different versions of `toJSON` evolve.
+  JSON.parse(rootToMiddleJson, (key, value) => {
+    if (typeof value === 'string') {
+      const byte = parseInt(value, 16);
+      if (isNaN(byte)) {
+        throw new Error(`expected all strings to be hex, but got: ${value}`);
+      }
+    }
+    return value;
+  });
   const rootToMiddleActual = DelegationChain.fromJSON(rootToMiddleJson);
   expect(rootToMiddleActual).toEqual(rootToMiddle);
 

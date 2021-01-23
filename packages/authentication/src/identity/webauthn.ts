@@ -201,8 +201,8 @@ export class WebAuthnIdentity extends SignIdentity {
           signature: new Uint8Array(response.signature),
         }),
       );
-      if ( ! cbor) {
-        throw new Error('failed to encode cbor')
+      if (!cbor) {
+        throw new Error('failed to encode cbor');
       }
       return blobFromUint8Array(new Uint8Array(cbor));
     } else {
