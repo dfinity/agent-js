@@ -6,7 +6,8 @@
     "module": "commonjs",
     "lib": [
       "dom",
-      "es2017"
+      "es2017",
+      "ES2019.Object"
     ],
     "declaration": true,
     "sourceMap": true,
@@ -16,10 +17,14 @@
     "strict": true,
     "baseUrl": "./",
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "outDir": ".tsc-out",
   },
   "include": [
     "types/*",
     "src/**/*.ts"
+  ],
+  "references": [
+    { "path": "../agent" },
   ]
 }
