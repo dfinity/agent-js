@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/authentication",
-  "version": "0.0.0",
+  "version": "0.0.0-pre.authentication.0",
   "main": ".tsc-out/src/index.js",
   "scripts": {
     "build": "tsc -b",

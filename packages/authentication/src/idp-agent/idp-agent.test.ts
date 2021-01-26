@@ -1,7 +1,7 @@
 import { IdentityProviderAgent, IdentityProviderIndicator, Transport } from './idp-agent';
 import { Principal } from '@dfinity/agent';
 import { AuthenticationRequest, createAuthenticationRequestUrl } from '../idp-protocol/request';
-import { UrlTransport } from './transport';
+import { UrlTransport, RedirectTransport } from './transport';
 
 export const unsafeTemporaryIdentityProvider: IdentityProviderIndicator = {
   url: new URL('https://identity-provider.sdk-test.dfinity.network'),
@@ -79,5 +79,31 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
     );
     expect(authenticationRequestUrl.searchParams.get('scope')).toEqual('');
     expect(authenticationRequestUrl.searchParams.get('login_hint')).toBeTruthy();
+  });
+  it('can send AuthenticationRequest through RedirectTransport', async () => {
+    const assignments: any[] = [];
+    const locationProxy = new Proxy(globalThis.location, {
+      get(target, key: any, receiver) {
+        const reflected = Reflect.get(target, key, receiver);
+        if (key === 'assign' && target instanceof Location) {
+          return function (url: string | URL) {
+            assignments.push(url);
+          };
+        }
+        return reflected;
+      },
+    });
+    const transport = RedirectTransport({ location: locationProxy });
+    const agent = createTestAgent({ transport });
+    const sendAuthenticationRequestCommand = {
+      redirectUri: exampleRedirectUri,
+      scope: [],
+    };
+    await agent.sendAuthenticationRequest(sendAuthenticationRequestCommand);
+    expect(assignments.length).toEqual(1);
+    const assignedUrl = new URL(assignments[0]);
+    expect(assignedUrl.searchParams.get('redirect_uri')).toEqual(
+      sendAuthenticationRequestCommand.redirectUri.toString(),
+    );
   });
 });

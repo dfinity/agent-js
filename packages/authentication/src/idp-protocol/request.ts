@@ -33,7 +33,8 @@ export function createAuthenticationRequestUrl(spec: {
 }): URL {
   const url = new URL(spec.identityProviderUrl.toString());
   for (const [key, value] of Object.entries(toOauth(spec.authenticationRequest))) {
-    url.searchParams.set(key, value);
+    const valueUriComponent = typeof value === 'undefined' ? '' : value;
+    url.searchParams.set(key, valueUriComponent);
   }
   return url;
 }

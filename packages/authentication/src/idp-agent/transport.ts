@@ -26,8 +26,8 @@ export function UrlTransport(withUrl: (url: URL) => any): Transport {
   }
 }
 
-export function RedirectTransport() {
+export function RedirectTransport(spec: { location: globalThis.Location }) {
   return UrlTransport(url => {
-    globalThis.location.assign(url.toString());
+    spec.location.assign(url.toString());
   });
 }
