@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/authentication-demo",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "",
   "keywords": [],
   "scripts": {
@@ -10,7 +10,7 @@
     "@dfinity/authentication": "file:../authentication"
   },
   "devDependencies": {
-    "@dfinity/agent": "0.6.22-pre.bengo.1",
+    "@dfinity/agent": "file:../agent",
     "terser-webpack-plugin": "2.2.2",
     "webpack": "4.41.3",
     "webpack-cli": "3.3.10"

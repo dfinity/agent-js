@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/authentication",
-  "version": "0.0.0-pre.identity-provider.7",
+  "version": "0.0.0",
   "main": ".tsc-out/src/index.js",
   "types": ".tsc-out/src/index.d.ts",
   "scripts": {
