@@ -75,13 +75,15 @@ export function DomEventTransport(): Transport<EnvelopeToDocument> {
   }
 }
 
-function AuthenticationResponseDetectedEvent(url: URL) {
+export function AuthenticationResponseDetectedEvent(url: URL) {
   return new CustomEvent(
     'https://internetcomputer.org/ns/authentication/AuthenticationResponseDetectedEvent',
     {
       detail: {
         url,
       },
+      bubbles: true,
+      cancelable: true,
     },
   );
 }

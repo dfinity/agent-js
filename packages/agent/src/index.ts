@@ -24,6 +24,7 @@ export { UICore, UI };
 export interface GlobalInternetComputer {
   ic: {
     agent: Agent;
+    bootstrapVersion: Number;
     HttpAgent: typeof HttpAgent;
     IDL: typeof IDL;
 

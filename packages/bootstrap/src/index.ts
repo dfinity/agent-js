@@ -8,8 +8,34 @@ import {
 } from '@dfinity/agent';
 import { createAgent } from './host';
 import { SiteInfo } from './site';
+import { debug } from 'console';
 
 declare const window: GlobalInternetComputer & Window;
+
+const app = {
+  get parentNode(): Element|null {
+    let host: Element|null = null;
+    for (const selector of ['ic-bootstrap', 'app']) {
+      if (host = document.querySelector(selector)) {
+        break;
+      }
+    }
+    return host;
+  },
+  render(el: Element) {
+    bootstrapLog('debug', 'app.render', { el })
+    const parent = this.parentNode;
+    if ( ! parent) {
+      log('debug', 'no host element found')
+      return;
+    }
+    // remove all children of host
+    while (parent.lastChild) {
+      parent.removeChild(parent.lastChild)
+    }
+    parent.appendChild(el);
+  }
+}
 
 // Retrieve and execute a JavaScript file from the server.
 async function _loadJs(
@@ -17,6 +43,7 @@ async function _loadJs(
   filename: string,
   onload = async () => {},
 ): Promise<any> {
+  bootstrapLog('debug', '_loadJs')
   const actor = createAssetCanisterActor({ canisterId });
   const content = await actor.retrieve(filename);
   const js = new TextDecoder().decode(new Uint8Array(content));
@@ -32,6 +59,7 @@ async function _loadJs(
 }
 
 async function _loadCandid(canisterId: Principal): Promise<any> {
+  bootstrapLog('debug', '_loadCandid')
   const origin = window.location.origin;
   const url = `${origin}/_/candid?canisterId=${canisterId.toText()}&format=js`;
   const response = await fetch(url);
@@ -46,6 +74,17 @@ async function _loadCandid(canisterId: Principal): Promise<any> {
 }
 
 async function _main() {
+  const bootstrapVersion = 1;
+  bootstrapLog('debug', '_main')
+  if (window?.ic?.bootstrapVersion >= bootstrapVersion) {
+    bootstrapLog('debug', `ic.bootstrapVersion >= ${bootstrapVersion}. Skipping _main()`)
+    return;
+  }
+  bootstrapLog('debug', 'initializing', { bootstrapVersion })
+  window.ic = {
+    ...window.ic,
+    bootstrapVersion,
+  }
   const site = await SiteInfo.fromWindow();
   const agent = await createAgent(site);
 
@@ -53,6 +92,7 @@ async function _main() {
   const canisterId = site.principal;
   window.ic = {
     agent,
+    bootstrapVersion,
     canister: canisterId && Actor.createActor(({ IDL: IDL_ }) => IDL_.Service({}), { canisterId }),
     HttpAgent,
     IDL,
@@ -75,18 +115,38 @@ async function _main() {
     } else {
       // Load index.js from the canister and execute it.
       await _loadJs(canisterId, 'index.js', async () => {
-        document.getElementById('ic-progress')!.remove();
+        const progress = document.getElementById('ic-progress');
+        if (progress) progress.remove();
       });
     }
   }
 }
 
 _main().catch(err => {
+  bootstrapLog("error", "caught error", { error: err })
   const div = document.createElement('div');
   div.innerText = 'An error happened:';
   const pre = document.createElement('pre');
   pre.innerHTML = err.stack;
   div.appendChild(pre);
-  document.body.replaceChild(div, document.body.getElementsByTagName('app').item(0)!);
+  app.render(div);
   throw err;
 });
+
+function bootstrapLog(level: keyof typeof console, ...loggables: any[]) {
+  log(level, '[bootstrap]', ...loggables)
+}
+
+/** Log something using globalThis.console, if present */
+function log(level: keyof typeof console, ...loggables: any[]) {
+  if (typeof console[level] === 'function') {
+    console[level](...loggables)
+    return;
+  }
+  if (level !== 'info') {
+    log('info', level, ...loggables)
+  }
+  if (typeof console?.log === 'function') {
+    console.log(...loggables)
+  }
+}

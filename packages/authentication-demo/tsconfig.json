@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+  },
+  "references": [
+    { "path": "../authentication", },
+    { "path": "../bootstrap", },
+  ]
+}
