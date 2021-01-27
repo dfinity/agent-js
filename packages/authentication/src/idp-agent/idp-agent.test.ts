@@ -1,26 +1,25 @@
-import { IdentityProviderAgent, IdentityProviderIndicator, Transport } from './idp-agent';
+import { IdentityProviderAgent } from './idp-agent';
 import { Principal } from '@dfinity/agent';
 import { AuthenticationRequest, createAuthenticationRequestUrl } from '../idp-protocol/request';
-import { UrlTransport, RedirectTransport } from './transport';
-
-export const unsafeTemporaryIdentityProvider: IdentityProviderIndicator = {
-  url: new URL('https://identity-provider.sdk-test.dfinity.network'),
-};
+import {
+  UrlTransport,
+  RedirectTransport,
+  IdentityProviderAgentEnvelope,
+  Transport,
+} from './transport';
+import { unsafeTemporaryIdentityProvider } from '.';
+import * as assert from 'assert';
 
 function createTestTransport() {
-  type Sendable = {
-    to: IdentityProviderIndicator;
-    message: AuthenticationRequest;
-  };
-  const sent: Array<Sendable> = [];
-  const send = async (s: Sendable) => {
+  const sent: Array<IdentityProviderAgentEnvelope> = [];
+  const send = async (s: IdentityProviderAgentEnvelope) => {
     sent.push(s);
   };
-  const transport = { send };
+  const transport: Transport<IdentityProviderAgentEnvelope> = { send };
   return { sent, transport };
 }
 
-function createTestAgent(spec: { transport: Transport }) {
+function createTestAgent(spec: { transport: Transport<IdentityProviderAgentEnvelope> }) {
   const { transport } = spec;
   const agent = new IdentityProviderAgent({
     identityProvider: unsafeTemporaryIdentityProvider,
@@ -52,6 +51,9 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
     const { to, message } = sent[0];
     // default IDP to the staging one
     expect(to).toEqual(unsafeTemporaryIdentityProvider);
+    if (message.type !== 'AuthenticationRequest') {
+      throw new Error(`Expected AuthentiationRequest`);
+    }
     expect(message).toMatchObject({
       type: 'AuthenticationRequest',
       scope: canisterPrincipal.toText(),

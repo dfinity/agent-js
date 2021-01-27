@@ -1,15 +1,13 @@
 {
-  "name": "@dfinity/authentication",
-  "version": "0.0.0-pre.identity-provider.7",
-  "main": ".tsc-out/src/index.js",
-  "types": ".tsc-out/src/index.d.ts",
+  "name": "@dfinity/agent",
+  "version": "0.0.0",
+  "main": "src/index.js",
   "scripts": {
     "build": "tsc -b",
     "bundle": "npm run build",
     "ci": "npm run prettier && npm run lint && npm run build && npm run test",
     "lint": "tslint --project tsconfig.json --config tslint.json",
     "lint:fix": "npm run lint -- --fix",
-    "prepare": "npm run build",
     "prettier": "prettier --check \"src/**/*.ts\"",
     "prettier:write": "npm run prettier -- --write",
     "test": "jest --verbose"
@@ -17,18 +15,14 @@
   "dependencies": {
     "@types/crc": "^3.4.0",
     "@types/jest": "^24.0.18",
-    "@dfinity/agent": "^0.6.20",
-    "asn1.js": "^5.4.1",
     "base32.js": "^0.1.0",
     "bignumber.js": "^9.0.0",
-    "bip39": "^3.0.2",
     "borc": "^2.1.1",
     "buffer": "^5.4.3",
     "buffer-pipe": "0.0.4",
     "crc": "3.8.0",
     "js-sha256": "0.9.0",
-    "simple-cbor": "^0.4.1",
-    "tweetnacl": "^1.0.1"
+    "simple-cbor": "^0.4.1"
   },
   "devDependencies": {
     "@trust/webcrypto": "^0.9.2",

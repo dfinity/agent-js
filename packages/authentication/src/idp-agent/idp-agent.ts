@@ -2,25 +2,13 @@ import { blobToHex } from '@dfinity/agent';
 import { stringifyScope, Scope } from '../idp-protocol/scope';
 import { Ed25519KeyIdentity } from '../identity/ed25519';
 import { AuthenticationRequest } from '../idp-protocol/request';
-
-export interface IdentityProviderIndicator {
-  url: URL;
-}
+import { isMaybeAuthenticationResponseUrl } from '../idp-protocol/response';
+import { IdentityProviderAgentEnvelope, IdentityProviderIndicator, Transport } from './transport';
 
 interface IIdentityProviderAgent {
   sendAuthenticationRequest(command: SendAuthenticationRequestCommand): Promise<void>;
+  receiveAuthenticationResponse(url: URL): Promise<void>;
 }
-
-type Sendable = {
-  to: IdentityProviderIndicator;
-  message: AuthenticationRequest;
-};
-
-type Sender = (s: Sendable) => Promise<void>;
-
-export type Transport = {
-  send: Sender;
-};
 
 type SendAuthenticationRequestCommand = {
   redirectUri?: URL;
@@ -29,16 +17,14 @@ type SendAuthenticationRequestCommand = {
 
 export class IdentityProviderAgent implements IIdentityProviderAgent {
   #identityProvider: IdentityProviderIndicator;
-  #transport: Transport = {
-    async send(sendable) {
-      console.log('IdentityProviderAgent default sender', sendable);
-    },
-  };
-  constructor(spec: { identityProvider: IdentityProviderIndicator; transport: Transport }) {
+  #transport: Transport<IdentityProviderAgentEnvelope>;
+  constructor(spec: {
+    identityProvider: IdentityProviderIndicator;
+    transport: Transport<IdentityProviderAgentEnvelope>;
+  }) {
     this.#identityProvider = spec.identityProvider;
     this.#transport = spec.transport;
   }
-
   async sendAuthenticationRequest(spec: SendAuthenticationRequestCommand): Promise<void> {
     const redirectUri: string = spec.redirectUri
       ? spec.redirectUri.toString()
@@ -55,6 +41,25 @@ export class IdentityProviderAgent implements IIdentityProviderAgent {
     await this.#transport.send({
       to: this.#identityProvider,
       message: authenticationRequest,
+    });
+  }
+
+  async receiveAuthenticationResponse(url: URL) {
+    if (!isMaybeAuthenticationResponseUrl(url)) {
+      console.debug(
+        'receiveAuthenticationResponse called, but the URL does not appear to contain an AuthenticationResponse',
+      );
+      return;
+    }
+    const authenticationResponseUrlDetectedEvent = {
+      type: 'AuthenticationResponseUrlDetectedEvent' as const,
+      payload: {
+        url,
+      },
+    };
+    this.#transport.send({
+      to: 'document',
+      message: authenticationResponseUrlDetectedEvent,
     });
   }
 }

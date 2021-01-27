@@ -1,11 +1,24 @@
-import * as idpAgentModule from './idp-agent';
-import { unsafeTemporaryIdentityProvider } from './idp-agent.test';
-import { RedirectTransport } from './transport';
+import * as idp from './idp-agent';
+import {
+  RedirectTransport,
+  IdentityProviderAgentEnvelope,
+  Transport,
+  BrowserTransport,
+  DomEventTransport,
+} from './transport';
 
-export const { IdentityProviderAgent } = idpAgentModule;
-export const authenticator = new IdentityProviderAgent({
+export const unsafeTemporaryIdentityProvider = {
+  url: new URL('https://identity-provider.sdk-test.dfinity.network/design-phase-1'),
+};
+
+export const { IdentityProviderAgent } = idp;
+
+export const authenticator = new idp.IdentityProviderAgent({
   identityProvider: unsafeTemporaryIdentityProvider,
-  transport: RedirectTransport({
-    location,
+  transport: BrowserTransport({
+    document: DomEventTransport(),
+    identityProvider: RedirectTransport({
+      location,
+    }),
   }),
 });

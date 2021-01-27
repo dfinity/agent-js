@@ -6,6 +6,8 @@
   "dependencies": {
     "@dfinity/agent": "file://./packages/agent",
     "@dfinity/agent-js-devtools": "file://./packages/agent-js-devtools",
+    "@dfinity/authentication": "file://./packages/authentication",
+    "@dfinity/authentication-demo": "file://./packages/authentication-demo",
     "@dfinity/bootstrap": "file://./packages/bootstrap",
     "@dfinity/identity-provider": "file://./packages/identity-provider"
   },
