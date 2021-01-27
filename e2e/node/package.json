@@ -4,7 +4,8 @@
   "version": "0.0.0-do-not-publish",
   "scripts": {
     "ci": "npm run e2e",
-    "e2e": "jest --verbose"
+    "e2e": "jest --verbose",
+    "mitm": "jest -i basic/mitm.test.ts"
   },
   "dependencies": {
     "@dfinity/agent": "file://../../packages/agent",
