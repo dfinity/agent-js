@@ -1,5 +1,6 @@
 import { authenticator } from "@dfinity/authentication";
 import "@dfinity/bootstrap";
+import authDemoContract from 'ic:canisters/authentication_demo';
 
 (() => {
   function log(...messages) {
@@ -12,27 +13,8 @@ import "@dfinity/bootstrap";
       // Always call super first in constructor
       super();
     }
-    onAuthenticationResponsDetectedEvent(event) {
-      console.debug("AuthenticationResponseDetectedEvent", {
-        url: event.detail.url,
-        event,
-      });
-    }
     connectedCallback() {
-      // this.ownerDocument.addEventListener(
-      //   AuthenticationResponseDetectedEvent().type,
-      //   this.onAuthenticationResponsDetectedEvent
-      // );
       this.render();
-      authenticator.receiveAuthenticationResponse(
-        new URL(this.ownerDocument.location.toString())
-      );
-    }
-    disconnectedCallback() {
-      this.ownerDocument.removeEventListener(
-        AuthenticationResponseDetectedEvent().type,
-        this.onAuthenticationResponsDetectedEvent
-      );
     }
     render() {
       // Create a shadow root
@@ -40,39 +22,44 @@ import "@dfinity/bootstrap";
       while (shadow.firstChild) {
         shadow.firstChild.remove();
       }
-      // Create text node and add word count to it
-      var button = document.createElement("button", {
-        is: "ic-authentication-button",
-      });
       // Append it to the shadow root
-      shadow.appendChild(button);
+      shadow.appendChild(document.createElement("button", {
+        is: "ic-authentication-button",
+      }));
+      shadow.appendChild(
+        (() => {
+          const testAgentButton = document.createElement('button');
+          testAgentButton.innerHTML = `Test Agent`
+          testAgentButton.addEventListener('click', this.onClickTestAgent)
+          return testAgentButton;
+        })(),
+      );
     }
-  }
-
-  function AuthenticationResponseDetectedEvent(url) {
-    return new CustomEvent(
-      "https://internetcomputer.org/ns/authentication/AuthenticationResponseDetectedEvent",
-      {
-        bubbles: true,
-        cancelable: true,
-        detail: {
-          url,
-        },
+    async onClickTestAgent(event) {
+      console.log('onClickTestAgent start', { event })
+      try {
+        const response = await authDemoContract.whoami();
+        console.log('onClickTestAgent response', { response })
+      } catch (error) {
+        console.error("Error calling whoami() in contract", error);
+        throw error;
       }
-    );
+    }
   }
 
   class AuthenticationButton extends HTMLButtonElement {
     constructor() {
       // Always call super first in constructor
       super();
-      const frag = this.ownerDocument.createDocumentFragment();
-      // Create text node and add word count to it
-      var text = document.createElement("span");
-      text.textContent = "Authenticate with IC";
-      // Append it to the shadow root
-      frag.appendChild(text);
-      this.appendChild(frag);
+      this.appendChild((() => {
+        const fragment = this.ownerDocument.createDocumentFragment();
+        // Create text node and add word count to it
+        var text = document.createElement("span");
+        text.textContent = "Authenticate with IC";
+        // Append it to the shadow root
+        fragment.appendChild(text);
+        return fragment;
+      })());
       this.addEventListener("click", this.listener);
     }
     listener(event) {

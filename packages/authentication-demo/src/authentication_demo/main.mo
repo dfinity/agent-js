@@ -1,5 +1,7 @@
+import P "mo:base/Principal";
+
 actor {
-    public func greet(name : Text) : async Text {
-        return "Hello, " # name # "!";
+    public shared query { caller } func whoami() : async (Principal) {
+        (caller)
     };
 };
