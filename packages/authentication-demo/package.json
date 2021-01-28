@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@dfinity/authentication": "file:../authentication",
-    "@dfinity/bootstrap": "file:../bootstrap"
+    "@dfinity/bootstrap": "file:../bootstrap",
+    "ts-loader": "^8.0.14",
+    "typescript": "^4.1.3"
   },
   "devDependencies": {
     "@dfinity/agent": "file:../agent",

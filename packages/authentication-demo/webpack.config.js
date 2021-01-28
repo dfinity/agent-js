@@ -49,7 +49,7 @@ function generateWebpackConfigForCanister(name, info) {
     },
     resolve: {
       alias: aliases,
-      extensions: ['.mjs', '.js', '.json', '.ts']
+      extensions: ['.ts', '.mjs', '.js', '.json']
     },
     output: {
       filename: "[name].js",
@@ -63,7 +63,7 @@ function generateWebpackConfigForCanister(name, info) {
     // tutorial, uncomment the following lines:
     module: {
      rules: [
-      //  { test: /\.(js|ts)x?$/, loader: "ts-loader" },
+       { test: /\.(js|ts)x?$/, loader: "ts-loader" },
        { test: /\.css$/, use: {
         loader: 'file-loader',
         options: {

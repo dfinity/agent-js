@@ -1,6 +1,9 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "baseUrl": "./",
+    "composite": true,
+    "incremental": true,
   },
   "references": [
     { "path": "../authentication", },
