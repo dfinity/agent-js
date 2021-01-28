@@ -11,13 +11,14 @@
   "dependencies": {
     "@dfinity/authentication": "file:../authentication",
     "@dfinity/bootstrap": "file:../bootstrap",
-    "ts-loader": "^8.0.14",
-    "typescript": "^4.1.3"
+    "clean-webpack-plugin": "^3.0.0"
   },
   "devDependencies": {
     "@dfinity/agent": "file:../agent",
     "prettier": "^2.2.1",
     "terser-webpack-plugin": "2.2.2",
+    "tsconfig-paths-webpack-plugin": "3.3.0",
+    "typescript": "^3.6.3",
     "webpack": "4.41.3",
     "webpack-cli": "3.3.10"
   }

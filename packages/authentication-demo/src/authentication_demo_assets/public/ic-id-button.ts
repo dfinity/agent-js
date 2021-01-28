@@ -15,7 +15,7 @@ export default class AuthenticationButton extends HTMLButtonElement {
     })());
     this.addEventListener("click", this.listener);
   }
-  listener(event) {
+  listener(event: Event) {
     switch (event.type) {
       case "click":
         this.requestAuthentication();

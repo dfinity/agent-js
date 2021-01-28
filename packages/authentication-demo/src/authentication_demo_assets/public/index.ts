@@ -1,7 +1,7 @@
-import AuthenticationDemo from "./elements/ic-authentication-demo";
-import AuthenticationSubjectPublicKeyElement from "./elements/ic-id-public-key";
-import AuthenticationButton from "./elements/ic-id-button";
-
+import AuthenticationDemo from "./ic-authentication-demo";
+import AuthenticationSubjectPublicKeyElement from "./ic-id-public-key";
+import AuthenticationButton from "./ic-id-button";
+import "@dfinity/bootstrap";
 
 async function main(el: Element) {
   if (globalThis.customElements) {

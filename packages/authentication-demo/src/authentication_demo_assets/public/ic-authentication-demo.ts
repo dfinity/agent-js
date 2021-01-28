@@ -42,7 +42,7 @@ export default class AuthenticationDemo extends HTMLElement {
         })(),
       )
     }
-    async onClickTestAgent(event) {
+    async onClickTestAgent(event: Event) {
       console.log('onClickTestAgent start', { event })
       try {
         const response = await authDemoContract.whoami();

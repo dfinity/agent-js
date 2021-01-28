@@ -9,7 +9,7 @@
         "authentication_demo"
       ],
       "frontend": {
-        "entrypoint": "src/authentication_demo_assets/public/index.ts"
+        "entrypoint": "./src/authentication_demo_assets/public/index.ts"
       },
       "source": [
         "src/authentication_demo_assets/assets",

@@ -1,8 +1,8 @@
 {
   "name": "@dfinity/authentication",
   "version": "0.0.0",
-  "main": ".tsc-out/src/index.js",
-  "types": ".tsc-out/src/index.d.ts",
+  "main": ".tsc-out/packages/authentication/src/index.js",
+  "types": ".tsc-out/packages/authentication/src/index.d.ts",
   "scripts": {
     "build": "tsc -b",
     "bundle": "npm run build",

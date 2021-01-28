@@ -1,8 +1,8 @@
-import { SignIdentity } from "@dfinity/agent";
-import { BootstrapIdentityChangedEventType } from "../events";
+import { SignIdentity, AnonymousIdentity, Identity } from "@dfinity/agent";
+import { BootstrapIdentityChangedEventType, IdentityDescriptor } from "./events";
 
 export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
-identity: SignIdentity
+identity: IdentityDescriptor|null = null;
 constructor() {
     super();
 }
@@ -45,23 +45,29 @@ connectedCallback() {
     }
     }))
 }
-onBootstrapIdentityMessageEvent(event) {
+onBootstrapIdentityMessageEvent(event: MessageEvent) {
     console.log('AuthenticationSubjectPublicKeyElement.onBootstrapIdentityMessageEvent', event);
     const data = event && event.data;
     const identity = data && data.identity
     if (identity) this.useIdentity(identity);
 }
-onIdentityChangedEvent(event) {
-    const identity = event && event.detail;
+onIdentityChangedEvent(event: Event|CustomEvent) {
+    const identity = ('detail' in event) && event.detail;
     if (identity) {
-    this.useIdentity(identity)
+        this.useIdentity(identity)
     }
 }
-useIdentity(identity) {
+useIdentity(identity: IdentityDescriptor) {
     console.debug('useIdentity', identity)
     this.identity = identity;
-    if (identity.publicKey) {
-    this.setAttribute('publicKey', identity.publicKey)
+    switch (identity.type) {
+        case "PublicKeyIdentity":
+            this.setAttribute('publicKey', identity.publicKey)
+            break;
+        case "AnonymousIdentity":
+            break;
+        default:
+            let x: never = identity;       
     }
     this.render();
 }

@@ -1,18 +1,21 @@
 const path = require("path");
 const TerserPlugin = require("terser-webpack-plugin");
 const dfxJson = require("./dfx.json");
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
+
+// Get the network name, or `local` by default.
+const getNetworkName = () => process.env["DFX_NETWORK"] || "local"
 
 // List of all aliases for canisters. This creates the module alias for
 // the `import ... from "ic:canisters/xyz"` where xyz is the name of a
 // canister.
 const aliases = Object.entries(dfxJson.canisters).reduce(
   (acc, [name, _value]) => {
-    // Get the network name, or `local` by default.
-    const networkName = process.env["DFX_NETWORK"] || "local";
     const outputRoot = path.join(
       __dirname,
       ".dfx",
-      networkName,
+      getNetworkName(),
       "canisters",
       name
     );
@@ -23,7 +26,7 @@ const aliases = Object.entries(dfxJson.canisters).reduce(
       ["ic:idl/" + name]: path.join(outputRoot, name + ".did.js"),
     };
   },
-  {}
+  {},
 );
 
 /**
@@ -33,23 +36,21 @@ function generateWebpackConfigForCanister(name, info) {
   if (typeof info.frontend !== "object") {
     return;
   }
-
   return {
+    target: 'web',
     mode: "production",
     entry: {
       index: path.join(__dirname, info.frontend.entrypoint),
     },
-    node: {
-      fs: "empty"
-    },
-    devtool: "source-map",
+    devtool: 'cheap-source-map',
     optimization: {
       minimize: true,
       minimizer: [new TerserPlugin()],
     },
     resolve: {
+      // plugins: [new TsconfigPathsPlugin({ configFile: './tsconfig.json' })],
       alias: aliases,
-      extensions: ['.ts', '.mjs', '.js', '.json']
+      extensions: [ '.ts', '.tsx', '.js', '.jsx', '.json', ],
     },
     output: {
       filename: "[name].js",
@@ -63,16 +64,21 @@ function generateWebpackConfigForCanister(name, info) {
     // tutorial, uncomment the following lines:
     module: {
      rules: [
-       { test: /\.(js|ts)x?$/, loader: "ts-loader" },
-       { test: /\.css$/, use: {
-        loader: 'file-loader',
-        options: {
-          emitFile: false,
-        }
-       } }
+       {  test: /\.(jsx|ts|tsx)$/,
+          use: {
+            loader: "ts-loader",
+            options: { configFile: path.join(__dirname, 'tsconfig.json')}
+          }
+        },
+       { test: /\.css$/, use: ['style-loader','css-loader'] }
      ]
     },
-    plugins: [],
+    node: {
+      fs: "empty"
+    },
+    plugins: [
+      new CleanWebpackPlugin(),
+    ],
   };
 }
 
