@@ -24,10 +24,11 @@ export { UICore, UI };
 export interface GlobalInternetComputer {
   ic: {
     agent: Agent;
-    bootstrapVersion: Number;
     HttpAgent: typeof HttpAgent;
     IDL: typeof IDL;
-
+    features: undefined|{
+      authn: true|undefined;
+    };
     /**
      * The Actor for the canister being used for the frontend. Normally should correspond to the
      * canister represented by the canister id in the URL.

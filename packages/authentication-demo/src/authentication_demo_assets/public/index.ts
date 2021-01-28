@@ -1,7 +1,13 @@
 import AuthenticationDemo from "./ic-authentication-demo";
 import AuthenticationSubjectPublicKeyElement from "./ic-id-public-key";
 import AuthenticationButton from "./ic-id-button";
-import "@dfinity/bootstrap";
+
+if ( ! (globalThis as any)?.ic?.features?.authn) {
+  console.debug('no ic.features.authn. Importing custom @dfinity/bootstrap')
+  import('@dfinity/bootstrap').then(() => {
+    console.debug('imported custom @dfinity/bootstrap')
+  })
+}
 
 async function main(el: Element) {
   if (globalThis.customElements) {

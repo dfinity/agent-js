@@ -131,18 +131,14 @@ async function _loadCandid(canisterId: Principal): Promise<any> {
 // }, true)
 
 async function _main() {
-  const bootstrapVersion = 1;
   bootstrapLog('debug', '_main');
-  if (window?.ic?.bootstrapVersion >= bootstrapVersion) {
-    bootstrapLog('debug', `ic.bootstrapVersion >= ${bootstrapVersion}. Skipping _main()`);
-    return;
-  }
-  bootstrapLog('debug', 'initializing', { bootstrapVersion });
   window.ic = {
     ...window.ic,
-    bootstrapVersion,
+    features: {
+      ...window.ic.features,
+      authn: true,
+    }
   };
-
   const site = await SiteInfo.fromWindow();
   const identities = DocumentIdentities(document);
   const mutableIdentity = await MutableIdentity(async function * () {
@@ -166,8 +162,8 @@ async function _main() {
   // Find the canister ID. Allow override from the url with 'canister_id=1234..'.
   const canisterId = site.principal;
   window.ic = {
+    ...window.ic,
     agent,
-    bootstrapVersion,
     canister: canisterId && Actor.createActor(({ IDL: IDL_ }) => IDL_.Service({}), { canisterId }),
     HttpAgent,
     IDL,
