@@ -48,6 +48,7 @@ export function BrowserTransport(spec: {
 }): Transport<IdentityProviderAgentEnvelope> {
   return Object.freeze({ send });
   async function send(envelope: IdentityProviderAgentEnvelope) {
+    console.debug('BrowserTransport.send', envelope);
     switch (envelope.to) {
       case 'document':
         await spec.document.send(envelope);
@@ -77,7 +78,7 @@ export function DomEventTransport(): Transport<EnvelopeToDocument> {
 
 export function AuthenticationResponseDetectedEvent(url: URL) {
   return new CustomEvent(
-    'https://internetcomputer.org/ns/authentication/AuthenticationResponseDetectedEvent',
+    'https://internetcomputer.org/ns/authentication/AuthenticationResponseDetectedEvent' as const,
     {
       detail: {
         url,

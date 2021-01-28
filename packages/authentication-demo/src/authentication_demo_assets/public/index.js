@@ -2,7 +2,6 @@ import { authenticator } from "@dfinity/authentication";
 import "@dfinity/bootstrap";
 
 (() => {
-  log("log: authentication_docs_demo iffe start");
   function log(...messages) {
     if (globalThis.console) {
       globalThis.console.log(...messages);
@@ -12,7 +11,6 @@ import "@dfinity/bootstrap";
     constructor() {
       // Always call super first in constructor
       super();
-      log("AuthenticationDemo constructor");
     }
     onAuthenticationResponsDetectedEvent(event) {
       console.debug("AuthenticationResponseDetectedEvent", {
@@ -21,11 +19,10 @@ import "@dfinity/bootstrap";
       });
     }
     connectedCallback() {
-      log("ad connectedCallback");
-      this.ownerDocument.addEventListener(
-        AuthenticationResponseDetectedEvent().type,
-        this.onAuthenticationResponsDetectedEvent
-      );
+      // this.ownerDocument.addEventListener(
+      //   AuthenticationResponseDetectedEvent().type,
+      //   this.onAuthenticationResponsDetectedEvent
+      // );
       this.render();
       authenticator.receiveAuthenticationResponse(
         new URL(this.ownerDocument.location.toString())
@@ -44,7 +41,6 @@ import "@dfinity/bootstrap";
         shadow.firstChild.remove();
       }
       // Create text node and add word count to it
-      log("AuthenticationDemo constructing AuthenticationButton");
       var button = document.createElement("button", {
         is: "ic-authentication-button",
       });
@@ -70,7 +66,6 @@ import "@dfinity/bootstrap";
     constructor() {
       // Always call super first in constructor
       super();
-      log("AuthenticationButton constructor");
       const frag = this.ownerDocument.createDocumentFragment();
       // Create text node and add word count to it
       var text = document.createElement("span");
@@ -90,17 +85,12 @@ import "@dfinity/bootstrap";
       }
     }
     requestAuthentication() {
-      console.log("requestAuthentication");
       authenticator.sendAuthenticationRequest({
         scope: [],
       });
     }
   }
   async function main(el) {
-    console.log("auth demo main", {
-      el,
-      customElements: globalThis.customElements,
-    });
     if (globalThis.customElements) {
       const elements = [
         ["ic-authentication-demo", AuthenticationDemo, {}],
@@ -112,17 +102,14 @@ import "@dfinity/bootstrap";
       ];
       for (const [tagName, ElementConstructor, opts] of elements) {
         if (customElements.get(tagName)) {
-          customElements.r;
           console.debug("customElement already defined. skipping.", tagName);
         } else {
-          console.debug("customElements defining", tagName);
           customElements.define(tagName, ElementConstructor, opts);
         }
       }
       await Promise.all(
         elements.map(async ([tagName]) => {
           await customElements.whenDefined(tagName);
-          console.debug("customElement defined", tagName);
         })
       );
     } else {

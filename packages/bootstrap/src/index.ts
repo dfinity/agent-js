@@ -5,37 +5,51 @@ import {
   HttpAgent,
   IDL,
   Principal,
+  SignIdentity,
+  Identity,
+  AnonymousIdentity,
+  HttpAgentOptions,
+  Agent,
 } from '@dfinity/agent';
+import {
+  response as icidResponse,
+  DelegationChain,
+  DelegationIdentity,
+  Ed25519KeyIdentity,
+} from '@dfinity/authentication';
 import { createAgent } from './host';
 import { SiteInfo } from './site';
 import { debug } from 'console';
 
 declare const window: GlobalInternetComputer & Window;
 
+const bootstrapLog = makeLog('bootstrap');
+const idActorLog = makeLog('ic-id-actor');
+
 const app = {
-  get parentNode(): Element|null {
-    let host: Element|null = null;
+  get parentNode(): Element | null {
+    let host: Element | null = null;
     for (const selector of ['ic-bootstrap', 'app']) {
-      if (host = document.querySelector(selector)) {
+      if ((host = document.querySelector(selector))) {
         break;
       }
     }
     return host;
   },
   render(el: Element) {
-    bootstrapLog('debug', 'app.render', { el })
+    bootstrapLog('debug', 'app.render', { el });
     const parent = this.parentNode;
-    if ( ! parent) {
-      log('debug', 'no host element found')
+    if (!parent) {
+      log('debug', 'no host element found');
       return;
     }
     // remove all children of host
     while (parent.lastChild) {
-      parent.removeChild(parent.lastChild)
+      parent.removeChild(parent.lastChild);
     }
     parent.appendChild(el);
-  }
-}
+  },
+};
 
 // Retrieve and execute a JavaScript file from the server.
 async function _loadJs(
@@ -43,7 +57,7 @@ async function _loadJs(
   filename: string,
   onload = async () => {},
 ): Promise<any> {
-  bootstrapLog('debug', '_loadJs')
+  bootstrapLog('debug', '_loadJs');
   const actor = createAssetCanisterActor({ canisterId });
   const content = await actor.retrieve(filename);
   const js = new TextDecoder().decode(new Uint8Array(content));
@@ -59,7 +73,7 @@ async function _loadJs(
 }
 
 async function _loadCandid(canisterId: Principal): Promise<any> {
-  bootstrapLog('debug', '_loadCandid')
+  bootstrapLog('debug', '_loadCandid');
   const origin = window.location.origin;
   const url = `${origin}/_/candid?canisterId=${canisterId.toText()}&format=js`;
   const response = await fetch(url);
@@ -75,18 +89,21 @@ async function _loadCandid(canisterId: Principal): Promise<any> {
 
 async function _main() {
   const bootstrapVersion = 1;
-  bootstrapLog('debug', '_main')
+  bootstrapLog('debug', '_main');
   if (window?.ic?.bootstrapVersion >= bootstrapVersion) {
-    bootstrapLog('debug', `ic.bootstrapVersion >= ${bootstrapVersion}. Skipping _main()`)
+    bootstrapLog('debug', `ic.bootstrapVersion >= ${bootstrapVersion}. Skipping _main()`);
     return;
   }
-  bootstrapLog('debug', 'initializing', { bootstrapVersion })
+  bootstrapLog('debug', 'initializing', { bootstrapVersion });
   window.ic = {
     ...window.ic,
     bootstrapVersion,
-  }
+  };
+
   const site = await SiteInfo.fromWindow();
-  const agent = await createAgent(site);
+  const identities = DocumentIdentities(document);
+  const identity = await MutableIdentity(identities);
+  const agent = await createAgent(withIdentity(identity)(site));
 
   // Find the canister ID. Allow override from the url with 'canister_id=1234..'.
   const canisterId = site.principal;
@@ -123,7 +140,7 @@ async function _main() {
 }
 
 _main().catch(err => {
-  bootstrapLog("error", "caught error", { error: err })
+  bootstrapLog('error', 'caught error', { error: err });
   const div = document.createElement('div');
   div.innerText = 'An error happened:';
   const pre = document.createElement('pre');
@@ -133,20 +150,98 @@ _main().catch(err => {
   throw err;
 });
 
-function bootstrapLog(level: keyof typeof console, ...loggables: any[]) {
-  log(level, '[bootstrap]', ...loggables)
-}
-
 /** Log something using globalThis.console, if present */
 function log(level: keyof typeof console, ...loggables: any[]) {
   if (typeof console[level] === 'function') {
-    console[level](...loggables)
+    console[level](...loggables);
     return;
   }
   if (level !== 'info') {
-    log('info', level, ...loggables)
+    log('info', level, ...loggables);
   }
   if (typeof console?.log === 'function') {
-    console.log(...loggables)
+    console.log(...loggables);
   }
+}
+
+function makeLog(name: string): typeof log {
+  return (level: keyof typeof console, ...loggables: any[]) => {
+    log(level, `[${name}]`, ...loggables);
+  };
+}
+
+async function MutableIdentity(
+  identities: AsyncIterable<SignIdentity | AnonymousIdentity>,
+): Promise<SignIdentity | AnonymousIdentity> {
+  makeLog('MutableIdentity')('debug', 'constructing MutableIdentity', identities);
+  const initialIdentity = new AnonymousIdentity();
+  let identity: AnonymousIdentity | SignIdentity = initialIdentity;
+  (async function () {
+    for await (const nextIdentity of identities) {
+      identity = nextIdentity;
+      makeLog('MutableIdentity')('debug', 'using newly generated identity: ', identity);
+    }
+  })();
+  const identityProxy: SignIdentity | AnonymousIdentity = new Proxy(initialIdentity, {
+    get(target, prop, receiver) {
+      const currentIdentity = target || identity;
+      return Reflect.get(currentIdentity, prop, receiver);
+    },
+  });
+  return identityProxy;
+}
+
+function withIdentity(identity: Identity) {
+  return (info: SiteInfo): SiteInfo => {
+    return Object.assign(Object.create(info), {
+      identity,
+    });
+  };
+}
+
+function AuthenticationResponseDetectedEvents(
+  spec: Pick<Document, 'addEventListener'>,
+): AsyncIterable<Event> {
+  const idChangedEventName =
+    'https://internetcomputer.org/ns/authentication/AuthenticationResponseDetectedEvent';
+  const events: AsyncIterable<Event> = (async function* () {
+    while (true) {
+      const nextEvent = await new Promise<Event>((resolve, reject) => {
+        spec.addEventListener(idChangedEventName, resolve, { once: true });
+      });
+      yield nextEvent;
+    }
+  })();
+  return events;
+}
+
+function DocumentIdentities(document: Document) {
+  const identities: AsyncIterable<SignIdentity | AnonymousIdentity> = (async function* () {
+    // Start anonymous
+    yield new AnonymousIdentity();
+    // Wait for AuthenticationResponseDetectedEvents
+    for await (const event of AuthenticationResponseDetectedEvents(document)) {
+      if (!(event instanceof CustomEvent)) {
+        idActorLog('warn', 'got unexpected event that is not a CustomEvent', { event });
+        continue;
+      }
+      const url = event.detail.url;
+      if (!(url instanceof URL)) {
+        idActorLog('warn', 'got CustomEvent without URL', { event });
+        continue;
+      }
+      const identity = (() => {
+        const response = icidResponse.fromQueryString(url.searchParams);
+        const chain = DelegationChain.fromJSON(icidResponse.parseBearerToken(response.accessToken));
+        const sessionIdentity = Ed25519KeyIdentity.generate();
+        const delegationIdentity = DelegationIdentity.fromDelegation(sessionIdentity, chain);
+        console.log('DocumentIdentities created delegationIdentity', {
+          publicKey: delegationIdentity.getPublicKey().toDer().toString('hex'),
+        });
+        return delegationIdentity;
+      })();
+      yield identity;
+    }
+  })();
+  return identities;
 }

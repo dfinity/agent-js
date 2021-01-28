@@ -105,6 +105,18 @@ async function _createSingleDelegation(
   };
 }
 
+interface IJsonnableDelegationChain {
+  publicKey: string;
+  delegations: Array<{
+    signature: string;
+    delegation: {
+      pubkey: string;
+      expiration: string;
+      targets?: string[];
+    };
+  }>;
+}
+
 /**
  * A chain of delegations. This is JSON Serializable.
  * This is the object to serialize and pass to a DelegationIdentity. It does not keep any
@@ -160,9 +172,8 @@ export class DelegationChain {
    * Creates a DelegationChain object from a JSON string.
    * @param json The JSON string to parse.
    */
-  public static fromJSON(json: string): DelegationChain {
-    const { publicKey, delegations } = JSON.parse(json);
-
+  public static fromJSON(json: string | IJsonnableDelegationChain): DelegationChain {
+    const { publicKey, delegations } = typeof json === 'string' ? JSON.parse(json) : json;
     if (!Array.isArray(delegations)) {
       throw new Error('Invalid delegations.');
     }
@@ -197,11 +208,21 @@ export class DelegationChain {
     public readonly publicKey: DerEncodedBlob,
   ) {}
 
-  public toJSON(): any {
+  public toJSON(): IJsonnableDelegationChain {
     return {
       delegations: this.delegations.map(signedDelegation => {
         const { delegation, signature } = signedDelegation;
-        return { delegation, signature: signature.toString('hex') };
+        const { targets } = delegation;
+        return {
+          delegation: {
+            expiration: delegation.expiration.toString(16),
+            pubkey: delegation.pubkey.toString('hex'),
+            ...(targets && {
+              targets: targets.map(t => t.toBlob().toString('hex')),
+            }),
+          },
+          signature: signature.toString('hex'),
+        };
       }),
       publicKey: this.publicKey.toString('hex'),
     };

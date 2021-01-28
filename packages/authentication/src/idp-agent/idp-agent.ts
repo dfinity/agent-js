@@ -45,7 +45,7 @@ export class IdentityProviderAgent implements IIdentityProviderAgent {
   }
 
   async receiveAuthenticationResponse(url: URL) {
-    console.debug('idp-agent', 'receiveAuthenticationResponse', { url })
+    console.debug('idp-agent', 'receiveAuthenticationResponse', { url });
     if (!isMaybeAuthenticationResponseUrl(url)) {
       console.debug(
         'receiveAuthenticationResponse called, but the URL does not appear to contain an AuthenticationResponse',

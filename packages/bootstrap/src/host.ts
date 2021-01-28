@@ -7,6 +7,7 @@ import {
   Principal,
   ProxyAgent,
   ProxyMessage,
+  SignIdentity,
 } from '@dfinity/agent';
 import { SiteInfo } from './site';
 
