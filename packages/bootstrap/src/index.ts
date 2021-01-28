@@ -19,12 +19,36 @@ import {
 } from '@dfinity/authentication';
 import { createAgent } from './host';
 import { SiteInfo } from './site';
-import { debug } from 'console';
 
 declare const window: GlobalInternetComputer & Window;
 
 const bootstrapLog = makeLog('bootstrap');
 const idActorLog = makeLog('ic-id-actor');
+
+const initialIdentity = new AnonymousIdentity;
+let currentMutableIdentity: AnonymousIdentity|SignIdentity = initialIdentity;
+
+window.addEventListener('BenEvent', (e) => {
+  console.log('bootstrap-js window listener handling BenEvent', e)
+});
+window.addEventListener('BootstrapIdentityRequestedEvent', (e) => {
+  console.log('bootstrap-js window listener handling BootstrapIdentityRequestedEvent', e)
+  const log = makeLog('bootsrap BootstrapIdentityRequestedEventHandler');
+  log('info', 'handling', event);
+  const detail = (event as CustomEvent).detail;
+  const sender: undefined|MessagePort = detail && detail.sender;
+  window.dispatchEvent(BootstrapIdentityChangedEvent(IdentityDescriptor(currentMutableIdentity)))
+  // if (sender) {
+  //   const message = {
+  //     identity: IdentityDescriptor(currentMutableIdentity),
+  //   }
+  //   log('info', 'sender.postMessage', message)
+  //   sender.postMessage(message)
+  // } else {
+  //   log('warn', 'unable to determine sender from event');
+  // }
+  return true;
+});
 
 const app = {
   get parentNode(): Element | null {
@@ -87,6 +111,25 @@ async function _loadCandid(canisterId: Principal): Promise<any> {
   return eval('import("' + dataUri + '")'); // tslint:disable-line
 }
 
+// console.log('adding listener for BootstrapIdentityRequestedEvent')
+// window.addEventListener('BootstrapIdentityRequestedEvent', (event) => {
+//   const log = makeLog('BootstrapIdentityServiceActor');
+//   log('info', 'handling', event);
+//   const detail = (event as CustomEvent).detail;
+//   const sender: undefined|MessagePort = detail && detail.sender;
+//   if (sender) {
+//     const message = {
+//       identity: currentMutableIdentity,
+//     }
+//     log('info', sender.postMessage, message)
+//     sender.postMessage(message)
+//     sender.start();
+//   } else {
+//     log('warn', 'unable to determine sender from event');
+//   }
+//   return true;
+// }, true)
+
 async function _main() {
   const bootstrapVersion = 1;
   bootstrapLog('debug', '_main');
@@ -102,8 +145,23 @@ async function _main() {
 
   const site = await SiteInfo.fromWindow();
   const identities = DocumentIdentities(document);
-  const identity = await MutableIdentity(identities);
-  const agent = await createAgent(withIdentity(identity)(site));
+  const mutableIdentity = await MutableIdentity(async function * () {
+    const log = makeLog('bootstrapMutableIdentities')
+    for await (const latestIdentity of identities) {
+      log('info', 'new latestIdentity', latestIdentity)
+      // yield latestIdentity;
+      yield Promise.resolve(latestIdentity).then(lid => {
+        log('info', 'setting currentMutableIdentity = ', lid)
+        currentMutableIdentity = lid;
+        return lid;
+      })
+      const event = BootstrapIdentityChangedEvent(IdentityDescriptor(latestIdentity))
+      log('debug', 'dispatching BootstrapIdentityChangedEvent', event)
+      // after yielding the identity, dispatch a BootstrapIdentityChangedEvent to let everyone else know
+      document.body.dispatchEvent(event)
+    }
+  }());
+  const agent = await createAgent(withIdentity(mutableIdentity)(site));
 
   // Find the canister ID. Allow override from the url with 'canister_id=1234..'.
   const canisterId = site.principal;
@@ -199,11 +257,60 @@ function withIdentity(identity: Identity) {
   };
 }
 
-function AuthenticationResponseDetectedEvents(
+async function * EventIterator(
+  spec: Pick<Document, 'addEventListener'>,
+  eventType: string,
+): AsyncIterable<Event> {
+  const log = makeLog('EventIterator')
+  log('debug', 'start')
+  log('debug', 'about to start while loop')
+  let i =0
+  while (true) {
+    ++i;
+    log('debug', 'about to start while loop', i)
+    const nextEvent = await new Promise<Event>((resolve, reject) => {
+      spec.addEventListener(eventType, resolve, {
+        once: true
+      });
+    });
+    log('debug', 'got nextEvent', nextEvent)
+    yield nextEvent;
+    log('debug', 'yielded nextEvent. loop fin', i)
+  }
+}
+
+function fromCallback<V>(emitter: (cb: (value: V) => void) => void): AsyncIterable<V> {
+  let values: V[];
+  let resolve: (values: V[]) => void;
+  const init = (r: (values: V[]) => void) => [values, resolve] = [[], r];  
+  let valuesAvailable = new Promise(init);
+  emitter(value => {
+    values.push(value);
+    resolve(values);
+  });
+  return {
+    [Symbol.asyncIterator]: async function*() {
+      for (;;) {
+        const vs = await valuesAvailable;
+        valuesAvailable = new Promise(init);
+        yield* vs;
+      }
+    }
+  };
+}
+
+function EventIterable(node: Pick<Node, 'addEventListener'>, event: string, options?: AddEventListenerOptions) {
+  return fromCallback(listener => {
+    node.addEventListener(
+      event, (e: Event) => listener(e), options);
+  });
+}
+
+function AuthenticationResponseDetectedEventIterable(
   spec: Pick<Document, 'addEventListener'>,
 ): AsyncIterable<Event> {
   const idChangedEventName =
-    'https://internetcomputer.org/ns/authentication/AuthenticationResponseDetectedEvent';
+    'https://internetcomputer.org/ns/authentication/AuthenticationResponseDetectedEvent' as const;
   const events: AsyncIterable<Event> = (async function* () {
     while (true) {
       const nextEvent = await new Promise<Event>((resolve, reject) => {
@@ -215,12 +322,32 @@ function AuthenticationResponseDetectedEvents(
   return events;
 }
 
+type IIdentityDescriptor =
+| { type: "AnonymousIdentity" }
+| { type: "PublicKeyIdentity", publicKey: string }
+type IBootstrapIdentityChangedEvent = CustomEvent<IIdentityDescriptor>
+
+function BootstrapIdentityChangedEvent(
+  /** Keep this as backward-incompatible data shape, NOT object-with-prototype that will change across versions */
+  spec: IIdentityDescriptor
+): IBootstrapIdentityChangedEvent {
+  const eventName =
+    'https://internetcomputer.org/ns/authentication/BootstrapIdentityChangedEvent' as const;
+  return new CustomEvent(eventName, {
+    detail: spec,
+    bubbles: true,
+    cancelable: true,
+    
+  });
+}
+
 function DocumentIdentities(document: Document) {
   const identities: AsyncIterable<SignIdentity | AnonymousIdentity> = (async function* () {
     // Start anonymous
     yield new AnonymousIdentity();
     // Wait for AuthenticationResponseDetectedEvents
-    for await (const event of AuthenticationResponseDetectedEvents(document)) {
+    for await (const event of AuthenticationResponseDetectedEventIterable(document)) {
+      idActorLog('info', 'got AuthenticationResponseDetectedEvent', event)
       if (!(event instanceof CustomEvent)) {
         idActorLog('warn', 'got unexpected event that is not a CustomEvent', { event });
         continue;
@@ -244,4 +371,11 @@ function DocumentIdentities(document: Document) {
     }
   })();
   return identities;
+}
+
+function IdentityDescriptor(identity: SignIdentity|AnonymousIdentity): IIdentityDescriptor {
+  const identityIndicator: IIdentityDescriptor = ('getPublicKey' in identity)
+  ? { type: "PublicKeyIdentity", publicKey: identity.getPublicKey().toDer().toString('hex')}
+  : { type: "AnonymousIdentity" }
+  return identityIndicator
 }
