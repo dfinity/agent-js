@@ -9,11 +9,11 @@ install_dfx_if_needed () {
         echo "which dfx=$(which dfx)"
         if ! command -v dfx 1>/dev/null; then
             # hmm. Still not installed.
-            echo "ls HOME=$(ls $HOME)"
+            github_actions_dfx="$HOME/bin/dfx"
             # On GitHub actions it might be here
-            if test -e "$HOME/dfx"; then
-                echo "aliasing dfx=$HOME/dfx"
-                alias dfx="$HOME/dfx"
+            if test -e "$github_actions_dfx"; then
+                echo "aliasing dfx=$github_actions_dfx"
+                alias dfx="$github_actions_dfx"
             fi
         fi
     else
