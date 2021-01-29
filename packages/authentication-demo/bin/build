@@ -2,6 +2,16 @@
 
 1>&2 echo "building authentication-demo pwd=$(pwd)"
 
+install_dfx_if_needed () {
+    if ! command -v dfx 1>/dev/null; then
+        yes | sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
+    else
+        echo "dfx is already installed" 1>&2
+    fi;
+}
+
+install_dfx_if_needed
+
 dfx start --background
 
 # build the js files for the contract, which are required to webpack
