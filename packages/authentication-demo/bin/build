@@ -23,10 +23,7 @@ install_dfx_if_needed () {
 }
 
 install_dfx_if_needed
-
 dfx start --background
-
 # build the js files for the contract, which are required to webpack
 dfx deploy
-
 dfx stop

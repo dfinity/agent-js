@@ -8,6 +8,9 @@ buildPackage () {
 		package=$1
 		echo "building package: $package"
 		cd "$package"
+		if ! test -e node_modules; then
+			npm i --ignore-scripts --no-package-lock
+		fi
 		npm run build --if-present
 	)
 }
