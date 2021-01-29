@@ -1,15 +1,15 @@
 import { createCustomEvent } from '../../dom-events';
-import { IIdentityDescriptor } from './IdentityDescriptor';
+import { IdentityDescriptor } from '@dfinity/agent';
 
 export const BootstrapIdentityChangedEventName = 'https://internetcomputer.org/ns/authentication/BootstrapIdentityChangedEvent' as const;
 
-export type BootstrapIdentityChangedEvent = CustomEvent<IIdentityDescriptor> & {
+export type BootstrapIdentityChangedEvent = CustomEvent<IdentityDescriptor> & {
   type: typeof BootstrapIdentityChangedEventName;
 };
 
 export function BootstrapIdentityChangedEvent(
   /** Keep this as backward-incompatible data shape, NOT object-with-prototype that will change across versions */
-  spec: IIdentityDescriptor,
+  spec: IdentityDescriptor,
 ): BootstrapIdentityChangedEvent {
   const event = createCustomEvent(BootstrapIdentityChangedEventName, {
     detail: spec,

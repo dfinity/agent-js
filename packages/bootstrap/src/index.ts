@@ -6,16 +6,14 @@ import {
   IDL,
   Principal,
   AnonymousIdentity,
-  SignIdentity,
 } from '@dfinity/agent';
 import { createAgent } from './host';
 import { SiteInfo, withIdentity } from './site';
 import { makeLog } from './log';
-import { IdentityActor, DocumentIdentities } from './actors/identity';
 import MutableIdentity from './actors/identity/MutableIdentity';
 import { BootstrapRenderer } from './render';
-import { EventIterable } from './dom-events';
-import { resolve } from 'path';
+import DocumentIdentities from './actors/identity/DocumentIdentities';
+import IdentityActor from "./actors/identity/IdentityActor";
 
 declare const window: GlobalInternetComputer & Window;
 
@@ -96,6 +94,7 @@ async function _main(spec: { render: ReturnType<typeof BootstrapRenderer> }) {
     document.addEventListener('beforeunload', event => resolve(event), { once: true });
   });
 
+  bootstrapLog('debug', 'typeof IdentityActor', typeof IdentityActor, { IdentityActor })
   IdentityActor({
     eventTarget: document,
     initialIdentity,

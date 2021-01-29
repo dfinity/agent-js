@@ -20,11 +20,11 @@ function fromCallback<V>(emitter: (cb: (value: V) => void) => void): AsyncIterab
 
 export function EventIterable(
   node: Pick<Node, 'addEventListener'>,
-  event: string,
+  eventName: string,
   options?: boolean | AddEventListenerOptions,
 ) {
   return fromCallback(listener => {
-    node.addEventListener(event, (e: Event | CustomEvent) => listener(e), options);
+    node.addEventListener(eventName, listener, options);
   });
 }
 
