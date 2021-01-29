@@ -1,13 +1,15 @@
 {
   "name": "@dfinity/authentication",
   "version": "0.0.0",
-  "main": "src/index.js",
+  "main": ".tsc-out/packages/authentication/src/index.js",
+  "types": ".tsc-out/packages/authentication/src/index.d.ts",
   "scripts": {
     "build": "tsc -b",
     "bundle": "npm run build",
     "ci": "npm run prettier && npm run lint && npm run build && npm run test",
     "lint": "tslint --project tsconfig.json --config tslint.json",
     "lint:fix": "npm run lint -- --fix",
+    "prepare": "npm run build",
     "prettier": "prettier --check \"src/**/*.ts\"",
     "prettier:write": "npm run prettier -- --write",
     "test": "jest --verbose"
@@ -15,7 +17,7 @@
   "dependencies": {
     "@types/crc": "^3.4.0",
     "@types/jest": "^24.0.18",
-    "@dfinity/agent": "file://../agent",
+    "@dfinity/agent": "file:../agent",
     "asn1.js": "^5.4.1",
     "base32.js": "^0.1.0",
     "bignumber.js": "^9.0.0",

@@ -1,25 +1,17 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "allowJs": false,
     "incremental": true,
-    "target": "es2017",
-    "module": "commonjs",
-    "lib": [
-      "dom",
-      "es2017"
-    ],
-    "declaration": true,
-    "sourceMap": true,
-    "rootDir": "./",
     "composite": true,
-    "tsBuildInfoFile": "./build_info.json",
-    "strict": true,
     "baseUrl": "./",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true
+    "outDir": "./.tsc-out",
   },
   "include": [
     "types/*",
-    "src/**/*.ts"
+    "src/**/*"
+  ],
+  "references": [
+    { "path": "../agent" },
   ]
 }

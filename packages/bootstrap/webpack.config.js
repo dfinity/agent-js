@@ -90,7 +90,13 @@ module.exports = {
         from: '../agent/src/utils/bls.wasm',
         to: 'bls.wasm',
       },
-    ]),    
+    ]),
+    new CopyWebpackPlugin([
+      {
+        from: '../bootstrap/src/candid/candid.css',
+        to: '../ts-out/packages/bootstrap/src/candid/candid.css',
+      },
+    ])
   ],
   devServer: {
     proxy: {
