@@ -26,9 +26,9 @@ export interface GlobalInternetComputer {
     agent: Agent;
     HttpAgent: typeof HttpAgent;
     IDL: typeof IDL;
-    features: undefined|{
+    features?: {
       /** This is falsy if zero authn is enabled */
-      authn: true|undefined;
+      authn?: Boolean;
     };
     /**
      * The Actor for the canister being used for the frontend. Normally should correspond to the

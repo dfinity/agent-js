@@ -7,7 +7,6 @@ import { hexEncodeUintArray } from "@dfinity/authentication/.tsc-out/packages/au
 export default class AuthenticationDemo extends HTMLElement {
   whoamiPrincipal: Principal | undefined;
   constructor() {
-    // Always call super first in constructor
     super();
   }
   connectedCallback() {
@@ -17,12 +16,10 @@ export default class AuthenticationDemo extends HTMLElement {
     );
   }
   render() {
-    // Create a shadow root
     const shadow = this.shadowRoot || this.attachShadow({ mode: "open" });
     while (shadow.firstChild) {
       shadow.firstChild.remove();
     }
-    // Append it to the shadow root
     shadow.appendChild(
       document.createElement("button", {
         is: "ic-authentication-button",
@@ -36,7 +33,6 @@ export default class AuthenticationDemo extends HTMLElement {
         return testAgentButton;
       })()
     );
-    console.log("ben about to ic-authentication-subject-public-key");
     shadow.appendChild(
       (() => {
         const div = document.createElement("div");
