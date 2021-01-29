@@ -3,7 +3,7 @@
 # exit on error
 set -e
 
-function buildPackage() {
+function buildPackage {
 	(
 		package=$1
 		echo "building package: $package"
