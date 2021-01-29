@@ -27,6 +27,7 @@ export interface GlobalInternetComputer {
     HttpAgent: typeof HttpAgent;
     IDL: typeof IDL;
     features: undefined|{
+      /** This is falsy if zero authn is enabled */
       authn: true|undefined;
     };
     /**

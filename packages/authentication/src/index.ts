@@ -4,3 +4,5 @@ export { DelegationIdentity, DelegationChain } from './identity/delegation';
 export { WebAuthnIdentity } from './identity/webauthn';
 export { authenticator, IdentityProviderAgent } from './idp-agent';
 export * from './idp-protocol';
+export * from './id-dom-events';
+export * from './types';

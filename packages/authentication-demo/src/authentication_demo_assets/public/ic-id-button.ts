@@ -4,15 +4,17 @@ export default class AuthenticationButton extends HTMLButtonElement {
   constructor() {
     // Always call super first in constructor
     super();
-    this.appendChild((() => {
-      const fragment = this.ownerDocument.createDocumentFragment();
-      // Create text node and add word count to it
-      var text = document.createElement("span");
-      text.textContent = "Authenticate with IC";
-      // Append it to the shadow root
-      fragment.appendChild(text);
-      return fragment;
-    })());
+    this.appendChild(
+      (() => {
+        const fragment = this.ownerDocument.createDocumentFragment();
+        // Create text node and add word count to it
+        var text = document.createElement("span");
+        text.textContent = "Authenticate with IC";
+        // Append it to the shadow root
+        fragment.appendChild(text);
+        return fragment;
+      })()
+    );
     this.addEventListener("click", this.listener);
   }
   listener(event: Event) {

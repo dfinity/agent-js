@@ -329,3 +329,11 @@ export class SiteInfo {
     }
   }
 }
+
+export function withIdentity(identity: Identity) {
+  return (info: SiteInfo): SiteInfo => {
+    return Object.assign(Object.create(info), {
+      identity,
+    });
+  };
+}

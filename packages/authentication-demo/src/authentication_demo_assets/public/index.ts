@@ -2,17 +2,23 @@ import AuthenticationDemo from "./ic-authentication-demo";
 import AuthenticationSubjectPublicKeyElement from "./ic-id-public-key";
 import AuthenticationButton from "./ic-id-button";
 
-if ( ! (globalThis as any)?.ic?.features?.authn) {
-  console.debug('no ic.features.authn. Importing custom @dfinity/bootstrap')
-  import('@dfinity/bootstrap').then(() => {
-    console.debug('imported custom @dfinity/bootstrap')
-  })
+if (!(globalThis as any)?.ic?.features?.authn) {
+  console.debug("no ic.features.authn. Importing custom @dfinity/bootstrap");
+  import("@dfinity/bootstrap").then(() => {
+    console.debug("imported custom @dfinity/bootstrap");
+  });
 }
 
 async function main(el: Element) {
   if (globalThis.customElements) {
-    const elements: Array<[string, CustomElementConstructor, ElementDefinitionOptions?]> = [
-      ["ic-authentication-subject-public-key" as const, AuthenticationSubjectPublicKeyElement, {}],
+    const elements: Array<
+      [string, CustomElementConstructor, ElementDefinitionOptions?]
+    > = [
+      [
+        "ic-authentication-subject-public-key" as const,
+        AuthenticationSubjectPublicKeyElement,
+        {},
+      ],
       ["ic-authentication-demo" as const, AuthenticationDemo, {}],
       [
         "ic-authentication-button" as const,
@@ -45,7 +51,9 @@ async function main(el: Element) {
 
 (async () => {
   const el =
-    (/* prefer this as its a valid HTML5 element tag ('app' is not) */ document.querySelector("ic-bootstrap")) || document.querySelector("app");
+    /* prefer this as its a valid HTML5 element tag ('app' is not) */ document.querySelector(
+      "ic-bootstrap"
+    ) || document.querySelector("app");
   if (!el) {
     throw new Error("Failed to find app el");
   }
