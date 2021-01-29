@@ -7,7 +7,14 @@ install_dfx_if_needed () {
         yes | sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
         sleep 2
         echo "which dfx=$(which dfx)"
-        ls $HOME/bin/
+        if ! command -v dfx 1>/dev/null; then
+            # hmm. Still not installed.
+            echo "ls HOME=$(ls $HOME)"
+            if [[ -x "$HOME/dfx" ]]; then
+                echo "aliasing dfx=$HOME/dfx"
+                alias dfx="$HOME/dfx"
+            fi
+        fi
     else
         echo "dfx is already installed" 1>&2
     fi;
