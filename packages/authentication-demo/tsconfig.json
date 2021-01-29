@@ -12,7 +12,6 @@
     "sourceMap": true,
     "strict": true,
     "target": "es2017",
-    
   },
   "include": ["./types/*", "./src/**/*.ts", "./src/**/*.tsx"],
   "references": [
