@@ -10,7 +10,8 @@ install_dfx_if_needed () {
         if ! command -v dfx 1>/dev/null; then
             # hmm. Still not installed.
             echo "ls HOME=$(ls $HOME)"
-            if [[ -x "$HOME/dfx" ]]; then
+            # On GitHub actions it might be here
+            if test -e "$HOME/dfx"; then
                 echo "aliasing dfx=$HOME/dfx"
                 alias dfx="$HOME/dfx"
             fi
