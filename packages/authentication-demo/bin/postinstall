@@ -1,0 +1,29 @@
+#!/bin/sh
+
+1>&2 echo "building authentication-demo pwd=$(pwd)"
+
+install_dfx_if_needed () {
+    if ! command -v dfx 1>/dev/null; then
+        export DFX_VERSION="$(cat dfx.json | grep dfx | awk '{ print $2 }' | tr -d '",')"
+        yes | sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
+        sleep 2
+        echo "which dfx=$(which dfx)"
+        if ! command -v dfx 1>/dev/null; then
+            # hmm. Still not installed.
+            github_actions_dfx="$HOME/bin/dfx"
+            # On GitHub actions it might be here
+            if test -e "$github_actions_dfx"; then
+                echo "aliasing dfx=$github_actions_dfx"
+                alias dfx="$github_actions_dfx"
+            fi
+        fi
+    else
+        echo "dfx is already installed" 1>&2
+    fi;
+}
+
+install_dfx_if_needed
+dfx start --background
+# build the js files for the contract, which are required to webpack
+dfx deploy
+dfx stop

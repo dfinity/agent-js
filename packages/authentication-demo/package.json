@@ -4,6 +4,7 @@
   "description": "",
   "keywords": [],
   "scripts": {
+    "postinstall": "./bin/postinstall",
     "build": "./bin/build",
     "prettier": "prettier --check \"src/**/*.(ts|js)\"",
     "prettier:write": "npm run prettier -- --write"
