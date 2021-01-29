@@ -12,22 +12,7 @@ buildPackage () {
 	)
 }
 
-bootstrap="./packages/bootstrap"
-authentication="./packages/authentication"
-
-# build this first otherwise ci breaks
-buildPackage $authentication
-buildPackage $bootstrap
-
 for package in ./packages/*
 do
-	if [ "$package" = "$authentication" ]; then
-		# skip for now because we did it earlier
-		continue
-	fi
-	if [ "$package" = "$bootstrap" ]; then
-		# skip for now because we did it earlier
-		continue
-	fi
 	buildPackage $package
 done
