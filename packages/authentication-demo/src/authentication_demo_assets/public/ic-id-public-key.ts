@@ -2,7 +2,6 @@ import {
   IdentityDescriptor,
   IdentityRequestedEvent,
 } from "@dfinity/authentication";
-import { isIdentityDescriptor } from "@dfinity/bootstrap/ts-out/packages/bootstrap/src/actors/identity/IdentityDescriptor";
 
 export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
   identity: IdentityDescriptor | null = null;
@@ -17,14 +16,14 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
       "";
   }
   connectedCallback() {
-    const identityRequestedEvent = IdentityRequestedEvent({
+    this.dispatchEvent(IdentityRequestedEvent({
       bubbles: true,
       cancelable: true,
+      composed: true,
       onIdentity: (id) => {
         this.onUnknownIdentity(id);
       },
-    });
-    this.dispatchEvent(identityRequestedEvent);
+    }));
     this.render();
   }
   onUnknownIdentity = (maybeIdentity: unknown) => {
@@ -53,4 +52,17 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
     }
     this.render();
   }
+}
+
+export function isIdentityDescriptor(
+  value: unknown | IdentityDescriptor,
+): value is IdentityDescriptor {
+  switch ((value as IdentityDescriptor)?.type) {
+    case 'AnonymousIdentity':
+      return true;
+    case 'PublicKeyIdentity':
+      if (typeof (value as any)?.publicKey !== 'string') return false;
+      return true;
+  }
+  return false;
 }

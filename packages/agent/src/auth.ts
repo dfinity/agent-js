@@ -94,3 +94,17 @@ export class AnonymousIdentity implements Identity {
     };
   }
 }
+
+export type IdentityDescriptor =
+  | { type: 'AnonymousIdentity' }
+  | { type: 'PublicKeyIdentity'; publicKey: string };
+
+export function createIdentityDescriptor(
+  identity: SignIdentity | AnonymousIdentity,
+): IdentityDescriptor {
+  const identityIndicator: IdentityDescriptor =
+    'getPublicKey' in identity
+      ? { type: 'PublicKeyIdentity', publicKey: identity.getPublicKey().toDer().toString('hex') }
+      : { type: 'AnonymousIdentity' };
+  return identityIndicator;
+}

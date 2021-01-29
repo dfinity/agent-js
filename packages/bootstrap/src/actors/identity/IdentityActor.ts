@@ -1,8 +1,7 @@
 import { EventIterable } from '../../dom-events';
 import { makeLog } from '../../log';
-import { SignIdentity, AnonymousIdentity } from '@dfinity/agent';
+import { SignIdentity, AnonymousIdentity, createIdentityDescriptor } from '@dfinity/agent';
 import { BootstrapIdentityChangedEvent } from './events';
-import { IdentityDescriptor as createIdentityDescriptor } from './IdentityDescriptor';
 import { IdentityRequestedEventUrl, IdentityDescriptor } from '@dfinity/authentication';
 
 /**
@@ -10,7 +9,7 @@ import { IdentityRequestedEventUrl, IdentityDescriptor } from '@dfinity/authenti
  * events:
  *   receives
  *     dom:
- *       BootstrapIdentityRequestedEvent
+ *       IdentityRequestedEvent
  *       AuthenticationResponseDetectedEvent
  *   sends: BootstrapIdentityChangedEvent
  */
@@ -35,7 +34,7 @@ export default function IdentityActor(spec: {
     if (started) throw new Error('Already started');
     started = true;
     await Promise.all([
-      handleBootstrapIdentityRequestedEvents(),
+      handleIdentityRequestedEvents(),
       // do this one last so all subscribers set up
       trackLatestIdentity(),
     ]);
@@ -58,19 +57,19 @@ export default function IdentityActor(spec: {
       publish(IdentityMessage(identityDescriptor));
     }
   }
-  async function handleBootstrapIdentityRequestedEvents() {
-    for await (const event of EventIterable(window, IdentityRequestedEventUrl)) {
-      log('debug', 'bootstrap-js window listener handling BootstrapIdentityRequestedEvent', event);
+  async function handleIdentityRequestedEvents() {
+    for await (const event of EventIterable(document, IdentityRequestedEventUrl, true)) {
+      log('debug', 'bootstrap-js window listener handling IdentityRequestedEvent', event);
       const detail = (event as CustomEvent).detail;
       const sender: undefined | MessagePort = detail && detail.sender;
       if (typeof sender?.postMessage === 'function') {
         const message = IdentityMessage(currentIdentity)
         log('debug', 'adding subscriber port', sender)
         subscribers.add(sender);
-        log('debug', 'replying to BootstrapIdentityRequestedEvent with', message)
+        log('debug', 'replying to IdentityRequestedEvent with', message)
         sender.postMessage(message);
       } else {
-        log('warn', 'BootstrapIdentityRequestedEvent did not contain a sender port');
+        log('warn', 'IdentityRequestedEvent did not contain a sender port');
       }
     }
   }

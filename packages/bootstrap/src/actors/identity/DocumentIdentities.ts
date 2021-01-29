@@ -1,4 +1,4 @@
-import { makeLog } from 'src/log';
+import { makeLog } from '../../log';
 import { SignIdentity, AnonymousIdentity } from '@dfinity/agent';
 import {
   response as icidResponse,

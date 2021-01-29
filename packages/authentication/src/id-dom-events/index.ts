@@ -1,7 +1,7 @@
 export const IdentityRequestedEventUrl = 'https://internetcomputer.org/ns/authentication/IdentityRequestedEvent' as const;
 
 export function IdentityRequestedEvent(
-  options: Pick<CustomEventInit<{}>, 'bubbles' | 'cancelable'> & {
+  options: Pick<CustomEventInit<{}>, 'bubbles' | 'cancelable' | 'composed'> & {
     onIdentity(identity: unknown): void;
   },
 ) {
