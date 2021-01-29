@@ -17,5 +17,10 @@ buildPackage () {
 
 for package in ./packages/*
 do
+	if [ "$package" == "./packages/authentication-demo" ]; then
+		continue;
+	fi
 	buildPackage $package
 done
+
+buildPackage ./packages/authentication-demo;
