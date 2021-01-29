@@ -28,6 +28,7 @@ Mergify can take care of enforcing all of this. Just add the `automerge-squash` 
 
 ### bin/* scripts
 
+
 The following scripts can be found in [./bin](./bin):
 
 Monorepo-related scripts run in this order, but are usually invoked by `npm install`:

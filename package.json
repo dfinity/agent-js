@@ -15,7 +15,8 @@
     "postinstall": "bin/npm-postinstall",
     "prepare": "bin/build",
     "e2e": "bin/e2e",
-    "test": "bin/test"
+    "test": "bin/test",
+    "mitm": "bin/mitm"
   },
   "repository": {
     "type": "git",

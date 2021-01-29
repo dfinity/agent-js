@@ -16,7 +16,7 @@ module.exports = {
   target: 'web',
   node: {
     // This is needed for wasm loader from emscripten
-    fs: 'empty'
+    fs: 'empty',
   },
   output: {
     // This is necessary to allow internal apps to bundle their own code with
@@ -96,7 +96,7 @@ module.exports = {
         from: '../bootstrap/src/candid/candid.css',
         to: '../ts-out/packages/bootstrap/src/candid/candid.css',
       },
-    ])
+    ]),
   ],
   devServer: {
     proxy: {

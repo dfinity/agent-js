@@ -26,7 +26,7 @@ export class InputBox {
   public value: any = undefined;
 
   constructor(public idl: IDL.Type, public ui: UIConfig) {
-    const status = document.createElement('div');
+    const status = document.createElement('span');
     status.className = 'status';
     this.status = status;
 
@@ -37,7 +37,8 @@ export class InputBox {
         }
         this.parse();
       });
-      ui.input.addEventListener('focus', () => {
+      ui.input.addEventListener('input', () => {
+        status.style.display = 'none';
         ui.input!.classList.remove('reject');
       });
     }
