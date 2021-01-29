@@ -2,8 +2,11 @@ import * as oauth2 from './oauth2';
 import * as assert from 'assert';
 import { hexToBytes } from './bytes';
 
-export function isMaybeAuthenticationResponseUrl(url: URL) {
-  return url.searchParams.has('access_token');
+export function isMaybeAuthenticationResponseUrl(url: URL|unknown) {
+  if (!(url && ('searchParams' in (url as URL)))) {
+    return false;
+  }
+  return (url as URL)?.searchParams?.has('access_token');
 }
 
 export type AuthenticationResponse = {
