@@ -1,0 +1,10 @@
+#!/bin/sh
+
+1>&2 echo "building authentication-demo pwd=$(pwd)"
+
+dfx start --background
+
+# build the js files for the contract, which are required to webpack
+dfx deploy
+
+dfx stop

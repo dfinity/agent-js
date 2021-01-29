@@ -4,7 +4,7 @@
   "description": "",
   "keywords": [],
   "scripts": {
-    "build": "webpack",
+    "build": "./bin/build",
     "prettier": "prettier --check \"src/**/*.(ts|js)\"",
     "prettier:write": "npm run prettier -- --write"
   },
