@@ -19,6 +19,10 @@ export async function hash(data: Buffer): Promise<BinaryBlob> {
   return blobFromUint8Array(new Uint8Array(hashed));
 }
 
+function isBigNumber(v: any): v is BigNumber {
+  return v && (v as any)._isBigNumber
+}
+
 async function hashValue(value: unknown): Promise<BinaryBlob> {
   if (value instanceof borc.Tagged) {
     return hashValue(value.value);
@@ -30,7 +34,7 @@ async function hashValue(value: unknown): Promise<BinaryBlob> {
     value instanceof BigInt
   ) {
     return hash(lebEncode(value));
-  } else if (value instanceof BigNumber) {
+  } else if ((value instanceof BigNumber) || isBigNumber(value)) {
     return hash(lebEncode(value) as BinaryBlob);
   } else if (typeof value === 'number') {
     return hash(lebEncode(value));
