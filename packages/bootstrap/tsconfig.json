@@ -14,5 +14,9 @@
     "strict": true,
     "target": "ES2017"
   },
-  "include": ["types/*", "src/**/*.ts", "src/**/*.css"]
+  "include": ["types/*", "src/**/*.ts", "src/**/*.css"],
+  "references": [
+    { "path": "../agent" },
+    { "path": "../authentication" },
+  ]
 }

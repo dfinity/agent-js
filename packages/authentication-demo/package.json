@@ -4,22 +4,23 @@
   "description": "",
   "keywords": [],
   "scripts": {
-    "build": "./bin/build",
+    "agent_js_monorepo_build_pre": "echo agent_js_monorepo_build_pre",
+    "agent_js_monorepo_build_post": "echo agent_js_monorepo_build_post",
+    "prepare": "./bin/prepare",
+    "build": "webpack",
     "prettier": "prettier --check \"src/**/*.(ts|js)\"",
     "prettier:write": "npm run prettier -- --write"
   },
   "dependencies": {
+    "@dfinity/agent": "file:../agent",
     "@dfinity/authentication": "file:../authentication",
     "@dfinity/bootstrap": "file:../bootstrap",
-    "clean-webpack-plugin": "^3.0.0"
-  },
-  "devDependencies": {
-    "@dfinity/agent": "file:../agent",
+    "clean-webpack-plugin": "^3.0.0",
     "prettier": "^2.2.1",
     "terser-webpack-plugin": "2.2.2",
     "tsconfig-paths-webpack-plugin": "3.3.0",
     "typescript": "^3.6.3",
-    "webpack": "4.41.3",
-    "webpack-cli": "3.3.10"
+    "webpack-cli": "3.3.10",
+    "webpack": "4.41.3"
   }
 }

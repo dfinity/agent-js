@@ -8,11 +8,21 @@ buildPackage () {
 		package=$1
 		echo "building package: $package"
 		cd "$package"
+		if ! test -e node_modules; then
+			npm i --ignore-scripts --no-package-lock
+		fi
+		npm run agent_js_monorepo_build_pre --if-present
+		npm run prepare --if-present
 		npm run build --if-present
+		npm run agent_js_monorepo_build_post --if-present
 	)
 }
 
-for package in ./packages/*
-do
+for package in ./packages/*; do
+	if [ "$package" = "./packages/authentication-demo" ]; then
+		continue;
+	fi
 	buildPackage $package
 done
+
+buildPackage ./packages/authentication-demo;
