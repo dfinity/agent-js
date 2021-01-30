@@ -50,6 +50,10 @@ async function hashValue(value: unknown): Promise<BinaryBlob> {
   } else if (value instanceof Promise) {
     return value.then(x => hashValue(x));
   } else {
+    console.warn('unhashable value', {
+      value,
+      typeofValue: typeof value,
+    });
     throw new Error(`Attempt to hash a value of unsupported type: ${value}`);
   }
 }
