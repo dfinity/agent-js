@@ -12,6 +12,7 @@ buildPackage () {
 			npm i --ignore-scripts --no-package-lock
 		fi
 		npm run agent_js_monorepo_build_pre --if-present
+		npm run prepare --if-present
 		npm run build --if-present
 		npm run agent_js_monorepo_build_post --if-present
 	)
