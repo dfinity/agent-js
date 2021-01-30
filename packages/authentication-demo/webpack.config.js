@@ -2,7 +2,6 @@ const path = require("path");
 const TerserPlugin = require("terser-webpack-plugin");
 const dfxJson = require("./dfx.json");
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
 // Get the network name, or `local` by default.
 const getNetworkName = () => process.env["DFX_NETWORK"] || "local"
