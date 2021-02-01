@@ -1,7 +1,7 @@
 import { WebAuthnIdentity } from '@dfinity/authentication';
-import { hexEncodeUintArray } from '../bytes';
+import { hexEncodeUintArray } from '../../bytes';
 
-export function StubbedWebAuthn() {
+export default function PolyfillWebAuthnIdentity() {
   return {
     async create() {
       return WebAuthnIdentity.fromJSON(
