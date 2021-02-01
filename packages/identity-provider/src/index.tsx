@@ -11,6 +11,7 @@ import NotFound from "./routes/NotFound";
 import RelyingPartyDemoRoute from "./relying-party-demo/routes";
 import { IdentityChangedEventIdentifier } from './relying-party-demo/events';
 import { Route as DesignPhase1Route } from "./design-phase-1";
+import { WebAuthnIdentity } from '@dfinity/authentication';
 
 const NotFoundRoute = () => {
   return <Route component={NotFound} />;
@@ -30,7 +31,10 @@ const App = () => {
                 </Route>
                 <Route exact path="/" component={HomeRoute} />
                 <Route path="/design-phase-1">
-                  <DesignPhase1Route NotFoundRoute={NotFoundRoute} />
+                  <DesignPhase1Route
+                    NotFoundRoute={NotFoundRoute}
+                    WebAuthnIdentity={WebAuthnIdentity}
+                  />
                 </Route>
                 <NotFoundRoute />
               </Switch>

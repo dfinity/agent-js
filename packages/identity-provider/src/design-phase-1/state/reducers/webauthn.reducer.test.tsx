@@ -5,15 +5,18 @@ import { useReducer } from '../state-react';
 import { hexEncodeUintArray, hexToBytes } from '../../../bytes';
 import {act} from 'react-dom/test-utils';
 import assert from 'assert';
-import * as webAuthnReducer from "./webauthn.reducer";
+import {WebAuthnReducer} from "./webauthn.reducer";
 import { Action } from "./webauthn.reducer";
 import { EffectLifecycleAction } from '../reducer-effects';
 import { latest } from 'immer/dist/internal';
+import PolyfillWebAuthnIdentity from "../../../testing/dom-nodejs-polyfills/PolyfillWebAuthnIdentity";
 
 describe('@dfinity/identity-provider/design-phase-1/reducers/webauthn.reducer', () => {
   it('works', async () => {
     const actions: Array<Action|EffectLifecycleAction> = [];
-    const reducer = webAuthnReducer
+    const reducer = WebAuthnReducer({
+      WebAuthnIdentity: PolyfillWebAuthnIdentity(),
+    })
     let latestState: React.ReducerState<typeof reducer.reduce>|undefined
     const Component: React.FunctionComponent = () => {
       const [state, dispatch] = useReducer({

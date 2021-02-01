@@ -45,13 +45,12 @@ export type Action =
       };
     };
 
-export function WebAuthnReducer(
-  spec: {
-    /** Useful for logging effects */
-    forEachAction?(action: Action): void;
-  },
-): IEffectiveReducer<State, Action> {
-  return Object.freeze({ init, reduce: wrappedReduce, effect });
+export function WebAuthnReducer(spec: {
+  /** Useful for logging effects */
+  forEachAction?(action: Action): void;
+  WebAuthnIdentity: Pick<typeof WebAuthnIdentity, 'create'>;
+}): IEffectiveReducer<State, Action> {
+  return Object.freeze({ init, reduce: wrappedReduce, effect: effector(spec) });
   function wrappedReduce(state: State | undefined = init(), action: Action): State {
     if (spec.forEachAction) spec.forEachAction(action);
     return reduce(state, action);
@@ -77,30 +76,34 @@ export function reduce(state: State | undefined = init(), action: Action): State
   return state;
 }
 
-export function effect(state: State, action: Action): undefined | EffectRequested<Action> {
-  switch (action.type) {
-    case 'WebAuthn/publicKeyCredentialRequested':
-      return {
-        type: 'EffectRequested',
-        payload: {
-          async effect() {
-            const webAuthnIdentity = await WebAuthnIdentity.create();
-            const publicKeyCredentialCreated: Action = {
-              type: 'WebAuthn/publicKeyCredentialCreated' as const,
-              payload: {
-                credential: {
-                  id: { hex: 'todoCredentialId' },
-                  publicKey: {
-                    hex: hexEncodeUintArray(webAuthnIdentity.getPublicKey().toDer()),
+export function effector(spec: {
+  WebAuthnIdentity: Pick<typeof WebAuthnIdentity, 'create'>;
+}): IEffectiveReducer<State, Action>['effect'] {
+  return function (state: State, action: Action): undefined | EffectRequested<Action> {
+    switch (action.type) {
+      case 'WebAuthn/publicKeyCredentialRequested':
+        return {
+          type: 'EffectRequested',
+          payload: {
+            async effect() {
+              const webAuthnIdentity = await spec.WebAuthnIdentity.create();
+              const publicKeyCredentialCreated: Action = {
+                type: 'WebAuthn/publicKeyCredentialCreated' as const,
+                payload: {
+                  credential: {
+                    id: { hex: 'todoCredentialId' },
+                    publicKey: {
+                      hex: hexEncodeUintArray(webAuthnIdentity.getPublicKey().toDer()),
+                    },
                   },
                 },
-              },
-            };
-            return [publicKeyCredentialCreated];
+              };
+              return [publicKeyCredentialCreated];
+            },
           },
-        },
-      };
-    default:
-  }
-  return;
+        };
+      default:
+    }
+    return;
+  };
 }

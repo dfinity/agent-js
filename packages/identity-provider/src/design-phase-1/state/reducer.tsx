@@ -15,7 +15,8 @@ import { History } from "history";
 export default function IdentityProviderReducer(spec: {
     /** Useful for logging effects */
     forEachAction?(action: Action): void;
-    history: History
+    history: History;
+    WebAuthnIdentity: Pick<typeof WebAuthnIdentity, 'create'>;
   }): IEffectiveReducer<State, Action> {
     return Object.freeze({
         effect: Effector(spec),
@@ -26,6 +27,7 @@ export default function IdentityProviderReducer(spec: {
 
 export function Effector(spec: {
     history: History;
+    WebAuthnIdentity: Pick<typeof WebAuthnIdentity, 'create'>
 }): IEffectiveReducer<State, Action>['effect'] {
     return (state: State, action: Action): undefined | EffectRequested<Action> => {
         switch (action.type) {
@@ -65,7 +67,7 @@ export function Effector(spec: {
             case "WebAuthn/reset":
             case "WebAuthn/publicKeyCredentialRequested":
             case "WebAuthn/publicKeyCredentialCreated":
-                return webAuthnReducer.effect(state.webAuthn, action);
+                return webAuthnReducer.effector(spec)(state.webAuthn, action);
             case "reset":
             case "DelegationRootSignerChanged":
                 break;

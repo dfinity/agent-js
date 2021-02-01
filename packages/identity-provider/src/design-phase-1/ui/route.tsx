@@ -26,6 +26,7 @@ const stateStorage = SerializedStorage(
 export default function DesignPhase0Route(props: {
     NotFoundRoute: React.ComponentType
     theme?: Theme
+    WebAuthnIdentity: Pick<typeof WebAuthnIdentity, 'create'>
 }) {
     const NotFoundRoute = props.NotFoundRoute;
     const location = useLocation()
@@ -48,6 +49,7 @@ export default function DesignPhase0Route(props: {
     const history = useHistory();
     const [state, dispatch] = useReducer(IdentityProviderReducer({
         history,
+        WebAuthnIdentity: props.WebAuthnIdentity,
     }), initialState)
     useStateStorage(stateStorage, state, dispatch);
     const urls = {
