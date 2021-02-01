@@ -16,14 +16,16 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
       "";
   }
   connectedCallback() {
-    this.dispatchEvent(IdentityRequestedEvent({
-      bubbles: true,
-      cancelable: true,
-      composed: true,
-      onIdentity: (id) => {
-        this.onUnknownIdentity(id);
-      },
-    }));
+    this.dispatchEvent(
+      IdentityRequestedEvent({
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        onIdentity: (id) => {
+          this.onUnknownIdentity(id);
+        },
+      })
+    );
     this.render();
   }
   onUnknownIdentity = (maybeIdentity: unknown) => {
@@ -55,13 +57,13 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
 }
 
 export function isIdentityDescriptor(
-  value: unknown | IdentityDescriptor,
+  value: unknown | IdentityDescriptor
 ): value is IdentityDescriptor {
   switch ((value as IdentityDescriptor)?.type) {
-    case 'AnonymousIdentity':
+    case "AnonymousIdentity":
       return true;
-    case 'PublicKeyIdentity':
-      if (typeof (value as any)?.publicKey !== 'string') return false;
+    case "PublicKeyIdentity":
+      if (typeof (value as any)?.publicKey !== "string") return false;
       return true;
   }
   return false;

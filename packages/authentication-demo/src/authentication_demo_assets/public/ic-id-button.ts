@@ -1,18 +1,24 @@
 import { authenticator } from "@dfinity/authentication";
 
-export default class AuthenticationButton extends HTMLButtonElement {
+/**
+ * This can't extend `HTMLButtonElement` and still work in Safari (AFAICT): https://github.com/webcomponents/polyfills/issues/102
+ * @todo feel free to extend HTMLButtonElement, just include a polyfill for Safari https://www.npmjs.com/package/@webreflection/custom-elements
+ */
+export default class AuthenticationButton extends HTMLElement {
   constructor() {
     super();
-    this.appendChild(
-      (() => {
-        const fragment = this.ownerDocument.createDocumentFragment();
-        var text = document.createElement("span");
-        text.textContent = "Authenticate with IC";
-        fragment.appendChild(text);
-        return fragment;
-      })()
-    );
     this.addEventListener("click", this.listener);
+  }
+  connectedCallback() {
+    const fragment: DocumentFragment = (() => {
+      const fragment = this.ownerDocument.createDocumentFragment();
+      const button = document.createElement("button");
+      const text = document.createTextNode("Authenticate with IC");
+      button.appendChild(text);
+      fragment.appendChild(button);
+      return fragment;
+    })();
+    this.appendChild(fragment);
   }
   listener(event: Event) {
     switch (event.type) {

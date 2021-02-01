@@ -11,9 +11,11 @@ if (!(globalThis as any)?.ic?.features?.authn) {
 
 async function main(el: Element) {
   if (globalThis.customElements) {
-    const elements: Array<
-      [string, CustomElementConstructor, ElementDefinitionOptions?]
-    > = [
+    const elements: Array<[
+      string,
+      CustomElementConstructor,
+      ElementDefinitionOptions?
+    ]> = [
       [
         "ic-authentication-subject-public-key" as const,
         AuthenticationSubjectPublicKeyElement,
@@ -23,13 +25,19 @@ async function main(el: Element) {
       [
         "ic-authentication-button" as const,
         AuthenticationButton,
-        { extends: "button" },
+        {}
       ],
     ];
     for (const [tagName, ElementConstructor, opts] of elements) {
       if (customElements.get(tagName)) {
         console.debug("customElement already defined. skipping.", tagName);
       } else {
+        console.debug(
+          "defining customElement",
+          tagName,
+          ElementConstructor,
+          opts
+        );
         customElements.define(tagName, ElementConstructor, opts);
       }
     }

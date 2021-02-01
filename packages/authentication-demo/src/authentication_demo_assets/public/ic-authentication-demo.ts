@@ -3,6 +3,7 @@ import { authenticator } from "@dfinity/authentication";
 import authDemoContract from "ic:canisters/authentication_demo";
 import { Principal } from "@dfinity/agent";
 import { hexEncodeUintArray } from "@dfinity/authentication/.tsc-out/packages/authentication/src/idp-protocol/bytes";
+import AuthenticationButton from "./ic-id-button";
 
 export default class AuthenticationDemo extends HTMLElement {
   whoamiPrincipal: Principal | undefined;
@@ -20,11 +21,7 @@ export default class AuthenticationDemo extends HTMLElement {
     while (shadow.firstChild) {
       shadow.firstChild.remove();
     }
-    shadow.appendChild(
-      document.createElement("button", {
-        is: "ic-authentication-button",
-      })
-    );
+    shadow.appendChild(new AuthenticationButton());
     shadow.appendChild(
       (() => {
         const testAgentButton = document.createElement("button");
