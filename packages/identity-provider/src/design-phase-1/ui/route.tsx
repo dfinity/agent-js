@@ -1,40 +1,27 @@
-import React, { lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Route, Switch, useRouteMatch, useLocation, Redirect, useHistory  } from 'react-router-dom';
+import React from 'react';
+import { Route, Switch, useRouteMatch, useLocation, Redirect, useHistory  } from 'react-router-dom';
 import WelcomeScreen from './screens/WelcomeScreen';
 import IdentityConfirmationScreen from './screens/IdentityConfirmationScreen';
 import {default as SessionConsentScreen} from './screens/SessionConsentScreen';
 import {default as AuthenticationResponseConfirmationScreen} from './screens/AuthenticationResponseConfirmationScreen';
-import { SerializedStorage, IStorage, LocalStorageKey, NotFoundError } from '../state/state-storage';
+import { SerializedStorage, LocalStorageKey, NotFoundError } from '../state/state-storage';
 import { useStateStorage } from '../state/state-storage-react';
 import { StateToStringCodec } from '../state/state-serialization';
-import { hexToBytes, hexEncodeUintArray } from 'src/bytes';
-import { Ed25519PublicKey , Ed25519KeyIdentity, DelegationChain, WebAuthnIdentity} from '@dfinity/authentication';
+import { hexToBytes } from 'src/bytes';
+import { WebAuthnIdentity} from '@dfinity/authentication';
 import * as icid from "../../protocol/ic-id-protocol"
-import { PublicKey, blobFromHex, derBlobFromBlob, SignIdentity, blobFromUint8Array } from '@dfinity/agent';
-import tweetnacl from "tweetnacl";
 import AuthenticationScreenLayout from './layout/AuthenticationScreenLayout';
 import { ThemeProvider, Theme } from '@material-ui/core';
 import { IdentityProviderStateType } from '../state/state';
-import IdentityProviderReducer, * as reducer from "../state/reducer";
+import IdentityProviderReducer from "../state/reducer";
+import AuthenticationController from '../AuthenticationController';
+import { AuthenticationResponseConsentProposal, createSignIdentity } from '../state/reducers/authentication';
+import { useReducer } from '../state/state-react';
 
 const stateStorage = SerializedStorage(
     LocalStorageKey('design-phase-1'),
     StateToStringCodec(IdentityProviderStateType),
 )
-import AuthenticationController from '../AuthenticationController';
-import { AuthenticationResponseConsentProposal, createSignIdentity } from '../state/reducers/authentication';
-import { useReducer } from '../state/state-react';
-
-function StubbedWebAuthn() {
-    return {
-        async create() {
-            return WebAuthnIdentity.fromJSON(JSON.stringify({
-                publicKey: hexEncodeUintArray(Uint8Array.from([])),
-                rawId: hexEncodeUintArray(Uint8Array.from([])),
-              }));
-        }
-    }
-}
 
 export default function DesignPhase0Route(props: {
     NotFoundRoute: React.ComponentType
@@ -60,7 +47,6 @@ export default function DesignPhase0Route(props: {
     )
     const history = useHistory();
     const [state, dispatch] = useReducer(IdentityProviderReducer({
-        WebAuthn: StubbedWebAuthn(),
         history,
     }), initialState)
     useStateStorage(stateStorage, state, dispatch);

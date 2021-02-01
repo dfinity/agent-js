@@ -15,9 +15,6 @@ import { History } from "history";
 export default function IdentityProviderReducer(spec: {
     /** Useful for logging effects */
     forEachAction?(action: Action): void;
-    WebAuthn: {
-      create(): Promise<WebAuthnIdentity>;
-    };
     history: History
   }): IEffectiveReducer<State, Action> {
     return Object.freeze({

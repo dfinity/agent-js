@@ -2,19 +2,15 @@ import { ThemeProvider } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import Container from '@material-ui/core/Container';
 import HomeRoute from './routes/Home';
-import React, { lazy, Suspense } from 'react';
+import React, { Suspense } from 'react';
 import { render } from 'react-dom';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import { IDPRootErrorBoundary } from './ErrorBoundary';
-import { ProvideAuth } from './hooks/use-auth';
 import theme from './theme';
-import { ROUTES } from './utils/constants';
 import NotFound from "./routes/NotFound";
 import RelyingPartyDemoRoute from "./relying-party-demo/routes";
-import { IdentityChangedEvent, IdentityChangedEventIdentifier } from './relying-party-demo/events';
+import { IdentityChangedEventIdentifier } from './relying-party-demo/events';
 import { Route as DesignPhase1Route } from "./design-phase-1";
-
-const Authorization = lazy(() => import('./authorization/routes/Authorization'));
 
 const NotFoundRoute = () => {
   return <Route component={NotFound} />;
@@ -23,28 +19,25 @@ const NotFoundRoute = () => {
 const App = () => {
   return (
     <IDPRootErrorBoundary>
-      <ProvideAuth>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          <Container maxWidth='xl'>
-            <Router>
-              <Suspense fallback={<div>Loading...</div>}>
-                <Switch>
-                  <Route exact path={ROUTES.AUTHORIZATION} component={Authorization} />
-                  <Route path={ROUTES.RELYING_PARTY_DEMO}>
-                    <RelyingPartyDemoRoute NotFoundRoute={NotFoundRoute} />
-                  </Route>
-                  <Route exact path={ROUTES.HOME} component={HomeRoute} />
-                  <Route path="/design-phase-1">
-                    <DesignPhase1Route NotFoundRoute={NotFoundRoute} />
-                  </Route>
-                  <NotFoundRoute />
-                </Switch>
-              </Suspense>
-            </Router>
-          </Container>
-        </ThemeProvider>
-      </ProvideAuth>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Container maxWidth='xl'>
+          <Router>
+            <Suspense fallback={<div>Loading...</div>}>
+              <Switch>
+                <Route path="/relying-party-demo">
+                  <RelyingPartyDemoRoute NotFoundRoute={NotFoundRoute} />
+                </Route>
+                <Route exact path="/" component={HomeRoute} />
+                <Route path="/design-phase-1">
+                  <DesignPhase1Route NotFoundRoute={NotFoundRoute} />
+                </Route>
+                <NotFoundRoute />
+              </Switch>
+            </Suspense>
+          </Router>
+        </Container>
+      </ThemeProvider>
     </IDPRootErrorBoundary>
   );
 };
