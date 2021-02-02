@@ -95,10 +95,24 @@ export class AnonymousIdentity implements Identity {
   }
 }
 
+/*
+ * We need to communicate with other agents on the page about identities,
+ * but those messages may need to go across boundaries where it's not possible to serialize/deserialize object prototypes easily.
+ * So these are lightweight, serializable objects that contain enough information to recreate SignIdentities,
+ * but don't commit to having all methods of SignIdentity.
+ * 
+ * Use Case:
+ * * DOM Events that let differently-versioned components communicate to one another about Identities,
+ *   even if they're using slightly different versions of agent packages to create/interpret them.
+ */
 export type IdentityDescriptor =
   | { type: 'AnonymousIdentity' }
   | { type: 'PublicKeyIdentity'; publicKey: string };
 
+/**
+ * Create an IdentityDescriptor from a @dfinity/authentication Identity
+ * @param identity - identity describe in returned descriptor
+ */
 export function createIdentityDescriptor(
   identity: SignIdentity | AnonymousIdentity,
 ): IdentityDescriptor {

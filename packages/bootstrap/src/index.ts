@@ -78,7 +78,7 @@ async function _main(spec: { render: ReturnType<typeof BootstrapRenderer> }) {
     ...window.ic,
     features: {
       ...window.ic?.features,
-      authn: true,
+      authentication: true,
     },
   };
   const site = await SiteInfo.fromWindow();

@@ -18,11 +18,14 @@ type SendAuthenticationRequestCommand = {
 export class IdentityProviderAgent implements IIdentityProviderAgent {
   #identityProvider: IdentityProviderIndicator;
   #transport: Transport<IdentityProviderAgentEnvelope>;
+  #location: Pick<Location, 'href'>;
   constructor(spec: {
     identityProvider: IdentityProviderIndicator;
     transport: Transport<IdentityProviderAgentEnvelope>;
+    location: Pick<Location, 'href'>;
   }) {
     this.#identityProvider = spec.identityProvider;
+    this.#location = spec.location;
     this.#transport = spec.transport;
   }
   async sendAuthenticationRequest(spec: SendAuthenticationRequestCommand): Promise<void> {
@@ -44,7 +47,7 @@ export class IdentityProviderAgent implements IIdentityProviderAgent {
     });
   }
 
-  async receiveAuthenticationResponse(url: URL): Promise<void> {
+  async receiveAuthenticationResponse(url:URL=new URL(this.#location.href)): Promise<void> {
     console.debug('idp-agent', 'receiveAuthenticationResponse', { url });
     if (!isMaybeAuthenticationResponseUrl(url)) {
       console.debug(

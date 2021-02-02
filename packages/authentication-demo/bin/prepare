@@ -24,7 +24,12 @@ install_dfx_if_needed () {
 
 install_dfx_if_needed
 dfx start --background
-# build the js files for the contract, which are required to webpack
+# authentication_demo_assets builder will try to webpack that canister,
+# which will need to resolve an import of `ic:canisters/authentication_demo`,
+# which our standard webpack.config.js configures to load from the *output* of `dfx build` the authentication_demo_canister.
+# In theory the dependency graph info in dfx.json should be enough to tell dfx.json to build everything in that order,
+# but in practice benjamin.goering@dfinity.org couldn't get a simple `dfx deploy` here to succeed.
+# So we explicitly build one, then the other.
 dfx -vvvvv deploy authentication_demo
 dfx -vvvvv deploy authentication_demo_assets
 dfx stop

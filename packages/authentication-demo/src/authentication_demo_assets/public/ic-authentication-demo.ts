@@ -5,6 +5,14 @@ import { Principal } from "@dfinity/agent";
 import { hexEncodeUintArray } from "@dfinity/authentication/.tsc-out/packages/authentication/src/idp-protocol/bytes";
 import AuthenticationButton from "./ic-id-button";
 
+/**
+ * Main Custom Element for the @dfinity/authentication-demo.
+ * It should:
+ * * render an ic-authentication-button that the end-user can use to initiate login.
+ * * render a button to test the @dfinity/agent included by @dfinity/bootstrap to see whether it picks up the identity from any AuthenticationResponse
+ *   * When someone clicks this, make a request to the `whoami()` method of the motoko actor,
+ *     which should echo back this agent's identity, which this element should render to the end-user.
+ */
 export default class AuthenticationDemo extends HTMLElement {
   whoamiPrincipal: Principal | undefined;
   constructor() {
@@ -16,6 +24,9 @@ export default class AuthenticationDemo extends HTMLElement {
       new URL(this.ownerDocument.location.toString())
     );
   }
+  /**
+   * Clear out children and re-append-children based on latest state.
+   */
   render() {
     const shadow = this.shadowRoot || this.attachShadow({ mode: "open" });
     while (shadow.firstChild) {
@@ -64,6 +75,10 @@ export default class AuthenticationDemo extends HTMLElement {
       );
     }
   }
+  /**
+   * click handler for 'Test Agent' button.
+   * @param event - ClickEvent from clicking
+   */
   onClickTestAgent = async (event: Event) => {
     console.log("onClickTestAgent start", { event });
     let response: unknown;

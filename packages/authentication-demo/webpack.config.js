@@ -47,7 +47,6 @@ function generateWebpackConfigForCanister(name, info) {
       minimizer: [new TerserPlugin()],
     },
     resolve: {
-      // plugins: [new TsconfigPathsPlugin({ configFile: './tsconfig.json' })],
       alias: aliases,
       extensions: [ '.ts', '.tsx', '.js', '.jsx', '.json', ],
     },

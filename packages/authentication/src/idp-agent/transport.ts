@@ -59,10 +59,10 @@ export function UrlTransport(
  * @returns transport that sends envelopes via redirect
  */
 export function RedirectTransport(
-  this: Pick<typeof globalThis, 'location'>,
+  location: Pick<Location, 'assign'>,
 ): Transport<IdentityProviderAgentEnvelope> {
   return UrlTransport(url => {
-    this.location.assign(url.toString());
+    location.assign(url.toString());
   });
 }
 

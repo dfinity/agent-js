@@ -61,6 +61,14 @@ export class Delegation {
   }
 }
 
+/**
+ * Type of ReturnType<Delegation.toJSON>.
+ * The goal here is to stringify all non-JSON-compatible types to some bytes representation we can stringify as hex.
+ * (Hex shouldn't be ambiguous ever, because you can encode as DER with semantic OIDs).
+ * * expiration is a BigInt of Nanoseconds since epoch as hex
+ * * pubkey is hex of DER publicKey
+ * * targets is array of strings, where each string is hex of principal blob (*NOT* textual representation)
+ */
 interface JsonnableDelegation {
   expiration: string;
   pubkey: string;
@@ -101,6 +109,7 @@ async function _createSingleDelegation(
   // and the message.
   const challenge = new Uint8Array([...domainSeparator, ...(await requestIdOf(delegation))]);
   const signature = await from.sign(blobFromUint8Array(challenge));
+  // This is extremely helpful to have in the debug log when tracking down ic-ref authentication signature errors.
   console.debug('@dfinity/authentication _createSingleDelegation', {
     challenge,
     signature,

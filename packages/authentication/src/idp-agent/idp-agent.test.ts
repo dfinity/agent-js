@@ -9,7 +9,8 @@ import {
 import { unsafeTemporaryIdentityProvider } from '.';
 
 /**
- *
+ * Create a Transport that it is useful for testing what gets sent over the transport.
+ * Also returns array of sent messages. (doesn't actually send them anywhere).
  */
 function createTestTransport() {
   const sent: Array<IdentityProviderAgentEnvelope> = [];
@@ -21,12 +22,16 @@ function createTestTransport() {
 }
 
 /**
- * @param transport - transport to use to send messages
+ * Create a @dfinity/agent that is useful for testing.
+ * @param transport - custom transport to use to send messages
  */
 function createTestAgent(transport: Transport<IdentityProviderAgentEnvelope>) {
   const agent = new IdentityProviderAgent({
     identityProvider: unsafeTemporaryIdentityProvider,
     transport,
+    location: {
+      href: "https://example.com/"
+    }
   });
   return agent;
 }
@@ -87,7 +92,7 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
   });
   it('can send AuthenticationRequest through RedirectTransport', async () => {
     const assignments: URL[] = [];
-    const locationProxy = new Proxy(globalThis.location, {
+    const locationProxy: Location = new Proxy(globalThis.location, {
       get(target, key, receiver) {
         const reflected = Reflect.get(target, key, receiver);
         if (key === 'assign' && target instanceof Location) {
@@ -98,9 +103,7 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
         return reflected;
       },
     });
-    const transport = RedirectTransport.call({
-      location: locationProxy,
-    });
+    const transport = RedirectTransport(locationProxy);
     const agent = createTestAgent(transport);
     const sendAuthenticationRequestCommand = {
       redirectUri: exampleRedirectUri,
