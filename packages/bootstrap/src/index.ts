@@ -6,10 +6,10 @@ import {
   IDL,
   Principal,
   AnonymousIdentity,
+  makeLog,
 } from '@dfinity/agent';
 import { createAgent } from './host';
 import { SiteInfo, withIdentity } from './site';
-import { makeLog } from './log';
 import MutableIdentity from './actors/identity/MutableIdentity';
 import { BootstrapRenderer } from './render';
 import DocumentIdentities from './actors/identity/DocumentIdentities';
@@ -94,7 +94,7 @@ async function _main(spec: { render: ReturnType<typeof BootstrapRenderer> }) {
     document.addEventListener('beforeunload', event => resolve(event), { once: true });
   });
 
-  bootstrapLog('debug', 'typeof IdentityActor', typeof IdentityActor, { IdentityActor })
+  bootstrapLog('debug', 'constructing IdentityActor')
   IdentityActor({
     eventTarget: document,
     initialIdentity,

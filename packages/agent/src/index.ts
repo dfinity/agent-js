@@ -2,10 +2,11 @@ import { ActorSubclass } from './actor';
 
 export * from './actor';
 export * from './agent';
-export * from './certificate';
 export * from './auth';
+export * from './certificate';
 export * from './http_agent_transforms';
 export * from './http_agent_types';
+export * from './log';
 export * from './principal';
 export * from './types';
 export * from './canisters/asset';

@@ -1,13 +1,10 @@
 import {
   Agent,
-  AuthHttpAgentRequestTransformFn,
   HttpAgent,
   makeExpiryTransform,
   makeNonceTransform,
-  Principal,
   ProxyAgent,
   ProxyMessage,
-  SignIdentity,
 } from '@dfinity/agent';
 import { SiteInfo } from './site';
 
