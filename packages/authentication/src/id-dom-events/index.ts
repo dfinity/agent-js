@@ -28,7 +28,6 @@ export function IdentityRequestedEvent<T>(
     }
     options.onIdentity(identity);
   };
-  port1.start();
   port2.start();
   return createCustomEvent(IdentityRequestedEventUrl, {
     ...options,
