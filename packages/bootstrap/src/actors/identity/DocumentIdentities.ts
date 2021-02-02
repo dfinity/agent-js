@@ -1,5 +1,8 @@
-import { makeLog } from '../../log';
-import { SignIdentity, AnonymousIdentity } from '@dfinity/agent';
+import {
+  AnonymousIdentity,
+  makeLog,
+  SignIdentity,
+} from '@dfinity/agent';
 import {
   response as icidResponse,
   DelegationChain,

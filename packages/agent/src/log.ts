@@ -4,6 +4,9 @@ function log(level: keyof typeof console, ...loggables: any[]) {
     console[level](...loggables);
     return;
   }
+  if ( ! level) {
+    throw new Error(`log level is required, but not provided`)
+  }
   if (level !== 'info') {
     log('info', level, ...loggables);
   }

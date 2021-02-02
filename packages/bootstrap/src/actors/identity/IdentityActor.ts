@@ -1,6 +1,10 @@
 import { EventIterable } from '../../dom-events';
-import { makeLog } from '../../log';
-import { SignIdentity, AnonymousIdentity, createIdentityDescriptor } from '@dfinity/agent';
+import {
+  AnonymousIdentity,
+  createIdentityDescriptor,
+  makeLog,
+  SignIdentity,
+} from '@dfinity/agent';
 import { BootstrapIdentityChangedEvent } from './events';
 import { IdentityRequestedEventUrl, IdentityDescriptor } from '@dfinity/authentication';
 

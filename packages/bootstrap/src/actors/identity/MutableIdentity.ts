@@ -1,5 +1,8 @@
-import { AnonymousIdentity, SignIdentity } from '@dfinity/agent';
-import { makeLog } from '../../log';
+import {
+  AnonymousIdentity,
+  makeLog,
+  SignIdentity,
+} from '@dfinity/agent';
 
 export default async function MutableIdentity(
   identities: AsyncIterable<SignIdentity | AnonymousIdentity>,
