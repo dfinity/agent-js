@@ -27,6 +27,9 @@ function createTestAgent(transport: Transport<IdentityProviderAgentEnvelope>) {
   const agent = new IdentityProviderAgent({
     identityProvider: unsafeTemporaryIdentityProvider,
     transport,
+    location: {
+      href: "https://example.com/"
+    }
   });
   return agent;
 }

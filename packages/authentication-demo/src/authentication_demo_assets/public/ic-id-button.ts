@@ -4,7 +4,7 @@ import * as canisters from "./canisters";
 
 /**
  * When clicked, initiates Authentication via @dfinity/authentication authenticator.sendAuthenticationRequest().
- * 
+ *
  * This can't extend `HTMLButtonElement` and still work in Safari (AFAICT): https://github.com/webcomponents/polyfills/issues/102
  * @todo feel free to extend HTMLButtonElement, just include a polyfill for Safari https://www.npmjs.com/package/@webreflection/custom-elements
  */
@@ -39,7 +39,7 @@ export default class AuthenticationButton extends HTMLElement {
         {
           type: "CanisterScope",
           principal: Actor.canisterIdOf(canisters.authentication_demo),
-        }
+        },
       ],
     });
   }

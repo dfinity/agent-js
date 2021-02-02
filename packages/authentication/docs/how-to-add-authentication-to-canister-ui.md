@@ -20,9 +20,10 @@ We'll start from a fresh project.
     ```
 4. After the authentication, the end-user will be redirected back to your page with an `access_token` in the URL query string. Call `authenticator.receiveAuthenticationResponse()` to (try to) process it.
     ```javascript
-    const isMaybeAuthenticationRedirect = (new URL(document.location.href)).searchParams.has('access_token');
-    if (isMaybeAuthenticationRedirect) {
-        authenticator.receiveAuthenticationResponse()
+    const url = new URL(document.location.href);
+    const isMaybeAuthenticationRedirect = (params) => params.has('access_token');
+    if (isMaybeAuthenticationRedirect(url.searchParams)) {
+        authenticator.receiveAuthenticationResponse(url)
     }
     ```
 5. If your DOM element needs to know about authenticated identities:

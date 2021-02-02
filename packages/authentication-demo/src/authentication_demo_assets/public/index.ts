@@ -3,13 +3,24 @@ import AuthenticationSubjectPublicKeyElement from "./ic-id-public-key";
 import AuthenticationButton from "./ic-id-button";
 
 if (!(globalThis as any)?.ic?.features?.authentication) {
-  console.debug("no ic.features.authentication. Importing custom @dfinity/bootstrap");
+  // There is either no version of @dfinity/bootstrap on the page, OR
+  // there is an older version that doesn't know about @dfinity/authentication.
+  // Either way, import the version from this package, which should trigger a re-load of the whole canister js.
+  console.debug(
+    "no ic.features.authentication. Importing custom @dfinity/bootstrap"
+  );
   import("@dfinity/bootstrap").then(() => {
     console.debug("imported custom @dfinity/bootstrap");
   });
 }
 
-async function main(el: Element) {
+/**
+ * Main entrypoint for this authentication-demo frontend.
+ * * define the other custom html elements with window.customElements.define
+ * * add an AuthenticationDemo to the page (which will trigger its constructor, connectedCallback, etc)
+ * @param parent - element in which to render the AuthenticationDemo
+ */
+async function main(parent: Element) {
   if (globalThis.customElements) {
     const elements: Array<[
       string,
@@ -22,11 +33,7 @@ async function main(el: Element) {
         {},
       ],
       ["ic-authentication-demo" as const, AuthenticationDemo, {}],
-      [
-        "ic-authentication-button" as const,
-        AuthenticationButton,
-        {}
-      ],
+      ["ic-authentication-button" as const, AuthenticationButton, {}],
     ];
     for (const [tagName, ElementConstructor, opts] of elements) {
       if (customElements.get(tagName)) {
@@ -52,18 +59,26 @@ async function main(el: Element) {
     );
     return;
   }
-  el.innerHTML = `
+  parent.innerHTML = `
     <ic-authentication-demo />
   `;
 }
 
 (async () => {
-  const el =
-    /* prefer this as its a valid HTML5 element tag ('app' is not) */ document.querySelector(
-      "ic-bootstrap"
-    ) || document.querySelector("app");
-  if (!el) {
-    throw new Error("Failed to find app el");
-  }
-  main(el);
+  main(
+    (() => {
+      // IIFE to find a good element to render in
+      for (const selector of [
+        /* prefer this as its a valid HTML5 element tag ('app' is not) */
+        "ic-bootstrap",
+        "app",
+      ]) {
+        const el = document.querySelector(selector);
+        if (el) return el;
+      }
+      throw new Error(
+        "Failed to find app element. Can't render @dfinity/authentication-demo"
+      );
+    })()
+  );
 })();

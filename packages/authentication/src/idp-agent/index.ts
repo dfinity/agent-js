@@ -13,4 +13,5 @@ export const authenticator = new idp.IdentityProviderAgent({
     document: DomEventTransport(),
     identityProvider: RedirectTransport.call(this),
   }),
+  location: globalThis.location,
 });

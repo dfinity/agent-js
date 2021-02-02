@@ -3,6 +3,15 @@ import {
   IdentityRequestedEvent,
 } from "@dfinity/authentication";
 
+/**
+ * Render the currently-authenticated identity from @dfinity/authentication.
+ * If there is only a AnonymousIdentity, render nothing.
+ * If there is a PublicKeyIdentity, render the publicKey hex.
+ *
+ * We broadcast an IdentityRequestedEvent with a callback to find out about each new identity and re-render.
+ *
+ * (Bring your own styles! This is just an HTML element)
+ */
 export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
   identity: IdentityDescriptor | null = null;
   constructor() {
@@ -28,8 +37,13 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
     );
     this.render();
   }
+  /**
+   * The value passed back from IdentityRequestedEvent onIdentity callback is `unknown`,
+   * since it may be from an actor at another version that any code we have access to.
+   * This method needs to do some inference about what kind of value it is, try to build an Identity, then call `this.useIdentity`
+   * @param maybeIdentity - unknown value from IdentityRequestedEvent onIdentity callback.
+   */
   onUnknownIdentity = (maybeIdentity: unknown) => {
-    console.debug("onUnknownIdentity", maybeIdentity);
     if (!isIdentityDescriptor(maybeIdentity)) {
       console.debug(
         "onUnknownIdentity received unknown value as identity",
@@ -39,8 +53,11 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
     }
     this.useIdentity(maybeIdentity);
   };
+  /**
+   * Change state to a new identity, then re-render.
+   * @param identity - new identity to use
+   */
   useIdentity(identity: IdentityDescriptor) {
-    console.debug("useIdentity", identity);
     this.identity = identity;
     switch (identity.type) {
       case "PublicKeyIdentity":
