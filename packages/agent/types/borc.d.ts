@@ -7,8 +7,6 @@ declare module 'borc' {
     decodeFirst(input: ArrayBuffer): any;
   }
 
-  export function decodeFirst(input: ArrayBuffer): any;
-
   export function encode(o: any): Buffer | null;
 
   class Tagged {

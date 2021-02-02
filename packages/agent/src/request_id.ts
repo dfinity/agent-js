@@ -19,7 +19,13 @@ export async function hash(data: Buffer): Promise<BinaryBlob> {
   return blobFromUint8Array(new Uint8Array(hashed));
 }
 
-function isBigNumber(v: any): v is BigNumber {
+/**
+ * Type Guard for BigNumber.js that have a protottype we don't have a reference to, so can't do an `instanceof` check.
+ * This can happen in certain sets of dependency graphs for the agent-js-monorepo, e.g. when used by authentication-demo.
+ * All this really verifies is the truthiness of the `_isBigNumber` property that the source code defines as protected.
+ * @param v - value to check for type=BigNumber.js
+ */
+function isProbablyBigNumber(v: any): v is BigNumber {
   return v && (v as any)._isBigNumber
 }
 
@@ -34,7 +40,7 @@ async function hashValue(value: unknown): Promise<BinaryBlob> {
     value instanceof BigInt
   ) {
     return hash(lebEncode(value));
-  } else if ((value instanceof BigNumber) || isBigNumber(value)) {
+  } else if (value instanceof BigNumber) {
     return hash(lebEncode(value) as BinaryBlob);
   } else if (typeof value === 'number') {
     return hash(lebEncode(value));
@@ -53,13 +59,17 @@ async function hashValue(value: unknown): Promise<BinaryBlob> {
     return Promise.resolve((value as any).toHash()).then(x => hashValue(x));
   } else if (value instanceof Promise) {
     return value.then(x => hashValue(x));
-  } else {
-    console.warn('unhashable value', {
-      value,
-      typeofValue: typeof value,
-    });
-    throw new Error(`Attempt to hash a value of unsupported type: ${value}`);
+  } else if (isProbablyBigNumber(value)) {
+    // Do this check much later than the other BigNumber check because this one is much less type-safe.
+    // So we want to try all the high-assurance type guards before this 'probable' one.
+    return hash(lebEncode(value) as BinaryBlob);
   }
+  throw Object.assign(
+    new Error(`Attempt to hash a value of unsupported type: ${value}`), {
+      // include so logs/callers can understand the confusing value. (when stringified in error message, prototype info is lost)
+      value,
+    }
+  );
 }
 
 const hashString = (value: string): Promise<BinaryBlob> => {
