@@ -1,6 +1,5 @@
 import { IdentityProviderAgent } from './idp-agent';
 import { Principal } from '@dfinity/agent';
-import { AuthenticationRequest, createAuthenticationRequestUrl } from '../idp-protocol/request';
 import {
   UrlTransport,
   RedirectTransport,
@@ -8,8 +7,10 @@ import {
   Transport,
 } from './transport';
 import { unsafeTemporaryIdentityProvider } from '.';
-import * as assert from 'assert';
 
+/**
+ *
+ */
 function createTestTransport() {
   const sent: Array<IdentityProviderAgentEnvelope> = [];
   const send = async (s: IdentityProviderAgentEnvelope) => {
@@ -19,8 +20,10 @@ function createTestTransport() {
   return { sent, transport };
 }
 
-function createTestAgent(spec: { transport: Transport<IdentityProviderAgentEnvelope> }) {
-  const { transport } = spec;
+/**
+ * @param transport - transport to use to send messages
+ */
+function createTestAgent(transport: Transport<IdentityProviderAgentEnvelope>) {
   const agent = new IdentityProviderAgent({
     identityProvider: unsafeTemporaryIdentityProvider,
     transport,
@@ -37,7 +40,7 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
     const canisterPrincipal = Principal.fromText('unvpp-2aaaa-aaaaa-qabsq-cai');
     const redirectUri = new URL(`https://${canisterPrincipal.toText()}.ic0.app/`);
     const { sent, transport } = createTestTransport();
-    const agent = createTestAgent({ transport });
+    const agent = createTestAgent(transport);
     await agent.sendAuthenticationRequest({
       redirectUri,
       scope: [
@@ -67,7 +70,7 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
     const transport = UrlTransport((url: URL) => {
       urls = [...urls, url];
     });
-    const agent = createTestAgent({ transport });
+    const agent = createTestAgent(transport);
     const sendAuthenticationRequestCommand = {
       redirectUri: exampleRedirectUri,
       scope: [],
@@ -83,27 +86,29 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
     expect(authenticationRequestUrl.searchParams.get('login_hint')).toBeTruthy();
   });
   it('can send AuthenticationRequest through RedirectTransport', async () => {
-    const assignments: any[] = [];
+    const assignments: URL[] = [];
     const locationProxy = new Proxy(globalThis.location, {
-      get(target, key: any, receiver) {
+      get(target, key, receiver) {
         const reflected = Reflect.get(target, key, receiver);
         if (key === 'assign' && target instanceof Location) {
           return function (url: string | URL) {
-            assignments.push(url);
+            assignments.push(typeof url === 'string' ? new URL(url) : url);
           };
         }
         return reflected;
       },
     });
-    const transport = RedirectTransport({ location: locationProxy });
-    const agent = createTestAgent({ transport });
+    const transport = RedirectTransport.call({
+      location: locationProxy,
+    });
+    const agent = createTestAgent(transport);
     const sendAuthenticationRequestCommand = {
       redirectUri: exampleRedirectUri,
       scope: [],
     };
     await agent.sendAuthenticationRequest(sendAuthenticationRequestCommand);
     expect(assignments.length).toEqual(1);
-    const assignedUrl = new URL(assignments[0]);
+    const assignedUrl = assignments[0];
     expect(assignedUrl.searchParams.get('redirect_uri')).toEqual(
       sendAuthenticationRequestCommand.redirectUri.toString(),
     );

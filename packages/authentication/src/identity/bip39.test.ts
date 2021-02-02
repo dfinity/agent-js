@@ -22,7 +22,7 @@ const testVectorsBip39: Array<[string, string]> = [
 ];
 
 test('BIP-39: Converting from entropy to mnemonic and vice versa', async () => {
-  testVectorsBip39.forEach(([entropy, mnemonic], i) => {
+  testVectorsBip39.forEach(([entropy, mnemonic]) => {
     expect(bip39MnemonicToEntropy(mnemonic).toString('hex')).toEqual(entropy);
     expect(bip39EntropyToMnemonic(blobFromHex(entropy))).toEqual(mnemonic);
   });
@@ -32,12 +32,13 @@ test('BIP-39 Identity works', async () => {
   for (const [entropy, mnemonic] of testVectorsBip39) {
     const id = Bip39Ed25519KeyIdentity.fromBip39Mnemonic(mnemonic);
     expect(id.getBip39Mnemonic()).toEqual(mnemonic);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((id as any)._entropy.toString('hex')).toEqual(entropy);
   }
 });
 
 test('BIP-39: Invalid inputs', async () => {
-  testVectorsBip39.forEach(([entropy, mnemonic], i) => {
+  testVectorsBip39.forEach(() => {
     expect(() => {
       // entropy too short
       bip39EntropyToMnemonic(

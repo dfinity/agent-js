@@ -21,11 +21,12 @@ export interface OAuth2AuthorizationRequest {
   redirect_uri: string;
   scope?: string;
   state?: string;
-  /** not in oauth2 */
   login_hint: string;
 }
 
-/** Derrive an OAuth2 mesage from a URL Querystring (provided as URLSearchParams instance) */
+/**
+ * Derrive an OAuth2 mesage from a URL Querystring (provided as URLSearchParams instance)
+ */
 export function fromQueryString(
   searchParams: URLSearchParams,
 ): undefined | OAuth2AccessTokenResponse | OAuth2AuthorizationRequest {

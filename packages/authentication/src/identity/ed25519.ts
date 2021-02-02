@@ -12,7 +12,7 @@ import {
 import * as tweetnacl from 'tweetnacl';
 
 export class Ed25519PublicKey implements PublicKey {
-  public static from(key: PublicKey) {
+  public static from(key: PublicKey): Ed25519PublicKey {
     return this.fromDer(key.toDer());
   }
 
@@ -166,7 +166,7 @@ export class Ed25519KeyIdentity extends SignIdentity {
   /**
    * Serialize this key to JSON.
    */
-  public toJSON(): any {
+  public toJSON(): JsonnableEd25519KeyIdentity {
     return [blobToHex(this._publicKey.toDer()), blobToHex(this._privateKey)];
   }
 
@@ -189,9 +189,14 @@ export class Ed25519KeyIdentity extends SignIdentity {
 
   /**
    * Signs a blob of data, with this identity's private key.
+   * @param blob - challenge to sign with this identity's secretKey, producing a signature
    */
   public async sign(blob: BinaryBlob): Promise<BinaryBlob> {
     const signature = tweetnacl.sign.detached(blob, this._privateKey);
     return blobFromUint8Array(signature);
   }
 }
+
+type PublicKeyHex = string;
+type SecretKeyHex = string;
+export type JsonnableEd25519KeyIdentity = [PublicKeyHex, SecretKeyHex];

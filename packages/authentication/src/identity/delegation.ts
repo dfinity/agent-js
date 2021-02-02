@@ -49,7 +49,7 @@ export class Delegation {
     });
   }
 
-  public toJSON() {
+  public toJSON(): JsonnableDelegation {
     // every string should be hex and once-de-hexed,
     // discoverable what it is (e.g. de-hex to get JSON with a 'type' property, or de-hex to DER with an OID)
     // After de-hex, if it's not obvious what it is, it's an ArrayBuffer.
@@ -59,6 +59,12 @@ export class Delegation {
       ...(this.targets && { targets: this.targets.map(p => p.toBlob().toString('hex')) }),
     };
   }
+}
+
+interface JsonnableDelegation {
+  expiration: string;
+  pubkey: string;
+  targets?: Array<string>;
 }
 
 /**
@@ -74,6 +80,7 @@ export interface SignedDelegation {
 
 /**
  * Sign a single delegation object for a period of time.
+ *
  * @param from The identity that lends its delegation.
  * @param to The identity that receives the delegation.
  * @param expiration An expiration date for this delegation.
@@ -151,6 +158,8 @@ export class DelegationChain {
    * @param expiration The length the delegation is valid. By default, 15 minutes from calling
    *                   this function.
    * @param options A set of options for this delegation. expiration and previous
+   * @param options.previous - Another DelegationChain that this chain should start with.
+   * @param options.targets - targets that scope the delegation (e.g. Canister Principals)
    */
   public static async create(
     from: SignIdentity,
@@ -170,6 +179,7 @@ export class DelegationChain {
 
   /**
    * Creates a DelegationChain object from a JSON string.
+   *
    * @param json The JSON string to parse.
    */
   public static fromJSON(json: string | IJsonnableDelegationChain): DelegationChain {
@@ -238,6 +248,7 @@ export class DelegationChain {
 export class DelegationIdentity extends SignIdentity {
   /**
    * Create a delegation without having access to delegateKey.
+   *
    * @param key The key used to sign the reqyests.
    * @param delegation A delegation object created using `createDelegation`.
    */
@@ -262,7 +273,9 @@ export class DelegationIdentity extends SignIdentity {
     return this._inner.sign(blob);
   }
 
-  public async transformRequest(request: HttpAgentRequest): Promise<any> {
+  public async transformRequest(
+    request: HttpAgentRequest,
+  ): ReturnType<SignIdentity['transformRequest']> {
     const { body, ...fields } = request;
     const requestId = await requestIdOf(body);
     return {

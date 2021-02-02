@@ -16,7 +16,10 @@ export type Scope = Array<ICanisterScope>;
  * The original motivation for this is that a scope string can be 'canisterAPrincipalText canisterBPrincipalText',
  * and we want this to parse that into an array of two 'CanisterScope' objects.
  *
- * @todo(bengo): This should ensure there are exactly one or two CanisterScopes,
+ *
+ * @param {string} scopeString - space-delimited string from ic-id AuthenticationRequest.scope
+ * @returns {Scope} parsed scopeString scopes of known scope types
+ * @todo This should ensure there are exactly one or two CanisterScopes,
  *   (see spec for more restrictions on 'scope')
  */
 export function parseScopeString(scopeString: string): Scope {
@@ -42,6 +45,9 @@ export function parseScopeString(scopeString: string): Scope {
 
 /**
  * Convert an IParsedScopeString back to a space-delimited string like that used in AuthenticationResponse
+ *
+ * @param scope previously-parsed scope descriptor objects that shuld be re-stringified
+ * @returns space-delimited scope string for oauth2
  */
 export function stringifyScope(scope: Scope): string {
   const scopeSegments = [...scope.map(cs => cs.principal.toText())];

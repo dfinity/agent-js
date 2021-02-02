@@ -2,10 +2,18 @@ import { BinaryBlob, blobFromHex, blobFromUint32Array } from '@dfinity/agent';
 import { entropyToMnemonic, mnemonicToEntropy } from 'bip39';
 import { Ed25519KeyIdentity } from './ed25519';
 
+/**
+ * @param mnemonic - bip39 mnemonic words (space-delimited strings)
+ * @param wordlist - all valid words to choose from.
+ */
 export function bip39MnemonicToEntropy(mnemonic: string, wordlist?: string[]): BinaryBlob {
   return blobFromHex(mnemonicToEntropy(mnemonic, wordlist));
 }
 
+/**
+ * Create a random BIP39 mnemonic phrase.
+ * @param seed - 32-byte value to use to 'seed' the random number generator. Identical seeds produce identical mnemonics.
+ */
 export function bip39EntropyToMnemonic(seed: BinaryBlob): string {
   if (seed.byteLength !== 32) {
     throw new Error('Entropy for BIP-39 must be 32 bytes');
@@ -14,6 +22,9 @@ export function bip39EntropyToMnemonic(seed: BinaryBlob): string {
   return entropyToMnemonic(seed.toString('hex'));
 }
 
+/**
+ *
+ */
 export function bip39GenerateMnemonic(): string {
   const entropy = new Uint32Array(32);
   crypto.getRandomValues(entropy);
