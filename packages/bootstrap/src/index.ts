@@ -94,7 +94,7 @@ async function _main(spec: { render: ReturnType<typeof BootstrapRenderer> }) {
     document.addEventListener('beforeunload', event => resolve(event), { once: true });
   });
 
-  bootstrapLog('debug', 'typeof IdentityActor', typeof IdentityActor, { IdentityActor })
+  bootstrapLog('debug', 'constructing IdentityActor')
   IdentityActor({
     eventTarget: document,
     initialIdentity,
