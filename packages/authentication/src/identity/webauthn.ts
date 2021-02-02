@@ -223,6 +223,11 @@ export class WebAuthnIdentity extends SignIdentity {
   }
 }
 
+/**
+ * ReturnType<WebAuthnIdentity.toJSON>
+ * * publicKey is hex(der(publicKey))
+ * * rawId is the string representation of the local WebAuthn Credential.id (iirc it is base64url encoded)
+ */
 export interface JsonnableWebAuthnIdentitiy {
   publicKey: string;
   rawId: string;

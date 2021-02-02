@@ -9,7 +9,8 @@ import {
 import { unsafeTemporaryIdentityProvider } from '.';
 
 /**
- *
+ * Create a Transport that it is useful for testing what gets sent over the transport.
+ * Also returns array of sent messages. (doesn't actually send them anywhere).
  */
 function createTestTransport() {
   const sent: Array<IdentityProviderAgentEnvelope> = [];
@@ -21,7 +22,8 @@ function createTestTransport() {
 }
 
 /**
- * @param transport - transport to use to send messages
+ * Create a @dfinity/agent that is useful for testing.
+ * @param transport - custom transport to use to send messages
  */
 function createTestAgent(transport: Transport<IdentityProviderAgentEnvelope>) {
   const agent = new IdentityProviderAgent({
