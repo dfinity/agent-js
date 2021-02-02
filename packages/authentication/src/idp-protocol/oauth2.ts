@@ -5,10 +5,8 @@ export interface OAuth2AccessTokenResponse {
   access_token: string; // REQUIRED.  The access token issued by the authorization server.
   token_type: 'bearer'; // default 'bearer' REQUIRED.  The type of the token issued as described in Section 7.1.
   expires_in: number; // The lifetime in seconds of the access token.
-  // @TODO - implement
-  state?: any;
-  // @TODO - implement
-  scope?: any;
+  state?: string;
+  scope?: string;
 }
 
 /**
@@ -25,7 +23,10 @@ export interface OAuth2AuthorizationRequest {
   login_hint: string;
 }
 
-/** Derrive an OAuth2 mesage from a URL Querystring (provided as URLSearchParams instance) */
+/**
+ * parse an oauth2 message from a URL query string.
+ * @param searchParams parameters of URL query string to parse
+ */
 export function fromQueryString(
   searchParams: URLSearchParams,
 ): undefined | OAuth2AccessTokenResponse | OAuth2AuthorizationRequest {
@@ -47,7 +48,10 @@ export function fromQueryString(
   }
 }
 
-/** Parse on oauth2 AuthorizationRequest from a URL query string */
+/**
+ * Parse on oauth2 AuthorizationRequest from a URL query string.
+ * @param searchParams - parameters of URL query string
+ */
 export function authorizationRequestFromQueryString(
   searchParams: URLSearchParams,
 ): OAuth2AuthorizationRequest {
@@ -73,6 +77,9 @@ export function authorizationRequestFromQueryString(
   return authorizationRequest;
 }
 
+/**
+ * @param searchParams - parameters from url query string
+ */
 export function accessTokenResponseFromQueryString(
   searchParams: URLSearchParams,
 ): OAuth2AccessTokenResponse {
