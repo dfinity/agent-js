@@ -92,7 +92,7 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
   });
   it('can send AuthenticationRequest through RedirectTransport', async () => {
     const assignments: URL[] = [];
-    const locationProxy = new Proxy(globalThis.location, {
+    const locationProxy: Location = new Proxy(globalThis.location, {
       get(target, key, receiver) {
         const reflected = Reflect.get(target, key, receiver);
         if (key === 'assign' && target instanceof Location) {
@@ -103,9 +103,7 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
         return reflected;
       },
     });
-    const transport = RedirectTransport.call({
-      location: locationProxy,
-    });
+    const transport = RedirectTransport(locationProxy);
     const agent = createTestAgent(transport);
     const sendAuthenticationRequestCommand = {
       redirectUri: exampleRedirectUri,
