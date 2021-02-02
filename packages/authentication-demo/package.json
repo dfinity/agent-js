@@ -4,8 +4,6 @@
   "description": "",
   "keywords": [],
   "scripts": {
-    "agent_js_monorepo_build_pre": "echo agent_js_monorepo_build_pre",
-    "agent_js_monorepo_build_post": "echo agent_js_monorepo_build_post",
     "prepare": "./bin/prepare",
     "build": "webpack",
     "prettier": "prettier --check \"src/**/*.(ts|js)\"",
