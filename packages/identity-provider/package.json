@@ -7,7 +7,7 @@
     "bundle": "npm run build",
     "ci": "npm run prettier && npm run lint && npm run build && npm run test",
     "develop": "webpack-dev-server --config webpack.config.dev.js",
-    "lint": "eslint --ext '.js,.jsx,.ts,.tsx' src",
+    "lint": "eslint --ext '.js,.jsx,.ts,.tsx' src/components",
     "lint:fix": "npm run lint -- --fix",
     "prettier": "prettier --check \"src/**/*.ts\"",
     "prettier:write": "npm run prettier -- --write",

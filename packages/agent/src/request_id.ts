@@ -109,7 +109,8 @@ function concat(bs: BinaryBlob[]): BinaryBlob {
  * https://docs.dfinity.systems/public/#api-hash-of-map
  * @param request - ic-ref request to hash into RequestId
  */
-export async function requestIdOf(request: Record<string, unknown>): Promise<RequestId> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function requestIdOf(request: Record<string, any>): Promise<RequestId> {
   const hashed: Array<Promise<[BinaryBlob, BinaryBlob]>> = Object.entries(request)
     .filter(([, value]) => value !== undefined)
     .map(async ([key, value]: [string, unknown]) => {
