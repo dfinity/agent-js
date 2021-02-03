@@ -7,7 +7,7 @@
     "bundle": "npm run build",
     "ci": "npm run prettier && npm run lint && npm run build && npm run test",
     "develop": "webpack-dev-server --config webpack.config.dev.js",
-    "lint": "npx eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
+    "lint": "eslint --ext '.js,.jsx,.ts,.tsx' src",
     "lint:fix": "npm run lint -- --fix",
     "prettier": "prettier --check \"src/**/*.ts\"",
     "prettier:write": "npm run prettier -- --write",
@@ -71,27 +71,5 @@
     "webpack-dev-server": "3.11.0",
     "webpack": "^4.41.2",
     "whatwg-fetch": "^3.0.0"
-  },
-  "eslintConfig": {
-    "extends": [
-      "eslint:recommended",
-      "plugin:@typescript-eslint/recommended",
-      "plugin:jsdoc/recommended"
-    ],
-    "parser": "@typescript-eslint/parser",
-    "plugins": [
-      "@typescript-eslint",
-      "jsdoc"
-    ],
-    "rules": {
-      "jsdoc/newline-after-description": "off",
-      "jsdoc/require-returns-type": "off",
-      "jsdoc/require-param-type": "off",
-      "jsdoc/require-jsdoc": ["warn", {
-        "publicOnly": true
-      }],
-      "jsdoc/require-returns": "off",
-      "jsdoc/require-returns-description": "warn"
-    }
   }
 }

@@ -26,27 +26,5 @@
     "typescript": "^3.6.3",
     "webpack-cli": "3.3.10",
     "webpack": "4.41.3"
-  },
-  "eslintConfig": {
-    "extends": [
-      "eslint:recommended",
-      "plugin:@typescript-eslint/recommended",
-      "plugin:jsdoc/recommended"
-    ],
-    "parser": "@typescript-eslint/parser",
-    "plugins": [
-      "@typescript-eslint",
-      "jsdoc"
-    ],
-    "rules": {
-      "jsdoc/newline-after-description": "off",
-      "jsdoc/require-returns-type": "off",
-      "jsdoc/require-param-type": "off",
-      "jsdoc/require-jsdoc": ["warn", {
-        "publicOnly": true
-      }],
-      "jsdoc/require-returns": "off",
-      "jsdoc/require-returns-description": "warn"
-    }
   }
 }

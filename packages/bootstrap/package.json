@@ -55,30 +55,5 @@
     "localforage": "^1.7.4",
     "ts-loader": "7.0.5",
     "tsconfig-paths-webpack-plugin": "^3.2.0"
-  },
-  "eslintConfig": {
-    "extends": [
-      "eslint:recommended",
-      "plugin:@typescript-eslint/recommended",
-      "plugin:jsdoc/recommended"
-    ],
-    "parser": "@typescript-eslint/parser",
-    "plugins": [
-      "@typescript-eslint",
-      "jsdoc"
-    ],
-    "rules": {
-      "jsdoc/newline-after-description": "off",
-      "jsdoc/require-returns-type": "off",
-      "jsdoc/require-param-type": "off",
-      "jsdoc/require-jsdoc": [
-        "warn",
-        {
-          "publicOnly": true
-        }
-      ],
-      "jsdoc/require-returns": "off",
-      "jsdoc/require-returns-description": "warn"
-    }
   }
 }

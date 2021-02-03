@@ -44,7 +44,7 @@ function isProbablyBigNumber(v: unknown): v is BigNumber {
 }
 
 interface ToHashable {
-  toHash(): unknown
+  toHash(): unknown;
 }
 
 async function hashValue(value: unknown): Promise<BinaryBlob> {
