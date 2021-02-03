@@ -18,19 +18,18 @@ function fromCallback<V>(emitter: (cb: (value: V) => void) => void): AsyncIterab
   };
 }
 
+/**
+ * Create an AsyncIterable of DOM Events. This can be more composable that the EventTarget interface itself.
+ * @param listenable - EvenTarget to monitor for events
+ * @param eventName - string name of event to listen for
+ * @param options - AddEventListenerOptions just like EventTarget.addEventListener.
+ */
 export function EventIterable(
-  node: Pick<Node, 'addEventListener'>,
+  listenable: Pick<EventTarget, 'addEventListener'>,
   eventName: string,
   options?: boolean | AddEventListenerOptions,
-) {
+): AsyncIterable<Event> {
   return fromCallback(listener => {
-    node.addEventListener(eventName, listener, options);
+    listenable.addEventListener(eventName, listener, options);
   });
-}
-
-/**
- * Create a CustomEvent with proper typescript awareness of .type
- */
-export function createCustomEvent<T extends string, D>(type: T, options: CustomEventInit<D>) {
-  return new CustomEvent(type, options) as CustomEvent<D> & { type: T };
 }

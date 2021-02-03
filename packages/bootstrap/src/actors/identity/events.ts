@@ -1,5 +1,5 @@
 import { IdentityDescriptor } from '@dfinity/agent';
-import { createCustomEvent } from '../../dom-events';
+import { createCustomEvent } from '@dfinity/authentication';
 
 export const BootstrapIdentityChangedEventName = 'https://internetcomputer.org/ns/authentication/BootstrapIdentityChangedEvent' as const;
 
