@@ -7,7 +7,7 @@ import * as React from "react";
  * * It doesn't matter that much for now, but without anything it can be confusing why http `GET /` just looks like an empty white page (broken?) in the web browser.
  * * Probably this should do different things based on TBD product/design requirements, e.g. if someone comes here on their own, they may be doing so in order to import/export keys or otherwise browse/manage their identities.
  */
-export default function HomeRoute() {
+export default function HomeRoute(): JSX.Element {
     return <>
         <h1>Internet Computer Identity Provider</h1>
         <p>This is a work in progress. You probably want to try out.</p>

@@ -2,7 +2,7 @@ import { Ed25519KeyIdentity } from "@dfinity/authentication";
 import { TextField } from "@material-ui/core";
 import * as React from "react";
 import RPAuthenticationButton from "../components/RPAuthenticationButton";
-import { IRelyingPartyAuthenticationSession, RelyingPartyAuthenticationSessionSerializer, RelyingPartyAuthenticationSessionStorage } from "../session";
+import { IRelyingPartyAuthenticationSession, RelyingPartyAuthenticationSessionSerializer } from "../session";
 import { IStorage } from "../storage";
 
 /**
@@ -12,15 +12,19 @@ import { IStorage } from "../storage";
  * 
  * What should it do?
  * * Show a button that the end-user can click to initiate the authentication flow (i.e. redirect to /authorization + AuthenticationRequest)
- * * @todo(bengo) - include a redirect_uri in the AuthenticationRequest that, when redirected back to with an AuthenticationResponse, does realistic things (i.e. shows the user the AuthenticationResponse that the RP redirct_uri receives)
+ *
+ * @param props props
+ * @param props.redirectUrl - URL to send AuthenticationResponses to
+ * @param props.sessionStorage - object that stores sessions, required for persisting sessions across page loads
+ * @param props.identityProviderUrl - URL of ic-id Identity Provider to send AuthenticationRequests to
  */
 export default function RelyingPartyDemo(props: {
     redirectUrl: URL;
     sessionStorage: IStorage<IRelyingPartyAuthenticationSession>
     identityProviderUrl: URL;
-}) {
+}): JSX.Element {
     const identityProviderUrl = props.identityProviderUrl
-    const [session, setSession] = React.useState<IRelyingPartyAuthenticationSession>({
+    const [session] = React.useState<IRelyingPartyAuthenticationSession>({
         type: "RelyingPartyAuthenticationSession",
         identity: Ed25519KeyIdentity.generate(),
     });

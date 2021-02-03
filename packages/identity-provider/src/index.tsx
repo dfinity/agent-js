@@ -9,9 +9,12 @@ import { IDPRootErrorBoundary } from './ErrorBoundary';
 import theme from './theme';
 import NotFound from "./routes/NotFound";
 import RelyingPartyDemoRoute from "./relying-party-demo/routes";
-import { IdentityChangedEventIdentifier } from './relying-party-demo/events';
+import { RelyingPartyDemoIdentityChangedEventIdentifier } from './relying-party-demo/events';
 import { Route as DesignPhase1Route } from "./design-phase-1";
 import { WebAuthnIdentity } from '@dfinity/authentication';
+import { makeLog } from '@dfinity/agent';
+
+const log = makeLog('identity-provider')
 
 const NotFoundRoute = () => {
   return <Route component={NotFound} />;
@@ -47,9 +50,8 @@ const App = () => {
 };
 
 async function _main() {
-  // Example of
-  document.body.addEventListener(IdentityChangedEventIdentifier, (event) => {
-    console.log(IdentityChangedEventIdentifier, event)
+  document.body.addEventListener(RelyingPartyDemoIdentityChangedEventIdentifier, (event) => {
+    console.log(RelyingPartyDemoIdentityChangedEventIdentifier, event)
   })
   render(<App />, document.body.getElementsByTagName('app').item(0));
 }
@@ -60,6 +62,12 @@ _main().catch(err => {
   const pre = document.createElement('pre');
   pre.innerHTML = err.stack;
   div.appendChild(pre);
-  document.body.replaceChild(div, document.body.getElementsByTagName('app').item(0)!);
+  const parentNode = document.body.querySelector('app');
+  if (parentNode) {
+    while(parentNode.firstChild) {parentNode.firstChild?.remove()}
+    parentNode.appendChild(div);
+  } else {
+    log('error', `error with _main() but couldn't find app element to render it`, err);
+  }
   throw err;
 });

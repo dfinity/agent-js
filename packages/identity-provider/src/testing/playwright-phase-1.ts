@@ -6,6 +6,9 @@ import * as os from 'os';
 /**
  * Test the end-to-end RelyingPartyDemo + IdentityProvider authentication flow.
  * Take screenshots of each screen.
+ * @param options options
+ * @param options.page - playwright page to control
+ * @param options.screenshotsDirectory - absolute path to directory in which to write screenshot images.
  */
 async function testIdentityProviderRelyingPartyDemo(options: {
   page: playwright.Page;
