@@ -27,16 +27,24 @@ jobs:
     - run: npm run build --if-present
     - uses: actions/upload-artifact@v2
       with:
-        name: built-monorepo
+        name: built-monorepo ${{ matrix.node }}
 
   lint:
+    strategy:
+      matrix:
+        os: [ubuntu-18.04]
+        ghc: ['8.8.4']
+        spec: ['release-0.15']
+        node:
+        - 12
+        - 14
     needs:
     - build
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/download-artifact@v2
       with:
-        name: built-monorepo
+        name: built-monorepo ${{ matrix.node }}
     - run: npm run lint --if-present
   
   test:
@@ -55,7 +63,7 @@ jobs:
     steps:
     - uses: actions/download-artifact@v2
       with:
-        name: built-monorepo
+        name: built-monorepo ${{ matrix.node }}
     - run: npm test
       env:
         CI: true
