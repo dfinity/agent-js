@@ -5,7 +5,7 @@ import BigNumber from 'bignumber.js';
 import { Buffer } from 'buffer/';
 import { Principal } from './principal';
 import { hash, requestIdOf } from './request_id';
-import { BinaryBlob, blobFromBuffer, blobFromHex, blobFromUint8Array, blobToHex } from './types';
+import { BinaryBlob, blobFromHex, blobFromUint8Array, blobToHex } from './types';
 
 const testHashOfBlob = async (input: BinaryBlob, expected: string) => {
   const hashed = await hash(input);
