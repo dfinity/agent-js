@@ -49,6 +49,6 @@ export interface GlobalInternetComputer {
      *
      * If a canister ID could not be found, no actor were created and this is undefined.
      */
-    canister: ActorSubclass<{}> | undefined;
+    canister: ActorSubclass | undefined;
   };
 }
