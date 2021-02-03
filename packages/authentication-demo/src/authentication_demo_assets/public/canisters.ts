@@ -1,4 +1,4 @@
-// @ts-ignore
+// @ts-expect-error because 'ic:canisters' is not resolvable without custom linker configuration in webpack.config.js
 import authDemoCanister from "ic:canisters/authentication_demo";
 import { Actor } from "@dfinity/agent";
 

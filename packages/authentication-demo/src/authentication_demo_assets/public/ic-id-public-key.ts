@@ -1,6 +1,7 @@
 import {
   IdentityDescriptor,
   IdentityRequestedEvent,
+  PublicKeyIdentityDescriptor,
 } from "@dfinity/authentication";
 
 /**
@@ -17,14 +18,14 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
   constructor() {
     super();
   }
-  render() {
+  render(): void {
     this.innerHTML =
       this.getAttribute("publicKey") ||
       this.getAttribute("initialPublicKey") ||
       this.getAttribute("placeholder") ||
       "";
   }
-  connectedCallback() {
+  connectedCallback(): void {
     this.dispatchEvent(
       IdentityRequestedEvent({
         bubbles: true,
@@ -43,7 +44,7 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
    * This method needs to do some inference about what kind of value it is, try to build an Identity, then call `this.useIdentity`
    * @param maybeIdentity - unknown value from IdentityRequestedEvent onIdentity callback.
    */
-  onUnknownIdentity = (maybeIdentity: unknown) => {
+  onUnknownIdentity = (maybeIdentity: unknown): void => {
     if (!isIdentityDescriptor(maybeIdentity)) {
       console.debug(
         "onUnknownIdentity received unknown value as identity",
@@ -57,8 +58,9 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
    * Change state to a new identity, then re-render.
    * @param identity - new identity to use
    */
-  useIdentity(identity: IdentityDescriptor) {
+  useIdentity(identity: IdentityDescriptor): void {
     this.identity = identity;
+    let exhaustive: never;
     switch (identity.type) {
       case "PublicKeyIdentity":
         this.setAttribute("publicKey", identity.publicKey);
@@ -67,12 +69,17 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
         this.removeAttribute("publicKey");
         break;
       default:
-        let x: never = identity;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        exhaustive = identity;
     }
     this.render();
   }
 }
 
+/**
+ * Type Guard for whether the unknown value is an IdentityDescriptor or not.
+ * @param value - value to type guard
+ */
 export function isIdentityDescriptor(
   value: unknown | IdentityDescriptor
 ): value is IdentityDescriptor {
@@ -80,7 +87,8 @@ export function isIdentityDescriptor(
     case "AnonymousIdentity":
       return true;
     case "PublicKeyIdentity":
-      if (typeof (value as any)?.publicKey !== "string") return false;
+      if (typeof (value as PublicKeyIdentityDescriptor)?.publicKey !== "string")
+        return false;
       return true;
   }
   return false;

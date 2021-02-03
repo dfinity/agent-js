@@ -13,7 +13,7 @@ export default class AuthenticationButton extends HTMLElement {
     super();
     this.addEventListener("click", this.listener);
   }
-  connectedCallback() {
+  connectedCallback(): void {
     const fragment: DocumentFragment = (() => {
       const fragment = this.ownerDocument.createDocumentFragment();
       const button = document.createElement("button");
@@ -24,7 +24,7 @@ export default class AuthenticationButton extends HTMLElement {
     })();
     this.appendChild(fragment);
   }
-  listener(event: Event) {
+  listener(event: Event): void {
     switch (event.type) {
       case "click":
         this.requestAuthentication();
@@ -33,7 +33,7 @@ export default class AuthenticationButton extends HTMLElement {
         console.debug(`AuthenticationButton got event: ${event.type}`);
     }
   }
-  requestAuthentication() {
+  requestAuthentication(): void {
     authenticator.sendAuthenticationRequest({
       scope: [
         {

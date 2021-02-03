@@ -2,7 +2,19 @@ import AuthenticationDemo from "./ic-authentication-demo";
 import AuthenticationSubjectPublicKeyElement from "./ic-id-public-key";
 import AuthenticationButton from "./ic-id-button";
 
-if (!(globalThis as any)?.ic?.features?.authentication) {
+interface InternetComputerGlobal {
+  features?: {
+    authentication?: true;
+  };
+}
+
+declare global {
+  interface Window {
+    ic?: InternetComputerGlobal;
+  }
+}
+
+if (!window.ic?.features?.authentication) {
   // There is either no version of @dfinity/bootstrap on the page, OR
   // there is an older version that doesn't know about @dfinity/authentication.
   // Either way, import the version from this package, which should trigger a re-load of the whole canister js.

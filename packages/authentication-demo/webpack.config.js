@@ -1,7 +1,10 @@
+/*eslint-env node*/
+/* eslint-disable @typescript-eslint/no-var-requires,@typescript-eslint/no-unused-vars */
 const path = require("path");
 const TerserPlugin = require("terser-webpack-plugin");
 const dfxJson = require("./dfx.json");
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+/* eslint-enable @typescript-eslint/no-var-requires */
 
 // Get the network name, or `local` by default.
 const getNetworkName = () => process.env["DFX_NETWORK"] || "local"
@@ -30,6 +33,8 @@ const aliases = Object.entries(dfxJson.canisters).reduce(
 
 /**
  * Generate a webpack configuration for a canister.
+ * @param name - name of canister
+ * @param info - object describing that canister from dfx.json
  */
 function generateWebpackConfigForCanister(name, info) {
   if (typeof info.frontend !== "object") {

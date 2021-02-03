@@ -1,5 +1,5 @@
 import { authenticator } from "@dfinity/authentication";
-// @ts-ignore
+// @ts-expect-error 'ic:canisters' is not resolvable without dfx-knowledge
 import authDemoContract from "ic:canisters/authentication_demo";
 import { Principal } from "@dfinity/agent";
 import { hexEncodeUintArray } from "@dfinity/authentication/.tsc-out/packages/authentication/src/idp-protocol/bytes";
@@ -18,7 +18,7 @@ export default class AuthenticationDemo extends HTMLElement {
   constructor() {
     super();
   }
-  connectedCallback() {
+  connectedCallback(): void {
     this.render();
     authenticator.receiveAuthenticationResponse(
       new URL(this.ownerDocument.location.toString())
@@ -27,7 +27,7 @@ export default class AuthenticationDemo extends HTMLElement {
   /**
    * Clear out children and re-append-children based on latest state.
    */
-  render() {
+  render(): void {
     const shadow = this.shadowRoot || this.attachShadow({ mode: "open" });
     while (shadow.firstChild) {
       shadow.firstChild.remove();
@@ -79,7 +79,7 @@ export default class AuthenticationDemo extends HTMLElement {
    * click handler for 'Test Agent' button.
    * @param event - ClickEvent from clicking
    */
-  onClickTestAgent = async (event: Event) => {
+  onClickTestAgent = async (event: Event): Promise<void> => {
     console.log("onClickTestAgent start", { event });
     let response: unknown;
     try {
