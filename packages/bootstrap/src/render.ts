@@ -1,5 +1,3 @@
-import { makeLog } from '@dfinity/agent';
-
 type Renderer = (el: Element) => void;
 
 /**
