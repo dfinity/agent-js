@@ -11,7 +11,7 @@ export default async function MutableIdentity(
   log('debug', 'constructing MutableIdentity', identities);
   const initialIdentity = new AnonymousIdentity();
   let identity: AnonymousIdentity | SignIdentity = initialIdentity;
-  (async function () {
+  (async () => {
     for await (const nextIdentity of identities) {
       identity = nextIdentity;
       log('debug', 'using newly generated identity: ', identity);

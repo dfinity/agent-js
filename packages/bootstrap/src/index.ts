@@ -1,19 +1,19 @@
 import {
   Actor,
+  AnonymousIdentity,
   createAssetCanisterActor,
   GlobalInternetComputer,
   HttpAgent,
   IDL,
-  Principal,
-  AnonymousIdentity,
   makeLog,
+  Principal,
 } from '@dfinity/agent';
-import { createAgent } from './host';
-import { SiteInfo, withIdentity } from './site';
-import MutableIdentity from './actors/identity/MutableIdentity';
-import { BootstrapRenderer } from './render';
 import DocumentIdentities from './actors/identity/DocumentIdentities';
-import IdentityActor from "./actors/identity/IdentityActor";
+import IdentityActor from './actors/identity/IdentityActor';
+import MutableIdentity from './actors/identity/MutableIdentity';
+import { createAgent } from './host';
+import { BootstrapRenderer } from './render';
+import { SiteInfo, withIdentity } from './site';
 
 declare const window: GlobalInternetComputer & Window;
 
@@ -86,15 +86,15 @@ async function _main(spec: { render: ReturnType<typeof BootstrapRenderer> }) {
   const identities = async function* () {
     yield initialIdentity;
     for await (const docId of DocumentIdentities(document)) {
-      bootstrapLog('debug', 'ben got docId', docId)
-      yield docId
+      bootstrapLog('debug', 'ben got docId', docId);
+      yield docId;
     }
-  }
+  };
   const beforeunload = new Promise(resolve => {
     document.addEventListener('beforeunload', event => resolve(event), { once: true });
   });
 
-  bootstrapLog('debug', 'constructing IdentityActor')
+  bootstrapLog('debug', 'constructing IdentityActor');
   IdentityActor({
     eventTarget: document,
     initialIdentity,
@@ -125,13 +125,13 @@ async function _main(spec: { render: ReturnType<typeof BootstrapRenderer> }) {
       // Load candid.did.js from endpoint.
       const candid = await _loadCandid(canisterId);
       const canister = window.ic.agent.makeActorFactory(candid.default)({ canisterId });
-      const render = await import('./candid/candid');
-      render.render(canisterId, canister);
+      const candidModule = await import('./candid/candid');
+      candidModule.render(canisterId, canister);
     } else {
       // Load index.js from the canister and execute it.
       await _loadJs(canisterId, 'index.js', async () => {
         const progress = document.getElementById('ic-progress');
-        if (progress) progress.remove();
+        if (progress) { progress.remove(); }
       });
     }
   }

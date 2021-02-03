@@ -1,12 +1,12 @@
-import { EventIterable } from '../../dom-events';
 import {
   AnonymousIdentity,
   createIdentityDescriptor,
   makeLog,
   SignIdentity,
 } from '@dfinity/agent';
+import { IdentityDescriptor, IdentityRequestedEventUrl } from '@dfinity/authentication';
+import { EventIterable } from '../../dom-events';
 import { BootstrapIdentityChangedEvent } from './events';
-import { IdentityRequestedEventUrl, IdentityDescriptor } from '@dfinity/authentication';
 
 /**
  * Keep track of end-user identity on the page.
@@ -35,7 +35,7 @@ export default function IdentityActor(spec: {
   start();
 
   async function start() {
-    if (started) throw new Error('Already started');
+    if (started) { throw new Error('Already started'); }
     started = true;
     await Promise.all([
       handleIdentityRequestedEvents(),
@@ -53,8 +53,8 @@ export default function IdentityActor(spec: {
   async function trackLatestIdentity() {
     for await (const identity of spec.identities) {
       currentIdentity = identity;
-      const identityDescriptor = createIdentityDescriptor(currentIdentity)
-      log('debug', 'new currentIdentity', {currentIdentity,identityDescriptor})
+      const identityDescriptor = createIdentityDescriptor(currentIdentity);
+      log('debug', 'new currentIdentity', {currentIdentity, identityDescriptor});
       spec.eventTarget.dispatchEvent(BootstrapIdentityChangedEvent(
         identityDescriptor,
       ));
@@ -67,10 +67,10 @@ export default function IdentityActor(spec: {
       const detail = (event as CustomEvent).detail;
       const sender: undefined | MessagePort = detail && detail.sender;
       if (typeof sender?.postMessage === 'function') {
-        const message = IdentityMessage(currentIdentity)
-        log('debug', 'adding subscriber port', sender)
+        const message = IdentityMessage(currentIdentity);
+        log('debug', 'adding subscriber port', sender);
         subscribers.add(sender);
-        log('debug', 'replying to IdentityRequestedEvent with', message)
+        log('debug', 'replying to IdentityRequestedEvent with', message);
         sender.postMessage(message);
       } else {
         log('warn', 'IdentityRequestedEvent did not contain a sender port');
@@ -78,7 +78,7 @@ export default function IdentityActor(spec: {
     }
   }
   function publish(message: ReturnType<typeof IdentityMessage>): void {
-    log('debug', 'publishing', {message, subscribers})
+    log('debug', 'publishing', {message, subscribers});
     for (const port of subscribers) {
       port.postMessage(message);
     }
@@ -88,5 +88,5 @@ export default function IdentityActor(spec: {
 function IdentityMessage(identity: IdentityDescriptor|SignIdentity|AnonymousIdentity) {
   return {
     identity: ('type' in identity) ? identity : createIdentityDescriptor(identity),
-  }
+  };
 }

@@ -4,10 +4,10 @@ import {
   SignIdentity,
 } from '@dfinity/agent';
 import {
-  response as icidResponse,
   DelegationChain,
   DelegationIdentity,
   Ed25519KeyIdentity,
+  response as icidResponse,
 } from '@dfinity/authentication';
 
 export default function DocumentIdentities(document: Document) {
@@ -15,7 +15,7 @@ export default function DocumentIdentities(document: Document) {
   const identities: AsyncIterable<SignIdentity | AnonymousIdentity> = (async function* () {
     // Wait for AuthenticationResponseDetectedEvents
     for await (const event of AuthenticationResponseDetectedEventIterable(document)) {
-      log('debug', 'handling AuthenticationResponseDetectedEvent', {event})
+      log('debug', 'handling AuthenticationResponseDetectedEvent', {event});
       if (!(event instanceof CustomEvent)) {
         log('warn', 'got unexpected event that is not a CustomEvent', { event });
         continue;
@@ -35,7 +35,7 @@ export default function DocumentIdentities(document: Document) {
         });
         return delegationIdentity;
       })();
-      log('debug', 'about to yield', identity)
+      log('debug', 'about to yield', identity);
       yield identity;
     }
   })();
