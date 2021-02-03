@@ -1,19 +1,31 @@
 import * as React from "react";
-import { useRouteMatch, useLocation } from "react-router-dom";
-import * as oauth2 from "../../protocol/oauth2";
+import { useLocation } from "react-router-dom";
 import * as icid from "../../protocol/ic-id-protocol";
-import { DelegationChain, DelegationIdentity, Ed25519KeyIdentity } from "@dfinity/authentication";
-import { hexEncodeUintArray } from "src/bytes";
-import { RelyingPartyAuthenticationSessionStorage, IRelyingPartyAuthenticationSession } from "../session";
+import { DelegationChain, DelegationIdentity } from "@dfinity/authentication";
+import { hexEncodeUintArray } from "../../bytes";
+import { IRelyingPartyAuthenticationSession } from "../session";
 import { IStorage } from "../storage";
 import { SignIdentity } from "@dfinity/agent";
 
+/**
+ * Handler of ic-id AuthenticationResponse.
+ * Create a route to this, then use that route as the AuthenticationRequest.redirect_uri.
+ * 
+ * What should it do?
+ * * detect AuthenticationResponse in document.location.
+ * * attempt to create DelegationIdentity from AuthenticationResponse.
+ * * render the AuthenticationResponse + DelegationIdentity to the end-user so they can make sense of it.
+ * 
+ * @param props props
+ * @param props.backToRpDemoUrl - URL to navigate to when someone clicks "Restart Relying Party Demo"
+ * @param props.sessionStorage - object that knows how to store sessions
+ * @param props.onIdentity - callback to call when a new Identity is constructed.
+ */
 export default function OAuthRedirectUriRoute(props: {
     backToRpDemoUrl: string;
     sessionStorage: IStorage<IRelyingPartyAuthenticationSession>;
     onIdentity(identity: SignIdentity|undefined): void;
-}) {
-    const { url, path } = useRouteMatch()
+}): JSX.Element {
     const location = useLocation()
     const icAuthenticationResponse = React.useMemo(
         () => {

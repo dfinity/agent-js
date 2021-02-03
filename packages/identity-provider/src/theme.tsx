@@ -2,8 +2,9 @@ import { createMuiTheme, responsiveFontSizes } from '@material-ui/core/styles';
 import SharpSansBlack from './assets/fonts/SharpSansDispNo1-Black.woff';
 import SharpSansBold from './assets/fonts/SharpSansDispNo1-Bold.woff';
 import SharpSansMedium from './assets/fonts/SharpSansDispNo1-Medium.woff';
+import { CSSProperties } from '@material-ui/core/styles/withStyles';
 
-const fontBaseStyles: any = {
+const fontBaseStyles: CSSProperties = {
   fontDisplay: 'swap',
   fontFamily: 'Sharp Sans',
   fontStyle: 'normal',

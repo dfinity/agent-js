@@ -8,7 +8,12 @@ export interface IRelyingPartyAuthenticationSession {
   identity: Ed25519KeyIdentity;
 }
 
-export const RelyingPartyAuthenticationSessionSerializer = {
+type JsonSerializer<T> = {
+  toJSON(value: T): string;
+  fromJSON(maybeJsonString: string): T;
+};
+
+export const RelyingPartyAuthenticationSessionSerializer: JsonSerializer<IRelyingPartyAuthenticationSession> = {
   toJSON(session: IRelyingPartyAuthenticationSession) {
     console.debug('RelyingPartyAuthenticationSessionSerializer.toJSON', { session });
     return JSON.stringify(session, toJSONReplacer, 2);
@@ -29,6 +34,10 @@ export const RelyingPartyAuthenticationSessionSerializer = {
   },
 };
 
+/**
+ * Store sessions in localstorage as JSON strings.
+ * @param storageKey - localStorage key to use for storage
+ */
 export function RelyingPartyAuthenticationSessionStorage(
   storageKey: string,
 ): IStorage<IRelyingPartyAuthenticationSession> {
@@ -47,8 +56,13 @@ export function RelyingPartyAuthenticationSessionStorage(
   };
 }
 
-/** Replacer function for JSON.stringify that will encode Buffers as hex */
-function toJSONReplacer(this: unknown, key: unknown, value: unknown) {
+/**
+ * Replacer function for JSON.stringify that will encode Buffers as hex.
+ * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#the_replacer_parameter
+ * @param propertyName - name of property being accessed in `this`
+ * @param value - value being stringified
+ */
+function toJSONReplacer(propertyName: unknown, value: unknown) {
   // handle objects with a 'type' property
   if (typeof value === 'object' && value && hasOwnProperty(value, 'type')) {
     switch (value.type) {
@@ -60,7 +74,7 @@ function toJSONReplacer(this: unknown, key: unknown, value: unknown) {
           type: 'Buffer',
           hex: hexEncodeUintArray(Uint8Array.from(value.data)),
         };
-      case 'RelyingPartyAuthenticationSession':
+      case 'RelyingPartyAuthenticationSession': {
         const identity =
           hasOwnProperty(value, 'identity') && value.identity instanceof Ed25519KeyIdentity
             ? value.identity
@@ -80,6 +94,7 @@ function toJSONReplacer(this: unknown, key: unknown, value: unknown) {
             secretKey,
           },
         };
+      }
     }
   }
   if (value instanceof Uint8Array) {
@@ -91,10 +106,12 @@ function toJSONReplacer(this: unknown, key: unknown, value: unknown) {
   return value;
 }
 
-/** Helper to check/assert object has prop */
-function hasOwnProperty<X extends {}, Y extends PropertyKey>(
-  obj: X,
-  prop: Y,
-): obj is X & Record<Y, unknown> {
-  return obj.hasOwnProperty(prop);
+/**
+ * Helper to check/assert object has prop.
+ * Gratitude to https://fettblog.eu/typescript-hasownproperty/.
+ * @param obj - object to check
+ * @param prop - name of property to check for existence of.
+ */
+function hasOwnProperty<X, Y extends PropertyKey>(obj: X, prop: Y): obj is X & Record<Y, unknown> {
+  return {}.hasOwnProperty.call(obj, prop);
 }

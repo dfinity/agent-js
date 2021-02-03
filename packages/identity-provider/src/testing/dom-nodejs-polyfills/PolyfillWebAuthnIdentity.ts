@@ -1,7 +1,10 @@
 import { WebAuthnIdentity } from '@dfinity/authentication';
 import { hexEncodeUintArray } from '../../bytes';
 
-export default function PolyfillWebAuthnIdentity() {
+/**
+ * Polyfill of `WebAuthnIdentity` to use in non-browser environments (no globalThis.navigator)
+ */
+export default function PolyfillWebAuthnIdentity(): Pick<typeof WebAuthnIdentity, 'create'> {
   return {
     async create() {
       return WebAuthnIdentity.fromJSON(
