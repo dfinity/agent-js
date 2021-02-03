@@ -11,6 +11,7 @@ import {
 import DocumentIdentities from './actors/identity/DocumentIdentities';
 import IdentityActor from './actors/identity/IdentityActor';
 import MutableIdentity from './actors/identity/MutableIdentity';
+import { isProbablyCandidModule } from './candid/candid';
 import { createAgent } from './host';
 import { BootstrapRenderer } from './render';
 import { SiteInfo, withIdentity } from './site';
@@ -18,16 +19,16 @@ import { SiteInfo, withIdentity } from './site';
 declare const window: GlobalInternetComputer & Window;
 
 const bootstrapLog = makeLog('bootstrap');
-const render = BootstrapRenderer(document);
+const bootstrapRender = BootstrapRenderer(document);
 
-_main({ render }).catch(err => {
+_main({ render: bootstrapRender }).catch(err => {
   bootstrapLog('error', 'caught error', { error: err });
   const div = document.createElement('div');
   div.innerText = 'An error happened:';
   const pre = document.createElement('pre');
   pre.innerHTML = err.stack;
   div.appendChild(pre);
-  render(div);
+  bootstrapRender(div);
   throw err;
 });
 
@@ -35,8 +36,8 @@ _main({ render }).catch(err => {
 async function _loadJs(
   canisterId: Principal,
   filename: string,
-  onload = async () => {},
-): Promise<any> {
+  onload = async () => { bootstrapLog('debug', '_loadJs onload'); },
+): Promise<unknown> {
   bootstrapLog('debug', '_loadJs', { canisterId, filename });
   const actor = createAssetCanisterActor({ canisterId });
   const content = await actor.retrieve(filename);
@@ -52,7 +53,7 @@ async function _loadJs(
   return eval(js); // tslint:disable-line
 }
 
-async function _loadCandid(canisterId: Principal): Promise<any> {
+async function _loadCandid(canisterId: Principal): Promise<unknown> {
   bootstrapLog('debug', '_loadCandid');
   const origin = window.location.origin;
   const url = `${origin}/_/candid?canisterId=${canisterId.toText()}&format=js`;
@@ -69,10 +70,12 @@ async function _loadCandid(canisterId: Principal): Promise<any> {
 
 /**
  * boot @dfinity/bootstrap
+ * @param spec spec
  * @param spec.render {Function} change the Element that should display to the end-user
  */
 async function _main(spec: { render: ReturnType<typeof BootstrapRenderer> }) {
   bootstrapLog('debug', '_main');
+  const { render } = spec;
   /** update features ASAP (in case other code detects them) */
   window.ic = {
     ...window.ic,
@@ -124,6 +127,9 @@ async function _main(spec: { render: ReturnType<typeof BootstrapRenderer> }) {
     if (window.location.pathname === '/candid') {
       // Load candid.did.js from endpoint.
       const candid = await _loadCandid(canisterId);
+      if ( ! isProbablyCandidModule(candid)) {
+        throw new Error(`loaded candid, but it doesnt appear to be the candid module we expect`);
+      }
       const canister = window.ic.agent.makeActorFactory(candid.default)({ canisterId });
       const candidModule = await import('./candid/candid');
       candidModule.render(canisterId, canister);

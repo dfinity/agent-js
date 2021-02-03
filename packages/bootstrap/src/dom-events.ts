@@ -19,7 +19,8 @@ function fromCallback<V>(emitter: (cb: (value: V) => void) => void): AsyncIterab
 }
 
 /**
- * Create an AsyncIterable of DOM Events. This can be more composable that the EventTarget interface itself.
+ * Create an AsyncIterable of DOM Events. This can be more composable that the EventTarget
+ * interface itself.
  * @param listenable - EvenTarget to monitor for events
  * @param eventName - string name of event to listen for
  * @param options - AddEventListenerOptions just like EventTarget.addEventListener.
