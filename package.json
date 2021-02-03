@@ -38,6 +38,7 @@
     }
   },
   "scripts": {
+    "lint": "bin/lint",
     "postinstall": "bin/npm-postinstall",
     "prepare": "bin/build",
     "e2e": "bin/e2e",
