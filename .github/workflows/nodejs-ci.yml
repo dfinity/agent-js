@@ -3,24 +3,7 @@ name: Node.js CI
 on: [push]
 
 jobs:
-  lint:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-18.04]
-        ghc: ['8.8.4']
-        spec: ['release-0.15']
-        node:
-        - 14
-    steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node }}
-    - run: npm install
-    - run: npm run lint --if-present
-  test:
+  build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -30,7 +13,6 @@ jobs:
         node:
         - 12
         - 14
-
     steps:
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node }}
@@ -44,6 +26,27 @@ jobs:
       run: "[ -d packages/agent/node_modules ] || npm run postinstall"
     - run: npm run build --if-present
 
+  lint:
+    needs:
+    - build
+    runs-on: ${{ matrix.os }}
+    steps:
+    - run: npm run lint --if-present
+  
+  test:
+    needs:
+    - build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04]
+        ghc: ['8.8.4']
+        spec: ['release-0.15']
+        node:
+        - 12
+        - 14
+
+    steps:
     - run: npm test
       env:
         CI: true
