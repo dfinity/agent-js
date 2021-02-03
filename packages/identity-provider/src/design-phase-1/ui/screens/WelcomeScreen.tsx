@@ -1,27 +1,28 @@
 import * as React from "react";
 import { Button } from "../../../components/Button";
 import { styled } from "@material-ui/core/styles"
-import { Box, makeStyles, Typography } from "@material-ui/core";
-import Skeleton from "@material-ui/lab/Skeleton";
+import { Typography } from "@material-ui/core";
 import SimpleScreenLayout from "../layout/SimpleScreenLayout";
 import LockIcon from '@material-ui/icons/Lock';
-import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import { SignIdentity } from "@dfinity/agent";
 import { hexEncodeUintArray } from "../../../bytes";
 import { Ed25519KeyIdentity, WebAuthnIdentity } from "@dfinity/authentication";
 
-const styler = () => {
-    return {
-    }
-}
-
+/**
+ * First Screen the end-user sees as part of Authentication.
+ * If they have a profile already from last time, let them re-use it.
+ * Always let them click 'create profile' to create a new 'root identity' keyPair.
+ * @param props props
+ * @param props.identity - identity from last time, if present
+ * @param props.useIdentity - invoke this with the Identity chosen by the end-user
+ * @param props.createProfile - invoke this to trigger creation of a brand new profile (and then re-render)
+ */
 export default function WelcomeScreen(props: {
     identity: undefined|Ed25519KeyIdentity|WebAuthnIdentity;
     useIdentity(identity: Ed25519KeyIdentity|WebAuthnIdentity): void;
     createProfile(): void;
-}) {
-    const styles = makeStyles(styler)();
-    const { createProfile, useIdentity } = props;
+}): JSX.Element {
+    const { createProfile } = props;
     const onClickCreateProfile = React.useCallback(createProfile, [createProfile])
     return <SimpleScreenLayout {...{
         HeroImage,
@@ -96,7 +97,6 @@ function Body(props: {
 }
 
 function HeroImage() {
-    const styles = makeStyles(styler)();
     return <>
         <LockIcon style={{fontSize: '4em'}} />
     </>;

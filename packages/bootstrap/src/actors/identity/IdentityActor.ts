@@ -16,18 +16,26 @@ import { BootstrapIdentityChangedEvent } from './events';
  *       IdentityRequestedEvent
  *       AuthenticationResponseDetectedEvent
  *   sends: BootstrapIdentityChangedEvent
+ * @param params params
+ * @param params.initialIdentity - Identity to use from the very beginning before others are
+ *   detected, e.g. AnonymousIdentity
+ * @param params.identities - AsyncIterable of future identities that are changed to
+ *   e.g. because of login events.
+ * @param params.eventTarget - Will have BootstrapIdentityChangedEvent dispatched on it whenever
+ *   identities emits a new value.
+ * @param params.cancel - When/if this resolves, the actor should shut down.
  */
-export default function IdentityActor(spec: {
+export default function IdentityActor(params: {
   initialIdentity: SignIdentity | AnonymousIdentity;
   identities: AsyncIterable<AnonymousIdentity | SignIdentity>;
   eventTarget: EventTarget;
-  cancel: Promise<any>;
-}) {
+  cancel: Promise<unknown>;
+}): void {
   const log = makeLog('@dfinity/bootstrap/IdentityActor');
   const subscribers = new Set<MessagePort>();
   let started = false;
-  let currentIdentity: SignIdentity | AnonymousIdentity = spec.initialIdentity;
-  spec.cancel.then(() => {
+  let currentIdentity: SignIdentity | AnonymousIdentity = params.initialIdentity;
+  params.cancel.then(() => {
     if (started) {
       stop();
     }
@@ -51,11 +59,11 @@ export default function IdentityActor(spec: {
     started = false;
   }
   async function trackLatestIdentity() {
-    for await (const identity of spec.identities) {
+    for await (const identity of params.identities) {
       currentIdentity = identity;
       const identityDescriptor = createIdentityDescriptor(currentIdentity);
       log('debug', 'new currentIdentity', {currentIdentity, identityDescriptor});
-      spec.eventTarget.dispatchEvent(BootstrapIdentityChangedEvent(
+      params.eventTarget.dispatchEvent(BootstrapIdentityChangedEvent(
         identityDescriptor,
       ));
       publish(IdentityMessage(identityDescriptor));

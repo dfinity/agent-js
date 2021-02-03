@@ -8,6 +8,8 @@
     "ci": "npm run prettier && npm run lint && npm run build",
     "lint": "tslint --project tsconfig.json --config tslint.json",
     "lint:fix": "npm run lint -- --fix",
+    "eslint": "npx eslint 'src/actors' --ext '.js,.jsx,.ts,.tsx'",
+    "eslint:fix": "npm run lint -- --fix",
     "prettier": "prettier --check \"src/**/*.ts\"",
     "prettier:write": "npm run prettier -- --write",
     "test": "jest --verbose",
@@ -37,7 +39,11 @@
     "webpack-cli": "^3.3.10",
     "webpack-dev-server": "^3.11.0",
     "whatwg-fetch": "^3.0.0",
-    "worker-plugin": "^4.0.3"
+    "worker-plugin": "^4.0.3",
+    "@typescript-eslint/eslint-plugin": "^4.14.2",
+    "@typescript-eslint/parser": "^4.14.2",
+    "eslint": "^7.19.0",
+    "eslint-plugin-jsdoc": "^31.6.0"
   },
   "dependencies": {
     "@dfinity/agent": "file://../agent",
@@ -48,5 +54,30 @@
     "localforage": "^1.7.4",
     "ts-loader": "7.0.5",
     "tsconfig-paths-webpack-plugin": "^3.2.0"
+  },
+  "eslintConfig": {
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/recommended",
+      "plugin:jsdoc/recommended"
+    ],
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+      "@typescript-eslint",
+      "jsdoc"
+    ],
+    "rules": {
+      "jsdoc/newline-after-description": "off",
+      "jsdoc/require-returns-type": "off",
+      "jsdoc/require-param-type": "off",
+      "jsdoc/require-jsdoc": [
+        "warn",
+        {
+          "publicOnly": true
+        }
+      ],
+      "jsdoc/require-returns": "off",
+      "jsdoc/require-returns-description": "warn"
+    }
   }
 }

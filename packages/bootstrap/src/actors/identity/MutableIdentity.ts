@@ -4,6 +4,10 @@ import {
   SignIdentity,
 } from '@dfinity/agent';
 
+/**
+ * An Identity that delegates to each new identity of an iterable of identities.
+ * @param identities - iterable of identities to delegate to
+ */
 export default async function MutableIdentity(
   identities: AsyncIterable<SignIdentity | AnonymousIdentity>,
 ): Promise<SignIdentity | AnonymousIdentity> {

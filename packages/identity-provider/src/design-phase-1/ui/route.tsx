@@ -23,14 +23,21 @@ const stateStorage = SerializedStorage(
     StateToStringCodec(IdentityProviderStateType),
 )
 
+/**
+ * Component for all routes of the 'design-phase-1' Identity Provider.
+ * @param props props
+ * @param props.NotFoundRoute - Component to render when the current URL doesn't match any route.
+ * @param props.theme - material-ui theme
+ * @param props.WebAuthnIdentity - knows how to interact with WebAuthn (or a stub in nodejs/nonbrowser).
+ */
 export default function DesignPhase0Route(props: {
     NotFoundRoute: React.ComponentType
     theme?: Theme
     WebAuthnIdentity: Pick<typeof WebAuthnIdentity, 'create'>
-}) {
+}): JSX.Element {
     const NotFoundRoute = props.NotFoundRoute;
     const location = useLocation()
-    const { url, path } = useRouteMatch()
+    const { path } = useRouteMatch()
     const initialState = React.useMemo(
         () => {
             try {
@@ -232,6 +239,9 @@ export default function DesignPhase0Route(props: {
 /**
  * Wrap children in a material-ui ThemeProvider if a theme prop is provided,
  * otherwise just render children.
+ * @param props props
+ * @param props.theme - @material-ui theme to customize UI
+ * @param props.children - element children
  */
 function MaybeTheme(props: { theme?: Theme, children: React.ReactNode }) {
   if ( ! props.theme) { return <>{props.children}</> }
