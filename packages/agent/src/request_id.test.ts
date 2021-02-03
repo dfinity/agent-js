@@ -1,11 +1,11 @@
 // tslint:disable-next-line: max-line-length
 // https://github.com/dfinity-lab/dfinity/blob/5fef1450c9ab16ccf18381379149e504b11c8218/docs/spec/public/index.adoc#request-ids
 
-import { Buffer } from 'buffer/';
-import { hash, requestIdOf } from './request_id';
-import { BinaryBlob, blobToHex, blobFromHex, blobFromBuffer, blobFromUint8Array } from './types';
 import BigNumber from 'bignumber.js';
+import { Buffer } from 'buffer/';
 import { Principal } from './principal';
+import { hash, requestIdOf } from './request_id';
+import { BinaryBlob, blobFromBuffer, blobFromHex, blobFromUint8Array, blobToHex } from './types';
 
 const testHashOfBlob = async (input: BinaryBlob, expected: string) => {
   const hashed = await hash(input);
@@ -87,7 +87,7 @@ test('requestIdOf for sender_delegation signature', async () => {
   );
   const delegation1 = {
     expiration: BigInt('1611365875951000000'),
-    pubkey: new Uint8Array(blobFromHex("302a300506032b6570032100819d9fe3ac251039f934cdc925da0b019848af9d650d4136fb5d955cff17f78e")),
+    pubkey: new Uint8Array(blobFromHex('302a300506032b6570032100819d9fe3ac251039f934cdc925da0b019848af9d650d4136fb5d955cff17f78e')),
     targets: [
       Uint8Array.from([0, 0, 0, 0, 0, 48, 0, 77, 1, 1]),
       Uint8Array.from([0, 0, 0, 0, 0, 32, 0, 43, 1, 1]),
@@ -98,7 +98,8 @@ test('requestIdOf for sender_delegation signature', async () => {
     blobToHex(blobFromUint8Array(expectedHashBytes)),
   );
 
-  // Note: this uses `BigNumber` and blobs, which the rest of this lib uses too. Make sure this works before `delegation1` above (with BigInt)
+  // Note: this uses `BigNumber` and blobs, which the rest of this lib uses too.
+  // Make sure this works before `delegation1` above (with BigInt)
   const delegation2 = {
     ...delegation1,
     pubkey: blobFromUint8Array(delegation1.pubkey),

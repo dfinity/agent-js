@@ -20,13 +20,16 @@ export async function hash(data: Buffer): Promise<BinaryBlob> {
 }
 
 /**
- * Type Guard for BigNumber.js that have a protottype we don't have a reference to, so can't do an `instanceof` check.
- * This can happen in certain sets of dependency graphs for the agent-js-monorepo, e.g. when used by authentication-demo.
- * All this really verifies is the truthiness of the `_isBigNumber` property that the source code defines as protected.
+ * Type Guard for BigNumber.js that have a protottype we don't have a reference to, so can't do
+ * an `instanceof` check.
+ * This can happen in certain sets of dependency graphs for the agent-js-monorepo, e.g. when used
+ * by authentication-demo.
+ * All this really verifies is the truthiness of the `_isBigNumber` property that the source code
+ * defines as protected.
  * @param v - value to check for type=BigNumber.js
  */
 function isProbablyBigNumber(v: any): v is BigNumber {
-  return v && (v as any)._isBigNumber
+  return v && (v as any)._isBigNumber;
 }
 
 async function hashValue(value: unknown): Promise<BinaryBlob> {
@@ -36,7 +39,8 @@ async function hashValue(value: unknown): Promise<BinaryBlob> {
     return hashString(value);
   } else if (
     typeof value === 'bigint' ||
-    // In some odd cases, e.g. `Object.assign(BigInt("1"), { a: 1 })` on node@v14.13.1, the result has typeof === 'object', but is still also a BigInt, so also check `instanceof`
+    // In some odd cases, e.g. `Object.assign(BigInt("1"), { a: 1 })` on node@v14.13.1, the result
+    // has typeof === 'object', but is still also a BigInt, so also check `instanceof`
     value instanceof BigInt
   ) {
     return hash(lebEncode(value));
@@ -60,15 +64,17 @@ async function hashValue(value: unknown): Promise<BinaryBlob> {
   } else if (value instanceof Promise) {
     return value.then(x => hashValue(x));
   } else if (isProbablyBigNumber(value)) {
-    // Do this check much later than the other BigNumber check because this one is much less type-safe.
+    // Do this check much later than the other BigNumber check because this one is much less
+    // type-safe.
     // So we want to try all the high-assurance type guards before this 'probable' one.
     return hash(lebEncode(value) as BinaryBlob);
   }
   throw Object.assign(
     new Error(`Attempt to hash a value of unsupported type: ${value}`), {
-      // include so logs/callers can understand the confusing value. (when stringified in error message, prototype info is lost)
+      // include so logs/callers can understand the confusing value.
+      // (when stringified in error message, prototype info is lost)
       value,
-    }
+    },
   );
 }
 
