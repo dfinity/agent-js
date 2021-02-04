@@ -1,0 +1,1 @@
+README for assets. This directory needs to be in the git repositor for the `dfx.json` assets configuration to work.
