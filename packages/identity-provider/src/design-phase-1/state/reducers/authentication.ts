@@ -1,4 +1,4 @@
-import * as icid from '../../../protocol/ic-id-protocol';
+import * as icid from '@dfinity/authentication';
 import * as t from 'io-ts';
 import { DelegationChain, Ed25519KeyIdentity, WebAuthnIdentity } from '@dfinity/authentication';
 import { withDefault } from '../state-serialization';
@@ -181,7 +181,7 @@ async function respond(spec: {
   consent: AuthenticationRequestConsent;
 }): Promise<icid.AuthenticationResponse> {
   const request = spec.consent.proposal.request;
-  const parsedScope = icid.parseScopeString(request.scope);
+  const parsedScope = icid.scope.parseScopeString(request.scope);
   const delegationTail: PublicKey = {
     toDer() {
       return derBlobFromBlob(blobFromHex(request.sessionIdentity.hex));
@@ -192,19 +192,19 @@ async function respond(spec: {
   const _24hrsInMs = 1000 * 60 * 60 * 24;
   const response: icid.AuthenticationResponse = {
     type: 'AuthenticationResponse',
-    accessToken: icid.createBearerToken({
+    accessToken: icid.request.createBearerToken({
       delegationChain: await DelegationChain.create(
         signIdentity,
         delegationTail,
         new Date(Date.now() + _24hrsInMs) /* 24hr expiry */,
         {
-          targets: parsedScope.canisters.map(({ principal }) => principal),
+          targets: parsedScope.map(({ principal }) => principal),
         },
       ),
     }),
     expiresIn: 10000000,
     tokenType: 'bearer',
-    scope: icid.stringifyScope(parsedScope),
+    scope: icid.scope.stringifyScope(parsedScope),
   };
   return response;
 }

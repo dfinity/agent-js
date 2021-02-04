@@ -3,9 +3,9 @@ import { Button } from "src/components/Button";
 import SimpleScreenLayout from "../layout/SimpleScreenLayout";
 import { Typography, makeStyles, createStyles, styled } from "@material-ui/core";
 import EnhancedEncryptionIcon from '@material-ui/icons/EnhancedEncryption';
-import { parseScopeString } from "src/protocol/ic-id-protocol";
 import { AuthenticationResponseConsentProposal, createSignIdentity } from "src/design-phase-1/state/reducers/authentication";
 import { hexEncodeUintArray } from "src/bytes";
+import { scope } from "@dfinity/authentication";
 
 /**
  * Screen that presents the user with a decision about whether they consent
@@ -127,7 +127,7 @@ function Body(props: {
                         <th scope="row">Canisters</th>
                         <td>
                             <ul>
-                                {parseScopeString(props.consentProposal.request.scope).canisters.map(({principal}, i) => {
+                                {scope.parseScopeString(props.consentProposal.request.scope).map(({principal}, i) => {
                                     return <li key={i}>{principal.toText()}</li>
                                 })}
                             </ul>

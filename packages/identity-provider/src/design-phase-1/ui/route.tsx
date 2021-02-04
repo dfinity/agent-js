@@ -9,7 +9,6 @@ import { useStateStorage } from '../state/state-storage-react';
 import { StateToStringCodec } from '../state/state-serialization';
 import { hexToBytes } from 'src/bytes';
 import { WebAuthnIdentity} from '@dfinity/authentication';
-import * as icid from "../../protocol/ic-id-protocol"
 import AuthenticationScreenLayout from './layout/AuthenticationScreenLayout';
 import { ThemeProvider, Theme } from '@material-ui/core';
 import { IdentityProviderStateType } from '../state/state';
@@ -17,6 +16,7 @@ import IdentityProviderReducer from "../state/reducer";
 import AuthenticationController from '../AuthenticationController';
 import { AuthenticationResponseConsentProposal, createSignIdentity } from '../state/reducers/authentication';
 import { useReducer } from '../state/state-react';
+import * as authentication from "@dfinity/authentication";
 
 const stateStorage = SerializedStorage(
     LocalStorageKey('design-phase-1'),
@@ -86,7 +86,7 @@ export default function DesignPhase0Route(props: {
     React.useEffect(
         () => {
             const searchParams = new URLSearchParams(location.search);
-            const icidMessage = icid.fromQueryString(searchParams)
+            const icidMessage = authentication.request.fromQueryString(searchParams)
             if ( ! icidMessage) return;
             if (icidMessage.type === "AuthenticationRequest") {
                 dispatch({

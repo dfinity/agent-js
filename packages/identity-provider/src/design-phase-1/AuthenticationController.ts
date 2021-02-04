@@ -1,10 +1,7 @@
 import { IdentityProviderAction } from './state/action';
-import { Ed25519KeyIdentity, WebAuthnIdentity } from '@dfinity/authentication';
+import { Ed25519KeyIdentity, WebAuthnIdentity, request, response } from '@dfinity/authentication';
 import { hexEncodeUintArray } from 'src/bytes';
-import * as icid from '../protocol/ic-id-protocol';
-import {
-  SignIdentity,
-} from '@dfinity/agent';
+import { SignIdentity } from '@dfinity/agent';
 import { AuthenticationResponseConsentProposal } from './state/reducers/authentication';
 import { Signer } from './state/codecs/sign';
 
@@ -27,8 +24,8 @@ interface IAuthenticationController extends EffectCreatorMap<string, IdentityPro
    * Send the AuthenticationResponse to redirect_uri via Navigate effect
    */
   respond(spec: {
-    request: Pick<icid.AuthenticationRequest, 'redirectUri'>;
-    response: icid.AuthenticationResponse;
+    request: Pick<request.AuthenticationRequest, 'redirectUri'>;
+    response: response.AuthenticationResponse;
   }): Promise<IdentityProviderAction[]>;
   consentToAuthenticationResponseProposal(spec: {
     consentProposal: AuthenticationResponseConsentProposal;
@@ -56,10 +53,10 @@ export default function AuthenticationController(options: {
   const { urls } = options;
   const idpController: IAuthenticationController = {
     async respond(spec: {
-      request: Pick<icid.AuthenticationRequest, 'redirectUri'>;
-      response: icid.AuthenticationResponse;
+      request: Pick<request.AuthenticationRequest, 'redirectUri'>;
+      response: response.AuthenticationResponse;
     }): Promise<IdentityProviderAction[]> {
-      const responseRedirectUrl = icid.createResponseRedirectUrl(
+      const responseRedirectUrl = createResponseRedirectUrl(
         spec.response,
         spec.request.redirectUri,
       );
@@ -139,4 +136,20 @@ export function describeSignIdentity(identity: WebAuthnIdentity | Ed25519KeyIden
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const x: never = identity;
   throw new Error('unexpected identity prototype');
+}
+
+function createResponseRedirectUrl(
+  authResponse: response.AuthenticationResponse,
+  requestRedirectUri: string,
+): URL {
+  const oauth2Response = response.toOauth(authResponse);
+  const redirectUrl = new URL(requestRedirectUri);
+  for (const [key, value] of Object.entries(oauth2Response)) {
+    if (typeof value === 'undefined') {
+      redirectUrl.searchParams.delete(key);
+    } else {
+      redirectUrl.searchParams.set(key, value);
+    }
+  }
+  return redirectUrl;
 }

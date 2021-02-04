@@ -1,4 +1,4 @@
-import * as icid from '../../../protocol/ic-id-protocol';
+import * as icid from '@dfinity/authentication';
 import * as t from 'io-ts';
 
 export type Action =

@@ -89,3 +89,19 @@ function decodeUtf8(bytes: Uint8Array): string {
     require('util').TextDecoder;
   return new TextDecoder().decode(bytes);
 }
+
+/**
+ * Convert an ic-id AuthenticationResponse to an oauth2 AccessTokenResponse.
+ * This is mostly converting to underscore_case.
+ * @param response - ic-id AuthenticationResponse
+ */
+export function toOauth(response: AuthenticationResponse): oauth2.OAuth2AccessTokenResponse {
+  const oauth2Response: oauth2.OAuth2AccessTokenResponse = {
+    access_token: response.accessToken,
+    token_type: 'bearer',
+    expires_in: response.expiresIn,
+    state: response.state,
+    scope: response.scope,
+  }
+  return oauth2Response
+}

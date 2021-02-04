@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useLocation } from "react-router-dom";
-import * as icid from "../../protocol/ic-id-protocol";
+import * as icid from "@dfinity/authentication";
 import { DelegationChain, DelegationIdentity } from "@dfinity/authentication";
 import { hexEncodeUintArray } from "../../bytes";
 import { IRelyingPartyAuthenticationSession } from "../session";
@@ -29,14 +29,14 @@ export default function OAuthRedirectUriRoute(props: {
     const location = useLocation()
     const icAuthenticationResponse = React.useMemo(
         () => {
-            const message = icid.fromQueryString(new URLSearchParams(location.search));
+            const message = icid.response.fromQueryString(new URLSearchParams(location.search));
             if (message && (message.type === "AuthenticationResponse")) {
                 return message;
             }
         },
         [location.search]
     )
-    const parsedBearerToken = icAuthenticationResponse && icid.parseBearerToken(icAuthenticationResponse.accessToken)
+    const parsedBearerToken = icAuthenticationResponse && icid.response.parseBearerToken(icAuthenticationResponse.accessToken)
     const delegationChain = DelegationChain.fromJSON(JSON.stringify(parsedBearerToken))
     // @TODO(bengo): This Ed25519KeyIdentity needs to correspond to the sender_pubkey sent as login_hint
     // otherwise sigs won't actually be accepted by replica when `delegationIdentity.sign` is used by HttpAgent to sign each ic request id

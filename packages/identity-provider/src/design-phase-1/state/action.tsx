@@ -1,5 +1,5 @@
 import { StateStoredAction } from "./state-storage-react";
-import * as icid from "../../protocol/ic-id-protocol";
+import * as icid from "@dfinity/authentication";
 import { Jsonnable } from "./json";
 import { Action as AuthenticationAction } from "./reducers/authentication";
 import { Action as WebAuthnAction } from "./reducers/webauthn.reducer";

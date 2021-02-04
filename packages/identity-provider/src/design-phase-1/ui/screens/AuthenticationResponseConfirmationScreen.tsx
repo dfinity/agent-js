@@ -2,7 +2,7 @@ import * as React from "react";
 import { Button } from "src/components/Button";
 import SimpleScreenLayout from "../layout/SimpleScreenLayout";
 import VerifiedUserIcon from '@material-ui/icons/VerifiedUser';
-import * as icid from "../../../protocol/ic-id-protocol"
+import * as authentication from "@dfinity/authentication";
 
 /**
  * Last screen. Indicate that there is now a whole AuthenticationResponse.
@@ -14,11 +14,11 @@ import * as icid from "../../../protocol/ic-id-protocol"
  * @param props.redirectWithResponse - Call this to finish the authn flow and send the response.
  */
 export default function (props: {
-    request: icid.AuthenticationRequest
-    response: icid.AuthenticationResponse
+    request: authentication.request.AuthenticationRequest
+    response: authentication.response.AuthenticationResponse
     redirectWithResponse(spec: {
-        request: icid.AuthenticationRequest
-        response: icid.AuthenticationResponse
+        request: authentication.request.AuthenticationRequest
+        response: authentication.response.AuthenticationResponse
     }): void;
 }): JSX.Element {
     const { request, response } = props;
