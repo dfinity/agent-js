@@ -1,8 +1,4 @@
-import {
-  AnonymousIdentity,
-  makeLog,
-  SignIdentity,
-} from '@dfinity/agent';
+import { AnonymousIdentity, makeLog, SignIdentity } from '@dfinity/agent';
 
 /**
  * An Identity that delegates to each new identity of an iterable of identities.

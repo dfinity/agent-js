@@ -8,7 +8,7 @@ function fromCallback<V>(emitter: (cb: (value: V) => void) => void): AsyncIterab
     resolve(values);
   });
   return {
-    async *[Symbol.asyncIterator] () {
+    async *[Symbol.asyncIterator]() {
       for (;;) {
         const vs = await valuesAvailable;
         valuesAvailable = new Promise(init);

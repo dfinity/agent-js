@@ -1,14 +1,11 @@
-import {
-  AnonymousIdentity,
-  makeLog,
-  SignIdentity,
-} from '@dfinity/agent';
+import { AnonymousIdentity, makeLog, SignIdentity } from '@dfinity/agent';
 import {
   DelegationChain,
   DelegationIdentity,
   Ed25519KeyIdentity,
   response as icidResponse,
 } from '@dfinity/authentication';
+import { AuthenticationResponseDetectedEventIdentifier } from '@dfinity/authentication';
 
 /**
  * AsyncIterable of Identities that can be generated as a result of handling
@@ -17,12 +14,12 @@ import {
  */
 export default function AuthenticationResponseIdentities(
   events: EventTarget,
-): AsyncIterable<SignIdentity|AnonymousIdentity> {
+): AsyncIterable<SignIdentity | AnonymousIdentity> {
   const log = makeLog('AuthenticationResponseIdentities');
   const identities: AsyncIterable<SignIdentity | AnonymousIdentity> = (async function* () {
     // Wait for AuthenticationResponseDetectedEvents
     for await (const event of AuthenticationResponseDetectedEventIterable(events)) {
-      log('debug', 'handling AuthenticationResponseDetectedEvent', {event});
+      log('debug', 'handling AuthenticationResponseDetectedEvent', { event });
       if (!(event instanceof CustomEvent)) {
         log('warn', 'got unexpected event that is not a CustomEvent', { event });
         continue;
@@ -52,11 +49,12 @@ export default function AuthenticationResponseIdentities(
 function AuthenticationResponseDetectedEventIterable(
   spec: Pick<Document, 'addEventListener'>,
 ): AsyncIterable<Event> {
-  const idChangedEventName = 'https://internetcomputer.org/ns/authentication/AuthenticationResponseDetectedEvent' as const;
   const events: AsyncIterable<Event> = (async function* () {
     while (true) {
       const nextEvent = await new Promise<Event>(resolve => {
-        spec.addEventListener(idChangedEventName, resolve, { once: true });
+        spec.addEventListener(AuthenticationResponseDetectedEventIdentifier, resolve, {
+          once: true,
+        });
       });
       yield nextEvent;
     }

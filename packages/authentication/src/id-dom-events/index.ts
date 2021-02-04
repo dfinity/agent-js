@@ -1,4 +1,5 @@
-export const IdentityRequestedEventUrl = 'https://internetcomputer.org/ns/authentication/IdentityRequestedEvent' as const;
+export const IdentityRequestedEventIdentifier = 'https://internetcomputer.org/ns/authentication/IdentityRequestedEvent' as const;
+export const AuthenticationResponseDetectedEventIdentifier = 'https://internetcomputer.org/ns/authentication/AuthenticationResponseDetectedEvent' as const;
 
 /**
  * CustomEvent dispatched by an element notifying others that it depends on an authenticated Identity.
@@ -11,7 +12,7 @@ export function IdentityRequestedEvent<T>(
     onIdentity(identity: unknown): void;
   },
 ): CustomEventWithDetail<
-  typeof IdentityRequestedEventUrl,
+  typeof IdentityRequestedEventIdentifier,
   {
     sender: MessagePort;
   }
@@ -29,7 +30,7 @@ export function IdentityRequestedEvent<T>(
     options.onIdentity(identity);
   };
   port2.start();
-  return createCustomEvent(IdentityRequestedEventUrl, {
+  return createCustomEvent(IdentityRequestedEventIdentifier, {
     ...options,
     detail: {
       sender: port1,

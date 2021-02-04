@@ -1,6 +1,6 @@
 import { AuthenticationRequest, createAuthenticationRequestUrl } from '../idp-protocol/request';
 import { CustomEventWithDetail, createCustomEvent } from '../id-dom-events';
-import { AuthenticationResponseDetectedEventIdentifier } from './dom-events';
+import { AuthenticationResponseDetectedEventIdentifier } from '../id-dom-events';
 
 export interface IdentityProviderIndicator {
   url: URL;
