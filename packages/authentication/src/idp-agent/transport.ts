@@ -77,6 +77,10 @@ export function BrowserTransport(params: {
   identityProvider: Transport<EnvelopeToIdentityProvider>;
 }): Transport<IdentityProviderAgentEnvelope> {
   return Object.freeze({ send });
+  /**
+   * Send an Envelope to its destination
+   * @param envelope - envelope to send
+   */
   async function send(envelope: IdentityProviderAgentEnvelope) {
     console.debug('BrowserTransport.send', envelope);
     switch (envelope.to) {
@@ -91,10 +95,14 @@ export function BrowserTransport(params: {
 }
 
 /**
- *
+ * Transport that sends messages by dispatching DOM Events
  */
 export function DomEventTransport(): Transport<EnvelopeToDocument> {
   return Object.freeze({ send });
+  /**
+   * Send an Envelope to its destination.
+   * @param e - envelope to send
+   */
   async function send(e: EnvelopeToDocument) {
     const message = e.message;
     const event = (() => {
