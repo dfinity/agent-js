@@ -1,15 +1,10 @@
 import { IdentityProviderAction } from './state/action';
-import { Ed25519KeyIdentity, DelegationChain, WebAuthnIdentity } from '@dfinity/authentication';
-import { hexEncodeUintArray, hexToBytes } from 'src/bytes';
+import { Ed25519KeyIdentity, WebAuthnIdentity } from '@dfinity/authentication';
+import { hexEncodeUintArray } from 'src/bytes';
 import * as icid from '../protocol/ic-id-protocol';
 import {
-  PublicKey,
   SignIdentity,
-  blobFromUint8Array,
-  derBlobFromBlob,
-  blobFromHex,
 } from '@dfinity/agent';
-import tweetnacl from 'tweetnacl';
 import { AuthenticationResponseConsentProposal } from './state/reducers/authentication';
 import { Signer } from './state/codecs/sign';
 
@@ -20,6 +15,7 @@ import { Signer } from './state/codecs/sign';
  * This separates concerns of creating effects and publishing them.
  * Assert that 'controller objects' extend EffectCreatorMap to be sure that all controller methods return effects (instead of having untyped side-effects of the invocation, e.g. a dispatch())
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type EffectCreator<Effect> = (...args: any[]) => Promise<Effect[]>;
 type EffectCreatorMap<EffectCreatorNames extends string, Effect extends { type: string }> = {
   [key in EffectCreatorNames]: EffectCreator<Effect>;
@@ -43,6 +39,13 @@ interface IAuthenticationController extends EffectCreatorMap<string, IdentityPro
   }): Promise<IdentityProviderAction[]>;
 }
 
+/**
+ * Common methods used throughout the Authentication flow to coordinate state.
+ * @param options options
+ * @param options.urls - URLs of certain screens that the controller needs to navigate between.
+ * @param options.urls.identity - identity-related URLs
+ * @param options.urls.identity.confirmation - IdentityConfirmationScreen URL
+ */
 export default function AuthenticationController(options: {
   urls: {
     identity: {
@@ -74,12 +77,6 @@ export default function AuthenticationController(options: {
     }) {
       const { consentProposal } = spec;
       console.debug('consentToAuthenticationResponseProposal', { consentProposal });
-      const parsedScope = icid.parseScopeString(spec.consentProposal.request.scope);
-      const delegationTail: PublicKey = {
-        toDer() {
-          return derBlobFromBlob(blobFromHex(spec.consentProposal.request.sessionIdentity.hex));
-        },
-      };
       const consentReceivedAction: IdentityProviderAction = {
         type: 'AuthenticationRequestConsentReceived',
         payload: {
@@ -117,12 +114,10 @@ export default function AuthenticationController(options: {
   return idpController;
 }
 
-/** return days since epoch as js Date object */
-function days(count: number) {
-  const msInOneDay = 1000 * 60 * 60 * 24;
-  return new Date(msInOneDay * count);
-}
-
+/**
+ * Given an Identity, return a json-serializable description of the Identity.
+ * @param identity - identity to describe
+ */
 export function describeSignIdentity(identity: WebAuthnIdentity | Ed25519KeyIdentity): Signer {
   if (identity instanceof WebAuthnIdentity) {
     return {
@@ -141,6 +136,7 @@ export function describeSignIdentity(identity: WebAuthnIdentity | Ed25519KeyIden
     };
   }
   // exhaust
-  let x: never = identity;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const x: never = identity;
   throw new Error('unexpected identity prototype');
 }
