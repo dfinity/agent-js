@@ -1,12 +1,12 @@
-import * as React from "react";
-import { Button } from "../../../components/Button";
-import { styled } from "@material-ui/core/styles"
-import { Typography } from "@material-ui/core";
-import SimpleScreenLayout from "../layout/SimpleScreenLayout";
+import * as React from 'react';
+import { Button } from '../../../components/Button';
+import { styled } from '@material-ui/core/styles';
+import { Typography } from '@material-ui/core';
+import SimpleScreenLayout from '../layout/SimpleScreenLayout';
 import LockIcon from '@material-ui/icons/Lock';
-import { SignIdentity } from "@dfinity/agent";
-import { hexEncodeUintArray } from "../../../bytes";
-import { Ed25519KeyIdentity, WebAuthnIdentity } from "@dfinity/authentication";
+import { SignIdentity } from '@dfinity/agent';
+import { hexEncodeUintArray } from '../../../bytes';
+import { Ed25519KeyIdentity, WebAuthnIdentity } from '@dfinity/authentication';
 
 /**
  * First Screen the end-user sees as part of Authentication.
@@ -18,86 +18,101 @@ import { Ed25519KeyIdentity, WebAuthnIdentity } from "@dfinity/authentication";
  * @param props.createProfile - invoke this to trigger creation of a brand new profile (and then re-render)
  */
 export default function WelcomeScreen(props: {
-    identity: undefined|Ed25519KeyIdentity|WebAuthnIdentity;
-    useIdentity(identity: Ed25519KeyIdentity|WebAuthnIdentity): void;
-    createProfile(): void;
+  identity: undefined | Ed25519KeyIdentity | WebAuthnIdentity;
+  useIdentity(identity: Ed25519KeyIdentity | WebAuthnIdentity): void;
+  createProfile(): void;
 }): JSX.Element {
-    const { createProfile } = props;
-    const onClickCreateProfile = React.useCallback(createProfile, [createProfile])
-    return <SimpleScreenLayout {...{
+  const { createProfile } = props;
+  const onClickCreateProfile = React.useCallback(createProfile, [createProfile]);
+  return (
+    <SimpleScreenLayout
+      {...{
         HeroImage,
         Title,
         Body: () => <Body identity={props.identity} />,
-        CallToAction: () => <CallToAction {...{onClickCreateProfile, ...props}} />
-    }}
-    />;
+        CallToAction: () => <CallToAction {...{ onClickCreateProfile, ...props }} />,
+      }}
+    />
+  );
 }
 
 function CallToAction(props: {
-    onClickCreateProfile(): void;
-    identity: Ed25519KeyIdentity|WebAuthnIdentity|undefined;
-    useIdentity(identity: SignIdentity): void;
+  onClickCreateProfile(): void;
+  identity: Ed25519KeyIdentity | WebAuthnIdentity | undefined;
+  useIdentity(identity: SignIdentity): void;
 }) {
-    const { identity } = props;
-    const existingIdentityString = React.useMemo(
-        () => {
-            if ( ! identity) return;
-            return hexEncodeUintArray(identity.getPublicKey().toDer())
-        },
-        [identity]
-    )
-    const ContinueButtonText = styled('div')({
-        maxWidth: '20em',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-    })
-    const primaryButtonProps: Partial<React.ComponentProps<typeof Button>> = {
-        variant: "contained",
-        color: "primary",
-    }
-    return <>
-        <Button
-            {...(identity ? {} : primaryButtonProps)}
-            data-test-id="next"
-            className="create-profile"
-            role="button"
-            onClick={props.onClickCreateProfile}>
-            Create Profile
-        </Button>
-        {identity && <>
-            <Button {...primaryButtonProps}
-                onClick={() => props.useIdentity(identity)}
-                data-test-id="continue-with-profile">
-                Continue as&nbsp;
-                <ContinueButtonText>
-                    <span>{existingIdentityString}</span>
-                </ContinueButtonText>
-            </Button>
-        </>}
+  const { identity } = props;
+  const existingIdentityString = React.useMemo(() => {
+    if (!identity) return;
+    return hexEncodeUintArray(identity.getPublicKey().toDer());
+  }, [identity]);
+  const ContinueButtonText = styled('div')({
+    maxWidth: '20em',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  });
+  const primaryButtonProps: Partial<React.ComponentProps<typeof Button>> = {
+    variant: 'contained',
+    color: 'primary',
+  };
+  return (
+    <>
+      <Button
+        {...(identity ? {} : primaryButtonProps)}
+        data-test-id='next'
+        className='create-profile'
+        role='button'
+        onClick={props.onClickCreateProfile}
+      >
+        Create Profile
+      </Button>
+      {identity && (
+        <>
+          <Button
+            {...primaryButtonProps}
+            onClick={() => props.useIdentity(identity)}
+            data-test-id='continue-with-profile'
+          >
+            Continue as&nbsp;
+            <ContinueButtonText>
+              <span>{existingIdentityString}</span>
+            </ContinueButtonText>
+          </Button>
+        </>
+      )}
     </>
+  );
 }
 function Title() {
-    return <>Getting Started</>
+  return <>Getting Started</>;
 }
 
-function Body(props: {
-    identity?: SignIdentity
-}) {
-    const { identity } = props;
-    return <>
-        <Typography variant="body1" paragraph>
-        Create a Profile to use this <a target="_blank" href="https://internetcomputer.org">Internet Computer</a> Canister.
-        </Typography>
-        {identity && <>
-            <Typography variant="body1" paragraph>
+function Body(props: { identity?: SignIdentity }) {
+  const { identity } = props;
+  return (
+    <>
+      <Typography variant='body1' paragraph>
+        Create a Profile to use this{' '}
+        <a target='_blank' href='https://internetcomputer.org'>
+          Internet Computer
+        </a>{' '}
+        Canister.
+      </Typography>
+      {identity && (
+        <>
+          <Typography variant='body1' paragraph>
             Or use your existing Profile to continue Authenticating.
-            </Typography>
-        </>}
+          </Typography>
+        </>
+      )}
     </>
+  );
 }
 
 function HeroImage() {
-    return <>
-        <LockIcon style={{fontSize: '4em'}} />
-    </>;
+  return (
+    <>
+      <LockIcon style={{ fontSize: '4em' }} />
+    </>
+  );
 }

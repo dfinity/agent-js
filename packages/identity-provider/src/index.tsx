@@ -7,14 +7,14 @@ import { render } from 'react-dom';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import { IDPRootErrorBoundary } from './ErrorBoundary';
 import theme from './theme';
-import NotFound from "./routes/NotFound";
-import RelyingPartyDemoRoute from "./relying-party-demo/routes";
+import NotFound from './routes/NotFound';
+import RelyingPartyDemoRoute from './relying-party-demo/routes';
 import { RelyingPartyDemoIdentityChangedEventIdentifier } from './relying-party-demo/events';
-import { Route as DesignPhase1Route } from "./design-phase-1";
+import { Route as DesignPhase1Route } from './design-phase-1';
 import { WebAuthnIdentity } from '@dfinity/authentication';
 import { makeLog } from '@dfinity/agent';
 
-const log = makeLog('identity-provider')
+const log = makeLog('identity-provider');
 
 const NotFoundRoute = () => {
   return <Route component={NotFound} />;
@@ -29,11 +29,11 @@ const App = () => {
           <Router>
             <Suspense fallback={<div>Loading...</div>}>
               <Switch>
-                <Route path="/relying-party-demo">
+                <Route path='/relying-party-demo'>
                   <RelyingPartyDemoRoute NotFoundRoute={NotFoundRoute} />
                 </Route>
-                <Route exact path="/" component={HomeRoute} />
-                <Route path="/design-phase-1">
+                <Route exact path='/' component={HomeRoute} />
+                <Route path='/design-phase-1'>
                   <DesignPhase1Route
                     NotFoundRoute={NotFoundRoute}
                     WebAuthnIdentity={WebAuthnIdentity}
@@ -50,9 +50,9 @@ const App = () => {
 };
 
 async function _main() {
-  document.body.addEventListener(RelyingPartyDemoIdentityChangedEventIdentifier, (event) => {
-    console.log(RelyingPartyDemoIdentityChangedEventIdentifier, event)
-  })
+  document.body.addEventListener(RelyingPartyDemoIdentityChangedEventIdentifier, event => {
+    console.log(RelyingPartyDemoIdentityChangedEventIdentifier, event);
+  });
   render(<App />, document.body.getElementsByTagName('app').item(0));
 }
 
@@ -64,7 +64,9 @@ _main().catch(err => {
   div.appendChild(pre);
   const parentNode = document.body.querySelector('app');
   if (parentNode) {
-    while(parentNode.firstChild) {parentNode.firstChild?.remove()}
+    while (parentNode.firstChild) {
+      parentNode.firstChild?.remove();
+    }
     parentNode.appendChild(div);
   } else {
     log('error', `error with _main() but couldn't find app element to render it`, err);

@@ -9,7 +9,7 @@
     "develop": "webpack-dev-server --config webpack.config.dev.js",
     "lint": "eslint --ext '.js,.jsx,.ts,.tsx' src",
     "lint:fix": "npm run lint -- --fix",
-    "prettier": "prettier --check \"src/**/*.ts\"",
+    "prettier": "prettier --check \"src/**/*.(ts|tsx)\"",
     "prettier:write": "npm run prettier -- --write",
     "tsc": "tsc -b",
     "test": "jest --verbose",
