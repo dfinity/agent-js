@@ -3,21 +3,20 @@
 const path = require("path");
 const TerserPlugin = require("terser-webpack-plugin");
 const dfxJson = require("./dfx.json");
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const {CleanWebpackPlugin} = require('clean-webpack-plugin')
 /* eslint-enable @typescript-eslint/no-var-requires */
-
-// Get the network name, or `local` by default.
-const getNetworkName = () => process.env["DFX_NETWORK"] || "local"
 
 // List of all aliases for canisters. This creates the module alias for
 // the `import ... from "ic:canisters/xyz"` where xyz is the name of a
 // canister.
 const aliases = Object.entries(dfxJson.canisters).reduce(
   (acc, [name, _value]) => {
+    // Get the network name, or `local` by default.
+    const networkName = process.env["DFX_NETWORK"] || "local";
     const outputRoot = path.join(
       __dirname,
       ".dfx",
-      getNetworkName(),
+      networkName,
       "canisters",
       name
     );
@@ -41,12 +40,14 @@ function generateWebpackConfigForCanister(name, info) {
     return;
   }
   return {
-    target: 'web',
     mode: "production",
     entry: {
       index: path.join(__dirname, info.frontend.entrypoint),
     },
-    devtool: 'cheap-source-map',
+    node: {
+      fs: "empty"
+    },
+    devtool: 'source-map',
     optimization: {
       minimize: true,
       minimizer: [new TerserPlugin()],
@@ -71,16 +72,13 @@ function generateWebpackConfigForCanister(name, info) {
           use: {
             loader: "ts-loader",
             options: {
-              configFile: path.join(__dirname, 'tsconfig.json'),
-              projectReferences: true,
+              // configFile: path.join(__dirname, 'tsconfig.json'),
+              // projectReferences: true,
             }
           }
         },
        { test: /\.css$/, use: ['style-loader','css-loader'] }
      ]
-    },
-    node: {
-      fs: "empty"
     },
     plugins: [
       new CleanWebpackPlugin(),
