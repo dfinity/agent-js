@@ -5,8 +5,20 @@ import { AuthenticationRequest } from '../idp-protocol/request';
 import { isMaybeAuthenticationResponseUrl } from '../idp-protocol/response';
 import { IdentityProviderAgentEnvelope, IdentityProviderIndicator, Transport } from './transport';
 
-interface IIdentityProviderAgent {
+/**
+ * Object that knows how to interact with an ic-id Identity Provider by sending/receiving messages.
+ */
+export interface IdentityProviderAgent {
+  /**
+   * Initiate Authentication by sending an AuthenticationRequest to the Identity Provider.
+   * @param command - parameters to build the AuthenticationRequest
+   */
   sendAuthenticationRequest(command: SendAuthenticationRequestCommand): Promise<void>;
+  /**
+   * Complete Authentication by receiving an AuthenticationResponse encoded in the provided URL (if present).
+   * @param url - URL containing AuthenticationResponse as query string parameters
+   *   (i.e. an oauth2 redirect_uri + accessTokenResponse)
+   */
   receiveAuthenticationResponse(url: URL): Promise<void>;
 }
 
@@ -15,7 +27,7 @@ type SendAuthenticationRequestCommand = {
   scope: Scope;
 };
 
-export class IdentityProviderAgent implements IIdentityProviderAgent {
+export class IdentityProviderAgent implements IdentityProviderAgent {
   #identityProvider: IdentityProviderIndicator;
   #transport: Transport<IdentityProviderAgentEnvelope>;
   #location: Pick<Location, 'href'>;
