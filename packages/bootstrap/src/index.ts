@@ -90,9 +90,9 @@ async function _main(spec: { render: ReturnType<typeof BootstrapRenderer> }) {
   const initialIdentity = new AnonymousIdentity();
   const identities = async function* () {
     yield initialIdentity;
-    for await (const docId of AuthenticationResponseIdentities(document)) {
-      bootstrapLog('debug', 'ben got docId', docId);
-      yield docId;
+    for await (const identity of AuthenticationResponseIdentities(document)) {
+      bootstrapLog('debug', 'got AuthenticationResponseIdentities identity', identity);
+      yield identity;
     }
   };
   const beforeunload = new Promise(resolve => {

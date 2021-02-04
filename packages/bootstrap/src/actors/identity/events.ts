@@ -3,6 +3,11 @@ import { createCustomEvent } from '@dfinity/authentication';
 
 export const BootstrapIdentityChangedEventName = 'https://internetcomputer.org/ns/authentication/BootstrapIdentityChangedEvent' as const;
 
+/**
+ * This is dispatched whenever `@dfinity/bootstrap`'s IdentityActor
+ * starts using a new Identity as its current identity.
+ * Only @dfinity/bootstrap should dispatch this.
+ */
 export type BootstrapIdentityChangedEvent = CustomEvent<IdentityDescriptor> & {
   type: typeof BootstrapIdentityChangedEventName;
 };
