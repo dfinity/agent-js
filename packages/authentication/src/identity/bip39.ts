@@ -22,6 +22,10 @@ export function bip39EntropyToMnemonic(seed: BinaryBlob): string {
   return bip39.entropyToMnemonic(seed.toString('hex'));
 }
 
+/**
+ * Generate a mnemonic phrase as described in BIP-39.
+ * https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki
+ */
 export function bip39GenerateMnemonic(): string {
   const entropy = new Uint32Array(32);
   crypto.getRandomValues(entropy);

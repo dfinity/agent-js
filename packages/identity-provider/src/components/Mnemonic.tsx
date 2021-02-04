@@ -61,7 +61,7 @@ interface MnemonicProps {
   onSubmit?: (val: HTMLFormElement) => void;
 }
 
-export const Mnemonic = (props: PropsWithoutRef<MnemonicProps>) => {
+export const Mnemonic = (props: PropsWithoutRef<MnemonicProps>): JSX.Element => {
   const { wordList, mode } = props;
 
   return (

@@ -6,8 +6,11 @@
   "scripts": {
     "build": "npm run tsc && npm run webpack",
     "ci": "npm run prettier && npm run lint && npm run build",
-    "lint": "tslint --project tsconfig.json --config tslint.json",
-    "lint:fix": "npm run lint -- --fix",
+    "lint": "npm run eslint && npm run tslint",
+    "tslint": "tslint --project tsconfig.json --config tslint.json",
+    "tslint:fix": "npm run lint -- --fix",
+    "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' src/actors src/dom-events.ts src/index.ts src/render.ts",
+    "eslint:fix": "npm run lint -- --fix",
     "prettier": "prettier --check \"src/**/*.ts\"",
     "prettier:write": "npm run prettier -- --write",
     "test": "jest --verbose",
@@ -37,7 +40,11 @@
     "webpack-cli": "^3.3.10",
     "webpack-dev-server": "^3.11.0",
     "whatwg-fetch": "^3.0.0",
-    "worker-plugin": "^4.0.3"
+    "worker-plugin": "^4.0.3",
+    "@typescript-eslint/eslint-plugin": "^4.14.2",
+    "@typescript-eslint/parser": "^4.14.2",
+    "eslint": "^7.19.0",
+    "eslint-plugin-jsdoc": "^31.6.0"
   },
   "dependencies": {
     "@dfinity/agent": "file://../agent",

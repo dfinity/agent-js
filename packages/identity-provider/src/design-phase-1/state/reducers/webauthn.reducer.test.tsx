@@ -1,14 +1,12 @@
-import { shallow, mount } from 'enzyme';
+import { mount } from 'enzyme';
 import * as React from 'react';
-import { WebAuthnIdentity } from '@dfinity/authentication';
 import { useReducer } from '../state-react';
-import { hexEncodeUintArray, hexToBytes } from '../../../bytes';
+import { hexToBytes } from '../../../bytes';
 import {act} from 'react-dom/test-utils';
 import assert from 'assert';
 import {WebAuthnReducer} from "./webauthn.reducer";
 import { Action } from "./webauthn.reducer";
 import { EffectLifecycleAction } from '../reducer-effects';
-import { latest } from 'immer/dist/internal';
 import PolyfillWebAuthnIdentity from "../../../testing/dom-nodejs-polyfills/PolyfillWebAuthnIdentity";
 
 describe('@dfinity/identity-provider/design-phase-1/reducers/webauthn.reducer', () => {
@@ -58,17 +56,19 @@ describe('@dfinity/identity-provider/design-phase-1/reducers/webauthn.reducer', 
     const button = el.find('button');
     button.simulate('click');
     expect(el.text()).toContain('didClick!')
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     await act(async () => {}) // wait for async effects
     const publicKeyCredentialCreatedAction = actions.find(({ type }) => type === 'WebAuthn/publicKeyCredentialCreated')
     assert.ok(publicKeyCredentialCreatedAction);
     switch (publicKeyCredentialCreatedAction.type) {
-      case "WebAuthn/publicKeyCredentialCreated":
+      case "WebAuthn/publicKeyCredentialCreated": {
         const { credential } = publicKeyCredentialCreatedAction.payload;
         const publicKey = Uint8Array.from(hexToBytes(credential.publicKey.hex))
         const credentialId = Uint8Array.from(hexToBytes(credential.id.hex))
         expect(publicKey.length).toBeGreaterThan(0);
         expect(credentialId.length).toBeGreaterThan(0);
         break;
+      }
       default:
         throw new Error('expected to find action of type "WebAuthn/publicKeyCredentialCreated"')
     }

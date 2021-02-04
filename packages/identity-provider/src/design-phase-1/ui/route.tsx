@@ -9,7 +9,6 @@ import { useStateStorage } from '../state/state-storage-react';
 import { StateToStringCodec } from '../state/state-serialization';
 import { hexToBytes } from 'src/bytes';
 import { WebAuthnIdentity} from '@dfinity/authentication';
-import * as icid from "../../protocol/ic-id-protocol"
 import AuthenticationScreenLayout from './layout/AuthenticationScreenLayout';
 import { ThemeProvider, Theme } from '@material-ui/core';
 import { IdentityProviderStateType } from '../state/state';
@@ -17,20 +16,28 @@ import IdentityProviderReducer from "../state/reducer";
 import AuthenticationController from '../AuthenticationController';
 import { AuthenticationResponseConsentProposal, createSignIdentity } from '../state/reducers/authentication';
 import { useReducer } from '../state/state-react';
+import * as authentication from "@dfinity/authentication";
 
 const stateStorage = SerializedStorage(
     LocalStorageKey('design-phase-1'),
     StateToStringCodec(IdentityProviderStateType),
 )
 
+/**
+ * Component for all routes of the 'design-phase-1' Identity Provider.
+ * @param props props
+ * @param props.NotFoundRoute - Component to render when the current URL doesn't match any route.
+ * @param props.theme - material-ui theme
+ * @param props.WebAuthnIdentity - knows how to interact with WebAuthn (or a stub in nodejs/nonbrowser).
+ */
 export default function DesignPhase0Route(props: {
     NotFoundRoute: React.ComponentType
     theme?: Theme
     WebAuthnIdentity: Pick<typeof WebAuthnIdentity, 'create'>
-}) {
+}): JSX.Element {
     const NotFoundRoute = props.NotFoundRoute;
     const location = useLocation()
-    const { url, path } = useRouteMatch()
+    const { path } = useRouteMatch()
     const initialState = React.useMemo(
         () => {
             try {
@@ -79,7 +86,7 @@ export default function DesignPhase0Route(props: {
     React.useEffect(
         () => {
             const searchParams = new URLSearchParams(location.search);
-            const icidMessage = icid.fromQueryString(searchParams)
+            const icidMessage = authentication.request.fromQueryString(searchParams)
             if ( ! icidMessage) return;
             if (icidMessage.type === "AuthenticationRequest") {
                 dispatch({
@@ -232,6 +239,9 @@ export default function DesignPhase0Route(props: {
 /**
  * Wrap children in a material-ui ThemeProvider if a theme prop is provided,
  * otherwise just render children.
+ * @param props props
+ * @param props.theme - @material-ui theme to customize UI
+ * @param props.children - element children
  */
 function MaybeTheme(props: { theme?: Theme, children: React.ReactNode }) {
   if ( ! props.theme) { return <>{props.children}</> }

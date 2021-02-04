@@ -7,7 +7,7 @@
     "build": "tsc -b",
     "bundle": "npm run build",
     "ci": "npm run prettier && npm run lint && npm run build && npm run test",
-    "lint": "npx eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
+    "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
     "prepare": "npm run build",
     "prettier": "prettier --check \"src/**/*.ts\"",
@@ -45,27 +45,5 @@
     "tslint": "^5.20.0",
     "typescript": "^3.9.7",
     "whatwg-fetch": "^3.0.0"
-  },
-  "eslintConfig": {
-    "extends": [
-      "eslint:recommended",
-      "plugin:@typescript-eslint/recommended",
-      "plugin:jsdoc/recommended"
-    ],
-    "parser": "@typescript-eslint/parser",
-    "plugins": [
-      "@typescript-eslint",
-      "jsdoc"
-    ],
-    "rules": {
-      "jsdoc/newline-after-description": "off",
-      "jsdoc/require-returns-type": "off",
-      "jsdoc/require-param-type": "off",
-      "jsdoc/require-jsdoc": ["warn", {
-        "publicOnly": true
-      }],
-      "jsdoc/require-returns": "off",
-      "jsdoc/require-returns-description": "warn"
-    }
   }
 }

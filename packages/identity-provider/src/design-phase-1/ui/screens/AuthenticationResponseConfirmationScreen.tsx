@@ -1,20 +1,26 @@
 import * as React from "react";
 import { Button } from "src/components/Button";
-import { hexEncodeUintArray } from "src/bytes";
 import SimpleScreenLayout from "../layout/SimpleScreenLayout";
-import { Typography, makeStyles } from "@material-ui/core";
-import Skeleton from "@material-ui/lab/Skeleton";
-import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import VerifiedUserIcon from '@material-ui/icons/VerifiedUser';
-import * as icid from "../../../protocol/ic-id-protocol"
+import * as authentication from "@dfinity/authentication";
+
+/**
+ * Last screen. Indicate that there is now a whole AuthenticationResponse.
+ * The end-user can click to finish the authentication flow,
+ * and send the response back to the RP redirect_uri via redirect.
+ * @param props props
+ * @param props.request - ic-id AuthenticationRequest
+ * @param props.response - ic-id AuthenticationResponse
+ * @param props.redirectWithResponse - Call this to finish the authn flow and send the response.
+ */
 export default function (props: {
-    request: icid.AuthenticationRequest
-    response: icid.AuthenticationResponse
+    request: authentication.request.AuthenticationRequest
+    response: authentication.response.AuthenticationResponse
     redirectWithResponse(spec: {
-        request: icid.AuthenticationRequest
-        response: icid.AuthenticationResponse
+        request: authentication.request.AuthenticationRequest
+        response: authentication.response.AuthenticationResponse
     }): void;
-}) {
+}): JSX.Element {
     const { request, response } = props;
     console.log('AuthenticationResponseConfirmationScreen', { request, response })
     return <>
@@ -34,23 +40,7 @@ export default function (props: {
     </>
 }
 
-
-const styler = () => {
-    return {
-    }
-}
-
-function CallToAction(props: {
-    nextHref: string;
-}) {
-    return <>
-        <Button role="button" data-test-id="deny-authorize-session">Deny</Button>
-        <Button role="button" variant="outlined" color="primary" data-test-id="allow-authorize-session" href={props.nextHref}>Allow</Button>
-    </>
-}
-
 function HeroImage() {
-    const styles = makeStyles(styler)();
     return <>
         <VerifiedUserIcon style={{fontSize: '4em'}} />
     </>

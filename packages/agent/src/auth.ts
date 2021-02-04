@@ -2,7 +2,7 @@ import { Buffer } from 'buffer/';
 import { HttpAgentRequest } from './http_agent_types';
 import { Principal } from './principal';
 import { requestIdOf } from './request_id';
-import { BinaryBlob, blobFromBuffer, blobFromUint8Array, DerEncodedBlob } from './types';
+import { BinaryBlob, blobFromBuffer, DerEncodedBlob } from './types';
 
 const domainSeparator = Buffer.from(new TextEncoder().encode('\x0Aic-request'));
 
@@ -38,7 +38,7 @@ export interface Identity {
    * after the transforms on the body of a request. The returned object can be
    * anything, but must be serializable to CBOR.
    */
-  transformRequest(request: HttpAgentRequest): Promise<any>;
+  transformRequest(request: HttpAgentRequest): Promise<unknown>;
 }
 
 /**
@@ -67,8 +67,9 @@ export abstract class SignIdentity implements Identity {
    * Transform a request into a signed version of the request. This is done last
    * after the transforms on the body of a request. The returned object can be
    * anything, but must be serializable to CBOR.
+   * @param request - internet computer request to transform
    */
-  public async transformRequest(request: HttpAgentRequest): Promise<any> {
+  public async transformRequest(request: HttpAgentRequest): Promise<unknown> {
     const { body, ...fields } = request;
     const requestId = await requestIdOf(body);
     return {
@@ -87,7 +88,7 @@ export class AnonymousIdentity implements Identity {
     return Principal.anonymous();
   }
 
-  public async transformRequest(request: HttpAgentRequest): Promise<any> {
+  public async transformRequest(request: HttpAgentRequest): Promise<unknown> {
     return {
       ...request,
       body: { content: request.body },
@@ -97,13 +98,15 @@ export class AnonymousIdentity implements Identity {
 
 /*
  * We need to communicate with other agents on the page about identities,
- * but those messages may need to go across boundaries where it's not possible to serialize/deserialize object prototypes easily.
- * So these are lightweight, serializable objects that contain enough information to recreate SignIdentities,
- * but don't commit to having all methods of SignIdentity.
- * 
+ * but those messages may need to go across boundaries where it's not possible to
+ * serialize/deserialize object prototypes easily.
+ * So these are lightweight, serializable objects that contain enough information to recreate
+ * SignIdentities, but don't commit to having all methods of SignIdentity.
+ *
  * Use Case:
- * * DOM Events that let differently-versioned components communicate to one another about Identities,
- *   even if they're using slightly different versions of agent packages to create/interpret them.
+ * * DOM Events that let differently-versioned components communicate to one another about
+ *   Identities, even if they're using slightly different versions of agent packages to
+ *   create/interpret them.
  */
 export type IdentityDescriptor =
   | { type: 'AnonymousIdentity' }

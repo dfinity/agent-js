@@ -1,21 +1,26 @@
 import React, { Component } from 'react';
 
-export class IDPRootErrorBoundary extends Component<{}, { hasError: boolean }> {
-  public static getDerivedStateFromError(error: Error) {
+interface Props {
+  children?: React.ReactNode
+}
+interface State { hasError: boolean }
+
+export class IDPRootErrorBoundary extends Component<Props, State> {
+  public static getDerivedStateFromError(error: Error): State {
     console.error('IDPRootErrorBoundary', error)
     // Update state so the next render will show the fallback UI.
     return { hasError: Boolean(error) };
   }
-  constructor(props: any) {
+  constructor(props: Props) {
     super(props);
     this.state = { hasError: false };
   }
-  public render() {
+  public render(): JSX.Element {
     if (this.state.hasError) {
       // You can render any custom fallback UI
       return <h2>Something went wrong.</h2>;
     }
-    return this.props.children;
+    return <>{this.props.children}</>
   }
 }
 

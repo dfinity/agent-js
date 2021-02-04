@@ -54,8 +54,7 @@ export function UrlTransport(
 
 /**
  * Transport that sends messages by converting them to a URL and redirecting this browsing context to the URL.
- * @param this - Window
- * @param this.location - current browsing context location
+ * @param location - current browsing context location
  * @returns transport that sends envelopes via redirect
  */
 export function RedirectTransport(

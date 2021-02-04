@@ -1,8 +1,8 @@
 import { blobFromUint8Array, Identity, Principal } from '@dfinity/agent';
 import {
-  Ed25519KeyIdentity,
   DelegationChain,
   DelegationIdentity,
+  Ed25519KeyIdentity,
   WebAuthnIdentity,
 } from '@dfinity/authentication';
 import localforage from 'localforage';

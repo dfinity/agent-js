@@ -30,12 +30,16 @@ export interface GlobalInternetComputer {
     /**
      * Simple advertisement of features in whoever is managing this `globalThis.ic`.
      * Use Case
-     * * Scripts that know they need an ic feature can detect using this and, if not present (e.g. old bootstrap version), they can dynamically include their own and continue operating (e.g. polyfill).
-     *   This is useful when adding features to bootstrap. You can still deploy your canister to an ic with old bootstrap, then just dynamically reload your own new-version bootstrap if needed.
+     * * Scripts that know they need an ic feature can detect using this and, if not present
+     *   (e.g. old bootstrap version), they can dynamically include their own and continue
+     *   operating (e.g. polyfill).
+     *   This is useful when adding features to bootstrap. You can still deploy your canister to
+     *   an ic with old bootstrap, then just dynamically reload your own new-version bootstrap if
+     *   needed.
      */
     features?: {
       /** This is falsy if authn isn't supported at all */
-      authentication?: Boolean;
+      authentication?: boolean;
     };
     /**
      * The Actor for the canister being used for the frontend. Normally should correspond to the
@@ -45,6 +49,6 @@ export interface GlobalInternetComputer {
      *
      * If a canister ID could not be found, no actor were created and this is undefined.
      */
-    canister: ActorSubclass<{}> | undefined;
+    canister: ActorSubclass | undefined;
   };
 }

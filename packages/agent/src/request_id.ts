@@ -5,10 +5,18 @@ import { BinaryBlob, blobFromBuffer, blobFromUint8Array, blobToHex } from './typ
 import { lebEncode } from './utils/leb128';
 
 export type RequestId = BinaryBlob & { __requestId__: void };
+/**
+ * get RequestId as hex-encoded blob.
+ * @param requestId - RequestId to hex
+ */
 export function toHex(requestId: RequestId): string {
   return blobToHex(requestId);
 }
 
+/**
+ * sha256 hash the provided Buffer
+ * @param data - input to hash function
+ */
 export async function hash(data: Buffer): Promise<BinaryBlob> {
   const hashed: ArrayBuffer = await crypto.subtle.digest(
     {
@@ -20,13 +28,23 @@ export async function hash(data: Buffer): Promise<BinaryBlob> {
 }
 
 /**
- * Type Guard for BigNumber.js that have a protottype we don't have a reference to, so can't do an `instanceof` check.
- * This can happen in certain sets of dependency graphs for the agent-js-monorepo, e.g. when used by authentication-demo.
- * All this really verifies is the truthiness of the `_isBigNumber` property that the source code defines as protected.
+ * Type Guard for BigNumber.js that have a protottype we don't have a reference to, so can't do
+ * an `instanceof` check.
+ * This can happen in certain sets of dependency graphs for the agent-js-monorepo, e.g. when used
+ * by authentication-demo.
+ * All this really verifies is the truthiness of the `_isBigNumber` property that the source code
+ * defines as protected.
  * @param v - value to check for type=BigNumber.js
  */
-function isProbablyBigNumber(v: any): v is BigNumber {
-  return v && (v as any)._isBigNumber
+function isProbablyBigNumber(v: unknown): v is BigNumber {
+  interface BigNumberProtected {
+    _isBigNumber: boolean;
+  }
+  return v && (v as BigNumberProtected)._isBigNumber;
+}
+
+interface ToHashable {
+  toHash(): unknown;
 }
 
 async function hashValue(value: unknown): Promise<BinaryBlob> {
@@ -36,7 +54,8 @@ async function hashValue(value: unknown): Promise<BinaryBlob> {
     return hashString(value);
   } else if (
     typeof value === 'bigint' ||
-    // In some odd cases, e.g. `Object.assign(BigInt("1"), { a: 1 })` on node@v14.13.1, the result has typeof === 'object', but is still also a BigInt, so also check `instanceof`
+    // In some odd cases, e.g. `Object.assign(BigInt("1"), { a: 1 })` on node@v14.13.1, the result
+    // has typeof === 'object', but is still also a BigInt, so also check `instanceof`
     value instanceof BigInt
   ) {
     return hash(lebEncode(value));
@@ -54,21 +73,23 @@ async function hashValue(value: unknown): Promise<BinaryBlob> {
   } else if (
     typeof value === 'object' &&
     value !== null &&
-    typeof (value as any).toHash === 'function'
+    typeof (value as ToHashable).toHash === 'function'
   ) {
-    return Promise.resolve((value as any).toHash()).then(x => hashValue(x));
+    return Promise.resolve((value as ToHashable).toHash()).then(x => hashValue(x));
   } else if (value instanceof Promise) {
     return value.then(x => hashValue(x));
   } else if (isProbablyBigNumber(value)) {
-    // Do this check much later than the other BigNumber check because this one is much less type-safe.
+    // Do this check much later than the other BigNumber check because this one is much less
+    // type-safe.
     // So we want to try all the high-assurance type guards before this 'probable' one.
     return hash(lebEncode(value) as BinaryBlob);
   }
   throw Object.assign(
     new Error(`Attempt to hash a value of unsupported type: ${value}`), {
-      // include so logs/callers can understand the confusing value. (when stringified in error message, prototype info is lost)
+      // include so logs/callers can understand the confusing value.
+      // (when stringified in error message, prototype info is lost)
       value,
-    }
+    },
   );
 }
 
@@ -82,9 +103,16 @@ function concat(bs: BinaryBlob[]): BinaryBlob {
   return blobFromBuffer(Buffer.concat(bs));
 }
 
+/**
+ * Get the RequestId of the provided ic-ref request.
+ * RequestId is the result of the representation-independent-hash function.
+ * https://docs.dfinity.systems/public/#api-hash-of-map
+ * @param request - ic-ref request to hash into RequestId
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function requestIdOf(request: Record<string, any>): Promise<RequestId> {
   const hashed: Array<Promise<[BinaryBlob, BinaryBlob]>> = Object.entries(request)
-    .filter(([_, value]) => value !== undefined)
+    .filter(([, value]) => value !== undefined)
     .map(async ([key, value]: [string, unknown]) => {
       const hashedKey = await hashString(key);
       const hashedValue = await hashValue(value);
@@ -94,7 +122,7 @@ export async function requestIdOf(request: Record<string, any>): Promise<Request
 
   const traversed: Array<[BinaryBlob, BinaryBlob]> = await Promise.all(hashed);
 
-  const sorted: Array<[BinaryBlob, BinaryBlob]> = traversed.sort(([k1, v1], [k2, v2]) => {
+  const sorted: Array<[BinaryBlob, BinaryBlob]> = traversed.sort(([k1], [k2]) => {
     return Buffer.compare(Buffer.from(k1), Buffer.from(k2));
   });
 

@@ -38,15 +38,21 @@ const Container: React.FunctionComponent = ({ children }) => {
     </>
 }
 
+/**
+ * Common Layout for all Authentication Screens.
+ * * Add padding around the whole page.
+ * * render on <Paper />
+ * @param props props
+ * @param props.children - elements to render inside layout
+ */
 export default function AuthenticationScreenLayout (props: {
     children: React.ReactNode
-}) {
+}): JSX.Element {
     return <>
     <Container>
         <PaddedPaper>        
             <div>{props.children}</div>
         </PaddedPaper>
     </Container>
-
     </>
 }

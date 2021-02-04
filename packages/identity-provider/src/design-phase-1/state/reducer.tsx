@@ -1,8 +1,5 @@
-import * as React from "react";
 import { IdentityProviderState as State } from "./state";
 import { IdentityProviderAction as Action } from "./action";
-import { hexEncodeUintArray } from "../../bytes";
-import produce from "immer";
 import { combineReducers } from "redux";
 import * as authenticationReducer from "./reducers/authentication";
 import * as delegationReducer from "./reducers/delegation";
@@ -12,6 +9,13 @@ import { EffectRequested, IEffectiveReducer } from "./reducer-effects";
 import { WebAuthnIdentity } from "@dfinity/authentication";
 import { History } from "history";
 
+/**
+ * EffectiveReducer for IdentityProvider. Builds initial state and updates state based on known actions.
+ * @param spec spec
+ * @param spec.forEachAction - called with each action
+ * @param spec.history - History object used to control 'Navigate' actions.
+ * @param spec.WebAuthnIdentity - can create WebAuthnIdentity instances (non-browser requires a stub)
+ */
 export default function IdentityProviderReducer(spec: {
     /** Useful for logging effects */
     forEachAction?(action: Action): void;
@@ -25,6 +29,12 @@ export default function IdentityProviderReducer(spec: {
     })
 }
 
+/**
+ * Create function that produces effects for a given action.
+ * @param spec spec
+ * @param spec.history - History object used to control 'Navigate' actions.
+ * @param spec.WebAuthnIdentity - can create WebAuthnIdentity instances (non-browser requires a stub)
+ */
 export function Effector(spec: {
     history: History;
     WebAuthnIdentity: Pick<typeof WebAuthnIdentity, 'create'>
@@ -34,7 +44,7 @@ export function Effector(spec: {
             case "EffectRequested":
                 console.log('design-phase-1/reducer/Effector EffectRequested (term)', action)
                 break;
-            case "Navigate":
+            case "Navigate": {
                 const navigateViaLocationAssignEffect: EffectRequested<Action> = {
                     type: "EffectRequested" as const,
                     payload: {
@@ -58,6 +68,7 @@ export function Effector(spec: {
                     }
                 }
                 return navigateViaLocationAssignEffect;
+            }
             case "StateStored":
                 return;
             case "AuthenticationRequestReceived":
@@ -71,9 +82,10 @@ export function Effector(spec: {
             case "reset":
             case "DelegationRootSignerChanged":
                 break;
-            default:
+            default: {
                 // Intentionally exhaustive. If compiler complains, add more cases above to explicitly handle.
-                let x: never = action;
+                // const x: never = action.type;
+            }
         }
         return;
     }
@@ -91,6 +103,10 @@ export const reduce = function (state: State|undefined, action: Action): State {
     return newState;
 }
 
+/**
+ * construct new state.
+ * @param initialState - initialState suggested by someone else.
+ */
 export function init(initialState?: State|undefined): State {
     return initialState||{
         authentication: authenticationReducer.init(),

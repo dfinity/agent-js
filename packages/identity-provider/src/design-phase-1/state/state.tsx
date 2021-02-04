@@ -19,5 +19,5 @@ export type IdentityProviderState = t.TypeOf<typeof IdentityProviderStateType>
 /**
  * asserts that IdentityProviderState is compatible with plain JSON
  * If you must break this, consider declaring another type that represents the version of the state that *is* json-serializable.
-*/
+ */
 export type JsonnableIdentityProviderState = Jsonnable<IdentityProviderState>

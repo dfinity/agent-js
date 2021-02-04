@@ -4,18 +4,25 @@ import {
   SignIdentity,
 } from '@dfinity/agent';
 import {
-  response as icidResponse,
   DelegationChain,
   DelegationIdentity,
   Ed25519KeyIdentity,
+  response as icidResponse,
 } from '@dfinity/authentication';
 
-export default function DocumentIdentities(document: Document) {
+/**
+ * AsyncIterable of Identities that can be generated as a result of handling
+ * AuthenticationResponseDetectedEvent on a Document.
+ * @param events - EventTarget to listen for AuthenticationResponseDetectedEvents
+ */
+export default function DocumentIdentities(
+  events: EventTarget,
+): AsyncIterable<SignIdentity|AnonymousIdentity> {
   const log = makeLog('DocumentIdentities');
   const identities: AsyncIterable<SignIdentity | AnonymousIdentity> = (async function* () {
     // Wait for AuthenticationResponseDetectedEvents
-    for await (const event of AuthenticationResponseDetectedEventIterable(document)) {
-      log('debug', 'handling AuthenticationResponseDetectedEvent', {event})
+    for await (const event of AuthenticationResponseDetectedEventIterable(events)) {
+      log('debug', 'handling AuthenticationResponseDetectedEvent', {event});
       if (!(event instanceof CustomEvent)) {
         log('warn', 'got unexpected event that is not a CustomEvent', { event });
         continue;
@@ -35,7 +42,7 @@ export default function DocumentIdentities(document: Document) {
         });
         return delegationIdentity;
       })();
-      log('debug', 'about to yield', identity)
+      log('debug', 'about to yield', identity);
       yield identity;
     }
   })();
@@ -48,7 +55,7 @@ function AuthenticationResponseDetectedEventIterable(
   const idChangedEventName = 'https://internetcomputer.org/ns/authentication/AuthenticationResponseDetectedEvent' as const;
   const events: AsyncIterable<Event> = (async function* () {
     while (true) {
-      const nextEvent = await new Promise<Event>((resolve, reject) => {
+      const nextEvent = await new Promise<Event>(resolve => {
         spec.addEventListener(idChangedEventName, resolve, { once: true });
       });
       yield nextEvent;

@@ -1,18 +1,18 @@
-import { shallow, mount } from 'enzyme';
+import { mount } from 'enzyme';
 import * as React from "react";
 import WelcomeScreen from "./WelcomeScreen";
 
 describe('@dfinity/identity-provider/design-phase-0/WelcomeScren', () => {
     it('renders with content', () => {
+        function noop() {/**/}
         const el = mount(
             <WelcomeScreen
-                useIdentity={() => {}}
+                useIdentity={noop}
                 identity={undefined}
-                createProfile={() => {}}
+                createProfile={noop}
             />
         )
         expect(el.find('[data-test-id="next"]' ).hostNodes().text().toLowerCase()).toContain('create profile')
         expect(el.find('[data-test-id="title"]').hostNodes().text().toLowerCase()).toContain('getting started')
-        // expect(el.text().toLowerCase()).toContain('already have an identity profile? login')
     })
 });

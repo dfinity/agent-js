@@ -11,7 +11,34 @@
     "@dfinity/bootstrap": "file://./packages/bootstrap",
     "@dfinity/identity-provider": "file://./packages/identity-provider"
   },
+  "eslintConfig": {
+    "root": true,
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/recommended",
+      "plugin:jsdoc/recommended"
+    ],
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+      "@typescript-eslint",
+      "jsdoc"
+    ],
+    "rules": {
+      "jsdoc/newline-after-description": "off",
+      "jsdoc/require-returns-type": "off",
+      "jsdoc/require-param-type": "off",
+      "jsdoc/require-jsdoc": [
+        "warn",
+        {
+          "publicOnly": true
+        }
+      ],
+      "jsdoc/require-returns": "off",
+      "jsdoc/require-returns-description": "warn"
+    }
+  },
   "scripts": {
+    "lint": "bin/lint",
     "postinstall": "bin/npm-postinstall",
     "prepare": "bin/build",
     "e2e": "bin/e2e",

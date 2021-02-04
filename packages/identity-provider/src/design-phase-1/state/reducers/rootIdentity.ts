@@ -1,4 +1,3 @@
-import * as icid from '../../../protocol/ic-id-protocol';
 import * as t from 'io-ts';
 import { createSignIdentity } from './authentication';
 import { hexEncodeUintArray } from '../../../bytes';
@@ -47,6 +46,12 @@ export const StateCodec = t.type({
 
 export type State = t.TypeOf<typeof StateCodec>;
 
+/**
+ * Reduce oldState + action -> newState.
+ * @param state - state to update
+ * @param action - action to use to update state
+ * @returns new state
+ */
 export function reduce(state: State | undefined = init(), action: Action): State {
   switch (action.type) {
     case 'reset':
@@ -65,6 +70,9 @@ export function reduce(state: State | undefined = init(), action: Action): State
   return state;
 }
 
+/**
+ * Create initial state
+ */
 export function init(): State {
   return {
     publicKey: undefined,

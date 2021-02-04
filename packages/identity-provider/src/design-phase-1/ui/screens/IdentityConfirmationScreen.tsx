@@ -2,32 +2,31 @@ import * as React from "react";
 import { Button } from "src/components/Button";
 import { hexEncodeUintArray } from "src/bytes";
 import SimpleScreenLayout from "../layout/SimpleScreenLayout";
-import Skeleton from "@material-ui/lab/Skeleton";
 import { Typography, Theme, makeStyles } from "@material-ui/core";
-import { Styles, StyleRulesCallback } from "@material-ui/core/styles/withStyles";
+import { StyleRulesCallback } from "@material-ui/core/styles/withStyles";
 import EmojiEmotionsIcon from '@material-ui/icons/EmojiEmotions';
 
 export type Identity = {
     toDer(): ArrayBuffer
 }
 
-const styler: StyleRulesCallback<Theme, {}> = () => ({
+const styler: StyleRulesCallback<Theme, Record<string,unknown>> = () => ({
     overflowBreakWords: {
         overflowWrap: 'break-word'
     }
 })
 
 /**
- * Simple Screen Layout for Authentication Screens.
- * This arranges the elements within the AuthenticationScreenLayout,
- *   at least for screens that all have a common, simple structure
- *   that includes Hero Image, Title, Body, Call To Action buttons.
+ * Screen that shows the end-user the identity they've selected so they can confirm their choice.
+ * @param props props
+ * @param props.next - href of URL to go to next after clicking the main CallToAction
+ * @param props.identity - Identity chosen by the end-user that we want them to confirm.
  */
 export default function (props: {
     /** href of page to go to when user clicks 'next' button */
     next: string;
     identity?: Identity
-}) {
+}): JSX.Element {
     const { identity } = props;
     return <>
         <div data-test-id="identity-confirmation-screen">

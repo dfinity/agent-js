@@ -5,7 +5,7 @@ export type JsonCompatible<T> = {
     ? T[P]
     : Pick<T, P> extends Required<Pick<T, P>>
     ? never
-    : T[P] extends (() => any) | undefined
+    : T[P] extends (() => unknown) | undefined
     ? never
     : JsonCompatible<T[P]>;
 };

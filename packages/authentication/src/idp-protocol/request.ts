@@ -1,4 +1,6 @@
 import * as oauth2 from './oauth2';
+import { DelegationChain } from '../identity/delegation';
+import { hexEncodeUintArray } from './bytes';
 
 export type AuthenticationRequest = {
   type: 'AuthenticationRequest';
@@ -47,4 +49,36 @@ export function createAuthenticationRequestUrl(params: {
     url.searchParams.set(key, valueUriComponent);
   }
   return url;
+}
+
+/**
+ * Parse URL query string parameters to an AuthenticationRequest, if possible.
+ * @param params - query string parameters to parse
+ */
+export function fromQueryString(params: URLSearchParams): AuthenticationRequest|undefined {
+  const oauth2Message = oauth2.fromQueryString(params);
+  if ( ! ('redirect_uri' in oauth2Message)) { return }
+  const oauth2Request: oauth2.OAuth2AuthorizationRequest = oauth2Message;
+  const authenticationRequest: AuthenticationRequest = {
+    type: 'AuthenticationRequest',
+    sessionIdentity: {
+      hex: oauth2Request.login_hint,
+    },
+    redirectUri: oauth2Request.redirect_uri,
+    state: oauth2Request.state,
+    scope: oauth2Request.scope,
+  }
+  return authenticationRequest;
+}
+
+/**
+ * Create a Bearer Token to encode the result of IC Authentication.
+ * @param spec spec
+ * @param spec.delegationChain - chain of policies/sigs that delegate authority
+ */
+export function createBearerToken(spec: { delegationChain: DelegationChain }): string {
+  const bearerToken = hexEncodeUintArray(
+    new TextEncoder().encode(JSON.stringify(spec.delegationChain)),
+  );
+  return bearerToken;
 }
