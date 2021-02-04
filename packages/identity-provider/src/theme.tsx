@@ -40,31 +40,33 @@ const primaryButton = {
   color: 'white',
   letterSpacing: '2px',
 };
-export const theme = responsiveFontSizes(createMuiTheme({
-  typography: {
-    fontFamily: [
-      '"Sharp Sans"',
-      '"Segoe UI"',
-      '"Helvetica Neue"',
-      'Arial',
-      'sans-serif',
-      '"Apple Color Emoji"',
-      '"Segoe UI Emoji"',
-      '"Segoe UI Symbol"',
-    ].join(','),
-  },
-  overrides: {
-    MuiButton: {
-      textPrimary: { ...primaryButton },
-      outlinedPrimary: primaryButton,
-      containedPrimary: primaryButton,
+export const theme = responsiveFontSizes(
+  createMuiTheme({
+    typography: {
+      fontFamily: [
+        '"Sharp Sans"',
+        '"Segoe UI"',
+        '"Helvetica Neue"',
+        'Arial',
+        'sans-serif',
+        '"Apple Color Emoji"',
+        '"Segoe UI Emoji"',
+        '"Segoe UI Symbol"',
+      ].join(','),
     },
-    MuiCssBaseline: {
-      '@global': {
-        '@font-face': [sharpSansBlack, sharpSansMedium, sharpSansBold],
+    overrides: {
+      MuiButton: {
+        textPrimary: { ...primaryButton },
+        outlinedPrimary: primaryButton,
+        containedPrimary: primaryButton,
+      },
+      MuiCssBaseline: {
+        '@global': {
+          '@font-face': [sharpSansBlack, sharpSansMedium, sharpSansBold],
+        },
       },
     },
-  },
-}));
+  }),
+);
 
 export default theme;

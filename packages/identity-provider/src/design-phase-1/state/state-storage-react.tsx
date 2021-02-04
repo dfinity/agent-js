@@ -1,10 +1,10 @@
-import * as React from "react";
-import { IStorage } from "./state-storage";
+import * as React from 'react';
+import { IStorage } from './state-storage';
 
 export type StateStoredAction<S> = {
-    type: "StateStored",
-    payload: { state: S }
-}
+  type: 'StateStored';
+  payload: { state: S };
+};
 
 /**
  * React hook to make use of Stored state.
@@ -14,18 +14,15 @@ export type StateStoredAction<S> = {
  * @param dispatch - called with StateStored action whenever state is set
  */
 export function useStateStorage<State>(
-    storage: IStorage<State>,
-    state: State,
-    dispatch: React.Dispatch<StateStoredAction<State>>
+  storage: IStorage<State>,
+  state: State,
+  dispatch: React.Dispatch<StateStoredAction<State>>,
 ): void {
-    React.useEffect(
-        () => {
-            storage.set(state)
-            dispatch({
-                type: "StateStored",
-                payload: { state },
-            })
-        },
-        [state]
-    )
+  React.useEffect(() => {
+    storage.set(state);
+    dispatch({
+      type: 'StateStored',
+      payload: { state },
+    });
+  }, [state]);
 }

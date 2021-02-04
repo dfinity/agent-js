@@ -7,5 +7,5 @@ import React from 'react';
  * @param props props
  */
 export function Alert(props: AlertProps): JSX.Element {
-  return <MuiAlert elevation={6} variant="filled" {...props} />;
+  return <MuiAlert elevation={6} variant='filled' {...props} />;
 }
