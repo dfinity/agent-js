@@ -13,6 +13,10 @@ export function isMaybeAuthenticationResponseUrl(url: URL | unknown): boolean {
   return (url as URL)?.searchParams?.has('access_token');
 }
 
+/**
+ * Response from ic-id Identity Provider containing result of authentication.
+ * See 'ic-id-protocol.md'.
+ */
 export type AuthenticationResponse = {
   type: 'AuthenticationResponse';
   accessToken: string;

@@ -1,5 +1,8 @@
 import { Principal } from '@dfinity/agent';
 
+/**
+ * Scope that represents ability to make requests to an IC Canister.
+ */
 export type ICanisterScope = {
   type: 'CanisterScope';
   principal: Principal;

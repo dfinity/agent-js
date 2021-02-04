@@ -15,10 +15,10 @@ import {
  * AuthenticationResponseDetectedEvent on a Document.
  * @param events - EventTarget to listen for AuthenticationResponseDetectedEvents
  */
-export default function DocumentIdentities(
+export default function AuthenticationResponseIdentities(
   events: EventTarget,
 ): AsyncIterable<SignIdentity|AnonymousIdentity> {
-  const log = makeLog('DocumentIdentities');
+  const log = makeLog('AuthenticationResponseIdentities');
   const identities: AsyncIterable<SignIdentity | AnonymousIdentity> = (async function* () {
     // Wait for AuthenticationResponseDetectedEvents
     for await (const event of AuthenticationResponseDetectedEventIterable(events)) {
