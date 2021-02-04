@@ -1,5 +1,4 @@
-import { pipe } from 'fp-ts/lib/function';
-import { left, fold, Either } from 'fp-ts/lib/Either';
+import { Either } from 'fp-ts/lib/Either';
 import * as t from 'io-ts';
 
 export interface Codec<A, I, O> {
@@ -8,7 +7,8 @@ export interface Codec<A, I, O> {
 }
 
 /**
- * When JSON.stringify is not enough, consider using io-ts Codecs to make these composable.
+ * Given a Codec, return another Codec that encodes to a string using JSON.stringify.
+ * @param StateCodec - io-ts Codec for state object
  */
 export function StateToStringCodec<State>(
   StateCodec: t.Type<State>,
@@ -25,6 +25,11 @@ export function StateToStringCodec<State>(
   }
 }
 
+/**
+ * Codec combinator to add a default value.
+ * @param type - io-ts Type to wrap with default
+ * @param defaultValue - default to use for `type`
+ */
 export function withDefault<T extends t.Mixed>(
   type: T,
   defaultValue: t.TypeOf<T>,

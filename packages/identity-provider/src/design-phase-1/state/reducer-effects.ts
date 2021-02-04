@@ -17,10 +17,15 @@ export type EffectRequested<Action> = {
   };
 };
 
+/**
+ * Handle a given effect, returning a promise of the effect being fully handled.
+ * @param dispatch - call this to dispatch more actions
+ * @param effect - effect to handle
+ */
 export async function handleEffect<A extends AnyStandardAction>(
   dispatch: (action: A | EffectLifecycleAction) => void,
   effect: EffectRequested<A>,
-) {
+): Promise<void> {
   switch (effect.type) {
     case 'EffectRequested':
       await (async () => {
@@ -50,7 +55,9 @@ export async function handleEffect<A extends AnyStandardAction>(
         });
       })();
       break;
-    default:
-      let x: never = effect.type;
+    default: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const x: never = effect.type;
+    }
   }
 }

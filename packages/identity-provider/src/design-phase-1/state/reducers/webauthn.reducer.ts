@@ -1,6 +1,6 @@
 import { WebAuthnIdentity } from '@dfinity/authentication';
 import { IEffectiveReducer, EffectRequested } from '../reducer-effects';
-import { hexEncodeUintArray, hexToBytes } from '../../../bytes';
+import { hexEncodeUintArray } from '../../../bytes';
 import * as t from 'io-ts';
 import { withDefault } from '../state-serialization';
 
@@ -45,6 +45,12 @@ export type Action =
       };
     };
 
+/**
+ * Reducer for WebAuthn State.
+ * @param spec spec
+ * @param spec.forEachAction - if provided, called with each action reduced
+ * @param spec.WebAuthnIdentity - can create WebAuthnIdentity instances (non-browser requires a stub)
+ */
 export function WebAuthnReducer(spec: {
   /** Useful for logging effects */
   forEachAction?(action: Action): void;
@@ -57,12 +63,21 @@ export function WebAuthnReducer(spec: {
   }
 }
 
+/**
+ * Create initial state
+ */
 export function init(): State {
   return {
     webAuthnWorks: true,
   };
 }
 
+/**
+ * Reduce (oldState + action) => newState
+ * @param state - previous state
+ * @param action - new action to use to update state
+ * @returns updated state
+ */
 export function reduce(state: State | undefined = init(), action: Action): State {
   switch (action.type) {
     case 'WebAuthn/publicKeyCredentialCreated':
@@ -76,6 +91,15 @@ export function reduce(state: State | undefined = init(), action: Action): State
   return state;
 }
 
+/**
+ * Create EffectConstructor for webauthn functionality.
+ * Handles:
+ * * WebAuthn/publicKeyCredentialRequested
+ *   * EffectRequested: use WebAuthnIdentity to create a new publicKeyCredential,
+ *     then dispatch WebAuthn/publicKeyCredentialCreated
+ * @param spec spec
+ * @param spec.WebAuthnIdentity - can create WebAuthnIdentity instances (non-browser requires a stub)
+ */
 export function effector(spec: {
   WebAuthnIdentity: Pick<typeof WebAuthnIdentity, 'create'>;
 }): IEffectiveReducer<State, Action>['effect'] {

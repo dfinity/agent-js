@@ -1,15 +1,11 @@
-import { shallow, mount } from 'enzyme';
-import * as React from 'react';
-import { StateToStringCodec, Codec } from './state-serialization';
+import { StateToStringCodec } from './state-serialization';
 import { IdentityProviderState } from './state';
-import { IStorage } from 'src/relying-party-demo/storage';
 import { SerializedStorage } from './state-storage';
-
 import { IdentityProviderStateType } from './state';
 
 describe('@dfinity/identity-provider/design-phase-0/state-storage', () => {
   it('works', () => {
-    let str: string = 'init';
+    let str = 'init';
     const storage = SerializedStorage(
       {
         get() {

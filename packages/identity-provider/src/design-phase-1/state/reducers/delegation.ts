@@ -17,7 +17,13 @@ export const StateCodec = t.type({
 });
 export type State = t.TypeOf<typeof StateCodec>;
 
-export function reduce(state: State = init(), action: Action) {
+/**
+ * Reduce oldState + action -> newState
+ * @param state - state to update
+ * @param action - action to use to update state
+ * @returns new state
+ */
+export function reduce(state: State = init(), action: Action): State {
   switch (action.type) {
     case 'reset':
       return init();
@@ -35,6 +41,7 @@ export function reduce(state: State = init(), action: Action) {
   return state;
 }
 
+/** construct initial state */
 export function init(): State {
   return {
     target: undefined,

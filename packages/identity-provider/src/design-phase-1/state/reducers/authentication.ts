@@ -6,13 +6,12 @@ import {
   PublicKey,
   derBlobFromBlob,
   blobFromHex,
-  SignIdentity,
   blobFromUint8Array,
 } from '@dfinity/agent';
 import tweetnacl from 'tweetnacl';
 import { hexToBytes } from '../../../bytes';
 import { EffectRequested } from '../reducer-effects';
-import { SignerCodec, Signer, Ed25519Signer, WebAuthnIdentitySigner } from '../codecs/sign';
+import { SignerCodec, Ed25519Signer, WebAuthnIdentitySigner } from '../codecs/sign';
 
 const AuthenticationRequestCodec = t.type({
   type: t.literal('AuthenticationRequest'),
@@ -89,6 +88,12 @@ export const StateCodec = t.intersection([
 ]);
 export type State = t.TypeOf<typeof StateCodec>;
 
+/**
+ * Update state given an action.
+ * @param state - previous state
+ * @param action - new action
+ * @returns new state
+ */
 export function reduce(state: State = init(), action: Action): State {
   switch (action.type) {
     case 'reset':
@@ -99,14 +104,14 @@ export function reduce(state: State = init(), action: Action): State {
         request: action.payload,
         response: undefined,
       };
-    case 'AuthenticationRequestConsentReceived':
+    case 'AuthenticationRequestConsentReceived': {
       /* The end-user just consented to an AuthenticationRequest. Update state to reflect this consent. */
-      const proposal: t.TypeOf<typeof ConsentProposalCodec> = action.payload.consent.proposal;
       const { consent } = action.payload;
       return {
         ...state,
         consent,
       };
+    }
     case 'AuthenticationResponsePrepared':
       return {
         ...state,
@@ -116,6 +121,7 @@ export function reduce(state: State = init(), action: Action): State {
   return state;
 }
 
+/** construct initial state */
 export function init(): State {
   return {
     request: undefined,
@@ -124,6 +130,13 @@ export function init(): State {
   };
 }
 
+/**
+ * Given an action, return any effects.
+ * Handles:
+ * * AuthenticationRequestConsentReceived
+ *   * build resulting AuthenticationResponse from consent, then dispatch AuthenticationResponsePrepared
+ * @param action - Action that might warrant an effect
+ */
 export function effect(action: Action): undefined | EffectRequested<Action> {
   switch (action.type) {
     case 'AuthenticationRequestConsentReceived':
@@ -131,7 +144,6 @@ export function effect(action: Action): undefined | EffectRequested<Action> {
         type: 'EffectRequested',
         payload: {
           async effect() {
-            const consent = action.payload.consent;
             const authenticationResponse = await respond({
               consent: action.payload.consent,
             });
@@ -149,14 +161,13 @@ export function effect(action: Action): undefined | EffectRequested<Action> {
 /**
  * Wraps a dispatch into a new dispatch with side effects.
  * Put everything here that should happen as a side effect to an action.
- * @param dispatch
+ * @param dispatch - function to dispatch more events
  */
 export function effector(dispatch: React.Dispatch<Action>): React.Dispatch<Action> {
   return async (action: Action) => {
     switch (action.type) {
-      case 'AuthenticationRequestConsentReceived':
+      case 'AuthenticationRequestConsentReceived': {
         console.log('authentication effector AuthenticationRequestConsentReceived');
-        const consent = action.payload.consent;
         const authenticationResponse = await respond({
           consent: action.payload.consent,
         });
@@ -166,6 +177,7 @@ export function effector(dispatch: React.Dispatch<Action>): React.Dispatch<Actio
         };
         dispatch(responsePrepared);
         break;
+      }
     }
   };
 }
@@ -203,13 +215,14 @@ async function respond(spec: {
 }
 
 /**
- * Given a declarative 'Signer' object, return the appropriate SignIdentity instance froM @dfinity/authentication
+ * Given a declarative 'Signer' object, return the appropriate SignIdentity instance from @dfinity/authentication.
+ * @param signer - description of SignIdentity
  */
 export function createSignIdentity(
   signer: WebAuthnIdentitySigner | Ed25519Signer,
 ): WebAuthnIdentity | Ed25519KeyIdentity {
   switch (signer.type) {
-    case 'Ed25519Signer':
+    case 'Ed25519Signer': {
       const keyPair = tweetnacl.sign.keyPair.fromSecretKey(
         Uint8Array.from(hexToBytes(signer.credential.secretKey.hex)),
       );
@@ -217,6 +230,7 @@ export function createSignIdentity(
         blobFromUint8Array(keyPair.publicKey),
         blobFromUint8Array(keyPair.secretKey),
       );
+    }
     case 'WebAuthnIdentitySigner':
       return (() => {
         console.log('about to WebAuthnIdentity.fromJSON', signer);

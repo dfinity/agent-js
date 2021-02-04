@@ -2,7 +2,6 @@ import { Codec } from './state-serialization';
 import { ValidationError } from 'io-ts';
 import { PathReporter } from 'io-ts/lib/PathReporter';
 import { pipe } from 'fp-ts/lib/function';
-import * as t from 'io-ts';
 import { fold, left } from 'fp-ts/lib/Either';
 
 export interface IStorage<T> {
@@ -10,10 +9,17 @@ export interface IStorage<T> {
   set(input: T): void;
 }
 
-export function SerializedStorage<A, O>(oStorage: IStorage<O>, codec: Codec<A, unknown, O>) {
+/**
+ * Storage that stores objects of type Decoded by first encoding them to type=Encoded via an io-ts Codec<Decoded,unknown,Encoded>
+ * Use Cases:
+ * * use a SerializedStorage<StateShape,string> to store encoded strings in localStorage
+ * @param encodedStorage - underlying storage object for encoded values
+ * @param codec - codec that can encode A->O and decode O->A.
+ */
+export function SerializedStorage<Decoded, Encoded>(encodedStorage: IStorage<Encoded>, codec: Codec<Decoded, unknown, Encoded>): IStorage<Decoded> {
   return Object.freeze({ get, set });
   function get() {
-    const stored = oStorage.get();
+    const stored = encodedStorage.get();
     if (!stored) {
       throw new NotFoundError();
     }
@@ -29,10 +35,10 @@ export function SerializedStorage<A, O>(oStorage: IStorage<O>, codec: Codec<A, u
     console.debug('SerializedStorage.get', { stored, decoded });
     return decoded;
   }
-  function set(input: A) {
+  function set(input: Decoded) {
     const encoded = codec.encode(input);
     console.debug('SerializedStorage.set', { input, encoded });
-    oStorage.set(encoded);
+    encodedStorage.set(encoded);
   }
 }
 
@@ -47,6 +53,11 @@ export class SerializedStateDecodingError extends Error {
   }
 }
 
+/**
+ * string Storage that stores data in a single DOM localStorage key.
+ * @param key - localStorage key to use to store data
+ * @param localStorage - window.localStorage or similar object
+ */
 export function LocalStorageKey(
   key: string,
   localStorage: typeof globalThis.localStorage = globalThis.localStorage,

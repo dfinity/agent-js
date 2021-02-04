@@ -1,11 +1,11 @@
 import * as React from "react";
 import { IEffectiveReducer, handleEffect, EffectRequested, EffectLifecycleAction } from "./reducer-effects";
 import { AnyStandardAction } from "./action";
-import { AnyAction } from "redux";
 
 /**
- * Use a reducer that also has init() and effect()
- * @param reducer 
+ * Like React.useReducer, but can handle EffectiveReducers (i.e. { init, effect, reduce })
+ * @param reducer - reducer object to use in this react hook context
+ * @param initArg - initial state
  */
 export function useReducer<
   S,
