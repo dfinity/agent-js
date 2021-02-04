@@ -1,7 +1,4 @@
-import {
-  IdentityProviderState,
-  IdentityProviderStateType,
-} from './state';
+import { IdentityProviderState, IdentityProviderStateType } from './state';
 import { StateToStringCodec } from './state-serialization';
 import { fold } from 'fp-ts/lib/Either';
 import { pipe } from 'fp-ts/lib/function';

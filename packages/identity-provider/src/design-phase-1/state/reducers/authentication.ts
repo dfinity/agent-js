@@ -2,12 +2,7 @@ import * as icid from '../../../protocol/ic-id-protocol';
 import * as t from 'io-ts';
 import { DelegationChain, Ed25519KeyIdentity, WebAuthnIdentity } from '@dfinity/authentication';
 import { withDefault } from '../state-serialization';
-import {
-  PublicKey,
-  derBlobFromBlob,
-  blobFromHex,
-  blobFromUint8Array,
-} from '@dfinity/agent';
+import { PublicKey, derBlobFromBlob, blobFromHex, blobFromUint8Array } from '@dfinity/agent';
 import tweetnacl from 'tweetnacl';
 import { hexToBytes } from '../../../bytes';
 import { EffectRequested } from '../reducer-effects';

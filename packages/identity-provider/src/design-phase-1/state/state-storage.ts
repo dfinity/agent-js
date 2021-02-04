@@ -16,7 +16,10 @@ export interface IStorage<T> {
  * @param encodedStorage - underlying storage object for encoded values
  * @param codec - codec that can encode A->O and decode O->A.
  */
-export function SerializedStorage<Decoded, Encoded>(encodedStorage: IStorage<Encoded>, codec: Codec<Decoded, unknown, Encoded>): IStorage<Decoded> {
+export function SerializedStorage<Decoded, Encoded>(
+  encodedStorage: IStorage<Encoded>,
+  codec: Codec<Decoded, unknown, Encoded>,
+): IStorage<Decoded> {
   return Object.freeze({ get, set });
   function get() {
     const stored = encodedStorage.get();

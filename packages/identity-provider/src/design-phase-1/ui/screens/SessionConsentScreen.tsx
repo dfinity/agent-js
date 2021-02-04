@@ -1,18 +1,23 @@
 import * as React from "react";
 import { Button } from "src/components/Button";
 import SimpleScreenLayout from "../layout/SimpleScreenLayout";
-import { Typography, makeStyles, Divider, Theme, createStyles, styled } from "@material-ui/core";
+import { Typography, makeStyles, createStyles, styled } from "@material-ui/core";
 import EnhancedEncryptionIcon from '@material-ui/icons/EnhancedEncryption';
 import { parseScopeString } from "src/protocol/ic-id-protocol";
 import { AuthenticationResponseConsentProposal, createSignIdentity } from "src/design-phase-1/state/reducers/authentication";
-import { hexToBytes, hexEncodeUintArray } from "src/bytes";
-import tweetnacl from "tweetnacl";
-import { Signer } from "src/design-phase-1/state/codecs/sign";
+import { hexEncodeUintArray } from "src/bytes";
 
+/**
+ * Screen that presents the user with a decision about whether they consent
+ * to a proposal to create an AuthenticationResponse with certain parameters.
+ * @param props props
+ * @param props.consentProposal - proposal to create a certain AuthenticationResponse
+ * @param props.consent - invoke this if the end-user consents
+ */
 export default function (props: {
     consentProposal: AuthenticationResponseConsentProposal
     consent(): void
-}) {
+}): JSX.Element {
     const { consentProposal } = props
     return <>
         <div data-test-id="session-consent-screen">
@@ -153,7 +158,6 @@ function Warning(props: { children: React.ReactNode}) {
 }
 
 function HeroImage() {
-    const styles = makeStyles(styler)();
     return <>
         <EnhancedEncryptionIcon style={{fontSize: '4em'}} />
     </>
