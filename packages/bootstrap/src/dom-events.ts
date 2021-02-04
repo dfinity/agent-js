@@ -1,3 +1,8 @@
+/**
+ * Create an AsyncIterable from a callback.
+ * via https://bit.ly/3aD3uD1
+ * @param emitter - called with cb to register cb with event source
+ */
 function fromCallback<V>(emitter: (cb: (value: V) => void) => void): AsyncIterable<V> {
   let values: V[];
   let resolve: (values: V[]) => void;
@@ -8,7 +13,7 @@ function fromCallback<V>(emitter: (cb: (value: V) => void) => void): AsyncIterab
     resolve(values);
   });
   return {
-    async *[Symbol.asyncIterator] () {
+    async *[Symbol.asyncIterator]() {
       for (;;) {
         const vs = await valuesAvailable;
         valuesAvailable = new Promise(init);

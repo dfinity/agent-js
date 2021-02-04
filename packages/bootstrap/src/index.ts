@@ -8,7 +8,7 @@ import {
   makeLog,
   Principal,
 } from '@dfinity/agent';
-import DocumentIdentities from './actors/identity/DocumentIdentities';
+import AuthenticationResponseIdentities from './actors/identity/AuthenticationResponseIdentities';
 import IdentityActor from './actors/identity/IdentityActor';
 import MutableIdentity from './actors/identity/MutableIdentity';
 import { isProbablyCandidModule } from './candid/candid';
@@ -36,7 +36,9 @@ _main({ render: bootstrapRender }).catch(err => {
 async function _loadJs(
   canisterId: Principal,
   filename: string,
-  onload = async () => { bootstrapLog('debug', '_loadJs onload'); },
+  onload = async () => {
+    bootstrapLog('debug', '_loadJs onload');
+  },
 ): Promise<unknown> {
   bootstrapLog('debug', '_loadJs', { canisterId, filename });
   const actor = createAssetCanisterActor({ canisterId });
@@ -88,9 +90,9 @@ async function _main(spec: { render: ReturnType<typeof BootstrapRenderer> }) {
   const initialIdentity = new AnonymousIdentity();
   const identities = async function* () {
     yield initialIdentity;
-    for await (const docId of DocumentIdentities(document)) {
-      bootstrapLog('debug', 'ben got docId', docId);
-      yield docId;
+    for await (const identity of AuthenticationResponseIdentities(document)) {
+      bootstrapLog('debug', 'got AuthenticationResponseIdentities identity', identity);
+      yield identity;
     }
   };
   const beforeunload = new Promise(resolve => {
@@ -127,7 +129,7 @@ async function _main(spec: { render: ReturnType<typeof BootstrapRenderer> }) {
     if (window.location.pathname === '/candid') {
       // Load candid.did.js from endpoint.
       const candid = await _loadCandid(canisterId);
-      if ( ! isProbablyCandidModule(candid)) {
+      if (!isProbablyCandidModule(candid)) {
         throw new Error(`loaded candid, but it doesnt appear to be the candid module we expect`);
       }
       const canister = window.ic.agent.makeActorFactory(candid.default)({ canisterId });
@@ -137,7 +139,9 @@ async function _main(spec: { render: ReturnType<typeof BootstrapRenderer> }) {
       // Load index.js from the canister and execute it.
       await _loadJs(canisterId, 'index.js', async () => {
         const progress = document.getElementById('ic-progress');
-        if (progress) { progress.remove(); }
+        if (progress) {
+          progress.remove();
+        }
       });
     }
   }

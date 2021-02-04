@@ -1,10 +1,5 @@
-import {
-  AnonymousIdentity,
-  createIdentityDescriptor,
-  makeLog,
-  SignIdentity,
-} from '@dfinity/agent';
-import { IdentityDescriptor, IdentityRequestedEventUrl } from '@dfinity/authentication';
+import { AnonymousIdentity, createIdentityDescriptor, makeLog, SignIdentity } from '@dfinity/agent';
+import { IdentityDescriptor, IdentityRequestedEventIdentifier } from '@dfinity/authentication';
 import { EventIterable } from '../../dom-events';
 import { BootstrapIdentityChangedEvent } from './events';
 
@@ -42,8 +37,11 @@ export default function IdentityActor(params: {
   });
   start();
 
+  /** Start the actor */
   async function start() {
-    if (started) { throw new Error('Already started'); }
+    if (started) {
+      throw new Error('Already started');
+    }
     started = true;
     await Promise.all([
       handleIdentityRequestedEvents(),
@@ -52,25 +50,36 @@ export default function IdentityActor(params: {
     ]);
     started = false;
   }
+
+  /**
+   * Stop the Actor.
+   */
   async function stop() {
     // http://seg.phault.net/blog/2018/03/async-iterators-cancellation/
     log('warn', 'stop isnt supported yet!');
     // @TODO give a cancellable promise to the subactors
     started = false;
   }
+
+  /**
+   * Whenever `identities` emits a new one, publish it to all subscribers.
+   */
   async function trackLatestIdentity() {
     for await (const identity of params.identities) {
       currentIdentity = identity;
       const identityDescriptor = createIdentityDescriptor(currentIdentity);
-      log('debug', 'new currentIdentity', {currentIdentity, identityDescriptor});
-      params.eventTarget.dispatchEvent(BootstrapIdentityChangedEvent(
-        identityDescriptor,
-      ));
+      log('debug', 'new currentIdentity', { currentIdentity, identityDescriptor });
+      params.eventTarget.dispatchEvent(BootstrapIdentityChangedEvent(identityDescriptor));
       publish(IdentityMessage(identityDescriptor));
     }
   }
+
+  /**
+   * For each IdentityRequestedEvent, respond with the current identity,
+   * and add the event/port to `subscribers` of future identities.
+   */
   async function handleIdentityRequestedEvents() {
-    for await (const event of EventIterable(document, IdentityRequestedEventUrl, true)) {
+    for await (const event of EventIterable(document, IdentityRequestedEventIdentifier, true)) {
       log('debug', 'bootstrap-js window listener handling IdentityRequestedEvent', event);
       const detail = (event as CustomEvent).detail;
       const sender: undefined | MessagePort = detail && detail.sender;
@@ -85,16 +94,21 @@ export default function IdentityActor(params: {
       }
     }
   }
+
+  /**
+   * Publish a message to all subscribers, e.g. to notify them of a new current Identity.
+   * @param message - message to publish
+   */
   function publish(message: ReturnType<typeof IdentityMessage>): void {
-    log('debug', 'publishing', {message, subscribers});
+    log('debug', 'publishing', { message, subscribers });
     for (const port of subscribers) {
       port.postMessage(message);
     }
   }
 }
 
-function IdentityMessage(identity: IdentityDescriptor|SignIdentity|AnonymousIdentity) {
+function IdentityMessage(identity: IdentityDescriptor | SignIdentity | AnonymousIdentity) {
   return {
-    identity: ('type' in identity) ? identity : createIdentityDescriptor(identity),
+    identity: 'type' in identity ? identity : createIdentityDescriptor(identity),
   };
 }

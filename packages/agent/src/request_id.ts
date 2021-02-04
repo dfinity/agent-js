@@ -47,6 +47,10 @@ interface ToHashable {
   toHash(): unknown;
 }
 
+/**
+ * Hash a single value according to the representation-independent-hash algorithm.
+ * @param value - value to hash
+ */
 async function hashValue(value: unknown): Promise<BinaryBlob> {
   if (value instanceof borc.Tagged) {
     return hashValue(value.value);
@@ -99,6 +103,10 @@ const hashString = (value: string): Promise<BinaryBlob> => {
   return hash(Buffer.from(encoded));
 };
 
+/**
+ * Concatenate many blobs.
+ * @param bs - blobs to concatenate
+ */
 function concat(bs: BinaryBlob[]): BinaryBlob {
   return blobFromBuffer(Buffer.concat(bs));
 }

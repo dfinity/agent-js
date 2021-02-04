@@ -28,7 +28,9 @@ export function BootstrapRenderer(document: Document): Renderer {
   const parentNode: Node = (() => {
     for (const selector of selectors) {
       const el = document.querySelector(selector);
-      if (el) { return el; }
+      if (el) {
+        return el;
+      }
     }
     throw new Error(`tried to render, but couldn't find bootstrap parent node`);
   })();

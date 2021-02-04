@@ -1,3 +1,7 @@
+/**
+ * @file Since ic-id-protocol is a profile of OAuth2. This file has everything related to OAuth2.
+ */
+
 import * as assert from 'assert';
 
 // https://tools.ietf.org/html/rfc6749#section-4.2.2
@@ -19,7 +23,7 @@ export interface OAuth2AuthorizationRequest {
   redirect_uri: string;
   scope?: string;
   state?: string;
-  /** not in oauth2 */
+  /** not in oauth2: see 'ic-id-protocol.md' */
   login_hint: string;
 }
 

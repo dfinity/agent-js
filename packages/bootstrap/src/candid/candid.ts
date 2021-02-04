@@ -223,7 +223,6 @@ function log(content: Element | string) {
   line.scrollIntoView();
 }
 
-
 /**
  * Type of module we expect back from _loadCandid (but may get something else)
  */
@@ -236,12 +235,18 @@ export interface CandidModule {
  * @param value - (maybe) ES-module object dynamically imported/evaled from candid ui
  */
 export function isProbablyCandidModule(value: unknown): value is CandidModule {
-  if ( ! value) { return false; }
-  if (!(
-    (typeof value === 'object') &&
-    value &&
-    ('default' in value) &&
-    (typeof (value as CandidModule)?.default === 'function')
-  )) { return false; }
+  if (!value) {
+    return false;
+  }
+  if (
+    !(
+      typeof value === 'object' &&
+      value &&
+      'default' in value &&
+      typeof (value as CandidModule)?.default === 'function'
+    )
+  ) {
+    return false;
+  }
   return true;
 }

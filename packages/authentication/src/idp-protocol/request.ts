@@ -2,9 +2,14 @@ import * as oauth2 from './oauth2';
 import { DelegationChain } from '../identity/delegation';
 import { hexEncodeUintArray } from './bytes';
 
+/**
+ * Request sent to an ic-id Provider to initiate authentication.
+ * See 'ic-id-protocol.md'.
+ */
 export type AuthenticationRequest = {
   type: 'AuthenticationRequest';
   sessionIdentity: {
+    /** der-encoded publicKey */
     hex: string;
   };
   redirectUri: string;
