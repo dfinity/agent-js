@@ -88,13 +88,11 @@ async function hashValue(value: unknown): Promise<BinaryBlob> {
     // So we want to try all the high-assurance type guards before this 'probable' one.
     return hash(lebEncode(value) as BinaryBlob);
   }
-  throw Object.assign(
-    new Error(`Attempt to hash a value of unsupported type: ${value}`), {
-      // include so logs/callers can understand the confusing value.
-      // (when stringified in error message, prototype info is lost)
-      value,
-    },
-  );
+  throw Object.assign(new Error(`Attempt to hash a value of unsupported type: ${value}`), {
+    // include so logs/callers can understand the confusing value.
+    // (when stringified in error message, prototype info is lost)
+    value,
+  });
 }
 
 const hashString = (value: string): Promise<BinaryBlob> => {

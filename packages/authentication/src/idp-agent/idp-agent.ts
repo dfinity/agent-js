@@ -1,9 +1,11 @@
-import { blobToHex } from '@dfinity/agent';
+import { blobToHex, makeLog } from '@dfinity/agent';
 import { stringifyScope, Scope } from '../idp-protocol/scope';
 import { Ed25519KeyIdentity } from '../identity/ed25519';
 import { AuthenticationRequest } from '../idp-protocol/request';
 import { isMaybeAuthenticationResponseUrl } from '../idp-protocol/response';
-import { IdentityProviderAgentEnvelope, IdentityProviderIndicator, Transport } from './transport';
+import { IdentityProviderAgentEnvelope, IdentityProviderIndicator, Transport, AuthenticationResponseUrlDetectedEvent } from './transport';
+
+type SignFunction = (challenge: ArrayBuffer) => Promise<ArrayBuffer>
 
 /**
  * Object that knows how to interact with an ic-id Identity Provider by sending/receiving messages.
@@ -19,10 +21,11 @@ export interface IdentityProviderAgent {
    * @param url - URL containing AuthenticationResponse as query string parameters
    *   (i.e. an oauth2 redirect_uri + accessTokenResponse)
    */
-  receiveAuthenticationResponse(url: URL): Promise<void>;
+  receiveAuthenticationResponse(url: URL, sign: SignFunction): Promise<void>;
 }
 
 type SendAuthenticationRequestCommand = {
+  saveIdentity(identity: Ed25519KeyIdentity): Promise<void>|void;
   redirectUri?: URL;
   scope: Scope;
 };
@@ -31,6 +34,7 @@ export class IdentityProviderAgent implements IdentityProviderAgent {
   #identityProvider: IdentityProviderIndicator;
   #transport: Transport<IdentityProviderAgentEnvelope>;
   #location: Pick<Location, 'href'>;
+  #log = makeLog('IdentityProviderAgent')
   constructor(spec: {
     identityProvider: IdentityProviderIndicator;
     transport: Transport<IdentityProviderAgentEnvelope>;
@@ -44,7 +48,8 @@ export class IdentityProviderAgent implements IdentityProviderAgent {
     const redirectUri: string = spec.redirectUri
       ? spec.redirectUri.toString()
       : globalThis.location.toString();
-    const sessionIdentity = Ed25519KeyIdentity.generate();
+    const randomSeed = crypto.getRandomValues(new Uint8Array(32));
+    const sessionIdentity = Ed25519KeyIdentity.generate(randomSeed);
     const authenticationRequest: AuthenticationRequest = {
       type: 'AuthenticationRequest',
       redirectUri,
@@ -53,24 +58,29 @@ export class IdentityProviderAgent implements IdentityProviderAgent {
         hex: blobToHex(sessionIdentity.getPublicKey().toDer()),
       },
     };
+    await spec.saveIdentity(sessionIdentity);
     await this.#transport.send({
       to: this.#identityProvider,
       message: authenticationRequest,
     });
   }
 
-  async receiveAuthenticationResponse(url:URL=new URL(this.#location.href)): Promise<void> {
-    console.debug('idp-agent', 'receiveAuthenticationResponse', { url });
+  async receiveAuthenticationResponse(
+    url:URL=new URL(this.#location.href),
+    sign: (challenge: ArrayBuffer) => Promise<ArrayBuffer>,
+  ): Promise<void> {
+    this.#log('debug', 'receiveAuthenticationResponse', { url, sign });
     if (!isMaybeAuthenticationResponseUrl(url)) {
-      console.debug(
+      this.#log('debug',
         'receiveAuthenticationResponse called, but the URL does not appear to contain an AuthenticationResponse',
       );
       return;
     }
-    const authenticationResponseUrlDetectedEvent = {
+    const authenticationResponseUrlDetectedEvent: AuthenticationResponseUrlDetectedEvent = {
       type: 'AuthenticationResponseUrlDetectedEvent' as const,
       payload: {
         url,
+        sign,
       },
     };
     this.#transport.send({

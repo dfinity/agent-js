@@ -2,19 +2,29 @@ import {
   Agent,
   HttpAgent,
   makeExpiryTransform,
+  makeLog,
   makeNonceTransform,
   ProxyAgent,
   ProxyMessage,
 } from '@dfinity/agent';
 import { SiteInfo } from './site';
 
+/**
+ * Create an Internet Computer agent for use by bootstrap.
+ * @param site - Describes the web page bootstrap is loading in.
+ */
 export async function createAgent(site: SiteInfo): Promise<Agent> {
+  const log = makeLog('createAgent');
   const workerHost = site.isUnknown() ? undefined : await site.getWorkerHost();
   const host = await site.getHost();
-
+  log('debug', 'createAgent', { workerHost, host, site });
   if (!workerHost) {
-    const identity = site.getOrCreateUserIdentity();
+    const identity = await site.getOrCreateUserIdentity();
     const creds = await site.getLogin();
+    log('debug', 'constructing HttpAgent with ', {
+      identity,
+      identityPrincipalHex: (await identity).getPrincipal().toHex(),
+    });
     const agent = new HttpAgent({
       host,
       ...(creds && { credentials: { name: creds[0], password: creds[1] } }),
@@ -40,7 +50,7 @@ async function createWorkerAgent(site: SiteInfo, workerHost: string, host: strin
       }
       messageQueue.push(msg);
     } else {
-      iframeEl.contentWindow!.postMessage(msg, '*');
+      iframeEl.contentWindow?.postMessage(msg, '*');
     }
   });
 
@@ -50,23 +60,23 @@ async function createWorkerAgent(site: SiteInfo, workerHost: string, host: strin
   window.addEventListener('message', ev => {
     if (ev.origin === workerHost) {
       switch (ev.data) {
-        case 'ready':
+        case 'ready': {
           const q = messageQueue?.splice(0, messageQueue.length) || [];
           for (const msg of q) {
-            iframeEl.contentWindow!.postMessage(msg, workerHost);
+            iframeEl.contentWindow?.postMessage(msg, workerHost);
           }
 
           loaded = true;
           messageQueue = null;
           break;
-
-        case 'login':
+        }
+        case 'login': {
           const url = new URL(workerHost);
           url.pathname = '/login.html';
           url.searchParams.append('redirect', '' + window.location);
           window.location.replace('' + url);
           break;
-
+        }
         default:
           if (typeof ev.data === 'object') {
             agent.onmessage(ev.data);

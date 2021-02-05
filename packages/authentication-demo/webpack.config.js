@@ -72,8 +72,8 @@ function generateWebpackConfigForCanister(name, info) {
           use: {
             loader: "ts-loader",
             options: {
-              // configFile: path.join(__dirname, 'tsconfig.json'),
-              // projectReferences: true,
+              configFile: path.join(__dirname, 'tsconfig.json'),
+              projectReferences: true,
             }
           }
         },

@@ -21,6 +21,7 @@ import {
   SubmitResponse,
 } from '../http_agent_types';
 import * as IDL from '../idl';
+import { makeLog } from '../log';
 import { Principal } from '../principal';
 import { requestIdOf } from '../request_id';
 import { BinaryBlob, blobFromHex, JsonObject } from '../types';
@@ -85,6 +86,7 @@ function getDefaultFetch(): typeof fetch {
 // other computations so that this class can stay as simple as possible while
 // allowing extensions.
 export class HttpAgent implements Agent {
+  protected readonly log = makeLog('HttpAgent');
   private readonly _pipeline: HttpAgentRequestTransformFn[] = [];
   private readonly _identity: Promise<Identity>;
   private readonly _fetch: typeof fetch;
@@ -124,7 +126,7 @@ export class HttpAgent implements Agent {
     this._identity = Promise.resolve(options.identity || new AnonymousIdentity());
   }
 
-  public addTransform(fn: HttpAgentRequestTransformFn, priority = fn.priority || 0) {
+  public addTransform(fn: HttpAgentRequestTransformFn, priority = fn.priority || 0): void {
     // Keep the pipeline sorted at all time, by priority.
     const i = this._pipeline.findIndex(x => (x.priority || 0) < priority);
     this._pipeline.splice(i >= 0 ? i : this._pipeline.length, 0, Object.assign(fn, { priority }));
@@ -142,9 +144,9 @@ export class HttpAgent implements Agent {
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
+    this.log('debug', 'call', { canisterId, fields, identity });
     const id = await (identity !== undefined ? identity : this._identity);
     const sender = id?.getPrincipal() || Principal.anonymous();
-
     return this.submit(
       {
         request_type: SubmitRequestType.Call,
@@ -273,6 +275,8 @@ export class HttpAgent implements Agent {
   }
 
   protected async submit(submit: SubmitRequest, identity: Identity): Promise<SubmitResponse> {
+    this.log('debug', 'submit', { submit, identity });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let transformedRequest: any = (await this._transform({
       request: {
         body: null,
@@ -320,7 +324,13 @@ export class HttpAgent implements Agent {
   }
 
   protected async read(request: ReadRequest, identity: Identity): Promise<ReadResponse> {
+    this.log('debug', 'read', {
+      request,
+      identity,
+      identityPrincipalHex: identity.getPrincipal().toHex(),
+    });
     // TODO: remove this any. This can be a Signed or UnSigned request.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let transformedRequest: any = await this._transform({
       request: {
         method: 'POST',

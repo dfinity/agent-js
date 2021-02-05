@@ -8,20 +8,33 @@ export default async function MutableIdentity(
   identities: AsyncIterable<SignIdentity | AnonymousIdentity>,
 ): Promise<SignIdentity | AnonymousIdentity> {
   const log = makeLog('MutableIdentity');
-  log('debug', 'constructing MutableIdentity', identities);
   const initialIdentity = new AnonymousIdentity();
-  let identity: AnonymousIdentity | SignIdentity = initialIdentity;
+  let currentIdentity: AnonymousIdentity | SignIdentity = initialIdentity;
+  function getCurrentIdentity() {
+    return currentIdentity;
+  }
   (async () => {
     for await (const nextIdentity of identities) {
-      identity = nextIdentity;
-      log('debug', 'using newly generated identity: ', identity);
+      const prevIdentity = currentIdentity;
+      currentIdentity = nextIdentity;
+      log('debug', 'using newly generated identity: ', {
+        prevIdentity,
+        prevIdentityPrincipalHex: prevIdentity.getPrincipal().toHex(),
+        currentIdentity,
+        currentIdentityPrincipalHex: currentIdentity.getPrincipal().toHex(),
+      });
     }
   })();
-  const identityProxy: SignIdentity | AnonymousIdentity = new Proxy(initialIdentity, {
-    get(target, prop, receiver) {
-      const currentIdentity = target || identity;
-      return Reflect.get(currentIdentity, prop, receiver);
+  const identityProxy: SignIdentity | AnonymousIdentity = new Proxy(
+    /* note that this isn't actually ever used as the reflection target in `get(target)` method,
+    the varying return value of getCurrentIdentity() is. */
+    initialIdentity,
+    {
+      get(target, prop, receiver) {
+        const returned = Reflect.get(getCurrentIdentity(), prop, receiver);
+        return returned;
+      },
     },
-  });
+  );
   return identityProxy;
 }

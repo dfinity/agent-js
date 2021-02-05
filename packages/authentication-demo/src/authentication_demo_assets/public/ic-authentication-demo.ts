@@ -1,9 +1,10 @@
 import { authenticator } from "@dfinity/authentication";
 // @ts-expect-error 'ic:canisters' is not resolvable without dfx-knowledge
 import authDemoContract from "ic:canisters/authentication_demo";
-import { Principal } from "@dfinity/agent";
+import { Principal, makeLog, blobFromUint8Array } from "@dfinity/agent";
 import { hexEncodeUintArray } from "@dfinity/authentication/.tsc-out/packages/authentication/src/idp-protocol/bytes";
 import AuthenticationButton from "./ic-id-button";
+import { defaultSessionIdentityStorage } from "./session";
 
 /**
  * Main Custom Element for the @dfinity/authentication-demo.
@@ -14,16 +15,38 @@ import AuthenticationButton from "./ic-id-button";
  *     which should echo back this agent's identity, which this element should render to the end-user.
  */
 export default class AuthenticationDemo extends HTMLElement {
+  #log = makeLog("AuthenticationDemo");
+  #sessionStorage = defaultSessionIdentityStorage;
   whoamiPrincipal: Principal | undefined;
   constructor() {
     super();
   }
   connectedCallback(): void {
     this.render();
+    this.#logSessionIdentity();
     authenticator.receiveAuthenticationResponse(
-      new URL(this.ownerDocument.location.toString())
+      new URL(this.ownerDocument.location.toString()),
+      this.#sign
     );
   }
+  #sign = async (challenge: ArrayBuffer): Promise<ArrayBuffer> => {
+    const sessionIdentityStored = await this.#sessionStorage.get();
+    if (sessionIdentityStored.empty) {
+      throw new Error(`cant find a sessionIdentity to use to sign`);
+    }
+    const sessionIdentity = sessionIdentityStored.value;
+    this.#log("debug", "signBefore using", {
+      sessionIdentity,
+      princpalHex: sessionIdentityStored.value.getPrincipal().toHex()
+    });
+    const signature = await sessionIdentity.sign(blobFromUint8Array(new Uint8Array(challenge)));
+    this.#log("debug", "signAfter", { challenge, signature, sessionIdentity });
+    return signature;
+  };
+  #logSessionIdentity = async (): Promise<void> => {
+    const stored = await defaultSessionIdentityStorage.get();
+    this.#log("debug", "got stored session on load", stored);
+  };
   /**
    * Clear out children and re-append-children based on latest state.
    */
@@ -45,9 +68,20 @@ export default class AuthenticationDemo extends HTMLElement {
       (() => {
         const div = document.createElement("div");
         div.innerHTML = `
-            <p>
-              The current authentication's publicKey is <ic-authentication-subject-public-key />
-            <p>
+          <p>
+            The current authentication's info is:
+          <p>
+          <dl>
+            <dt>Public Key</dt><dd>
+              <ic-authentication-subject-public-key format="hex" placeholder="&hellip;" />
+            </dd>
+            <dt>Principal Text</dt><dd>
+              <ic-authentication-subject-public-key format="principal.text" placeholder="&hellip;" />
+            </dd>
+            <dt>Principal Hex</dt><dd>
+              <ic-authentication-subject-public-key format="principal.hex" placeholder="&hellip;" />
+            </dd>
+          </dl>
           `;
         return div;
       })()
@@ -62,7 +96,7 @@ export default class AuthenticationDemo extends HTMLElement {
                 <dt>Principal Text</dt><dd>
                   <span>${this.whoamiPrincipal.toText()}</span>
                 </dd>
-                <dt>Public Key Hex</dt><dd>
+                <dt>Principal Blob Hex</dt><dd>
                   <span>${hexEncodeUintArray(
                     this.whoamiPrincipal.toBlob()
                   )}</span>

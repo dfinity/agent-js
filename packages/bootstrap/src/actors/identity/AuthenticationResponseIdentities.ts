@@ -2,7 +2,6 @@ import { AnonymousIdentity, makeLog, SignIdentity } from '@dfinity/agent';
 import {
   DelegationChain,
   DelegationIdentity,
-  Ed25519KeyIdentity,
   response as icidResponse,
 } from '@dfinity/authentication';
 import { AuthenticationResponseDetectedEventIdentifier } from '@dfinity/authentication';
@@ -29,17 +28,27 @@ export default function AuthenticationResponseIdentities(
         log('warn', 'got CustomEvent without URL', { event });
         continue;
       }
+      const signFunction = event.detail.sign;
+      if (typeof signFunction !== 'function') {
+        throw new Error('no sign function');
+      }
+      log('debug', 'new signFunction is', signFunction);
       const identity = (() => {
         const response = icidResponse.fromQueryString(url.searchParams);
         const chain = DelegationChain.fromJSON(icidResponse.parseBearerToken(response.accessToken));
-        const sessionIdentity = Ed25519KeyIdentity.generate();
+        const sessionIdentity: Pick<SignIdentity, 'sign'> = {
+          async sign(challenge) {
+            const signature = await signFunction(challenge);
+            return signature;
+          },
+        };
         const delegationIdentity = DelegationIdentity.fromDelegation(sessionIdentity, chain);
-        log('debug', 'created delegationIdentity', {
-          publicKey: delegationIdentity.getPublicKey().toDer().toString('hex'),
-        });
         return delegationIdentity;
       })();
-      log('debug', 'about to yield', identity);
+      log('debug', 'yielding', {
+        identity,
+        principalHex: identity.getPrincipal().toHex(),
+      });
       yield identity;
     }
   })();
