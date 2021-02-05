@@ -1,7 +1,6 @@
 {
   "name": "@dfinity/bootstrap",
   "version": "0.0.0",
-  "private": true,
   "scripts": {
     "build": "npm run tsc && npm run webpack",
     "ci": "npm run prettier && npm run lint && npm run build",
