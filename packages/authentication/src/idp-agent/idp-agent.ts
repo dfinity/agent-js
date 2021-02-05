@@ -1,4 +1,4 @@
-import { blobToHex } from '@dfinity/agent';
+import { blobToHex, makeLog } from '@dfinity/agent';
 import { stringifyScope, Scope } from '../idp-protocol/scope';
 import { Ed25519KeyIdentity } from '../identity/ed25519';
 import { AuthenticationRequest } from '../idp-protocol/request';
@@ -34,6 +34,7 @@ export class IdentityProviderAgent implements IdentityProviderAgent {
   #identityProvider: IdentityProviderIndicator;
   #transport: Transport<IdentityProviderAgentEnvelope>;
   #location: Pick<Location, 'href'>;
+  #log = makeLog('IdentityProviderAgent')
   constructor(spec: {
     identityProvider: IdentityProviderIndicator;
     transport: Transport<IdentityProviderAgentEnvelope>;
@@ -68,20 +69,18 @@ export class IdentityProviderAgent implements IdentityProviderAgent {
     url:URL=new URL(this.#location.href),
     sign: (challenge: ArrayBuffer) => Promise<ArrayBuffer>,
   ): Promise<void> {
-    console.debug('idp-agent', 'receiveAuthenticationResponse', { url, sign });
+    this.#log('debug', 'receiveAuthenticationResponse', { url, sign });
     if (!isMaybeAuthenticationResponseUrl(url)) {
-      console.debug(
+      this.#log('debug',
         'receiveAuthenticationResponse called, but the URL does not appear to contain an AuthenticationResponse',
       );
       return;
     }
-    const signChannel = new MessageChannel();
     const authenticationResponseUrlDetectedEvent: AuthenticationResponseUrlDetectedEvent = {
       type: 'AuthenticationResponseUrlDetectedEvent' as const,
       payload: {
         url,
         sign,
-        signPort: signChannel.port1,
       },
     };
     this.#transport.send({

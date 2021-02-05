@@ -87,7 +87,8 @@ async function _main(spec: { render: ReturnType<typeof BootstrapRenderer> }) {
     },
   };
   const siteFromWindow = await SiteInfo.fromWindow();
-  const initialIdentity = await siteFromWindow.getOrCreateUserIdentity() || new AnonymousIdentity();
+  const initialIdentity =
+    (await siteFromWindow.getOrCreateUserIdentity()) || new AnonymousIdentity();
   const identities = async function* () {
     yield initialIdentity;
     for await (const identity of AuthenticationResponseIdentities(document)) {
@@ -95,7 +96,7 @@ async function _main(spec: { render: ReturnType<typeof BootstrapRenderer> }) {
       yield identity;
     }
   };
-  const site = withIdentity(await MutableIdentity(identities()))(siteFromWindow)
+  const site = withIdentity(await MutableIdentity(identities()))(siteFromWindow);
 
   const beforeunload = new Promise(resolve => {
     document.addEventListener('beforeunload', event => resolve(event), { once: true });

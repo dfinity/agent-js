@@ -2,10 +2,10 @@ import {
   Agent,
   HttpAgent,
   makeExpiryTransform,
+  makeLog,
   makeNonceTransform,
   ProxyAgent,
   ProxyMessage,
-  makeLog,
 } from '@dfinity/agent';
 import { SiteInfo } from './site';
 
@@ -17,11 +17,14 @@ export async function createAgent(site: SiteInfo): Promise<Agent> {
   const log = makeLog('createAgent');
   const workerHost = site.isUnknown() ? undefined : await site.getWorkerHost();
   const host = await site.getHost();
-  log('debug', 'createAgent', { workerHost, host, site, })
+  log('debug', 'createAgent', { workerHost, host, site });
   if (!workerHost) {
     const identity = await site.getOrCreateUserIdentity();
     const creds = await site.getLogin();
-    log('debug', 'constructing HttpAgent with ', { identity, identityPrincipalHex: (await identity).getPrincipal().toHex() })
+    log('debug', 'constructing HttpAgent with ', {
+      identity,
+      identityPrincipalHex: (await identity).getPrincipal().toHex(),
+    });
     const agent = new HttpAgent({
       host,
       ...(creds && { credentials: { name: creds[0], password: creds[1] } }),

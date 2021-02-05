@@ -30,19 +30,17 @@ export default class AuthenticationDemo extends HTMLElement {
     );
   }
   #sign = async (challenge: ArrayBuffer): Promise<ArrayBuffer> => {
-    this.#log("debug", "sign start", { challenge });
     const sessionIdentityStored = await this.#sessionStorage.get();
-    this.#log("debug", "sign got sessionValue from storage", {
-      sessionIdentityStored,
-    });
     if (sessionIdentityStored.empty) {
       throw new Error(`cant find a sessionIdentity to use to sign`);
     }
     const sessionIdentity = sessionIdentityStored.value;
-    const signature = await sessionIdentity.sign(
-      blobFromUint8Array(new Uint8Array(challenge))
-    );
-    this.#log("debug", "signed", { challenge, signature, sessionIdentity });
+    this.#log("debug", "signBefore using", {
+      sessionIdentity,
+      princpalHex: sessionIdentityStored.value.getPrincipal().toHex()
+    });
+    const signature = await sessionIdentity.sign(blobFromUint8Array(new Uint8Array(challenge)));
+    this.#log("debug", "signAfter", { challenge, signature, sessionIdentity });
     return signature;
   };
   #logSessionIdentity = async (): Promise<void> => {

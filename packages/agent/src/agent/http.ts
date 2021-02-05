@@ -124,13 +124,7 @@ export class HttpAgent implements Agent {
       const { name, password } = options.credentials;
       this._credentials = `${name}${password ? ':' + password : ''}`;
     }
-    this._identity = Promise.resolve(options.identity || new AnonymousIdentity()).then(ident => {
-      this.#log('info', 'http agent identity resolved', ident)
-      return ident;
-    }).catch(error => {
-      this.#log('warn', 'http agent identity resolution error', error)
-      throw error;
-    });
+    this._identity = Promise.resolve(options.identity || new AnonymousIdentity());
   }
 
   public addTransform(fn: HttpAgentRequestTransformFn, priority = fn.priority || 0): void {
@@ -140,11 +134,7 @@ export class HttpAgent implements Agent {
   }
 
   public async getPrincipal(): Promise<Principal | null> {
-    this.#log('debug', 'getPrincipal() start')
-    const identity = await this._identity;
-    const principal = identity.getPrincipal();
-    this.#log('debug', 'getPrincipal() end', principal)
-    return principal
+    return this._identity ? (await this._identity).getPrincipal() : Principal.anonymous();
   }
 
   public async call(
@@ -155,11 +145,9 @@ export class HttpAgent implements Agent {
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
-    this.#log('info', 'call', { canisterId, fields, identity })
+    this.#log('debug', 'call', { canisterId, fields, identity })
     const id = await (identity !== undefined ? identity : this._identity);
-
     const sender = id?.getPrincipal() || Principal.anonymous();
-
     return this.submit(
       {
         request_type: SubmitRequestType.Call,
@@ -288,7 +276,7 @@ export class HttpAgent implements Agent {
   }
 
   protected async submit(submit: SubmitRequest, identity: Identity): Promise<SubmitResponse> {
-    this.#log('info', 'submit()', { submit, identity })
+    this.#log('debug', 'submit', { submit, identity })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let transformedRequest: any = (await this._transform({
       request: {
@@ -337,7 +325,7 @@ export class HttpAgent implements Agent {
   }
 
   protected async read(request: ReadRequest, identity: Identity): Promise<ReadResponse> {
-    this.#log('info', 'read()', {request, identity, identityPrincipalHex: identity.getPrincipal().toHex()})
+    this.#log('debug', 'read', {request, identity, identityPrincipalHex: identity.getPrincipal().toHex()})
     // TODO: remove this any. This can be a Signed or UnSigned request.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let transformedRequest: any = await this._transform({

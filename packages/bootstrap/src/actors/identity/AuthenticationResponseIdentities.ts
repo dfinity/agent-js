@@ -28,29 +28,27 @@ export default function AuthenticationResponseIdentities(
         log('warn', 'got CustomEvent without URL', { event });
         continue;
       }
-      const signFunction = event.detail.sign
+      const signFunction = event.detail.sign;
       if (typeof signFunction !== 'function') {
-        throw new Error('no sign function')
+        throw new Error('no sign function');
       }
-      log('debug', 'signFunction is', signFunction)
+      log('debug', 'new signFunction is', signFunction);
       const identity = (() => {
         const response = icidResponse.fromQueryString(url.searchParams);
         const chain = DelegationChain.fromJSON(icidResponse.parseBearerToken(response.accessToken));
         const sessionIdentity: Pick<SignIdentity, 'sign'> = {
           async sign(challenge) {
-            log('debug', 'sessionIdentity signFunction start', { challenge })
-            const signature = await signFunction(challenge)
-            log('debug', 'sessionIdentity signFunction', { challenge, signature })
+            const signature = await signFunction(challenge);
             return signature;
-          }
+          },
         };
         const delegationIdentity = DelegationIdentity.fromDelegation(sessionIdentity, chain);
-        log('debug', 'created delegationIdentity', {
-          publicKey: delegationIdentity.getPublicKey().toDer().toString('hex'),
-        });
         return delegationIdentity;
       })();
-      log('debug', 'about to yield', identity);
+      log('debug', 'yielding', {
+        identity,
+        principalHex: identity.getPrincipal().toHex(),
+      });
       yield identity;
     }
   })();

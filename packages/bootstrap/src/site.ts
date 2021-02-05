@@ -339,7 +339,7 @@ export function withIdentity(identity: Identity) {
     const newInfo: SiteInfo = Object.create(info);
     newInfo.getOrCreateUserIdentity = async () => {
       return identity;
-    }
+    };
     return newInfo;
   };
 }

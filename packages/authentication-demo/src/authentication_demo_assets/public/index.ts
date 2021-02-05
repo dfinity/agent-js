@@ -14,17 +14,17 @@ declare global {
   }
 }
 
-// if (!window.ic?.features?.authentication) {
-//   // There is either no version of @dfinity/bootstrap on the page, OR
-//   // there is an older version that doesn't know about @dfinity/authentication.
-//   // Either way, import the version from this package, which should trigger a re-load of the whole canister js.
-//   console.debug(
-//     "no ic.features.authentication. Importing custom @dfinity/bootstrap"
-//   );
-//   import("@dfinity/bootstrap").then(() => {
-//     console.debug("imported custom @dfinity/bootstrap");
-//   });
-// }
+if (!window.ic?.features?.authentication) {
+  // There is either no version of @dfinity/bootstrap on the page, OR
+  // there is an older version that doesn't know about @dfinity/authentication.
+  // Either way, import the version from this package, which should trigger a re-load of the whole canister js.
+  console.debug(
+    "no ic.features.authentication. Importing custom @dfinity/bootstrap"
+  );
+  import("@dfinity/bootstrap").then(() => {
+    console.debug("imported custom @dfinity/bootstrap");
+  });
+}
 
 /**
  * Main entrypoint for this authentication-demo frontend.

@@ -12,7 +12,6 @@ export type AuthenticationResponseUrlDetectedEvent = {
   payload: {
     url: URL;
     sign: (challenge: ArrayBuffer) => Promise<ArrayBuffer>
-    signPort: MessagePort
   };
 };
 

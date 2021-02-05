@@ -19,9 +19,6 @@ type PublicKeyFormat = "principal.hex" | "principal.text" | "hex";
 export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
   identity: IdentityDescriptor | null = null;
   #log = makeLog("AuthenticationSubjectPublicKeyElement");
-  static get observedAttributes(): string[] {
-    return [];
-  }
   constructor() {
     super();
   }
