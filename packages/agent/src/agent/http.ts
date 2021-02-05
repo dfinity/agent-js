@@ -21,11 +21,11 @@ import {
   SubmitResponse,
 } from '../http_agent_types';
 import * as IDL from '../idl';
+import { makeLog } from '../log';
 import { Principal } from '../principal';
 import { requestIdOf } from '../request_id';
 import { BinaryBlob, blobFromHex, JsonObject } from '../types';
 import { Agent } from './api';
-import { makeLog } from '../log';
 
 const API_VERSION = 'v1';
 
@@ -86,13 +86,12 @@ function getDefaultFetch(): typeof fetch {
 // other computations so that this class can stay as simple as possible while
 // allowing extensions.
 export class HttpAgent implements Agent {
+  protected readonly log = makeLog('HttpAgent');
   private readonly _pipeline: HttpAgentRequestTransformFn[] = [];
   private readonly _identity: Promise<Identity>;
   private readonly _fetch: typeof fetch;
   private readonly _host: URL;
   private readonly _credentials: string | undefined;
-
-  #log = makeLog('HttpAgent')
 
   constructor(options: HttpAgentOptions = {}) {
     if (options.source) {
@@ -145,7 +144,7 @@ export class HttpAgent implements Agent {
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
-    this.#log('debug', 'call', { canisterId, fields, identity })
+    this.log('debug', 'call', { canisterId, fields, identity });
     const id = await (identity !== undefined ? identity : this._identity);
     const sender = id?.getPrincipal() || Principal.anonymous();
     return this.submit(
@@ -276,7 +275,7 @@ export class HttpAgent implements Agent {
   }
 
   protected async submit(submit: SubmitRequest, identity: Identity): Promise<SubmitResponse> {
-    this.#log('debug', 'submit', { submit, identity })
+    this.log('debug', 'submit', { submit, identity });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let transformedRequest: any = (await this._transform({
       request: {
@@ -325,7 +324,11 @@ export class HttpAgent implements Agent {
   }
 
   protected async read(request: ReadRequest, identity: Identity): Promise<ReadResponse> {
-    this.#log('debug', 'read', {request, identity, identityPrincipalHex: identity.getPrincipal().toHex()})
+    this.log('debug', 'read', {
+      request,
+      identity,
+      identityPrincipalHex: identity.getPrincipal().toHex(),
+    });
     // TODO: remove this any. This can be a Signed or UnSigned request.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let transformedRequest: any = await this._transform({

@@ -13,10 +13,10 @@ export function getDefaultAgent(): Agent {
   const agent =
     typeof window === 'undefined'
       ? typeof global === 'undefined'
-      ? typeof self === 'undefined'
-        ? undefined
-        : self.ic.agent
-      : global.ic.agent
+        ? typeof self === 'undefined'
+          ? undefined
+          : self.ic.agent
+        : global.ic.agent
       : window.ic.agent;
 
   if (!agent) {

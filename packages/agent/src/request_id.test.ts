@@ -87,7 +87,11 @@ test('requestIdOf for sender_delegation signature', async () => {
   );
   const delegation1 = {
     expiration: BigInt('1611365875951000000'),
-    pubkey: new Uint8Array(blobFromHex('302a300506032b6570032100819d9fe3ac251039f934cdc925da0b019848af9d650d4136fb5d955cff17f78e')),
+    pubkey: new Uint8Array(
+      blobFromHex(
+        '302a300506032b6570032100819d9fe3ac251039f934cdc925da0b019848af9d650d4136fb5d955cff17f78e',
+      ),
+    ),
     targets: [
       Uint8Array.from([0, 0, 0, 0, 0, 48, 0, 77, 1, 1]),
       Uint8Array.from([0, 0, 0, 0, 0, 32, 0, 43, 1, 1]),

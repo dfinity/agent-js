@@ -1,6 +1,8 @@
-export type DefaultLogLevel = 'debug'|'warn'|'info'|'error';
-export type LogFunction<Level extends DefaultLogLevel> =
-  (level: Level, ...loggables: unknown[]) => void;
+export type DefaultLogLevel = 'debug' | 'warn' | 'info' | 'error';
+export type LogFunction<Level extends DefaultLogLevel> = (
+  level: Level,
+  ...loggables: unknown[]
+) => void;
 
 /**
  * Log something using globalThis.console, if present.
@@ -8,11 +10,11 @@ export type LogFunction<Level extends DefaultLogLevel> =
  * @param loggables - variable arguments passed to `console.log(...)`
  */
 export function log<Level extends DefaultLogLevel>(level: Level, ...loggables: unknown[]): void {
-  if ((level in console) && (typeof console[level] === 'function')) {
+  if (level in console && typeof console[level] === 'function') {
     console[level](...loggables);
     return;
   }
-  if ( ! level) {
+  if (!level) {
     throw new Error(`log level is required, but not provided`);
   }
   if (level !== 'info') {
