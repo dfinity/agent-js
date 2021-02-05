@@ -1,0 +1,7 @@
+# We work with a safelist here, so block everything that's not permitted, and add files
+# that are.
+**
+
+!README.md
+!dist/**
+!package.json
