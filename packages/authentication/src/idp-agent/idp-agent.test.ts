@@ -47,6 +47,7 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
     const { sent, transport } = createTestTransport();
     const agent = createTestAgent(transport);
     await agent.sendAuthenticationRequest({
+      saveIdentity: async () => {/*noop*/},
       redirectUri,
       scope: [
         {
@@ -78,6 +79,7 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
     const agent = createTestAgent(transport);
     const sendAuthenticationRequestCommand = {
       redirectUri: exampleRedirectUri,
+      saveIdentity: async () => {/* noop */},
       scope: [],
     };
     await agent.sendAuthenticationRequest(sendAuthenticationRequestCommand);
@@ -106,6 +108,7 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
     const transport = RedirectTransport(locationProxy);
     const agent = createTestAgent(transport);
     const sendAuthenticationRequestCommand = {
+      saveIdentity: async () => {/* noop */},
       redirectUri: exampleRedirectUri,
       scope: [],
     };

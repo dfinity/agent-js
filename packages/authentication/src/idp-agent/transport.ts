@@ -1,15 +1,18 @@
 import { AuthenticationRequest, createAuthenticationRequestUrl } from '../idp-protocol/request';
 import { CustomEventWithDetail, createCustomEvent } from '../id-dom-events';
 import { AuthenticationResponseDetectedEventIdentifier } from '../id-dom-events';
+import { makeLog } from '@dfinity/agent';
 
 export interface IdentityProviderIndicator {
   url: URL;
 }
 
-type AuthenticationResponseUrlDetectedEvent = {
+export type AuthenticationResponseUrlDetectedEvent = {
   type: 'AuthenticationResponseUrlDetectedEvent';
   payload: {
     url: URL;
+    sign: (challenge: ArrayBuffer) => Promise<ArrayBuffer>
+    signPort: MessagePort
   };
 };
 
@@ -108,31 +111,29 @@ export function DomEventTransport(): Transport<EnvelopeToDocument> {
     const event = (() => {
       switch (message.type) {
         case 'AuthenticationResponseUrlDetectedEvent':
-          return AuthenticationResponseDetectedEvent(message.payload.url);
+          return AuthenticationResponseDetectedEvent(message.payload);
         default:
           throw new Error('unexpected message.type');
       }
     })();
+    makeLog('DomEventTransport')('debug', 'dispatching event on document', event)
     globalThis.document.dispatchEvent(event);
   }
 }
 
 /**
- * @param url - URL in which the (maybe) AuthenticationResponse was detected.
+ * @param detail details of event
  */
 export function AuthenticationResponseDetectedEvent(
-  url: URL,
+  detail: AuthenticationResponseUrlDetectedEvent['payload']
 ): CustomEventWithDetail<
   typeof AuthenticationResponseDetectedEventIdentifier,
-  {
-    url: URL;
-  }
+  AuthenticationResponseUrlDetectedEvent['payload']
 > {
   return createCustomEvent(AuthenticationResponseDetectedEventIdentifier, {
-    detail: {
-      url,
-    },
+    detail,
     bubbles: true,
     cancelable: true,
+    composed: true,
   });
 }

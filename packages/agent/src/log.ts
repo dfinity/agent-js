@@ -10,6 +10,7 @@ export type LogFunction<Level extends DefaultLogLevel> =
 export function log<Level extends DefaultLogLevel>(level: Level, ...loggables: unknown[]): void {
   if ((level in console) && (typeof console[level] === 'function')) {
     console[level](...loggables);
+    return;
   }
   if ( ! level) {
     throw new Error(`log level is required, but not provided`);

@@ -86,8 +86,8 @@ async function _main(spec: { render: ReturnType<typeof BootstrapRenderer> }) {
       authentication: true,
     },
   };
-  const site = await SiteInfo.fromWindow();
-  const initialIdentity = new AnonymousIdentity();
+  const siteFromWindow = await SiteInfo.fromWindow();
+  const initialIdentity = await siteFromWindow.getOrCreateUserIdentity() || new AnonymousIdentity();
   const identities = async function* () {
     yield initialIdentity;
     for await (const identity of AuthenticationResponseIdentities(document)) {
@@ -95,11 +95,13 @@ async function _main(spec: { render: ReturnType<typeof BootstrapRenderer> }) {
       yield identity;
     }
   };
+  const site = withIdentity(await MutableIdentity(identities()))(siteFromWindow)
+
   const beforeunload = new Promise(resolve => {
     document.addEventListener('beforeunload', event => resolve(event), { once: true });
   });
 
-  bootstrapLog('debug', 'constructing IdentityActor');
+  bootstrapLog('debug', 'constructing IdentityActor', { initialIdentity });
   IdentityActor({
     eventTarget: document,
     initialIdentity,
@@ -107,7 +109,7 @@ async function _main(spec: { render: ReturnType<typeof BootstrapRenderer> }) {
     cancel: beforeunload,
   });
 
-  const agent = await createAgent(withIdentity(await MutableIdentity(identities()))(site));
+  const agent = await createAgent(site);
 
   // Find the canister ID. Allow override from the url with 'canister_id=1234..'.
   const canisterId = site.principal;

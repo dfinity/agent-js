@@ -1,6 +1,7 @@
 import { authenticator } from "@dfinity/authentication";
-import { Actor } from "@dfinity/agent";
+import { Actor, makeLog } from "@dfinity/agent";
 import * as canisters from "./canisters";
+import { defaultSessionIdentityStorage } from "./session";
 
 /**
  * When clicked, initiates Authentication via @dfinity/authentication authenticator.sendAuthenticationRequest().
@@ -9,6 +10,7 @@ import * as canisters from "./canisters";
  * @todo feel free to extend HTMLButtonElement, just include a polyfill for Safari https://www.npmjs.com/package/@webreflection/custom-elements
  */
 export default class AuthenticationButton extends HTMLElement {
+  #log = makeLog("AuthenticationButton");
   constructor() {
     super();
     this.addEventListener("click", this.listener);
@@ -35,6 +37,10 @@ export default class AuthenticationButton extends HTMLElement {
   }
   requestAuthentication(): void {
     authenticator.sendAuthenticationRequest({
+      saveIdentity: (identity) => {
+        this.#log("debug", "sendAuthenticationRequest.saveIdentity", identity);
+        defaultSessionIdentityStorage.set(identity);
+      },
       scope: [
         {
           type: "CanisterScope",

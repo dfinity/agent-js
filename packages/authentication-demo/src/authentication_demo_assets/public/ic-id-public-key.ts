@@ -3,6 +3,9 @@ import {
   IdentityRequestedEvent,
   PublicKeyIdentityDescriptor,
 } from "@dfinity/authentication";
+import { makeLog, Principal, blobFromUint8Array } from "@dfinity/agent";
+
+type PublicKeyFormat = "principal.hex" | "principal.text" | "hex";
 
 /**
  * Render the currently-authenticated identity from @dfinity/authentication.
@@ -15,16 +18,67 @@ import {
  */
 export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
   identity: IdentityDescriptor | null = null;
+  #log = makeLog("AuthenticationSubjectPublicKeyElement");
+  static get observedAttributes(): string[] {
+    return [];
+  }
   constructor() {
     super();
   }
   render(): void {
-    this.innerHTML =
-      this.getAttribute("publicKey") ||
-      this.getAttribute("initialPublicKey") ||
-      this.getAttribute("placeholder") ||
-      "";
+    while (this.firstChild) {
+      this.firstChild.remove();
+    }
+    this.appendChild(this.createChild());
   }
+  createChild(): Node {
+    const publicKeyHex = this.getAttribute("publicKey");
+    if (!publicKeyHex) {
+      return this.ownerDocument.createTextNode(
+        this.getAttribute("placeholder") || ""
+      );
+    }
+    const format = this.getAttribute("format");
+    switch (format) {
+      case "principal.hex":
+      case "principal.text":
+        return this.ownerDocument.createTextNode(
+          this.#formatPublicKey(format, publicKeyHex)
+        );
+      case undefined:
+      case null:
+      case "hex":
+        return document.createTextNode(publicKeyHex);
+      default:
+        this.#log("warn", "unexpected format. using hex instead.", {
+          unknownFormat: format,
+        });
+        return document.createTextNode(publicKeyHex);
+    }
+  }
+  #formatPublicKey = (
+    format: PublicKeyFormat,
+    publicKeyHex: string
+  ): string => {
+    const bytes = Uint8Array.from(hexToBytes(publicKeyHex));
+    function BytesPrincipal(bytes: Uint8Array) {
+      return Principal.selfAuthenticating(blobFromUint8Array(bytes));
+    }
+    switch (format) {
+      case "hex":
+        return toHex(bytes);
+      case "principal.hex": {
+        return BytesPrincipal(bytes).toHex();
+      }
+      case "principal.text": {
+        return BytesPrincipal(bytes).toText();
+      }
+      default:
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-case-declarations
+        const x: never = format;
+    }
+    throw new Error(`unexpected to format provided to formatPublicKey`);
+  };
   connectedCallback(): void {
     this.dispatchEvent(
       IdentityRequestedEvent({
@@ -92,4 +146,15 @@ export function isIdentityDescriptor(
       return true;
   }
   return false;
+}
+
+function hexToBytes(hex: string): Array<number> {
+  const bytes = (hex.match(/.{2}/gi) || []).map((octet) => parseInt(octet, 16));
+  return bytes;
+}
+
+function toHex(bytes: Uint8Array) {
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }

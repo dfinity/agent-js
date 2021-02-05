@@ -25,6 +25,7 @@ import { Principal } from '../principal';
 import { requestIdOf } from '../request_id';
 import { BinaryBlob, blobFromHex, JsonObject } from '../types';
 import { Agent } from './api';
+import { makeLog } from '../log';
 
 const API_VERSION = 'v1';
 
@@ -91,6 +92,8 @@ export class HttpAgent implements Agent {
   private readonly _host: URL;
   private readonly _credentials: string | undefined;
 
+  #log = makeLog('HttpAgent')
+
   constructor(options: HttpAgentOptions = {}) {
     if (options.source) {
       this._pipeline = [...options.source._pipeline];
@@ -121,17 +124,27 @@ export class HttpAgent implements Agent {
       const { name, password } = options.credentials;
       this._credentials = `${name}${password ? ':' + password : ''}`;
     }
-    this._identity = Promise.resolve(options.identity || new AnonymousIdentity());
+    this._identity = Promise.resolve(options.identity || new AnonymousIdentity()).then(ident => {
+      this.#log('info', 'http agent identity resolved', ident)
+      return ident;
+    }).catch(error => {
+      this.#log('warn', 'http agent identity resolution error', error)
+      throw error;
+    });
   }
 
-  public addTransform(fn: HttpAgentRequestTransformFn, priority = fn.priority || 0) {
+  public addTransform(fn: HttpAgentRequestTransformFn, priority = fn.priority || 0): void {
     // Keep the pipeline sorted at all time, by priority.
     const i = this._pipeline.findIndex(x => (x.priority || 0) < priority);
     this._pipeline.splice(i >= 0 ? i : this._pipeline.length, 0, Object.assign(fn, { priority }));
   }
 
   public async getPrincipal(): Promise<Principal | null> {
-    return this._identity ? (await this._identity).getPrincipal() : Principal.anonymous();
+    this.#log('debug', 'getPrincipal() start')
+    const identity = await this._identity;
+    const principal = identity.getPrincipal();
+    this.#log('debug', 'getPrincipal() end', principal)
+    return principal
   }
 
   public async call(
@@ -142,7 +155,9 @@ export class HttpAgent implements Agent {
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
+    this.#log('info', 'call', { canisterId, fields, identity })
     const id = await (identity !== undefined ? identity : this._identity);
+
     const sender = id?.getPrincipal() || Principal.anonymous();
 
     return this.submit(
@@ -273,6 +288,8 @@ export class HttpAgent implements Agent {
   }
 
   protected async submit(submit: SubmitRequest, identity: Identity): Promise<SubmitResponse> {
+    this.#log('info', 'submit()', { submit, identity })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let transformedRequest: any = (await this._transform({
       request: {
         body: null,
@@ -320,7 +337,9 @@ export class HttpAgent implements Agent {
   }
 
   protected async read(request: ReadRequest, identity: Identity): Promise<ReadResponse> {
+    this.#log('info', 'read()', {request, identity, identityPrincipalHex: identity.getPrincipal().toHex()})
     // TODO: remove this any. This can be a Signed or UnSigned request.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let transformedRequest: any = await this._transform({
       request: {
         method: 'POST',

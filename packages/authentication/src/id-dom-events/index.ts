@@ -20,7 +20,7 @@ export function IdentityRequestedEvent<T>(
   const channel = new MessageChannel();
   const { port1, port2 } = channel;
   port2.onmessage = (event: MessageEvent) => {
-    console.debug('IdentityRequestedEvent port2.onmessage', event);
+    // console.debug('IdentityRequestedEvent port2.onmessage', event);
     const data = event && event.data;
     const identity = data && data.identity;
     if (!identity) {
