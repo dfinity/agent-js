@@ -1,7 +1,8 @@
-import { authenticator } from "@dfinity/authentication";
+import { authenticator, Ed25519KeyIdentity } from "@dfinity/authentication";
 import { Actor, makeLog } from "@dfinity/agent";
 import * as canisters from "./canisters";
-import { defaultSessionIdentityStorage } from "./session";
+import { defaultSessionStorage, SessionPublicKey } from "./session";
+import { hexEncodeUintArray } from "@dfinity/authentication/.tsc-out/packages/authentication/src/idp-protocol/bytes";
 
 /**
  * When clicked, initiates Authentication via @dfinity/authentication authenticator.sendAuthenticationRequest().
@@ -11,6 +12,7 @@ import { defaultSessionIdentityStorage } from "./session";
  */
 export default class AuthenticationButton extends HTMLElement {
   #log = makeLog("AuthenticationButton");
+  #session = defaultSessionStorage;
   constructor() {
     super();
     this.addEventListener("click", this.listener);
@@ -26,20 +28,33 @@ export default class AuthenticationButton extends HTMLElement {
     })();
     this.appendChild(fragment);
   }
-  listener(event: Event): void {
+  async listener(event: Event): Promise<void> {
     switch (event.type) {
       case "click":
-        this.requestAuthentication();
+        await this.requestAuthentication();
         break;
       default:
         console.debug(`AuthenticationButton got event: ${event.type}`);
     }
   }
-  requestAuthentication(): void {
+  async requestAuthentication(): Promise<void> {
+    const sessionIdentity = Ed25519KeyIdentity.generate(
+      crypto.getRandomValues(new Uint8Array(32))
+    );
+    const session = {
+      identity: {
+        secretKey: {
+          hex: hexEncodeUintArray(sessionIdentity.getKeyPair().secretKey),
+        },
+      },
+    };
+    this.#log("debug", "setting new session", session);
+    await this.#session.set(session);
     authenticator.sendAuthenticationRequest({
-      saveIdentity: (identity) => {
-        this.#log("debug", "sendAuthenticationRequest.saveIdentity", identity);
-        defaultSessionIdentityStorage.set(identity);
+      session: {
+        identity: {
+          publicKey: SessionPublicKey(session),
+        },
       },
       scope: [
         {

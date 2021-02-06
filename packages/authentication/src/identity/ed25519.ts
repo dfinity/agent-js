@@ -8,7 +8,9 @@ import {
   KeyPair,
   PublicKey,
   SignIdentity,
+  blobFromBuffer,
 } from '@dfinity/agent';
+import { Buffer } from 'buffer/';
 import * as tweetnacl from 'tweetnacl';
 
 export class Ed25519PublicKey implements PublicKey {
@@ -155,6 +157,15 @@ export class Ed25519KeyIdentity extends SignIdentity {
     return new Ed25519KeyIdentity(Ed25519PublicKey.fromRaw(publicKey), privateKey);
   }
 
+  public static fromSecretKey(secretKey: ArrayBuffer): Ed25519KeyIdentity {
+    const keyPair = tweetnacl.sign.keyPair.fromSecretKey(new Uint8Array(secretKey));
+    const identity = Ed25519KeyIdentity.fromKeyPair(
+      blobFromUint8Array(keyPair.publicKey),
+      blobFromUint8Array(keyPair.secretKey),
+    );
+    return identity;
+  }
+
   protected _publicKey: Ed25519PublicKey;
 
   // `fromRaw` and `fromDer` should be used for instantiation, not this constructor.
@@ -189,9 +200,10 @@ export class Ed25519KeyIdentity extends SignIdentity {
 
   /**
    * Signs a blob of data, with this identity's private key.
-   * @param blob - challenge to sign with this identity's secretKey, producing a signature
+   * @param challenge - challenge to sign with this identity's secretKey, producing a signature
    */
-  public async sign(blob: BinaryBlob): Promise<BinaryBlob> {
+  public async sign(challenge: BinaryBlob|ArrayBuffer): Promise<BinaryBlob> {
+    const blob = (challenge instanceof Buffer) ? blobFromBuffer(challenge) : blobFromUint8Array(new Uint8Array(challenge));
     const signature = tweetnacl.sign.detached(blob, this._privateKey);
     return blobFromUint8Array(signature);
   }

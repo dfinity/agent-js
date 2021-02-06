@@ -1,4 +1,4 @@
-import { IdentityProviderAgent } from './idp-agent';
+import { IdentityProviderAgent, SendAuthenticationRequestCommand } from './idp-agent';
 import { Principal } from '@dfinity/agent';
 import {
   UrlTransport,
@@ -7,6 +7,7 @@ import {
   Transport,
 } from './transport';
 import { unsafeTemporaryIdentityProvider } from '.';
+import { Ed25519KeyIdentity } from '../identity/ed25519';
 
 /**
  * Create a Transport that it is useful for testing what gets sent over the transport.
@@ -47,7 +48,15 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
     const { sent, transport } = createTestTransport();
     const agent = createTestAgent(transport);
     await agent.sendAuthenticationRequest({
-      saveIdentity: async () => {/*noop*/},
+      session: {
+        identity: {
+          publicKey: {
+            toDer() {
+              return Uint8Array.from([])
+            }
+          }
+        }
+      },
       redirectUri,
       scope: [
         {
@@ -77,10 +86,14 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
       urls = [...urls, url];
     });
     const agent = createTestAgent(transport);
-    const sendAuthenticationRequestCommand = {
+    const sendAuthenticationRequestCommand: SendAuthenticationRequestCommand = {
       redirectUri: exampleRedirectUri,
-      saveIdentity: async () => {/* noop */},
       scope: [],
+      session: {
+        identity: {
+          publicKey: Ed25519KeyIdentity.generate().getPublicKey(),
+        }
+      }
     };
     await agent.sendAuthenticationRequest(sendAuthenticationRequestCommand);
     expect(urls.length).toEqual(1);
@@ -107,10 +120,14 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
     });
     const transport = RedirectTransport(locationProxy);
     const agent = createTestAgent(transport);
-    const sendAuthenticationRequestCommand = {
-      saveIdentity: async () => {/* noop */},
+    const sendAuthenticationRequestCommand: SendAuthenticationRequestCommand = {
       redirectUri: exampleRedirectUri,
       scope: [],
+      session: {
+        identity: {
+          publicKey: Ed25519KeyIdentity.generate().getPublicKey(),
+        }
+      }
     };
     await agent.sendAuthenticationRequest(sendAuthenticationRequestCommand);
     expect(assignments.length).toEqual(1);

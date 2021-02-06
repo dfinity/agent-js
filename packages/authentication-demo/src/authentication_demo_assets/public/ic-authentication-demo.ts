@@ -1,10 +1,9 @@
 import { authenticator } from "@dfinity/authentication";
 // @ts-expect-error 'ic:canisters' is not resolvable without dfx-knowledge
 import authDemoContract from "ic:canisters/authentication_demo";
-import { Principal, makeLog, blobFromUint8Array } from "@dfinity/agent";
-import { hexEncodeUintArray } from "@dfinity/authentication/.tsc-out/packages/authentication/src/idp-protocol/bytes";
+import { Principal, makeLog } from "@dfinity/agent";
 import AuthenticationButton from "./ic-id-button";
-import { defaultSessionIdentityStorage } from "./session";
+import { defaultSessionStorage, SessionIdentitySignFunction } from "./session";
 
 /**
  * Main Custom Element for the @dfinity/authentication-demo.
@@ -16,36 +15,42 @@ import { defaultSessionIdentityStorage } from "./session";
  */
 export default class AuthenticationDemo extends HTMLElement {
   #log = makeLog("AuthenticationDemo");
-  #sessionStorage = defaultSessionIdentityStorage;
+  #sessionStorage = defaultSessionStorage;
   whoamiPrincipal: Principal | undefined;
   constructor() {
     super();
   }
   connectedCallback(): void {
     this.render();
-    this.#logSessionIdentity();
-    authenticator.receiveAuthenticationResponse(
-      new URL(this.ownerDocument.location.toString()),
-      this.#sign
-    );
+    this.#initializeAuthentication();
   }
-  #sign = async (challenge: ArrayBuffer): Promise<ArrayBuffer> => {
-    const sessionIdentityStored = await this.#sessionStorage.get();
-    if (sessionIdentityStored.empty) {
-      throw new Error(`cant find a sessionIdentity to use to sign`);
+  #initializeAuthentication = async (): Promise<void> => {
+    const { value: session } = await this.#sessionStorage.get();
+    this.#log("debug", "initializingAuthentication", { session });
+    if (!session) {
+      this.#log(
+        "debug",
+        "initializeAuthentication got no session from storage"
+      );
+      return;
     }
-    const sessionIdentity = sessionIdentityStored.value;
-    this.#log("debug", "signBefore using", {
-      sessionIdentity,
-      princpalHex: sessionIdentityStored.value.getPrincipal().toHex()
-    });
-    const signature = await sessionIdentity.sign(blobFromUint8Array(new Uint8Array(challenge)));
-    this.#log("debug", "signAfter", { challenge, signature, sessionIdentity });
-    return signature;
-  };
-  #logSessionIdentity = async (): Promise<void> => {
-    const stored = await defaultSessionIdentityStorage.get();
-    this.#log("debug", "got stored session on load", stored);
+    const url = new URL(location.href);
+    let authenticationResponse = session.authenticationResponse;
+    if (!authenticationResponse && url.searchParams.has("access_token")) {
+      authenticationResponse = url.toString();
+      await this.#sessionStorage.set({
+        ...session,
+        authenticationResponse,
+      });
+    }
+    if (authenticationResponse) {
+      authenticator.useSession({
+        authenticationResponse,
+        identity: {
+          sign: SessionIdentitySignFunction(session.identity),
+        },
+      });
+    }
   };
   /**
    * Clear out children and re-append-children based on latest state.
@@ -97,9 +102,7 @@ export default class AuthenticationDemo extends HTMLElement {
                   <span>${this.whoamiPrincipal.toText()}</span>
                 </dd>
                 <dt>Principal Blob Hex</dt><dd>
-                  <span>${hexEncodeUintArray(
-                    this.whoamiPrincipal.toBlob()
-                  )}</span>
+                  <span>${this.whoamiPrincipal.toBlob().toString("hex")}</span>
                 </dd>
               </dl>
               

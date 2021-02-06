@@ -1,19 +1,13 @@
 import { AuthenticationRequest, createAuthenticationRequestUrl } from '../idp-protocol/request';
-import { CustomEventWithDetail, createCustomEvent } from '../id-dom-events';
-import { AuthenticationResponseDetectedEventIdentifier } from '../id-dom-events';
+import { SignerAvailableEvent, AuthenticationResponseUrlDetectedEvent, AuthenticationResponseUrlDetectedEventIdentifier, createCustomEvent } from '../id-dom-events';
 import { makeLog } from '@dfinity/agent';
+import { BootstrapChangeIdentityCommand, BootstrapChangeIdentityCommandIdentifier } from '../bootstrap-messages/BootstrapChangeIdentityCommand';
 
 export interface IdentityProviderIndicator {
   url: URL;
 }
 
-export type AuthenticationResponseUrlDetectedEvent = {
-  type: 'AuthenticationResponseUrlDetectedEvent';
-  payload: {
-    url: URL;
-    sign: (challenge: ArrayBuffer) => Promise<ArrayBuffer>
-  };
-};
+
 
 export type EnvelopeToIdentityProvider = {
   to: IdentityProviderIndicator;
@@ -21,7 +15,11 @@ export type EnvelopeToIdentityProvider = {
 };
 export type EnvelopeToDocument = {
   to: 'document';
-  message: AuthenticationResponseUrlDetectedEvent;
+  message:
+  | ReturnType<typeof AuthenticationResponseUrlDetectedEvent>
+  | ReturnType<typeof SignerAvailableEvent>
+  | BootstrapChangeIdentityCommand
+  ;
 };
 export type IdentityProviderAgentEnvelope = EnvelopeToIdentityProvider | EnvelopeToDocument;
 
@@ -103,36 +101,30 @@ export function DomEventTransport(): Transport<EnvelopeToDocument> {
   return Object.freeze({ send });
   /**
    * Send an Envelope to its destination.
-   * @param e - envelope to send
+   * @param envelope - envelope to send
    */
-  async function send(e: EnvelopeToDocument) {
-    const message = e.message;
+  async function send(envelope: EnvelopeToDocument) {
+    const message = envelope.message;
     const event = (() => {
       switch (message.type) {
-        case 'AuthenticationResponseUrlDetectedEvent':
-          return AuthenticationResponseDetectedEvent(message.payload);
+        case AuthenticationResponseUrlDetectedEventIdentifier:
+          return AuthenticationResponseUrlDetectedEvent(message.detail);
+        case BootstrapChangeIdentityCommandIdentifier:
+          return createCustomEvent(
+            message.type,
+            {
+              bubbles: true,
+              composed: true,
+              detail: message.detail,
+            },
+          )
         default:
-          throw new Error('unexpected message.type');
+          throw Object.assign(new Error('unexpected message.type'), {
+            envelope,
+          });
       }
     })();
     makeLog('DomEventTransport')('debug', 'dispatching event on document', event)
     globalThis.document.dispatchEvent(event);
   }
-}
-
-/**
- * @param detail details of event
- */
-export function AuthenticationResponseDetectedEvent(
-  detail: AuthenticationResponseUrlDetectedEvent['payload']
-): CustomEventWithDetail<
-  typeof AuthenticationResponseDetectedEventIdentifier,
-  AuthenticationResponseUrlDetectedEvent['payload']
-> {
-  return createCustomEvent(AuthenticationResponseDetectedEventIdentifier, {
-    detail,
-    bubbles: true,
-    cancelable: true,
-    composed: true,
-  });
 }

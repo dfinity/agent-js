@@ -1,3 +1,4 @@
+export { SendAuthenticationRequestCommand } from "./idp-agent";
 import * as idp from './idp-agent';
 import { RedirectTransport, BrowserTransport, DomEventTransport } from './transport';
 

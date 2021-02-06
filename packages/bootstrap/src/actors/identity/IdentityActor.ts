@@ -1,5 +1,5 @@
 import { AnonymousIdentity, createIdentityDescriptor, makeLog, SignIdentity } from '@dfinity/agent';
-import { IdentityDescriptor, IdentityRequestedEventIdentifier } from '@dfinity/authentication';
+import { IdentityDescriptor, IdentityRequestedEventIdentifier, BootstrapChangeIdentityCommandIdentifier, AuthenticationResponseUrlDetectedEvent } from '@dfinity/authentication';
 import { EventIterable } from '../../dom-events';
 import { BootstrapIdentityChangedEvent } from './events';
 
@@ -44,6 +44,7 @@ export default function IdentityActor(params: {
     }
     started = true;
     await Promise.all([
+      handleBootstrapChangeIdentityCommand(),
       handleIdentityRequestedEvents(),
       // do this one last so all subscribers set up
       trackLatestIdentity(),
@@ -61,16 +62,21 @@ export default function IdentityActor(params: {
     started = false;
   }
 
+  async function useIdentity(identity: SignIdentity|AnonymousIdentity) {
+    const prevIdentity = currentIdentity;
+    log('debug', 'useIdentity', { prevIdentity, identity });
+    currentIdentity = identity;
+    const identityDescriptor = createIdentityDescriptor(identity);
+    params.eventTarget.dispatchEvent(BootstrapIdentityChangedEvent(identityDescriptor));
+    publish(IdentityMessage(identityDescriptor));
+  }
+
   /**
    * Whenever `identities` emits a new one, publish it to all subscribers.
    */
   async function trackLatestIdentity() {
     for await (const identity of params.identities) {
-      currentIdentity = identity;
-      const identityDescriptor = createIdentityDescriptor(currentIdentity);
-      log('debug', 'new currentIdentity', { currentIdentity, identityDescriptor });
-      params.eventTarget.dispatchEvent(BootstrapIdentityChangedEvent(identityDescriptor));
-      publish(IdentityMessage(identityDescriptor));
+      await useIdentity(identity);
     }
   }
 
@@ -95,6 +101,45 @@ export default function IdentityActor(params: {
     }
   }
 
+  async function handleBootstrapChangeIdentityCommand() {
+    for await (const event of EventIterable(document, BootstrapChangeIdentityCommandIdentifier, true)) {
+      log('debug', 'got handleBootstrapChangeIdentityCommand CustomEvent', { event });
+      const detail: unknown = (event as CustomEvent).detail;
+      if (typeof detail !== 'object') {
+        continue;
+      }
+      const authenticationResponseString = hasOwnProperty(detail, 'authenticationResponse') && detail.authenticationResponse;
+      if (typeof authenticationResponseString !== 'string') {
+        log('debug', 'detail.authenticationResponse must be a string', detail)
+        continue;
+      }
+
+      // const authenticationResponse = response.fromQueryString(new URL(authenticationResponseString).searchParams)
+      // const parsedAccessToken = response.parseBearerToken(authenticationResponse.accessToken);
+
+      const identity = hasOwnProperty(detail, 'identity') && detail.identity;
+      const signFunction = hasOwnProperty(identity, 'sign') && identity.sign
+      if (typeof signFunction !== 'function') {
+        log('debug', 'detail.sign must be a function', detail)
+        continue;
+      }
+      log('debug', 'handleBootstrapChangeIdentityCommand redispatching AuthenticationResponseUrlDetectedEvent')
+      document.dispatchEvent(AuthenticationResponseUrlDetectedEvent({
+        url: new URL(authenticationResponseString),
+        sign: signFunction as AuthenticationResponseUrlDetectedEvent['detail']['sign']
+      }))
+      // const chain = DelegationChain.fromJSON(parsedAccessToken);
+      // const sessionIdentity: Pick<SignIdentity, 'sign'> = {
+      //   async sign(challenge) {
+      //     const signature = await signFunction(challenge);
+      //     return signature;
+      //   },
+      // };
+      // const delegationIdentity = DelegationIdentity.fromDelegation(sessionIdentity, chain);
+      // await useIdentity(delegationIdentity)
+    }
+  }
+
   /**
    * Publish a message to all subscribers, e.g. to notify them of a new current Identity.
    * @param message - message to publish
@@ -111,4 +156,14 @@ function IdentityMessage(identity: IdentityDescriptor | SignIdentity | Anonymous
   return {
     identity: 'type' in identity ? identity : createIdentityDescriptor(identity),
   };
+}
+
+/**
+ * Helper to check/assert object has prop.
+ * Gratitude to https://fettblog.eu/typescript-hasownproperty/.
+ * @param obj - object to check
+ * @param prop - name of property to check for existence of.
+ */
+function hasOwnProperty<X, Y extends PropertyKey>(obj: X, prop: Y): obj is X & Record<Y, unknown> {
+  return {}.hasOwnProperty.call(obj, prop);
 }
