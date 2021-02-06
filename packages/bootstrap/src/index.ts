@@ -8,10 +8,12 @@ import {
   makeLog,
   Principal,
 } from '@dfinity/agent';
-import AuthenticationResponseIdentities from './actors/identity/AuthenticationResponseIdentities';
+import { BootstrapChangeIdentityCommandIdentifier } from '@dfinity/authentication';
+import { ChangeCommandEventIdentities } from './actors/identity/BootstrapIdentities';
 import IdentityActor from './actors/identity/IdentityActor';
 import MutableIdentity from './actors/identity/MutableIdentity';
 import { isProbablyCandidModule } from './candid/candid';
+import { EventIterable } from './dom-events';
 import { createAgent } from './host';
 import { BootstrapRenderer } from './render';
 import { SiteInfo, withIdentity } from './site';
@@ -90,8 +92,10 @@ async function _main(spec: { render: ReturnType<typeof BootstrapRenderer> }) {
   const initialIdentity = new AnonymousIdentity();
   const identities = async function* () {
     yield initialIdentity;
-    for await (const identity of AuthenticationResponseIdentities(document)) {
-      bootstrapLog('debug', 'got AuthenticationResponseIdentities identity', identity);
+    for await (const identity of ChangeCommandEventIdentities(
+      EventIterable(document, BootstrapChangeIdentityCommandIdentifier),
+    )) {
+      bootstrapLog('debug', 'got ChangeCommandEventIdentities identity', identity);
       yield identity;
     }
   };

@@ -40,7 +40,7 @@ export async function* combine<T, TReturn>(
     }
   } finally {
     for (const [index, iterator] of asyncIterators.entries()) {
-      if (nextPromises[index] !== never && (typeof iterator.return === 'function')) {
+      if (nextPromises[index] !== never && typeof iterator.return === 'function') {
         iterator.return();
       }
     }
