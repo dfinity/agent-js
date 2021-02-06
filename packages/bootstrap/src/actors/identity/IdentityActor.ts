@@ -5,8 +5,11 @@ import {
   IdentityRequestedEventIdentifier,
 } from '@dfinity/authentication';
 import { EventIterable } from '../../dom-events';
+import {
+  ChangeCommandIdentity,
+  isBootstrapChangeIdentityCommand,
+} from './BootstrapIdentities';
 import { BootstrapIdentityChangedEvent } from './events';
-import { isBootstrapChangeIdentityCommand, ChangeCommandIdentity } from './BootstrapIdentities';
 
 /**
  * Keep track of end-user identity on the page.
@@ -87,7 +90,8 @@ export default function IdentityActor(params: {
    * and add the event/port to `subscribers` of future identities.
    */
   async function handleIdentityRequestedEvents() {
-    for await (const event of EventIterable(params.eventTarget, IdentityRequestedEventIdentifier, true)) {
+    const events = EventIterable(params.eventTarget, IdentityRequestedEventIdentifier, true);
+    for await (const event of events) {
       log('debug', 'bootstrap-js window listener handling IdentityRequestedEvent', event);
       const detail = (event as CustomEvent).detail;
       const sender: undefined | MessagePort = detail && detail.sender;
@@ -112,7 +116,7 @@ export default function IdentityActor(params: {
       if ( ! isBootstrapChangeIdentityCommand(event)) {
         continue;
       }
-      useIdentity(ChangeCommandIdentity (event))
+      useIdentity(ChangeCommandIdentity (event));
     }
   }
 

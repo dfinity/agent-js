@@ -7,7 +7,7 @@ import { AnonymousIdentity, makeLog, SignIdentity } from '@dfinity/agent';
  */
 export default async function MutableIdentity(
   identities: AsyncIterable<SignIdentity | AnonymousIdentity>,
-  initialIdentity=new AnonymousIdentity
+  initialIdentity = new AnonymousIdentity(),
 ): Promise<SignIdentity | AnonymousIdentity> {
   const log = makeLog('MutableIdentity');
   let currentIdentity: AnonymousIdentity | SignIdentity = initialIdentity;
