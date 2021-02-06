@@ -18,7 +18,9 @@ export default function AuthenticationResponseIdentities(
   const log = makeLog('AuthenticationResponseIdentities');
   const identities: AsyncIterable<SignIdentity | AnonymousIdentity> = (async function* () {
     // Wait for AuthenticationResponseUrlDetectedEvents
-    for await (const event of EventIterable(events, AuthenticationResponseUrlDetectedEventIdentifier)) {
+    const AuthnResponseEvents = () =>
+      EventIterable(events, AuthenticationResponseUrlDetectedEventIdentifier);
+    for await (const event of AuthnResponseEvents()) {
       log('debug', 'handling AuthenticationResponseUrlDetectedEvent', { event });
       if (!(event instanceof CustomEvent)) {
         log('warn', 'got unexpected event that is not a CustomEvent', { event });
@@ -37,13 +39,13 @@ export default function AuthenticationResponseIdentities(
           log(
             'warn',
             'AuthenticationResponseUrlDetectedEvent had aurl, but it couldnt be used to generate an AuthenticationResponse',
-            {error},
+            { error },
           );
         }
-      })()
+      })();
 
-      if ( ! response) {
-        continue
+      if (!response) {
+        continue;
       }
 
       const signFunction = event.detail.sign;

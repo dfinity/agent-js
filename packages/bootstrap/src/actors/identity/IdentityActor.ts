@@ -1,5 +1,10 @@
 import { AnonymousIdentity, createIdentityDescriptor, makeLog, SignIdentity } from '@dfinity/agent';
-import { IdentityDescriptor, IdentityRequestedEventIdentifier, BootstrapChangeIdentityCommandIdentifier, AuthenticationResponseUrlDetectedEvent } from '@dfinity/authentication';
+import {
+  AuthenticationResponseUrlDetectedEvent,
+  BootstrapChangeIdentityCommandIdentifier,
+  IdentityDescriptor,
+  IdentityRequestedEventIdentifier,
+} from '@dfinity/authentication';
 import { EventIterable } from '../../dom-events';
 import { BootstrapIdentityChangedEvent } from './events';
 
@@ -62,7 +67,7 @@ export default function IdentityActor(params: {
     started = false;
   }
 
-  async function useIdentity(identity: SignIdentity|AnonymousIdentity) {
+  async function useIdentity(identity: SignIdentity | AnonymousIdentity) {
     const prevIdentity = currentIdentity;
     log('debug', 'useIdentity', { prevIdentity, identity });
     currentIdentity = identity;
@@ -102,32 +107,43 @@ export default function IdentityActor(params: {
   }
 
   async function handleBootstrapChangeIdentityCommand() {
-    for await (const event of EventIterable(document, BootstrapChangeIdentityCommandIdentifier, true)) {
+    for await (const event of EventIterable(
+      document,
+      BootstrapChangeIdentityCommandIdentifier,
+      true,
+    )) {
       log('debug', 'got handleBootstrapChangeIdentityCommand CustomEvent', { event });
       const detail: unknown = (event as CustomEvent).detail;
       if (typeof detail !== 'object') {
         continue;
       }
-      const authenticationResponseString = hasOwnProperty(detail, 'authenticationResponse') && detail.authenticationResponse;
+      const authenticationResponseString =
+        hasOwnProperty(detail, 'authenticationResponse') && detail.authenticationResponse;
       if (typeof authenticationResponseString !== 'string') {
-        log('debug', 'detail.authenticationResponse must be a string', detail)
+        log('debug', 'detail.authenticationResponse must be a string', detail);
         continue;
       }
 
-      // const authenticationResponse = response.fromQueryString(new URL(authenticationResponseString).searchParams)
+      // const authenticationResponse = response.fromQueryString(
+      //  new URL(authenticationResponseString).searchParams)
       // const parsedAccessToken = response.parseBearerToken(authenticationResponse.accessToken);
 
       const identity = hasOwnProperty(detail, 'identity') && detail.identity;
-      const signFunction = hasOwnProperty(identity, 'sign') && identity.sign
+      const signFunction = hasOwnProperty(identity, 'sign') && identity.sign;
       if (typeof signFunction !== 'function') {
-        log('debug', 'detail.sign must be a function', detail)
+        log('debug', 'detail.sign must be a function', detail);
         continue;
       }
-      log('debug', 'handleBootstrapChangeIdentityCommand redispatching AuthenticationResponseUrlDetectedEvent')
-      document.dispatchEvent(AuthenticationResponseUrlDetectedEvent({
-        url: new URL(authenticationResponseString),
-        sign: signFunction as AuthenticationResponseUrlDetectedEvent['detail']['sign']
-      }))
+      log(
+        'debug',
+        'handleBootstrapChangeIdentityCommand redispatching AuthenticationResponseUrlDetectedEvent',
+      );
+      document.dispatchEvent(
+        AuthenticationResponseUrlDetectedEvent({
+          url: new URL(authenticationResponseString),
+          sign: signFunction as AuthenticationResponseUrlDetectedEvent['detail']['sign'],
+        }),
+      );
       // const chain = DelegationChain.fromJSON(parsedAccessToken);
       // const sessionIdentity: Pick<SignIdentity, 'sign'> = {
       //   async sign(challenge) {
