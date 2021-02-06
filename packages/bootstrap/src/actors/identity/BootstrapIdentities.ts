@@ -6,6 +6,7 @@ import {
   DelegationIdentity,
   response,
 } from '@dfinity/authentication';
+import { EventIterable } from '../../dom-events';
 
 /**
  * Map a stream of DOM Events to a stream of Identitys
@@ -64,4 +65,15 @@ export function isBootstrapChangeIdentityCommand(
     return false;
   }
   return true;
+}
+
+/**
+ * AsyncIterable of identities bootstrap should use.
+ * @param eventTarget - target to watch for DOM Events like BootstrapChangeIdentityCommand
+ */
+export function BootstrapIdentities(
+  eventTarget: EventTarget): AsyncIterable<SignIdentity|AnonymousIdentity> {
+  const events = EventIterable(eventTarget, BootstrapChangeIdentityCommandIdentifier);
+  const identities = ChangeCommandEventIdentities(events);
+  return identities;
 }
