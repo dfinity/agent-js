@@ -8,7 +8,7 @@ import {
   makeLog,
   Principal,
 } from '@dfinity/agent';
-import AuthenticationResponseIdentities from './actors/identity/AuthenticationResponseIdentities';
+import { BootstrapIdentities } from './actors/identity/BootstrapIdentities';
 import IdentityActor from './actors/identity/IdentityActor';
 import MutableIdentity from './actors/identity/MutableIdentity';
 import { isProbablyCandidModule } from './candid/candid';
@@ -87,16 +87,8 @@ async function _main(spec: { render: ReturnType<typeof BootstrapRenderer> }) {
     },
   };
   const siteFromWindow = await SiteInfo.fromWindow();
-  const initialIdentity =
-    (await siteFromWindow.getOrCreateUserIdentity()) || new AnonymousIdentity();
-  const identities = async function* () {
-    yield initialIdentity;
-    for await (const identity of AuthenticationResponseIdentities(document)) {
-      bootstrapLog('debug', 'got AuthenticationResponseIdentities identity', identity);
-      yield identity;
-    }
-  };
-  const site = withIdentity(await MutableIdentity(identities()))(siteFromWindow);
+  const initialIdentity = new AnonymousIdentity();
+  const site = withIdentity(await MutableIdentity(BootstrapIdentities(document)))(siteFromWindow);
 
   const beforeunload = new Promise(resolve => {
     document.addEventListener('beforeunload', event => resolve(event), { once: true });
@@ -106,7 +98,6 @@ async function _main(spec: { render: ReturnType<typeof BootstrapRenderer> }) {
   IdentityActor({
     eventTarget: document,
     initialIdentity,
-    identities: identities(),
     cancel: beforeunload,
   });
 

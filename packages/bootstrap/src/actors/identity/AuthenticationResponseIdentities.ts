@@ -4,21 +4,24 @@ import {
   DelegationIdentity,
   response as icidResponse,
 } from '@dfinity/authentication';
-import { AuthenticationResponseDetectedEventIdentifier } from '@dfinity/authentication';
+import { AuthenticationResponseUrlDetectedEventIdentifier } from '@dfinity/authentication';
+import { EventIterable } from '../../dom-events';
 
 /**
  * AsyncIterable of Identities that can be generated as a result of handling
- * AuthenticationResponseDetectedEvent on a Document.
- * @param events - EventTarget to listen for AuthenticationResponseDetectedEvents
+ * AuthenticationResponseUrlDetectedEvent on a Document.
+ * @param events - EventTarget to listen for AuthenticationResponseUrlDetectedEvents
  */
 export default function AuthenticationResponseIdentities(
   events: EventTarget,
 ): AsyncIterable<SignIdentity | AnonymousIdentity> {
   const log = makeLog('AuthenticationResponseIdentities');
   const identities: AsyncIterable<SignIdentity | AnonymousIdentity> = (async function* () {
-    // Wait for AuthenticationResponseDetectedEvents
-    for await (const event of AuthenticationResponseDetectedEventIterable(events)) {
-      log('debug', 'handling AuthenticationResponseDetectedEvent', { event });
+    // Wait for AuthenticationResponseUrlDetectedEvents
+    const AuthnResponseEvents = () =>
+      EventIterable(events, AuthenticationResponseUrlDetectedEventIdentifier);
+    for await (const event of AuthnResponseEvents()) {
+      log('debug', 'handling AuthenticationResponseUrlDetectedEvent', { event });
       if (!(event instanceof CustomEvent)) {
         log('warn', 'got unexpected event that is not a CustomEvent', { event });
         continue;
@@ -28,13 +31,29 @@ export default function AuthenticationResponseIdentities(
         log('warn', 'got CustomEvent without URL', { event });
         continue;
       }
+
+      const response = (() => {
+        try {
+          return icidResponse.fromQueryString(url.searchParams);
+        } catch (error) {
+          log(
+            'warn',
+            'AuthenticationResponseUrlDetectedEvent had aurl, but it couldnt be used to generate an AuthenticationResponse',
+            { error },
+          );
+        }
+      })();
+
+      if (!response) {
+        continue;
+      }
+
       const signFunction = event.detail.sign;
       if (typeof signFunction !== 'function') {
         throw new Error('no sign function');
       }
       log('debug', 'new signFunction is', signFunction);
       const identity = (() => {
-        const response = icidResponse.fromQueryString(url.searchParams);
         const chain = DelegationChain.fromJSON(icidResponse.parseBearerToken(response.accessToken));
         const sessionIdentity: Pick<SignIdentity, 'sign'> = {
           async sign(challenge) {
@@ -53,20 +72,4 @@ export default function AuthenticationResponseIdentities(
     }
   })();
   return identities;
-}
-
-function AuthenticationResponseDetectedEventIterable(
-  spec: Pick<Document, 'addEventListener'>,
-): AsyncIterable<Event> {
-  const events: AsyncIterable<Event> = (async function* () {
-    while (true) {
-      const nextEvent = await new Promise<Event>(resolve => {
-        spec.addEventListener(AuthenticationResponseDetectedEventIdentifier, resolve, {
-          once: true,
-        });
-      });
-      yield nextEvent;
-    }
-  })();
-  return events;
 }

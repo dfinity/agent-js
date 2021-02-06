@@ -7,7 +7,7 @@
     "ci": "npm run prettier && npm run lint && npm run build",
     "lint": "npm run eslint && npm run tslint",
     "tslint": "tslint --project tsconfig.json --config tslint.json",
-    "tslint:fix": "npm run lint -- --fix",
+    "tslint:fix": "npm run tslint -- --fix",
     "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' src/actors src/dom-events.ts src/index.ts src/render.ts",
     "eslint:fix": "npm run lint -- --fix",
     "prettier": "prettier --check \"src/**/*.ts\"",

@@ -1,6 +1,14 @@
 import { AnonymousIdentity, createIdentityDescriptor, makeLog, SignIdentity } from '@dfinity/agent';
-import { IdentityDescriptor, IdentityRequestedEventIdentifier } from '@dfinity/authentication';
+import {
+  BootstrapChangeIdentityCommandIdentifier,
+  IdentityDescriptor,
+  IdentityRequestedEventIdentifier,
+} from '@dfinity/authentication';
 import { EventIterable } from '../../dom-events';
+import {
+  ChangeCommandIdentity,
+  isBootstrapChangeIdentityCommand,
+} from './BootstrapIdentities';
 import { BootstrapIdentityChangedEvent } from './events';
 
 /**
@@ -14,15 +22,12 @@ import { BootstrapIdentityChangedEvent } from './events';
  * @param params params
  * @param params.initialIdentity - Identity to use from the very beginning before others are
  *   detected, e.g. AnonymousIdentity
- * @param params.identities - AsyncIterable of future identities that are changed to
- *   e.g. because of login events.
  * @param params.eventTarget - Will have BootstrapIdentityChangedEvent dispatched on it whenever
  *   identities emits a new value.
  * @param params.cancel - When/if this resolves, the actor should shut down.
  */
 export default function IdentityActor(params: {
   initialIdentity: SignIdentity | AnonymousIdentity;
-  identities: AsyncIterable<AnonymousIdentity | SignIdentity>;
   eventTarget: EventTarget;
   cancel: Promise<unknown>;
 }): void {
@@ -45,8 +50,9 @@ export default function IdentityActor(params: {
     started = true;
     await Promise.all([
       handleIdentityRequestedEvents(),
+      handleBootstrapChangeIdentityCommand(),
       // do this one last so all subscribers set up
-      trackLatestIdentity(),
+      // trackLatestIdentity(),
     ]);
     started = false;
   }
@@ -61,25 +67,31 @@ export default function IdentityActor(params: {
     started = false;
   }
 
-  /**
-   * Whenever `identities` emits a new one, publish it to all subscribers.
-   */
-  async function trackLatestIdentity() {
-    for await (const identity of params.identities) {
-      currentIdentity = identity;
-      const identityDescriptor = createIdentityDescriptor(currentIdentity);
-      log('debug', 'new currentIdentity', { currentIdentity, identityDescriptor });
-      params.eventTarget.dispatchEvent(BootstrapIdentityChangedEvent(identityDescriptor));
-      publish(IdentityMessage(identityDescriptor));
-    }
+  async function useIdentity(identity: SignIdentity | AnonymousIdentity) {
+    const prevIdentity = currentIdentity;
+    log('debug', 'useIdentity', { prevIdentity, identity });
+    currentIdentity = identity;
+    const identityDescriptor = createIdentityDescriptor(identity);
+    params.eventTarget.dispatchEvent(BootstrapIdentityChangedEvent(identityDescriptor));
+    publish(IdentityMessage(identityDescriptor));
   }
+
+  // /**
+  //  * Whenever `identities` emits a new one, publish it to all subscribers.
+  //  */
+  // async function trackLatestIdentity() {
+  //   for await (const identity of params.identities) {
+  //     await useIdentity(identity);
+  //   }
+  // }
 
   /**
    * For each IdentityRequestedEvent, respond with the current identity,
    * and add the event/port to `subscribers` of future identities.
    */
   async function handleIdentityRequestedEvents() {
-    for await (const event of EventIterable(document, IdentityRequestedEventIdentifier, true)) {
+    const events = EventIterable(params.eventTarget, IdentityRequestedEventIdentifier, true);
+    for await (const event of events) {
       log('debug', 'bootstrap-js window listener handling IdentityRequestedEvent', event);
       const detail = (event as CustomEvent).detail;
       const sender: undefined | MessagePort = detail && detail.sender;
@@ -92,6 +104,19 @@ export default function IdentityActor(params: {
       } else {
         log('warn', 'IdentityRequestedEvent did not contain a sender port');
       }
+    }
+  }
+
+  async function handleBootstrapChangeIdentityCommand() {
+    for await (const event of EventIterable(
+      params.eventTarget,
+      BootstrapChangeIdentityCommandIdentifier,
+      true,
+    )) {
+      if ( ! isBootstrapChangeIdentityCommand(event)) {
+        continue;
+      }
+      useIdentity(ChangeCommandIdentity (event));
     }
   }
 
