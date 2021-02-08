@@ -99,7 +99,7 @@ function extractDER(buf: Buffer): Buffer {
   return buf.slice(DER_PREFIX.length);
 }
 
-function bufferToArray(buf: Buffer): string {
+function bufferToHex(buf: Buffer): string {
   return buf.toString('hex');
 }
 
