@@ -1,4 +1,4 @@
-import { CustomEventWithDetail, createCustomEvent } from "./CustomEventWithDetail";
+import { CustomEventWithDetail, createCustomEvent } from './CustomEventWithDetail';
 
 export const IdentityRequestedEventIdentifier = 'https://internetcomputer.org/ns/authentication/IdentityRequestedEvent' as const;
 
@@ -9,32 +9,33 @@ export const IdentityRequestedEventIdentifier = 'https://internetcomputer.org/ns
  * @param options.onIdentity - Function that will be called each time the @dfinity/bootstrap window.ic.agent SignIdentity is changed.
  */
 export function IdentityRequestedEvent<T>(
-    options: Pick<CustomEventInit<T>, 'bubbles' | 'cancelable' | 'composed'> & {
-      onIdentity(identity: unknown): void;
-    },
-  ): CustomEventWithDetail<
-    typeof IdentityRequestedEventIdentifier,
-    {
-      sender: MessagePort;
-    }
-  > {
-    const channel = new MessageChannel();
-    const { port1, port2 } = channel;
-    port2.onmessage = (event: MessageEvent) => {
-      const data = event && event.data;
-      const identity = data && data.identity;
-      if (!identity) {
-        console.warn(`Cannot determine identity from bootstrapIdentityChannel MessageEvent`, { event });
-        return;
-      }
-      options.onIdentity(identity);
-    };
-    port2.start();
-    return createCustomEvent(IdentityRequestedEventIdentifier, {
-      ...options,
-      detail: {
-        sender: port1,
-      },
-    });
+  options: Pick<CustomEventInit<T>, 'bubbles' | 'cancelable' | 'composed'> & {
+    onIdentity(identity: unknown): void;
+  },
+): CustomEventWithDetail<
+  typeof IdentityRequestedEventIdentifier,
+  {
+    sender: MessagePort;
   }
-  
+> {
+  const channel = new MessageChannel();
+  const { port1, port2 } = channel;
+  port2.onmessage = (event: MessageEvent) => {
+    const data = event && event.data;
+    const identity = data && data.identity;
+    if (!identity) {
+      console.warn(`Cannot determine identity from bootstrapIdentityChannel MessageEvent`, {
+        event,
+      });
+      return;
+    }
+    options.onIdentity(identity);
+  };
+  port2.start();
+  return createCustomEvent(IdentityRequestedEventIdentifier, {
+    ...options,
+    detail: {
+      sender: port1,
+    },
+  });
+}

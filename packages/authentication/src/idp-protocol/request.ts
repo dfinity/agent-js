@@ -60,9 +60,11 @@ export function createAuthenticationRequestUrl(params: {
  * Parse URL query string parameters to an AuthenticationRequest, if possible.
  * @param params - query string parameters to parse
  */
-export function fromQueryString(params: URLSearchParams): AuthenticationRequest|undefined {
+export function fromQueryString(params: URLSearchParams): AuthenticationRequest | undefined {
   const oauth2Message = oauth2.fromQueryString(params);
-  if ( ! ('redirect_uri' in oauth2Message)) { return }
+  if (!('redirect_uri' in oauth2Message)) {
+    return;
+  }
   const oauth2Request: oauth2.OAuth2AuthorizationRequest = oauth2Message;
   const authenticationRequest: AuthenticationRequest = {
     type: 'AuthenticationRequest',
@@ -72,7 +74,7 @@ export function fromQueryString(params: URLSearchParams): AuthenticationRequest|
     redirectUri: oauth2Request.redirect_uri,
     state: oauth2Request.state,
     scope: oauth2Request.scope,
-  }
+  };
   return authenticationRequest;
 }
 

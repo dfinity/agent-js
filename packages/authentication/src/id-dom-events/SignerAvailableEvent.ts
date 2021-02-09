@@ -1,15 +1,15 @@
-import { CustomEventWithDetail, createCustomEvent } from "./CustomEventWithDetail";
+import { CustomEventWithDetail, createCustomEvent } from './CustomEventWithDetail';
 
 export const SignerAvailableEventIdentifier = 'https://internetcomputer.org/ns/authentication/SignerAvailableEvent' as const;
 
-type SignFunction = (challenge: ArrayBuffer) => Promise<ArrayBuffer>
+type SignFunction = (challenge: ArrayBuffer) => Promise<ArrayBuffer>;
 
 export type SignerAvailableEventDetail = {
-    publicKey: {
-        hex: string;
-    },
-    sign: SignFunction;
-}
+  publicKey: {
+    hex: string;
+  };
+  sign: SignFunction;
+};
 
 /**
  * CustomEvent dispatched by an element notifying others that it depends on an authenticated Identity.
@@ -18,17 +18,14 @@ export type SignerAvailableEventDetail = {
  * @param options.onIdentity - Function that will be called each time the @dfinity/bootstrap window.ic.agent SignIdentity is changed.
  */
 export function SignerAvailableEvent<T>(
-    options: Pick<CustomEventInit<T>, 'bubbles' | 'cancelable' | 'composed'> & SignerAvailableEventDetail,
-  ): CustomEventWithDetail<
-    typeof SignerAvailableEventIdentifier,
-    SignerAvailableEventDetail
-  > {
-    return createCustomEvent(SignerAvailableEventIdentifier, {
-      ...options,
-      detail: {
-        publicKey: options.publicKey,
-        sign: options.sign,
-      },
-    });
-  }
-  
+  options: Pick<CustomEventInit<T>, 'bubbles' | 'cancelable' | 'composed'> &
+    SignerAvailableEventDetail,
+): CustomEventWithDetail<typeof SignerAvailableEventIdentifier, SignerAvailableEventDetail> {
+  return createCustomEvent(SignerAvailableEventIdentifier, {
+    ...options,
+    detail: {
+      publicKey: options.publicKey,
+      sign: options.sign,
+    },
+  });
+}

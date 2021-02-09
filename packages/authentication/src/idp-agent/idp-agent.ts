@@ -19,10 +19,10 @@ export type SendAuthenticationRequestCommand = {
   session: {
     identity: {
       publicKey: {
-        toDer(): Uint8Array
-      }
-    }
-  }
+        toDer(): Uint8Array;
+      };
+    };
+  };
   redirectUri?: URL;
   scope: Scope;
 };
@@ -31,7 +31,7 @@ export class IdentityProviderAgent implements IdentityProviderAgent {
   #identityProvider: IdentityProviderIndicator;
   #transport: Transport<IdentityProviderAgentEnvelope>;
   #location: Pick<Location, 'href'>;
-  #log = makeLog('IdentityProviderAgent')
+  #log = makeLog('IdentityProviderAgent');
   constructor(spec: {
     identityProvider: IdentityProviderIndicator;
     transport: Transport<IdentityProviderAgentEnvelope>;

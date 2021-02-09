@@ -1,13 +1,19 @@
 import { AuthenticationRequest, createAuthenticationRequestUrl } from '../idp-protocol/request';
-import { SignerAvailableEvent, AuthenticationResponseUrlDetectedEvent, AuthenticationResponseUrlDetectedEventIdentifier, createCustomEvent } from '../id-dom-events';
+import {
+  SignerAvailableEvent,
+  AuthenticationResponseUrlDetectedEvent,
+  AuthenticationResponseUrlDetectedEventIdentifier,
+  createCustomEvent,
+} from '../id-dom-events';
 import { makeLog } from '@dfinity/agent';
-import { BootstrapChangeIdentityCommand, BootstrapChangeIdentityCommandIdentifier } from '../bootstrap-messages/BootstrapChangeIdentityCommand';
+import {
+  BootstrapChangeIdentityCommand,
+  BootstrapChangeIdentityCommandIdentifier,
+} from '../bootstrap-messages/BootstrapChangeIdentityCommand';
 
 export interface IdentityProviderIndicator {
   url: URL;
 }
-
-
 
 export type EnvelopeToIdentityProvider = {
   to: IdentityProviderIndicator;
@@ -16,10 +22,9 @@ export type EnvelopeToIdentityProvider = {
 export type EnvelopeToDocument = {
   to: 'document';
   message:
-  | ReturnType<typeof AuthenticationResponseUrlDetectedEvent>
-  | ReturnType<typeof SignerAvailableEvent>
-  | BootstrapChangeIdentityCommand
-  ;
+    | ReturnType<typeof AuthenticationResponseUrlDetectedEvent>
+    | ReturnType<typeof SignerAvailableEvent>
+    | BootstrapChangeIdentityCommand;
 };
 export type IdentityProviderAgentEnvelope = EnvelopeToIdentityProvider | EnvelopeToDocument;
 
@@ -110,21 +115,18 @@ export function DomEventTransport(): Transport<EnvelopeToDocument> {
         case AuthenticationResponseUrlDetectedEventIdentifier:
           return AuthenticationResponseUrlDetectedEvent(message.detail);
         case BootstrapChangeIdentityCommandIdentifier:
-          return createCustomEvent(
-            message.type,
-            {
-              bubbles: true,
-              composed: true,
-              detail: message.detail,
-            },
-          )
+          return createCustomEvent(message.type, {
+            bubbles: true,
+            composed: true,
+            detail: message.detail,
+          });
         default:
           throw Object.assign(new Error('unexpected message.type'), {
             envelope,
           });
       }
     })();
-    makeLog('DomEventTransport')('debug', 'dispatching event on document', event)
+    makeLog('DomEventTransport')('debug', 'dispatching event on document', event);
     globalThis.document.dispatchEvent(event);
   }
 }
