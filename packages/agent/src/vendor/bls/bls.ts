@@ -9,8 +9,7 @@ function base64ToArray(b: string): ArrayBuffer {
   const key = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
   let input = b;
 
-  const bytes = Math.ceil((input.length / 4) * 3 + 2);
-  const arrayBuffer = new ArrayBuffer(bytes);
+  const bytes = Math.ceil(input.length / 4 + 1) * 3;
 
   if (key.indexOf(input.charAt(input.length - 1)) == 64){
     input = input.substring(0, input.length - 1);
@@ -18,11 +17,12 @@ function base64ToArray(b: string): ArrayBuffer {
   if (key.indexOf(input.charAt(input.length - 1)) == 64){
     input = input.substring(0, input.length - 1);
   }
+
+  const arrayBuffer = new ArrayBuffer(bytes);
 
   let uarray;
   let chr1, chr2, chr3;
   let enc1, enc2, enc3, enc4;
-  let j = 0;
 
   if (arrayBuffer) {
     uarray = new Uint8Array(arrayBuffer);
@@ -30,7 +30,8 @@ function base64ToArray(b: string): ArrayBuffer {
     uarray = new Uint8Array(bytes);
   }
 
-  for (let i = 0; i < bytes; i += 3) {
+  let i = 0;
+  for (let j = 0; i < bytes; i += 3) {
     //get the 3 octects in 4 ascii chars
     enc1 = key.indexOf(input.charAt(j++));
     enc2 = key.indexOf(input.charAt(j++));
@@ -46,7 +47,7 @@ function base64ToArray(b: string): ArrayBuffer {
     if (enc4 != 64) uarray[i + 2] = chr3;
   }
 
-  return arrayBuffer;
+  return arrayBuffer.slice(0, i - 1);
 }
 
 /**
