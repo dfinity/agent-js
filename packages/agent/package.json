@@ -15,7 +15,6 @@
   "dependencies": {
     "@types/crc": "^3.4.0",
     "@types/jest": "^24.0.18",
-    "amcl-bls": "file:src/vendor/bls",
     "base32.js": "^0.1.0",
     "bignumber.js": "^9.0.0",
     "borc": "^2.1.1",

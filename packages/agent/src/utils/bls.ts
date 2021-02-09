@@ -1,9 +1,9 @@
-import init, { bls_init, bls_verify } from 'amcl-bls';
+import init, { bls_init, bls_verify } from '../vendor/bls/bls';
 
 export class BLS {
   public static async blsVerify(pk: Uint8Array, sig: Uint8Array, msg: Uint8Array): Promise<boolean> {
     if (!BLS.verify) {
-      await init(); //init('../vendor/bls/bls_bg.wasm');
+      await init('../vendor/bls/bls_bg.wasm');
       if (bls_init() !== 0) {
         throw new Error('Cannot initialize BLS');
       }
