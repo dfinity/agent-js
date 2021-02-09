@@ -7,4 +7,4 @@ export * from './idp-protocol';
 export * from './id-dom-events';
 export * from './types';
 export * from './bootstrap-messages/BootstrapChangeIdentityCommand';
-export { authenticator, Authenticator } from './authenticator';
+export { authenticator, Authenticator, IdentitiesIterable } from './authenticator';

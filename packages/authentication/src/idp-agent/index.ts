@@ -16,7 +16,7 @@ export const { IdentityProviderAgent } = idp;
 export const authenticator = new idp.IdentityProviderAgent({
   identityProvider: unsafeTemporaryIdentityProvider,
   transport: BrowserTransport({
-    document: DomEventTransport(),
+    document: DomEventTransport(document),
     identityProvider: RedirectTransport(location),
   }),
   location,

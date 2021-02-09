@@ -101,8 +101,9 @@ export function BrowserTransport(params: {
 
 /**
  * Transport that sends messages by dispatching DOM Events
+ * @param eventTarget - target of dispatched events
  */
-export function DomEventTransport(): Transport<EnvelopeToDocument> {
+export function DomEventTransport(eventTarget: Pick<EventTarget,'dispatchEvent'>): Transport<EnvelopeToDocument> {
   return Object.freeze({ send });
   /**
    * Send an Envelope to its destination.
@@ -127,6 +128,6 @@ export function DomEventTransport(): Transport<EnvelopeToDocument> {
       }
     })();
     makeLog('DomEventTransport')('debug', 'dispatching event on document', event);
-    globalThis.document.dispatchEvent(event);
+    eventTarget.dispatchEvent(event);
   }
 }
