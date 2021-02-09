@@ -31,13 +31,14 @@ function createTestAgent(transport: Transport<IdentityProviderAgentEnvelope>) {
     identityProvider: unsafeTemporaryIdentityProvider,
     transport,
     location: {
-      href: "https://example.com/"
-    }
+      href: 'https://example.com/',
+    },
   });
   return agent;
 }
 
-const samplePublicKeyHex = '305e300c060a2b0601040183b8430101034e00a5010203262001215820e8bdd09933e81019b4acbe17301ac6ccd0f5db8dd892267ee18b620e603bea632258209b125cf1b2f23ab42796a1ee88336dae244d6d8058f3c192d1fa79b1d05ff473'
+const samplePublicKeyHex =
+  '305e300c060a2b0601040183b8430101034e00a5010203262001215820e8bdd09933e81019b4acbe17301ac6ccd0f5db8dd892267ee18b620e603bea632258209b125cf1b2f23ab42796a1ee88336dae244d6d8058f3c192d1fa79b1d05ff473';
 
 const exampleRedirectUri = new URL(
   `https://${Principal.fromText('unvpp-2aaaa-aaaaa-qabsq-cai').toText()}.ic0.app/`,
@@ -54,10 +55,10 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
         identity: {
           publicKey: {
             toDer() {
-              return blobFromHex(samplePublicKeyHex)
-            }
-          }
-        }
+              return blobFromHex(samplePublicKeyHex);
+            },
+          },
+        },
       },
       redirectUri,
       scope: [
@@ -80,7 +81,7 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
     });
     // sessionIdentity was generated for us.
     const hexPattern = /[0-9a-f]/gi;
-    console.log({ message })
+    console.log({ message });
     expect(message.sessionIdentity.hex.match(hexPattern)).toBeTruthy();
   });
   it('can send AuthenticationRequest through UrlTransport', async () => {
@@ -95,8 +96,8 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
       session: {
         identity: {
           publicKey: Ed25519KeyIdentity.generate().getPublicKey(),
-        }
-      }
+        },
+      },
     };
     await agent.sendAuthenticationRequest(sendAuthenticationRequestCommand);
     expect(urls.length).toEqual(1);
@@ -129,8 +130,8 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
       session: {
         identity: {
           publicKey: Ed25519KeyIdentity.generate().getPublicKey(),
-        }
-      }
+        },
+      },
     };
     await agent.sendAuthenticationRequest(sendAuthenticationRequestCommand);
     expect(assignments.length).toEqual(1);

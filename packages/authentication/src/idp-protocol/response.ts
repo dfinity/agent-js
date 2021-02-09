@@ -106,6 +106,6 @@ export function toOauth(response: AuthenticationResponse): oauth2.OAuth2AccessTo
     expires_in: response.expiresIn,
     state: response.state,
     scope: response.scope,
-  }
-  return oauth2Response
+  };
+  return oauth2Response;
 }

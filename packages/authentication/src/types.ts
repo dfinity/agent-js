@@ -1,8 +1,6 @@
 export type PublicKeyIdentityDescriptor = {
   type: 'PublicKeyIdentity';
-  publicKey: string
-}
+  publicKey: string;
+};
 
-export type IdentityDescriptor =
-  | { type: 'AnonymousIdentity' }
-  | PublicKeyIdentityDescriptor
+export type IdentityDescriptor = { type: 'AnonymousIdentity' } | PublicKeyIdentityDescriptor;

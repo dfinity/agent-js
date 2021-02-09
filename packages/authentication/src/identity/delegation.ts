@@ -261,11 +261,17 @@ export class DelegationIdentity extends SignIdentity {
    * @param key The key used to sign the reqyests.
    * @param delegation A delegation object created using `createDelegation`.
    */
-  public static fromDelegation(key: Pick<SignIdentity, 'sign'>, delegation: DelegationChain): DelegationIdentity {
+  public static fromDelegation(
+    key: Pick<SignIdentity, 'sign'>,
+    delegation: DelegationChain,
+  ): DelegationIdentity {
     return new this(key, delegation);
   }
 
-  protected constructor(private _inner: Pick<SignIdentity, 'sign'>, private _delegation: DelegationChain) {
+  protected constructor(
+    private _inner: Pick<SignIdentity, 'sign'>,
+    private _delegation: DelegationChain,
+  ) {
     super();
   }
 

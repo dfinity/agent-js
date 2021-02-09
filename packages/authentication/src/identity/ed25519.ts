@@ -202,8 +202,11 @@ export class Ed25519KeyIdentity extends SignIdentity {
    * Signs a blob of data, with this identity's private key.
    * @param challenge - challenge to sign with this identity's secretKey, producing a signature
    */
-  public async sign(challenge: BinaryBlob|ArrayBuffer): Promise<BinaryBlob> {
-    const blob = (challenge instanceof Buffer) ? blobFromBuffer(challenge) : blobFromUint8Array(new Uint8Array(challenge));
+  public async sign(challenge: BinaryBlob | ArrayBuffer): Promise<BinaryBlob> {
+    const blob =
+      challenge instanceof Buffer
+        ? blobFromBuffer(challenge)
+        : blobFromUint8Array(new Uint8Array(challenge));
     const signature = tweetnacl.sign.detached(blob, this._privateKey);
     return blobFromUint8Array(signature);
   }
