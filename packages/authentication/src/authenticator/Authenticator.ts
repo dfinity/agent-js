@@ -111,7 +111,9 @@ export class Authenticator implements IAuthenticator {
  * Create a Transport to use for the default Authenticator exported from @dfinity/authentication as `authenticator`
  * @param eventTarget - dispatch events on this
  */
-export function DefaultAuthenticatorTransport(eventTarget: Pick<EventTarget,'dispatchEvent'>): Transport<AuthenticatorEnvelope> {
+export function DefaultAuthenticatorTransport(
+  eventTarget: Pick<EventTarget, 'dispatchEvent'>,
+): Transport<AuthenticatorEnvelope> {
   return BrowserTransport({
     document: DomEventTransport(eventTarget),
     identityProvider: RedirectTransport(location),

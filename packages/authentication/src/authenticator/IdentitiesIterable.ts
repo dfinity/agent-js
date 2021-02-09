@@ -7,13 +7,15 @@ import { EventIterable } from '../id-dom-events/dom-events';
  * @param events - source of BootstrapIdentityChangedEvents
  * @yields new identities used by bootstrap
  */
-export async function * IdentitiesIterable(events: Pick<EventTarget,'addEventListener'>): AsyncGenerator<IdentityDescriptor, void, unknown> {
+export async function* IdentitiesIterable(
+  events: Pick<EventTarget, 'addEventListener'>,
+): AsyncGenerator<IdentityDescriptor, void, unknown> {
   const log = makeLog('IdentitiesIterable');
   const BootstrapIdentityChangedEventName = 'https://internetcomputer.org/ns/authentication/BootstrapIdentityChangedEvent' as const;
   for await (const event of EventIterable(events, BootstrapIdentityChangedEventName, true)) {
     const detail = event && (event as CustomEvent)?.detail;
-    if ( ! isIdentityDescriptor(detail)) {
-      log('warn', 'got event whose detail does not appear to be an IdentityDescriptor. Skipping.')
+    if (!isIdentityDescriptor(detail)) {
+      log('warn', 'got event whose detail does not appear to be an IdentityDescriptor. Skipping.');
       continue;
     }
     yield detail;
