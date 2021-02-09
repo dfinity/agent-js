@@ -21,7 +21,6 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
     super();
     (async () => {
       for await (const identity of IdentitiesIterable(this.ownerDocument)) {
-        this.#log('debug', 'using new identity', identity)
         this.useIdentity(identity);
       }
     })();
@@ -32,6 +31,7 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
    */
   useIdentity(identity: IdentityDescriptor): void {
     this.identity = identity;
+    this.#log('debug', 'useIdentity called with', identity)
     switch (identity.type) {
       case "PublicKeyIdentity":
         this.setAttribute("publicKey", identity.publicKey);

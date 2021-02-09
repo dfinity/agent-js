@@ -4,6 +4,7 @@ import authDemoContract from "ic:canisters/authentication_demo";
 import { Principal, makeLog } from "@dfinity/agent";
 import AuthenticationButton from "./ic-id-button";
 import { defaultSessionStorage, SessionIdentitySignFunction } from "./session";
+import { toHex } from "./bytes";
 
 /**
  * Main Custom Element for the @dfinity/authentication-demo.
@@ -47,7 +48,18 @@ export default class AuthenticationDemo extends HTMLElement {
       authenticator.useSession({
         authenticationResponse,
         identity: {
-          sign: SessionIdentitySignFunction(session.identity),
+          sign: async (challenge) => {
+            if (/signRequiresConfirm/i.test(location.href)) {
+              const confirmationRequest: string = [
+                'Do you want to sign?',
+                `challenge = ${toHex(new Uint8Array(challenge))}`,
+              ].join('\n\n')
+              if ( ! confirm(confirmationRequest)) {
+                throw new Error('signing did not receive confirmation from end-user')
+              }
+            }
+            return SessionIdentitySignFunction(session.identity)(challenge);
+          }
         },
       });
     }
@@ -131,8 +143,12 @@ export default class AuthenticationDemo extends HTMLElement {
       throw error;
     }
     if (isPrincipal(response)) {
-      this.whoamiPrincipal = response;
-      this.render();
+      if (this.whoamiPrincipal && this.whoamiPrincipal.toHex() === response.toHex()) {
+        this.#log('debug', 'whoamiPrincipal is same as before. Skiping unnecessary re-render.')
+      } else {
+        this.whoamiPrincipal = response;
+        this.render();
+      }
     }
   };
 }

@@ -1,6 +1,8 @@
-import { Ed25519KeyIdentity, Ed25519PublicKey } from "@dfinity/authentication";
-import { hexToBytes } from "@dfinity/authentication/.tsc-out/packages/authentication/src/idp-protocol/bytes";
-import { makeLog, blobFromUint8Array } from "@dfinity/agent";
+import { makeLog } from "@dfinity/agent";
+import tweetnacl from "tweetnacl";
+import { hexToBytes } from "./bytes";
+
+export const defaultSessionStorage = SessionJsonStorage();
 
 export interface AuthenticationDemoSession {
   // url
@@ -13,17 +15,33 @@ export interface AuthenticationDemoSession {
 }
 
 /**
+ * Create a KeyPair for the Session.
+ * @param session - session containing keyPair secretKey
+ */
+export function SessionKeyPair(session: AuthenticationDemoSession): tweetnacl.SignKeyPair {
+  return tweetnacl.sign.keyPair.fromSecretKey(hexToBytes(session.identity.secretKey.hex));
+}
+
+const ed25519PublicKeyDerPrefix = hexToBytes('302a300506032b6570032100');
+
+/**
  * Get the PublicKey for a Session
  * @param session - session
  */
 export function SessionPublicKey(
   session: AuthenticationDemoSession
-): Ed25519PublicKey {
-  const secretKeyBytes = hexToBytes(session.identity.secretKey.hex);
-  const publicKeyBytes = secretKeyBytes.slice(secretKeyBytes.length / -2);
-  const publicKey = Ed25519PublicKey.fromRaw(
-    blobFromUint8Array(publicKeyBytes)
-  );
+): {
+  toDer(): Uint8Array;
+} {
+  const keyPair = SessionKeyPair(session);
+  const publicKey = {
+    toDer() {
+      return Uint8Array.from([
+        ...ed25519PublicKeyDerPrefix,
+        ...keyPair.publicKey,
+      ]);
+    }
+  }
   return publicKey;
 }
 
@@ -90,18 +108,6 @@ export function SessionJsonStorage(
   };
 }
 
-export const defaultSessionStorage = SessionJsonStorage();
-
-// /**
-//  * Helper to check/assert object has prop.
-//  * Gratitude to https://fettblog.eu/typescript-hasownproperty/.
-//  * @param obj - object to check
-//  * @param prop - name of property to check for existence of.
-//  */
-// function hasOwnProperty<X, Y extends PropertyKey>(obj: X, prop: Y): obj is X & Record<Y, unknown> {
-//   return {}.hasOwnProperty.call(obj, prop);
-// }
-
 type SignFunction = (challenge: ArrayBuffer) => Promise<ArrayBuffer>;
 
 /**
@@ -115,10 +121,8 @@ export function SessionIdentitySignFunction(options: {
     hex: string;
   };
 }): SignFunction {
-  const identity = Ed25519KeyIdentity.fromSecretKey(
-    hexToBytes(options.secretKey.hex)
-  );
+  const secretKey = hexToBytes(options.secretKey.hex);
   return async (challenge) => {
-    return identity.sign(challenge);
+    return tweetnacl.sign.detached(new Uint8Array(challenge), secretKey)
   };
 }
