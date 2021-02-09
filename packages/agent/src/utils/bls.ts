@@ -1,19 +1,20 @@
-// tslint:disable-next-line:no-var-requires
-const BLSModule = require('./bls_gen');
+import init, { bls_init, bls_verify } from 'amcl-bls';
 
 export class BLS {
-  public static async blsVerify(pk: string, sig: string, msg: string): Promise<boolean> {
+  public static async blsVerify(pk: Uint8Array, sig: Uint8Array, msg: Uint8Array): Promise<boolean> {
     if (!BLS.verify) {
-      const m = await BLSModule();
-      if (m._init() !== 0) {
+      await init(); //init('../vendor/bls/bls_bg.wasm');
+      if (bls_init() !== 0) {
         throw new Error('Cannot initialize BLS');
       }
-      BLS.verify = m.cwrap('verify', 'boolean', ['string', 'string', 'string']);
+      BLS.verify = (pk, sig, msg) => {
+        return bls_verify(pk, sig, msg) == 0;
+      };
     }
     const res = BLS.verify(pk, sig, msg);
     return res;
   }
-  private static verify: (pk: string, sig: string, msg: string) => boolean;
+  private static verify: (pk: Uint8Array, sig: Uint8Array, msg: Uint8Array) => boolean;
 
   private constructor() {}
 }

@@ -7,6 +7,8 @@ dist/
 
 # Cannot ignore .d.ts files in types/
 !types/**/*.d.ts
+!src/vendor/bls/**/*.js
+!src/vendor/bls/**/*.d.ts
 
 # Cannot ignore setup files for webpack and jest, which are still JavaScript.
 !webpack.config.js
