@@ -9,7 +9,7 @@ function base64ToArray(b: string): ArrayBuffer {
   const key = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
   let input = b;
 
-  const bytes = Math.floor((input.length / 4) * 3 + 2);
+  const bytes = Math.ceil((input.length / 4) * 3 + 2);
   const arrayBuffer = new ArrayBuffer(bytes);
 
   if (key.indexOf(input.charAt(input.length - 1)) == 64){

@@ -1,5 +1,4 @@
 import init, { bls_init, bls_verify } from '../vendor/bls/bls';
-import { blobFromUint8Array, blobToHex } from "../types";
 
 export let verify: (pk: Uint8Array, sig: Uint8Array, msg: Uint8Array) => boolean;
 
@@ -14,7 +13,8 @@ export async function blsVerify(
       throw new Error('Cannot initialize BLS');
     }
     verify = (pk1, sig1, msg1) => {
-      return bls_verify(pk1, sig1, msg1) === 0;
+      // Reorder things from what the WASM expects (sig, m, w).
+      return bls_verify(sig1, msg1, pk1) === 0;
     };
   }
   return verify(pk, sig, msg);
