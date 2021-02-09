@@ -1,5 +1,17 @@
-import { makeLog, isIdentityDescriptor, IdentityDescriptor } from '@dfinity/agent';
-import { EventIterable } from '../id-dom-events/dom-events';
+import { isIdentityDescriptor, IdentityDescriptor } from '@dfinity/agent';
+import { CallbackIterable } from '../id-dom-events/dom-events';
+import { IdentityRequestedEvent } from '../id-dom-events';
+
+function createCallbackIterable<T>(): {
+  iterable: AsyncIterable<T>,
+  push(value: T): void,
+} {
+  let push;
+  const iterable = CallbackIterable<T>(listener => {
+    push = listener;
+  });
+  return { iterable, push };
+}
 
 /**
  * AsyncIterable of new Identities used by @dfinity/bootstrap.
@@ -8,16 +20,18 @@ import { EventIterable } from '../id-dom-events/dom-events';
  * @yields new identities used by bootstrap
  */
 export async function* IdentitiesIterable(
-  events: Pick<EventTarget, 'addEventListener'>,
-): AsyncGenerator<IdentityDescriptor, void, unknown> {
-  const log = makeLog('IdentitiesIterable');
-  const BootstrapIdentityChangedEventName = 'https://internetcomputer.org/ns/authentication/BootstrapIdentityChangedEvent' as const;
-  for await (const event of EventIterable(events, BootstrapIdentityChangedEventName, true)) {
-    const detail = event && (event as CustomEvent)?.detail;
-    if (!isIdentityDescriptor(detail)) {
-      log('warn', 'got event whose detail does not appear to be an IdentityDescriptor. Skipping.');
-      continue;
+  events: Pick<EventTarget, 'addEventListener'|'dispatchEvent'>,
+): AsyncIterable<IdentityDescriptor> {
+  const { push, iterable } = createCallbackIterable<IdentityDescriptor>()
+  const identityRequestedEvent = IdentityRequestedEvent({
+    bubbles: true,
+    composed: true,
+    onIdentity(identity) {
+      if (isIdentityDescriptor(identity)) {
+        push(identity);
+      }
     }
-    yield detail;
-  }
+  });
+  events.dispatchEvent(identityRequestedEvent);
+  yield * iterable;
 }

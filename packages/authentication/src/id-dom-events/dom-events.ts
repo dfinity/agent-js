@@ -3,7 +3,7 @@
  * via https://bit.ly/3aD3uD1
  * @param emitter - called with cb to register cb with event source
  */
-function fromCallback<V>(emitter: (cb: (value: V) => void) => void): AsyncIterable<V> {
+export function CallbackIterable<V>(emitter: (cb: (value: V) => void) => void): AsyncIterable<V> {
   let values: V[];
   let resolve: (values: V[]) => void;
   const init = (r: (values: V[]) => void) => ([values, resolve] = [[], r]);
@@ -35,7 +35,7 @@ export function EventIterable(
   eventName: string,
   options?: boolean | AddEventListenerOptions,
 ): AsyncIterable<Event> {
-  return fromCallback(listener => {
+  return CallbackIterable(listener => {
     listenable.addEventListener(eventName, listener, options);
   });
 }

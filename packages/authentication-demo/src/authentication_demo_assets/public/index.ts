@@ -2,6 +2,7 @@ import AuthenticationDemo from "./ic-authentication-demo";
 import AuthenticationSubjectPublicKeyElement from "./ic-id-public-key";
 import AuthenticationButton from "./ic-id-button";
 import { IdentitiesIterable } from "@dfinity/authentication";
+import { makeLog } from "@dfinity/agent";
 
 interface InternetComputerGlobal {
   features?: {
@@ -34,9 +35,10 @@ if (!window.ic?.features?.authentication) {
  * @param parent - element in which to render the AuthenticationDemo
  */
 async function main(parent: Element) {
+  const log = makeLog('authentication-demo');
   (async () => {
     for await (const value of IdentitiesIterable(document)) {
-      console.log('IdentitiesIterable yielded', value);
+      log('debug', 'IdentitiesIterable yielded', value);
     }
   })();
   if (globalThis.customElements) {

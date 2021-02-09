@@ -2,6 +2,7 @@ import { Ed25519KeyIdentity } from '../identity/ed25519';
 import { IdentitiesIterable } from './IdentitiesIterable';
 import { createIdentityDescriptor } from '@dfinity/agent';
 import { hexEncodeUintArray } from '../idp-protocol/bytes';
+import { IdentityRequestedEvent, IdentityRequestedEventIdentifier } from '../id-dom-events';
 
 // const sampleAuthenticationResponse = {
 //   url:
@@ -16,27 +17,37 @@ describe('IdentitiesIterable', () => {
   it('has identities iterable', async () => {
     // const authenticator = new Authenticator();
     const el = document.createElement('div');
+    const sampleIdentity = Ed25519KeyIdentity.generate(crypto.getRandomValues(new Uint8Array(32)))
+    // This is similar to one @dfinity/bootstrap's IdentityActor does,
+    // but this test doesn't rely on a running IdentityActor
+    function handleOne(el: Element, event: Event|CustomEvent) {
+      const detail = (event as CustomEvent)?.detail;
+      const sender = (detail as ReturnType<typeof IdentityRequestedEvent>['detail'])?.sender;
+      if ( ! sender) {
+        return listenOne(el);
+      }
+      sender.postMessage({
+        identity: createIdentityDescriptor(sampleIdentity)
+      })
+    }
+    function listenOne(el: Element) {
+      el.addEventListener(
+        IdentityRequestedEventIdentifier,
+        (event) => handleOne(el, event),
+        { once: true },
+      );
+    }
+    listenOne(el);
     const identitiesIterable = IdentitiesIterable(el);
     await new Promise(setImmediate);
-    const firstIdentityResult = identitiesIterable.next();
-    const sessionIdentity = Ed25519KeyIdentity.generate(crypto.getRandomValues(new Uint8Array(32)));
-    const BootstrapIdentityChangedEventName = 'https://internetcomputer.org/ns/authentication/BootstrapIdentityChangedEvent' as const;
-    // In practice, only @dfinity/bootstrap's IdentityActor should do this.
-    // but we don't have @dfinity/bootstrap running in these tests :)
-    el.dispatchEvent(
-      new CustomEvent(BootstrapIdentityChangedEventName, {
-        bubbles: true,
-        composed: true,
-        detail: createIdentityDescriptor(sessionIdentity),
-      }),
-    );
+    const firstIdentityResult = await identitiesIterable[Symbol.asyncIterator]().next()
     expect((await firstIdentityResult).done).toEqual(false);
     const firstIdentityResultValue = (await firstIdentityResult).value;
     if (!(firstIdentityResultValue && firstIdentityResultValue?.type === 'PublicKeyIdentity')) {
       throw new Error('expected firstIdentityResultValue to be PublicKeyIdentity');
     }
     expect(firstIdentityResultValue.publicKey).toEqual(
-      hexEncodeUintArray(sessionIdentity.getPublicKey().toDer()),
+      hexEncodeUintArray(sampleIdentity.getPublicKey().toDer()),
     );
   });
 });

@@ -1,6 +1,6 @@
 import {
   IdentityDescriptor,
-  IdentityRequestedEvent,
+  IdentitiesIterable,
 } from "@dfinity/authentication";
 import { makeLog, Principal, blobFromUint8Array, isIdentityDescriptor } from "@dfinity/agent";
 
@@ -64,7 +64,7 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
       case "hex":
         return toHex(bytes);
       case "principal.hex": {
-        return BytesPrincipal(bytes).toHex();
+        return toHex(BytesPrincipal(bytes))
       }
       case "principal.text": {
         return BytesPrincipal(bytes).toText();
@@ -75,18 +75,16 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
     }
     throw new Error(`unexpected to format provided to formatPublicKey`);
   };
+  #identitiesWatcher: undefined|{
+    cancel(): void;
+  }
   connectedCallback(): void {
-    this.dispatchEvent(
-      IdentityRequestedEvent({
-        bubbles: true,
-        cancelable: true,
-        composed: true,
-        onIdentity: (id) => {
-          this.onUnknownIdentity(id);
-        },
-      })
-    );
+    this.#identitiesWatcher = IdentitiesWatcher((i) => this.useIdentity(i));
     this.render();
+  }
+  disconnectedCallback(): void {
+    this.#identitiesWatcher?.cancel();
+    this.#identitiesWatcher = undefined;
   }
   /**
    * The value passed back from IdentityRequestedEvent onIdentity callback is `unknown`,
@@ -131,8 +129,34 @@ function hexToBytes(hex: string): Array<number> {
   return bytes;
 }
 
-function toHex(bytes: Uint8Array) {
+function toHex(bytes: Uint8Array|Principal) {
+  const hexRaw = (bytes instanceof Principal)
+    ? bytes.toHex()
+    : bytesToHex(bytes)
+  const hex = hexRaw.toLowerCase();
+  return hex;
+}
+
+function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes)
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+}
+
+function IdentitiesWatcher(useIdentity: (id: IdentityDescriptor) => void|Promise<void>): {
+  promise: Promise<unknown>,
+  cancel(): void,
+} {
+  let cancel: () => void = () => {
+    throw new Error('cancel not yet reassigned by promise constructor') }
+  const cancelPromise = new Promise((resolve, reject) => {
+    cancel = () => reject();
+  });
+  const watcher = (async () => {
+    for await (const identity of IdentitiesIterable(document)) {
+      await useIdentity(identity);
+    }
+  })();
+  const promise = Promise.race([watcher, cancelPromise])
+  return { promise, cancel }
 }
