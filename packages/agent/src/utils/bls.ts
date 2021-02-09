@@ -1,20 +1,21 @@
 import init, { bls_init, bls_verify } from '../vendor/bls/bls';
+import { blobFromUint8Array, blobToHex } from "../types";
 
-export class BLS {
-  public static async blsVerify(pk: Uint8Array, sig: Uint8Array, msg: Uint8Array): Promise<boolean> {
-    if (!BLS.verify) {
-      await init('../vendor/bls/bls_bg.wasm');
-      if (bls_init() !== 0) {
-        throw new Error('Cannot initialize BLS');
-      }
-      BLS.verify = (pk, sig, msg) => {
-        return bls_verify(pk, sig, msg) == 0;
-      };
+export let verify: (pk: Uint8Array, sig: Uint8Array, msg: Uint8Array) => boolean;
+
+export async function blsVerify(
+  pk: Uint8Array,
+  sig: Uint8Array,
+  msg: Uint8Array,
+): Promise<boolean> {
+  if (!verify) {
+    await init();
+    if (bls_init() !== 0) {
+      throw new Error('Cannot initialize BLS');
     }
-    const res = BLS.verify(pk, sig, msg);
-    return res;
+    verify = (pk1, sig1, msg1) => {
+      return bls_verify(pk1, sig1, msg1) === 0;
+    };
   }
-  private static verify: (pk: Uint8Array, sig: Uint8Array, msg: Uint8Array) => boolean;
-
-  private constructor() {}
+  return verify(pk, sig, msg);
 }

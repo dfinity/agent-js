@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-import { BLS } from './bls';
+import { blsVerify } from './bls';
 
 test('verify', async () => {
   const pk = Uint8Array.from(
@@ -12,6 +12,6 @@ test('verify', async () => {
   const sig = Uint8Array.from(
     Buffer.from('b89e13a212c830586eaa9ad53946cd968718ebecc27eda849d9232673dcd4f440e8b5df39bf14a88048c15e16cbcaabe', 'hex'));
   const msg = Uint8Array.from(Buffer.from('hello'));
-  expect(await BLS.blsVerify(pk, sig, msg)).toBe(true);
-  expect(await BLS.blsVerify(pk, sig, Uint8Array.from(Buffer.from('hallo')))).toBe(false);
+  expect(await blsVerify(pk, sig, msg)).toBe(true);
+  expect(await blsVerify(pk, sig, Uint8Array.from(Buffer.from('hallo')))).toBe(false);
 }, 10000); // Default timer is flaky with WASM.
