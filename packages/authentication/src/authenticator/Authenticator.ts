@@ -14,11 +14,6 @@ import { IdentityProviderAgent, SendAuthenticationRequestCommand } from '../idp-
 import { unsafeTemporaryIdentityProvider } from '../idp-agent';
 import { makeLog } from '@dfinity/agent';
 
-type ReceiveAuthenticationResponseCommand = {
-  url: URL;
-  sign: (challenge: ArrayBuffer) => Promise<ArrayBuffer>;
-};
-
 type UseSessionCommand = {
   /**
    * ic-id-protocol AuthenticationResponse as a URL string.
@@ -36,13 +31,6 @@ type UseSessionCommand = {
 
 export interface IAuthenticator {
   sendAuthenticationRequest: IdentityProviderAgent['sendAuthenticationRequest'];
-  /**
-   * Complete Authentication by receiving an AuthenticationResponse encoded in the provided URL (if present).
-   * @param command - parameters used for processing the AuthenticationResponse.
-   */
-  receiveAuthenticationResponse(
-    command: ReceiveAuthenticationResponseCommand,
-  ): void | Promise<void>;
   useSession(command: UseSessionCommand): void | Promise<void>;
 }
 
@@ -70,14 +58,6 @@ export class Authenticator implements IAuthenticator {
       transport: this.#transport,
       identityProvider: options.identityProvider,
       location: location,
-    });
-  }
-  async receiveAuthenticationResponse(
-    command: ReceiveAuthenticationResponseCommand,
-  ): Promise<void> {
-    this.#transport.send({
-      to: 'document',
-      message: AuthenticationResponseUrlDetectedEvent(command),
     });
   }
   async sendAuthenticationRequest(command: SendAuthenticationRequestCommand): Promise<void> {
