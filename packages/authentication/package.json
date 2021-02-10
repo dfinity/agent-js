@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/authentication",
-  "version": "0.0.0-identity-provider.0",
+  "version": "0.0.0",
   "main": ".tsc-out/packages/authentication/src/index.js",
   "types": ".tsc-out/packages/authentication/src/index.d.ts",
   "scripts": {
@@ -15,7 +15,7 @@
     "test": "jest --verbose --detectOpenHandles"
   },
   "dependencies": {
-    "@dfinity/agent": "^0.0.0-identity-provider.0",
+    "@dfinity/agent": "^0.0.0",
     "@types/crc": "^3.4.0",
     "@types/jest": "^24.0.18",
     "asn1.js": "^5.4.1",
