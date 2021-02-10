@@ -69,17 +69,21 @@ function KeyedLocalStorage(
     },
   });
 }
-const defaultSessionStringStorage = KeyedLocalStorage(
-  localStorage,
-  "ic-id-rp-session"
-);
+
+function DefaultSessionStringStorage() {
+  const defaultSessionStringStorage = KeyedLocalStorage(
+    localStorage,
+    "ic-id-rp-session"
+  );
+  return defaultSessionStringStorage;
+}
 
 /**
  * Storage for Session Identities.
  * @param stringStorage - place to store stringified session identities. Defaults to localStorage key ic-id-rp-session
  */
 export function SessionJsonStorage(
-  stringStorage: SimpleStorage<string> = defaultSessionStringStorage
+  stringStorage: SimpleStorage<string> = DefaultSessionStringStorage()
 ): SimpleStorage<AuthenticationDemoSession> {
   const log = makeLog("SessionJsonStorage");
   return {

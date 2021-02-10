@@ -8,9 +8,6 @@ lintPackage () {
 		package=$1
 		echo "linting package: $package"
 		cd "$package"
-		if ! test -e node_modules; then
-			npm i --ignore-scripts --no-package-lock
-		fi
 		npm run agent_js_monorepo_lint_pre --if-present
 		# path override required to make /node_modules/.bin resolvable by npm
 		THIS_SUBPACKAGE_PATH="$(pwd)/../../node_modules/.bin:$PATH"
