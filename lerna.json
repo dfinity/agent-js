@@ -3,5 +3,5 @@
     "packages/agent",
     "packages/authentication"
   ],
-  "version": "0.0.0-pre.identity.provider.15"
+  "version": "0.0.0-identity-provider.0"
 }
