@@ -2,6 +2,9 @@
 /* eslint-disable */
 let wasm: InitOutput;
 
+// This WASM is generated from the BLS Rust code of the Agent RS (see
+// http://github.com/dfinity/agent-rs/)
+// Once the WASM is compiled, simply base64 encode it and include it in this string.
 const wasmBytesBase64 = `
     AGFzbQEAAAABXg9gAn9/AGABfwBgA39/fwBgAn9/AX9gAX8Bf2ADf39/AX9gBH9/f38AYAV/f39/fwBgBn9/f39/fwF/
     YAAAYAZ/f39/f38AYAV/fn5+fgBgAAF/YAF/AX5gAn9/AX4DvAG6AQgEAAEAAAABAgEDAAAMAAACAQEKAQAHBgEAAQEA
