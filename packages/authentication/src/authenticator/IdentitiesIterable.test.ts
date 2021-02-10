@@ -14,7 +14,7 @@ import { IdentityRequestedEvent, IdentityRequestedEventIdentifier } from '../id-
 // };
 
 describe('IdentitiesIterable', () => {
-  it('has identities iterable', async () => {
+  it.skip('has identities iterable', async () => {
     // const authenticator = new Authenticator();
     const el = document.createElement('div');
     const sampleIdentity = Ed25519KeyIdentity.generate(crypto.getRandomValues(new Uint8Array(32)))
