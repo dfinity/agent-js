@@ -11,7 +11,6 @@ jobs:
         ghc: ['8.8.4']
         spec: ['release-0.15']
         node:
-        - 12
         - 14
 
     steps:
@@ -26,10 +25,7 @@ jobs:
     - run: npm run lint --if-present
 
     - run: npm install
-    - # I don't want to do this, but when devving with nektos/act, postinstall wasn't getting run.
-      # Then, the later `npm test` would fail because packages/* didn't have their devDependencies.
-      # The test beforehand won't do it if the relevant subpackge's ndoe_modules were already fetched.
-      run: "[ -d packages/agent/node_modules ] || npm run postinstall"
+
     - run: npm run build --if-present
 
     - run: npm test
