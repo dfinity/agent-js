@@ -1,5 +1,5 @@
 import { makeLog } from "@dfinity/agent";
-import tweetnacl from "tweetnacl";
+import { Ed25519KeyIdentity } from "@dfinity/authentication";
 import { hexToBytes } from "./bytes";
 
 export const defaultSessionStorage = SessionJsonStorage();
@@ -14,15 +14,21 @@ export interface AuthenticationDemoSession {
   };
 }
 
+function SessionIdentity(session: AuthenticationDemoSession) {
+  const id = Ed25519KeyIdentity.fromSecretKey(hexToBytes(session.identity.secretKey.hex));
+  return id;
+}
+
 /**
  * Create a KeyPair for the Session.
  * @param session - session containing keyPair secretKey
  */
-export function SessionKeyPair(session: AuthenticationDemoSession): tweetnacl.SignKeyPair {
-  return tweetnacl.sign.keyPair.fromSecretKey(hexToBytes(session.identity.secretKey.hex));
+export function SessionKeyPair(session: AuthenticationDemoSession): ReturnType<Ed25519KeyIdentity['getKeyPair']> {
+  const id = SessionIdentity(session);
+  return id.getKeyPair();
 }
 
-const ed25519PublicKeyDerPrefix = hexToBytes('302a300506032b6570032100');
+// const ed25519PublicKeyDerPrefix = hexToBytes('302a300506032b6570032100');
 
 /**
  * Get the PublicKey for a Session
@@ -34,14 +40,7 @@ export function SessionPublicKey(
   toDer(): Uint8Array;
 } {
   const keyPair = SessionKeyPair(session);
-  const publicKey = {
-    toDer() {
-      return Uint8Array.from([
-        ...ed25519PublicKeyDerPrefix,
-        ...keyPair.publicKey,
-      ]);
-    }
-  }
+  const publicKey = keyPair.publicKey
   return publicKey;
 }
 
@@ -125,8 +124,8 @@ export function SessionIdentitySignFunction(options: {
     hex: string;
   };
 }): SignFunction {
-  const secretKey = hexToBytes(options.secretKey.hex);
+  const id = SessionIdentity({ identity: options })
   return async (challenge) => {
-    return tweetnacl.sign.detached(new Uint8Array(challenge), secretKey)
+    return id.sign(challenge);
   };
 }
