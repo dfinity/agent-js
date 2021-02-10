@@ -22,7 +22,6 @@ describe('IdentitiesIterable', () => {
    * @todo unskip this test.
    */
   it('has identities iterable', async () => {
-    // const authenticator = new Authenticator();
     const el = document.createElement('div');
     const sampleIdentity = Ed25519KeyIdentity.generate(crypto.getRandomValues(new Uint8Array(32)))
     // This is similar to one @dfinity/bootstrap's IdentityActor does,
@@ -47,10 +46,19 @@ describe('IdentitiesIterable', () => {
     listenOne(el);
     const identitiesIterable = IdentitiesIterable(el);
     
-    await new Promise(setImmediate);
-    const firstIdentityResult = await identitiesIterable[Symbol.asyncIterator]().next()
-    expect((await firstIdentityResult).done).toEqual(false);
-    const firstIdentityResultValue = (await firstIdentityResult).value;
+    await new Promise((resolve) => setTimeout(resolve, 1));
+    const timeout = (ms: number) => new Promise<void>((resolve) => {
+      setTimeout(() => resolve(undefined), ms);
+    })
+    const firstIdentityResult = await Promise.race([
+      timeout(5000),
+      identitiesIterable[Symbol.asyncIterator]().next()
+    ])
+    if ( ! firstIdentityResult) {
+      throw new Error('no firstIdentityResult')
+    }
+    expect(firstIdentityResult.done).toEqual(false);
+    const firstIdentityResultValue = firstIdentityResult.value;
     if (!(firstIdentityResultValue && firstIdentityResultValue?.type === 'PublicKeyIdentity')) {
       throw new Error('expected firstIdentityResultValue to be PublicKeyIdentity');
     }
@@ -60,3 +68,4 @@ describe('IdentitiesIterable', () => {
     await identitiesIterable.return();
   });
 });
+
