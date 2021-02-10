@@ -99,10 +99,6 @@ function extractDER(buf: Buffer): Buffer {
   return buf.slice(DER_PREFIX.length);
 }
 
-function bufferToHex(buf: Buffer): Uint8Array {
-  return Uint8Array.from(buf);
-}
-
 export async function reconstruct(t: HashTree): Promise<Buffer> {
   switch (t[0]) {
     case NodeId.Empty:
