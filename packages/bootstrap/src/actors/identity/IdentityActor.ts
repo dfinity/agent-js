@@ -97,10 +97,9 @@ export default function IdentityActor(params: {
       const sender: undefined | MessagePort = detail && detail.sender;
       if (typeof sender?.postMessage === 'function') {
         const message = IdentityMessage(currentIdentity);
-        log('debug', 'adding subscriber port', sender);
         subscribers.add(sender);
-        log('debug', 'replying to IdentityRequestedEvent with', message);
         sender.postMessage(message);
+        log('debug', 'responded to IdentityRequestedEvent', { sender, message, subscribers });
       } else {
         log('warn', 'IdentityRequestedEvent did not contain a sender port');
       }

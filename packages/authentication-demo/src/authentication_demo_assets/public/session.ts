@@ -1,6 +1,8 @@
-import { Ed25519KeyIdentity, Ed25519PublicKey } from "@dfinity/authentication";
-import { hexToBytes } from "@dfinity/authentication/.tsc-out/packages/authentication/src/idp-protocol/bytes";
-import { makeLog, blobFromUint8Array } from "@dfinity/agent";
+import { makeLog } from "@dfinity/agent";
+import { Ed25519KeyIdentity } from "@dfinity/authentication";
+import { hexToBytes } from "./bytes";
+
+export const defaultSessionStorage = SessionJsonStorage();
 
 export interface AuthenticationDemoSession {
   // url
@@ -12,18 +14,33 @@ export interface AuthenticationDemoSession {
   };
 }
 
+function SessionIdentity(session: AuthenticationDemoSession) {
+  const id = Ed25519KeyIdentity.fromSecretKey(hexToBytes(session.identity.secretKey.hex));
+  return id;
+}
+
+/**
+ * Create a KeyPair for the Session.
+ * @param session - session containing keyPair secretKey
+ */
+export function SessionKeyPair(session: AuthenticationDemoSession): ReturnType<Ed25519KeyIdentity['getKeyPair']> {
+  const id = SessionIdentity(session);
+  return id.getKeyPair();
+}
+
+// const ed25519PublicKeyDerPrefix = hexToBytes('302a300506032b6570032100');
+
 /**
  * Get the PublicKey for a Session
  * @param session - session
  */
 export function SessionPublicKey(
   session: AuthenticationDemoSession
-): Ed25519PublicKey {
-  const secretKeyBytes = hexToBytes(session.identity.secretKey.hex);
-  const publicKeyBytes = secretKeyBytes.slice(secretKeyBytes.length / -2);
-  const publicKey = Ed25519PublicKey.fromRaw(
-    blobFromUint8Array(publicKeyBytes)
-  );
+): {
+  toDer(): Uint8Array;
+} {
+  const keyPair = SessionKeyPair(session);
+  const publicKey = keyPair.publicKey
   return publicKey;
 }
 
@@ -51,17 +68,21 @@ function KeyedLocalStorage(
     },
   });
 }
-const defaultSessionStringStorage = KeyedLocalStorage(
-  localStorage,
-  "ic-id-rp-session"
-);
+
+function DefaultSessionStringStorage() {
+  const defaultSessionStringStorage = KeyedLocalStorage(
+    localStorage,
+    "ic-id-rp-session"
+  );
+  return defaultSessionStringStorage;
+}
 
 /**
  * Storage for Session Identities.
  * @param stringStorage - place to store stringified session identities. Defaults to localStorage key ic-id-rp-session
  */
 export function SessionJsonStorage(
-  stringStorage: SimpleStorage<string> = defaultSessionStringStorage
+  stringStorage: SimpleStorage<string> = DefaultSessionStringStorage()
 ): SimpleStorage<AuthenticationDemoSession> {
   const log = makeLog("SessionJsonStorage");
   return {
@@ -90,18 +111,6 @@ export function SessionJsonStorage(
   };
 }
 
-export const defaultSessionStorage = SessionJsonStorage();
-
-// /**
-//  * Helper to check/assert object has prop.
-//  * Gratitude to https://fettblog.eu/typescript-hasownproperty/.
-//  * @param obj - object to check
-//  * @param prop - name of property to check for existence of.
-//  */
-// function hasOwnProperty<X, Y extends PropertyKey>(obj: X, prop: Y): obj is X & Record<Y, unknown> {
-//   return {}.hasOwnProperty.call(obj, prop);
-// }
-
 type SignFunction = (challenge: ArrayBuffer) => Promise<ArrayBuffer>;
 
 /**
@@ -115,10 +124,8 @@ export function SessionIdentitySignFunction(options: {
     hex: string;
   };
 }): SignFunction {
-  const identity = Ed25519KeyIdentity.fromSecretKey(
-    hexToBytes(options.secretKey.hex)
-  );
+  const id = SessionIdentity({ identity: options })
   return async (challenge) => {
-    return identity.sign(challenge);
+    return id.sign(challenge);
   };
 }

@@ -12,20 +12,59 @@ We'll start from a fresh project.
     npm install @dfinity/authentication@0.0.0-pre.identity-provider.9
     ```
 2. `import { authenticator } from "@dfinity/authentication";`
-3. To request that the end-user authenticate, call `authenticator.sendAuthenticationRequest({ scope: [] })`
+3. To request that the end-user authenticate, call `authenticator.sendAuthenticationRequest`
     ```javascript
+    import { authenticator, Ed25519KeyIdentity } from "@dfinity/authentication";
     if (confirm('Do you want to Authenticate?')) {
-        authenticator.sendAuthenticationRequest({scope:[]})
+        login()
+    }
+    function readSession(session) {
+        const stored = localStorage.getItem('session');
+        if ( ! stored) { return null; }
+        try {
+            const parsed = JSON.parse();
+            return {
+                ...parsed,
+                identity: Ed25519KeyIdentity.fromJSON(parsed.identity)
+            }
+        } catch (error) {
+            throw error;
+        }
+    }
+    function writeSession(session) {
+        localStorage.setItem('session', JSON.stringify(session));
+    }
+    function login() {
+        const entropy = crypto.getRandomValues(new Uint8Array(32));
+        const sessionIdentity = Ed25519KeyIdentity.generate(entropy);
+        const session = {
+            authenticationResponse: undefined,
+            identity: sessionIdentity,
+        };
+        writeSession(session);
+        authenticator.sendAuthenticationRequest({
+          scope:[],
+          session,
+        })
     }
     ```
-4. After the authentication, the end-user will be redirected back to your page with an `access_token` in the URL query string. Call `authenticator.receiveAuthenticationResponse()` to (try to) process it.
+4. After the authentication, the end-user will be redirected back to your page with an `access_token` in the URL query string. Call `authenticator.useSession` to (try to) process it.
     ```javascript
-    const url = new URL(document.location.href);
-    const isMaybeAuthenticationRedirect = (params) => params.has('access_token');
-    if (isMaybeAuthenticationRedirect(url.searchParams)) {
-        authenticator.receiveAuthenticationResponse(url)
+    import { IdentitiesIterable } from "@dfinity/authentication";
+    const session = readSession();
+    if (session.authenticationResponse) {
+        authenticator.useSession(session);
+    } else {
+        if (/access_token/.test(location.search)) {
+            writeSession({
+                ...session,
+                authenticationResponse: location.toString(),
+            })
+            authenticator.useSession(readSession());
+        }
     }
     ```
+
 5. If your DOM element needs to know about authenticated identities:
     ```javascript
     import { IdentityRequestedEvent } from "@dfinity/authentication"
@@ -36,6 +75,14 @@ We'll start from a fresh project.
             console.log('new @dfinity/authentication identity', identity);
         },
     }))
+    ```
+
+6. If you just want to react to each new identity:
+    ```javascript
+    import { IdentitiesIterable } from "@dfinity/authentication";
+    for await (const identity of IdentitiesIterable(document)) {
+        console.log('new identity', identity);
+    }
     ```
 
 ## Example Apps

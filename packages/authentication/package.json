@@ -12,7 +12,7 @@
     "prepare": "npm run build",
     "prettier": "prettier --check \"src/**/*.ts\"",
     "prettier:write": "npm run prettier -- --write",
-    "test": "jest --verbose"
+    "test": "jest --verbose --detectOpenHandles"
   },
   "dependencies": {
     "@types/crc": "^3.4.0",

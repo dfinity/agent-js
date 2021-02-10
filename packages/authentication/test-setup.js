@@ -9,4 +9,5 @@
 
 window.crypto = require("@trust/webcrypto");
 window.TextEncoder = require("text-encoding").TextEncoder;
+window.MessageChannel = require('worker_threads').MessageChannel;
 require("whatwg-fetch");

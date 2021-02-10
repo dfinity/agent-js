@@ -108,9 +108,12 @@ export class AnonymousIdentity implements Identity {
  *   Identities, even if they're using slightly different versions of agent packages to
  *   create/interpret them.
  */
+export interface AnonymousIdentityDescriptor { type: 'AnonymousIdentity'; }
+export interface PublicKeyIdentityDescriptor { type: 'PublicKeyIdentity'; publicKey: string; }
 export type IdentityDescriptor =
-  | { type: 'AnonymousIdentity' }
-  | { type: 'PublicKeyIdentity'; publicKey: string };
+  | AnonymousIdentityDescriptor
+  | PublicKeyIdentityDescriptor
+  ;
 
 /**
  * Create an IdentityDescriptor from a @dfinity/authentication Identity
@@ -124,4 +127,24 @@ export function createIdentityDescriptor(
       ? { type: 'PublicKeyIdentity', publicKey: identity.getPublicKey().toDer().toString('hex') }
       : { type: 'AnonymousIdentity' };
   return identityIndicator;
+}
+
+
+/**
+ * Type Guard for whether the unknown value is an IdentityDescriptor or not.
+ * @param value - value to type guard
+ */
+export function isIdentityDescriptor(
+  value: unknown | IdentityDescriptor,
+): value is IdentityDescriptor {
+  switch ((value as IdentityDescriptor)?.type) {
+    case 'AnonymousIdentity':
+      return true;
+    case 'PublicKeyIdentity':
+      if (typeof (value as PublicKeyIdentityDescriptor)?.publicKey !== 'string') {
+        return false;
+      }
+      return true;
+  }
+  return false;
 }

@@ -1,11 +1,9 @@
 import {
   IdentityDescriptor,
-  IdentityRequestedEvent,
-  PublicKeyIdentityDescriptor,
+  IdentitiesIterable,
 } from "@dfinity/authentication";
-import { makeLog, Principal, blobFromUint8Array } from "@dfinity/agent";
-
-type PublicKeyFormat = "principal.hex" | "principal.text" | "hex";
+import { makeLog } from "@dfinity/agent";
+import { formatPublicKey } from "./publicKey";
 
 /**
  * Render the currently-authenticated identity from @dfinity/authentication.
@@ -21,97 +19,19 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
   #log = makeLog("AuthenticationSubjectPublicKeyElement");
   constructor() {
     super();
-  }
-  render(): void {
-    while (this.firstChild) {
-      this.firstChild.remove();
-    }
-    this.appendChild(this.createChild());
-  }
-  createChild(): Node {
-    const publicKeyHex = this.getAttribute("publicKey");
-    if (!publicKeyHex) {
-      return this.ownerDocument.createTextNode(
-        this.getAttribute("placeholder") || ""
-      );
-    }
-    const format = this.getAttribute("format");
-    switch (format) {
-      case "principal.hex":
-      case "principal.text":
-        return this.ownerDocument.createTextNode(
-          this.#formatPublicKey(format, publicKeyHex)
-        );
-      case undefined:
-      case null:
-      case "hex":
-        return document.createTextNode(publicKeyHex);
-      default:
-        this.#log("warn", "unexpected format. using hex instead.", {
-          unknownFormat: format,
-        });
-        return document.createTextNode(publicKeyHex);
-    }
-  }
-  #formatPublicKey = (
-    format: PublicKeyFormat,
-    publicKeyHex: string
-  ): string => {
-    const bytes = Uint8Array.from(hexToBytes(publicKeyHex));
-    function BytesPrincipal(bytes: Uint8Array) {
-      return Principal.selfAuthenticating(blobFromUint8Array(bytes));
-    }
-    switch (format) {
-      case "hex":
-        return toHex(bytes);
-      case "principal.hex": {
-        return BytesPrincipal(bytes).toHex();
+    (async () => {
+      for await (const identity of IdentitiesIterable(this.ownerDocument)) {
+        this.useIdentity(identity);
       }
-      case "principal.text": {
-        return BytesPrincipal(bytes).toText();
-      }
-      default:
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-case-declarations
-        const x: never = format;
-    }
-    throw new Error(`unexpected to format provided to formatPublicKey`);
-  };
-  connectedCallback(): void {
-    this.dispatchEvent(
-      IdentityRequestedEvent({
-        bubbles: true,
-        cancelable: true,
-        composed: true,
-        onIdentity: (id) => {
-          this.onUnknownIdentity(id);
-        },
-      })
-    );
-    this.render();
+    })();
   }
-  /**
-   * The value passed back from IdentityRequestedEvent onIdentity callback is `unknown`,
-   * since it may be from an actor at another version that any code we have access to.
-   * This method needs to do some inference about what kind of value it is, try to build an Identity, then call `this.useIdentity`
-   * @param maybeIdentity - unknown value from IdentityRequestedEvent onIdentity callback.
-   */
-  onUnknownIdentity = (maybeIdentity: unknown): void => {
-    if (!isIdentityDescriptor(maybeIdentity)) {
-      console.debug(
-        "onUnknownIdentity received unknown value as identity",
-        maybeIdentity
-      );
-      return;
-    }
-    this.useIdentity(maybeIdentity);
-  };
   /**
    * Change state to a new identity, then re-render.
    * @param identity - new identity to use
    */
   useIdentity(identity: IdentityDescriptor): void {
     this.identity = identity;
-    let exhaustive: never;
+    this.#log('debug', 'useIdentity called with', identity)
     switch (identity.type) {
       case "PublicKeyIdentity":
         this.setAttribute("publicKey", identity.publicKey);
@@ -119,39 +39,55 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
       case "AnonymousIdentity":
         this.removeAttribute("publicKey");
         break;
-      default:
+      default: {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        exhaustive = identity;
+        const exhaustive: never = identity;
+      }
     }
-    this.render();
+    this.renderChildren();
+  }
+  /**
+   * Completely re-render all children.
+   */
+  renderChildren(): void {
+    while (this.firstChild) {
+      this.firstChild.remove();
+    }
+    this.appendChild(ChildrenNode({
+      createDocumentFragment: () => document.createDocumentFragment(),
+      createTextNode: (t) => document.createTextNode(t),
+      publicKeyHex: this.getAttribute('publicKey') || "",
+      placeholder: this.getAttribute('placeholder') || "",
+      format: this.getAttribute('format') || "hex",
+    }));
   }
 }
 
 /**
- * Type Guard for whether the unknown value is an IdentityDescriptor or not.
- * @param value - value to type guard
+ * Create a DOM Node that should be children of AuthenticationSubjectPublicKeyElement.
+ * @param options options
  */
-export function isIdentityDescriptor(
-  value: unknown | IdentityDescriptor
-): value is IdentityDescriptor {
-  switch ((value as IdentityDescriptor)?.type) {
-    case "AnonymousIdentity":
-      return true;
-    case "PublicKeyIdentity":
-      if (typeof (value as PublicKeyIdentityDescriptor)?.publicKey !== "string")
-        return false;
-      return true;
+function ChildrenNode(options: Pick<Document,'createDocumentFragment'|'createTextNode'> & {
+  publicKeyHex: string;
+  placeholder: string;
+  format: string;
+}): Node {
+  const publicKeyHex = options.publicKeyHex;
+  if (!publicKeyHex) {
+    const text = options.createTextNode(options.placeholder);
+    return text;
   }
-  return false;
-}
-
-function hexToBytes(hex: string): Array<number> {
-  const bytes = (hex.match(/.{2}/gi) || []).map((octet) => parseInt(octet, 16));
-  return bytes;
-}
-
-function toHex(bytes: Uint8Array) {
-  return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+  const format = options.format;
+  switch (format) {
+    case "hex":
+    case "principal.hex":
+    case "principal.text":
+      return options.createTextNode(
+        formatPublicKey(format, publicKeyHex)
+      );
+    default:
+      return options.createTextNode(
+        formatPublicKey("hex", publicKeyHex)
+      );
+  }
 }

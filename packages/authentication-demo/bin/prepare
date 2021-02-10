@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# exit on error
+set -e
+
 1>&2 echo "building authentication-demo pwd=$(pwd)"
 
 install_dfx_if_needed () {

@@ -1,8 +1,9 @@
-import { authenticator, Ed25519KeyIdentity } from "@dfinity/authentication";
+import { authenticator } from "@dfinity/authentication";
 import { Actor, makeLog } from "@dfinity/agent";
 import * as canisters from "./canisters";
-import { defaultSessionStorage, SessionPublicKey } from "./session";
-import { hexEncodeUintArray } from "@dfinity/authentication/.tsc-out/packages/authentication/src/idp-protocol/bytes";
+import { defaultSessionStorage } from "./session";
+import tweetnacl from "tweetnacl";
+import { hexToBytes, toHex } from "./bytes";
 
 /**
  * When clicked, initiates Authentication via @dfinity/authentication authenticator.sendAuthenticationRequest().
@@ -38,13 +39,11 @@ export default class AuthenticationButton extends HTMLElement {
     }
   }
   async requestAuthentication(): Promise<void> {
-    const sessionIdentity = Ed25519KeyIdentity.generate(
-      crypto.getRandomValues(new Uint8Array(32))
-    );
+    const sessionKeyPair = tweetnacl.sign.keyPair.fromSeed(tweetnacl.randomBytes(32))
     const session = {
       identity: {
         secretKey: {
-          hex: hexEncodeUintArray(sessionIdentity.getKeyPair().secretKey),
+          hex: toHex(sessionKeyPair.secretKey),
         },
       },
     };
@@ -53,7 +52,14 @@ export default class AuthenticationButton extends HTMLElement {
     authenticator.sendAuthenticationRequest({
       session: {
         identity: {
-          publicKey: SessionPublicKey(session),
+          publicKey: {
+            toDer() {
+              return Uint8Array.from([
+                ...hexToBytes('302a300506032b6570032100'),
+                ...sessionKeyPair.publicKey,
+              ]);
+            }
+          },
         },
       },
       scope: [
