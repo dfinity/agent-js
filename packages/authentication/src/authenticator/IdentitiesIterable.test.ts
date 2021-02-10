@@ -14,7 +14,14 @@ import { IdentityRequestedEvent, IdentityRequestedEventIdentifier } from '../id-
 // };
 
 describe('IdentitiesIterable', () => {
-  it.skip('has identities iterable', async () => {
+  /**
+   * Skipping this test on 2021-02-09 because it hangs on github actions.
+   * It only hangs on github actions, preventing `npm test` from returning.
+   * Debug via binary search of commenting out parts of code until the bug goes away.
+   * 
+   * @todo unskip this test.
+   */
+  it('has identities iterable', async () => {
     // const authenticator = new Authenticator();
     const el = document.createElement('div');
     const sampleIdentity = Ed25519KeyIdentity.generate(crypto.getRandomValues(new Uint8Array(32)))
@@ -39,6 +46,7 @@ describe('IdentitiesIterable', () => {
     }
     listenOne(el);
     const identitiesIterable = IdentitiesIterable(el);
+    
     await new Promise(setImmediate);
     const firstIdentityResult = await identitiesIterable[Symbol.asyncIterator]().next()
     expect((await firstIdentityResult).done).toEqual(false);
@@ -49,5 +57,6 @@ describe('IdentitiesIterable', () => {
     expect(firstIdentityResultValue.publicKey).toEqual(
       hexEncodeUintArray(sampleIdentity.getPublicKey().toDer()),
     );
+    await identitiesIterable.return();
   });
 });

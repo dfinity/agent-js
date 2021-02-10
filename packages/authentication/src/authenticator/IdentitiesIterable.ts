@@ -21,7 +21,7 @@ function createCallbackIterable<T>(): {
  */
 export async function* IdentitiesIterable(
   events: Pick<EventTarget, 'addEventListener'|'dispatchEvent'>,
-): AsyncIterable<IdentityDescriptor> {
+): AsyncGenerator<IdentityDescriptor, void, undefined> {
   const { push, iterable } = createCallbackIterable<IdentityDescriptor>()
   const identityRequestedEvent = IdentityRequestedEvent({
     bubbles: true,
