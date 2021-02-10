@@ -8,6 +8,7 @@ do
 	(
 		echo "testing package: $package"
 		cd "$package"
-		npm test
+		THIS_SUBPACKAGE_PATH="$(pwd)/../../node_modules/.bin:$PATH"
+		PATH=$THIS_SUBPACKAGE_PATH npm run test --if-present
 	)
 done
