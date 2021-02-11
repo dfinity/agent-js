@@ -54,8 +54,5 @@
   "bugs": {
     "url": "https://github.com/dfinity-lab/agent-js/issues"
   },
-  "homepage": "https://github.com/dfinity-lab/agent-js#readme",
-  "devDependencies": {
-    "lerna": "^3.22.1"
-  }
+  "homepage": "https://github.com/dfinity-lab/agent-js#readme"
 }
