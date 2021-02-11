@@ -3,5 +3,5 @@
     "packages/agent",
     "packages/authentication"
   ],
-  "version": "0.6.24-lerna.0"
+  "version": "0.6.24-authentication.0"
 }
