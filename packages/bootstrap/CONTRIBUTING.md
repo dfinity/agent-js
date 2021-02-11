@@ -18,7 +18,21 @@ a limitation of the web API (see
 https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts/features_restricted_to_secure_contexts[
 the MDN documentation])**.
 
+# Canary and Staging the publish process to NPM
+Follow the best practices guidelines here for publishing prereleases:
+https://kevinkreuzer.medium.com/publishing-a-beta-or-alpha-version-to-npm-46035b630dd7
 
+In general, avoid publishing to NPM unless necessary. This includes:
+- testing a release locally. Use `npm pack` or `lerna pack` to create tarballs instead.
+- test the release process itself locally. Use a private npm registry such as http://verdaccio.org.
+- sending a test branch release to third parties. Use `npm pack` or `lerna pack` for this.
+- sharing a branch or temporary code across repos. A solution will come soon to publish
+  a GitHub repo for every commit, instead.
+- if you MUST publish to NPM _itself_, use a dist tag (`lerna publish --tag temp`).
+
+Remember: npm does not allow deprecation of packages anymore, and the `latest` dist tag is
+  installed by default. So publishing without a dist tag can break people trying to use our
+  software.
 
 # Startup Process
 - The bootstrap server determines which worker host it is using;
