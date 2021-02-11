@@ -1,10 +1,15 @@
 import { Buffer } from 'buffer/';
-import { getRootKey } from './actor';
+import { Agent, getDefaultAgent } from './agent';
 import * as cbor from './cbor';
 import { ReadStateResponse } from './http_agent_types';
 import { hash } from './request_id';
 import { BinaryBlob } from './types';
-import { BLS } from './utils/bls';
+import { blsVerify } from './utils/bls';
+
+async function getRootKey(agent: Agent): Promise<BinaryBlob> {
+  // TODO add the real root key for Mercury
+  return ((await agent.status()) as any).root_key;
+}
 
 interface Cert extends Record<string, any> {
   tree: HashTree;
@@ -34,39 +39,44 @@ interface Delegation extends Record<string, any> {
 export class Certificate {
   private readonly cert: Cert;
   private verified: boolean = false;
-  constructor(response: ReadStateResponse) {
+  private _rootKey: BinaryBlob | null = null;
+
+  constructor(response: ReadStateResponse, private _agent: Agent = getDefaultAgent()) {
     this.cert = cbor.decode(response.certificate);
   }
+
   public lookup(path: Buffer[]): Buffer | undefined {
     if (!this.verified) {
       throw new Error('Cannot lookup unverified certificate');
     }
     return lookup_path(path, this.cert.tree);
   }
-  public verify(): Promise<boolean> {
-    return (async () => {
-      const rootHash = await reconstruct(this.cert.tree);
-      const derKey = await checkDelegation(this.cert.delegation);
-      const sig = this.cert.signature;
-      const key = extractDER(derKey);
-      const msg = Buffer.concat([domain_sep('ic-state-root'), rootHash]);
-      const res = await BLS.blsVerify(bufferToHex(key), bufferToHex(sig), bufferToHex(msg));
-      this.verified = res;
-      return res;
-    })();
-  }
-}
 
-async function checkDelegation(d?: Delegation): Promise<Buffer> {
-  if (!d) {
-    return await getRootKey();
+  public async verify(): Promise<boolean> {
+    const rootHash = await reconstruct(this.cert.tree);
+    const derKey = await this._checkDelegation(this.cert.delegation);
+    const sig = this.cert.signature;
+    const key = extractDER(derKey);
+    const msg = Buffer.concat([domain_sep('ic-state-root'), rootHash]);
+    const res = await blsVerify(key, sig, msg);
+    this.verified = res;
+    return res;
   }
-  const cert: Certificate = new Certificate(d as any);
-  if (!(await cert.verify())) {
-    throw new Error('fail to verify delegation certificate');
+
+  private async _checkDelegation(d?: Delegation): Promise<Buffer> {
+    if (!d) {
+      if (!this._rootKey) {
+        this._rootKey = await getRootKey(this._agent);
+      }
+      return this._rootKey;
+    }
+    const cert: Certificate = new Certificate(d as any, this._agent);
+    if (!(await cert.verify())) {
+      throw new Error('fail to verify delegation certificate');
+    }
+    const res = cert.lookup([Buffer.from('subnet'), d.subnet_id, Buffer.from('public_key')])!;
+    return Promise.resolve(res);
   }
-  const res = cert.lookup([Buffer.from('subnet'), d.subnet_id, Buffer.from('public_key')])!;
-  return Promise.resolve(res);
 }
 
 const DER_PREFIX = Buffer.from(
@@ -87,10 +97,6 @@ function extractDER(buf: Buffer): Buffer {
     );
   }
   return buf.slice(DER_PREFIX.length);
-}
-
-function bufferToHex(buf: Buffer): string {
-  return buf.toString('hex');
 }
 
 export async function reconstruct(t: HashTree): Promise<Buffer> {

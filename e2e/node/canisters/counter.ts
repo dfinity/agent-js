@@ -22,6 +22,7 @@ export default async function (): Promise<{
         inc: IDL.Func([], [], []),
         read: IDL.Func([], [IDL.Nat], ["query"]),
         greet: IDL.Func([IDL.Text], [IDL.Text], []),
+        queryGreet: IDL.Func([IDL.Text], [IDL.Text], ["query"]),        
       });
     };
 
