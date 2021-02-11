@@ -9,7 +9,7 @@ import {
   ReadStateFields,
   ReadStateResponse,
   SubmitResponse,
-} from '@dfinity/agent';
+} from '..';
 import * as actor from '../actor';
 import * as IDL from '../idl';
 import { Agent } from './api';

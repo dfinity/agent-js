@@ -4,7 +4,7 @@ import * as cbor from './cbor';
 import { ReadStateResponse } from './http_agent_types';
 import { hash } from './request_id';
 import { BinaryBlob } from './types';
-import { BLS } from './utils/bls';
+import { blsVerify } from './utils/bls';
 
 async function getRootKey(agent: Agent): Promise<BinaryBlob> {
   // TODO add the real root key for Mercury
@@ -58,7 +58,7 @@ export class Certificate {
     const sig = this.cert.signature;
     const key = extractDER(derKey);
     const msg = Buffer.concat([domain_sep('ic-state-root'), rootHash]);
-    const res = await BLS.blsVerify(bufferToHex(key), bufferToHex(sig), bufferToHex(msg));
+    const res = await blsVerify(key, sig, msg);
     this.verified = res;
     return res;
   }
@@ -97,10 +97,6 @@ function extractDER(buf: Buffer): Buffer {
     );
   }
   return buf.slice(DER_PREFIX.length);
-}
-
-function bufferToHex(buf: Buffer): string {
-  return buf.toString('hex');
 }
 
 export async function reconstruct(t: HashTree): Promise<Buffer> {
