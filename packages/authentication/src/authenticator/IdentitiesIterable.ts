@@ -3,8 +3,8 @@ import { CallbackIterable } from '../id-dom-events/dom-events';
 import { IdentityRequestedEvent } from '../id-dom-events';
 
 function createCallbackIterable<T>(): {
-  iterable: AsyncIterable<T>,
-  push(value: T): void,
+  iterable: AsyncIterable<T>;
+  push(value: T): void;
 } {
   let push;
   const iterable = CallbackIterable<T>(listener => {
@@ -20,9 +20,9 @@ function createCallbackIterable<T>(): {
  * @yields new identities used by bootstrap
  */
 export async function* IdentitiesIterable(
-  events: Pick<EventTarget, 'addEventListener'|'dispatchEvent'>,
+  events: Pick<EventTarget, 'addEventListener' | 'dispatchEvent'>,
 ): AsyncGenerator<IdentityDescriptor, void, undefined> {
-  const { push, iterable } = createCallbackIterable<IdentityDescriptor>()
+  const { push, iterable } = createCallbackIterable<IdentityDescriptor>();
   const identityRequestedEvent = IdentityRequestedEvent({
     bubbles: true,
     composed: true,
@@ -30,8 +30,8 @@ export async function* IdentitiesIterable(
       if (isIdentityDescriptor(identity)) {
         push(identity);
       }
-    }
+    },
   });
   events.dispatchEvent(identityRequestedEvent);
-  yield * iterable;
+  yield* iterable;
 }

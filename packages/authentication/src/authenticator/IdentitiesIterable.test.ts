@@ -25,39 +25,38 @@ describe('IdentitiesIterable', () => {
    */
   it.skip('has identities iterable', async () => {
     const el = document.createElement('div');
-    const sampleIdentity = Ed25519KeyIdentity.generate(crypto.getRandomValues(new Uint8Array(32)))
+    const sampleIdentity = Ed25519KeyIdentity.generate(crypto.getRandomValues(new Uint8Array(32)));
     // This is similar to one @dfinity/bootstrap's IdentityActor does,
     // but this test doesn't rely on a running IdentityActor
-    function handleOne(el: Element, event: Event|CustomEvent) {
+    function handleOne(el: Element, event: Event | CustomEvent) {
       const detail = (event as CustomEvent)?.detail;
       const sender = (detail as ReturnType<typeof IdentityRequestedEvent>['detail'])?.sender;
-      if ( ! sender) {
+      if (!sender) {
         return listenOne(el);
       }
       sender.postMessage({
-        identity: createIdentityDescriptor(sampleIdentity)
-      })
+        identity: createIdentityDescriptor(sampleIdentity),
+      });
     }
     function listenOne(el: Element) {
-      el.addEventListener(
-        IdentityRequestedEventIdentifier,
-        (event) => handleOne(el, event),
-        { once: true },
-      );
+      el.addEventListener(IdentityRequestedEventIdentifier, event => handleOne(el, event), {
+        once: true,
+      });
     }
     listenOne(el);
     const identitiesIterable = IdentitiesIterable(el);
-    
-    await new Promise((resolve) => setTimeout(resolve, 1));
-    const timeout = (ms: number) => new Promise<void>((resolve) => {
-      setTimeout(() => resolve(undefined), ms);
-    })
+
+    await new Promise(resolve => setTimeout(resolve, 1));
+    const timeout = (ms: number) =>
+      new Promise<void>(resolve => {
+        setTimeout(() => resolve(undefined), ms);
+      });
     const firstIdentityResult = await Promise.race([
       timeout(5000),
-      identitiesIterable[Symbol.asyncIterator]().next()
-    ])
-    if ( ! firstIdentityResult) {
-      throw new Error('no firstIdentityResult')
+      identitiesIterable[Symbol.asyncIterator]().next(),
+    ]);
+    if (!firstIdentityResult) {
+      throw new Error('no firstIdentityResult');
     }
     expect(firstIdentityResult.done).toEqual(false);
     const firstIdentityResultValue = firstIdentityResult.value;
@@ -70,4 +69,3 @@ describe('IdentitiesIterable', () => {
     await identitiesIterable.return();
   });
 });
-

@@ -29,7 +29,13 @@ type UseSessionCommand = {
   };
 };
 
-export interface IAuthenticator {
+/** Eventually don't depend on tsc lib dom for this */
+export type AuthenticatorEventTarget = Pick<
+  EventTarget,
+  'addEventListener' | 'removeEventListener'
+>;
+
+export interface IAuthenticator extends AuthenticatorEventTarget {
   sendAuthenticationRequest: IdentityProviderAgent['sendAuthenticationRequest'];
   useSession(command: UseSessionCommand): void | Promise<void>;
 }
@@ -60,10 +66,46 @@ export class Authenticator implements IAuthenticator {
       location: location,
     });
   }
-  async sendAuthenticationRequest(command: SendAuthenticationRequestCommand): Promise<void> {
+  /**
+   * noop for now, stubbed with @todo to implement.
+   * Identical to https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.
+   * Eventually will be a subset of it to be node-friendly away from DOM.
+   * @param type - event type to add a listener for.
+   * @param listener - called on each event
+   */
+  public addEventListener: AuthenticatorEventTarget['addEventListener'] = (type, listener) => {
+    this.#log('debug', 'addEventListener', { type, listener });
+  };
+  /**
+   * Remoe a previously-added (or not) event listener.
+   * @param type - event type for which to stop calling the listener
+   * @param listener - listener to remove
+   * @param options - listening options
+   */
+  public removeEventListener: AuthenticatorEventTarget['removeEventListener'] = (
+    type,
+    listener,
+    options,
+  ) => {
+    this.#log('debug', 'removeEventListener', { type, listener, options });
+  };
+  /**
+   * Send an ic-id-protocol.AuthenticationRequest to an Identity Provider (IDP).
+   * Usually this happens by serializing the request as a query string and redirecting to the
+   * identityProvider url with the query string appended.
+   * @param command SendAuthenticationRequestCommand
+   */
+  public async sendAuthenticationRequest(command: SendAuthenticationRequestCommand): Promise<void> {
     return this.#identityProviderAgent.sendAuthenticationRequest(command);
   }
-  async useSession(command: UseSessionCommand): Promise<void> {
+  /**
+   * Publish a BootstrapChangeIdentityCommand with info from a UseSessionCommand
+   * @param command - used to build BootstrapChangeIdentityCommand
+   * @param command.authenticationResponse - ic-id-protocol.AuthenticationResponse as a url string
+   * @param command.identity - ic-id-rp (canister) controlled keypair that is delegated to
+   *    for the extend of a certain expiry and scope
+   */
+  public async useSession(command: UseSessionCommand): Promise<void> {
     if (!command.authenticationResponse) {
       this.#log(
         'debug',
