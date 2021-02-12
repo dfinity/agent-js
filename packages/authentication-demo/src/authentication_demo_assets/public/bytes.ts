@@ -28,10 +28,9 @@ export function hexToBytes(hex: string): Uint8Array {
  * hex-encode
  * @param toEncode - value to hex-encode
  */
-export function toHex(toEncode: Uint8Array|Principal): string {
-  const hexRaw = (toEncode instanceof Principal)
-    ? toEncode.toHex()
-    : bytesToHex(toEncode)
+export function toHex(toEncode: Uint8Array | Principal): string {
+  const hexRaw =
+    toEncode instanceof Principal ? toEncode.toHex() : bytesToHex(toEncode);
   const hex = hexRaw.toLowerCase();
   return hex;
 }

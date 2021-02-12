@@ -1,9 +1,10 @@
-import {
-  IdentityDescriptor,
-  IdentitiesIterable,
-} from "@dfinity/authentication";
+import { IdentityDescriptor, authenticator } from "@dfinity/authentication";
 import { makeLog } from "@dfinity/agent";
 import { formatPublicKey } from "./publicKey";
+import {
+  IdentityChangedEventIdentifier,
+  IdentityChangedEvent,
+} from "@dfinity/authentication/src/authenticator/events";
 
 /**
  * Render the currently-authenticated identity from @dfinity/authentication.
@@ -19,11 +20,21 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
   #log = makeLog("AuthenticationSubjectPublicKeyElement");
   constructor() {
     super();
-    (async () => {
-      for await (const identity of IdentitiesIterable(this.ownerDocument)) {
-        this.useIdentity(identity);
-      }
-    })();
+  }
+  connectedCallback(): void {
+    authenticator.addEventListener(
+      IdentityChangedEventIdentifier,
+      this.handleIdentityChangedEvent
+    );
+  }
+  disconnectedCallback(): void {
+    authenticator.removeEventListener(
+      IdentityChangedEventIdentifier,
+      this.handleIdentityChangedEvent
+    );
+  }
+  handleIdentityChangedEvent(event: IdentityChangedEvent): void {
+    this.useIdentity(event.detail.identity);
   }
   /**
    * Change state to a new identity, then re-render.
@@ -31,7 +42,7 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
    */
   useIdentity(identity: IdentityDescriptor): void {
     this.identity = identity;
-    this.#log('debug', 'useIdentity called with', identity)
+    this.#log("debug", "useIdentity called with", identity);
     switch (identity.type) {
       case "PublicKeyIdentity":
         this.setAttribute("publicKey", identity.publicKey);
@@ -53,13 +64,15 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
     while (this.firstChild) {
       this.firstChild.remove();
     }
-    this.appendChild(ChildrenNode({
-      createDocumentFragment: () => document.createDocumentFragment(),
-      createTextNode: (t) => document.createTextNode(t),
-      publicKeyHex: this.getAttribute('publicKey') || "",
-      placeholder: this.getAttribute('placeholder') || "",
-      format: this.getAttribute('format') || "hex",
-    }));
+    this.appendChild(
+      ChildrenNode({
+        createDocumentFragment: () => document.createDocumentFragment(),
+        createTextNode: (t) => document.createTextNode(t),
+        publicKeyHex: this.getAttribute("publicKey") || "",
+        placeholder: this.getAttribute("placeholder") || "",
+        format: this.getAttribute("format") || "hex",
+      })
+    );
   }
 }
 
@@ -67,11 +80,13 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
  * Create a DOM Node that should be children of AuthenticationSubjectPublicKeyElement.
  * @param options options
  */
-function ChildrenNode(options: Pick<Document,'createDocumentFragment'|'createTextNode'> & {
-  publicKeyHex: string;
-  placeholder: string;
-  format: string;
-}): Node {
+function ChildrenNode(
+  options: Pick<Document, "createDocumentFragment" | "createTextNode"> & {
+    publicKeyHex: string;
+    placeholder: string;
+    format: string;
+  }
+): Node {
   const publicKeyHex = options.publicKeyHex;
   if (!publicKeyHex) {
     const text = options.createTextNode(options.placeholder);
@@ -82,12 +97,8 @@ function ChildrenNode(options: Pick<Document,'createDocumentFragment'|'createTex
     case "hex":
     case "principal.hex":
     case "principal.text":
-      return options.createTextNode(
-        formatPublicKey(format, publicKeyHex)
-      );
+      return options.createTextNode(formatPublicKey(format, publicKeyHex));
     default:
-      return options.createTextNode(
-        formatPublicKey("hex", publicKeyHex)
-      );
+      return options.createTextNode(formatPublicKey("hex", publicKeyHex));
   }
 }
