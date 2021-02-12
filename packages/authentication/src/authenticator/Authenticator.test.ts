@@ -23,4 +23,8 @@ describe('@dfinity/authentication Authenticator', () => {
     }
     expect(useSessionWithoutAuthenticationResponse()).resolves.not.toThrow();
   });
+  it('implements EventTarget https://developer.mozilla.org/en-US/docs/Web/API/EventTarget', () => {
+    expect(typeof new Authenticator().addEventListener).toEqual('function');
+    expect(typeof new Authenticator().removeEventListener).toEqual('function');
+  });
 });
