@@ -1,6 +1,5 @@
 export { SendAuthenticationRequestCommand } from './idp-agent';
 import * as idp from './idp-agent';
-import { RedirectTransport, BrowserTransport, DomEventTransport } from './transport';
 
 /**
  * This Identity Provider is an 'Acceptance Testing' environment operated by DFINITY.
@@ -12,12 +11,3 @@ export const unsafeTemporaryIdentityProvider = {
 };
 
 export const { IdentityProviderAgent } = idp;
-
-export const authenticator = new idp.IdentityProviderAgent({
-  identityProvider: unsafeTemporaryIdentityProvider,
-  transport: BrowserTransport({
-    document: DomEventTransport(document),
-    identityProvider: RedirectTransport(location),
-  }),
-  location,
-});

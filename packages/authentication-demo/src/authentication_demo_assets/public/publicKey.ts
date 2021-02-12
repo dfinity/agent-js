@@ -8,7 +8,7 @@ type PublicKeyFormat = "principal.hex" | "principal.text" | "hex";
  * @param format - how to format the publicKey
  * @param publicKeyHex - hex of publicKey bytes
  */
-export function formatPublicKey (
+export function formatPublicKey(
   format: PublicKeyFormat,
   publicKeyHex: string
 ): string {
@@ -17,7 +17,7 @@ export function formatPublicKey (
     case "hex":
       return toHex(bytes);
     case "principal.hex": {
-      return toHex(BytesPrincipal(bytes))
+      return toHex(BytesPrincipal(bytes));
     }
     case "principal.text": {
       return BytesPrincipal(bytes).toText();

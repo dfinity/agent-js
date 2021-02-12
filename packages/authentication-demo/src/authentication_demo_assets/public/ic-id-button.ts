@@ -39,7 +39,9 @@ export default class AuthenticationButton extends HTMLElement {
     }
   }
   async requestAuthentication(): Promise<void> {
-    const sessionKeyPair = tweetnacl.sign.keyPair.fromSeed(tweetnacl.randomBytes(32))
+    const sessionKeyPair = tweetnacl.sign.keyPair.fromSeed(
+      tweetnacl.randomBytes(32)
+    );
     const session = {
       identity: {
         secretKey: {
@@ -55,10 +57,10 @@ export default class AuthenticationButton extends HTMLElement {
           publicKey: {
             toDer() {
               return Uint8Array.from([
-                ...hexToBytes('302a300506032b6570032100'),
+                ...hexToBytes("302a300506032b6570032100"),
                 ...sessionKeyPair.publicKey,
               ]);
-            }
+            },
           },
         },
       },

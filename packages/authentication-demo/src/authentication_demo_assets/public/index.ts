@@ -1,8 +1,9 @@
 import AuthenticationDemo from "./ic-authentication-demo";
 import AuthenticationSubjectPublicKeyElement from "./ic-id-public-key";
 import AuthenticationButton from "./ic-id-button";
-import { IdentitiesIterable } from "@dfinity/authentication";
+import { IdentitiesIterable, authenticator } from "@dfinity/authentication";
 import { makeLog } from "@dfinity/agent";
+import { IdentityChangedEventIdentifier } from "@dfinity/authentication/src/authenticator/events";
 
 interface InternetComputerGlobal {
   features?: {
@@ -35,10 +36,15 @@ declare global {
  * @param parent - element in which to render the AuthenticationDemo
  */
 async function main(parent: Element) {
-  const log = makeLog('authentication-demo');
+  const log = makeLog("authentication-demo");
+  authenticator.addEventListener(IdentityChangedEventIdentifier, (event) => {
+    log("debug", "addEventListener IdentityChangedEvent listener called with", {
+      event,
+    });
+  });
   (async () => {
     for await (const value of IdentitiesIterable(document)) {
-      log('debug', 'IdentitiesIterable yielded', value);
+      log("debug", "IdentitiesIterable yielded", value);
     }
   })();
   if (globalThis.customElements) {

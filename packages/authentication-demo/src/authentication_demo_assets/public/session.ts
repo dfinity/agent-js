@@ -15,7 +15,9 @@ export interface AuthenticationDemoSession {
 }
 
 function SessionIdentity(session: AuthenticationDemoSession) {
-  const id = Ed25519KeyIdentity.fromSecretKey(hexToBytes(session.identity.secretKey.hex));
+  const id = Ed25519KeyIdentity.fromSecretKey(
+    hexToBytes(session.identity.secretKey.hex)
+  );
   return id;
 }
 
@@ -23,7 +25,9 @@ function SessionIdentity(session: AuthenticationDemoSession) {
  * Create a KeyPair for the Session.
  * @param session - session containing keyPair secretKey
  */
-export function SessionKeyPair(session: AuthenticationDemoSession): ReturnType<Ed25519KeyIdentity['getKeyPair']> {
+export function SessionKeyPair(
+  session: AuthenticationDemoSession
+): ReturnType<Ed25519KeyIdentity["getKeyPair"]> {
   const id = SessionIdentity(session);
   return id.getKeyPair();
 }
@@ -40,7 +44,7 @@ export function SessionPublicKey(
   toDer(): Uint8Array;
 } {
   const keyPair = SessionKeyPair(session);
-  const publicKey = keyPair.publicKey
+  const publicKey = keyPair.publicKey;
   return publicKey;
 }
 
@@ -124,7 +128,7 @@ export function SessionIdentitySignFunction(options: {
     hex: string;
   };
 }): SignFunction {
-  const id = SessionIdentity({ identity: options })
+  const id = SessionIdentity({ identity: options });
   return async (challenge) => {
     return id.sign(challenge);
   };

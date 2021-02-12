@@ -51,15 +51,17 @@ export default class AuthenticationDemo extends HTMLElement {
           sign: async (challenge) => {
             if (/signRequiresConfirm/i.test(location.href)) {
               const confirmationRequest: string = [
-                'Do you want to sign?',
+                "Do you want to sign?",
                 `challenge = ${toHex(new Uint8Array(challenge))}`,
-              ].join('\n\n')
-              if ( ! confirm(confirmationRequest)) {
-                throw new Error('signing did not receive confirmation from end-user')
+              ].join("\n\n");
+              if (!confirm(confirmationRequest)) {
+                throw new Error(
+                  "signing did not receive confirmation from end-user"
+                );
               }
             }
             return SessionIdentitySignFunction(session.identity)(challenge);
-          }
+          },
         },
       });
     }
@@ -143,8 +145,14 @@ export default class AuthenticationDemo extends HTMLElement {
       throw error;
     }
     if (isPrincipal(response)) {
-      if (this.whoamiPrincipal && this.whoamiPrincipal.toHex() === response.toHex()) {
-        this.#log('debug', 'whoamiPrincipal is same as before. Skiping unnecessary re-render.')
+      if (
+        this.whoamiPrincipal &&
+        this.whoamiPrincipal.toHex() === response.toHex()
+      ) {
+        this.#log(
+          "debug",
+          "whoamiPrincipal is same as before. Skiping unnecessary re-render."
+        );
       } else {
         this.whoamiPrincipal = response;
         this.render();
