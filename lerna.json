@@ -1,0 +1,7 @@
+{
+  "packages": [
+    "packages/agent",
+    "packages/authentication"
+  ],
+  "version": "0.0.0"
+}
