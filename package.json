@@ -38,12 +38,28 @@
     }
   },
   "scripts": {
-    "lint": "bin/lint",
-    "postinstall": "bin/npm-postinstall",
-    "prepare": "bin/build",
     "e2e": "bin/e2e",
-    "test": "bin/test",
-    "mitm": "bin/mitm"
+    "mitm": "bin/mitm",
+    "postinstall": "npm run bootstrap",
+    "prepare": "npm run build",
+    "bootstrap": "lerna bootstrap --no-ci --hoist",
+    "bootstrap:quick": "npm run bootstrap -- --scope=@dfinity/*",
+    "clean": "npm run clean:artifacts && npm run clean:packages && npm run clean:root",
+    "clean:artifacts": "lerna run clean --parallel",
+    "clean:packages": "lerna clean --yes",
+    "clean:root": "rimraf node_modules",
+    "start": "npm run build:quick && npm run start:quick",
+    "start:quick": "dotenv lerna run start -- --parallel",
+    "build": "lerna run build --concurrency=1 --stream",
+    "build:quick": "npm run build -- --scope=@dfinity/*",
+    "test": "lerna run test --concurrency=1 --stream",
+    "test:quick": "lerna run test:quick --concurrency=1 --stream",
+    "test:coverage": "lerna run test:coverage --parallel",
+    "test:watch": "lerna run test:watch --parallel",
+    "publish:release": "lerna publish --force-publish=* --no-push --no-git-tag-version",
+    "lint": "eslint --cache --cache-location node_modules/.cache/eslint --fix",
+    "lint:all": "npm run lint 'packages/*/src/**/*.ts*'",
+    "lint:staged": "lint-staged"
   },
   "repository": {
     "type": "git",
