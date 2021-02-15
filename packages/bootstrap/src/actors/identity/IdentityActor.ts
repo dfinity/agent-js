@@ -1,14 +1,12 @@
-import { AnonymousIdentity, createIdentityDescriptor, makeLog, SignIdentity } from '@dfinity/agent';
+import { AnonymousIdentity, createIdentityDescriptor, SignIdentity } from '@dfinity/agent';
 import {
   BootstrapChangeIdentityCommandIdentifier,
   IdentityDescriptor,
   IdentityRequestedEventIdentifier,
 } from '@dfinity/authentication';
 import { EventIterable } from '../../dom-events';
-import {
-  ChangeCommandIdentity,
-  isBootstrapChangeIdentityCommand,
-} from './BootstrapIdentities';
+import { makeLog } from '../../log';
+import { ChangeCommandIdentity, isBootstrapChangeIdentityCommand } from './BootstrapIdentities';
 import { BootstrapIdentityChangedEvent } from './events';
 
 /**
@@ -112,10 +110,10 @@ export default function IdentityActor(params: {
       BootstrapChangeIdentityCommandIdentifier,
       true,
     )) {
-      if ( ! isBootstrapChangeIdentityCommand(event)) {
+      if (!isBootstrapChangeIdentityCommand(event)) {
         continue;
       }
-      useIdentity(ChangeCommandIdentity (event));
+      useIdentity(ChangeCommandIdentity(event));
     }
   }
 

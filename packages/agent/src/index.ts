@@ -6,7 +6,6 @@ export * from './auth';
 export * from './certificate';
 export * from './http_agent_transforms';
 export * from './http_agent_types';
-export * from './log';
 export * from './principal';
 export * from './types';
 export * from './canisters/asset';

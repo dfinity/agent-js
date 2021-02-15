@@ -1,8 +1,8 @@
-import { makeLog } from '@dfinity/agent';
 import { stringifyScope, Scope } from '../idp-protocol/scope';
 import { AuthenticationRequest } from '../idp-protocol/request';
 import { IdentityProviderAgentEnvelope, IdentityProviderIndicator, Transport } from './transport';
 import { hexEncodeUintArray } from '../idp-protocol/bytes';
+import { makeLog } from '../log';
 
 /**
  * Object that knows how to interact with an ic-id Identity Provider by sending/receiving messages.

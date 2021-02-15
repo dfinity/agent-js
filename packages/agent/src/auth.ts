@@ -108,12 +108,14 @@ export class AnonymousIdentity implements Identity {
  *   Identities, even if they're using slightly different versions of agent packages to
  *   create/interpret them.
  */
-export interface AnonymousIdentityDescriptor { type: 'AnonymousIdentity'; }
-export interface PublicKeyIdentityDescriptor { type: 'PublicKeyIdentity'; publicKey: string; }
-export type IdentityDescriptor =
-  | AnonymousIdentityDescriptor
-  | PublicKeyIdentityDescriptor
-  ;
+export interface AnonymousIdentityDescriptor {
+  type: 'AnonymousIdentity';
+}
+export interface PublicKeyIdentityDescriptor {
+  type: 'PublicKeyIdentity';
+  publicKey: string;
+}
+export type IdentityDescriptor = AnonymousIdentityDescriptor | PublicKeyIdentityDescriptor;
 
 /**
  * Create an IdentityDescriptor from a @dfinity/authentication Identity
@@ -128,7 +130,6 @@ export function createIdentityDescriptor(
       : { type: 'AnonymousIdentity' };
   return identityIndicator;
 }
-
 
 /**
  * Type Guard for whether the unknown value is an IdentityDescriptor or not.

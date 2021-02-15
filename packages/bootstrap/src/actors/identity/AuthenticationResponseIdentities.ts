@@ -1,4 +1,4 @@
-import { AnonymousIdentity, makeLog, SignIdentity } from '@dfinity/agent';
+import { AnonymousIdentity, SignIdentity } from '@dfinity/agent';
 import {
   DelegationChain,
   DelegationIdentity,
@@ -6,6 +6,7 @@ import {
 } from '@dfinity/authentication';
 import { AuthenticationResponseUrlDetectedEventIdentifier } from '@dfinity/authentication';
 import { EventIterable } from '../../dom-events';
+import { makeLog } from '../../log';
 
 /**
  * AsyncIterable of Identities that can be generated as a result of handling
