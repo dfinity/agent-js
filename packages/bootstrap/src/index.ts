@@ -12,15 +12,17 @@ import IdentityActor from './actors/identity/IdentityActor';
 import MutableIdentity from './actors/identity/MutableIdentity';
 import { isProbablyCandidModule } from './candid/candid';
 import { createAgent } from './host';
+import { makeLog } from './log';
 import { BootstrapRenderer } from './render';
 import { SiteInfo, withIdentity } from './site';
 
 declare const window: GlobalInternetComputer & Window;
 
+const bootstrapLog = makeLog('bootstrap');
 const bootstrapRender = BootstrapRenderer(document);
 
 _main({ render: bootstrapRender }).catch(err => {
-  console.error('caught error:', err);
+  bootstrapLog('error', 'caught error', { error: err });
   const div = document.createElement('div');
   div.innerText = 'An error happened:';
   const pre = document.createElement('pre');
@@ -34,8 +36,11 @@ _main({ render: bootstrapRender }).catch(err => {
 async function _loadJs(
   canisterId: Principal,
   filename: string,
-  onload = async () => {},
+  onload = async () => {
+    bootstrapLog('debug', '_loadJs onload');
+  },
 ): Promise<unknown> {
+  bootstrapLog('debug', '_loadJs', { canisterId, filename });
   const actor = createAssetCanisterActor({ canisterId });
   const content = await actor.retrieve(filename);
   const js = new TextDecoder().decode(new Uint8Array(content));
@@ -51,6 +56,7 @@ async function _loadJs(
 }
 
 async function _loadCandid(canisterId: Principal): Promise<unknown> {
+  bootstrapLog('debug', '_loadCandid');
   const origin = window.location.origin;
   const url = `${origin}/_/candid?canisterId=${canisterId.toText()}&format=js`;
   const response = await fetch(url);
@@ -70,6 +76,7 @@ async function _loadCandid(canisterId: Principal): Promise<unknown> {
  * @param spec.render {Function} change the Element that should display to the end-user
  */
 async function _main(spec: { render: ReturnType<typeof BootstrapRenderer> }) {
+  bootstrapLog('debug', '_main');
   const { render } = spec;
   /** update features ASAP (in case other code detects them) */
   window.ic = {
@@ -87,6 +94,7 @@ async function _main(spec: { render: ReturnType<typeof BootstrapRenderer> }) {
     document.addEventListener('beforeunload', event => resolve(event), { once: true });
   });
 
+  bootstrapLog('debug', 'constructing IdentityActor', { initialIdentity });
   IdentityActor({
     eventTarget: document,
     initialIdentity,

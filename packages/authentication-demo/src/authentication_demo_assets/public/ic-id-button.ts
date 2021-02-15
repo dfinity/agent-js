@@ -1,4 +1,4 @@
-import { authenticator } from "@dfinity/authentication";
+import { authenticator, makeLog } from "@dfinity/authentication";
 import { Actor } from "@dfinity/agent";
 import * as canisters from "./canisters";
 import { defaultSessionStorage } from "./session";
@@ -12,6 +12,7 @@ import { hexToBytes, toHex } from "./bytes";
  * @todo feel free to extend HTMLButtonElement, just include a polyfill for Safari https://www.npmjs.com/package/@webreflection/custom-elements
  */
 export default class AuthenticationButton extends HTMLElement {
+  #log = makeLog("AuthenticationButton");
   #session = defaultSessionStorage;
   constructor() {
     super();
@@ -48,7 +49,7 @@ export default class AuthenticationButton extends HTMLElement {
         },
       },
     };
-    console.debug("setting new session", session);
+    this.#log("debug", "setting new session", session);
     await this.#session.set(session);
     authenticator.sendAuthenticationRequest({
       session: {

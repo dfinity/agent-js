@@ -13,6 +13,7 @@ import {
 import { IdentityProviderAgent, SendAuthenticationRequestCommand } from '../idp-agent/idp-agent';
 import { unsafeTemporaryIdentityProvider } from '../idp-agent';
 import { isIdentityDescriptor } from '@dfinity/agent';
+import { makeLog } from '../log';
 
 type UseSessionCommand = {
   /**
@@ -55,6 +56,7 @@ type AuthenticatorListener = IdentityChangedEventListener;
 
 export class Authenticator implements IAuthenticator {
   #identityProviderAgent: IdentityProviderAgent;
+  #log = makeLog('Authenticator');
   #transport: Transport<AuthenticatorEnvelope>;
   #events: EventTarget = document;
   #listenerToDomListener: WeakMap<IdentityChangedEventListener, EventListener> = new WeakMap
@@ -106,6 +108,7 @@ export class Authenticator implements IAuthenticator {
       const detail = ('detail' in event) && event.detail;
       const identity: unknown = detail && ('identity' in detail) && detail?.identity;
       if ( ! isIdentityDescriptor(identity)) {
+        this.#log('debug', 'domEventListener got event with no identityDescriptor. Skipping')
         return;
       }
       listener({
@@ -133,6 +136,10 @@ export class Authenticator implements IAuthenticator {
    */
   public async useSession(command: UseSessionCommand): Promise<void> {
     if (!command.authenticationResponse) {
+      this.#log(
+        'debug',
+        'useSession called without authenticationResponse. Will NOT send BootstrapChangeIdentityCommand.',
+      );
       return;
     }
     const message: BootstrapChangeIdentityCommand = {
