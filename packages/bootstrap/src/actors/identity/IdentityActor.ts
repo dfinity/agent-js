@@ -1,6 +1,7 @@
 import { AnonymousIdentity, createIdentityDescriptor, SignIdentity } from '@dfinity/agent';
 import {
   BootstrapChangeIdentityCommandIdentifier,
+  IdentityChangedEvent as AuthenticationIdentityChangedEvent,
   IdentityDescriptor,
   IdentityRequestedEventIdentifier,
 } from '@dfinity/authentication';
@@ -49,8 +50,6 @@ export default function IdentityActor(params: {
     await Promise.all([
       handleIdentityRequestedEvents(),
       handleBootstrapChangeIdentityCommand(),
-      // do this one last so all subscribers set up
-      // trackLatestIdentity(),
     ]);
     started = false;
   }
@@ -71,17 +70,11 @@ export default function IdentityActor(params: {
     currentIdentity = identity;
     const identityDescriptor = createIdentityDescriptor(identity);
     params.eventTarget.dispatchEvent(BootstrapIdentityChangedEvent(identityDescriptor));
+    params.eventTarget.dispatchEvent(AuthenticationIdentityChangedEvent({
+      identity: identityDescriptor,
+    }));
     publish(IdentityMessage(identityDescriptor));
   }
-
-  // /**
-  //  * Whenever `identities` emits a new one, publish it to all subscribers.
-  //  */
-  // async function trackLatestIdentity() {
-  //   for await (const identity of params.identities) {
-  //     await useIdentity(identity);
-  //   }
-  // }
 
   /**
    * For each IdentityRequestedEvent, respond with the current identity,

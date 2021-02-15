@@ -1,9 +1,12 @@
 import AuthenticationDemo from "./ic-authentication-demo";
 import AuthenticationSubjectPublicKeyElement from "./ic-id-public-key";
 import AuthenticationButton from "./ic-id-button";
-import { IdentitiesIterable, authenticator } from "@dfinity/authentication";
-import { makeLog } from "@dfinity/agent";
-import { IdentityChangedEventIdentifier } from "@dfinity/authentication/src/authenticator/events";
+import {
+  IdentitiesIterable,
+  authenticator,
+  makeLog,
+  IdentityChangedEventIdentifier,
+} from "@dfinity/authentication";
 
 interface InternetComputerGlobal {
   features?: {

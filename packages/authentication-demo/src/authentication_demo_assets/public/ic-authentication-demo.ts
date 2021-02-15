@@ -1,10 +1,11 @@
 import { authenticator } from "@dfinity/authentication";
 // @ts-expect-error 'ic:canisters' is not resolvable without dfx-knowledge
 import authDemoContract from "ic:canisters/authentication_demo";
-import { Principal, makeLog } from "@dfinity/agent";
+import { Principal } from "@dfinity/agent";
 import AuthenticationButton from "./ic-id-button";
 import { defaultSessionStorage, SessionIdentitySignFunction } from "./session";
 import { toHex } from "./bytes";
+import { makeLog } from "@dfinity/authentication";
 
 /**
  * Main Custom Element for the @dfinity/authentication-demo.
