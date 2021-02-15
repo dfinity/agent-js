@@ -1,5 +1,6 @@
-import { Ed25519KeyIdentity, makeLog } from "@dfinity/authentication";
+import { Ed25519KeyIdentity } from "@dfinity/authentication";
 import { hexToBytes } from "./bytes";
+import { makeLog } from "./log";
 
 export const defaultSessionStorage = SessionJsonStorage();
 
