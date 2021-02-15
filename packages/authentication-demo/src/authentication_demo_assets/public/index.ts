@@ -4,6 +4,7 @@ import AuthenticationButton from "./ic-id-button";
 import {
   IdentitiesIterable,
   authenticator,
+  makeLog,
   IdentityChangedEventIdentifier,
 } from "@dfinity/authentication";
 
@@ -38,12 +39,15 @@ declare global {
  * @param parent - element in which to render the AuthenticationDemo
  */
 async function main(parent: Element) {
+  const log = makeLog("authentication-demo");
   authenticator.addEventListener(IdentityChangedEventIdentifier, (event) => {
-    console.debug("addEventListener IdentityChangedEvent listener called with", { event });
+    log("debug", "addEventListener IdentityChangedEvent listener called with", {
+      event,
+    });
   });
   (async () => {
     for await (const value of IdentitiesIterable(document)) {
-      console.debug("IdentitiesIterable yielded", value);
+      log("debug", "IdentitiesIterable yielded", value);
     }
   })();
   if (globalThis.customElements) {

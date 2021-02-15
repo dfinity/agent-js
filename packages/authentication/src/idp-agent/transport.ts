@@ -5,6 +5,7 @@ import {
   AuthenticationResponseUrlDetectedEventIdentifier,
   createCustomEvent,
 } from '../id-dom-events';
+import { makeLog } from '../log';
 import {
   BootstrapChangeIdentityCommand,
   BootstrapChangeIdentityCommandIdentifier,
@@ -128,6 +129,7 @@ export function DomEventTransport(
           });
       }
     })();
+    makeLog('DomEventTransport')('debug', 'dispatching event on document', event);
     eventTarget.dispatchEvent(event);
   }
 }

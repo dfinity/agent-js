@@ -6,6 +6,7 @@ import {
   IdentityRequestedEventIdentifier,
 } from '@dfinity/authentication';
 import { EventIterable } from '../../dom-events';
+import { makeLog } from '../../log';
 import { ChangeCommandIdentity, isBootstrapChangeIdentityCommand } from './BootstrapIdentities';
 import { BootstrapIdentityChangedEvent } from './events';
 
@@ -29,6 +30,7 @@ export default function IdentityActor(params: {
   eventTarget: EventTarget;
   cancel: Promise<unknown>;
 }): void {
+  const log = makeLog('@dfinity/bootstrap/IdentityActor');
   const subscribers = new Set<MessagePort>();
   let started = false;
   let currentIdentity: SignIdentity | AnonymousIdentity = params.initialIdentity;
@@ -56,12 +58,15 @@ export default function IdentityActor(params: {
    * Stop the Actor.
    */
   async function stop() {
+    // http://seg.phault.net/blog/2018/03/async-iterators-cancellation/
+    log('warn', 'stop isnt supported yet!');
     // @TODO give a cancellable promise to the subactors
     started = false;
   }
 
   async function useIdentity(identity: SignIdentity | AnonymousIdentity) {
     const prevIdentity = currentIdentity;
+    log('debug', 'useIdentity', { prevIdentity, identity });
     currentIdentity = identity;
     const identityDescriptor = createIdentityDescriptor(identity);
     params.eventTarget.dispatchEvent(BootstrapIdentityChangedEvent(identityDescriptor));
@@ -78,12 +83,16 @@ export default function IdentityActor(params: {
   async function handleIdentityRequestedEvents() {
     const events = EventIterable(params.eventTarget, IdentityRequestedEventIdentifier, true);
     for await (const event of events) {
+      log('debug', 'bootstrap-js window listener handling IdentityRequestedEvent', event);
       const detail = (event as CustomEvent).detail;
       const sender: undefined | MessagePort = detail && detail.sender;
       if (typeof sender?.postMessage === 'function') {
         const message = IdentityMessage(currentIdentity);
         subscribers.add(sender);
         sender.postMessage(message);
+        log('debug', 'responded to IdentityRequestedEvent', { sender, message, subscribers });
+      } else {
+        log('warn', 'IdentityRequestedEvent did not contain a sender port');
       }
     }
   }
@@ -106,6 +115,7 @@ export default function IdentityActor(params: {
    * @param message - message to publish
    */
   function publish(message: ReturnType<typeof IdentityMessage>): void {
+    log('debug', 'publishing', { message, subscribers });
     for (const port of subscribers) {
       port.postMessage(message);
     }

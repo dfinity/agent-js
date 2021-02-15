@@ -1,4 +1,5 @@
 import { AnonymousIdentity, SignIdentity } from '@dfinity/agent';
+import { makeLog } from '../../log';
 
 /**
  * An Identity that delegates to each new identity of an iterable of identities.
@@ -9,6 +10,7 @@ export default async function MutableIdentity(
   identities: AsyncIterable<SignIdentity | AnonymousIdentity>,
   initialIdentity = new AnonymousIdentity(),
 ): Promise<SignIdentity | AnonymousIdentity> {
+  const log = makeLog('MutableIdentity');
   let currentIdentity: AnonymousIdentity | SignIdentity = initialIdentity;
   function getCurrentIdentity() {
     return currentIdentity;
@@ -17,6 +19,12 @@ export default async function MutableIdentity(
     for await (const nextIdentity of identities) {
       const prevIdentity = currentIdentity;
       currentIdentity = nextIdentity;
+      log('debug', 'using newly generated identity: ', {
+        prevIdentity,
+        prevIdentityPrincipalHex: prevIdentity.getPrincipal().toHex(),
+        currentIdentity,
+        currentIdentityPrincipalHex: currentIdentity.getPrincipal().toHex(),
+      });
     }
   })();
   const identityProxy: SignIdentity | AnonymousIdentity = new Proxy(
