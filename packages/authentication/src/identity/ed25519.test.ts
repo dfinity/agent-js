@@ -1,5 +1,6 @@
 import { blobFromHex, blobFromUint8Array } from '@dfinity/agent';
 import { Buffer } from 'buffer/';
+import { bip39EntropyToMnemonic, bip39MnemonicToEntropy } from './bip39';
 import { Ed25519KeyIdentity, Ed25519PublicKey } from './ed25519';
 
 const testVectors: Array<[string, string]> = [
@@ -18,7 +19,7 @@ const testVectors: Array<[string, string]> = [
 ];
 
 test('DER encoding of ED25519 keys', async () => {
-  testVectors.forEach(([rawPublicKeyHex, derEncodedPublicKeyHex]) => {
+  testVectors.forEach(([rawPublicKeyHex, derEncodedPublicKeyHex], i) => {
     const publicKey = Ed25519PublicKey.fromRaw(blobFromHex(rawPublicKeyHex));
     const expectedDerPublicKey = blobFromHex(derEncodedPublicKeyHex);
     expect(publicKey.toDer()).toEqual(expectedDerPublicKey);
@@ -26,7 +27,7 @@ test('DER encoding of ED25519 keys', async () => {
 });
 
 test('DER decoding of ED25519 keys', async () => {
-  testVectors.forEach(([rawPublicKeyHex, derEncodedPublicKeyHex]) => {
+  testVectors.forEach(([rawPublicKeyHex, derEncodedPublicKeyHex], i) => {
     const derPublicKey = blobFromHex(derEncodedPublicKeyHex);
     const expectedPublicKey = blobFromHex(rawPublicKeyHex);
     expect(Ed25519PublicKey.fromDer(derPublicKey).toRaw()).toEqual(expectedPublicKey);
@@ -89,7 +90,7 @@ const testVectorsSLIP10 = [
 
 test('derive Ed25519 via SLIP 0010', async () => {
   await Promise.all(
-    testVectorsSLIP10.map(([seed, privateKey, publicKey]) => {
+    testVectorsSLIP10.map(([seed, privateKey, publicKey], i) => {
       const expectedPrivateKey = blobFromHex(privateKey);
       // The SLIP 0010 test vectors contain a leading 0-byte for now obvious reason, the remainder
       // makes sense.

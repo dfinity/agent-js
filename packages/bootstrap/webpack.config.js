@@ -14,6 +14,10 @@ module.exports = {
     worker: './src/worker.ts',
   },
   target: 'web',
+  node: {
+    // This is needed for wasm loader from emscripten
+    fs: 'empty'
+  },
   output: {
     // This is necessary to allow internal apps to bundle their own code with
     // webpack which may conflict with us.
@@ -48,15 +52,9 @@ module.exports = {
         test: /\.css$/,
         use: ['style-loader', 'css-loader'],
       },
-      {  test: /\.(jsx|ts|tsx)$/,
-        use: {
-          loader: "ts-loader",
-          options: {
-            // eslint-disable-next-line no-undef
-            configFile: path.join(__dirname, 'tsconfig.json'),
-            projectReferences: true,
-          }
-        }
+      {
+        test: /\.tsx?$/,
+        use: ['ts-loader'],
       },
     ],
   },
@@ -87,6 +85,12 @@ module.exports = {
         to: 'favicon.ico',
       },
     ]),
+    new CopyWebpackPlugin([
+      {
+        from: '../agent/src/utils/bls.wasm',
+        to: 'bls.wasm',
+      },
+    ]),    
   ],
   devServer: {
     proxy: {

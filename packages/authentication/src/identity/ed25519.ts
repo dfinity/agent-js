@@ -8,13 +8,11 @@ import {
   KeyPair,
   PublicKey,
   SignIdentity,
-  blobFromBuffer,
 } from '@dfinity/agent';
-import { Buffer } from 'buffer/';
 import * as tweetnacl from 'tweetnacl';
 
 export class Ed25519PublicKey implements PublicKey {
-  public static from(key: PublicKey): Ed25519PublicKey {
+  public static from(key: PublicKey) {
     return this.fromDer(key.toDer());
   }
 
@@ -157,15 +155,6 @@ export class Ed25519KeyIdentity extends SignIdentity {
     return new Ed25519KeyIdentity(Ed25519PublicKey.fromRaw(publicKey), privateKey);
   }
 
-  public static fromSecretKey(secretKey: ArrayBuffer): Ed25519KeyIdentity {
-    const keyPair = tweetnacl.sign.keyPair.fromSecretKey(new Uint8Array(secretKey));
-    const identity = Ed25519KeyIdentity.fromKeyPair(
-      blobFromUint8Array(keyPair.publicKey),
-      blobFromUint8Array(keyPair.secretKey),
-    );
-    return identity;
-  }
-
   protected _publicKey: Ed25519PublicKey;
 
   // `fromRaw` and `fromDer` should be used for instantiation, not this constructor.
@@ -177,7 +166,7 @@ export class Ed25519KeyIdentity extends SignIdentity {
   /**
    * Serialize this key to JSON.
    */
-  public toJSON(): JsonnableEd25519KeyIdentity {
+  public toJSON(): any {
     return [blobToHex(this._publicKey.toDer()), blobToHex(this._privateKey)];
   }
 
@@ -200,18 +189,9 @@ export class Ed25519KeyIdentity extends SignIdentity {
 
   /**
    * Signs a blob of data, with this identity's private key.
-   * @param challenge - challenge to sign with this identity's secretKey, producing a signature
    */
-  public async sign(challenge: BinaryBlob | ArrayBuffer): Promise<BinaryBlob> {
-    const blob =
-      challenge instanceof Buffer
-        ? blobFromBuffer(challenge)
-        : blobFromUint8Array(new Uint8Array(challenge));
+  public async sign(blob: BinaryBlob): Promise<BinaryBlob> {
     const signature = tweetnacl.sign.detached(blob, this._privateKey);
     return blobFromUint8Array(signature);
   }
 }
-
-type PublicKeyHex = string;
-type SecretKeyHex = string;
-export type JsonnableEd25519KeyIdentity = [PublicKeyHex, SecretKeyHex];

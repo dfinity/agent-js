@@ -1,4 +1,4 @@
-import { BinaryBlob, blobFromHex, SignIdentity, Principal } from '@dfinity/agent';
+import { BinaryBlob, blobFromHex, SignIdentity } from '@dfinity/agent';
 import BigNumber from 'bignumber.js';
 import { DelegationChain } from './delegation';
 import { Ed25519KeyIdentity } from './ed25519';
@@ -54,7 +54,7 @@ test('delegation signs with proper keys (3)', async () => {
   expect(middleToBottom).toEqual(golden);
 });
 
-test('DelegationChain can be serialized to and from JSON', async () => {
+test('can be serialized to and from JSON', async () => {
   const root = createIdentity(2);
   const middle = createIdentity(1);
   const bottom = createIdentity(0);
@@ -63,9 +63,6 @@ test('DelegationChain can be serialized to and from JSON', async () => {
     root,
     middle.getPublicKey(),
     new Date(1609459200000),
-    {
-      targets: [Principal.fromText('jyi7r-7aaaa-aaaab-aaabq-cai')],
-    },
   );
   const middleToBottom = await DelegationChain.create(
     middle,
@@ -73,21 +70,10 @@ test('DelegationChain can be serialized to and from JSON', async () => {
     new Date(1609459200000),
     {
       previous: rootToMiddle,
-      targets: [Principal.fromText('u76ha-lyaaa-aaaab-aacha-cai')],
     },
   );
 
   const rootToMiddleJson = JSON.stringify(rootToMiddle);
-  // All strings in the JSON should be hex so it is clear how to decode this as different versions of `toJSON` evolve.
-  JSON.parse(rootToMiddleJson, (key, value) => {
-    if (typeof value === 'string') {
-      const byte = parseInt(value, 16);
-      if (isNaN(byte)) {
-        throw new Error(`expected all strings to be hex, but got: ${value}`);
-      }
-    }
-    return value;
-  });
   const rootToMiddleActual = DelegationChain.fromJSON(rootToMiddleJson);
   expect(rootToMiddleActual).toEqual(rootToMiddle);
 

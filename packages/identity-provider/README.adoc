@@ -2,34 +2,3 @@
 
 HTML/JS/CSS to handle creation/delegation of webauthn keys
 
-## Development
-
-## Build
-
-[[build]]Build the project source code to compiled output:
-----
-npm run build
-----
-
-This should write output to `./dist/`
-
-## Deploys
-
-[NOTE]
-====
-You'll want to <<build,build the project>> first.
-====
-
-Deploy to https://identity-provider.sdk-test.dfinity.network:
-----
-./etc/identity-provider.sdk-test.dfinity.network/deploy && echo 'deployed' || echo 'error deploying'
-----
-
-Flags passed as shell arguments will be forwarded to `rsync`, e.g.
-----
-▶ ./etc/identity-provider.sdk-test.dfinity.network/deploy --progress --verbose
-sending incremental file list
-
-sent 731 bytes  received 12 bytes  212.29 bytes/sec
-total size is 19.29M  speedup is 25,968.48
-----

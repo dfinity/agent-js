@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { Identity, Principal } from '@dfinity/agent';
+import { blobFromUint8Array, Identity, Principal } from '@dfinity/agent';
 import {
+  Ed25519KeyIdentity,
   DelegationChain,
   DelegationIdentity,
-  Ed25519KeyIdentity,
   WebAuthnIdentity,
 } from '@dfinity/authentication';
 import localforage from 'localforage';
@@ -67,6 +66,7 @@ const localhostHostRe = /(?<subdomain>(.*))\.(?<domain>localhost)$/;
 
 /**
  * Internal data structure for the location informations.
+ * @internal
  */
 interface LocationInfo {
   // The domain of the request, which is where the worker domain name should be.
@@ -260,7 +260,7 @@ export class SiteInfo {
     }
   }
 
-  public isUnknown(): boolean {
+  public isUnknown() {
     return this.kind === DomainKind.Unknown;
   }
 
@@ -328,18 +328,4 @@ export class SiteInfo {
       return maybeValue;
     }
   }
-}
-
-/**
- * Wrap a SiteInfo to produce a new SiteInfo that always returns the provided identity.
- * @param identity - identity to use
- */
-export function withIdentity(identity: Identity) {
-  return (info: SiteInfo): SiteInfo => {
-    const newInfo: SiteInfo = Object.create(info);
-    newInfo.getOrCreateUserIdentity = async () => {
-      return identity;
-    };
-    return newInfo;
-  };
 }

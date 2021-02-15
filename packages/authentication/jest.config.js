@@ -4,6 +4,6 @@ module.exports = {
   setupFilesAfterEnv: ['jest-expect-message'],
   testPathIgnorePatterns: ['/node_modules/', '/out/', '\\.js$'],
   transform: {
-    "^.+\\.tsx?$": "ts-jest"
+    '^.+\\.ts$': 'ts-jest',
   },
 };
