@@ -1,10 +1,7 @@
 import {
   IdentitiesIterable,
   IdentityChangedEvent,
-  IdentityDescriptor,
-  makeLog,
-} from "@dfinity/authentication";
-import { formatPublicKey } from "./publicKey";
+} from "@dfinity/authentication/src/authenticator/events";
 
 /**
  * Render the currently-authenticated identity from @dfinity/authentication.
@@ -17,17 +14,16 @@ import { formatPublicKey } from "./publicKey";
  */
 export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
   identity: IdentityDescriptor | null = null;
-  #iterateIdentities: undefined | Promise<void>;
-  #log = makeLog("AuthenticationSubjectPublicKeyElement");
+
   constructor() {
     super();
     // @todo: cancel this on disconnectedCallback
-    // using http://seg.phault.net/blog/2018/03/async-iterators-cancellation/
-    this.#iterateIdentities = (async () => {
-      for await (const identity of IdentitiesIterable(this.ownerDocument)) {
-        this.useIdentity(identity);
-      }
-    })();
+    authenticator.addEventListener(
+      IdentityChangedEventIdentifier,
+      this.handleIdentityChangedEvent
+    );
+  }
+  disconnectedCallback(): void {
   }
   handleIdentityChangedEvent(event: IdentityChangedEvent): void {
     this.useIdentity(event.detail.identity);
@@ -38,7 +34,6 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
    */
   useIdentity(identity: IdentityDescriptor): void {
     this.identity = identity;
-    this.#log("debug", "useIdentity called with", identity);
     switch (identity.type) {
       case "PublicKeyIdentity":
         this.setAttribute("publicKey", identity.publicKey);

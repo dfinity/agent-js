@@ -6,7 +6,6 @@ import {
   ProxyAgent,
   ProxyMessage,
 } from '@dfinity/agent';
-import { makeLog } from './log';
 import { SiteInfo } from './site';
 
 /**
@@ -14,17 +13,13 @@ import { SiteInfo } from './site';
  * @param site - Describes the web page bootstrap is loading in.
  */
 export async function createAgent(site: SiteInfo): Promise<Agent> {
-  const log = makeLog('createAgent');
   const workerHost = site.isUnknown() ? undefined : await site.getWorkerHost();
   const host = await site.getHost();
-  log('debug', 'createAgent', { workerHost, host, site });
+
   if (!workerHost) {
     const identity = await site.getOrCreateUserIdentity();
     const creds = await site.getLogin();
-    log('debug', 'constructing HttpAgent with ', {
-      identity,
-      identityPrincipalHex: (await identity).getPrincipal().toHex(),
-    });
+
     const agent = new HttpAgent({
       host,
       ...(creds && { credentials: { name: creds[0], password: creds[1] } }),

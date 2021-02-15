@@ -5,7 +5,6 @@ export { WebAuthnIdentity } from './identity/webauthn';
 export { IdentityProviderAgent } from './idp-agent';
 export * from './idp-protocol';
 export * from './id-dom-events';
-export * from './log';
 export * from './types';
 export * from './bootstrap-messages/BootstrapChangeIdentityCommand';
 export { authenticator, Authenticator, IdentitiesIterable } from './authenticator';
