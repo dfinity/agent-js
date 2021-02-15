@@ -5,7 +5,6 @@ import { Principal } from "@dfinity/agent";
 import AuthenticationButton from "./ic-id-button";
 import { defaultSessionStorage, SessionIdentitySignFunction } from "./session";
 import { toHex } from "./bytes";
-import { makeLog } from "@dfinity/authentication";
 
 /**
  * Main Custom Element for the @dfinity/authentication-demo.
@@ -16,7 +15,6 @@ import { makeLog } from "@dfinity/authentication";
  *     which should echo back this agent's identity, which this element should render to the end-user.
  */
 export default class AuthenticationDemo extends HTMLElement {
-  #log = makeLog("AuthenticationDemo");
   #sessionStorage = defaultSessionStorage;
   whoamiPrincipal: Principal | undefined;
   constructor() {
@@ -28,12 +26,8 @@ export default class AuthenticationDemo extends HTMLElement {
   }
   #initializeAuthentication = async (): Promise<void> => {
     const { value: session } = await this.#sessionStorage.get();
-    this.#log("debug", "initializingAuthentication", { session });
     if (!session) {
-      this.#log(
-        "debug",
-        "initializeAuthentication got no session from storage"
-      );
+      console.debug("initializeAuthentication got no session from storage");
       return;
     }
     const url = new URL(location.href);
@@ -150,10 +144,7 @@ export default class AuthenticationDemo extends HTMLElement {
         this.whoamiPrincipal &&
         this.whoamiPrincipal.toHex() === response.toHex()
       ) {
-        this.#log(
-          "debug",
-          "whoamiPrincipal is same as before. Skiping unnecessary re-render."
-        );
+        console.debug("whoamiPrincipal is same as before. Skiping unnecessary re-render.");
       } else {
         this.whoamiPrincipal = response;
         this.render();

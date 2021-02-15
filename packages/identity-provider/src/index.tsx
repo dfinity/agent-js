@@ -11,9 +11,7 @@ import NotFound from './routes/NotFound';
 import RelyingPartyDemoRoute from './relying-party-demo/routes';
 import { RelyingPartyDemoIdentityChangedEventIdentifier } from './relying-party-demo/events';
 import { Route as DesignPhase1Route } from './design-phase-1';
-import { makeLog, WebAuthnIdentity } from '@dfinity/authentication';
-
-const log = makeLog('identity-provider');
+import { WebAuthnIdentity } from '@dfinity/authentication';
 
 const NotFoundRoute = () => {
   return <Route component={NotFound} />;
@@ -68,7 +66,7 @@ _main().catch(err => {
     }
     parentNode.appendChild(div);
   } else {
-    log('error', `error with _main() but couldn't find app element to render it`, err);
+    console.error(`error with _main() but couldn't find app element to render it`, err);
   }
   throw err;
 });

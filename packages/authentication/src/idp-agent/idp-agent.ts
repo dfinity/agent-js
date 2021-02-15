@@ -2,7 +2,6 @@ import { stringifyScope, Scope } from '../idp-protocol/scope';
 import { AuthenticationRequest } from '../idp-protocol/request';
 import { IdentityProviderAgentEnvelope, IdentityProviderIndicator, Transport } from './transport';
 import { hexEncodeUintArray } from '../idp-protocol/bytes';
-import { makeLog } from '../log';
 
 /**
  * Object that knows how to interact with an ic-id Identity Provider by sending/receiving messages.
@@ -31,7 +30,6 @@ export class IdentityProviderAgent implements IdentityProviderAgent {
   #identityProvider: IdentityProviderIndicator;
   #transport: Transport<IdentityProviderAgentEnvelope>;
   #location: Pick<Location, 'href'>;
-  #log = makeLog('IdentityProviderAgent');
   constructor(spec: {
     identityProvider: IdentityProviderIndicator;
     transport: Transport<IdentityProviderAgentEnvelope>;
