@@ -9,6 +9,13 @@
     "@dfinity/bootstrap": "file://./packages/bootstrap",
     "@dfinity/identity-provider": "file://./packages/identity-provider"
   },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^4.15.1",
+    "@typescript-eslint/parser": "^4.15.1",
+    "eslint": "^7.20.0",
+    "eslint-plugin-jsdoc": "^32.0.0",
+    "lerna": "^3.22.1"
+  },
   "scripts": {
     "e2e": "bin/e2e",
     "mitm": "bin/mitm",
@@ -42,8 +49,5 @@
   "bugs": {
     "url": "https://github.com/dfinity-lab/agent-js/issues"
   },
-  "homepage": "https://github.com/dfinity-lab/agent-js#readme",
-  "devDependencies": {
-    "lerna": "^3.22.1"
-  }
+  "homepage": "https://github.com/dfinity-lab/agent-js#readme"
 }

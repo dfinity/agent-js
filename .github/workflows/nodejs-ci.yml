@@ -22,11 +22,11 @@ jobs:
           node-version: ${{ matrix.node }}
 
       # See if we can lint before full build/test
-      - run: npm install --ignore-scripts
+      - run: npm ci --ignore-scripts
       - run: npm run lint --if-present
 
       # full install, including npm postinstall, prepare
-      - run: npm install
+      - run: npm ci
       # build monorepo incl. each subpackage
       - run: npm run build --if-present
 
