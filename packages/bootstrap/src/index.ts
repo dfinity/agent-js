@@ -5,7 +5,6 @@ import {
   GlobalInternetComputer,
   HttpAgent,
   IDL,
-  makeLog,
   Principal,
 } from '@dfinity/agent';
 import { BootstrapIdentities } from './actors/identity/BootstrapIdentities';
@@ -13,6 +12,7 @@ import IdentityActor from './actors/identity/IdentityActor';
 import MutableIdentity from './actors/identity/MutableIdentity';
 import { isProbablyCandidModule } from './candid/candid';
 import { createAgent } from './host';
+import { makeLog } from './log';
 import { BootstrapRenderer } from './render';
 import { SiteInfo, withIdentity } from './site';
 

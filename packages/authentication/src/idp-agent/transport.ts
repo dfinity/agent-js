@@ -5,7 +5,7 @@ import {
   AuthenticationResponseUrlDetectedEventIdentifier,
   createCustomEvent,
 } from '../id-dom-events';
-import { makeLog } from '@dfinity/agent';
+import { makeLog } from '../log';
 import {
   BootstrapChangeIdentityCommand,
   BootstrapChangeIdentityCommandIdentifier,

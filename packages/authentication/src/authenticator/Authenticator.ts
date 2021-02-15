@@ -12,8 +12,9 @@ import {
 } from '../bootstrap-messages/BootstrapChangeIdentityCommand';
 import { IdentityProviderAgent, SendAuthenticationRequestCommand } from '../idp-agent/idp-agent';
 import { unsafeTemporaryIdentityProvider } from '../idp-agent';
-import { makeLog, isIdentityDescriptor } from '@dfinity/agent';
+import { isIdentityDescriptor } from '@dfinity/agent';
 import { IdentityChangedEventIdentifier, IdentityChangedEvent } from './events';
+import { makeLog } from '../log';
 
 type UseSessionCommand = {
   /**

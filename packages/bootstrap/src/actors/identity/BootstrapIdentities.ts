@@ -72,7 +72,8 @@ export function isBootstrapChangeIdentityCommand(
  * @param eventTarget - target to watch for DOM Events like BootstrapChangeIdentityCommand
  */
 export function BootstrapIdentities(
-  eventTarget: EventTarget): AsyncIterable<SignIdentity|AnonymousIdentity> {
+  eventTarget: EventTarget,
+): AsyncIterable<SignIdentity | AnonymousIdentity> {
   const events = EventIterable(eventTarget, BootstrapChangeIdentityCommandIdentifier);
   const identities = ChangeCommandEventIdentities(events);
   return identities;

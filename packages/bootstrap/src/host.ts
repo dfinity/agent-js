@@ -2,11 +2,11 @@ import {
   Agent,
   HttpAgent,
   makeExpiryTransform,
-  makeLog,
   makeNonceTransform,
   ProxyAgent,
   ProxyMessage,
 } from '@dfinity/agent';
+import { makeLog } from './log';
 import { SiteInfo } from './site';
 
 /**

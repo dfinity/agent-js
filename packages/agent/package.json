@@ -6,7 +6,7 @@
     "build": "tsc -b",
     "bundle": "npm run build",
     "ci": "npm run prettier && npm run lint && npm run build && npm run test",
-    "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' src/index.ts src/auth.ts src/log.ts src/request_id.ts src/request_id.test.ts",
+    "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' src/index.ts src/auth.ts src/request_id.ts src/request_id.test.ts",
     "eslint:fix": "npm run lint -- --fix",
     "lint": "npm run eslint && npm run tslint",
     "tslint": "tslint --project tsconfig.json --config tslint.json",
