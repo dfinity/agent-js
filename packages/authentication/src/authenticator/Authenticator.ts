@@ -5,7 +5,7 @@ import {
   RedirectTransport,
   IdentityProviderIndicator,
 } from '../idp-agent/transport';
-import { AuthenticationResponseUrlDetectedEvent, IdentityRequestedEvent } from '../id-dom-events';
+import { AuthenticationResponseUrlDetectedEvent, IdentityChangedEventIdentifier, IdentityChangedEvent } from '../id-dom-events';
 import {
   BootstrapChangeIdentityCommand,
   BootstrapChangeIdentityCommandIdentifier,
@@ -13,7 +13,6 @@ import {
 import { IdentityProviderAgent, SendAuthenticationRequestCommand } from '../idp-agent/idp-agent';
 import { unsafeTemporaryIdentityProvider } from '../idp-agent';
 import { isIdentityDescriptor } from '@dfinity/agent';
-import { IdentityChangedEventIdentifier, IdentityChangedEvent } from './events';
 import { makeLog } from '../log';
 
 type UseSessionCommand = {
@@ -52,11 +51,15 @@ interface AuthenticatorOptions {
   events: EventTarget
 }
 
+type IdentityChangedEventListener = (id: IdentityChangedEvent) => void;
+type AuthenticatorListener = IdentityChangedEventListener;
+
 export class Authenticator implements IAuthenticator {
   #identityProviderAgent: IdentityProviderAgent;
   #log = makeLog('Authenticator');
   #transport: Transport<AuthenticatorEnvelope>;
   #events: EventTarget = document;
+  #listenerToDomListener: WeakMap<IdentityChangedEventListener, EventListener> = new WeakMap
   constructor(
     options: AuthenticatorOptions = {
       transport: DefaultAuthenticatorTransport(document),
@@ -79,37 +82,42 @@ export class Authenticator implements IAuthenticator {
    * @param type - type of event to listen for
    * @param listener - listener called for each event
    */
-  addEventListener(type: typeof IdentityChangedEventIdentifier, listener: (id: IdentityChangedEvent) => void): void {
-    this.#log('debug', 'addEventListener', { type, listener });
-    this.#events.dispatchEvent(IdentityRequestedEvent({
-      bubbles: true,
-      composed: true,
-      onIdentity: (identity) => {
-        if ( ! isIdentityDescriptor(identity)) {
-          this.#log('debug', 'got something other than an identity descriptor. skipping');
-          return;
-        }
-        listener({
-          type: IdentityChangedEventIdentifier,
-          detail: {identity},
-        });
-      }
-    }))
-  }
-  protected handleIdentityChangedEvent(event: IdentityChangedEvent): void {
-    this.#log('debug', 'handleIdentityChangedEvent', { event })
+  addEventListener(type: typeof IdentityChangedEventIdentifier, listener: IdentityChangedEventListener): void {
+    const domEventListener: EventListener = this.#listenerToDomListener.get(listener) || this.createDomEventListener(listener);
+    this.#listenerToDomListener.set(listener, domEventListener)
+    this.#events.addEventListener(IdentityChangedEventIdentifier, domEventListener);
   }
   /**
    * Remoe a previously-added (or not) event listener.
    * @param type - event type for which to stop calling the listener
    * @param listener - listener to remove
    */
-  public removeEventListener: AuthenticatorEventTarget['removeEventListener'] = (
+  removeEventListener: AuthenticatorEventTarget['removeEventListener'] = (
     type,
     listener,
   ) => {
-    this.#log('debug', 'removeEventListener', { type, listener });
+    const domEventListener = this.#listenerToDomListener.get(listener);
+    if ( ! domEventListener) {
+      return;
+    }
+    this.#events.removeEventListener(IdentityChangedEventIdentifier, domEventListener);
+    this.#listenerToDomListener.delete(listener);
   };
+  private createDomEventListener(listener: AuthenticatorListener): EventListener {
+    const domEventListener: EventListener = (event: Event|CustomEvent) => {
+      const detail = ('detail' in event) && event.detail;
+      const identity: unknown = detail && ('identity' in detail) && detail?.identity;
+      if ( ! isIdentityDescriptor(identity)) {
+        this.#log('debug', 'domEventListener got event with no identityDescriptor. Skipping')
+        return;
+      }
+      listener({
+        type: IdentityChangedEventIdentifier,
+        detail: {identity},
+      });
+    }
+    return domEventListener;
+  }
   /**
    * Send an ic-id-protocol.AuthenticationRequest to an Identity Provider (IDP).
    * Usually this happens by serializing the request as a query string and redirecting to the
@@ -145,7 +153,6 @@ export class Authenticator implements IAuthenticator {
       to: 'document' as const,
       message,
     };
-    this.#log('debug', 'useSession sending to document', envelope);
     await this.#transport.send(envelope);
   }
 }

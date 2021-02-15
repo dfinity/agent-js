@@ -1,5 +1,5 @@
-import { authenticator } from "@dfinity/authentication";
-import { Actor, makeLog } from "@dfinity/agent";
+import { authenticator, makeLog } from "@dfinity/authentication";
+import { Actor } from "@dfinity/agent";
 import * as canisters from "./canisters";
 import { defaultSessionStorage } from "./session";
 import tweetnacl from "tweetnacl";
