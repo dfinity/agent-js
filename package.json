@@ -5,13 +5,13 @@
   "description": "Use an Agent to interact with the Internet Computer from your JavaScript program.",
   "dependencies": {
     "dfinity-agent": "file:packages/agent",
+    "dfinity-agent-js-devtools": "file:packages/agent-js-devtools",
     "dfinity-authentication": "file:packages/authentication",
     "dfinity-bootstrap": "file:packages/bootstrap"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.15.1",
     "@typescript-eslint/parser": "^4.15.1",
-    "dfinity-agent-js-devtools": "file:packages/agent-js-devtools",
     "eslint-plugin-jsdoc": "^32.0.0",
     "eslint": "^7.20.0",
     "lerna": "^3.22.1"
