@@ -15,6 +15,7 @@ export default async function MutableIdentity(
   }
   (async () => {
     for await (const nextIdentity of identities) {
+      const prevIdentity = currentIdentity;
       currentIdentity = nextIdentity;
     }
   })();

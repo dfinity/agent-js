@@ -32,7 +32,6 @@ export default function AuthenticationResponseIdentities(
         try {
           return icidResponse.fromQueryString(url.searchParams);
         } catch (error) {
-          // @todo - check for well-known error, else re-throw
         }
       })();
 

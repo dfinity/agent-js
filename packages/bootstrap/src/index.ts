@@ -20,7 +20,6 @@ declare const window: GlobalInternetComputer & Window;
 const bootstrapRender = BootstrapRenderer(document);
 
 _main({ render: bootstrapRender }).catch(err => {
-  // tslint:disable-next-line:no-console
   console.error('caught error:', err);
   const div = document.createElement('div');
   div.innerText = 'An error happened:';
@@ -35,7 +34,7 @@ _main({ render: bootstrapRender }).catch(err => {
 async function _loadJs(
   canisterId: Principal,
   filename: string,
-  onload?: () => Promise<void>,
+  onload = async () => {},
 ): Promise<unknown> {
   const actor = createAssetCanisterActor({ canisterId });
   const content = await actor.retrieve(filename);
@@ -44,7 +43,7 @@ async function _loadJs(
 
   // Run an event function so the callee can execute some code before loading the
   // Javascript.
-  if (onload) { await onload(); }
+  await onload();
 
   // TODO(hansl): either get rid of eval, or rid of webpack, or make this
   // work without this horrible hack.
