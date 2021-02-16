@@ -6,7 +6,6 @@ import {
   authenticator,
   IdentityChangedEventIdentifier,
 } from "@dfinity/authentication";
-import { makeLog } from "./log";
 
 interface InternetComputerGlobal {
   features?: {
