@@ -17,8 +17,8 @@
     "test": "lerna run test --concurrency=1 --stream",
     "test:coverage": "lerna run test:coverage --parallel",
     "publish:release": "lerna publish --force-publish=* --no-push --no-git-tag-version",
-    "lint": "eslint --cache --cache-location node_modules/.cache/eslint 'packages/*/src/**/*.ts*'",
-    "lint:e2e": "eslint --cache --cache-location node_modules/.cache/eslint 'e2e/*/src/**/*.ts*'",
+    "lint": "npm run lint:packages",
+    "lint:e2e": "eslint --cache --cache-location node_modules/.cache/eslint 'e2e/*/**/*.ts*'",
     "line:fix": "npm run lint -- --fix",
     "lint:packages": "eslint --cache --cache-location node_modules/.cache/eslint 'packages/*/src/**/*.ts*'"
   },
