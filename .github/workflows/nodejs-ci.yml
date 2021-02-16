@@ -21,17 +21,14 @@ jobs:
       with:
         node-version: ${{ matrix.node }}
 
-    # See if we can lint before full build/test
-    - run: npm ci --ignore-scripts
-    - run: npm run lint --if-present
+    - run: npx lerna bootstrap
+    - run: npx lerna run lint
 
-    # full install, including npm postinstall, prepare
-    - run: npm ci
     # build monorepo incl. each subpackage
-    - run: npm run build --if-present
+    - run: npx lerna run build
 
     # test monorepo incl. each subpackage
-    - run: npm test
+    - run: npx lerna run test
       env:
         CI: true
 
@@ -99,7 +96,7 @@ jobs:
            &
         sleep 1
 
-    - run: npm run e2e
+    - run: npx lerna run e2e
       env:
         CI: true
         IC_REF_PORT: ${{ steps.ic_ref.outputs.IC_REF_PORT }}
@@ -109,7 +106,7 @@ jobs:
         CI: true
         IC_REF_PORT: 8888
         MITM: true
-      run: npm run mitm
+      run: npx lerna run mitm
 
     - name: clean up
       run: |

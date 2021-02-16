@@ -19,12 +19,26 @@ export async function hash(data: Buffer): Promise<BinaryBlob> {
   return blobFromUint8Array(new Uint8Array(hashed));
 }
 
+/**
+ * Type Guard for BigNumber.js that have a protottype we don't have a reference to, so can't do
+ * an `instanceof` check. This can happen in certain sets of dependency graphs for the
+ * agent-js-monorepo, e.g. when used by authentication-demo. All this really verifies is the
+ * truthiness of the `_isBigNumber` property that the source code defines as protected.
+ * @param v - value to check for type=BigNumber.js
+ */
+function isBigNumber(v: unknown): v is BigNumber {
+  interface BigNumberProtected {
+    _isBigNumber: boolean;
+  }
+  return typeof v === 'object' && v !== null && (v as BigNumberProtected)._isBigNumber;
+}
+
 async function hashValue(value: unknown): Promise<BinaryBlob> {
   if (value instanceof borc.Tagged) {
     return hashValue(value.value);
   } else if (typeof value === 'string') {
     return hashString(value);
-  } else if (value instanceof BigNumber) {
+  } else if (isBigNumber(value)) {
     return hash(lebEncode(value) as BinaryBlob);
   } else if (typeof value === 'number') {
     return hash(lebEncode(value));

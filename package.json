@@ -3,12 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "description": "Use an Agent to interact with the Internet Computer from your JavaScript program.",
-  "dependencies": {
-    "@dfinity/agent": "file://./packages/agent",
-    "@dfinity/agent-js-devtools": "file://./packages/agent-js-devtools",
-    "@dfinity/bootstrap": "file://./packages/bootstrap",
-    "@dfinity/identity-provider": "file://./packages/identity-provider"
-  },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.15.1",
     "@typescript-eslint/parser": "^4.15.1",
@@ -17,28 +11,16 @@
     "lerna": "^3.22.1"
   },
   "scripts": {
-    "e2e": "bin/e2e",
-    "mitm": "bin/mitm",
-    "postinstall": "npm run bootstrap",
+    "preinstall": "echo Please run 'npx lerna bootstrap' instead of npm install.; exit 1",
     "prepare": "npm run build",
-    "bootstrap": "lerna bootstrap --no-ci --hoist",
-    "bootstrap:quick": "npm run bootstrap -- --scope=@dfinity/*",
-    "clean": "npm run clean:artifacts && npm run clean:packages && npm run clean:root",
-    "clean:artifacts": "lerna run clean --parallel",
-    "clean:packages": "lerna clean --yes",
-    "clean:root": "rimraf node_modules",
-    "start": "npm run build:quick && npm run start:quick",
-    "start:quick": "dotenv lerna run start -- --parallel",
-    "build": "lerna run build --concurrency=1 --stream",
-    "build:quick": "npm run build -- --scope=@dfinity/*",
+    "build": "lerna run build --stream",
     "test": "lerna run test --concurrency=1 --stream",
-    "test:quick": "lerna run test:quick --concurrency=1 --stream",
     "test:coverage": "lerna run test:coverage --parallel",
-    "test:watch": "lerna run test:watch --parallel",
     "publish:release": "lerna publish --force-publish=* --no-push --no-git-tag-version",
-    "lint": "eslint --cache --cache-location node_modules/.cache/eslint --fix",
-    "lint:all": "npm run lint 'packages/*/src/**/*.ts*'",
-    "lint:staged": "lint-staged"
+    "lint": "eslint --cache --cache-location node_modules/.cache/eslint 'packages/*/src/**/*.ts*'",
+    "lint:e2e": "eslint --cache --cache-location node_modules/.cache/eslint 'e2e/*/src/**/*.ts*'",
+    "line:fix": "npm run lint -- --fix",
+    "lint:packages": "eslint --cache --cache-location node_modules/.cache/eslint 'packages/*/src/**/*.ts*'"
   },
   "repository": {
     "type": "git",
