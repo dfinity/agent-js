@@ -7,9 +7,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ubuntu-latest
-        ghc: '8.8.4'
-        spec: 'release-0.15'
+        os: [ubuntu-latest]
+        ghc: ['8.8.4']
+        spec: ['release-0.15']
         node:
           - 12
           - 14
