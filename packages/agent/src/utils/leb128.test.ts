@@ -24,6 +24,7 @@ test('leb', () => {
   );
   expect(lebEncode(new BigNumber('2000000')).toString('hex')).toBe('80897a');
   expect(lebEncode(new BigNumber('60000000000000000')).toString('hex')).toBe('808098f4e9b5ca6a');
+  expect(lebEncode(BigInt('60000000000000000')).toString('hex')).toBe('808098f4e9b5ca6a');
 
   expect(lebDecode(new Pipe(Buffer.from([0]))).toNumber()).toBe(0);
   expect(lebDecode(new Pipe(Buffer.from([1]))).toNumber()).toBe(1);
