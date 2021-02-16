@@ -1,6 +1,8 @@
 {
   "packages": [
-    "packages/*",
+    "packages/agent",
+    "packages/authentication",
+    "packages/bootstrap",
     "e2e/*"
   ],
   "version": "0.6.24"
