@@ -15,17 +15,17 @@ import { toHex } from "./bytes";
  *     which should echo back this agent's identity, which this element should render to the end-user.
  */
 export default class AuthenticationDemo extends HTMLElement {
-  #sessionStorage = defaultSessionStorage;
+  protected sessionStorage = defaultSessionStorage;
   whoamiPrincipal: Principal | undefined;
   constructor() {
     super();
   }
   connectedCallback(): void {
     this.render();
-    this.#initializeAuthentication();
+    this.initializeAuthentication();
   }
-  #initializeAuthentication = async (): Promise<void> => {
-    const { value: session } = await this.#sessionStorage.get();
+  protected initializeAuthentication = async (): Promise<void> => {
+    const { value: session } = await this.sessionStorage.get();
     if (!session) {
       console.debug("initializeAuthentication got no session from storage");
       return;
@@ -34,7 +34,7 @@ export default class AuthenticationDemo extends HTMLElement {
     let authenticationResponse = session.authenticationResponse;
     if (!authenticationResponse && url.searchParams.has("access_token")) {
       authenticationResponse = url.toString();
-      await this.#sessionStorage.set({
+      await this.sessionStorage.set({
         ...session,
         authenticationResponse,
       });

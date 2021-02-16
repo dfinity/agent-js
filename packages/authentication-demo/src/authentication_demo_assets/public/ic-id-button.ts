@@ -4,7 +4,6 @@ import * as canisters from "./canisters";
 import { defaultSessionStorage } from "./session";
 import tweetnacl from "tweetnacl";
 import { hexToBytes, toHex } from "./bytes";
-import { makeLog } from "./log";
 
 /**
  * When clicked, initiates Authentication via @dfinity/authentication authenticator.sendAuthenticationRequest().
@@ -13,7 +12,7 @@ import { makeLog } from "./log";
  * @todo feel free to extend HTMLButtonElement, just include a polyfill for Safari https://www.npmjs.com/package/@webreflection/custom-elements
  */
 export default class AuthenticationButton extends HTMLElement {
-  #session = defaultSessionStorage;
+  protected session = defaultSessionStorage;
   constructor() {
     super();
     this.addEventListener("click", this.listener);
@@ -50,7 +49,7 @@ export default class AuthenticationButton extends HTMLElement {
       },
     };
     console.debug("setting new session", session);
-    await this.#session.set(session);
+    await this.session.set(session);
     authenticator.sendAuthenticationRequest({
       session: {
         identity: {

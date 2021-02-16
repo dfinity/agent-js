@@ -1,7 +1,8 @@
 import {
-  IdentitiesIterable,
   IdentityChangedEvent,
   IdentityDescriptor,
+  authenticator,
+  IdentityChangedEventIdentifier,
 } from "@dfinity/authentication";
 import { formatPublicKey } from "./publicKey";
 
@@ -24,8 +25,6 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
       IdentityChangedEventIdentifier,
       this.handleIdentityChangedEvent
     );
-  }
-  disconnectedCallback(): void {
   }
   handleIdentityChangedEvent(event: IdentityChangedEvent): void {
     this.useIdentity(event.detail.identity);
