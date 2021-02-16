@@ -2,8 +2,8 @@ import {
   IdentitiesIterable,
   IdentityChangedEvent,
   IdentityDescriptor,
-  makeLog,
 } from "@dfinity/authentication";
+import { makeLog } from "./log";
 import { formatPublicKey } from "./publicKey";
 
 /**

@@ -5,7 +5,7 @@ import { Principal } from "@dfinity/agent";
 import AuthenticationButton from "./ic-id-button";
 import { defaultSessionStorage, SessionIdentitySignFunction } from "./session";
 import { toHex } from "./bytes";
-import { makeLog } from "@dfinity/authentication";
+import { makeLog } from "./log";
 
 /**
  * Main Custom Element for the @dfinity/authentication-demo.

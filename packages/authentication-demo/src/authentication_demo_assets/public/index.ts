@@ -4,9 +4,9 @@ import AuthenticationButton from "./ic-id-button";
 import {
   IdentitiesIterable,
   authenticator,
-  makeLog,
   IdentityChangedEventIdentifier,
 } from "@dfinity/authentication";
+import { makeLog } from "./log";
 
 interface InternetComputerGlobal {
   features?: {

@@ -1,6 +1,6 @@
 import * as logModule from './log';
 
-test('log module exports makeLog(logName)(logLevel, ...loggables)', () => {
+test('@dfinity/agent exports makeLog(logName)(logLevel, ...loggables)', () => {
   expect(typeof logModule.makeLog).toEqual('function');
   const log = logModule.makeLog('logName');
   expect(typeof log).toEqual('function');

@@ -11,7 +11,8 @@ import NotFound from './routes/NotFound';
 import RelyingPartyDemoRoute from './relying-party-demo/routes';
 import { RelyingPartyDemoIdentityChangedEventIdentifier } from './relying-party-demo/events';
 import { Route as DesignPhase1Route } from './design-phase-1';
-import { makeLog, WebAuthnIdentity } from '@dfinity/authentication';
+import { WebAuthnIdentity } from '@dfinity/authentication';
+import { makeLog } from './log';
 
 const log = makeLog('identity-provider');
 

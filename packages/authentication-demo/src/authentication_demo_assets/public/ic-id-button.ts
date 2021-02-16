@@ -1,9 +1,10 @@
-import { authenticator, makeLog } from "@dfinity/authentication";
+import { authenticator } from "@dfinity/authentication";
 import { Actor } from "@dfinity/agent";
 import * as canisters from "./canisters";
 import { defaultSessionStorage } from "./session";
 import tweetnacl from "tweetnacl";
 import { hexToBytes, toHex } from "./bytes";
+import { makeLog } from "./log";
 
 /**
  * When clicked, initiates Authentication via @dfinity/authentication authenticator.sendAuthenticationRequest().
