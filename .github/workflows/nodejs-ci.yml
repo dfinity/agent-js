@@ -22,7 +22,7 @@ jobs:
         node-version: ${{ matrix.node }}
 
     - run: npx lerna bootstrap
-    - run: npm run lint
+    - run: npx lerna run lint
 
     # build monorepo incl. each subpackage
     - run: npx lerna run build
