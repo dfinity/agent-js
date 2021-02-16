@@ -5,7 +5,6 @@
   "description": "Use an Agent to interact with the Internet Computer from your JavaScript program.",
   "dependencies": {
     "dfinity-agent": "file:packages/agent",
-    "dfinity-agent-js-devtools": "file:packages/agent-js-devtools",
     "dfinity-authentication": "file:packages/authentication",
     "dfinity-bootstrap": "file:packages/bootstrap"
   },
@@ -14,7 +13,8 @@
     "@typescript-eslint/parser": "^4.15.1",
     "eslint-plugin-jsdoc": "^32.0.0",
     "eslint": "^7.20.0",
-    "lerna": "^3.22.1"
+    "lerna": "^3.22.1",
+    "typescript": "^3.6.3"
   },
   "scripts": {
     "build": "lerna run build --stream",
