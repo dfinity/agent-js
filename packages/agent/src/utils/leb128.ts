@@ -17,8 +17,10 @@ export function safeRead(pipe: Pipe, num: number): Buffer {
   return pipe.read(num);
 }
 
-export function lebEncode(value: number | BigNumber): Buffer {
-  if (typeof value === 'number') {
+export function lebEncode(value: number | BigNumber | bigint | BigInt): Buffer {
+  if (typeof value === 'bigint' || value instanceof BigInt) {
+    value = new BigNumber(value.toString(10), 10)
+  } else if (typeof value === 'number') {
     value = new BigNumber(value);
   }
   value = value.integerValue();
