@@ -1,7 +1,7 @@
 {
   "packages": [
-    "packages/agent",
-    "packages/authentication"
+    "packages/*",
+    "e2e/*"
   ],
-  "version": "0.0.0"
+  "version": "0.6.24"
 }

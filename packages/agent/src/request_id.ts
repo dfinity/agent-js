@@ -29,42 +29,27 @@ export async function hash(data: Buffer): Promise<BinaryBlob> {
 
 /**
  * Type Guard for BigNumber.js that have a protottype we don't have a reference to, so can't do
- * an `instanceof` check.
- * This can happen in certain sets of dependency graphs for the agent-js-monorepo, e.g. when used
- * by authentication-demo.
- * All this really verifies is the truthiness of the `_isBigNumber` property that the source code
- * defines as protected.
+ * an `instanceof` check. This can happen in certain sets of dependency graphs for the
+ * agent-js-monorepo, e.g. when used by authentication-demo. All this really verifies is the
+ * truthiness of the `_isBigNumber` property that the source code defines as protected.
  * @param v - value to check for type=BigNumber.js
  */
-function isProbablyBigNumber(v: unknown): v is BigNumber {
+function isBigNumber(v: unknown): v is BigNumber {
   interface BigNumberProtected {
     _isBigNumber: boolean;
   }
-  return v && (v as BigNumberProtected)._isBigNumber;
+  return typeof v === 'object' && v !== null && (v as BigNumberProtected)._isBigNumber;
 }
 
 interface ToHashable {
   toHash(): unknown;
 }
 
-/**
- * Hash a single value according to the representation-independent-hash algorithm.
- * @param value - value to hash
- */
 async function hashValue(value: unknown): Promise<BinaryBlob> {
   if (value instanceof borc.Tagged) {
     return hashValue(value.value);
   } else if (typeof value === 'string') {
     return hashString(value);
-  } else if (
-    typeof value === 'bigint' ||
-    // In some odd cases, e.g. `Object.assign(BigInt("1"), { a: 1 })` on node@v14.13.1, the result
-    // has typeof === 'object', but is still also a BigInt, so also check `instanceof`
-    value instanceof BigInt
-  ) {
-    return hash(lebEncode(value));
-  } else if (value instanceof BigNumber) {
-    return hash(lebEncode(value) as BinaryBlob);
   } else if (typeof value === 'number') {
     return hash(lebEncode(value));
   } else if (Buffer.isBuffer(value)) {
@@ -82,7 +67,7 @@ async function hashValue(value: unknown): Promise<BinaryBlob> {
     return Promise.resolve((value as ToHashable).toHash()).then(x => hashValue(x));
   } else if (value instanceof Promise) {
     return value.then(x => hashValue(x));
-  } else if (isProbablyBigNumber(value)) {
+  } else if (isBigNumber(value)) {
     // Do this check much later than the other BigNumber check because this one is much less
     // type-safe.
     // So we want to try all the high-assurance type guards before this 'probable' one.
