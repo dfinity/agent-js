@@ -5,7 +5,7 @@
   "scripts": {
     "build": "npm run webpack",
     "ci": "npm run prettier && npm run lint && npm run build",
-    "lint": "npm run eslint && npm run tslint",
+    "lint": "npm run eslint",
     "tslint": "tslint --project tsconfig.json --config tslint.json",
     "tslint:fix": "npm run tslint -- --fix",
     "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' src/actors src/dom-events.ts src/index.ts src/render.ts",
