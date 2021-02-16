@@ -6,6 +6,5 @@
     "e2e/*"
   ],
   "version": "0.6.24",
-  "hoist": true,
   "ci": true
 }
