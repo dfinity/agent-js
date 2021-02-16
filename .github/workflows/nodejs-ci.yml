@@ -79,7 +79,7 @@ jobs:
         mkdir -p $HOME/bin
         cd ic-ref/impl
         cabal update
-        cabal install -w ghc-${{ matrix.ghc }} --overwrite-policy=always  --installdir=$HOME/bin
+        cabal install exe:ic-ref -w ghc-${{ matrix.ghc }} --overwrite-policy=always  --installdir=$HOME/bin
 
     - name: Running ic-ref
       id: ic_ref
