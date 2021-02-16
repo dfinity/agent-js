@@ -6,7 +6,6 @@ import {
 } from '@dfinity/authentication';
 import { AuthenticationResponseUrlDetectedEventIdentifier } from '@dfinity/authentication';
 import { EventIterable } from '../../dom-events';
-import { makeLog } from '../../log';
 
 /**
  * AsyncIterable of Identities that can be generated as a result of handling
@@ -16,20 +15,16 @@ import { makeLog } from '../../log';
 export default function AuthenticationResponseIdentities(
   events: EventTarget,
 ): AsyncIterable<SignIdentity | AnonymousIdentity> {
-  const log = makeLog('AuthenticationResponseIdentities');
   const identities: AsyncIterable<SignIdentity | AnonymousIdentity> = (async function* () {
     // Wait for AuthenticationResponseUrlDetectedEvents
     const AuthnResponseEvents = () =>
       EventIterable(events, AuthenticationResponseUrlDetectedEventIdentifier);
     for await (const event of AuthnResponseEvents()) {
-      log('debug', 'handling AuthenticationResponseUrlDetectedEvent', { event });
       if (!(event instanceof CustomEvent)) {
-        log('warn', 'got unexpected event that is not a CustomEvent', { event });
         continue;
       }
       const url = event.detail.url;
       if (!(url instanceof URL)) {
-        log('warn', 'got CustomEvent without URL', { event });
         continue;
       }
 
@@ -37,11 +32,6 @@ export default function AuthenticationResponseIdentities(
         try {
           return icidResponse.fromQueryString(url.searchParams);
         } catch (error) {
-          log(
-            'warn',
-            'AuthenticationResponseUrlDetectedEvent had aurl, but it couldnt be used to generate an AuthenticationResponse',
-            { error },
-          );
         }
       })();
 
@@ -53,7 +43,6 @@ export default function AuthenticationResponseIdentities(
       if (typeof signFunction !== 'function') {
         throw new Error('no sign function');
       }
-      log('debug', 'new signFunction is', signFunction);
       const identity = (() => {
         const chain = DelegationChain.fromJSON(icidResponse.parseBearerToken(response.accessToken));
         const sessionIdentity: Pick<SignIdentity, 'sign'> = {
@@ -65,10 +54,6 @@ export default function AuthenticationResponseIdentities(
         const delegationIdentity = DelegationIdentity.fromDelegation(sessionIdentity, chain);
         return delegationIdentity;
       })();
-      log('debug', 'yielding', {
-        identity,
-        principalHex: identity.getPrincipal().toHex(),
-      });
       yield identity;
     }
   })();

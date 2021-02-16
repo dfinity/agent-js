@@ -32,11 +32,6 @@ export function IdentityRequestedEvent<T>(
     options.onIdentity(identity);
   };
   port2.start();
-  // options.cancel.then(() => {
-  //   makeLog('IdentityRequestedEvent')('debug', 'closing');
-  //   port1.close();
-  //   port2.close();
-  // });
   return createCustomEvent(IdentityRequestedEventIdentifier, {
     ...options,
     detail: {

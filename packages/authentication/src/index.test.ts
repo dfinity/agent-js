@@ -1,4 +1,4 @@
-import { authenticator } from '.';
+import { authenticator } from './index';
 
 /**
  * Right now this is just an instance of Authenticator.

@@ -13,7 +13,6 @@ import { makeLog } from "./log";
  * @todo feel free to extend HTMLButtonElement, just include a polyfill for Safari https://www.npmjs.com/package/@webreflection/custom-elements
  */
 export default class AuthenticationButton extends HTMLElement {
-  #log = makeLog("AuthenticationButton");
   #session = defaultSessionStorage;
   constructor() {
     super();
@@ -50,7 +49,7 @@ export default class AuthenticationButton extends HTMLElement {
         },
       },
     };
-    this.#log("debug", "setting new session", session);
+    console.debug("setting new session", session);
     await this.#session.set(session);
     authenticator.sendAuthenticationRequest({
       session: {

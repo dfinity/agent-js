@@ -39,15 +39,12 @@ declare global {
  * @param parent - element in which to render the AuthenticationDemo
  */
 async function main(parent: Element) {
-  const log = makeLog("authentication-demo");
   authenticator.addEventListener(IdentityChangedEventIdentifier, (event) => {
-    log("debug", "addEventListener IdentityChangedEvent listener called with", {
-      event,
-    });
+    console.debug("addEventListener IdentityChangedEvent listener called with", { event });
   });
   (async () => {
     for await (const value of IdentitiesIterable(document)) {
-      log("debug", "IdentitiesIterable yielded", value);
+      console.debug("IdentitiesIterable yielded", value);
     }
   })();
   if (globalThis.customElements) {
