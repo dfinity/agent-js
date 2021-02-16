@@ -7,9 +7,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04]
-        ghc: ['8.8.4']
-        spec: ['release-0.15']
+        os: ubuntu-latest
+        ghc: '8.8.4'
+        spec: 'release-0.15'
         node:
           - 12
           - 14
@@ -60,15 +60,6 @@ jobs:
       with:
         ghc-version: ${{ matrix.ghc }}
         cabal-version: '3.2'
-
-    - name: Cargo cache
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
     - name: Build ic-ref
       run: |
