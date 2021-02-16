@@ -34,7 +34,7 @@ _main({ render: bootstrapRender }).catch(err => {
 async function _loadJs(
   canisterId: Principal,
   filename: string,
-  onload = async () => {},
+  onload = async () => {/* noop */},
 ): Promise<unknown> {
   const actor = createAssetCanisterActor({ canisterId });
   const content = await actor.retrieve(filename);

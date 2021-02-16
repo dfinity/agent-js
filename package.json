@@ -20,7 +20,7 @@
     "build": "lerna run build --stream",
     "line:fix": "npm run lint -- --fix",
     "lint:e2e": "eslint --cache --cache-location node_modules/.cache/eslint 'e2e/*/**/*.ts*'",
-    "lint:packages": "eslint --cache --cache-location node_modules/.cache/eslint 'packages/*/src/**/*.ts*'",
+    "lint:packages": "lerna run lint",
     "lint": "npm run lint:packages",
     "postinstall": "lerna run prepare",
     "publish:release": "lerna publish --force-publish=* --no-push --no-git-tag-version",
