@@ -38,7 +38,7 @@
     "test:coverage": "lerna run test:coverage --parallel",
     "test:watch": "lerna run test:watch --parallel",
     "publish:release": "lerna publish --force-publish=* --no-push --no-git-tag-version",
-    "lint": "eslint --cache --cache-location node_modules/.cache/eslint --fix",
+    "lint": "bin/lint",
     "lint:all": "npm run lint 'packages/*/src/**/*.ts*'",
     "lint:staged": "lint-staged"
   },
