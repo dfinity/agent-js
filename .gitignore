@@ -49,6 +49,7 @@ typings/
 # TypeScript cache
 *.tsbuildinfo
 build_info.json
+.tsc-out/
 
 # Optional npm cache directory
 .npm
@@ -109,3 +110,4 @@ dist
 # IDE Settings
 .code
 .idea
+.vscode
