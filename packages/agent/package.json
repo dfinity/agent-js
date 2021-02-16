@@ -2,6 +2,7 @@
   "name": "@dfinity/agent",
   "version": "0.0.0",
   "main": "src/index.js",
+  "types": "src/index.d.ts",
   "scripts": {
     "build": "tsc -b",
     "bundle": "npm run build",
