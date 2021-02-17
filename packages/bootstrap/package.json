@@ -1,11 +1,15 @@
 {
   "name": "@dfinity/bootstrap",
   "version": "0.0.0",
+  "main": "ts-out/packages/bootstrap/src",
   "scripts": {
-    "build": "npm run tsc && npm run webpack",
+    "build": "npm run webpack",
     "ci": "npm run prettier && npm run lint && npm run build",
-    "lint": "tslint --project tsconfig.json --config tslint.json",
-    "lint:fix": "npm run lint -- --fix",
+    "lint": "npm run eslint",
+    "tslint": "tslint --project tsconfig.json --config tslint.json",
+    "tslint:fix": "npm run tslint -- --fix",
+    "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' src/actors src/dom-events.ts src/index.ts src/render.ts",
+    "eslint:fix": "npm run lint -- --fix",
     "prettier": "prettier --check \"src/**/*.ts\"",
     "prettier:write": "npm run prettier -- --write",
     "test": "jest --verbose",
@@ -30,12 +34,16 @@
     "text-encoding": "^0.7.0",
     "ts-jest": "^24.2.0",
     "tslint": "^5.20.0",
-    "typescript": "3.9.5",
+    "typescript": "^3.6.3",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.10",
     "webpack-dev-server": "^3.11.0",
     "whatwg-fetch": "^3.0.0",
-    "worker-plugin": "^4.0.3"
+    "worker-plugin": "^4.0.3",
+    "@typescript-eslint/eslint-plugin": "^4.14.2",
+    "@typescript-eslint/parser": "^4.14.2",
+    "eslint": "^7.19.0",
+    "eslint-plugin-jsdoc": "^31.6.0"
   },
   "dependencies": {
     "@dfinity/agent": "*",

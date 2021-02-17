@@ -48,9 +48,15 @@ module.exports = {
         test: /\.css$/,
         use: ['style-loader', 'css-loader'],
       },
-      {
-        test: /\.tsx?$/,
-        use: ['ts-loader'],
+      {  test: /\.(jsx|ts|tsx)$/,
+        use: {
+          loader: "ts-loader",
+          options: {
+            // eslint-disable-next-line no-undef
+            configFile: path.join(__dirname, 'tsconfig.json'),
+            projectReferences: true,
+          }
+        }
       },
     ],
   },

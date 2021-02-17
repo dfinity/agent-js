@@ -71,6 +71,7 @@ export class CosePublicKey implements PublicKey {
  * because we don't need to verify the authenticity of the key on the server (we don't
  * register our keys with the IC). Any challenge would do, even one per key, randomly
  * generated.
+ *
  * @param challenge The challenge to transform into a byte array. By default a hard
  *        coded string.
  */
@@ -109,7 +110,7 @@ async function _createCredential(): Promise<PublicKeyCredential | null> {
 
   // Validate that it's the correct type at runtime, since WebAuthn does not HAVE to
   // reply with a PublicKeyCredential.
-  if (creds.response === undefined || !(creds.rawId! instanceof ArrayBuffer)) {
+  if (creds.response === undefined || !(creds.rawId instanceof ArrayBuffer)) {
     return null;
   } else {
     return creds;
@@ -129,6 +130,7 @@ enum PubKeyCoseAlgo {
 export class WebAuthnIdentity extends SignIdentity {
   /**
    * Create an identity from a JSON serialization.
+   * @param json - json to parse
    */
   public static fromJSON(json: string): WebAuthnIdentity {
     const { publicKey, rawId } = JSON.parse(json);
@@ -151,7 +153,7 @@ export class WebAuthnIdentity extends SignIdentity {
     }
 
     const response = creds.response as AuthenticatorAttestationResponse;
-    if (!(response.attestationObject! instanceof ArrayBuffer)) {
+    if (!(response.attestationObject instanceof ArrayBuffer)) {
       throw new Error('Was expecting an attestation response.');
     }
 
@@ -191,8 +193,8 @@ export class WebAuthnIdentity extends SignIdentity {
 
     const response = result.response as AuthenticatorAssertionResponse;
     if (
-      response.signature! instanceof ArrayBuffer &&
-      response.authenticatorData! instanceof ArrayBuffer
+      response.signature instanceof ArrayBuffer &&
+      response.authenticatorData instanceof ArrayBuffer
     ) {
       const cbor = borc.encode(
         new borc.Tagged(55799, {
@@ -201,7 +203,9 @@ export class WebAuthnIdentity extends SignIdentity {
           signature: new Uint8Array(response.signature),
         }),
       );
-
+      if (!cbor) {
+        throw new Error('failed to encode cbor');
+      }
       return blobFromUint8Array(new Uint8Array(cbor));
     } else {
       throw new Error('Invalid response from WebAuthn.');
@@ -211,10 +215,20 @@ export class WebAuthnIdentity extends SignIdentity {
   /**
    * Allow for JSON serialization of all information needed to reuse this identity.
    */
-  public toJSON(): any {
+  public toJSON(): JsonnableWebAuthnIdentitiy {
     return {
       publicKey: this._publicKey.getCose().toString('hex'),
       rawId: this._rawId.toString('hex'),
     };
   }
+}
+
+/**
+ * ReturnType<WebAuthnIdentity.toJSON>
+ * * publicKey is hex(der(publicKey))
+ * * rawId is the string representation of the local WebAuthn Credential.id (iirc it is base64url encoded)
+ */
+export interface JsonnableWebAuthnIdentitiy {
+  publicKey: string;
+  rawId: string;
 }

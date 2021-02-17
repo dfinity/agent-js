@@ -1,24 +1,23 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "composite": true,
-    "incremental": true,
     "allowJs": false,
-    "outDir": "ts-out/",
-    "target": "ES2017",
+    "baseUrl": "./",
+    "composite": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "incremental": true,
+    "lib": ["dom", "es2017"],
     "module": "commonjs",
-    "lib": [
-      "dom",
-      "es2017"
-    ],
+    "outDir": "ts-out/",
     "sourceMap": true,
     "strict": true,
-    "baseUrl": "./",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true
+    "target": "ES2017"
   },
-  "include": [
-    "types/*",
-    "src/**/*.ts"
+  "include": ["types/*", "src/**/*.ts", "src/**/*.css"],
+  "exclude": ["**/*.test.ts"],
+  "references": [
+    { "path": "../agent" },
+    { "path": "../authentication" },
   ]
 }

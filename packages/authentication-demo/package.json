@@ -1,0 +1,32 @@
+{
+  "name": "@dfinity/authentication-demo",
+  "version": "0.0.0",
+  "description": "",
+  "keywords": [],
+  "scripts": {
+    "prepare": "./bin/prepare",
+    "build": "webpack",
+    "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
+    "lint:fix": "npm run lint -- --fix",
+    "prettier": "prettier --check \"src/**/*.(ts|js)\"",
+    "prettier:write": "npm run prettier -- --write"
+  },
+  "dependencies": {
+    "@dfinity/agent": "*",
+    "@dfinity/authentication": "*",
+    "@dfinity/bootstrap": "*",
+    "@typescript-eslint/eslint-plugin": "^4.14.2",
+    "@typescript-eslint/parser": "^4.14.2",
+    "clean-webpack-plugin": "^3.0.0",
+    "eslint-plugin-jsdoc": "^31.6.0",
+    "eslint": "^7.19.0",
+    "prettier": "^2.2.1",
+    "terser-webpack-plugin": "2.2.2",
+    "ts-loader": "8.0.17",
+    "tsconfig-paths-webpack-plugin": "3.3.0",
+    "typescript": "^3.6.3",
+    "tweetnacl": "^1.0.3",
+    "webpack-cli": "3.3.10",
+    "webpack": "4.41.3"
+  }
+}

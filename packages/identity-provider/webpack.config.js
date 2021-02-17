@@ -3,19 +3,22 @@ const TerserPlugin = require('terser-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
+const IgnorePlugin = require('webpack').IgnorePlugin
 
 module.exports = {
   mode: 'production',
   entry: {
-    'identity-provider': './src/identity-provider.ts',
+    'index': './src/index.tsx'
   },
   target: 'web',
+  node: {
+    // This is needed for wasm loader from emscripten
+    fs: 'empty'
+  },
   output: {
-    // This is necessary to allow internal apps to bundle their own code with
-    // webpack which may conflict with us.
-    jsonpFunction: '__dfinityJsonp',
     path: path.resolve(__dirname, './dist'),
     filename: '[name]-[hash].js',
+    publicPath: '/',
   },
   resolve: {
     plugins: [new TsconfigPathsPlugin({ configFile: './tsconfig.json' })],
@@ -47,13 +50,18 @@ module.exports = {
         test: /\.tsx?$/,
         use: ['ts-loader'],
       },
+      {
+        test: /\.(woff|woff2|eot|ttf|otf)$/,
+        use: ['file-loader'],
+      },
     ],
   },
   plugins: [
+    new IgnorePlugin(/^\.\/wordlists\/(?!english)/, /bip39\/src$/),
     new HtmlWebpackPlugin({
       template: 'src/index.html',
       filename: 'index.html',
-      chunks: ['identity-provider'],
+      chunks: ['identity-provider', 'index'],
     }),
     new CopyWebpackPlugin([
       {

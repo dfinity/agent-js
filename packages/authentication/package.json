@@ -1,16 +1,17 @@
 {
   "name": "@dfinity/authentication",
   "version": "0.0.0",
-  "main": "src/index.js",
+  "main": ".tsc-out/packages/authentication/src/index.js",
+  "types": ".tsc-out/packages/authentication/src/index.d.ts",
   "scripts": {
     "build": "tsc -b",
     "bundle": "npm run build",
-    "ci": "npm run prettier && npm run lint && npm run build && npm run test",
-    "lint": "tslint --project tsconfig.json --config tslint.json",
+    "ci": "npm run prettier && npm run lint && npm run test",
+    "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
     "prettier": "prettier --check \"src/**/*.ts\"",
     "prettier:write": "npm run prettier -- --write",
-    "test": "jest --verbose"
+    "test": "jest --verbose --detectOpenHandles"
   },
   "dependencies": {
     "@dfinity/agent": "*",
@@ -30,6 +31,10 @@
   },
   "devDependencies": {
     "@trust/webcrypto": "^0.9.2",
+    "@typescript-eslint/eslint-plugin": "^4.14.2",
+    "@typescript-eslint/parser": "^4.14.2",
+    "eslint": "^7.19.0",
+    "eslint-plugin-jsdoc": "^31.6.0",
     "jest": "^24.9.0",
     "jest-expect-message": "^1.0.2",
     "node-fetch": "2.6.1",

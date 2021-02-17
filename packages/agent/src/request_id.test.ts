@@ -1,9 +1,11 @@
 // tslint:disable-next-line: max-line-length
 // https://github.com/dfinity-lab/dfinity/blob/5fef1450c9ab16ccf18381379149e504b11c8218/docs/spec/public/index.adoc#request-ids
 
+import BigNumber from 'bignumber.js';
 import { Buffer } from 'buffer/';
+import { Principal } from './principal';
 import { hash, requestIdOf } from './request_id';
-import { BinaryBlob, blobToHex } from './types';
+import { BinaryBlob, blobFromHex, blobFromUint8Array, blobToHex } from './types';
 
 const testHashOfBlob = async (input: BinaryBlob, expected: string) => {
   const hashed = await hash(input);
@@ -75,5 +77,51 @@ test('requestIdOf', async () => {
 
   expect(blobToHex(requestId)).toEqual(
     '8781291c347db32a9d8c10eb62b710fce5a93be676474c42babc74c51858f94b',
+  );
+});
+
+test.skip('requestIdOf for sender_delegation signature', async () => {
+  // this is what replica wants
+  const expectedHashBytes = Uint8Array.from(
+    blobFromHex('f0c66015041eccb5528fc7fd817bb4d0707369d7e1383d3cdaa074b2b2236824'),
+  );
+  const delegation1 = {
+    expiration: BigInt('1611365875951000000'),
+    pubkey: new Uint8Array(
+      blobFromHex(
+        '302a300506032b6570032100819d9fe3ac251039f934cdc925da0b019848af9d650d4136fb5d955cff17f78e',
+      ),
+    ),
+    targets: [
+      Uint8Array.from([0, 0, 0, 0, 0, 48, 0, 77, 1, 1]),
+      Uint8Array.from([0, 0, 0, 0, 0, 32, 0, 43, 1, 1]),
+    ].map(ua => blobFromUint8Array(ua)),
+  };
+  const delegation1ActualHashBytes = await requestIdOf(delegation1);
+  expect(blobToHex(delegation1ActualHashBytes)).toEqual(
+    blobToHex(blobFromUint8Array(expectedHashBytes)),
+  );
+
+  // Note: this uses `BigNumber` and blobs, which the rest of this lib uses too.
+  // Make sure this works before `delegation1` above (with BigInt)
+  const delegation2 = {
+    ...delegation1,
+    pubkey: blobFromUint8Array(delegation1.pubkey),
+    targets: delegation1.targets.map(t => blobFromUint8Array(t)),
+    expiration: new BigNumber(delegation1.expiration.toString(10), 10),
+  };
+  const delegation2ActualHashBytes = await requestIdOf(delegation2);
+  expect(blobToHex(delegation2ActualHashBytes)).toEqual(
+    blobToHex(blobFromUint8Array(delegation1ActualHashBytes)),
+  );
+
+  // This one uses Principals as targets
+  const delegation3 = {
+    ...delegation1,
+    targets: delegation1.targets.map(t => Principal.fromBlob(t)),
+  };
+  const delegation3ActualHashBytes = await requestIdOf(delegation3);
+  expect(blobToHex(delegation3ActualHashBytes)).toEqual(
+    blobToHex(blobFromUint8Array(delegation1ActualHashBytes)),
   );
 });

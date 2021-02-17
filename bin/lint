@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# exit on error
+set -e
+
+lintPackage () {
+	(
+		package=$1
+		echo "linting package: $package"
+		cd "$package"
+		npm run agent_js_monorepo_lint_pre --if-present
+		# path override required to make /node_modules/.bin resolvable by npm
+		THIS_SUBPACKAGE_PATH="$(pwd)/../../node_modules/.bin:$PATH"
+		PATH=$THIS_SUBPACKAGE_PATH npm run lint --if-present
+		npm run agent_js_monorepo_lint_post --if-present
+	)
+}
+
+for package in ./packages/*; do
+	lintPackage $package
+done

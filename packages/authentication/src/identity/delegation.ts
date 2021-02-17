@@ -43,17 +43,36 @@ export class Delegation {
     return cbor.value.map({
       pubkey: cbor.value.bytes(this.pubkey),
       expiration: cbor.value.u64(this.expiration.toString(16), 16),
-      ...(this.targets && { targets: this.targets.map(t => cbor.value.bytes(t.toBlob())) }),
-    } as any);
+      ...(this.targets && {
+        targets: cbor.value.array(this.targets.map(t => cbor.value.bytes(t.toBlob()))),
+      }),
+    });
   }
 
-  public toJSON(): any {
+  public toJSON(): JsonnableDelegation {
+    // every string should be hex and once-de-hexed,
+    // discoverable what it is (e.g. de-hex to get JSON with a 'type' property, or de-hex to DER with an OID)
+    // After de-hex, if it's not obvious what it is, it's an ArrayBuffer.
     return {
       expiration: this.expiration.toString(16),
       pubkey: this.pubkey.toString('hex'),
-      ...(this.targets && this.targets.map(p => p.toText())),
+      ...(this.targets && { targets: this.targets.map(p => p.toBlob().toString('hex')) }),
     };
   }
+}
+
+/**
+ * Type of ReturnType<Delegation.toJSON>.
+ * The goal here is to stringify all non-JSON-compatible types to some bytes representation we can stringify as hex.
+ * (Hex shouldn't be ambiguous ever, because you can encode as DER with semantic OIDs).
+ * * expiration is a BigInt of Nanoseconds since epoch as hex
+ * * pubkey is hex of DER publicKey
+ * * targets is array of strings, where each string is hex of principal blob (*NOT* textual representation)
+ */
+interface JsonnableDelegation {
+  expiration: string;
+  pubkey: string;
+  targets?: Array<string>;
 }
 
 /**
@@ -69,6 +88,7 @@ export interface SignedDelegation {
 
 /**
  * Sign a single delegation object for a period of time.
+ *
  * @param from The identity that lends its delegation.
  * @param to The identity that receives the delegation.
  * @param expiration An expiration date for this delegation.
@@ -85,17 +105,32 @@ async function _createSingleDelegation(
     new BigNumber(+expiration).times(1000000), // In nanoseconds.
     targets,
   );
-
   // The signature is calculated by signing the concatenation of the domain separator
   // and the message.
-  const signature = await from.sign(
-    blobFromUint8Array(new Uint8Array([...domainSeparator, ...(await requestIdOf(delegation))])),
-  );
-
+  const challenge = new Uint8Array([...domainSeparator, ...(await requestIdOf(delegation))]);
+  const signature = await from.sign(blobFromUint8Array(challenge));
+  // This is extremely helpful to have in the debug log when tracking down ic-ref authentication signature errors.
+  console.debug('@dfinity/authentication _createSingleDelegation', {
+    challenge,
+    signature,
+    delegation,
+  });
   return {
     delegation,
     signature,
   };
+}
+
+interface IJsonnableDelegationChain {
+  publicKey: string;
+  delegations: Array<{
+    signature: string;
+    delegation: {
+      pubkey: string;
+      expiration: string;
+      targets?: string[];
+    };
+  }>;
 }
 
 /**
@@ -132,15 +167,19 @@ export class DelegationChain {
    * @param expiration The length the delegation is valid. By default, 15 minutes from calling
    *                   this function.
    * @param options A set of options for this delegation. expiration and previous
+   * @param options.previous - Another DelegationChain that this chain should start with.
+   * @param options.targets - targets that scope the delegation (e.g. Canister Principals)
    */
   public static async create(
     from: SignIdentity,
     to: PublicKey,
     expiration: Date = new Date(Date.now() + 15 * 60 * 1000),
-    options: { previous?: DelegationChain } = {},
+    options: {
+      previous?: DelegationChain;
+      targets?: Array<Principal>;
+    } = {},
   ): Promise<DelegationChain> {
-    const delegation = await _createSingleDelegation(from, to, expiration);
-
+    const delegation = await _createSingleDelegation(from, to, expiration, options.targets);
     return new DelegationChain(
       [...(options.previous?.delegations || []), delegation],
       options.previous?.publicKey || from.getPublicKey().toDer(),
@@ -149,11 +188,11 @@ export class DelegationChain {
 
   /**
    * Creates a DelegationChain object from a JSON string.
+   *
    * @param json The JSON string to parse.
    */
-  public static fromJSON(json: string): DelegationChain {
-    const { publicKey, delegations } = JSON.parse(json);
-
+  public static fromJSON(json: string | IJsonnableDelegationChain): DelegationChain {
+    const { publicKey, delegations } = typeof json === 'string' ? JSON.parse(json) : json;
     if (!Array.isArray(delegations)) {
       throw new Error('Invalid delegations.');
     }
@@ -173,7 +212,7 @@ export class DelegationChain {
               if (typeof t !== 'string') {
                 throw new Error('Invalid target.');
               }
-              return Principal.fromText(t);
+              return Principal.fromHex(t);
             }),
         ),
         signature: _parseBlob(signature),
@@ -188,11 +227,21 @@ export class DelegationChain {
     public readonly publicKey: DerEncodedBlob,
   ) {}
 
-  public toJSON(): any {
+  public toJSON(): IJsonnableDelegationChain {
     return {
       delegations: this.delegations.map(signedDelegation => {
         const { delegation, signature } = signedDelegation;
-        return { delegation, signature: signature.toString('hex') };
+        const { targets } = delegation;
+        return {
+          delegation: {
+            expiration: delegation.expiration.toString(16),
+            pubkey: delegation.pubkey.toString('hex'),
+            ...(targets && {
+              targets: targets.map(t => t.toBlob().toString('hex')),
+            }),
+          },
+          signature: signature.toString('hex'),
+        };
       }),
       publicKey: this.publicKey.toString('hex'),
     };
@@ -208,14 +257,21 @@ export class DelegationChain {
 export class DelegationIdentity extends SignIdentity {
   /**
    * Create a delegation without having access to delegateKey.
+   *
    * @param key The key used to sign the reqyests.
    * @param delegation A delegation object created using `createDelegation`.
    */
-  public static fromDelegation(key: SignIdentity, delegation: DelegationChain): DelegationIdentity {
+  public static fromDelegation(
+    key: Pick<SignIdentity, 'sign'>,
+    delegation: DelegationChain,
+  ): DelegationIdentity {
     return new this(key, delegation);
   }
 
-  protected constructor(private _inner: SignIdentity, private _delegation: DelegationChain) {
+  protected constructor(
+    private _inner: Pick<SignIdentity, 'sign'>,
+    private _delegation: DelegationChain,
+  ) {
     super();
   }
 
@@ -232,10 +288,11 @@ export class DelegationIdentity extends SignIdentity {
     return this._inner.sign(blob);
   }
 
-  public async transformRequest(request: HttpAgentRequest): Promise<any> {
+  public async transformRequest(
+    request: HttpAgentRequest,
+  ): ReturnType<SignIdentity['transformRequest']> {
     const { body, ...fields } = request;
     const requestId = await requestIdOf(body);
-
     return {
       ...fields,
       body: {

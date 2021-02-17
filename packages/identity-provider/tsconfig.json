@@ -1,25 +1,25 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "incremental": true,
-    "target": "es2017",
-    "module": "commonjs",
-    "lib": [
-      "dom",
-      "es2017"
-    ],
-    "declaration": true,
-    "sourceMap": true,
-    "rootDir": "./",
-    "composite": true,
-    "tsBuildInfoFile": "./build_info.json",
-    "strict": true,
+    "allowJs": false,
     "baseUrl": "./",
+    "composite": true,
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "incremental": true,
+    "jsx": "react",
+    "lib": ["dom", "es2017", "ESNext"],
+    "module": "commonjs",
+    "outDir": ".tsc-out",
+    "sourceMap": true,
+    "strict": true,
+    "target": "es2017",
+    "tsBuildInfoFile": "./build_info.json"
   },
-  "include": [
-    "types/*",
-    "src/**/*.ts"
+  "include": ["types/*", "src/**/*.ts", "src/**/*.tsx"],
+  "references": [
+    { "path": "../agent" },
+    { "path": "../authentication" },
+    { "path": "../bootstrap" }
   ]
 }

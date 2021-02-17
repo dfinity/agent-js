@@ -1,0 +1,38 @@
+#!/bin/sh
+
+# exit on error
+set -e
+
+1>&2 echo "building authentication-demo pwd=$(pwd)"
+
+install_dfx_if_needed () {
+    if ! command -v dfx 1>/dev/null; then
+        export DFX_VERSION="$(cat dfx.json | grep dfx | awk '{ print $2 }' | tr -d '",')"
+        yes | sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
+        sleep 2
+        echo "which dfx=$(which dfx)"
+        if ! command -v dfx 1>/dev/null; then
+            # hmm. Still not installed.
+            github_actions_dfx="$HOME/bin/dfx"
+            # On GitHub actions it might be here
+            if test -e "$github_actions_dfx"; then
+                echo "aliasing dfx=$github_actions_dfx"
+                alias dfx="$github_actions_dfx"
+            fi
+        fi
+    else
+        echo "dfx is already installed" 1>&2
+    fi;
+}
+
+install_dfx_if_needed
+dfx start --background
+# authentication_demo_assets builder will try to webpack that canister,
+# which will need to resolve an import of `ic:canisters/authentication_demo`,
+# which our standard webpack.config.js configures to load from the *output* of `dfx build` the authentication_demo_canister.
+# In theory the dependency graph info in dfx.json should be enough to tell dfx.json to build everything in that order,
+# but in practice benjamin.goering@dfinity.org couldn't get a simple `dfx deploy` here to succeed.
+# So we explicitly build one, then the other.
+dfx -vvvvv deploy authentication_demo
+dfx -vvvvv deploy authentication_demo_assets
+dfx stop
