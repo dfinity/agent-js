@@ -15,6 +15,7 @@
     "target": "ES2017"
   },
   "include": ["types/*", "src/**/*.ts", "src/**/*.css"],
+  "exclude": ["**/*.test.ts"],
   "references": [
     { "path": "../agent" },
     { "path": "../authentication" },

@@ -61,7 +61,6 @@ export default function IdentityActor(params: {
   }
 
   async function useIdentity(identity: SignIdentity | AnonymousIdentity) {
-    const prevIdentity = currentIdentity;
     currentIdentity = identity;
     const identityDescriptor = createIdentityDescriptor(identity);
     params.eventTarget.dispatchEvent(BootstrapIdentityChangedEvent(identityDescriptor));

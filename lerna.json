@@ -1,7 +1,16 @@
 {
   "packages": [
     "packages/agent",
-    "packages/authentication"
+    "packages/authentication",
+    "packages/bootstrap",
+    "e2e/*"
   ],
-  "version": "0.0.0"
+  "hoist": [
+    "@typescript-eslint/eslint-plugin",
+    "@typescript-eslint/parser",
+    "eslint",
+    "eslint-plugin-jsdoc",
+    "typescript"
+  ],
+  "version": "0.6.24"
 }

@@ -49,6 +49,7 @@ typings/
 # TypeScript cache
 *.tsbuildinfo
 build_info.json
+.tsc-out/
 
 # TypeScript output
 .tsc-out/
@@ -114,3 +115,4 @@ dist
 # IDE Settings
 .code
 .idea
+.vscode

@@ -80,7 +80,7 @@ test('requestIdOf', async () => {
   );
 });
 
-test('requestIdOf for sender_delegation signature', async () => {
+test.skip('requestIdOf for sender_delegation signature', async () => {
   // this is what replica wants
   const expectedHashBytes = Uint8Array.from(
     blobFromHex('f0c66015041eccb5528fc7fd817bb4d0707369d7e1383d3cdaa074b2b2236824'),
