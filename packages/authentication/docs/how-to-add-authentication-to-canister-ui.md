@@ -50,7 +50,6 @@ We'll start from a fresh project.
     ```
 4. After the authentication, the end-user will be redirected back to your page with an `access_token` in the URL query string. Call `authenticator.useSession` to (try to) process it.
     ```javascript
-    import { IdentitiesIterable } from "@dfinity/authentication";
     const session = readSession();
     if (session.authenticationResponse) {
         authenticator.useSession(session);
@@ -75,14 +74,6 @@ We'll start from a fresh project.
             console.log('new @dfinity/authentication identity', identity);
         },
     }))
-    ```
-
-6. If you just want to react to each new identity:
-    ```javascript
-    import { IdentitiesIterable } from "@dfinity/authentication";
-    for await (const identity of IdentitiesIterable(document)) {
-        console.log('new identity', identity);
-    }
     ```
 
 ## Example Apps

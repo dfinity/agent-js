@@ -1,10 +1,8 @@
 import {
-  IdentityChangedEvent,
-  IdentityDescriptor,
-  authenticator,
-  IdentityChangedEventIdentifier,
+  IdentityRequestedEvent,
 } from "@dfinity/authentication";
 import { formatPublicKey } from "./publicKey";
+import { isIdentityDescriptor, IdentityDescriptor } from "@dfinity/agent";
 
 /**
  * Render the currently-authenticated identity from @dfinity/authentication.
@@ -20,14 +18,18 @@ export default class AuthenticationSubjectPublicKeyElement extends HTMLElement {
 
   constructor() {
     super();
-    // @todo: cancel this on disconnectedCallback
-    authenticator.addEventListener(
-      IdentityChangedEventIdentifier,
-      this.handleIdentityChangedEvent
-    );
   }
-  handleIdentityChangedEvent(event: IdentityChangedEvent): void {
-    this.useIdentity(event.detail.identity);
+  connectedCallback(): void {
+    // @todo: cancel this on disconnectedCallback
+    this.ownerDocument.dispatchEvent(IdentityRequestedEvent({
+      onIdentity: (identity) => {
+        if ( ! isIdentityDescriptor(identity)) {
+          console.warn('onIdentity called with non-IdentityDescriptor (unexpected)')
+          return;
+        }
+        this.useIdentity(identity);
+      }
+    }));
   }
   /**
    * Change state to a new identity, then re-render.

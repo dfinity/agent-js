@@ -1,6 +1,5 @@
 import { AuthenticationRequest, createAuthenticationRequestUrl } from '../idp-protocol/request';
 import {
-  SignerAvailableEvent,
   AuthenticationResponseUrlDetectedEvent,
   AuthenticationResponseUrlDetectedEventIdentifier,
   createCustomEvent,
@@ -22,7 +21,6 @@ export type EnvelopeToDocument = {
   to: 'document';
   message:
     | ReturnType<typeof AuthenticationResponseUrlDetectedEvent>
-    | ReturnType<typeof SignerAvailableEvent>
     | BootstrapChangeIdentityCommand;
 };
 export type IdentityProviderAgentEnvelope = EnvelopeToIdentityProvider | EnvelopeToDocument;
