@@ -23,6 +23,7 @@
     "lint:packages": "lerna run lint",
     "lint": "npm run lint:packages",
     "postinstall": "lerna run prepare",
+    "preinstall": "echo Please run 'npx lerna bootstrap' instead of npm install.; exit 1",
     "publish:release": "lerna publish --force-publish=* --no-push --no-git-tag-version",
     "test:coverage": "lerna run test:coverage --parallel",
     "test": "lerna run test --concurrency=1 --stream"
