@@ -18,7 +18,7 @@ export interface OAuth2AccessTokenResponse {
  * But, since it uses underscore keys not camelCase and it's a 'greatest common denominator' of what's really going on, it could be a bit lossy, so it's not necessarily what we want to pass around internally, it's just a standard interop/serialization format of sorts.
  */
 export interface OAuth2AuthorizationRequest {
-  response_type: 'token';
+  response_type: string;
   client_id?: string;
   redirect_uri: string;
   scope?: string;
