@@ -2,7 +2,6 @@ import AuthenticationDemo from "./ic-authentication-demo";
 import AuthenticationSubjectPublicKeyElement from "./ic-id-public-key";
 import AuthenticationButton from "./ic-id-button";
 import {
-  IdentitiesIterable,
   authenticator,
   IdentityChangedEventIdentifier,
 } from "@dfinity/authentication";
@@ -41,11 +40,6 @@ async function main(parent: Element) {
   authenticator.addEventListener(IdentityChangedEventIdentifier, (event) => {
     console.debug("addEventListener IdentityChangedEvent listener called with", { event });
   });
-  (async () => {
-    for await (const value of IdentitiesIterable(document)) {
-      console.debug("IdentitiesIterable yielded", value);
-    }
-  })();
   if (globalThis.customElements) {
     const elements: Array<[
       string,
