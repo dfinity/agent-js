@@ -5,5 +5,8 @@
     "packages/bootstrap",
     "e2e/*"
   ],
+  "hoist": [
+    "@typescript-eslint/eslint-plugin"
+  ],
   "version": "0.6.24"
 }
