@@ -6,6 +6,7 @@
     "e2e/*"
   ],
   "hoist": [
+    "@types/node",
     "@typescript-eslint/eslint-plugin",
     "@typescript-eslint/parser",
     "eslint",
