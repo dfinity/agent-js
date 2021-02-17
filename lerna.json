@@ -1,8 +1,7 @@
 {
   "packages": [
-    "packages/agent",
-    "packages/authentication",
-    "packages/bootstrap",
+    "apps/*",
+    "packages/*",
     "e2e/*"
   ],
   "hoist": [

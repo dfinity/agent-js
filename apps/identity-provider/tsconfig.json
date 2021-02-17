@@ -18,8 +18,8 @@
   },
   "include": ["types/*", "src/**/*.ts", "src/**/*.tsx"],
   "references": [
-    { "path": "../agent" },
-    { "path": "../authentication" },
+    { "path": "../../packages/agent" },
+    { "path": "../../packages/authentication" },
     { "path": "../bootstrap" }
   ]
 }

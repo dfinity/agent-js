@@ -17,7 +17,7 @@
   "include": ["types/*", "src/**/*.ts", "src/**/*.css"],
   "exclude": ["**/*.test.ts"],
   "references": [
-    { "path": "../agent" },
-    { "path": "../authentication" },
+    { "path": "../../packages/agent" },
+    { "path": "../../packages/authentication" },
   ]
 }
