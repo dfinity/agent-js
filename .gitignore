@@ -51,9 +51,6 @@ typings/
 build_info.json
 .tsc-out/
 
-# TypeScript output
-.tsc-out/
-
 # Optional npm cache directory
 .npm
 
@@ -109,8 +106,6 @@ dist
 
 # TernJS port file
 .tern-port
-
-.vscode
 
 # IDE Settings
 .code
