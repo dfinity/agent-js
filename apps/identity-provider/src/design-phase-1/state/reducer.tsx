@@ -7,7 +7,7 @@ import * as rootIdentityReducer from './reducers/rootIdentity';
 import * as webAuthnReducer from './reducers/webauthn.reducer';
 import { EffectRequested, IEffectiveReducer } from './reducer-effects';
 import { WebAuthnIdentity } from '@dfinity/authentication';
-import { History } from 'history';
+import type { History } from 'history';
 
 /**
  * EffectiveReducer for IdentityProvider. Builds initial state and updates state based on known actions.

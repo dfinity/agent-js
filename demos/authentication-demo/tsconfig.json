@@ -15,8 +15,8 @@
   },
   "include": ["./types/*", "./src/**/*.ts", "./src/**/*.tsx"],
   "references": [
-    { "path": "../agent" },
-    { "path": "../authentication" },
-    { "path": "../bootstrap" }
+    { "path": "../../packages/agent" },
+    { "path": "../../packages/authentication" },
+    { "path": "../../apps/bootstrap" }
   ]
 }
