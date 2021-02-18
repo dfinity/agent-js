@@ -82,14 +82,30 @@ const productionConfig = {
         },
       }),
     ],
+    splitChunks: {
+      chunks: 'all',
+      cacheGroups: {
+        dfinity: {
+          test: /[\\/]packages[\\/](agent|authentication)[\\/]/,
+          name: 'dfinity',
+          chunks: 'initial',
+        },
+        react: {
+          test: /[\\/]node_modules[\\/]react(-dom)?[\\/]/,
+          name: 'react',
+          chunks: 'initial',
+        },
+        commons: {
+          test: /[\\/]node_modules[\\/]/,
+          name: "vendor",
+          chunks: "initial",
+        },
+      },
+    },
   },
 };
 
 const developmentConfig = {
-  optimization: {
-    minimize: false,
-    minimizer: undefined,
-  },
   mode: 'development',
   devServer: {
     contentBase: './dist',
@@ -109,6 +125,9 @@ module.exports = (env) => {
   if (env === "development") {
     return merge(commonConfig, developmentConfig);
   } else if (env === "production") {
+    return merge(commonConfig, productionConfig);
+  } else if (env === undefined) {
+    console.error("No environment specified, defaulting to prod.")
     return merge(commonConfig, productionConfig);
   } else {
     throw new Error(`Invalid environment name: "${JSON.stringify(env)}"`);

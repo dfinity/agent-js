@@ -8,9 +8,7 @@ import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import { IDPRootErrorBoundary } from './ErrorBoundary';
 import theme from './theme';
 import NotFound from './routes/NotFound';
-import RelyingPartyDemoRoute from './relying-party-demo/routes';
 import { RelyingPartyDemoIdentityChangedEventIdentifier } from './relying-party-demo/events';
-import { Route as DesignPhase1Route } from './design-phase-1';
 import { WebAuthnIdentity } from '@dfinity/authentication';
 
 const NotFoundRoute = () => {
@@ -18,6 +16,9 @@ const NotFoundRoute = () => {
 };
 
 const App = () => {
+  const RelyingPartyDemoRoute = React.lazy(() => import('./relying-party-demo/routes'));
+  const DesignPhase1Route = React.lazy(() => import('./design-phase-1'));
+
   return (
     <IDPRootErrorBoundary>
       <ThemeProvider theme={theme}>
