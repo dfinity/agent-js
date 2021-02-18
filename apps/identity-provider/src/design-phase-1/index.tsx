@@ -1,1 +1,2 @@
-export { default as Route } from './ui/route';
+import Route from './ui/route';
+export default Route;
