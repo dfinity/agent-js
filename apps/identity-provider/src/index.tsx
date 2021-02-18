@@ -8,7 +8,6 @@ import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import { IDPRootErrorBoundary } from './ErrorBoundary';
 import theme from './theme';
 import NotFound from './routes/NotFound';
-import { RelyingPartyDemoIdentityChangedEventIdentifier } from './relying-party-demo/events';
 import { WebAuthnIdentity } from '@dfinity/authentication';
 
 const NotFoundRoute = () => {
@@ -16,7 +15,6 @@ const NotFoundRoute = () => {
 };
 
 const App = () => {
-  const RelyingPartyDemoRoute = React.lazy(() => import('./relying-party-demo/routes'));
   const DesignPhase1Route = React.lazy(() => import('./design-phase-1'));
 
   return (
@@ -27,9 +25,6 @@ const App = () => {
           <Router>
             <Suspense fallback={<div>Loading...</div>}>
               <Switch>
-                <Route path='/relying-party-demo'>
-                  <RelyingPartyDemoRoute NotFoundRoute={NotFoundRoute} />
-                </Route>
                 <Route exact path='/' component={HomeRoute} />
                 <Route path='/design-phase-1'>
                   <DesignPhase1Route
@@ -47,27 +42,4 @@ const App = () => {
   );
 };
 
-async function _main() {
-  document.body.addEventListener(RelyingPartyDemoIdentityChangedEventIdentifier, event => {
-    console.log(RelyingPartyDemoIdentityChangedEventIdentifier, event);
-  });
-  render(<App />, document.body.getElementsByTagName('app').item(0));
-}
-
-_main().catch(err => {
-  const div = document.createElement('div');
-  div.innerText = 'An error happened:';
-  const pre = document.createElement('pre');
-  pre.innerHTML = err.stack;
-  div.appendChild(pre);
-  const parentNode = document.body.querySelector('app');
-  if (parentNode) {
-    while (parentNode.firstChild) {
-      parentNode.firstChild?.remove();
-    }
-    parentNode.appendChild(div);
-  } else {
-    console.error(`error with _main() but couldn't find app element to render it`, err);
-  }
-  throw err;
-});
+render(<App />, document.body.getElementsByTagName('app').item(0));
