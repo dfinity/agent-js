@@ -1,7 +1,10 @@
 import * as React from 'react';
 import { Button } from 'src/components/Button';
 import SimpleScreenLayout from '../layout/SimpleScreenLayout';
-import { Typography, makeStyles, createStyles, styled } from '@material-ui/core';
+import Typography from '@material-ui/core/Typography';
+import makeStyles from '@material-ui/core/styles/makeStyles';
+import createStyles from '@material-ui/core/styles/createStyles';
+import styled from '@material-ui/core/styles/styled';
 import EnhancedEncryptionIcon from '@material-ui/icons/EnhancedEncryption';
 import {
   AuthenticationResponseConsentProposal,

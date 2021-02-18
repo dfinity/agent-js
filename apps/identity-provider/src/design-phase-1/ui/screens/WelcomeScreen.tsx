@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Button } from '../../../components/Button';
 import { styled } from '@material-ui/core/styles';
-import { Typography } from '@material-ui/core';
+import Typography from '@material-ui/core/Typography';
 import SimpleScreenLayout from '../layout/SimpleScreenLayout';
 import LockIcon from '@material-ui/icons/Lock';
 import { SignIdentity } from '@dfinity/agent';

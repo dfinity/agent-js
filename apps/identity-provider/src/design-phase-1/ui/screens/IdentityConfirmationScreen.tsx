@@ -2,7 +2,9 @@ import * as React from 'react';
 import { Button } from 'src/components/Button';
 import { hexEncodeUintArray } from 'src/bytes';
 import SimpleScreenLayout from '../layout/SimpleScreenLayout';
-import { Typography, Theme, makeStyles } from '@material-ui/core';
+import Typography from '@material-ui/core/Typography';
+import type { Theme } from '@material-ui/core/styles/createMuiTheme';
+import makeStyles from '@material-ui/core/styles/makeStyles';
 import { StyleRulesCallback } from '@material-ui/core/styles/withStyles';
 import EmojiEmotionsIcon from '@material-ui/icons/EmojiEmotions';
 

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import Paper from '@material-ui/core/Paper';
 import { styled } from '@material-ui/core/styles';
-import { Grid } from '@material-ui/core';
+import Grid from '@material-ui/core/Grid';
 
 // Wrapper of whole 'layout'. Pad. White bg.
 const PaddedPaper = styled(Paper)(({ theme }) => ({
