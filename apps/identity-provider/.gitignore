@@ -10,6 +10,5 @@ dist/
 
 # Cannot ignore setup files for webpack and jest, which are still JavaScript.
 !webpack.config.js
-!webpack.config.dev.js
 !jest.config.js
 !test-setup.js
