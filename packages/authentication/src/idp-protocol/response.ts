@@ -52,6 +52,39 @@ export function fromQueryString(searchParams: URLSearchParams): AuthenticationRe
   throw new Error(`Unable to create AuthenticationResponse from URLSearchParams`);
 }
 
+/**
+ * Parse an AuthenticationResponse from a URL, if possible.
+ * @param url - URL from which to attempt parsing an AuthenticationResponse
+ * @param options options
+ * @param options.allowSearch - whether to try to parse the URL 'search params' (aka query string)
+ *   It's preferred for the AuthenticationResponse to be url-encoded in the URL Hash Fragment.
+ *   Only use this for backward-compatability with pre-release versions of IDP.
+ *   @todo (remove this affordance so no one is tempted to use query string when it's not needed and recommended against by oauth2)
+ */
+export function fromUrl(
+  url: URL,
+  options:{
+    allowSearch?: boolean;
+  },
+): AuthenticationResponse {
+  const candidates = [
+    url.hash.replace(/^#/,''),
+    ...(options.allowSearch ? [url.search.replace(/^\?/, '')] : []),
+  ]
+  for (let i=0; i<candidates.length; i++) {
+    const maybeUrlEncodedString = candidates[i];
+    try {
+      return fromQueryString(new URLSearchParams(maybeUrlEncodedString));
+    } catch (error) {
+      const hasAnotherCandidate = Boolean((i+1) < candidates.length)
+      if (hasAnotherCandidate) {
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+
 interface IParsedBearerToken {
   publicKey: string;
   delegations: Array<{
