@@ -5,7 +5,7 @@ import {
   RedirectTransport,
   IdentityProviderIndicator,
 } from '../idp-agent/transport';
-import { AuthenticationResponseUrlDetectedEvent, IdentityChangedEventIdentifier, IdentityChangedEvent } from '../id-dom-events';
+import { IdentityChangedEventIdentifier, IdentityChangedEvent } from '../id-dom-events';
 import {
   BootstrapChangeIdentityCommand,
   BootstrapChangeIdentityCommandIdentifier,
@@ -41,7 +41,6 @@ export interface IAuthenticator extends AuthenticatorEventTarget {
 }
 
 export type AuthenticatorEnvelope =
-  | { to: 'document'; message: ReturnType<typeof AuthenticationResponseUrlDetectedEvent> }
   | { to: 'document'; message: BootstrapChangeIdentityCommand };
 
 interface AuthenticatorOptions {
