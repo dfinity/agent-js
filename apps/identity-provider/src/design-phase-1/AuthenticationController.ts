@@ -56,14 +56,13 @@ export default function AuthenticationController(options: {
       request: Pick<request.AuthenticationRequest, 'redirectUri'>;
       response: response.AuthenticationResponse;
     }): Promise<IdentityProviderAction[]> {
-      const responseRedirectUrl = createResponseRedirectUrl(
-        spec.response,
-        spec.request.redirectUri,
-      );
       const navigateToRedirectUriWithResponse: IdentityProviderAction = {
         type: 'Navigate',
         payload: {
-          href: responseRedirectUrl.toString(),
+          href: response.createSendResponseUri(
+            new URL(spec.request.redirectUri),
+            spec.response,
+          ),
         },
       };
       return [navigateToRedirectUriWithResponse];
@@ -136,20 +135,4 @@ export function describeSignIdentity(identity: WebAuthnIdentity | Ed25519KeyIden
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const x: never = identity;
   throw new Error('unexpected identity prototype');
-}
-
-function createResponseRedirectUrl(
-  authResponse: response.AuthenticationResponse,
-  requestRedirectUri: string,
-): URL {
-  const oauth2Response = response.toOauth(authResponse);
-  const redirectUrl = new URL(requestRedirectUri);
-  for (const [key, value] of Object.entries(oauth2Response)) {
-    if (typeof value === 'undefined') {
-      redirectUrl.searchParams.delete(key);
-    } else {
-      redirectUrl.searchParams.set(key, value);
-    }
-  }
-  return redirectUrl;
 }
