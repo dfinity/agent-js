@@ -32,8 +32,15 @@ export async function* ChangeCommandEventIdentities(
  * @param command - BootstrapChangeIdentityCommand
  */
 export function ChangeCommandIdentity(command: BootstrapChangeIdentityCommand): DelegationIdentity {
-  const authenticationResponse = response.fromQueryString(
-    new URL(command.detail.authenticationResponse).searchParams,
+  const authenticationResponse = response.fromUrl(
+    new URL(command.detail.authenticationResponse),
+    {
+      // @todo stop allowing this once we successfully ship support for the now-preferred
+      // syntax of only parsing the URL hash fragment for AuthenticationResponse.
+      // After that, it should also be safe to remove all of the `allowSearch: true` functionality.
+      // https://github.com/dfinity/agent-js/issues/125
+      allowSearch: true
+    }
   );
   const responseIdentity = (() => {
     const chain = DelegationChain.fromJSON(
