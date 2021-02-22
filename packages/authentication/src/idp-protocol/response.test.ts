@@ -87,6 +87,19 @@ test('ic-id-protocol/response fromUrl', async () => {
   expect(() => icidResponse.fromUrl(new URL(sampleWithQueryString), {allowSearch: true})).not.toThrow();
 })
 
+test('ic-id-protocol/response createSendResponseUri', async () => {
+  const redirectUri = `https://dfinity.org/tmp/example-redirect-uri`;
+  const authenticationResponse = icidResponse.fromQueryString(
+    new URLSearchParams(
+      '?scope=a%20b&access_token=accessTokenValue&expires_in=2099000000&token_type=bearer&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Frelying-party-demo%2Foauth%2Fredirect_uri',
+    ),
+  );
+  const responseUri = icidResponse.createSendResponseUri(new URL(redirectUri), authenticationResponse);
+  expect(responseUri).toBeTruthy();
+  expect(typeof responseUri).toEqual('string')
+  expect(responseUri).toEqual(`${redirectUri}#accessToken=accessTokenValue&expiresIn=2099000000&scope=a+b&tokenType=bearer&type=AuthenticationResponse`)
+});
+
 describe('ic-id-protocol parseScopeString', () => {
   it('allows old-style principal texts', () => {
     // bengo: I'm not sure whether it's a good idea to allow these or not.

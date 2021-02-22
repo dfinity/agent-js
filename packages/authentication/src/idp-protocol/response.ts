@@ -143,3 +143,44 @@ export function toOauth(response: AuthenticationResponse): oauth2.OAuth2AccessTo
   };
   return oauth2Response;
 }
+
+/**
+ * Create a URI that will send an AuthenticationResponse to a redirect_uri.
+ * The AuthenticationResponse will be encoded as x-www-form-urlencoded, then appended
+ * to the redirectUri as the entirety of the hash fragment
+ * @param redirectUri - URI to send response to. Usually from AuthenticationRequest.redirectUri
+ *   The endpoint URI MUST NOT include a fragment component (https://tools.ietf.org/html/rfc6749#section-3.1.2).
+ * @param authenticationResponse - response to send to the redirect_uri via redirect.
+ */
+export function createSendResponseUri(redirectUri: URL, authenticationResponse: AuthenticationResponse): string {
+  if (redirectUri.hash) {
+    throw new Error(`redirectUri MUST NOT already have a hash fragment`)
+  }
+  const responseUri = (() => {
+    const _responseUrl = new URL(redirectUri.toString());
+    _responseUrl.hash = `#${querystringify(authenticationResponse, true)}`
+    return _responseUrl.toString();
+  })();
+  return responseUri;
+}
+
+/**
+ * Given a record, return that record encoded like application/x-www-form-urlencoded
+ * @param record - key/value pairs
+ * @param [sortKeys=false] - whether or not to sort the keys in the returned query string.
+ */
+function querystringify(record: Record<string,string|number>, sortKeys=false): string {
+  const searchParams = new URLSearchParams;
+  const recordKeys = Object.keys(record)
+  if (sortKeys) {
+    recordKeys.sort();
+  }
+  for (const key of recordKeys) {
+    const value = record[key];
+    if ([null,undefined].includes(value)) {
+      continue;
+    }
+    searchParams.set(key, value?.toString());
+  }
+  return searchParams.toString()
+}
