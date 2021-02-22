@@ -71,18 +71,19 @@ export function fromUrl(
     url.hash.replace(/^#/,''),
     ...(options.allowSearch ? [url.search.replace(/^\?/, '')] : []),
   ]
+  const failures: Array<{ candidate: string, error: Error }> = [];
   for (let i=0; i<candidates.length; i++) {
     const maybeUrlEncodedString = candidates[i];
     try {
       return fromQueryString(new URLSearchParams(maybeUrlEncodedString));
     } catch (error) {
-      const hasAnotherCandidate = Boolean((i+1) < candidates.length)
-      if (hasAnotherCandidate) {
-        continue;
-      }
-      throw error;
+      failures.push({ error, candidate: maybeUrlEncodedString })
     }
   }
+  throw Object.assign(new Error('Failed to create AuthenticationResponse from url'), {
+    url,
+    failures,
+  })
 }
 
 interface IParsedBearerToken {
