@@ -158,7 +158,7 @@ export function createSendResponseUri(redirectUri: URL, authenticationResponse: 
   }
   const responseUri = (() => {
     const _responseUrl = new URL(redirectUri.toString());
-    _responseUrl.hash = `#${querystringify(authenticationResponse, true)}`
+    _responseUrl.hash = `#${queryStringify(authenticationResponse, true)}`
     return _responseUrl.toString();
   })();
   return responseUri;
@@ -169,7 +169,7 @@ export function createSendResponseUri(redirectUri: URL, authenticationResponse: 
  * @param record - key/value pairs
  * @param [sortKeys=false] - whether or not to sort the keys in the returned query string.
  */
-function querystringify(record: Record<string,string|number>, sortKeys=false): string {
+function queryStringify(record: Record<string, string | number>, sortKeys = false): string {
   const searchParams = new URLSearchParams;
   const recordKeys = Object.keys(record)
   if (sortKeys) {
