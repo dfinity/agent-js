@@ -1,7 +1,5 @@
 import { AuthenticationRequest, createAuthenticationRequestUrl } from '../idp-protocol/request';
 import {
-  AuthenticationResponseUrlDetectedEvent,
-  AuthenticationResponseUrlDetectedEventIdentifier,
   createCustomEvent,
 } from '../id-dom-events';
 import {
@@ -20,7 +18,6 @@ export type EnvelopeToIdentityProvider = {
 export type EnvelopeToDocument = {
   to: 'document';
   message:
-    | ReturnType<typeof AuthenticationResponseUrlDetectedEvent>
     | BootstrapChangeIdentityCommand;
 };
 export type IdentityProviderAgentEnvelope = EnvelopeToIdentityProvider | EnvelopeToDocument;
@@ -112,8 +109,6 @@ export function DomEventTransport(
     const message = envelope.message;
     const event = (() => {
       switch (message.type) {
-        case AuthenticationResponseUrlDetectedEventIdentifier:
-          return AuthenticationResponseUrlDetectedEvent(message.detail);
         case BootstrapChangeIdentityCommandIdentifier:
           return createCustomEvent(message.type, {
             bubbles: true,
