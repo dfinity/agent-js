@@ -44,9 +44,9 @@ export type AuthenticatorEnvelope =
   | { to: 'document'; message: BootstrapChangeIdentityCommand };
 
 interface AuthenticatorOptions {
-  transport: Transport<AuthenticatorEnvelope>;
-  identityProvider: IdentityProviderIndicator;
-  events: EventTarget
+  transport?: Transport<AuthenticatorEnvelope>;
+  identityProvider?: IdentityProviderIndicator;
+  events?: EventTarget;
 }
 
 type IdentityChangedEventListener = (id: IdentityChangedEvent) => void;
@@ -57,18 +57,13 @@ export class Authenticator implements IAuthenticator {
   #transport: Transport<AuthenticatorEnvelope>;
   #events: EventTarget = document;
   #listenerToDomListener: WeakMap<IdentityChangedEventListener, EventListener> = new WeakMap
-  constructor(
-    options: AuthenticatorOptions = {
-      transport: DefaultAuthenticatorTransport(document),
-      identityProvider: unsafeTemporaryIdentityProvider,
-      events: document,
-    },
-  ) {
-    this.#events = options.events;
-    this.#transport = options.transport;
+
+  constructor(options: AuthenticatorOptions = {}) {
+    this.#events = options.events ?? document;
+    this.#transport = options.transport ?? DefaultAuthenticatorTransport(document);
     this.#identityProviderAgent = new IdentityProviderAgent({
       transport: this.#transport,
-      identityProvider: options.identityProvider,
+      identityProvider: options.identityProvider ?? unsafeTemporaryIdentityProvider,
       location: location,
     });
   }
