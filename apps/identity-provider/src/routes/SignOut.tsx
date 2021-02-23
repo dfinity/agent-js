@@ -3,16 +3,15 @@ import * as React from 'react';
 /**
  * A `/signout?returnTo=...` route that simply returns to the original route. This is
  * for future compliance if we ever support revoking session keys.
- * @param propReturnTo
- * @param propReturnTo.returnTo
+ * @param props.returnTo A URL to redirect the user to. If missing, will try to use the
+ *                       query parameter.
+ * @param props Properties.
  */
-export default function SignOutRoute(
-  { returnTo: propReturnTo }: { returnTo?: string },
-): JSX.Element {
-  let returnTo: string | null | undefined = propReturnTo;
+export default function SignOutRoute(props: { returnTo?: string }): JSX.Element {
+  let returnTo: string | null | undefined = props.returnTo;
   if (!returnTo) {
     const params = new URLSearchParams(window.location.search);
-    returnTo = propReturnTo || params.get('returnTo');
+    returnTo = params.get('returnTo');
   }
 
   if (returnTo) {
