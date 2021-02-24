@@ -2,6 +2,7 @@
   "name": "@dfinity/auth_ic0_app-worker",
   "dependencies": {
     "@cloudflare/kv-asset-handler": "^0.1.0",
+    "@cloudflare/wrangler": "^1.13.0",
     "@dfinity/identity-provider": "*",
     "webpack": "^5.24.1"
   },
