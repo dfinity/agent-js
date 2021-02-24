@@ -1,8 +1,9 @@
 {
   "packages": [
     "apps/*",
-    "packages/*",
-    "e2e/*"
+    "demos/sample-javascript",
+    "e2e/*",
+    "packages/*"
   ],
   "hoist": [
     "@typescript-eslint/eslint-plugin",

@@ -1,5 +1,5 @@
 import { IdentityProviderAgent, SendAuthenticationRequestCommand } from './idp-agent';
-import { Principal, blobFromHex } from '@dfinity/agent';
+import { Principal, blobFromHex, derBlobFromBlob } from '@dfinity/agent';
 import {
   UrlTransport,
   RedirectTransport,
@@ -53,10 +53,12 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
     await agent.sendAuthenticationRequest({
       session: {
         identity: {
-          publicKey: {
-            toDer() {
-              return blobFromHex(samplePublicKeyHex);
-            },
+          getPublicKey() {
+            return {
+              toDer() {
+                return derBlobFromBlob(blobFromHex(samplePublicKeyHex));
+              },
+            };
           },
         },
       },
@@ -94,9 +96,7 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
       redirectUri: exampleRedirectUri,
       scope: [],
       session: {
-        identity: {
-          publicKey: Ed25519KeyIdentity.generate().getPublicKey(),
-        },
+        identity: Ed25519KeyIdentity.generate(),
       },
     };
     await agent.sendAuthenticationRequest(sendAuthenticationRequestCommand);
@@ -128,9 +128,7 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
       redirectUri: exampleRedirectUri,
       scope: [],
       session: {
-        identity: {
-          publicKey: Ed25519KeyIdentity.generate().getPublicKey(),
-        },
+        identity: Ed25519KeyIdentity.generate(),
       },
     };
     await agent.sendAuthenticationRequest(sendAuthenticationRequestCommand);

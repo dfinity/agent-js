@@ -1,3 +1,4 @@
+import { SignIdentity } from '@dfinity/agent';
 import { stringifyScope, Scope } from '../idp-protocol/scope';
 import { AuthenticationRequest } from '../idp-protocol/request';
 import { IdentityProviderAgentEnvelope, IdentityProviderIndicator, Transport } from './transport';
@@ -16,11 +17,7 @@ export interface IdentityProviderAgent {
 
 export type SendAuthenticationRequestCommand = {
   session: {
-    identity: {
-      publicKey: {
-        toDer(): Uint8Array;
-      };
-    };
+    identity: Pick<SignIdentity, 'getPublicKey'>;
   };
   redirectUri?: URL;
   scope: Scope;
@@ -48,7 +45,7 @@ export class IdentityProviderAgent implements IdentityProviderAgent {
       redirectUri,
       scope: stringifyScope(spec.scope),
       sessionIdentity: {
-        hex: hexEncodeUintArray(spec.session.identity.publicKey.toDer()),
+        hex: hexEncodeUintArray(spec.session.identity.getPublicKey().toDer()),
       },
     };
     await this.#transport.send({
