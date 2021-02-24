@@ -65,13 +65,13 @@ export default function FlowRoute(props: {
   const { path } = useRouteMatch();
   const urls = {
     identity: {
-      confirmation: `${path}/identity/confirmation`,
+      confirmation: `${path}identity/confirmation`,
     },
     session: {
-      consent: `${path}/session/consent`,
+      consent: `${path}session/consent`,
     },
     response: {
-      confirmation: `${path}/response/confirmation`,
+      confirmation: `${path}response/confirmation`,
     },
   };
   const rootIdentity = React.useMemo(() => {
@@ -113,7 +113,7 @@ export default function FlowRoute(props: {
       <MaybeTheme theme={props.theme}>
         <AuthenticationScreenLayout>
           <Switch>
-            <Route exact path={`${path}/welcome`}>
+            <Route exact path={`${path}welcome`}>
               <WelcomeScreen
                 identity={rootSignIdentity}
                 useIdentity={async identity => {
