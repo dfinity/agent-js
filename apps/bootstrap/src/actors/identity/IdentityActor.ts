@@ -28,6 +28,7 @@ export default function IdentityActor(params: {
   initialIdentity: SignIdentity | AnonymousIdentity;
   eventTarget: EventTarget;
   cancel: Promise<unknown>;
+  foo?: boolean;
 }): void {
   const subscribers = new Set<MessagePort>();
   let started = false;
