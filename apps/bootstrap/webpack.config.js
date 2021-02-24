@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const webpack = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
@@ -15,15 +16,22 @@ module.exports = {
   },
   target: 'web',
   output: {
-    // This is necessary to allow internal apps to bundle their own code with
-    // webpack which may conflict with us.
-    jsonpFunction: '__dfinityJsonp',
     path: path.resolve(__dirname, './dist'),
     filename: '[name]-[hash].js',
   },
   resolve: {
     plugins: [new TsconfigPathsPlugin({ configFile: './tsconfig.json' })],
     extensions: ['.tsx', '.ts', '.js'],
+    alias: {
+      process: "process/browser"
+    },
+    fallback: {
+      "assert": require.resolve("assert/"),
+      "buffer": require.resolve("buffer/"),
+      "events": require.resolve("events/"),
+      "stream": require.resolve("stream-browserify/"),
+      "util": require.resolve("util/"),
+    },
   },
   devtool: 'source-map',
   optimization: {
@@ -87,6 +95,10 @@ module.exports = {
         to: 'favicon.ico',
       },
     ]),
+    new webpack.ProvidePlugin({
+      Buffer: [require.resolve('buffer/'), 'Buffer'],
+      process: require.resolve('process/browser'),
+    }),
   ],
   devServer: {
     proxy: {
