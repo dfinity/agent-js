@@ -114,9 +114,6 @@ export default function DesignPhase0Route(props: {
         <AuthenticationScreenLayout>
           <Switch>
             <Route exact path={`${path}`}>
-              <Redirect to={`${path}/welcome${location.search}`} />
-            </Route>
-            <Route exact path={`${path}/welcome`}>
               <WelcomeScreen
                 identity={rootSignIdentity}
                 useIdentity={async identity => {
