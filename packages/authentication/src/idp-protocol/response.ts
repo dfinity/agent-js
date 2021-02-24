@@ -52,6 +52,40 @@ export function fromQueryString(searchParams: URLSearchParams): AuthenticationRe
   throw new Error(`Unable to create AuthenticationResponse from URLSearchParams`);
 }
 
+/**
+ * Parse an AuthenticationResponse from a URL, if possible.
+ * @param url - URL from which to attempt parsing an AuthenticationResponse
+ * @param options options
+ * @param options.allowSearch - whether to try to parse the URL 'search params' (aka query string)
+ *   It's preferred for the AuthenticationResponse to be url-encoded in the URL Hash Fragment.
+ *   Only use this for backward-compatability with pre-release versions of IDP.
+ *   @todo (remove this affordance so no one is tempted to use query string when it's not needed and recommended against by oauth2)
+ */
+export function fromUrl(
+  url: URL,
+  options:{
+    allowSearch?: boolean;
+  },
+): AuthenticationResponse {
+  const candidates = [
+    url.hash.replace(/^#/,''),
+    ...(options.allowSearch ? [url.search.replace(/^\?/, '')] : []),
+  ]
+  const failures: Array<{ candidate: string, error: Error }> = [];
+  for (let i=0; i<candidates.length; i++) {
+    const maybeUrlEncodedString = candidates[i];
+    try {
+      return fromQueryString(new URLSearchParams(maybeUrlEncodedString));
+    } catch (error) {
+      failures.push({ error, candidate: maybeUrlEncodedString })
+    }
+  }
+  throw Object.assign(new Error('Failed to create AuthenticationResponse from url'), {
+    url,
+    failures,
+  })
+}
+
 interface IParsedBearerToken {
   publicKey: string;
   delegations: Array<{
@@ -108,4 +142,45 @@ export function toOauth(response: AuthenticationResponse): oauth2.OAuth2AccessTo
     scope: response.scope,
   };
   return oauth2Response;
+}
+
+/**
+ * Create a URI that will send an AuthenticationResponse to a redirect_uri.
+ * The AuthenticationResponse will be encoded as x-www-form-urlencoded, then appended
+ * to the redirectUri as the entirety of the hash fragment
+ * @param redirectUri - URI to send response to. Usually from AuthenticationRequest.redirectUri
+ *   The endpoint URI MUST NOT include a fragment component (https://tools.ietf.org/html/rfc6749#section-3.1.2).
+ * @param authenticationResponse - response to send to the redirect_uri via redirect.
+ */
+export function createSendResponseUri(redirectUri: URL, authenticationResponse: AuthenticationResponse): string {
+  if (redirectUri.hash) {
+    throw new Error(`redirectUri MUST NOT already have a hash fragment`)
+  }
+  const responseUri = (() => {
+    const _responseUrl = new URL(redirectUri.toString());
+    _responseUrl.hash = `#${queryStringify(authenticationResponse, true)}`
+    return _responseUrl.toString();
+  })();
+  return responseUri;
+}
+
+/**
+ * Given a record, return that record encoded like application/x-www-form-urlencoded
+ * @param record - key/value pairs
+ * @param [sortKeys=false] - whether or not to sort the keys in the returned query string.
+ */
+function queryStringify(record: Record<string, string | number>, sortKeys = false): string {
+  const searchParams = new URLSearchParams;
+  const recordKeys = Object.keys(record)
+  if (sortKeys) {
+    recordKeys.sort();
+  }
+  for (const key of recordKeys) {
+    const value = record[key];
+    if ([null,undefined].includes(value)) {
+      continue;
+    }
+    searchParams.set(key, value?.toString());
+  }
+  return searchParams.toString()
 }
