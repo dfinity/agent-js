@@ -20,6 +20,7 @@ declare const window: GlobalInternetComputer & Window;
 const bootstrapRender = BootstrapRenderer(document);
 
 _main({ render: bootstrapRender }).catch(err => {
+  // tslint:disable-next-line: no-console
   console.error('caught error:', err);
   const div = document.createElement('div');
   div.innerText = 'An error happened:';
