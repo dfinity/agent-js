@@ -62,7 +62,11 @@ export class AuthenticationClient {
       // Remove the `#` at the start.
       const hashParams = new URLSearchParams(location.hash.substr(1));
 
-      return searchParams.get('access_token') || hashParams.get('access_token') || null;
+      return searchParams.get('accessToken')
+          || searchParams.get('access_token')
+          || hashParams.get('accessToken')
+          || hashParams.get('access_token')
+          || null;
     } catch (e) {
       // Ignore errors. Return false in that case (maybe the hash params cannot be parsed?).
     }
