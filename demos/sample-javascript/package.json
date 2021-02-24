@@ -2,8 +2,8 @@
   "name": "ic-agent-sample-javascript-app",
   "private": true,
   "dependencies": {
-    "@dfinity/agent": "*",
-    "@dfinity/authentication": "*",
+    "@dfinity/agent": "^0.6.25-beta.0",
+    "@dfinity/authentication": "^0.6.25-beta.0",
     "assert": "^2.0.0",
     "buffer": "^6.0.3",
     "events": "^3.2.0",
