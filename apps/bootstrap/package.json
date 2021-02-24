@@ -1,6 +1,7 @@
 {
   "name": "@dfinity/bootstrap",
   "version": "0.0.0",
+  "private": true,
   "main": "ts-out/packages/bootstrap/src",
   "scripts": {
     "build": "npm run webpack",

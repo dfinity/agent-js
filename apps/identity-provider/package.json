@@ -1,6 +1,7 @@
 {
   "name": "@dfinity/identity-provider",
   "version": "0.6.8",
+  "private": true,
   "main": "src/index.js",
   "scripts": {
     "build": "npm run tsc && npm run webpack",
