@@ -9,7 +9,7 @@ import {
 // TODO: move this into @dfinity/authentication
 const KEY_LOCALSTORAGE_KEY = 'ic-identity';
 const KEY_LOCALSTORAGE_DELEGATION = 'ic-delegation';
-const DEFAULT_IDP_URL = 'https://auth.ic0.app/';
+const DEFAULT_IDP_URL = 'https://auth.ic0.app/authorize';
 
 export class AuthenticationClient {
   constructor(options = {}) {

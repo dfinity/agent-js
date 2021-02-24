@@ -49,10 +49,6 @@ export function createAuthenticationRequestUrl(params: {
   authenticationRequest: AuthenticationRequest;
 }): URL {
   const url = new URL(params.identityProviderUrl.toString());
-  if (url.pathname === '/') {
-    url.pathname = '/authorize';
-  }
-
   for (const [key, value] of Object.entries(toOauth(params.authenticationRequest))) {
     const valueUriComponent = typeof value === 'undefined' ? '' : value;
     url.searchParams.set(key, valueUriComponent);
