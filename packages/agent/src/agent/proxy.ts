@@ -182,6 +182,7 @@ export class ProxyAgent implements Agent {
       case ProxyMessageKind.CallResponse:
       case ProxyMessageKind.QueryResponse:
       case ProxyMessageKind.ReadStateResponse:
+      case ProxyMessageKind.StatusResponse:
         return resolve(msg.response);
       default:
         throw new Error(`Invalid message being sent to ProxyAgent: ${JSON.stringify(msg)}`);
