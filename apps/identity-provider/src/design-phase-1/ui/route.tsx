@@ -62,15 +62,16 @@ export default function FlowRoute(props: {
     initialState,
   );
   useStateStorage(stateStorage, state, dispatch);
+  const { path } = useRouteMatch();
   const urls = {
     identity: {
-      confirmation: `/identity/confirmation`,
+      confirmation: `${path}/identity/confirmation`,
     },
     session: {
-      consent: `/session/consent`,
+      consent: `${path}/session/consent`,
     },
     response: {
-      confirmation: `/response/confirmation`,
+      confirmation: `${path}/response/confirmation`,
     },
   };
   const rootIdentity = React.useMemo(() => {
@@ -112,7 +113,7 @@ export default function FlowRoute(props: {
       <MaybeTheme theme={props.theme}>
         <AuthenticationScreenLayout>
           <Switch>
-            <Route path='/welcome'>
+            <Route exact path={`${path}/welcome`}>
               <WelcomeScreen
                 identity={rootSignIdentity}
                 useIdentity={async identity => {
@@ -133,6 +134,7 @@ export default function FlowRoute(props: {
               />
             </Route>
             <Route
+              exact
               path={urls.identity.confirmation}
               component={() => {
                 return (
@@ -157,6 +159,7 @@ export default function FlowRoute(props: {
               }}
             />
             <Route
+              exact
               path={urls.session.consent}
               component={() => {
                 const authenticationRequestHasConsent = React.useMemo(() => {
@@ -203,7 +206,7 @@ export default function FlowRoute(props: {
                 );
               }}
             />
-            <Route path={urls.response.confirmation}>
+            <Route exact path={urls.response.confirmation}>
               {!rootIdentity ? (
                 <>
                   No session found. Please <Link to='/'>start over</Link>

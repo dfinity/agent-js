@@ -27,13 +27,14 @@ const App = () => {
             <Suspense fallback={<div>Loading...</div>}>
               <Switch>
                 <Route exact path='/' component={HomeRoute} />
-                <Route path='/authorize'>
+                <Route exact path='/authorize'>
                   <AuthorizeRoute />
                 </Route>
                 <AuthFlowRoute
                   NotFoundRoute={NotFoundRoute}
                   WebAuthnIdentity={WebAuthnIdentity}
                 />
+                <NotFoundRoute />
               </Switch>
             </Suspense>
           </Router>
