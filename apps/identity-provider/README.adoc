@@ -33,3 +33,17 @@ sending incremental file list
 sent 731 bytes  received 12 bytes  212.29 bytes/sec
 total size is 19.29M  speedup is 25,968.48
 ----
+
+## Routes
+
+The Identity Provider has a simple route scheme for its API;
+
+- `/`. The root, which is kept empty for now, but most likely will incorporate some
+  identity management functionality.
+- `/authorize`. The URL used by relying parties to initiate an authorization process. This must
+  remain a stable route as third parties will rely on it.
+
+Other routes (like `/welcome`) are made available as part of the authorization process flow, but
+are not documented here as they aren't officially part of the API. For now, only the routes above
+are reserved names.
+

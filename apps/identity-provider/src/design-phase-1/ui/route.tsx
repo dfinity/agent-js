@@ -113,9 +113,6 @@ export default function DesignPhase0Route(props: {
       <MaybeTheme theme={props.theme}>
         <AuthenticationScreenLayout>
           <Switch>
-            <Route exact path={`${path}`}>
-              <Redirect to={`${path}/welcome${location.search}`} />
-            </Route>
             <Route exact path={`${path}/welcome`}>
               <WelcomeScreen
                 identity={rootSignIdentity}
