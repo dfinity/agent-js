@@ -26,6 +26,7 @@ opt else
     bootstrap -> bootstrap: Generate PrivateKey + PublicKey
     bootstrap -> identity: Authorization Request
     note right of bootstrap
+        GET provider.example.com/authorize?...
         session_key: bytes = PublicKey
         redirect: string = "localhost:8080/?canisterId=...
     end note

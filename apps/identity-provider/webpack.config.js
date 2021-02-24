@@ -54,6 +54,7 @@ const commonConfig = {
     new CleanWebpackPlugin({ cleanStaleWebpackAssets: false }),
     new webpack.IgnorePlugin(/^\.\/wordlists\/(?!english)/, /bip39\/src$/),
     new webpack.ProvidePlugin({
+      Buffer: [require.resolve('buffer/'), 'Buffer'],
       process: require.resolve('process/browser'),
     }),
     new HtmlWebpackPlugin({

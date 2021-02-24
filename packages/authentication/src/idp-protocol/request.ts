@@ -62,7 +62,7 @@ export function createAuthenticationRequestUrl(params: {
  */
 export function fromQueryString(params: URLSearchParams): AuthenticationRequest | undefined {
   const oauth2Message = oauth2.fromQueryString(params);
-  if (!('redirect_uri' in oauth2Message)) {
+  if (!oauth2Message || !('redirect_uri' in oauth2Message)) {
     return;
   }
   const oauth2Request: oauth2.OAuth2AuthorizationRequest = oauth2Message;

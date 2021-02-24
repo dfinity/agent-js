@@ -1,5 +1,5 @@
 import React from 'react';
-import { Route, Switch, useRouteMatch, useLocation, Redirect, useHistory } from 'react-router-dom';
+import { Link, Route, Switch, useRouteMatch, useLocation, Redirect, useHistory } from 'react-router-dom';
 import WelcomeScreen from './screens/WelcomeScreen';
 import IdentityConfirmationScreen from './screens/IdentityConfirmationScreen';
 import { default as SessionConsentScreen } from './screens/SessionConsentScreen';
@@ -8,7 +8,7 @@ import { SerializedStorage, LocalStorageKey, NotFoundError } from '../state/stat
 import { useStateStorage } from '../state/state-storage-react';
 import { StateToStringCodec } from '../state/state-serialization';
 import { hexToBytes } from 'src/bytes';
-import { WebAuthnIdentity } from '@dfinity/authentication';
+import { AuthenticationRequest, WebAuthnIdentity } from '@dfinity/authentication';
 import AuthenticationScreenLayout from './layout/AuthenticationScreenLayout';
 import type { Theme } from '@material-ui/core/styles/createMuiTheme';
 import { ThemeProvider } from '@material-ui/core/styles';
@@ -34,14 +34,13 @@ const stateStorage = SerializedStorage(
  * @param props.theme - material-ui theme
  * @param props.WebAuthnIdentity - knows how to interact with WebAuthn (or a stub in nodejs/nonbrowser).
  */
-export default function DesignPhase0Route(props: {
+export default function FlowRoute(props: {
   NotFoundRoute: React.ComponentType;
   theme?: Theme;
   WebAuthnIdentity: Pick<typeof WebAuthnIdentity, 'create'>;
 }): JSX.Element {
   const NotFoundRoute = props.NotFoundRoute;
   const location = useLocation();
-  const { path } = useRouteMatch();
   const initialState = React.useMemo(() => {
     try {
       const initialStateFromStorage = stateStorage.get();
@@ -63,6 +62,7 @@ export default function DesignPhase0Route(props: {
     initialState,
   );
   useStateStorage(stateStorage, state, dispatch);
+  const { path } = useRouteMatch();
   const urls = {
     identity: {
       confirmation: `${path}/identity/confirmation`,
@@ -113,9 +113,6 @@ export default function DesignPhase0Route(props: {
       <MaybeTheme theme={props.theme}>
         <AuthenticationScreenLayout>
           <Switch>
-            <Route exact path={`${path}`}>
-              <Redirect to={`${path}/welcome${location.search}`} />
-            </Route>
             <Route exact path={`${path}/welcome`}>
               <WelcomeScreen
                 identity={rootSignIdentity}
@@ -178,15 +175,15 @@ export default function DesignPhase0Route(props: {
                   <>
                     {!rootIdentity ? (
                       <>
-                        No rootIdentity Found. Please <a href='/'>start over</a>
+                        No rootIdentity Found. Please <Link to='/'>start over</Link>
                       </>
                     ) : !state.authentication.request ? (
                       <>
-                        No AuthenticationRequest Found. Please <a href='/'>start over</a>
+                        No AuthenticationRequest Found. Please <Link to='/'>start over</Link>
                       </>
                     ) : !consentProposal ? (
                       <>
-                        No consentProposal Found. Please <a href='/'>start over</a>
+                        No consentProposal Found. Please <Link to='/'>start over</Link>
                       </>
                     ) : (
                       <>
@@ -212,15 +209,15 @@ export default function DesignPhase0Route(props: {
             <Route exact path={urls.response.confirmation}>
               {!rootIdentity ? (
                 <>
-                  No session found. Please <a href='/'>start over</a>
+                  No session found. Please <Link to='/'>start over</Link>
                 </>
               ) : !state.authentication.request ? (
                 <>
-                  No AuthenticationRequest found. Please <a href='/'>start over</a>
+                  No AuthenticationRequest found. Please <Link to='/'>start over</Link>
                 </>
               ) : !state.authentication.response ? (
                 <>
-                  No AuthenticationResponse found. Please <a href='/'>start over</a>
+                  No AuthenticationResponse found. Please <Link to='/'>start over</Link>
                 </>
               ) : (
                 <>
@@ -249,7 +246,7 @@ export default function DesignPhase0Route(props: {
           <pre>{JSON.stringify(state, null, 2)}</pre>
           <button onClick={() => dispatch({ type: 'reset' })}>reset state</button>
           <p>
-            <a href={`${path}/../`}>start over</a>
+            <Link to='/welcome'>start over</Link>
           </p>
         </details>
       </MaybeTheme>
