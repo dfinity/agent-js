@@ -9,5 +9,5 @@ import { Redirect } from 'react-router-dom';
 export default function AuthorizeRoute(): JSX.Element {
   return (
     <Redirect to={`/welcome${location.search}`} />
-  )
+  );
 }
