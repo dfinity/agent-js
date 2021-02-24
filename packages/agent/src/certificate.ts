@@ -11,7 +11,7 @@ async function getRootKey(agent: Agent): Promise<BinaryBlob> {
   return ((await agent.status()) as any).root_key;
 }
 
-interface Cert extends Record<string, any> {
+interface Cert {
   tree: HashTree;
   signature: Buffer;
   delegation?: Delegation;
@@ -36,9 +36,22 @@ interface Delegation extends Record<string, any> {
   certificate: Buffer;
 }
 
+function isBufferEqual(a: Buffer, b: Buffer): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
 export class Certificate {
   private readonly cert: Cert;
-  private verified: boolean = false;
+  private verified = false;
   private _rootKey: BinaryBlob | null = null;
 
   constructor(response: ReadStateResponse, private _agent: Agent = getDefaultAgent()) {
@@ -91,14 +104,18 @@ function extractDER(buf: Buffer): Buffer {
     throw new TypeError(`BLS DER-encoded public key must be ${expectedLength} bytes long`);
   }
   const prefix = buf.slice(0, DER_PREFIX.length);
-  if (!prefix.equals(DER_PREFIX)) {
+  if (!isBufferEqual(prefix, DER_PREFIX)) {
     throw new TypeError(
       `BLS DER-encoded public key is invalid. Expect the following prefix: ${DER_PREFIX}, but get ${prefix}`,
     );
   }
+
   return buf.slice(DER_PREFIX.length);
 }
 
+/**
+ * @param t
+ */
 export async function reconstruct(t: HashTree): Promise<Buffer> {
   switch (t[0]) {
     case NodeId.Empty:
@@ -139,6 +156,10 @@ function domain_sep(s: string): Buffer {
   return Buffer.concat([buf, Buffer.from(s)]);
 }
 
+/**
+ * @param path
+ * @param tree
+ */
 export function lookup_path(path: Buffer[], tree: HashTree): Buffer | undefined {
   if (path.length === 0) {
     switch (tree[0]) {
@@ -172,7 +193,7 @@ function find_label(l: Buffer, trees: HashTree[]): HashTree | undefined {
   for (const t of trees) {
     if (t[0] === NodeId.Labeled) {
       const p = Buffer.from(t[1] as ArrayBuffer);
-      if (l.equals(p)) {
+      if (isBufferEqual(l, p)) {
         return t[2];
       }
     }
