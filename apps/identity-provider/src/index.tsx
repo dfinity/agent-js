@@ -15,7 +15,7 @@ const NotFoundRoute = () => {
 };
 
 const App = () => {
-  const SignInRoute = React.lazy(() => import('./routes/SignIn'));
+  const Authorize = React.lazy(() => import('./routes/Authorize'));
 
   return (
     <IDPRootErrorBoundary>
@@ -26,8 +26,8 @@ const App = () => {
             <Suspense fallback={<div>Loading...</div>}>
               <Switch>
                 <Route exact path='/' component={HomeRoute} />
-                <Route path='/signin'>
-                  <SignInRoute NotFoundRoute={NotFoundRoute} WebAuthnIdentity={WebAuthnIdentity} />
+                <Route path='/authorize'>
+                  <Authorize NotFoundRoute={NotFoundRoute} WebAuthnIdentity={WebAuthnIdentity} />
                 </Route>
                 <NotFoundRoute />
               </Switch>
