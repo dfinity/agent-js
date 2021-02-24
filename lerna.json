@@ -3,7 +3,8 @@
     "apps/*",
     "demos/sample-javascript",
     "e2e/*",
-    "packages/*"
+    "packages/*",
+    "workers/*"
   ],
   "hoist": [
     "@typescript-eslint/eslint-plugin",
