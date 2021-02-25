@@ -1294,8 +1294,6 @@ export class ServiceClass extends ConstructType<PrincipalId> {
 
 /**
  * Encode a array of values
- * @param argTypes
- * @param args
  * @returns {Buffer} serialised value
  */
 export function encode(argTypes: Array<Type<any>>, args: any[]): BinaryBlob {
@@ -1592,56 +1590,30 @@ export const Nat64 = new FixedNatClass(64);
 
 export const Principal = new PrincipalClass();
 
-/**
- * @param {...any} types
- */
 export function Tuple<T extends any[]>(...types: T): TupleClass<T> {
   return new TupleClass(types);
 }
-/**
- * @param t
- */
 export function Vec<T>(t: Type<T>): VecClass<T> {
   return new VecClass(t);
 }
-/**
- * @param t
- */
 export function Opt<T>(t: Type<T>): OptClass<T> {
   return new OptClass(t);
 }
 
-/**
- * @param t
- */
 export function Record(t: Record<string, Type>): RecordClass {
   return new RecordClass(t);
 }
-/**
- * @param fields
- */
 export function Variant(fields: Record<string, Type>) {
   return new VariantClass(fields);
 }
-/**
- *
- */
 export function Rec() {
   return new RecClass();
 }
 
-/**
- * @param args
- * @param ret
- * @param annotations
- */
 export function Func(args: Type[], ret: Type[], annotations: string[] = []) {
   return new FuncClass(args, ret, annotations);
 }
 
-/**
- * @param t
- */
 export function Service(t: Record<string, FuncClass>): ServiceClass {
   return new ServiceClass(t);
 }
