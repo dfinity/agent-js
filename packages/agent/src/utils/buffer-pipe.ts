@@ -22,8 +22,8 @@ export default class BufferPipe {
   /**
    * @param buffer A buffer to write to the pipe.
    */
-  public write(buffer: Parameters<typeof Buffer.from>[0]): void {
-    const buf = Buffer.from(buffer);
+  public write(buffer: number[] | ArrayBuffer | Buffer | Uint8Array): void {
+    const buf = Buffer.from(buffer as unknown[]);
     this._bytesWrote += buf.length;
     this.buffer = Buffer.concat([this.buffer, buf]);
   }
