@@ -9,7 +9,6 @@
     "incremental": true,
     "jsx": "react",
     "lib": ["dom", "es2017", "ESNext"],
-    "module": "commonjs",
     "outDir": ".tsc-out",
     "sourceMap": true,
     "strict": true,
