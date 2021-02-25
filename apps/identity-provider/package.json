@@ -4,7 +4,7 @@
   "private": true,
   "main": "src/index.js",
   "scripts": {
-    "build": "npm run tsc && npm run webpack",
+    "build": "npm run webpack",
     "bundle": "npm run build",
     "ci": "npm run prettier && npm run lint && npm run build && npm run test",
     "develop": "webpack-dev-server --env development",

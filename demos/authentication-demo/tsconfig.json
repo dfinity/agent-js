@@ -7,7 +7,6 @@
     "esModuleInterop": true,
     "incremental": true,
     "lib": ["dom", "es2017", "ESNext"],
-    "module": "commonjs",
     "outDir": "./.tsc-out",
     "sourceMap": true,
     "strict": true,

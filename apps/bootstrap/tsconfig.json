@@ -8,7 +8,6 @@
     "forceConsistentCasingInFileNames": true,
     "incremental": true,
     "lib": ["dom", "es2017"],
-    "module": "commonjs",
     "outDir": "ts-out/",
     "sourceMap": true,
     "strict": true,

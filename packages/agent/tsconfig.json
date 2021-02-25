@@ -2,8 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "incremental": true,
-    "target": "es2017",
-    "module": "commonjs",
+    "target": "es6",
     "lib": [
       "dom",
       "es2017"
@@ -15,11 +14,6 @@
     "tsBuildInfoFile": "./build_info.json",
     "strict": true,
     "baseUrl": "./",
-    "paths": {
-      "@dfinity/agent": [
-        "src"
-      ]
-    },
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true
   },

@@ -7,7 +7,16 @@
         "es2015",
         "es2017"
       ],
-      "rootDir": "."
+      "rootDir": ".",
+      "baseUrl": "",
+      "paths": {
+        "@dfinity/agent": [
+          "packages/agent/src"
+        ],
+        "@dfinity/authentication": [
+          "packages/authentication/src"
+        ],
+      }
     },
     "files": [],
     "references": [
