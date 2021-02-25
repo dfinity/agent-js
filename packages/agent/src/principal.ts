@@ -1,6 +1,6 @@
-import base32 from 'base32.js';
 import { Buffer } from 'buffer/';
 import { BinaryBlob, blobFromHex, blobFromUint8Array, blobToHex } from './types';
+import { decode, encode } from './utils/base32';
 import { getCrc32 } from './utils/getCrc';
 import { sha224 } from './utils/sha224';
 
@@ -24,9 +24,7 @@ export class Principal {
   public static fromText(text: string): Principal {
     const canisterIdNoDash = text.toLowerCase().replace(/-/g, '');
 
-    const decoder = new base32.Decoder({ type: 'rfc4648', lc: false });
-    const result = decoder.write(canisterIdNoDash).finalize();
-    let arr = new Uint8Array(result);
+    let arr = decode(canisterIdNoDash);
     arr = arr.slice(4, arr.length);
 
     return new this(blobFromUint8Array(arr));
@@ -65,10 +63,13 @@ export class Principal {
     const bytes = Uint8Array.from(this._blob);
     const array = new Uint8Array([...checksum, ...bytes]);
 
-    const encoder = new base32.Encoder({ type: 'rfc4648', lc: false });
-    const result = encoder.write(array).finalize().toLowerCase();
+    const result = encode(array);
     const matches = result.match(/.{1,5}/g);
-    return matches ? matches.join('-') : '';
+    if (!matches) {
+      // This should only happen if there's no character, which is unreachable.
+      throw new Error();
+    }
+    return matches.join('-');
   }
 
   public toString() {
