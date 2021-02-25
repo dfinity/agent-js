@@ -5,6 +5,9 @@
   "scripts": {
     "ci": "npm run e2e",
     "e2e": "jest --verbose",
+    "eslint:fix": "npm run lint -- --fix",
+    "eslint": "eslint {basic,canisters,utils,*.js} --ext '.js,.jsx,.ts,.tsx'",
+    "lint": "npm run eslint",
     "mitm": "jest -i basic/mitm.test.ts"
   },
   "dependencies": {
@@ -14,9 +17,13 @@
     "@types/base64-js": "^1.2.5",
     "@types/jest": "^24.0.18",
     "@types/node": "^13.7.7",
+    "@typescript-eslint/eslint-plugin": "^4.14.2",
+    "@typescript-eslint/parser": "^4.14.2",
     "buffer": "^5.4.3",
-    "jest": "^24.9.0",
+    "eslint-plugin-jsdoc": "^31.6.0",
+    "eslint": "^7.19.0",
     "jest-expect-message": "^1.0.2",
+    "jest": "^24.9.0",
     "node-fetch": "2.6.1",
     "prettier": "^1.19.1",
     "text-encoding": "^0.7.0",
