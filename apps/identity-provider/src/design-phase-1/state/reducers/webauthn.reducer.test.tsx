@@ -3,7 +3,6 @@ import * as React from 'react';
 import { useReducer } from '../state-react';
 import { hexToBytes } from '../../../bytes';
 import { act } from 'react-dom/test-utils';
-import assert from 'assert';
 import { WebAuthnReducer } from './webauthn.reducer';
 import { Action } from './webauthn.reducer';
 import { EffectLifecycleAction } from '../reducer-effects';
@@ -60,7 +59,9 @@ describe('@dfinity/identity-provider/design-phase-1/reducers/webauthn.reducer', 
     const publicKeyCredentialCreatedAction = actions.find(
       ({ type }) => type === 'WebAuthn/publicKeyCredentialCreated',
     );
-    assert.ok(publicKeyCredentialCreatedAction);
+    if (!publicKeyCredentialCreatedAction) {
+      throw new Error();
+    }
     switch (publicKeyCredentialCreatedAction.type) {
       case 'WebAuthn/publicKeyCredentialCreated': {
         const { credential } = publicKeyCredentialCreatedAction.payload;
@@ -74,7 +75,9 @@ describe('@dfinity/identity-provider/design-phase-1/reducers/webauthn.reducer', 
         throw new Error('expected to find action of type "WebAuthn/publicKeyCredentialCreated"');
     }
 
-    assert.ok(latestState);
+    if (!latestState) {
+      throw new Error();
+    }
     expect(latestState.publicKeyCredential?.publicKey.hex).toBeTruthy();
   });
 });

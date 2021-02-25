@@ -27,7 +27,6 @@ const commonConfig = {
       process: "process/browser"
     },
     fallback: {
-      "assert": require.resolve("assert/"),
       "events": require.resolve("events/"),
       "stream": require.resolve("stream-browserify/"),
       "util": require.resolve("util/"),

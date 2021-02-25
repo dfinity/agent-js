@@ -1,5 +1,4 @@
 import * as oauth2 from './oauth2';
-import * as assert from 'assert';
 import { hexToBytes } from './bytes';
 
 /**
@@ -112,7 +111,9 @@ export function parseBearerToken(icIdpBearerToken: string): IParsedBearerToken {
   if (typeof publicKey !== 'string') {
     throw new Error('publicKey must be a string');
   }
-  assert.ok(delegations);
+  if (!delegations) {
+    throw new Error('delegations null');
+  }
   const result: IParsedBearerToken = {
     publicKey,
     delegations: delegations as IParsedBearerToken['delegations'],
