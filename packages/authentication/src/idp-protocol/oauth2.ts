@@ -2,8 +2,6 @@
  * @file Since ic-id-protocol is a profile of OAuth2. This file has everything related to OAuth2.
  */
 
-import * as assert from 'assert';
-
 // https://tools.ietf.org/html/rfc6749#section-4.2.2
 export interface OAuth2AccessTokenResponse {
   access_token: string; // REQUIRED.  The access token issued by the authorization server.
@@ -61,11 +59,17 @@ export function authorizationRequestFromQueryString(
 ): OAuth2AuthorizationRequest {
   // console.debug('authorizationRequestFromQueryString', { scope: searchParams.get('scope') })
   const login_hint = searchParams.get('login_hint');
-  assert.ok(login_hint, 'login_hint is required');
+  if (!login_hint) {
+    throw new Error('login_hint is required');
+  }
   const redirect_uri = searchParams.get('redirect_uri');
-  assert.ok(redirect_uri, 'redirect_uri is required');
+  if (!redirect_uri) {
+    throw new Error('redirect_uri is required');
+  }
   const response_type = searchParams.get('response_type') || 'token';
-  assert.ok(response_type === 'token');
+  if (response_type !== 'token') {
+    throw new Error('response_type must be token');
+  }
   const scope = searchParams.get('scope');
   const authorizationRequest: OAuth2AuthorizationRequest = {
     response_type,
@@ -88,12 +92,14 @@ export function accessTokenResponseFromQueryString(
   searchParams: URLSearchParams,
 ): OAuth2AccessTokenResponse {
   const access_token = searchParams.get('access_token');
-  assert.ok(access_token);
+  if (!access_token) {
+    throw new Error('No access_token found.');
+  }
 
   const expires_in = parseInt(searchParams.get('expires_in') || '');
-  assert.equal(typeof expires_in, 'number');
-  assert.equal(isNaN(expires_in), false);
-  assert.ok(expires_in);
+  if (typeof expires_in !== 'number' || !Number.isFinite(expires_in) || expires_in < 1) {
+    throw new Error('Invalid expires_in.');
+  }
 
   const token_type = searchParams.get('token_type');
   if (token_type !== 'bearer') {

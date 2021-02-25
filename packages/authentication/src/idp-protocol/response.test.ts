@@ -1,4 +1,3 @@
-import * as assert from 'assert';
 import * as icidResponse from './response';
 import { DelegationChain } from '../identity/delegation';
 import { hexEncodeUintArray } from './bytes';
@@ -10,8 +9,8 @@ test('can parse AuthenticationResponse fromQueryString', async () => {
       '?scope=a%20b&access_token=accessTokenValue&expires_in=2099000000&token_type=bearer&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Frelying-party-demo%2Foauth%2Fredirect_uri',
     ),
   );
-  assert.ok(authenticationResponse);
-  assert.ok('accessToken' in authenticationResponse);
+  expect(authenticationResponse).toBeTruthy();
+  expect('accessToken' in authenticationResponse).toBeTruthy();
   expect(authenticationResponse.accessToken).toStrictEqual('accessTokenValue');
   expect(authenticationResponse.tokenType).toStrictEqual('bearer');
   expect(authenticationResponse.expiresIn).toStrictEqual(2099000000);
@@ -53,8 +52,8 @@ describe('ic-id-protocol', () => {
         '?scope=a%20b&access_token=accessTokenValue&expires_in=2099000000&token_type=bearer&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Frelying-party-demo%2Foauth%2Fredirect_uri',
       ),
     );
-    assert.ok(authenticationResponse);
-    assert.ok('accessToken' in authenticationResponse);
+    expect(authenticationResponse).toBeTruthy();
+    expect('accessToken' in authenticationResponse).toBeTruthy();
     expect(authenticationResponse.accessToken).toStrictEqual('accessTokenValue');
     expect(authenticationResponse.tokenType).toStrictEqual('bearer');
     expect(authenticationResponse.expiresIn).toStrictEqual(2099000000);
