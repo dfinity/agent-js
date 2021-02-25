@@ -6,7 +6,7 @@
     "ci": "npm run e2e",
     "e2e": "jest --verbose",
     "eslint:fix": "npm run lint -- --fix",
-    "eslint": "eslint {basic,canisters,utils,*.js} --ext '.js,.jsx,.ts,.tsx'",
+    "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' basic canisters utils *.js",
     "lint": "npm run eslint",
     "mitm": "jest -i basic/mitm.test.ts"
   },
