@@ -23,7 +23,7 @@ test('round trip', () => {
     b: 'two',
     c: Buffer.from([3]) as BinaryBlob,
     d: { four: 'four' },
-    e: Principal.fromText('ic:FfFfFfFfFfFfFfFfd7'),
+    e: Principal.fromHex('FfFfFfFfFfFfFfFfd7'),
     f: Buffer.from([]) as BinaryBlob,
     g: new BigNumber('0xffffffffffffffff'),
   };
