@@ -11,7 +11,7 @@ let cache: {
 } | null = null;
 
 /**
- * Create an Actor that acts as an 'whoami servie' (echoes back request.caller Principal)
+ * Create an Actor that acts as an 'whoami service' (echoes back request.caller Principal)
  */
 export default async function (): Promise<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
