@@ -50,8 +50,8 @@ test("identity: query and call gives same principal", async () => {
 
 test("identity: two different Ed25519 keys should have a different principal", async () => {
   const { canisterId, idl } = await installIdentityCanister();
-  let identity1 = createIdentityActor(0, canisterId, idl);
-  let identity2 = createIdentityActor(1, canisterId, idl);
+  const identity1 = createIdentityActor(0, canisterId, idl);
+  const identity2 = createIdentityActor(1, canisterId, idl);
 
   const principal1 = await identity1.whoami_query();
   const principal2 = await identity2.whoami_query();
@@ -61,20 +61,20 @@ test("identity: two different Ed25519 keys should have a different principal", a
 test("delegation: principal is the same between delegated keys", async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
-  let masterKey = createIdentity(0);
-  let sessionKey = createIdentity(1);
+  const masterKey = createIdentity(0);
+  const sessionKey = createIdentity(1);
 
-  let delegation = await DelegationChain.create(
+  const delegation = await DelegationChain.create(
     masterKey,
     sessionKey.getPublicKey()
   );
   const id3 = DelegationIdentity.fromDelegation(sessionKey, delegation);
 
-  let identityActor1 = Actor.createActor(idl, {
+  const identityActor1 = Actor.createActor(idl, {
     canisterId,
     agent: new HttpAgent({ source: agent, identity: masterKey }),
   }) as any;
-  let identityActor2 = Actor.createActor(idl, {
+  const identityActor2 = Actor.createActor(idl, {
     canisterId,
     agent: new HttpAgent({ source: agent, identity: sessionKey }),
   }) as any;
@@ -94,9 +94,9 @@ test("delegation: principal is the same between delegated keys", async () => {
 test("delegation: works with 3 keys", async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
-  let rootKey = createIdentity(2);
-  let middleKey = createIdentity(1);
-  let bottomKey = createIdentity(0);
+  const rootKey = createIdentity(2);
+  const middleKey = createIdentity(1);
+  const bottomKey = createIdentity(0);
 
   const id1D2 = await DelegationChain.create(rootKey, middleKey.getPublicKey());
   const idDelegated = DelegationIdentity.fromDelegation(
@@ -111,11 +111,11 @@ test("delegation: works with 3 keys", async () => {
     )
   );
 
-  let identityActorBottom = Actor.createActor(idl, {
+  const identityActorBottom = Actor.createActor(idl, {
     canisterId,
     agent: new HttpAgent({ source: agent, identity: bottomKey }),
   }) as any;
-  let identityActorMiddle = Actor.createActor(idl, {
+  const identityActorMiddle = Actor.createActor(idl, {
     canisterId,
     agent: new HttpAgent({ source: agent, identity: middleKey }),
   }) as any;
@@ -141,10 +141,10 @@ test("delegation: works with 3 keys", async () => {
 test("delegation: works with 4 keys", async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
-  let rootKey = createIdentity(3);
-  let middleKey = createIdentity(2);
-  let middle2Key = createIdentity(1);
-  let bottomKey = createIdentity(0);
+  const rootKey = createIdentity(3);
+  const middleKey = createIdentity(2);
+  const middle2Key = createIdentity(1);
+  const bottomKey = createIdentity(0);
 
   const rootToMiddle = await DelegationChain.create(
     rootKey,
@@ -170,15 +170,15 @@ test("delegation: works with 4 keys", async () => {
     )
   );
 
-  let identityActorBottom = Actor.createActor(idl, {
+  const identityActorBottom = Actor.createActor(idl, {
     canisterId,
     agent: new HttpAgent({ source: agent, identity: bottomKey }),
   }) as any;
-  let identityActorMiddle = Actor.createActor(idl, {
+  const identityActorMiddle = Actor.createActor(idl, {
     canisterId,
     agent: new HttpAgent({ source: agent, identity: middleKey }),
   }) as any;
-  let identityActorMiddle2 = Actor.createActor(idl, {
+  const identityActorMiddle2 = Actor.createActor(idl, {
     canisterId,
     agent: new HttpAgent({ source: agent, identity: middle2Key }),
   }) as any;
