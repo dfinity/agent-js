@@ -39,8 +39,8 @@ export function ChangeCommandIdentity(command: BootstrapChangeIdentityCommand): 
       // syntax of only parsing the URL hash fragment for AuthenticationResponse.
       // After that, it should also be safe to remove all of the `allowSearch: true` functionality.
       // https://github.com/dfinity/agent-js/issues/125
-      allowSearch: true
-    }
+      allowSearch: true,
+    },
   );
   const responseIdentity = (() => {
     const chain = DelegationChain.fromJSON(

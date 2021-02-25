@@ -8,7 +8,7 @@ import { SerializedStorage, LocalStorageKey, NotFoundError } from '../state/stat
 import { useStateStorage } from '../state/state-storage-react';
 import { StateToStringCodec } from '../state/state-serialization';
 import { hexToBytes } from 'src/bytes';
-import { AuthenticationRequest, WebAuthnIdentity } from '@dfinity/authentication';
+import { WebAuthnIdentity } from '@dfinity/authentication';
 import AuthenticationScreenLayout from './layout/AuthenticationScreenLayout';
 import type { Theme } from '@material-ui/core/styles/createMuiTheme';
 import { ThemeProvider } from '@material-ui/core/styles';

@@ -13,5 +13,5 @@
     "eslint-plugin-jsdoc",
     "typescript"
   ],
-  "version": "0.6.24"
+  "version": "0.6.25-beta.0"
 }

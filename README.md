@@ -31,6 +31,19 @@ commands to keep in mind;
 You can also install lerna globally and not use `npx` if you wish; run `npm install -g lerna` then
 skip the `npx` part of the example commands.
 
+### Publishing
+
+To publish to NPM, create a branch and run the following commands;
+
+* `lerna bootstrap`. Makes sure everything is installed and up to date locally;
+* `lerna run build`. Builds all the applications and packages.
+* `lerna run test`. Just in case.
+* `lerna publish VERSION_NUMBER --dist-tag DIST_TAG`. The `VERSION_NUMBER` should be set to
+  the version to be published (e.g. `0.6.30`). The `DIST_TAG` argument can be ignored
+  
+This will change your code locally, so create a `chore: release VERSION_NUMBER` commit and
+push. Once the PR is created get someone to review it.
+
 ### GitHub Actions
 
 GitHub Actions for this repo are configured in [./.github/workflows](./.github/workflows).
