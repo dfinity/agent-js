@@ -10,10 +10,6 @@ import BigNumber from 'bignumber.js';
 import { Buffer } from 'buffer/';
 import Pipe from './buffer-pipe';
 
-/**
- * @param pipe
- * @param num
- */
 export function safeRead(pipe: Pipe, num: number): Buffer {
   if (pipe.buffer.length < num) {
     throw new Error('unexpected end of buffer');
@@ -21,9 +17,6 @@ export function safeRead(pipe: Pipe, num: number): Buffer {
   return pipe.read(num);
 }
 
-/**
- * @param value
- */
 export function lebEncode(value: number | BigNumber | bigint | BigInt): Buffer {
   if (typeof value === 'bigint' || value instanceof BigInt) {
     value = new BigNumber(value.toString(10), 10)
@@ -50,9 +43,6 @@ export function lebEncode(value: number | BigNumber | bigint | BigInt): Buffer {
   return new Buffer(pipe.buffer);
 }
 
-/**
- * @param pipe
- */
 export function lebDecode(pipe: Pipe): BigNumber {
   let shift = 0;
   let value = new BigNumber(0);
@@ -67,9 +57,6 @@ export function lebDecode(pipe: Pipe): BigNumber {
   return value;
 }
 
-/**
- * @param value
- */
 export function slebEncode(value: BigNumber | number): Buffer {
   if (typeof value === 'number') {
     value = new BigNumber(value);
@@ -92,9 +79,6 @@ export function slebEncode(value: BigNumber | number): Buffer {
     }
   }
 
-  /**
-   * @param num
-   */
   function getLowerBytes(num: BigNumber): number {
     const bytes = num.mod(0x80).toNumber();
     if (isNeg) {
@@ -107,9 +91,6 @@ export function slebEncode(value: BigNumber | number): Buffer {
   return new Buffer(pipe.buffer);
 }
 
-/**
- * @param pipe
- */
 export function slebDecode(pipe: Pipe): BigNumber {
   // Get the size of the buffer, then cut a buffer of that size.
   const pipeView = new Uint8Array(pipe.buffer);
@@ -132,10 +113,6 @@ export function slebDecode(pipe: Pipe): BigNumber {
   return value.negated().minus(1);
 }
 
-/**
- * @param value
- * @param byteLength
- */
 export function writeUIntLE(value: BigNumber | number, byteLength: number): Buffer {
   if ((value instanceof BigNumber && value.isNegative()) || value < 0) {
     throw new Error('Cannot write negative values.');
@@ -143,10 +120,6 @@ export function writeUIntLE(value: BigNumber | number, byteLength: number): Buff
   return writeIntLE(value, byteLength);
 }
 
-/**
- * @param value
- * @param byteLength
- */
 export function writeIntLE(value: BigNumber | number, byteLength: number): Buffer {
   if (typeof value === 'number') {
     value = new BigNumber(value);
@@ -169,10 +142,6 @@ export function writeIntLE(value: BigNumber | number, byteLength: number): Buffe
   return new Buffer(pipe.buffer);
 }
 
-/**
- * @param pipe
- * @param byteLength
- */
 export function readUIntLE(pipe: Pipe, byteLength: number): BigNumber {
   let val = new BigNumber(safeRead(pipe, 1)[0]);
   let mul = new BigNumber(1);
@@ -185,10 +154,6 @@ export function readUIntLE(pipe: Pipe, byteLength: number): BigNumber {
   return val;
 }
 
-/**
- * @param pipe
- * @param byteLength
- */
 export function readIntLE(pipe: Pipe, byteLength: number): BigNumber {
   let val = readUIntLE(pipe, byteLength);
   const mul = new BigNumber(2).pow(8 * (byteLength - 1) + 7);
