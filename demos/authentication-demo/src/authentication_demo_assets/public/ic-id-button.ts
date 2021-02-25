@@ -1,5 +1,5 @@
 import { authenticator } from "@dfinity/authentication";
-import { Actor } from "@dfinity/agent";
+import { Actor, blobFromUint8Array, derBlobFromBlob } from "@dfinity/agent";
 import * as canisters from "./canisters";
 import { defaultSessionStorage } from "./session";
 import tweetnacl from "tweetnacl";
@@ -53,14 +53,14 @@ export default class AuthenticationButton extends HTMLElement {
     authenticator.sendAuthenticationRequest({
       session: {
         identity: {
-          publicKey: {
+          getPublicKey: () => ({
             toDer() {
-              return Uint8Array.from([
+              return derBlobFromBlob(blobFromUint8Array(Uint8Array.from([
                 ...hexToBytes("302a300506032b6570032100"),
                 ...sessionKeyPair.publicKey,
-              ]);
+              ])));
             },
-          },
+          }),
         },
       },
       scope: [
