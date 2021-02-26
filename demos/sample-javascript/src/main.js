@@ -54,8 +54,6 @@ window.onload = async () => {
       } catch (err) {
         console.error("Error parsing redirect:", err);
       }
-
-      window.history.replaceState({}, document.title, "/");
     }
   }
 
