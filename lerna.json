@@ -1,12 +1,15 @@
 {
   "packages": [
     "apps/*",
+    "demos/authentication-demo",
     "demos/sample-javascript",
     "e2e/*",
     "packages/*",
     "workers/*"
   ],
   "hoist": [
+    "@types/jest",
+    "@types/node",
     "@typescript-eslint/eslint-plugin",
     "@typescript-eslint/parser",
     "eslint",
