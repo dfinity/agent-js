@@ -5,11 +5,16 @@ import agent from "../utils/agent";
 
 let cache: {
   canisterId: Principal;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   actor: any;
 } | null = null;
 
+/**
+ * Create a counter Actor + canisterId
+ */
 export default async function (): Promise<{
   canisterId: Principal;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   actor: any;
 }> {
   if (!cache) {
@@ -28,6 +33,7 @@ export default async function (): Promise<{
 
     cache = {
       canisterId,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       actor: Actor.createActor(idl, { canisterId, agent }) as any,
     };
   }

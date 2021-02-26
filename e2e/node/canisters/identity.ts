@@ -4,12 +4,17 @@ import path from "path";
 import agent from "../utils/agent";
 
 let cache: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   actor: any;
   canisterId: Principal;
   idl: IDL.InterfaceFactory;
 } | null = null;
 
+/**
+ * Create an Actor that acts as an 'whoami service' (echoes back request.caller Principal)
+ */
 export default async function (): Promise<{
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   actor: any;
   canisterId: Principal;
   idl: IDL.InterfaceFactory;
@@ -29,6 +34,7 @@ export default async function (): Promise<{
     cache = {
       canisterId,
       idl,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       actor: Actor.createActor(idl, { canisterId, agent }) as any,
     };
   }

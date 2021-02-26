@@ -1,3 +1,4 @@
+/* eslint-env node */
 module.exports = {
   bail: false,
   setupFiles: ["./test-setup"],
