@@ -3,7 +3,7 @@
  */
 
 // https://tools.ietf.org/html/rfc6749#section-4.2.2
-export interface OAuth2AccessTokenResponse {
+export type OAuth2AccessTokenResponse = {
   access_token: string; // REQUIRED.  The access token issued by the authorization server.
   token_type: 'bearer'; // default 'bearer' REQUIRED.  The type of the token issued as described in Section 7.1.
   expires_in: number; // The lifetime in seconds of the access token.
