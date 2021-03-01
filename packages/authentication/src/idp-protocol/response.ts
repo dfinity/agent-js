@@ -159,7 +159,7 @@ export function createSendResponseUri(redirectUri: URL, authenticationResponse: 
   }
   const responseUri = (() => {
     const _responseUrl = new URL(redirectUri.toString());
-    _responseUrl.hash = `#${queryStringify(authenticationResponse, true)}`
+    _responseUrl.hash = `#${queryStringify(toOauth(authenticationResponse), true)}`
     return _responseUrl.toString();
   })();
   return responseUri;
