@@ -1,7 +1,8 @@
 import {AnonymousIdentity, HttpAgent, Principal} from '@dfinity/agent';
 import {
   Authenticator,
-  DelegationChain, DelegationIdentity,
+  DelegationChain,
+  DelegationIdentity,
   Ed25519KeyIdentity
 } from '@dfinity/authentication';
 
