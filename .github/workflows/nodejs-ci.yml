@@ -9,7 +9,22 @@ jobs:
       matrix:
         os: [ubuntu-18.04]
         ghc: ['8.8.4']
-        spec: ['release-0.15']
+        spec:
+          - release-0.15
+          # Spec: Add module hash and controller to state tree (#276)
+          - c23cce1b982eff77dd285d7ce63209edb8a96b85
+          # ic-ref: Cache the module hash (#289)
+          - 147c64d94ff6350a63e58df9690e5144bfe04045
+          # Clarify and test availability of certification APIs (#286)
+          - 061abbd96edfcea6e9897e3dc5afdeb5d684e197
+          #  Backport ingress filtering and secp256k1` 
+          - 7381b702eaca27c21b2323c77abbf5956ef556f7
+          #  ic-ref(-test): Implement and test canister_inspect_message (#287)
+          - a5c34a30bac688af2585ce7d6a9e893e8598c718
+          #  ic-ref: Support for secp256k1 (#267)
+          - 3a9dd6a2f9c0ed93283bd6d3ab6f027f036e3152
+          #  Fix more merge mistakes
+          - a4b893d04a38e833365b5d83e015e98ba179935c
         node:
           - 12
           - 14
