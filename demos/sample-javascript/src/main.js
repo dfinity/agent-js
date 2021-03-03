@@ -1,5 +1,10 @@
-import { HttpAgent, Principal } from '@dfinity/agent';
-import { AuthenticationClient } from './authClient';
+import {AnonymousIdentity, HttpAgent, Principal} from '@dfinity/agent';
+import {
+  Authenticator,
+  DelegationChain,
+  DelegationIdentity,
+  Ed25519KeyIdentity
+} from '@dfinity/authentication';
 
 const signInBtn = document.getElementById("signinBtn");
 const signOutBtn = document.getElementById("signoutBtn");
@@ -10,62 +15,94 @@ const canisterIdEl = document.getElementById("canisterId");
 const principalEl = document.getElementById("principal");
 const idpUrlEl = document.getElementById("idpUrl");
 
-// This is a canister that exists in the main network.
-const authClient = new AuthenticationClient({
-  identityProvider: new URL(idpUrlEl.value),
-});
+let identity = new AnonymousIdentity();
 
-signInBtn.addEventListener("click", async () => {
-  // Creates an Ed25519 identity, serializes it to JSON, saves it to
-  // storage, then window.location = CreateUrlFromOptions(options);
-  await new AuthenticationClient({
-    identityProvider: new URL(idpUrlEl.value),
-  }).loginWithRedirect({
+// This should not be needed if we want to use the default identity provider
+// which is https://auth.ic0.app/.
+const url = new URL(idpUrlEl.value);
+const authenticator = new Authenticator({
+  identityProvider: { url: url.toString() },
+});
+// Remove the lines above to use the default authenticator.
+
+function login() {
+  identity = Ed25519KeyIdentity.generate();
+  const session = { identity };
+  localStorage.setItem('ic-session', JSON.stringify(session));
+
+  authenticator.sendAuthenticationRequest({
     redirectUri: window.location.origin,
-    scope: [{ principal: Principal.fromText(canisterIdEl.value) }],
+    session,
+    scope: [
+      { principal: Principal.fromText(canisterIdEl.value) },
+    ],
   });
-});
+}
 
-signOutBtn.addEventListener("click", async () => {
-  await new AuthenticationClient({
-    identityProvider: new URL(idpUrlEl.value),
-  }).logout({
-    returnTo: window.location.origin,
-  });  // This basically clear localStorage then window.location = options.returnTo
-});
+function logout() {
+  localStorage.removeItem('ic-session');
+  identity = new AnonymousIdentity();
+  updatePrincipal();
+}
 
-let identity = authClient.getIdentity();
+function handleCallback(session) {
+  const searchParams = new URLSearchParams(location.search);
+  // Remove the `#` at the start.
+  const hashParams = new URLSearchParams(location.hash.substr(1));
 
-window.onload = async () => {
-  const isAuthenticated = await authClient.isAuthenticated();
-  if (isAuthenticated) {
-    console.log("User already authenticated");
-    identity = await authClient.getIdentity();
-  } else {
-    if (authClient.shouldParseResult(location)) {
-      try {
-        // Gets search and hash and extracts all info,
-        // calls storage.set to store the authResponse object (DelegationChain),
-        // creates a DelegationIdentity with the Ed25519 from storage
-        // and the authentication response from this.
-        const result = await authClient.handleRedirectCallback(location);
-        // This is instanceof DelegationIdentity
-        identity = result.identity;
-      } catch (err) {
-        console.error("Error parsing redirect:", err);
-      }
+  const maybeAccessToken = searchParams.get('access_token') || hashParams.get('access_token');
+  if (maybeAccessToken) {
+    const chainJson = [...maybeAccessToken]
+      .reduce((acc, curr, i) => {
+        acc[Math.floor(i / 2)] = (acc[i / 2 | 0] || "") + curr;
+        return acc;
+      }, [])
+      .map(x => Number.parseInt(x, 16))
+      .map(x => String.fromCharCode(x))
+      .join('');
+
+    const key = Ed25519KeyIdentity.fromParsedJson(session.identity);
+    identity = DelegationIdentity.fromDelegation(key, DelegationChain.fromJSON(chainJson));
+
+    localStorage.setItem('ic-session', JSON.stringify({
+      ...session,
+      authenticationResponse: chainJson,
+    }));
+  }
+}
+
+signInBtn.addEventListener("click", login);
+signOutBtn.addEventListener("click", logout);
+
+function updatePrincipal() {
+  principalEl.innerHTML = `<div>ID: ${identity.getPrincipal().toText()}</div>`;
+}
+
+function init() {
+  // Verify if an identity already exists.
+  const maybeSession = localStorage.getItem('ic-session');
+  if (maybeSession) {
+    let session = JSON.parse(maybeSession);
+    // TODO: move this into Authenticator.
+    if (session.authenticationResponse) {
+      const key = Ed25519KeyIdentity.fromParsedJson(session.identity);
+      const chain = DelegationChain.fromJSON(session.authenticationResponse);
+      identity = DelegationIdentity.fromDelegation(key, chain);
+    } else {
+      handleCallback(session);
     }
   }
 
-  principalEl.innerText = identity.getPrincipal().toText();
-};
+  updatePrincipal();
+}
 
-whoamiBtn.addEventListener("click", async () => {
+window.onload = init;
+
+whoamiBtn.addEventListener("click", () => {
   if (identity === null) {
-    console.error("No identity... Window not loaded?");
+    alert("No identity... Window not loaded?");
     return;
   }
-
 
   // We either have an Agent with an anonymous identity (not authenticated),
   // or already authenticated agent, or parsing the redirect from window.location.
@@ -76,9 +113,13 @@ whoamiBtn.addEventListener("click", async () => {
 
   const canisterId = Principal.fromText(canisterIdEl.value);
   const actor = agent.makeActorFactory(({IDL}) => IDL.Service({
-    whoami: IDL.Func([], [IDL.Principal], ['query']),
+    whoami: IDL.Func([], [IDL.Principal], []),
   }))({agent, canisterId});
 
+  whoAmIResponseEl.innerText = "Loading..."
+
   // Similar to the sample project on dfx new:
-  whoAmIResponseEl.innerText = (await actor.whoami()).toText();
+  actor.whoami().then(principal => {
+    whoAmIResponseEl.innerText = principal.toText();
+  });
 });
