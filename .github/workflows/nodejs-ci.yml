@@ -9,7 +9,9 @@ jobs:
       matrix:
         os: [ubuntu-18.04]
         ghc: ['8.8.4']
-        spec: ['release-0.15']
+        icrefgitref:
+          - release-0.15
+          - c23cce1b982eff77dd285d7ce63209edb8a96b85
         node:
           - 12
           - 14
@@ -44,7 +46,7 @@ jobs:
         # Personal Read-only Access Token created by hans.larsen@dfinity.org
         token: ${{ secrets.IC_REF_TOKEN }}
         path: ic-ref
-        ref: ${{ matrix.spec }}
+        ref: ${{ matrix.icrefgitref }}
 
     - name: Cache ~/.cabal/store
       uses: actions/cache@v2
