@@ -46,7 +46,7 @@ const styler = function () {
     consentTable: {
       '& th,td': {
         'textAlign': 'left',
-        'overflowWrap': 'break-word',
+        'overflowWrap': 'anywhere',
         'wordBreak': 'break-all',
         '&:first-child': {
           fontWeight: 'bold',
