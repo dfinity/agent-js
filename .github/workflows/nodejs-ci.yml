@@ -14,14 +14,18 @@ jobs:
           - release-0.15
           # this works https://github.com/dfinity/agent-js/pull/280/checks?check_run_id=2026797772
           - 061abbd96edfcea6e9897e3dc5afdeb5d684e197
-          #  Backport ingress filtering and secp256k1` 
+          #  this works Backport ingress filtering and secp256k1` 
           - 7381b702eaca27c21b2323c77abbf5956ef556f7
-          #  ic-ref(-test): Implement and test canister_inspect_message (#287)
-          - a5c34a30bac688af2585ce7d6a9e893e8598c718
-          #  ic-ref: Support for secp256k1 (#267)
-          - 3a9dd6a2f9c0ed93283bd6d3ab6f027f036e3152
-          #  Fix more merge mistakes
-          - a4b893d04a38e833365b5d83e015e98ba179935c
+          #  no work ic-ref(-test): Implement and test canister_inspect_message (#287)
+          # - a5c34a30bac688af2585ce7d6a9e893e8598c718
+          #  no work ic-ref: Support for secp256k1 (#267)
+          # - 3a9dd6a2f9c0ed93283bd6d3ab6f027f036e3152
+          - 79b8c6e5215e59ecdffc6e536cb71afa925ccf36
+          - 1b982e2af1181a18654852e549f2f018543f6806
+          - 1734e0816d61e470d2fda918e825535d3c62a05e
+          # no work - Fix more merge mistakes
+          # - a4b893d04a38e833365b5d83e015e98ba179935c
+          - 49b6fbd288caf361e025e6920b6a4cd87ca2bd38
         node:
           # - 12
           - 14
