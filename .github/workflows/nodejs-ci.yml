@@ -112,6 +112,7 @@ jobs:
         sleep 1
 
     - run: npx lerna run e2e
+      continue-on-error: true
       env:
         CI: true
         IC_REF_PORT: ${{ steps.ic_ref.outputs.IC_REF_PORT }}
