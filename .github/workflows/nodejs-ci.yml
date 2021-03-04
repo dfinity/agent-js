@@ -6,13 +6,14 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-18.04]
         ghc: ['8.8.4']
         spec:
-          # - release-0.15
+          - release-0.15
           # this works https://github.com/dfinity/agent-js/pull/280/checks?check_run_id=2026797772
-          # - 061abbd96edfcea6e9897e3dc5afdeb5d684e197
+          - 061abbd96edfcea6e9897e3dc5afdeb5d684e197
           #  Backport ingress filtering and secp256k1` 
           - 7381b702eaca27c21b2323c77abbf5956ef556f7
           #  ic-ref(-test): Implement and test canister_inspect_message (#287)
