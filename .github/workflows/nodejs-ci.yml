@@ -6,15 +6,15 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-18.04]
         ghc: ['8.8.4']
-        icrefgitref:
-          - release-0.15
-          - c23cce1b982eff77dd285d7ce63209edb8a96b85
+        spec:
+        - release-0.15 # https://github.com/dfinity-lab/ic-ref/tree/release-0.15
         node:
-          - 12
-          - 14
+        - 12
+        - 14
 
     steps:
     - uses: actions/checkout@v2

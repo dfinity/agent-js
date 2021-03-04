@@ -19,9 +19,7 @@ let identity = new AnonymousIdentity();
 
 // This should not be needed if we want to use the default identity provider
 // which is https://auth.ic0.app/.
-const getIdpElIdentityProvider = () => ({
-  url: new URL(idpUrlEl.value)
-});
+const getIdpElUrl = () => new URL(idpUrlEl.value);
 // Remove the lines above to use the default authenticator.
 
 function login() {
@@ -30,7 +28,9 @@ function login() {
   localStorage.setItem('ic-session', JSON.stringify(session));
   const loginAuthenticator = new Authenticator({ identityProvider: { url: getIdpElUrl() }});
   loginAuthenticator.sendAuthenticationRequest({
-    identityProvider: getIdpElIdentityProvider(),
+    identityProvider: {
+      url: getIdpElUrl(),
+    },
     redirectUri: window.location.origin,
     session,
     scope: [
