@@ -46,11 +46,14 @@ const styler = function () {
     consentTable: {
       '& th,td': {
         'textAlign': 'left',
-        'overflowWrap': 'anywhere',
+        'overflowWrap': 'break-word',
+        'wordBreak': 'break-all',
         '&:first-child': {
           fontWeight: 'bold',
           textAlign: 'right',
           overflowWrap: 'initial',
+          whiteSpace: 'nowrap',
+          wordBreak: 'normal',
         },
         'verticalAlign': 'top',
         'paddingRight': '1em',

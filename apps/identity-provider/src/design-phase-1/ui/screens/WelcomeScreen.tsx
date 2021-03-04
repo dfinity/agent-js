@@ -47,7 +47,7 @@ function CallToAction(props: {
     return hexEncodeUintArray(identity.getPublicKey().toDer());
   }, [identity]);
   const ContinueButtonText = styled('div')({
-    maxWidth: '20em',
+    maxWidth: '6em',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   });
