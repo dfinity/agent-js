@@ -13,7 +13,7 @@
     "util": "^0.12.3",
     "webpack": "^5.24.1",
     "webpack-cli": "^4.5.0",
-    "webpack-dev-server": "^3.11.2"
+    "webpack-dev-server": "^4.0.0-beta.0"
   },
   "scripts": {
     "develop": "webpack-dev-server"

@@ -108,10 +108,12 @@ const productionConfig = {
 const developmentConfig = {
   mode: 'development',
   devServer: {
-    contentBase: './dist',
+    static: {
+      directory: path.join(__dirname, './dist'),
+      serveIndex: true,
+    },
     hot: true,
     historyApiFallback: true,
-    serveIndex: true,
   },
   plugins: [
     new BundleAnalyzerPlugin({
