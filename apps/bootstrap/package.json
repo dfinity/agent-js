@@ -45,7 +45,7 @@
     "typescript": "^3.6.3",
     "util": "^0.12.3",
     "webpack": "^5.24.2",
-    "webpack-cli": "^3.3.10",
+    "webpack-cli": "^4.5.0",
     "webpack-dev-server": "^3.11.0",
     "whatwg-fetch": "^3.0.0",
     "worker-plugin": "^4.0.3"
