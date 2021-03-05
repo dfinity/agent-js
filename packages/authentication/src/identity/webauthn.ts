@@ -186,6 +186,7 @@ export class WebAuthnIdentity extends SignIdentity {
           {
             type: 'public-key',
             id: this._rawId,
+            transports: ['internal'],
           },
         ],
         challenge: blob,
