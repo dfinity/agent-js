@@ -57,7 +57,7 @@ describe('@dfinity/authentication Authenticator', () => {
     
         function listener() {
           listenerCallCount++;
-          resolve();
+          resolve(undefined);
         }
       });
     }

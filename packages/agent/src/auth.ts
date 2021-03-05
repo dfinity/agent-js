@@ -53,7 +53,7 @@ export abstract class SignIdentity implements Identity {
   /**
    * Signs a blob of data, with this identity's private key.
    */
-  public abstract async sign(blob: BinaryBlob): Promise<BinaryBlob>;
+  public abstract sign(blob: BinaryBlob): Promise<BinaryBlob>;
 
   /**
    * Get the principal represented by this identity. Normally should be a
