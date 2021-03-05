@@ -15,7 +15,7 @@
     "serve": "webpack-dev-server --env production",
     "tsc": "tsc -b",
     "test": "jest --verbose",
-    "webpack": "webpack"
+    "webpack": "webpack --env production"
   },
   "dependencies": {
     "@dfinity/agent": "^0.6.25-beta.0",
