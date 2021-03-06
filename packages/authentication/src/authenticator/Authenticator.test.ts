@@ -57,12 +57,7 @@ describe('@dfinity/authentication Authenticator', () => {
       });
     }
 
-    await Promise.race([
-      new Promise((resolve, reject) =>
-        setInterval(() => reject(new Error('testAddEventListener timeout')), 3000),
-      ),
-      testAddEventListener(),
-    ]);
+    testAddEventListener();
     expect(firstListener).toBeCalledTimes(1);
 
     // Now removeEventListener and ensure our first listener isn't called

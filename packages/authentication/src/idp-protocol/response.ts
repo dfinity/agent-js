@@ -184,7 +184,7 @@ function queryStringify(
   }
   for (const key of recordKeys) {
     const value = record[key];
-    if (value === null ?? value === undefined) {
+    if (value === null || value === undefined) {
       continue;
     }
     searchParams.set(key, value?.toString());
