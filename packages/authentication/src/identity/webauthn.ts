@@ -7,7 +7,7 @@ import {
   PublicKey,
   SignIdentity,
 } from '@dfinity/agent';
-import borc = require('borc');
+import borc from 'borc';
 import * as tweetnacl from 'tweetnacl';
 
 function _coseToDerEncodedBlob(cose: ArrayBuffer): DerEncodedBlob {

@@ -73,7 +73,7 @@ export function fromQueryString(params: URLSearchParams): AuthenticationRequest 
     },
     redirectUri: oauth2Request.redirect_uri,
     state: oauth2Request.state,
-    scope: oauth2Request.scope,
+    scope: oauth2Request.scope as string,
   };
   return authenticationRequest;
 }

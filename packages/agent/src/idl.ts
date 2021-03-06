@@ -1,6 +1,6 @@
 // tslint:disable:max-classes-per-file
 import BigNumber from 'bignumber.js';
-import Pipe = require('buffer-pipe');
+import Pipe from 'buffer-pipe';
 import { Buffer } from 'buffer/';
 import { Principal as PrincipalId } from './principal';
 import { BinaryBlob, blobFromBuffer, JsonValue } from './types';

@@ -104,7 +104,7 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
     const authenticationRequestUrl = urls[0];
     expect(authenticationRequestUrl.toString()).toBeTruthy();
     expect(authenticationRequestUrl.searchParams.get('redirect_uri')).toEqual(
-      sendAuthenticationRequestCommand.redirectUri.toString(),
+      sendAuthenticationRequestCommand.redirectUri?.toString(),
     );
     expect(authenticationRequestUrl.searchParams.get('scope')).toEqual('');
     expect(authenticationRequestUrl.searchParams.get('login_hint')).toBeTruthy();
@@ -135,7 +135,7 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
     expect(assignments.length).toEqual(1);
     const assignedUrl = assignments[0];
     expect(assignedUrl.searchParams.get('redirect_uri')).toEqual(
-      sendAuthenticationRequestCommand.redirectUri.toString(),
+      sendAuthenticationRequestCommand.redirectUri?.toString(),
     );
   });
 });

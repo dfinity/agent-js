@@ -62,27 +62,27 @@ export function fromQueryString(searchParams: URLSearchParams): AuthenticationRe
  */
 export function fromUrl(
   url: URL,
-  options:{
+  options: {
     allowSearch?: boolean;
   },
 ): AuthenticationResponse {
   const candidates = [
-    url.hash.replace(/^#/,''),
+    url.hash.replace(/^#/, ''),
     ...(options.allowSearch ? [url.search.replace(/^\?/, '')] : []),
-  ]
-  const failures: Array<{ candidate: string, error: Error }> = [];
-  for (let i=0; i<candidates.length; i++) {
+  ];
+  const failures: Array<{ candidate: string; error: Error }> = [];
+  for (let i = 0; i < candidates.length; i++) {
     const maybeUrlEncodedString = candidates[i];
     try {
       return fromQueryString(new URLSearchParams(maybeUrlEncodedString));
     } catch (error) {
-      failures.push({ error, candidate: maybeUrlEncodedString })
+      failures.push({ error, candidate: maybeUrlEncodedString });
     }
   }
   throw Object.assign(new Error('Failed to create AuthenticationResponse from url'), {
     url,
     failures,
-  })
+  });
 }
 
 interface IParsedBearerToken {
@@ -153,13 +153,16 @@ export function toOauth(response: AuthenticationResponse): oauth2.OAuth2AccessTo
  *   The endpoint URI MUST NOT include a fragment component (https://tools.ietf.org/html/rfc6749#section-3.1.2).
  * @param authenticationResponse - response to send to the redirect_uri via redirect.
  */
-export function createSendResponseUri(redirectUri: URL, authenticationResponse: AuthenticationResponse): string {
+export function createSendResponseUri(
+  redirectUri: URL,
+  authenticationResponse: AuthenticationResponse,
+): string {
   if (redirectUri.hash) {
-    throw new Error(`redirectUri MUST NOT already have a hash fragment`)
+    throw new Error(`redirectUri MUST NOT already have a hash fragment`);
   }
   const responseUri = (() => {
     const _responseUrl = new URL(redirectUri.toString());
-    _responseUrl.hash = `#${queryStringify(toOauth(authenticationResponse), true)}`
+    _responseUrl.hash = `#${queryStringify(toOauth(authenticationResponse), true)}`;
     return _responseUrl.toString();
   })();
   return responseUri;
@@ -170,18 +173,21 @@ export function createSendResponseUri(redirectUri: URL, authenticationResponse: 
  * @param record - key/value pairs
  * @param [sortKeys=false] - whether or not to sort the keys in the returned query string.
  */
-function queryStringify(record: Record<string, string | number>, sortKeys = false): string {
-  const searchParams = new URLSearchParams;
-  const recordKeys = Object.keys(record)
+function queryStringify(
+  record: Record<string, string | number | undefined>,
+  sortKeys = false,
+): string {
+  const searchParams = new URLSearchParams();
+  const recordKeys = Object.keys(record);
   if (sortKeys) {
     recordKeys.sort();
   }
   for (const key of recordKeys) {
     const value = record[key];
-    if ([null,undefined].includes(value)) {
+    if (value === null ?? value === undefined) {
       continue;
     }
     searchParams.set(key, value?.toString());
   }
-  return searchParams.toString()
+  return searchParams.toString();
 }

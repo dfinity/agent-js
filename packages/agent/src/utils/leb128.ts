@@ -7,7 +7,7 @@
 // TODO: The best solution would be to have our own buffer type around
 //       Uint8Array which is standard.
 import BigNumber from 'bignumber.js';
-import Pipe = require('buffer-pipe');
+import Pipe from 'buffer-pipe';
 import { Buffer } from 'buffer/';
 
 export function safeRead(pipe: Pipe, num: number): Buffer {
@@ -19,7 +19,7 @@ export function safeRead(pipe: Pipe, num: number): Buffer {
 
 export function lebEncode(value: number | BigNumber | bigint | BigInt): Buffer {
   if (typeof value === 'bigint' || value instanceof BigInt) {
-    value = new BigNumber(value.toString(10), 10)
+    value = new BigNumber(value.toString(10), 10);
   } else if (typeof value === 'number') {
     value = new BigNumber(value);
   }
