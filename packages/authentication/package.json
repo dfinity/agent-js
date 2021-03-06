@@ -1,10 +1,10 @@
 {
   "name": "@dfinity/authentication",
   "version": "0.6.25-beta.0",
-  "main": ".tsc-out/packages/authentication/src/index.js",
-  "types": ".tsc-out/packages/authentication/src/index.d.ts",
+  "main": "./lib/cjs/index.js",
+  "module": "./lib/esm/index.js",
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b && tsc -p tsconfig-cjs.json",
     "bundle": "npm run build",
     "ci": "npm run prettier && npm run lint && npm run test",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
