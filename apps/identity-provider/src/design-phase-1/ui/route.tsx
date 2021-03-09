@@ -162,13 +162,14 @@ export default function FlowRoute(props: {
               exact
               path={urls.session.consent}
               component={() => {
-                const authenticationRequestHasConsent = React.useMemo(() => {
-                  const { request, consent } = state.authentication;
+                const authenticationRequestHasConsentAndResponse = React.useMemo(() => {
+                  const { request, consent, response } = state.authentication;
                   if (!consent) return false;
-                  return JSON.stringify(request) === JSON.stringify(consent.proposal.request);
+                  const consentMatch = JSON.stringify(request) === JSON.stringify(consent.proposal.request);
+                  return consentMatch && !!response
                 }, [state.authentication]);
                 /** If the we've already consented to this request, redirect to next screen. */
-                if (authenticationRequestHasConsent) {
+                if (authenticationRequestHasConsentAndResponse) {
                   return <Redirect to={urls.response.confirmation} />;
                 }
                 return (
