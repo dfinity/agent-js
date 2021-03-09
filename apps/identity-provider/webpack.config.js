@@ -108,10 +108,12 @@ const productionConfig = {
 const developmentConfig = {
   mode: 'development',
   devServer: {
-    contentBase: './dist',
+    static: {
+      directory: path.join(__dirname, './dist'),
+      serveIndex: true,
+    },
     hot: true,
     historyApiFallback: true,
-    serveIndex: true,
   },
   plugins: [
     new BundleAnalyzerPlugin({
@@ -122,14 +124,11 @@ const developmentConfig = {
 };
 
 module.exports = (env) => {
-  if (env === "development") {
+  if (env.development) {
     return merge(commonConfig, developmentConfig);
-  } else if (env === "production") {
-    return merge(commonConfig, productionConfig);
-  } else if (env === undefined) {
-    console.error("No environment specified, defaulting to prod.")
-    return merge(commonConfig, productionConfig);
-  } else {
-    throw new Error(`Invalid environment name: "${JSON.stringify(env)}"`);
   }
+  if (env.production) {
+    return merge(commonConfig, productionConfig);
+  }
+  throw new Error(`Invalid environment name: "${JSON.stringify(env)}"`);
 }

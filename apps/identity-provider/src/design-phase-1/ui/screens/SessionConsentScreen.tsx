@@ -47,10 +47,13 @@ const styler = function () {
       '& th,td': {
         'textAlign': 'left',
         'overflowWrap': 'anywhere',
+        'wordBreak': 'break-all',
         '&:first-child': {
           fontWeight: 'bold',
           textAlign: 'right',
           overflowWrap: 'initial',
+          whiteSpace: 'nowrap',
+          wordBreak: 'normal',
         },
         'verticalAlign': 'top',
         'paddingRight': '1em',
