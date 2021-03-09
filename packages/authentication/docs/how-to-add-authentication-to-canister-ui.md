@@ -77,8 +77,3 @@ We'll start from a fresh project.
     ```
 
 ## Example Apps
-
-* [ic-id-aware Custom Elements](https://github.com/dfinity/agent-js/tree/identity-provider/2021-01-04/packages/authentication-demo)
-* outside of monorepo
-    * https://github.com/gobengo/ic-whoami/
-        * https://unyqz-hiaaa-aaaab-aacea-cai.ic0.app
