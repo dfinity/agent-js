@@ -61,7 +61,8 @@ function hashValue(value: unknown): BinaryBlob {
     typeof (value as ToHashable).toHash === 'function'
   ) {
     return  hashValue((value as ToHashable).toHash())
-  // TODO how would this be implemented?
+  // TODO This should be move to a specific async method as the webauthn flow required
+  // the flow to be synchronous to ensure Safari touch id works.
   // } else if (value instanceof Promise) {
   //   return value.then(x => hashValue(x));
   } else if (isBigNumber(value)) {
