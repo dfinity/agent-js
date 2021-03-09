@@ -107,7 +107,7 @@ async function _createSingleDelegation(
   );
   // The signature is calculated by signing the concatenation of the domain separator
   // and the message.
-  const challenge = new Uint8Array([...domainSeparator, ...(await requestIdOf(delegation))]);
+  const challenge = new Uint8Array([...domainSeparator, ...(requestIdOf(delegation))]);
   const signature = await from.sign(blobFromUint8Array(challenge));
   // This is extremely helpful to have in the debug log when tracking down ic-ref authentication signature errors.
   console.debug('@dfinity/authentication _createSingleDelegation', {
