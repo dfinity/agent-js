@@ -17,7 +17,7 @@
   },
   "scripts": {
     "build": "lerna run build --stream",
-    "line:fix": "npm run lint -- --fix",
+    "lint:fix": "npm run lint -- --fix",
     "lint:e2e": "eslint --cache --cache-location node_modules/.cache/eslint 'e2e/*/**/*.ts*'",
     "lint:packages": "lerna run lint",
     "lint": "npm run lint:packages",

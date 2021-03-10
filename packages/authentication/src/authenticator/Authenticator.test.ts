@@ -48,7 +48,7 @@ describe('@dfinity/authentication Authenticator', () => {
     // Will need to store this function ref to be able to pass it to removeListener
     const firstListener = jest.fn();
     async function testAddEventListener() {
-      await new Promise(resolve => {
+      await new Promise(() => {
         authenticator.addEventListener(IdentityChangedEventIdentifier, firstListener);
 
         eventTarget.dispatchEvent(
