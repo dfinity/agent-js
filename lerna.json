@@ -1,7 +1,6 @@
 {
   "packages": [
     "apps/*",
-    "demos/authentication-demo",
     "demos/sample-javascript",
     "e2e/*",
     "packages/*",
