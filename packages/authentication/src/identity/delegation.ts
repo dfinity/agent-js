@@ -107,7 +107,10 @@ async function _createSingleDelegation(
   );
   // The signature is calculated by signing the concatenation of the domain separator
   // and the message.
-  const challenge = new Uint8Array([...domainSeparator, ...(await requestIdOf(delegation))]);
+  // Note: To ensure Safari treats this as a user gesture, ensure to not use async methods
+  // besides the actualy webauthn functionality (such as `sign`). Safari will de-register
+  // a user gesture if you await an async call thats not fetch, xhr, or setTimeout.
+  const challenge = new Uint8Array([...domainSeparator, ...(requestIdOf(delegation))]);
   const signature = await from.sign(blobFromUint8Array(challenge));
   // This is extremely helpful to have in the debug log when tracking down ic-ref authentication signature errors.
   console.debug('@dfinity/authentication _createSingleDelegation', {
