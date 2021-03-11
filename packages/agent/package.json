@@ -1,10 +1,10 @@
 {
   "name": "@dfinity/agent",
   "version": "0.6.25-beta.0",
-  "main": "src/index.js",
-  "types": "src/index.d.ts",
+  "main": "./lib/cjs/index",
+  "module": "./lib/esm/index",
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b && tsc -p tsconfig-cjs.json",
     "bundle": "npm run build",
     "ci": "npm run prettier && npm run lint && npm run test",
     "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' src/index.ts src/auth.ts src/request_id.ts src/request_id.test.ts",

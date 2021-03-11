@@ -83,7 +83,6 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
     });
     // sessionIdentity was generated for us.
     const hexPattern = /[0-9a-f]/gi;
-    console.log({ message });
     expect(message.sessionIdentity.hex.match(hexPattern)).toBeTruthy();
   });
   it('can send AuthenticationRequest through UrlTransport', async () => {
@@ -104,24 +103,22 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
     const authenticationRequestUrl = urls[0];
     expect(authenticationRequestUrl.toString()).toBeTruthy();
     expect(authenticationRequestUrl.searchParams.get('redirect_uri')).toEqual(
-      sendAuthenticationRequestCommand.redirectUri.toString(),
+      sendAuthenticationRequestCommand.redirectUri?.toString(),
     );
     expect(authenticationRequestUrl.searchParams.get('scope')).toEqual('');
     expect(authenticationRequestUrl.searchParams.get('login_hint')).toBeTruthy();
   });
   it('can send AuthenticationRequest through RedirectTransport', async () => {
-    const assignments: URL[] = [];
-    const locationProxy: Location = new Proxy(globalThis.location, {
-      get(target, key, receiver) {
-        const reflected = Reflect.get(target, key, receiver);
-        if (key === 'assign' && target instanceof Location) {
-          return function (url: string | URL) {
-            assignments.push(typeof url === 'string' ? new URL(url) : url);
-          };
-        }
-        return reflected;
-      },
-    });
+    const oldLocation = Object.assign(window.location);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    delete window.location;
+    window.location = {
+      ...oldLocation,
+      assign: jest.fn(),
+    };
+
+    const locationProxy: Location = new Proxy(globalThis.location, {});
     const transport = RedirectTransport(locationProxy);
     const agent = createTestAgent(transport);
     const sendAuthenticationRequestCommand: SendAuthenticationRequestCommand = {
@@ -132,10 +129,14 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
       },
     };
     await agent.sendAuthenticationRequest(sendAuthenticationRequestCommand);
-    expect(assignments.length).toEqual(1);
-    const assignedUrl = assignments[0];
-    expect(assignedUrl.searchParams.get('redirect_uri')).toEqual(
-      sendAuthenticationRequestCommand.redirectUri.toString(),
-    );
+    expect(location.assign).toBeCalledTimes(1);
+
+    expect(
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      new URLSearchParams(new URL(window.location.assign.mock.calls[0][0]).search).get(
+        'redirect_uri',
+      ),
+    ).toBe(sendAuthenticationRequestCommand.redirectUri?.toString());
   });
 });

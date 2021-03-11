@@ -9,7 +9,7 @@ export type OAuth2AccessTokenResponse = {
   expires_in: number; // The lifetime in seconds of the access token.
   state?: string;
   scope?: string;
-}
+};
 
 /**
  * This should be compatible with OAuth 2.0 Authorization Request.
@@ -106,8 +106,8 @@ export function accessTokenResponseFromQueryString(
     throw new Error(`unexpected oauth2 token_type: ${token_type}`);
   }
 
-  const scope = searchParams.get('scope');
-  const state = searchParams.get('state');
+  const scope = searchParams.get('scope') ?? undefined;
+  const state = searchParams.get('state') ?? undefined;
 
   const response: OAuth2AccessTokenResponse = {
     access_token,
