@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import digestSync from 'crypto-digest-sync';
+import { sha256 as jsSha256 } from 'js-sha256';
 import borc from 'borc';
 import { Buffer } from 'buffer/';
 import { BinaryBlob, blobFromBuffer, blobFromUint8Array, blobToHex } from './types';
@@ -19,7 +19,9 @@ export function toHex(requestId: RequestId): string {
  * @param data - input to hash function
  */
 export function hash(data: Buffer): BinaryBlob {
-  const hashed: ArrayBuffer = digestSync('SHA-256', data.buffer);
+  const hashed: ArrayBuffer = jsSha256.create()
+    .update(data)
+    .arrayBuffer();
   return blobFromUint8Array(new Uint8Array(hashed));
 }
 

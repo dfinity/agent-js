@@ -25,7 +25,6 @@
     "buffer": "^5.4.3",
     "buffer-pipe": "0.0.4",
     "crc": "3.8.0",
-    "crypto-digest-sync": "^1.0.0",
     "js-sha256": "0.9.0",
     "simple-cbor": "^0.4.1"
   },
