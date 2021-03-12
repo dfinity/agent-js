@@ -14,7 +14,8 @@
     "tslint:fix": "npm run lint -- --fix",
     "prettier": "prettier --check \"src/**/*.ts\"",
     "prettier:write": "npm run prettier -- --write",
-    "test": "jest --verbose"
+    "test": "jest --verbose",
+    "test:coverage": "jest --verbose --collectCoverage"
   },
   "dependencies": {
     "@types/crc": "^3.4.0",

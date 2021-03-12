@@ -11,7 +11,8 @@
     "lint:fix": "npm run lint -- --fix",
     "prettier": "prettier --check \"src/**/*.ts\"",
     "prettier:write": "npm run prettier -- --write",
-    "test": "jest --verbose --detectOpenHandles"
+    "test": "jest --verbose --detectOpenHandles",
+    "test:coverage": "jest --verbose --collectCoverage"
   },
   "dependencies": {
     "@dfinity/agent": "^0.6.25-beta.0",
