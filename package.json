@@ -13,7 +13,8 @@
     "typescript": "^3.6.3"
   },
   "engines": {
-    "node": "^12 || ^14"
+    "node": "^12 || ^14",
+    "npm": "^7"
   },
   "scripts": {
     "build": "lerna run build --stream",
