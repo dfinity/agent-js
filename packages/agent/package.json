@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/agent",
-  "version": "0.6.26-beta.0",
+  "version": "0.6.26-beta.1",
   "main": "./lib/cjs/index",
   "module": "./lib/esm/index",
   "scripts": {

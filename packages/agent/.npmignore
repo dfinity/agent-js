@@ -2,15 +2,10 @@
 # that are.
 **
 
-!src/**/*.d.ts
-!src/**/*.js
+!lib/**
 !types/**/*.d.ts
 !package.json
 !README.md
-!src/utils/bls*
-
-# bls.ts should not be included in the npm package.
-src/utils/bls.ts
 
 # The following line further removes all test files (which matches .js and .d.ts).
-src/**/*.test.*
+lib/**/*.test.*
