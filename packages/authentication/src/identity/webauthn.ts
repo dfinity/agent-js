@@ -93,10 +93,8 @@ async function _createCredential(): Promise<PublicKeyCredential | null> {
   const creds = (await navigator.credentials.create({
     publicKey: {
       authenticatorSelection: {
-        authenticatorAttachment: "platform",
         userVerification: 'preferred',
       },
-      attestation: 'direct',
       challenge: _createChallengeBuffer(),
       pubKeyCredParams: [{ type: 'public-key', alg: PubKeyCoseAlgo.ECDSA_WITH_SHA256 }],
       rp: {
@@ -186,7 +184,6 @@ export class WebAuthnIdentity extends SignIdentity {
           {
             type: 'public-key',
             id: this._rawId,
-            transports: ['internal'],
           },
         ],
         challenge: blob,
