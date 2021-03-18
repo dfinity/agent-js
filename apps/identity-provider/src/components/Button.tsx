@@ -1,11 +1,24 @@
 import MatButton, { ButtonProps } from '@material-ui/core/Button';
-import { styled } from '@material-ui/core/styles';
+import { withStyles, createStyles, Theme } from '@material-ui/core/styles';
 import React from 'react';
 
-const SpacedMatButton = styled(MatButton)(({ theme }) => ({
-  marginLeft: theme.spacing(1),
-  marginRight: theme.spacing(1),
-}));
+const styles = ({ breakpoints, spacing }: Theme) => createStyles({
+  root: {
+    marginLeft: spacing(1),
+    marginRight: spacing(1),
+    maxWidth: `calc(100% - ${spacing(1)}px)`,
+    whiteSpace: 'nowrap'
+  },
+  [breakpoints.down('xs')]: {
+    label: {
+      display: 'block'
+    }
+  }
+});
+
+const SpacedMatButton = withStyles(styles)((props: ButtonProps) => 
+  <MatButton {...props} classes={props.classes}  />
+);
 
 export const Button = Object.assign(
   (
