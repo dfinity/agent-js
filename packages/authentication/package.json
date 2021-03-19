@@ -9,6 +9,7 @@
     "ci": "npm run prettier && npm run lint && npm run test",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
+    "make:docs/reference": "typedoc src/index.ts --out docs/reference",
     "prettier": "prettier --check \"src/**/*.ts\"",
     "prettier:write": "npm run prettier -- --write",
     "test": "jest --verbose --detectOpenHandles"
@@ -40,6 +41,7 @@
     "text-encoding": "^0.7.0",
     "ts-jest": "^24.2.0",
     "tslint": "^5.20.0",
+    "typedoc": "^0.20.32",
     "typescript": "^3.6.3",
     "whatwg-fetch": "^3.0.0"
   }
