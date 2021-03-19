@@ -6,5 +6,4 @@ export { IdentityProviderAgent } from './idp-agent';
 export * from './idp-protocol';
 export * from './id-dom-events';
 export * from './types';
-export * from './bootstrap-messages/BootstrapChangeIdentityCommand';
-export { authenticator, Authenticator } from './authenticator';
+export { Authenticator } from './authenticator';

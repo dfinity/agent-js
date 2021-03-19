@@ -1,4 +1,4 @@
-import { authenticator } from './index';
+import { Authenticator } from './index';
 
 /**
  * Right now this is just an instance of Authenticator.
@@ -6,8 +6,7 @@ import { authenticator } from './index';
  * and technically it's kind of a separate contract we should test to prevent regression.
  */
 test('exports authenticator', () => {
-  expect(typeof authenticator.addEventListener).toEqual('function');
-  expect(typeof authenticator.removeEventListener).toEqual('function');
+  expect(typeof Authenticator).toEqual('function');
+  const authenticator = new Authenticator();
   expect(typeof authenticator.sendAuthenticationRequest).toEqual('function');
-  expect(typeof authenticator.useSession).toEqual('function');
 });

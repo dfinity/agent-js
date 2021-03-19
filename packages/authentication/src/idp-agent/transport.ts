@@ -1,26 +1,20 @@
 import { AuthenticationRequest, createAuthenticationRequestUrl } from '../idp-protocol/request';
-import {
-  createCustomEvent,
-} from '../id-dom-events';
-import {
-  BootstrapChangeIdentityCommand,
-  BootstrapChangeIdentityCommandIdentifier,
-} from '../bootstrap-messages/BootstrapChangeIdentityCommand';
 
 export interface IdentityProviderIndicator {
   url: URL;
+}
+
+export type Envelope<Message extends { type: string },Address> = {
+  to: Address;
+  message: Message;
 }
 
 export type EnvelopeToIdentityProvider = {
   to: IdentityProviderIndicator;
   message: AuthenticationRequest;
 };
-export type EnvelopeToDocument = {
-  to: 'document';
-  message:
-    | BootstrapChangeIdentityCommand;
-};
-export type IdentityProviderAgentEnvelope = EnvelopeToIdentityProvider | EnvelopeToDocument;
+
+export type IdentityProviderAgentEnvelope = EnvelopeToIdentityProvider;
 
 export type Transport<E> = {
   send(e: E): Promise<void>;
@@ -69,10 +63,8 @@ export function RedirectTransport(
  * It sends to a different transport depending on the target.
  * @param params params
  * @param params.identityProvider - Transport to use when sending messages to an identityProvider
- * @param params.document - Transport to use when sending messages to the web document
  */
 export function BrowserTransport(params: {
-  document: Transport<EnvelopeToDocument>;
   identityProvider: Transport<EnvelopeToIdentityProvider>;
 }): Transport<IdentityProviderAgentEnvelope> {
   return Object.freeze({ send });
@@ -83,44 +75,9 @@ export function BrowserTransport(params: {
   async function send(envelope: IdentityProviderAgentEnvelope) {
     console.debug('BrowserTransport.send', envelope);
     switch (envelope.to) {
-      case 'document':
-        await params.document.send(envelope);
-        break;
       default:
         // IDP
         await params.identityProvider.send(envelope);
     }
-  }
-}
-
-/**
- * Transport that sends messages by dispatching DOM Events
- * @param eventTarget - target of dispatched events
- */
-export function DomEventTransport(
-  eventTarget: Pick<EventTarget, 'dispatchEvent'>,
-): Transport<EnvelopeToDocument> {
-  return Object.freeze({ send });
-  /**
-   * Send an Envelope to its destination.
-   * @param envelope - envelope to send
-   */
-  async function send(envelope: EnvelopeToDocument) {
-    const message = envelope.message;
-    const event = (() => {
-      switch (message.type) {
-        case BootstrapChangeIdentityCommandIdentifier:
-          return createCustomEvent(message.type, {
-            bubbles: true,
-            composed: true,
-            detail: message.detail,
-          });
-        default:
-          throw Object.assign(new Error('unexpected message.type'), {
-            envelope,
-          });
-      }
-    })();
-    eventTarget.dispatchEvent(event);
   }
 }
