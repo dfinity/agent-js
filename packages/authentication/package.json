@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/authentication",
-  "version": "0.6.27",
+  "version": "0.6.28",
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
   "scripts": {
@@ -15,7 +15,7 @@
     "test": "jest --verbose --detectOpenHandles"
   },
   "dependencies": {
-    "@dfinity/agent": "^0.6.27",
+    "@dfinity/agent": "^0.6.28",
     "@types/crc": "^3.4.0",
     "@types/jest": "^24.0.18",
     "bignumber.js": "^9.0.0",
