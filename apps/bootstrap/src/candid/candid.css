@@ -1,4 +1,4 @@
-:root {
+:root #candid_ui {
   font-family: 'Circular Std', 'Roboto', sans-serif;
   font-weight: 300;
   font-size: 10px;
@@ -23,7 +23,7 @@
   --error: #b82121;
 }
 
-#app {
+#candid_ui #app {
   display: flex;
   flex-direction: column;
   width: 100vw;
@@ -31,18 +31,18 @@
   font-size: var(--font-md);
 }
 
-#container {
+#candid_ui #container {
   display: flex;
   flex-direction: column;
   height: calc(100vh - var(--header-height));
 }
 
-#main-content {
+#candid_ui #main-content {
   flex: 1;
   overflow: auto;
 }
 
-#header {
+#candid_ui #header {
   height: var(--header-height);
   width: 100%;
   text-align: center;
@@ -52,23 +52,23 @@
   border-bottom: 1px solid var(--dark);
 }
 
-#title-card {
+#candid_ui #title-card {
   padding: 3.2rem 1.8rem 0;
   font-size: 1.6rem;
 }
 
-#title {
+#candid_ui #title {
   font-size: 3.4rem;
   letter-spacing: 0.1rem;
 }
 
-#methods {
+#candid_ui #methods {
   font-family: 'Vremena Grotesk', 'Roboto Mono', monospace;
   padding: 0;
   margin: 0;
 }
 
-#methods li {
+#candid_ui #methods li {
   display: flex;
   flex-direction: column;
   list-style: none;
@@ -77,65 +77,65 @@
   border: 1px solid var(--dark);
 }
 
-.signature {
+#candid_ui .signature {
   font-weight: lighter;
   margin-bottom: var(--pad-md);
 }
-.signature b {
+.#candid_ui signature b {
   font-weight: bold;
 }
 
-.composite {
+#candid_ui .composite {
   margin-bottom: var(--pad-md);
 }
 
-input,
-select {
+#candid_ui input,
+#candid_ui select {
   font-size: var(--font-md);
   font-family: 'Circular Std', 'Roboto', sans-serif;
   margin-bottom: var(--pad-lg);
 }
-input:not([type='checkbox']),
-select {
+#candid_ui input:not([type='checkbox']),
+#candid_ui select {
   width: 100%;
   height: 4.8rem;
   padding: 1.5rem;
   border: 1px solid var(--dark);
 }
-input[type='number']::-webkit-inner-spin-button {
+#candid_ui input[type='number']::-webkit-inner-spin-button {
   width: 3rem;
   height: 3rem;
 }
-label {
+#candid_ui label {
   font-family: 'Circular Std', 'Roboto', sans-serif;
   margin-right: var(--pad-sm);
 }
-label.small {
+#candid_ui label.small {
   font-size: 1rem;
 }
-.popup-form {
+#candid_ui .popup-form {
   padding-left: var(--pad-md);
   width: 100%;
 }
-input[type='checkbox'] ~ .popup-form {
+#candid_ui input[type='checkbox'] ~ .popup-form {
   padding-left: var(--pad-md);
 }
-.input-container > span > .popup-form,
-.ui-result > span > .popup-form {
+#candid_ui .input-container > span > .popup-form,
+#candid_ui .ui-result > span > .popup-form {
   padding-left: 0;
 }
-.input-container span:not(.status),
-.ui-result span:not(.status) {
+#candid_ui .input-container span:not(.status),
+#candid_ui .ui-result span:not(.status) {
   position: relative;
   overflow-clip: none;
   overflow-y: visible;
 }
 
-.reject {
+#candid_ui .reject {
   border-color: var(--error) !important;
   box-shadow: 0 0 1px var(--error);
 }
-.result {
+#candid_ui .result {
   display: none;
   position: relative;
   width: 100%;
@@ -144,10 +144,10 @@ input[type='checkbox'] ~ .popup-form {
   font-size: 1.4rem;
   border-top: 1px solid var(--light);
 }
-.error {
+#candid_ui .error {
   color: var(--error);
 }
-.status {
+#candid_ui .status {
   display: none;
   position: absolute;
   top: 3.1rem;
@@ -156,25 +156,25 @@ input[type='checkbox'] ~ .popup-form {
   color: var(--error);
   white-space: pre;
 }
-.left {
+#candid_ui .left {
   flex: 1;
   overflow-wrap: anywhere;
 }
-.right {
+#candid_ui .right {
   color: var(--dark);
   align-self: stretch;
   margin-left: var(--pad-md);
 }
-.clear {
+#candid_ui .clear {
   clear: both;
 }
 
-.button-container {
+#candid_ui .button-container {
   display: flex;
   margin-top: 0.8rem;
 }
 
-.btn {
+#candid_ui .btn {
   font-family: 'Roboto', sans-serif;
   letter-spacing: 0.05rem;
   background-color: var(--darkest);
@@ -185,76 +185,76 @@ input[type='checkbox'] ~ .popup-form {
   text-transform: uppercase;
   flex: 1;
 }
-.btn:not(:last-child) {
+#candid_ui .btn:not(:last-child) {
   margin-right: var(--pad-md);
 }
-button {
+#candid_ui button {
   padding: 0;
   border: none;
   background-color: inherit;
   color: inherit;
 }
-button:focus,
-input:focus,
-select:focus,
-textarea:focus {
+#candid_ui button:focus,
+#candid_ui input:focus,
+#candid_ui select:focus,
+#candid_ui textarea:focus {
   outline: none;
 }
-.random {
+#candid_ui .random {
   background-color: var(--lighter);
   color: var(--darkest);
 }
 
-.result-buttons {
+#candid_ui .result-buttons {
   display: none;
   position: absolute;
   top: -0.1rem;
   right: 0;
 }
-.result:not(.error):hover .result-buttons {
+#candid_ui .result:not(.error):hover .result-buttons {
   display: block;
 }
-.result-buttons .btn {
+#candid_ui .result-buttons .btn {
   color: var(--darkest);
   background-color: var(--white);
   border: 1px solid var(--darkest);
   font-size: 1.1rem;
   padding: 0.2rem 0.8rem;
 }
-.result-buttons .btn:not(:last-child) {
+#candid_ui .result-buttons .btn:not(:last-child) {
   margin-right: 0.5rem;
 }
-.result-buttons .btn:focus,
-.result-buttons .btn:hover {
+#candid_ui .result-buttons .btn:focus,
+#candid_ui .result-buttons .btn:hover {
   background-color: var(--light);
 }
-.result-buttons .btn:active {
+#candid_ui .result-buttons .btn:active {
   background-color: var(--lightest);
 }
-.result-buttons .btn.active {
+#candid_ui .result-buttons .btn.active {
   color: var(--white);
   background-color: var(--darkest);
 }
 
-#console {
+#candid_ui #console {
   overflow: hidden;
   height: var(--header-height);
   background-color: var(--light-bg);
   color: var(--darkest);
   transition: height 0.2s ease-in-out;
 }
-#console.open {
+#candid_ui #console.open {
   height: 40vh;
 }
 
-#console-bar {
+#candid_ui #console-bar {
   display: flex;
   height: var(--header-height);
   background-color: var(--white);
   padding: 0;
   border-bottom: 1px solid var(--light);
 }
-.console-header {
+#candid_ui .console-header {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -266,109 +266,109 @@ textarea:focus {
   text-align: center;
   text-transform: uppercase;
 }
-#output-button,
-#methods-button {
+#candid_ui #output-button,
+#candid_ui #methods-button {
   flex: 1;
   cursor: pointer;
   font-size: var(--font-lg);
   border-bottom: 1px solid var(--medium);
 }
-#output-button:hover,
-#methods-button:hover,
-#output-button:focus,
-#methods-button:focus {
+#candid_ui #output-button:hover,
+#candid_ui #methods-button:hover,
+#candid_ui #output-button:focus,
+#candid_ui #methods-button:focus {
   background-color: var(--light);
 }
-.active-tab {
+#candid_ui .active-tab {
   background-color: var(--lighter);
 }
 
-#output-pane,
-#methods-pane {
+#candid_ui #output-pane,
+#candid_ui #methods-pane {
   font-family: var(--font-mono);
   height: 0;
   padding: 0 0 3rem;
   margin-right: calc(-1 * var(--pad-md));
 }
 
-#output-list,
-#methods-list {
+#candid_ui #output-list,
+#candid_ui #methods-list {
   list-style: none;
   padding: 0 0 var(--pad-lg);
   height: calc(40vh - (var(--header-height) * 2));
   overflow-y: auto;
 }
 
-.output-line {
+#candid_ui .output-line {
   width: 100%;
   padding: 0.4rem 0.8rem;
   overflow-wrap: break-word;
 }
-.output-line:nth-child(2n-1) {
+#candid_ui .output-line:nth-child(2n-1) {
   background-color: var(--lighter);
 }
 
-#methods-list {
+#candid_ui #methods-list {
   padding-top: 0.2rem;
 }
-#methods-list a {
+#candid_ui #methods-list a {
   display: block;
   padding: 0.7rem 1.5rem;
   color: var(--darkest);
 }
-#methods-list a:focus,
-#methods-list a:hover {
+#candid_ui #methods-list a:focus,
+#candid_ui #methods-list a:hover {
   background-color: var(--darker);
   color: var(--white);
   text-decoration: none;
 }
-#methods-list a:active {
+#candid_ui #methods-list a:active {
   background-color: var(--darkest);
 }
 
 @media only screen and (min-width: 800px) {
-  :root {
+  :root #candid_ui {
     --header-height: 5.6rem;
     --console-width: clamp(28rem, 30vw, 40rem);
   }
 
-  #header {
+  #candid_ui #header {
     text-align: left;
     padding-left: 3rem;
   }
 
-  #container {
+  #candid_ui #container {
     flex-direction: row;
     overflow: auto;
   }
 
-  #title-card {
+  #candid_ui #title-card {
     padding-left: 0;
   }
 
-  #main-content {
+  #candid_ui #main-content {
     flex: 1;
     padding: 0 3rem 5rem;
   }
 
-  .btn {
+  #candid_ui .btn {
     width: auto;
     flex: 0;
     padding: var(--pad-sm) var(--pad-md);
   }
 
-  .input-container span:not(:first-child):not(.status),
-  .ui-result span:not(:first-child):not(.status) {
+  #candid_ui .input-container span:not(:first-child):not(.status),
+  #candid_ui .ui-result span:not(:first-child):not(.status) {
     margin-left: var(--pad-md);
   }
-  input:not([type='checkbox']),
-  select {
+  #candid_ui input:not([type='checkbox']),
+  #candid_ui select {
     width: 23.2rem;
     height: 4rem;
     padding: 1rem var(--pad-md);
   }
 
-  #console {
+  #candid_ui #console {
     display: flex;
     flex-direction: row-reverse;
     width: var(--header-height);
@@ -376,12 +376,12 @@ textarea:focus {
     padding: 0;
     transition: width 0.2s ease-in-out;
   }
-  #console.open {
+  #candid_ui #console.open {
     width: calc(var(--header-height) + var(--console-width));
     height: calc(100vh - var(--header-height));
   }
 
-  #console-bar {
+  #candid_ui #console-bar {
     display: flex;
     flex-direction: column;
     justify-self: end;
@@ -391,42 +391,42 @@ textarea:focus {
     border-bottom: none;
     border-left: 1px solid var(--light);
   }
-  #console-bar button {
+  #candid_ui #console-bar button {
     flex: 0;
     font-size: 4rem;
     padding: 0.8rem;
   }
 
-  .console-header {
+  #candid_ui .console-header {
     display: none;
     width: 0;
     border-bottom: none;
     transition: width 0.2s ease-in-out;
   }
-  #console.open .console-header {
+  #candid_ui #console.open .console-header {
     display: flex;
     width: 100%;
   }
 
-  #output-pane,
-  #methods-pane {
+  #candid_ui #output-pane,
+  #candid_ui #methods-pane {
     width: 100%;
     margin: 0;
   }
 
-  #methods-pane,
-  #output-pane {
+  #candid_ui #methods-pane,
+  #candid_ui #output-pane {
     height: 100% !important;
     width: 0;
     transition: width 0.2s ease-in-out;
   }
-  #console.open #methods-pane,
-  #console.open #output-pane {
+  #candid_ui #console.open #methods-pane,
+  #candid_ui #console.open #output-pane {
     width: var(--console-width);
   }
 
-  #output-list,
-  #methods-list {
+  #candid_ui #output-list,
+  #candid_ui #methods-list {
     height: calc(100vh - (var(--header-height) * 2));
   }
 }
