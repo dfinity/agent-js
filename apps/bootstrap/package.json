@@ -53,6 +53,7 @@
   "dependencies": {
     "@dfinity/agent": "^0.6.28",
     "@dfinity/authentication": "^0.6.28",
+    "@dollarshaveclub/cloudworker": "^0.1.2",
     "bignumber.js": "^9.0.0",
     "buffer": "5.6.0",
     "css-loader": "^3.4.2",

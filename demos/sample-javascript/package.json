@@ -4,6 +4,7 @@
   "dependencies": {
     "@dfinity/agent": "^0.6.25-beta.0",
     "@dfinity/authentication": "^0.6.25-beta.0",
+    "@dollarshaveclub/cloudworker": "^0.1.2",
     "assert": "^2.0.0",
     "buffer": "^6.0.3",
     "events": "^3.2.0",
