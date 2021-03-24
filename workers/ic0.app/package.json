@@ -10,6 +10,7 @@
     "webpack": "^5.24.1"
   },
   "scripts": {
-    "build": "wrangler build"
+    "build": "wrangler build",
+    "start": "npm run build && cloudworker worker/worker.js --kv-set Config.replicaUrl=http://localhost:8000"
   }
 }
