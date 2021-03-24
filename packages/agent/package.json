@@ -7,14 +7,15 @@
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
     "bundle": "npm run build",
     "ci": "npm run prettier && npm run lint && npm run test",
-    "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' src/index.ts src/auth.ts src/request_id.ts src/request_id.test.ts",
     "eslint:fix": "npm run lint -- --fix",
+    "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' src/index.ts src/auth.ts src/request_id.ts src/request_id.test.ts",
     "lint": "npm run eslint",
-    "tslint": "tslint --project tsconfig.json --config tslint.json",
-    "tslint:fix": "npm run lint -- --fix",
-    "prettier": "prettier --check \"src/**/*.ts\"",
+    "make:docs/reference": "typedoc src/index.ts --out docs/reference",
     "prettier:write": "npm run prettier -- --write",
-    "test": "jest --verbose"
+    "prettier": "prettier --check \"src/**/*.ts\"",
+    "test": "jest --verbose",
+    "tslint:fix": "npm run lint -- --fix",
+    "tslint": "tslint --project tsconfig.json --config tslint.json"
   },
   "dependencies": {
     "@types/crc": "^3.4.0",
@@ -41,6 +42,7 @@
     "text-encoding": "^0.7.0",
     "ts-jest": "^24.2.0",
     "tslint": "^5.20.0",
+    "typedoc": "^0.20.33",
     "typescript": "^3.6.3",
     "whatwg-fetch": "^3.0.0"
   }
