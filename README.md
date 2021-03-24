@@ -44,6 +44,20 @@ To publish to NPM, create a branch and run the following commands;
 This will change your code locally, so create a `chore: release VERSION_NUMBER` commit and
 push. Once the PR is created get someone to review it.
 
+### Publishing Cloudflare Workers
+Until Cloudflare is no longer needed, we need to publish both workers from their directories;
+
+* Start from a fresh clone (or `git clean -dfx .`)
+* `lerna bootstrap`
+* `lerna run build`
+* `cd workers/auth.ic0.app` for the Authentication
+* `npm ci` to make sure the proper packages are installed.
+* `npx wrangler login` to login. YOU NEED AN API TOKEN FOR THIS.
+* `npm run build`
+* `npx wrangler publish`
+
+Repeat steps for `workers/ic0.app`.
+
 ### GitHub Actions
 
 GitHub Actions for this repo are configured in [./.github/workflows](./.github/workflows).
