@@ -1,31 +1,42 @@
 name: NPM Release
 
-on: 
-  workflow_dispatch:
-    inputs:
-      canary:
-        default: 'true'
+on:
+  release:
+    types: [published]
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-18.04]
+        ghc: ["8.8.4"]
+        spec:
+          - release-0.15 # https://github.com/dfinity-lab/ic-ref/tree/release-0.15
+        node:
+          - 12
+          - 14
     steps:
-      - name: checkout
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
+      - name: Publish Docs ${{ matrix.node }}
+        uses: actions/setup-node@v1
         with:
-          fetch-depth: 0
-      - name: git config identity
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/$GITHUB_REPOSITORY
+          node-version: ${{ matrix.node }}
+
+      - run: npx lerna bootstrap
+      - run: npx lerna run lint
+
+      # build monorepo incl. each subpackage
+      - run: npx lerna run build
+
+      # test monorepo incl. each subpackage
+      - run: npx lerna run test
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - if: ${{ inputs.canary }}
-        run: npx lerna publish --canary --yes
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - if: ${{ ! inputs.canary }}
-        run: npx lerna publish --yes
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CI: true
+
+      # generate package docs
+      - run: npx lerna make:docs/reference
+
+      # publish docs
+      - run: dfx deploy --network=ic
