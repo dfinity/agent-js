@@ -17,6 +17,7 @@
     "test": "jest --verbose"
   },
   "dependencies": {
+    "@dollarshaveclub/cloudworker": "^0.1.2",
     "@types/crc": "^3.4.0",
     "@types/jest": "^24.0.18",
     "base64-arraybuffer": "^0.2.0",
