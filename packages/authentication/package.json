@@ -1,6 +1,10 @@
 {
   "name": "@dfinity/authentication",
   "version": "0.6.28",
+  "author": "DFINITY Stiftung <sdk@dfinity.org>",
+  "license": "Apache-2.0",
+  "description": "JavaScript and TypeScript library to manage identity and authentication with the Internet Computer",
+  "keywords": ["agent", "authentication", "internet-computer", "sdk"],
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
   "scripts": {

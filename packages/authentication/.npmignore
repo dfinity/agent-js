@@ -6,6 +6,7 @@
 !types/**/*.d.ts
 !package.json
 !README.md
+!LICENSE
 
 # The following line further removes all test files (which matches .js and .d.ts).
 lib/**/*.test.*
