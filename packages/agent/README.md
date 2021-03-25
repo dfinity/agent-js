@@ -4,8 +4,6 @@ JavaScript and TypeScript library to interact with the [Internet Computer](https
 
 Visit the [Dfinity Forum](https://forum.dfinity.org/) and [SDK Documentation](https://sdk.dfinity.org/docs/index.html) for more information and support building on the Internet Computer.
 
-Additional documentation for the `@dfinity/agent` source code is also available at [https://3wgop-viaaa-aaaaa-qalhq-cai.ic0.app/index.html](https://3wgop-viaaa-aaaaa-qalhq-cai.ic0.app/index.html)
-
 ---
 
 ## Installation

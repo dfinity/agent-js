@@ -4,8 +4,6 @@ JavaScript and TypeScript library to support manage Identities and enable simple
 
 Visit the [Dfinity Forum](https://forum.dfinity.org/) and [SDK Documentation](https://sdk.dfinity.org/docs/index.html) for more information and support building on the Internet Computer.
 
-Additional documentation for the `@dfinity/authentication` source code is also available at [https://zl3ah-gaaaa-aaaaa-qalia-cai.ic0.app/index.html](https://zl3ah-gaaaa-aaaaa-qalia-cai.ic0.app/index.html)
-
 ---
 
 ## Installation
