@@ -1,0 +1,16 @@
+{
+  "name": "@dfinity/ic0_app-worker",
+  "private": true,
+  "dependencies": {
+    "@cloudflare/kv-asset-handler": "^0.1.0",
+    "@cloudflare/wrangler": "^1.13.0",
+    "@dfinity/agent": "0.6.28",
+    "@dfinity/bootstrap": "file:../../apps/bootstrap",
+    "@dollarshaveclub/cloudworker": "^0.1.2",
+    "webpack": "^5.24.1"
+  },
+  "scripts": {
+    "build": "wrangler build",
+    "start": "npm run build && cloudworker worker/worker.js --kv-set Config.replicaUrl=http://localhost:8000"
+  }
+}

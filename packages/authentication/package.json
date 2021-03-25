@@ -33,10 +33,12 @@
     "make:docs/reference": "typedoc src/index.ts --out docs/reference",
     "prettier": "prettier --check \"src/**/*.ts\"",
     "prettier:write": "npm run prettier -- --write",
-    "test": "jest --verbose --detectOpenHandles"
+    "test": "jest --verbose --detectOpenHandles",
+    "test:coverage": "jest --verbose --collectCoverage"
   },
   "dependencies": {
     "@dfinity/agent": "^0.6.28",
+    "@dollarshaveclub/cloudworker": "^0.1.2",
     "@types/crc": "^3.4.0",
     "@types/jest": "^24.0.18",
     "bignumber.js": "^9.0.0",

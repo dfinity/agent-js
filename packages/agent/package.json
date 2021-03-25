@@ -33,10 +33,12 @@
     "prettier:write": "npm run prettier -- --write",
     "prettier": "prettier --check \"src/**/*.ts\"",
     "test": "jest --verbose",
+    "test:coverage": "jest --verbose --collectCoverage",
     "tslint:fix": "npm run lint -- --fix",
     "tslint": "tslint --project tsconfig.json --config tslint.json"
   },
   "dependencies": {
+    "@dollarshaveclub/cloudworker": "^0.1.2",
     "@types/crc": "^3.4.0",
     "@types/jest": "^24.0.18",
     "base64-arraybuffer": "^0.2.0",

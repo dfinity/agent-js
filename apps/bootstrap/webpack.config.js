@@ -94,6 +94,10 @@ module.exports = {
         to: 'favicon.ico',
       },
     ]),
+    new webpack.ProvidePlugin({
+      Buffer: [require.resolve('buffer/'), 'Buffer'],
+      process: require.resolve('process/browser'),
+    }),
   ],
   devServer: {
     proxy: {
