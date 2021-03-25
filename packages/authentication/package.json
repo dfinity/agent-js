@@ -3,6 +3,7 @@
   "version": "0.6.28",
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
+  "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
     "bundle": "npm run build",
