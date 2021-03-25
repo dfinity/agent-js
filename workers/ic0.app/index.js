@@ -2,16 +2,15 @@ import { getAssetFromKV, serveSinglePageApp } from '@cloudflare/kv-asset-handler
 import { Actor, HttpAgent, Principal } from '@dfinity/agent';
 
 const DEBUG = true;
-const agent = createAgent();
 
-async function createAgent() {
+async function getAgent() {
   // The replica URL is stored as a JSON object in the KV store. By default this will fail
   // to make sure we don't deploy to the wrong worker by mistake.
   const REPLICA_URL = await Config.get("replicaUrl");
 
   if (!REPLICA_URL) {
     console.error(`'Config' KV store does not have a 'replicaUrl' value.`);
-    throw new Error();
+    throw new Error("Could not read KV store.");
   }
 
   // The agent used by EVERY Http Requests to canisters.
@@ -147,7 +146,7 @@ async function handleEvent(event) {
   const url = new URL(request.url);
 
   if (url.pathname.startsWith('/api')) {
-    const replicaUrl = new URL(url.pathname + url.search, REPLICA_URL);
+    const replicaUrl = new URL(url.pathname + url.search, await Config.get("replicaUrl"));
 
     // Forward to the replica as is.
     return await fetch(replicaUrl, request);
@@ -168,7 +167,7 @@ async function handleEvent(event) {
   if (maybeCanisterId) {
     try {
       const actor = Actor.createActor(canisterIdlFactory, {
-        agent: await agent,
+        agent: await getAgent(),
         canisterId: maybeCanisterId,
       });
       const requestHeaders = [];
