@@ -93,21 +93,15 @@ export interface InstallCodeRequest extends Record<string, any> {
   sender: BinaryBlob;
   ingress_expiry: Expiry;
 }
-export interface CreateCanisterRequest extends Record<string, any> {
-  request_type: SubmitRequestType.CreateCanister;
-  sender: BinaryBlob;
-  ingress_expiry: Expiry;
-}
 // tslint:enable:camel-case
 
 // The types of values allowed in the `request_type` field for submit requests.
 export enum SubmitRequestType {
   Call = 'call',
   InstallCode = 'install_code',
-  CreateCanister = 'create_canister',
 }
 
-export type SubmitRequest = CallRequest | InstallCodeRequest | CreateCanisterRequest;
+export type SubmitRequest = CallRequest | InstallCodeRequest;
 export interface SubmitResponse {
   requestId: RequestId;
   response: {

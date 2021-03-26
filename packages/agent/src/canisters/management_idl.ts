@@ -7,6 +7,14 @@ export default ({ IDL }) => {
   const canister_id = IDL.Principal;
   const wasm_module = IDL.Vec(IDL.Nat8);
   return IDL.Service({
+    provisional_create_canister_with_cycles: IDL.Func(
+      [
+        IDL.Record({ amount: IDL.Opt(IDL.Nat) }),
+      ], [
+        IDL.Record({ canister_id: canister_id }),
+      ],
+      [],
+    ),
     create_canister: IDL.Func([], [IDL.Record({ canister_id: canister_id })], []),
     install_code: IDL.Func(
       [

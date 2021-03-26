@@ -218,25 +218,11 @@ export class ProxyAgent implements Agent {
     }) as Promise<SubmitResponse>;
   }
 
-  public createCanister(): Promise<SubmitResponse> {
-    throw new Error('unimplemented. This will be removed when we upgrade the spec to 0.8');
-  }
-
   public status(): Promise<JsonObject> {
     return this._sendAndWait({
       id: this._nextId++,
       type: ProxyMessageKind.Status,
     }) as Promise<JsonObject>;
-  }
-
-  public install(
-    canisterId: Principal | string,
-    fields: {
-      module: BinaryBlob;
-      arg?: BinaryBlob;
-    },
-  ): Promise<SubmitResponse> {
-    throw new Error('unimplemented. This will be removed when we upgrade the spec to 0.8');
   }
 
   public query(canisterId: Principal | string, fields: QueryFields): Promise<QueryResponse> {
