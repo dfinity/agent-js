@@ -180,20 +180,6 @@ export class HttpAgent implements Agent {
     );
   }
 
-  public async createCanister(identity?: Identity | Promise<Identity>): Promise<SubmitResponse> {
-    const id = await (identity || this._identity);
-    const sender = id?.getPrincipal() || Principal.anonymous();
-
-    return this.submit(
-      {
-        request_type: SubmitRequestType.CreateCanister,
-        sender: sender.toBlob(),
-        ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
-      },
-      id,
-    );
-  }
-
   public async query(
     canisterId: Principal | string,
     fields: QueryFields,
