@@ -1,10 +1,10 @@
-import { Actor, CallConfig } from '../actor';
+import { Actor, ActorSubclass, CallConfig } from '../actor';
 import { Principal } from '../principal';
 import managementCanisterIdl from './management_idl';
 
 /* tslint:disable */
 export interface ManagementCanisterRecord {
-  create_canister(): Promise<{ canister_id: Principal }>;
+  provisional_create_canister_with_cycles(arg0: { amount: [] | [number] }): Promise<{ canister_id: Principal }>;
   install_code(arg0: {
     mode: { install: null } | { reinstall: null } | { upgrade: null };
     canister_id: Principal;
@@ -20,7 +20,7 @@ export interface ManagementCanisterRecord {
  * Create a management canister actor.
  * @param config
  */
-export function getManagementCanister(config: CallConfig) {
+export function getManagementCanister(config: CallConfig): ActorSubclass<ManagementCanisterRecord> {
   return Actor.createActor<ManagementCanisterRecord>(managementCanisterIdl, {
     ...config,
     canisterId: Principal.fromHex(''),

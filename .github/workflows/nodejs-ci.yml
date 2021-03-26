@@ -46,7 +46,7 @@ jobs:
         # Personal Read-only Access Token created by hans.larsen@dfinity.org
         token: ${{ secrets.IC_REF_TOKEN }}
         path: ic-ref
-        ref: ${{ matrix.icrefgitref }}
+        ref: ${{ matrix.spec }}
 
     - name: Cache ~/.cabal/store
       uses: actions/cache@v2
