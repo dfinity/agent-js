@@ -3,10 +3,11 @@ import { Actor, HttpAgent, Principal } from '@dfinity/agent';
 
 const DEBUG = true;
 
-async function getAgent() {
+async function getAgent(mercury) {
   // The replica URL is stored as a JSON object in the KV store. By default this will fail
   // to make sure we don't deploy to the wrong worker by mistake.
-  const REPLICA_URL = await Config.get("replicaUrl");
+  // If this is a request to the mercury network we instead use a hard coded URL.
+  const REPLICA_URL = mercury ? "https://mercury.dfinity.network" : await Config.get("replicaUrl");
 
   if (!REPLICA_URL) {
     console.error(`'Config' KV store does not have a 'replicaUrl' value.`);
@@ -167,7 +168,7 @@ async function handleEvent(event) {
   if (maybeCanisterId) {
     try {
       const actor = Actor.createActor(canisterIdlFactory, {
-        agent: await getAgent(),
+        agent: await getAgent(url.hostname.startsWith("mercury.")),
         canisterId: maybeCanisterId,
       });
       const requestHeaders = [];
