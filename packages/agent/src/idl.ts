@@ -1,5 +1,4 @@
 // tslint:disable:max-classes-per-file
-import BigNumber from 'bignumber.js';
 import Pipe from 'buffer-pipe';
 import { Buffer } from 'buffer/';
 import { Principal as PrincipalId } from './principal';
@@ -424,18 +423,18 @@ export class TextClass extends PrimitiveType<string> {
 /**
  * Represents an IDL Int
  */
-export class IntClass extends PrimitiveType<BigNumber> {
+export class IntClass extends PrimitiveType<bigint> {
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitInt(this, d);
   }
 
-  public covariant(x: any): x is BigNumber {
+  public covariant(x: any): x is bigint {
     // We allow encoding of JavaScript plain numbers.
-    // But we will always decode to BigNumber.
-    return (BigNumber.isBigNumber(x) && x.isInteger()) || Number.isInteger(x);
+    // But we will always decode to bigint.
+    return typeof x === 'bigint' || Number.isInteger(x);
   }
 
-  public encodeValue(x: BigNumber | number) {
+  public encodeValue(x: bigint | number) {
     return slebEncode(x);
   }
 
@@ -452,29 +451,26 @@ export class IntClass extends PrimitiveType<BigNumber> {
     return 'int';
   }
 
-  public valueToString(x: BigNumber) {
-    return x.toFixed();
+  public valueToString(x: bigint) {
+    return x.toString();
   }
 }
 
 /**
  * Represents an IDL Nat
  */
-export class NatClass extends PrimitiveType<BigNumber> {
+export class NatClass extends PrimitiveType<bigint> {
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitNat(this, d);
   }
 
-  public covariant(x: any): x is BigNumber {
+  public covariant(x: any): x is bigint {
     // We allow encoding of JavaScript plain numbers.
-    // But we will always decode to BigNumber.
-    return (
-      (BigNumber.isBigNumber(x) && x.isInteger() && !x.isNegative()) ||
-      (Number.isInteger(x) && x >= 0)
-    );
+    // But we will always decode to bigint.
+    return (typeof x === 'bigint' && x > BigInt(0)) || (Number.isInteger(x) && x >= 0);
   }
 
-  public encodeValue(x: BigNumber | number) {
+  public encodeValue(x: bigint | number) {
     return lebEncode(x);
   }
 
@@ -491,8 +487,8 @@ export class NatClass extends PrimitiveType<BigNumber> {
     return 'nat';
   }
 
-  public valueToString(x: BigNumber) {
-    return x.toFixed();
+  public valueToString(x: bigint) {
+    return x.toString();
   }
 }
 
@@ -551,7 +547,7 @@ export class FloatClass extends PrimitiveType<number> {
 /**
  * Represents an IDL fixed-width Int(n)
  */
-export class FixedIntClass extends PrimitiveType<BigNumber | number> {
+export class FixedIntClass extends PrimitiveType<bigint | number> {
   constructor(private _bits: number) {
     super();
   }
@@ -560,20 +556,20 @@ export class FixedIntClass extends PrimitiveType<BigNumber | number> {
     return v.visitFixedInt(this, d);
   }
 
-  public covariant(x: any): x is BigNumber {
-    const min = new BigNumber(2).pow(this._bits - 1).negated();
-    const max = new BigNumber(2).pow(this._bits - 1).minus(1);
-    if (BigNumber.isBigNumber(x) && x.isInteger()) {
-      return x.gte(min) && x.lte(max);
+  public covariant(x: any): x is bigint {
+    const min = BigInt(2) ** BigInt(this._bits - 1) * BigInt(-1);
+    const max = BigInt(2) ** BigInt(this._bits - 1) - BigInt(1);
+    if (typeof x === 'bigint') {
+      return x >= min && x <= max;
     } else if (Number.isInteger(x)) {
-      const v = new BigNumber(x);
-      return v.gte(min) && v.lte(max);
+      const v = BigInt(x);
+      return v >= min && v <= max;
     } else {
       return false;
     }
   }
 
-  public encodeValue(x: BigNumber | number) {
+  public encodeValue(x: bigint | number) {
     return writeIntLE(x, this._bits / 8);
   }
 
@@ -596,7 +592,7 @@ export class FixedIntClass extends PrimitiveType<BigNumber | number> {
     return `int${this._bits}`;
   }
 
-  public valueToString(x: BigNumber | number) {
+  public valueToString(x: bigint | number) {
     return x.toString();
   }
 }
@@ -604,7 +600,7 @@ export class FixedIntClass extends PrimitiveType<BigNumber | number> {
 /**
  * Represents an IDL fixed-width Nat(n)
  */
-export class FixedNatClass extends PrimitiveType<BigNumber | number> {
+export class FixedNatClass extends PrimitiveType<bigint | number> {
   constructor(private _bits: number) {
     super();
   }
@@ -613,19 +609,19 @@ export class FixedNatClass extends PrimitiveType<BigNumber | number> {
     return v.visitFixedNat(this, d);
   }
 
-  public covariant(x: any): x is BigNumber {
-    const max = new BigNumber(2).pow(this._bits);
-    if (BigNumber.isBigNumber(x) && x.isInteger() && !x.isNegative()) {
-      return x.lt(max);
+  public covariant(x: any): x is bigint {
+    const max = BigInt(2) ** BigInt(this._bits);
+    if (typeof x === 'bigint' && x > BigInt(0)) {
+      return x < max;
     } else if (Number.isInteger(x) && x >= 0) {
-      const v = new BigNumber(x);
-      return v.lt(max);
+      const v = BigInt(x);
+      return v < max;
     } else {
       return false;
     }
   }
 
-  public encodeValue(x: BigNumber | number) {
+  public encodeValue(x: bigint | number) {
     return writeUIntLE(x, this._bits / 8);
   }
 
@@ -648,7 +644,7 @@ export class FixedNatClass extends PrimitiveType<BigNumber | number> {
     return `nat${this._bits}`;
   }
 
-  public valueToString(x: BigNumber | number) {
+  public valueToString(x: bigint | number) {
     return x.toString();
   }
 }

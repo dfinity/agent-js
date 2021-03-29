@@ -1,4 +1,3 @@
-import BigNumber from 'bignumber.js';
 import { sha256 as jsSha256 } from 'js-sha256';
 import borc from 'borc';
 import { Buffer } from 'buffer/';
@@ -19,24 +18,8 @@ export function toHex(requestId: RequestId): string {
  * @param data - input to hash function
  */
 export function hash(data: Buffer): BinaryBlob {
-  const hashed: ArrayBuffer = jsSha256.create()
-    .update(data)
-    .arrayBuffer();
+  const hashed: ArrayBuffer = jsSha256.create().update(data).arrayBuffer();
   return blobFromUint8Array(new Uint8Array(hashed));
-}
-
-/**
- * Type Guard for BigNumber.js that have a protottype we don't have a reference to, so can't do
- * an `instanceof` check. This can happen in certain sets of dependency graphs for the
- * agent-js-monorepo, e.g. when used by authentication-demo. All this really verifies is the
- * truthiness of the `_isBigNumber` property that the source code defines as protected.
- * @param v - value to check for type=BigNumber.js
- */
-function isBigNumber(v: unknown): v is BigNumber {
-  interface BigNumberProtected {
-    _isBigNumber: boolean;
-  }
-  return typeof v === 'object' && v !== null && (v as BigNumberProtected)._isBigNumber;
 }
 
 interface ToHashable {
@@ -62,13 +45,13 @@ function hashValue(value: unknown): BinaryBlob {
     value !== null &&
     typeof (value as ToHashable).toHash === 'function'
   ) {
-    return  hashValue((value as ToHashable).toHash())
-  // TODO This should be move to a specific async method as the webauthn flow required
-  // the flow to be synchronous to ensure Safari touch id works.
-  // } else if (value instanceof Promise) {
-  //   return value.then(x => hashValue(x));
-  } else if (isBigNumber(value)) {
-    // Do this check much later than the other BigNumber check because this one is much less
+    return hashValue((value as ToHashable).toHash());
+    // TODO This should be move to a specific async method as the webauthn flow required
+    // the flow to be synchronous to ensure Safari touch id works.
+    // } else if (value instanceof Promise) {
+    //   return value.then(x => hashValue(x));
+  } else if (typeof value === 'bigint') {
+    // Do this check much later than the other bigint check because this one is much less
     // type-safe.
     // So we want to try all the high-assurance type guards before this 'probable' one.
     return hash(lebEncode(value) as BinaryBlob);
@@ -118,6 +101,6 @@ export function requestIdOf(request: Record<string, any>): RequestId {
   });
 
   const concatenated: BinaryBlob = concat(sorted.map(concat));
-  const requestId = (hash(concatenated)) as RequestId;
+  const requestId = hash(concatenated) as RequestId;
   return requestId;
 }

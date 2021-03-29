@@ -2,7 +2,6 @@
 // This file is based on:
 // tslint:disable-next-line: max-line-length
 // https://github.com/dfinity-lab/dfinity/blob/9bca65f8edd65701ea6bdb00e0752f9186bbc893/docs/spec/public/index.adoc#cbor-encoding-of-requests-and-responses
-import BigNumber from 'bignumber.js';
 import borc from 'borc';
 import { Buffer } from 'buffer/';
 import * as cbor from 'simple-cbor';
@@ -13,8 +12,7 @@ import { BinaryBlob, blobFromBuffer, blobFromHex } from './types';
 // We are using hansl/simple-cbor for CBOR serialization, to avoid issues with
 // encoding the uint64 values that the HTTP handler of the client expects for
 // canister IDs. However, simple-cbor does not yet provide deserialization so
-// we are using `BigNumber` and `Buffer` types instead of `BigInt` and
-// `Uint8Array` (respectively) so that we can use the dignifiedquire/borc CBOR
+// we are using `Uint8Array` so that we can use the dignifiedquire/borc CBOR
 // decoder.
 
 class PrincipalEncoder implements CborEncoder<Principal> {
@@ -53,9 +51,9 @@ class BufferEncoder implements CborEncoder<Buffer> {
   }
 }
 
-class BigNumberEncoder implements CborEncoder<BigNumber> {
+class BigIntEncoder implements CborEncoder<BigInt> {
   public get name() {
-    return 'BigNumber';
+    return 'BigInt';
   }
 
   public get priority() {
@@ -63,15 +61,15 @@ class BigNumberEncoder implements CborEncoder<BigNumber> {
   }
 
   public match(value: any): boolean {
-    return value instanceof BigNumber;
+    return typeof value === `bigint`;
   }
 
-  public encode(v: BigNumber): cbor.CborValue {
-    // Always use a bignumber encoding.
-    if (v.isPositive() || v.isZero()) {
+  public encode(v: bigint): cbor.CborValue {
+    // Always use a bigint encoding.
+    if (v > BigInt(0)) {
       return cbor.value.tagged(2, cbor.value.bytes(blobFromHex(v.toString(16))));
     } else {
-      return cbor.value.tagged(3, cbor.value.bytes(blobFromHex(v.multipliedBy(-1).toString(16))));
+      return cbor.value.tagged(3, cbor.value.bytes(blobFromHex((BigInt('-1') * v).toString(16))));
     }
   }
 }
@@ -79,7 +77,7 @@ class BigNumberEncoder implements CborEncoder<BigNumber> {
 const serializer = SelfDescribeCborSerializer.withDefaultEncoders(true);
 serializer.addEncoder(new PrincipalEncoder());
 serializer.addEncoder(new BufferEncoder());
-serializer.addEncoder(new BigNumberEncoder());
+serializer.addEncoder(new BigIntEncoder());
 
 export enum CborTag {
   Uint64LittleEndian = 71,
@@ -98,8 +96,9 @@ export function decode<T>(input: Uint8Array): T {
     },
   });
   const result = decoder.decodeFirst(input);
-  if (result.hasOwnProperty('canister_id')) {
+  if ('canister_id' in result) {
     result.canister_id = Principal.fromText(result.canister_id.toString(16));
   }
+  result;
   return result;
 }

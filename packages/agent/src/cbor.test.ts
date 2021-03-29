@@ -1,4 +1,3 @@
-import BigNumber from 'bignumber.js';
 import { Buffer } from 'buffer/';
 import { decode, encode } from './cbor';
 import { Principal } from './principal';
@@ -12,11 +11,11 @@ test('round trip', () => {
     d: { four: string };
     e: Principal;
     f: BinaryBlob;
-    g: BigNumber;
+    g: bigint;
   }
 
   // FIXME: since we have limited control over CBOR decoding, we are relying on
-  // BigNumber types actually containing big numbers, since small numbers are
+  // BigInt types actually containing big numbers, since small numbers are
   // represented as numbers and big numbers are represented as strings.
   const input: Data = {
     a: 1,
@@ -25,7 +24,7 @@ test('round trip', () => {
     d: { four: 'four' },
     e: Principal.fromHex('FfFfFfFfFfFfFfFfd7'),
     f: Buffer.from([]) as BinaryBlob,
-    g: new BigNumber('0xffffffffffffffff'),
+    g: BigInt('0xffffffffffffffff'),
   };
 
   const output = decode<Data>(encode(input));
@@ -38,6 +37,10 @@ test('round trip', () => {
 
   expect(blobToHex(outputC)).toBe(blobToHex(inputC));
   expect(buf2hex((outputE as any) as Uint8Array).toUpperCase()).toBe(inputE.toHex());
+
+  outputRest; //?
+  inputRest; //?
+
   expect(outputRest).toEqual(inputRest);
 });
 

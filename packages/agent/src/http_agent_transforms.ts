@@ -1,4 +1,3 @@
-import BigNumber from 'bignumber.js';
 import { Buffer } from 'buffer/';
 import * as cbor from 'simple-cbor';
 import { Endpoint, HttpAgentRequest, HttpAgentRequestTransformFn } from './http_agent_types';
@@ -10,14 +9,14 @@ const NANOSECONDS_PER_MILLISECONDS = 1000000;
 const REPLICA_PERMITTED_DRIFT_MILLISECONDS = 60 * 1000;
 
 export class Expiry {
-  private readonly _value: BigNumber;
+  private readonly _value: bigint;
 
   constructor(deltaInMSec: number) {
-    // Use BigNumber because it can overflow the maximum number allowed in a double float.
-    this._value = new BigNumber(Date.now().valueOf())
-      .plus(deltaInMSec)
-      .minus(REPLICA_PERMITTED_DRIFT_MILLISECONDS)
-      .times(NANOSECONDS_PER_MILLISECONDS);
+    // Use bigint because it can overflow the maximum number allowed in a double float.
+    this._value = BigInt(Date.now().valueOf());
+    this._value += BigInt(deltaInMSec);
+    this._value -= BigInt(REPLICA_PERMITTED_DRIFT_MILLISECONDS);
+    this._value *= BigInt(NANOSECONDS_PER_MILLISECONDS);
   }
 
   public toCBOR(): cbor.CborValue {

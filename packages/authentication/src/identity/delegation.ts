@@ -10,7 +10,6 @@ import {
   requestIdOf,
   SignIdentity,
 } from '@dfinity/agent';
-import BigNumber from 'bignumber.js';
 import { Buffer } from 'buffer/';
 import * as cbor from 'simple-cbor';
 
@@ -34,7 +33,7 @@ function _parseBlob(value: unknown): BinaryBlob {
 export class Delegation {
   constructor(
     public readonly pubkey: BinaryBlob,
-    public readonly expiration: BigNumber,
+    public readonly expiration: bigint,
     public readonly targets?: Principal[],
   ) {}
 
@@ -102,7 +101,7 @@ async function _createSingleDelegation(
 ): Promise<SignedDelegation> {
   const delegation: Delegation = new Delegation(
     to.toDer(),
-    new BigNumber(+expiration).times(1000000), // In nanoseconds.
+    BigInt(+expiration) * BigInt(1000000), // In nanoseconds.
     targets,
   );
   // The signature is calculated by signing the concatenation of the domain separator
@@ -110,7 +109,7 @@ async function _createSingleDelegation(
   // Note: To ensure Safari treats this as a user gesture, ensure to not use async methods
   // besides the actualy webauthn functionality (such as `sign`). Safari will de-register
   // a user gesture if you await an async call thats not fetch, xhr, or setTimeout.
-  const challenge = new Uint8Array([...domainSeparator, ...(requestIdOf(delegation))]);
+  const challenge = new Uint8Array([...domainSeparator, ...requestIdOf(delegation)]);
   const signature = await from.sign(blobFromUint8Array(challenge));
   // This is extremely helpful to have in the debug log when tracking down ic-ref authentication signature errors.
   console.debug('@dfinity/authentication _createSingleDelegation', {
@@ -209,7 +208,7 @@ export class DelegationChain {
       return {
         delegation: new Delegation(
           _parseBlob(pubkey),
-          new BigNumber(expiration, 16),
+          BigInt(expiration),
           targets &&
             targets.map((t: unknown) => {
               if (typeof t !== 'string') {

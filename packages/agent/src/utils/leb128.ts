@@ -43,14 +43,14 @@ export function lebEncode(value: number | BigNumber | bigint | BigInt): Buffer {
   return new Buffer(pipe.buffer);
 }
 
-export function lebDecode(pipe: Pipe): BigNumber {
+export function lebDecode(pipe: Pipe): bigint {
   let shift = 0;
-  let value = new BigNumber(0);
+  let value = BigInt(0);
   let byte;
 
   do {
     byte = safeRead(pipe, 1)[0];
-    value = value.plus(new BigNumber(byte & 0x7f).multipliedBy(new BigNumber(2).pow(shift)));
+    value += BigInt(byte & 0x7f) * BigInt(2) ** BigInt(shift);
     shift += 7;
   } while (byte >= 0x80);
 
@@ -91,7 +91,7 @@ export function slebEncode(value: BigNumber | number): Buffer {
   return new Buffer(pipe.buffer);
 }
 
-export function slebDecode(pipe: Pipe): BigNumber {
+export function slebDecode(pipe: Pipe): bigint {
   // Get the size of the buffer, then cut a buffer of that size.
   const pipeView = new Uint8Array(pipe.buffer);
   let len = 0;
@@ -106,11 +106,11 @@ export function slebDecode(pipe: Pipe): BigNumber {
   }
 
   const bytes = new Uint8Array(safeRead(pipe, len + 1));
-  let value = new BigNumber(0);
+  let value = BigInt(0);
   for (let i = bytes.byteLength - 1; i >= 0; i--) {
-    value = value.times(0x80).plus(0x80 - (bytes[i] & 0x7f) - 1);
+    value = value * BigInt(0x80) + BigInt(0x80 - (bytes[i] & 0x7f) - 1);
   }
-  return value.negated().minus(1);
+  return value * BigInt(-1) - BigInt(1);
 }
 
 export function writeUIntLE(value: BigNumber | number, byteLength: number): Buffer {
