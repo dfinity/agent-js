@@ -4,6 +4,8 @@ JavaScript and TypeScript library to interact with the [Internet Computer](https
 
 Visit the [Dfinity Forum](https://forum.dfinity.org/) and [SDK Documentation](https://sdk.dfinity.org/docs/index.html) for more information and support building on the Internet Computer.
 
+Additional API Documentation can be found [here](https://peacock.dev/agent-docs).
+
 ---
 
 ## Installation
