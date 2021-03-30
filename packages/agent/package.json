@@ -1,6 +1,28 @@
 {
   "name": "@dfinity/agent",
   "version": "0.6.28",
+  "author": "DFINITY Stiftung <sdk@dfinity.org>",
+  "license": "Apache-2.0",
+  "description": "JavaScript and TypeScript library to interact with the Internet Computer",
+  "keywords": [
+    "internet computer",
+    "internet-computer",
+    "ic",
+    "dfinity",
+    "agent",
+    "actor",
+    "dfx",
+    "canister",
+    "candid",
+    "motoko",
+    "javascript",
+    "typescript",
+    "blockchain",
+    "crypto",
+    "distributed",
+    "api",
+    "sdk"
+  ],
   "main": "./lib/cjs/index",
   "module": "./lib/esm/index",
   "scripts": {
