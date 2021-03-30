@@ -1,10 +1,9 @@
 {
   "name": "@dfinity/authentication",
   "version": "0.6.28",
-  "main": "./lib/cjs/index.js",
-  "module": "./lib/esm/index.js",
+  "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "SEE LICENSE IN LICENSE",
-  "homepage": "https://sdk.dfinity.org/docs/index.html",
+  "description": "JavaScript and TypeScript library to manage identity and authentication with the Internet Computer",
   "keywords": [
     "internet computer",
     "ic",
@@ -24,6 +23,9 @@
     "distributed",
     "api"
   ],
+  "main": "./lib/cjs/index.js",
+  "module": "./lib/esm/index.js",
+  "homepage": "https://sdk.dfinity.org/docs/index.html",
   "scripts": {
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
     "bundle": "npm run build",
