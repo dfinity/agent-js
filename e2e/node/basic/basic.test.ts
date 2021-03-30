@@ -32,5 +32,5 @@ test("read_state", async () => {
 
 test("createCanister", async () => {
   // Make sure this doesn't fail.
-  await getManagementCanister({}).create_canister();
+  await getManagementCanister({}).provisional_create_canister_with_cycles({ amount: [1e12] });
 });
