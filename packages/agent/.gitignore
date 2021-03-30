@@ -5,6 +5,9 @@ dist/
 **/*.js.map
 **/*.d.ts
 
+# generated docs
+/docs/reference
+
 # Cannot ignore .d.ts files in types/
 !types/**/*.d.ts
 
