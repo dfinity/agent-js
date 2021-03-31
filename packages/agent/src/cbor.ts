@@ -110,9 +110,5 @@ export function decode<T>(input: Uint8Array): T {
     },
   });
   const result = decoder.decodeFirst(input);
-  if ('canister_id' in result) {
-    result.canister_id = Principal.fromText(result.canister_id.toString(16));
-  }
-  result;
   return result;
 }
