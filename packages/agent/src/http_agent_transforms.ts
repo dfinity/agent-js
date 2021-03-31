@@ -4,19 +4,17 @@ import { Endpoint, HttpAgentRequest, HttpAgentRequestTransformFn } from './http_
 import { makeNonce, Nonce } from './types';
 import { lebEncode } from './utils/leb128';
 
-const NANOSECONDS_PER_MILLISECONDS = 1000000;
+const NANOSECONDS_PER_MILLISECONDS = BitInt(1000000);
 
-const REPLICA_PERMITTED_DRIFT_MILLISECONDS = 60 * 1000;
+const REPLICA_PERMITTED_DRIFT_MILLISECONDS = BigInt(60 * 1000);
 
 export class Expiry {
   private readonly _value: bigint;
 
   constructor(deltaInMSec: number) {
     // Use bigint because it can overflow the maximum number allowed in a double float.
-    this._value = BigInt(Date.now().valueOf());
-    this._value += BigInt(deltaInMSec);
-    this._value -= BigInt(REPLICA_PERMITTED_DRIFT_MILLISECONDS);
-    this._value *= BigInt(NANOSECONDS_PER_MILLISECONDS);
+    this._value = (BigInt(Date.now()) + BigInt(deltaInMSec) - REPLICA_PERMITTED_DRIFT_MILLISECONDS)
+      * NANOSECONDS_PER_MILLISECONDS;
   }
 
   public toCBOR(): cbor.CborValue {
