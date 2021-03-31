@@ -403,8 +403,8 @@ export class TextClass extends PrimitiveType<string> {
 
   public decodeValue(b: Pipe, t: Type) {
     this.checkType(t);
-    const len = lebDecode(b).toNumber();
-    const buf = safeRead(b, len);
+    const len = lebDecode(b);
+    const buf = safeRead(b, Number(len));
     if (!isValidUTF8(buf)) {
       throw new Error('Not valid UTF8 text');
     }
@@ -582,7 +582,7 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
     this.checkType(t);
     const num = readIntLE(b, this._bits / 8);
     if (this._bits <= 32) {
-      return num.toNumber();
+      return Number(num);
     } else {
       return num;
     }
@@ -634,7 +634,7 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
     this.checkType(t);
     const num = readUIntLE(b, this._bits / 8);
     if (this._bits <= 32) {
-      return num.toNumber();
+      return Number(num);
     } else {
       return num;
     }
@@ -684,7 +684,7 @@ export class VecClass<T> extends ConstructType<T[]> {
     if (!(vec instanceof VecClass)) {
       throw new Error('Not a vector type');
     }
-    const len = lebDecode(b).toNumber();
+    const len = Number(lebDecode(b));
     const rets: any[] = [];
     for (let i = 0; i < len; i++) {
       rets.push(this._type.decodeValue(b, vec._type));
@@ -987,7 +987,7 @@ export class VariantClass extends ConstructType<Record<string, any>> {
     if (!(variant instanceof VariantClass)) {
       throw new Error('Not a variant type');
     }
-    const idx = lebDecode(b).toNumber();
+    const idx = Number(lebDecode(b));
     if (idx >= variant._fields.length) {
       throw Error('Invalid variant index: ' + idx);
     }
@@ -1103,7 +1103,7 @@ function decodePrincipalId(b: Pipe): PrincipalId {
   if (x !== '01') {
     throw new Error('Cannot decode principal');
   }
-  const len = lebDecode(b).toNumber();
+  const len = Number(lebDecode(b));
   const hex = safeRead(b, len).toString('hex').toUpperCase();
   return PrincipalId.fromHex(hex);
 }
@@ -1204,7 +1204,7 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
     }
     const canister = decodePrincipalId(b);
 
-    const mLen = lebDecode(b).toNumber();
+    const mLen = Number(lebDecode(b));
     const buf = safeRead(b, mLen);
     if (!isValidUTF8(buf)) {
       throw new Error('Not valid UTF8 method name');
@@ -1288,6 +1288,14 @@ export class ServiceClass extends ConstructType<PrincipalId> {
   }
 }
 
+function toReadableString(x: unknown): string {
+  if (typeof x === 'bigint') {
+    return `${x}n`;
+  } else {
+    return JSON.stringify(x);
+  }
+}
+
 /**
  * Encode a array of values
  * @returns {Buffer} serialised value
@@ -1307,7 +1315,7 @@ export function encode(argTypes: Array<Type<any>>, args: any[]): BinaryBlob {
   const vals = Buffer.concat(
     zipWith(argTypes, args, (t, x) => {
       if (!t.covariant(x)) {
-        throw new Error(`Invalid ${t.display()} argument: "${JSON.stringify(x)}"`);
+        throw new Error(`Invalid ${t.display()} argument: ${toReadableString(x)}`);
       }
 
       return t.encodeValue(x);
@@ -1336,24 +1344,24 @@ export function decode(retTypes: Type[], bytes: Buffer): JsonValue[] {
 
   function readTypeTable(pipe: Pipe): [Array<[IDLTypeIds, any]>, number[]] {
     const typeTable: Array<[IDLTypeIds, any]> = [];
-    const len = lebDecode(pipe).toNumber();
+    const len = Number(lebDecode(pipe));
 
     for (let i = 0; i < len; i++) {
-      const ty = slebDecode(pipe).toNumber();
+      const ty = Number(slebDecode(pipe));
       switch (ty) {
         case IDLTypeIds.Opt:
         case IDLTypeIds.Vector: {
-          const t = slebDecode(pipe).toNumber();
+          const t = Number(slebDecode(pipe));
           typeTable.push([ty, t]);
           break;
         }
         case IDLTypeIds.Record:
         case IDLTypeIds.Variant: {
           const fields = [];
-          let objectLength = lebDecode(pipe).toNumber();
+          let objectLength = Number(lebDecode(pipe));
           let prevHash;
           while (objectLength--) {
-            const hash = lebDecode(pipe).toNumber();
+            const hash = Number(lebDecode(pipe));
             if (hash >= Math.pow(2, 32)) {
               throw new Error('field id out of 32-bit range');
             }
@@ -1361,7 +1369,7 @@ export function decode(retTypes: Type[], bytes: Buffer): JsonValue[] {
               throw new Error('field id collision or not sorted');
             }
             prevHash = hash;
-            const t = slebDecode(pipe).toNumber();
+            const t = Number(slebDecode(pipe));
             fields.push([hash, t]);
           }
           typeTable.push([ty, fields]);
@@ -1369,20 +1377,20 @@ export function decode(retTypes: Type[], bytes: Buffer): JsonValue[] {
         }
         case IDLTypeIds.Func: {
           for (let k = 0; k < 2; k++) {
-            let funcLength = lebDecode(pipe).toNumber();
+            let funcLength = Number(lebDecode(pipe));
             while (funcLength--) {
               slebDecode(pipe);
             }
           }
-          const annLen = lebDecode(pipe).toNumber();
+          const annLen = Number(lebDecode(pipe));
           safeRead(pipe, annLen);
           typeTable.push([ty, undefined]);
           break;
         }
         case IDLTypeIds.Service: {
-          let servLength = lebDecode(pipe).toNumber();
+          let servLength = Number(lebDecode(pipe));
           while (servLength--) {
-            const l = lebDecode(pipe).toNumber();
+            const l = Number(lebDecode(pipe));
             safeRead(pipe, l);
             slebDecode(pipe);
           }
@@ -1395,9 +1403,9 @@ export function decode(retTypes: Type[], bytes: Buffer): JsonValue[] {
     }
 
     const rawList: number[] = [];
-    const length = lebDecode(pipe).toNumber();
+    const length = Number(lebDecode(pipe));
     for (let i = 0; i < length; i++) {
-      rawList.push(slebDecode(pipe).toNumber());
+      rawList.push(Number(slebDecode(pipe)));
     }
     return [typeTable, rawList];
   }

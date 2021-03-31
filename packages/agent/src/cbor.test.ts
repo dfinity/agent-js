@@ -38,9 +38,6 @@ test('round trip', () => {
   expect(blobToHex(outputC)).toBe(blobToHex(inputC));
   expect(buf2hex((outputE as any) as Uint8Array).toUpperCase()).toBe(inputE.toHex());
 
-  outputRest; //?
-  inputRest; //?
-
   expect(outputRest).toEqual(inputRest);
 });
 

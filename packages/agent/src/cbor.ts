@@ -88,10 +88,24 @@ export const encode = (value: any): BinaryBlob => {
   return blobFromBuffer(Buffer.from(serializer.serialize(value)));
 };
 
+function decodePositiveBigInt(buf: Uint8Array): bigint {
+  const len = buf.byteLength;
+  let res = BigInt(0);
+  for (let i = 0; i < len; i++) {
+    // tslint:disable-next-line:no-bitwise
+    res = res * BigInt(0x100) + BigInt(buf[i]);
+  }
+
+  return res;
+}
+
 export function decode<T>(input: Uint8Array): T {
   const decoder = new borc.Decoder({
     size: input.byteLength,
     tags: {
+      // Override tags 2 and 3 for BigInt support (borc supports only BigNumber).
+      2: val => decodePositiveBigInt(val),
+      3: val => -decodePositiveBigInt(val),
       [CborTag.Semantic]: (value: T): T => value,
     },
   });

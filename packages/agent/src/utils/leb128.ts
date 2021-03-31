@@ -17,22 +17,25 @@ export function safeRead(pipe: Pipe, num: number): Buffer {
   return pipe.read(num);
 }
 
-export function lebEncode(value: number | BigNumber | bigint | BigInt): Buffer {
-  if (typeof value === 'bigint' || value instanceof BigInt) {
-    value = new BigNumber(value.toString(10), 10);
-  } else if (typeof value === 'number') {
-    value = new BigNumber(value);
+/**
+ * Encode a positive number (or bigint) into a Buffer. The number will be floored to the
+ * nearest integer.
+ * @param value The number to encode.
+ */
+export function lebEncode(value: bigint | number): Buffer {
+  if (typeof value === 'number') {
+    value = BigInt(value);
   }
-  value = value.integerValue();
-  if (value.lt(0)) {
+
+  if (value < BigInt(0)) {
     throw new Error('Cannot leb encode negative values.');
   }
 
   const pipe = new Pipe();
   while (true) {
-    const i = value.mod(0x80).toNumber();
-    value = value.idiv(0x80);
-    if (value.eq(0)) {
+    const i = Number(value & BigInt(0x7F));
+    value /= BigInt(0x80);
+    if (value === BigInt(0)) {
       pipe.write([i]);
       break;
     } else {
@@ -43,54 +46,71 @@ export function lebEncode(value: number | BigNumber | bigint | BigInt): Buffer {
   return new Buffer(pipe.buffer);
 }
 
+/**
+ * Decode a leb encoded buffer into a bigint. The number will always be positive (does not
+ * support signed leb encoding).
+ * @param pipe A Buffer containing the leb encoded bits.
+ */
 export function lebDecode(pipe: Pipe): bigint {
-  let shift = 0;
+  let shift = BigInt(0);
   let value = BigInt(0);
   let byte;
 
   do {
     byte = safeRead(pipe, 1)[0];
-    value += BigInt(byte & 0x7f) * BigInt(2) ** BigInt(shift);
-    shift += 7;
+    value += BigInt(byte & 0x7f).valueOf() * BigInt(2) ** shift;
+    shift += BigInt(7);
   } while (byte >= 0x80);
 
   return value;
 }
 
-export function slebEncode(value: BigNumber | number): Buffer {
+/**
+ * Encode a number (or bigint) into a Buffer, with support for negative numbers. The number
+ * will be floored to the nearest integer.
+ * @param value The number to encode.
+ */
+export function slebEncode(value: bigint | number): Buffer {
   if (typeof value === 'number') {
-    value = new BigNumber(value);
+    value = BigInt(value);
   }
-  value = value.integerValue();
 
-  const isNeg = value.lt(0);
+  const isNeg = value < BigInt(0);
   if (isNeg) {
-    value = value.abs().minus(1);
+    value = -value - BigInt(1);
   }
   const pipe = new Pipe();
   while (true) {
-    const i = getLowerBytes(value);
-    value = value.idiv(0x80);
-    if ((isNeg && value.eq(0) && (i & 0x40) !== 0) || (!isNeg && value.eq(0) && (i & 0x40) === 0)) {
-      pipe.write([i]);
-      break;
-    } else {
-      pipe.write([i | 0x80]);
-    }
+      const i = getLowerBytes(value);
+      value /= BigInt(0x80);
+
+      // prettier-ignore
+      if (   ( isNeg && value === BigInt(0) && (i & 0x40) !== 0)
+          || (!isNeg && value === BigInt(0) && (i & 0x40) === 0)) {
+        pipe.write([i]);
+        break;
+      } else {
+        pipe.write([i | 0x80]);
+      }
   }
 
-  function getLowerBytes(num: BigNumber): number {
-    const bytes = num.mod(0x80).toNumber();
+  function getLowerBytes(num: bigint): number {
+    const bytes = num % BigInt(0x80);
     if (isNeg) {
       // We swap the bits here again, and remove 1 to do two's complement.
-      return 0x80 - bytes - 1;
+      return Number(BigInt(0x80) - bytes - BigInt(1));
     } else {
-      return bytes;
+      return Number(bytes);
     }
   }
   return new Buffer(pipe.buffer);
 }
 
+/**
+ * Decode a leb encoded buffer into a bigint. The number is decoded with support for negative
+ * signed-leb encoding.
+ * @param pipe A Buffer containing the signed leb encoded bits.
+ */
 export function slebDecode(pipe: Pipe): bigint {
   // Get the size of the buffer, then cut a buffer of that size.
   const pipeView = new Uint8Array(pipe.buffer);
@@ -110,55 +130,54 @@ export function slebDecode(pipe: Pipe): bigint {
   for (let i = bytes.byteLength - 1; i >= 0; i--) {
     value = value * BigInt(0x80) + BigInt(0x80 - (bytes[i] & 0x7f) - 1);
   }
-  return value * BigInt(-1) - BigInt(1);
+  return -value - BigInt(1);
 }
 
-export function writeUIntLE(value: BigNumber | number, byteLength: number): Buffer {
-  if ((value instanceof BigNumber && value.isNegative()) || value < 0) {
+export function writeUIntLE(value: bigint | number, byteLength: number): Buffer {
+  if (BigInt(value) < BigInt(0)) {
     throw new Error('Cannot write negative values.');
   }
   return writeIntLE(value, byteLength);
 }
 
-export function writeIntLE(value: BigNumber | number, byteLength: number): Buffer {
-  if (typeof value === 'number') {
-    value = new BigNumber(value);
-  }
-  value = value.integerValue();
+export function writeIntLE(value: bigint | number, byteLength: number): Buffer {
+  value = BigInt(value);
+
   const pipe = new Pipe();
   let i = 0;
-  let mul = new BigNumber(256);
-  let sub = 0;
-  let byte = value.mod(mul).toNumber();
+  let mul = BigInt(256);
+  let sub = BigInt(0);
+  let byte = Number(value % mul);
   pipe.write([byte]);
   while (++i < byteLength) {
-    if (value.lt(0) && sub === 0 && byte !== 0) {
-      sub = 1;
+    if (value < 0 && sub === BigInt(0) && byte !== 0) {
+      sub = BigInt(1);
     }
-    byte = value.idiv(mul).minus(sub).mod(256).toNumber();
+    byte = Number((value / mul - sub) % BigInt(256));
     pipe.write([byte]);
-    mul = mul.times(256);
+    mul *= BigInt(256);
   }
+
   return new Buffer(pipe.buffer);
 }
 
-export function readUIntLE(pipe: Pipe, byteLength: number): BigNumber {
-  let val = new BigNumber(safeRead(pipe, 1)[0]);
-  let mul = new BigNumber(1);
+export function readUIntLE(pipe: Pipe, byteLength: number): bigint {
+  let val = BigInt(safeRead(pipe, 1)[0]);
+  let mul = BigInt(1);
   let i = 0;
   while (++i < byteLength) {
-    mul = mul.times(256);
-    const byte = safeRead(pipe, 1)[0];
-    val = val.plus(mul.times(byte));
+    mul *= BigInt(256);
+    const byte = BigInt(safeRead(pipe, 1)[0]);
+    val = val + (mul * byte);
   }
   return val;
 }
 
-export function readIntLE(pipe: Pipe, byteLength: number): BigNumber {
+export function readIntLE(pipe: Pipe, byteLength: number): bigint {
   let val = readUIntLE(pipe, byteLength);
-  const mul = new BigNumber(2).pow(8 * (byteLength - 1) + 7);
-  if (val.gte(mul)) {
-    val = val.minus(mul.times(2));
+  const mul = BigInt(2) ** (BigInt(8) * BigInt(byteLength - 1) + BigInt(7));
+  if (val >= mul) {
+    val -= mul * BigInt(2);
   }
   return val;
 }
