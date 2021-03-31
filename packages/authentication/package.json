@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/authentication",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to manage identity and authentication with the Internet Computer",
@@ -39,7 +39,7 @@
     "test:coverage": "jest --verbose --collectCoverage"
   },
   "dependencies": {
-    "@dfinity/agent": "^0.7.0",
+    "@dfinity/agent": "^0.7.1",
     "@dollarshaveclub/cloudworker": "^0.1.2",
     "@types/crc": "^3.4.0",
     "@types/jest": "^24.0.18",

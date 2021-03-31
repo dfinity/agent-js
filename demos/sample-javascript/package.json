@@ -2,8 +2,8 @@
   "name": "ic-agent-sample-javascript-app",
   "private": true,
   "dependencies": {
-    "@dfinity/agent": "^0.7.0",
-    "@dfinity/authentication": "^0.7.0",
+    "@dfinity/agent": "^0.7.1",
+    "@dfinity/authentication": "^0.7.1",
     "@dollarshaveclub/cloudworker": "^0.1.2",
     "assert": "^2.0.0",
     "buffer": "^6.0.3",
@@ -19,5 +19,5 @@
   "scripts": {
     "develop": "webpack-dev-server"
   },
-  "version": "0.7.0"
+  "version": "0.7.1"
 }
