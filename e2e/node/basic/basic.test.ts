@@ -25,7 +25,7 @@ test("read_state", async () => {
     Buffer.concat([Buffer.from("DIDL\x00\x01\x7d"), rawTime])
   )[0];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const time = (decoded as any).toNumber() / 1e9;
+  const time = Number(decoded as any) / 1e9;
   // The diff between decoded time and local time is within 5s
   expect(Math.abs(time - now) < 5).toBe(true);
 });
