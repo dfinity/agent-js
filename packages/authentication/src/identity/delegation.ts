@@ -205,11 +205,11 @@ export class DelegationChain {
       if (targets !== undefined && !Array.isArray(targets)) {
         throw new Error('Invalid targets.');
       }
-      global?.console.log(0, typeof expiration, expiration.toString(), JSON.stringify(expiration));
+
       return {
         delegation: new Delegation(
           _parseBlob(pubkey),
-          BigInt(expiration),
+          BigInt(`0x${expiration}`),  // expiration in JSON is an hexa string (See toJSON() below).
           targets &&
             targets.map((t: unknown) => {
               if (typeof t !== 'string') {
