@@ -4,7 +4,7 @@ import { Endpoint, HttpAgentRequest, HttpAgentRequestTransformFn } from './http_
 import { makeNonce, Nonce } from './types';
 import { lebEncode } from './utils/leb128';
 
-const NANOSECONDS_PER_MILLISECONDS = BitInt(1000000);
+const NANOSECONDS_PER_MILLISECONDS = BigInt(1000000);
 
 const REPLICA_PERMITTED_DRIFT_MILLISECONDS = BigInt(60 * 1000);
 
