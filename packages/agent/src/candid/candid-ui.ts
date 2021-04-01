@@ -1,4 +1,3 @@
-import BigNumber from 'bignumber.js';
 import * as IDL from '../idl';
 import { Principal } from '../principal';
 import * as UI from './candid-core';
@@ -118,8 +117,8 @@ class Parse extends IDL.Visitor<string, any> {
   public visitFloat(t: IDL.FloatClass, v: string): number {
     return parseFloat(v);
   }
-  public visitNumber(t: IDL.PrimitiveType, v: string): BigNumber {
-    return new BigNumber(v);
+  public visitNumber(t: IDL.PrimitiveType, v: string): bigint {
+    return BigInt(v);
   }
   public visitPrincipal(t: IDL.PrincipalClass, v: string): Principal {
     return Principal.fromText(v);
@@ -146,17 +145,17 @@ class Random extends IDL.Visitor<string, any> {
   public visitFloat(t: IDL.FloatClass, v: string): number {
     return Math.random();
   }
-  public visitInt(t: IDL.IntClass, v: string): BigNumber {
-    return new BigNumber(this.generateNumber(true));
+  public visitInt(t: IDL.IntClass, v: string): bigint {
+    return BigInt(this.generateNumber(true));
   }
-  public visitNat(t: IDL.NatClass, v: string): BigNumber {
-    return new BigNumber(this.generateNumber(false));
+  public visitNat(t: IDL.NatClass, v: string): bigint {
+    return BigInt(this.generateNumber(false));
   }
-  public visitFixedInt(t: IDL.FixedIntClass, v: string): BigNumber {
-    return new BigNumber(this.generateNumber(true));
+  public visitFixedInt(t: IDL.FixedIntClass, v: string): bigint {
+    return BigInt(this.generateNumber(true));
   }
-  public visitFixedNat(t: IDL.FixedNatClass, v: string): BigNumber {
-    return new BigNumber(this.generateNumber(false));
+  public visitFixedNat(t: IDL.FixedNatClass, v: string): bigint {
+    return BigInt(this.generateNumber(false));
   }
   private generateNumber(signed: boolean): number {
     const num = Math.floor(Math.random() * 100);

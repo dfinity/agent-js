@@ -27,7 +27,12 @@ export class Principal {
     let arr = decode(canisterIdNoDash);
     arr = arr.slice(4, arr.length);
 
-    return new this(blobFromUint8Array(arr));
+    const principal = new this(blobFromUint8Array(arr));
+    if (principal.toText() !== text) {
+      throw new Error(`Principal "${principal.toText()}" does not have a valid checksum.`);
+    }
+
+    return principal;
   }
 
   public static fromBlob(blob: BinaryBlob): Principal {

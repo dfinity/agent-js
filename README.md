@@ -35,35 +35,47 @@ skip the `npx` part of the example commands.
 
 To publish to NPM, create a branch and run the following commands;
 
-* `lerna bootstrap`. Makes sure everything is installed and up to date locally;
-* `lerna run build`. Builds all the applications and packages.
-* `lerna run test`. Just in case.
-* `lerna publish VERSION_NUMBER --dist-tag DIST_TAG`. The `VERSION_NUMBER` should be set to
+- `lerna bootstrap`. Makes sure everything is installed and up to date locally;
+- `lerna run build`. Builds all the applications and packages.
+- `lerna run test`. Just in case.
+- `lerna publish VERSION_NUMBER --dist-tag DIST_TAG`. The `VERSION_NUMBER` should be set to
   the version to be published (e.g. `0.6.30`). The `DIST_TAG` argument can be ignored
-  
+
 This will change your code locally, so create a `chore: release VERSION_NUMBER` commit and
 push. Once the PR is created get someone to review it.
 
 ### Publishing Cloudflare Workers
+
 Until Cloudflare is no longer needed, we need to publish both workers from their directories;
 
-* Start from a fresh clone (or `git clean -dfx .`)
-* `lerna bootstrap`
-* `lerna run build`
-* `cd workers/auth.ic0.app` for the Authentication
-* `npm ci` to make sure the proper packages are installed.
-* `npx wrangler login` to login. YOU NEED AN API TOKEN FOR THIS.
-* `npm run build`
-* `npx wrangler publish`
+- Start from a fresh clone (or `git clean -dfx .`)
+- `lerna bootstrap`
+- `lerna run build`
+- `cd workers/auth.ic0.app` for the Authentication
+- `npm ci` to make sure the proper packages are installed.
+- `npx wrangler login` to login. YOU NEED AN API TOKEN FOR THIS.
+- `npm run build`
+- `npx wrangler publish`
 
 Repeat steps for `workers/ic0.app`.
+
+### Publishing Docs
+
+Until we have an internal process and centrally owned canister, docs can be released manually for `@dfinity/agent` and `@dfinity/authentication`.
+
+- Start from a fresh clone (or `git clean -dfx .`)
+- `lerna bootstrap`
+- `npm run make:docs/reference`
+- `dfx deploy`
+
+Note - you may need to ask to be added as a controller for the wallet that owns the docs until this job is moved to CI
 
 ### GitHub Actions
 
 GitHub Actions for this repo are configured in [./.github/workflows](./.github/workflows).
 
-* [nodejs-ci.yml](./.github/workflows/nodejs-ci.yml) - For every git push, do a build, test of all packages.
-* [commitlint.yml](./.github/workflows/commitlint.yml) - Run [commitlint](https://commitlint.js.org/#/) on every git commit message.
+- [nodejs-ci.yml](./.github/workflows/nodejs-ci.yml) - For every git push, do a build, test of all packages.
+- [commitlint.yml](./.github/workflows/commitlint.yml) - Run [commitlint](https://commitlint.js.org/#/) on every git commit message.
 
 ### Master Branch Conventions and Mergify
 
@@ -71,14 +83,13 @@ All commits in the master branch should come from squashed GitHub Pull Requests,
 
 Mergify can take care of enforcing all of this. Just add the `automerge-squash` label to each Pull Request that Mergify should merge. This policy is configured via [./.mergify.yml](./.mergify).
 
-### bin/* scripts
-
+### bin/\* scripts
 
 The following scripts can be found in [./bin](./bin):
 
 Monorepo-related scripts run in this order, but are usually invoked by `npm install`:
 
-* npm-postinstall - Run with `npm run postinstall` in this monorepo package.
-  * It copies devtools dependencies from ./packages/agent-js-devtools/node_modules -> ./node_modules
-* build - Build (`npm run build`) each subpackage in ./packages/
-* test - Run `npm test` in each subpackage
+- npm-postinstall - Run with `npm run postinstall` in this monorepo package.
+  - It copies devtools dependencies from ./packages/agent-js-devtools/node_modules -> ./node_modules
+- build - Build (`npm run build`) each subpackage in ./packages/
+- test - Run `npm test` in each subpackage

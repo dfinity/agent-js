@@ -1,7 +1,6 @@
 // tslint:disable-next-line: max-line-length
 // https://github.com/dfinity-lab/dfinity/blob/5fef1450c9ab16ccf18381379149e504b11c8218/docs/spec/public/index.adoc#request-ids
 
-import BigNumber from 'bignumber.js';
 import { Buffer } from 'buffer/';
 import { Principal } from './principal';
 import { hash, requestIdOf } from './request_id';
@@ -102,13 +101,13 @@ test.skip('requestIdOf for sender_delegation signature', async () => {
     blobToHex(blobFromUint8Array(expectedHashBytes)),
   );
 
-  // Note: this uses `BigNumber` and blobs, which the rest of this lib uses too.
+  // Note: this uses `bigint` and blobs, which the rest of this lib uses too.
   // Make sure this works before `delegation1` above (with BigInt)
   const delegation2 = {
     ...delegation1,
     pubkey: blobFromUint8Array(delegation1.pubkey),
     targets: delegation1.targets.map(t => blobFromUint8Array(t)),
-    expiration: new BigNumber(delegation1.expiration.toString(10), 10),
+    expiration: BigInt(delegation1.expiration.toString(10)),
   };
   const delegation2ActualHashBytes = await requestIdOf(delegation2);
   expect(blobToHex(delegation2ActualHashBytes)).toEqual(

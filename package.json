@@ -16,6 +16,7 @@
     "eslint-plugin-jsdoc": "^31.6.0",
     "lerna": "^3.22.1",
     "ts-node": "^9.1.1",
+    "typedoc": "^0.20.32",
     "typescript": "^3.6.3"
   },
   "engines": {
@@ -23,11 +24,12 @@
     "npm": "^7"
   },
   "scripts": {
-    "build": "lerna run build --stream",
+    "build": "echo \"Skipping build command. Please run 'npx lerna run build' if you intended to build all packages\"",
     "lint:fix": "npm run lint -- --fix",
     "lint:e2e": "eslint --cache --cache-location node_modules/.cache/eslint 'e2e/*/**/*.ts*'",
     "lint:packages": "lerna run lint",
     "lint": "npm run lint:packages",
+    "make:docs/reference": "lerna run make:docs/reference",
     "postinstall": "lerna run prepare",
     "preinstall": "echo Please run 'npx lerna bootstrap' instead of npm install.; exit 1",
     "publish:release": "lerna publish --force-publish=* --no-push --no-git-tag-version",
