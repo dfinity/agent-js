@@ -33,11 +33,14 @@
     "npm": "^7"
   },
   "scripts": {
-    "build": "",
+    "build": "npm run build --workspaces",
+    "postinstall": "cd e2e/node && npm install",
     "lint:fix": "npm run lint -- --fix",
     "lint:e2e": "eslint --cache --cache-location node_modules/.cache/eslint 'e2e/*/**/*.ts*'",
     "make:docs/reference": "lerna run make:docs/reference",
     "publish:release": "lerna publish --force-publish=* --no-push --no-git-tag-version",
+    "e2e": "cd e2e/node && npm run e2e",
+    "mitm": "cd e2e/node && npm run mitm",
     "test:coverage": "lerna run test:coverage --parallel",
     "test": "jest"
   },

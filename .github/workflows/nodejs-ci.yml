@@ -100,7 +100,7 @@ jobs:
              &
           sleep 1
 
-      - run: npx lerna run e2e
+      - run: npm run e2e
         env:
           CI: true
           IC_REF_PORT: ${{ steps.ic_ref.outputs.IC_REF_PORT }}
@@ -110,7 +110,7 @@ jobs:
           CI: true
           IC_REF_PORT: 8888
           MITM: true
-        run: npx lerna run mitm
+        run: npm run mitm
 
       - name: clean up
         run: |
