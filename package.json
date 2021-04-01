@@ -9,9 +9,11 @@
     "jest-cli": "^26.6.3",
     "ts-jest": "^26.5.4"
   },
-  "workspaces": [
-    "packages/**"
-  ],
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  },
   "devDependencies": {
     "@babel/preset-env": "^7.13.12",
     "@babel/preset-typescript": "^7.13.0",
@@ -31,11 +33,9 @@
     "npm": "^7"
   },
   "scripts": {
-    "build": "echo \"Skipping build command. Please run 'npx lerna run build' if you intended to build all packages\"",
+    "build": "",
     "lint:fix": "npm run lint -- --fix",
     "lint:e2e": "eslint --cache --cache-location node_modules/.cache/eslint 'e2e/*/**/*.ts*'",
-    "lint:packages": "lerna run lint",
-    "lint": "npm run lint:packages",
     "make:docs/reference": "lerna run make:docs/reference",
     "publish:release": "lerna publish --force-publish=* --no-push --no-git-tag-version",
     "test:coverage": "lerna run test:coverage --parallel",
