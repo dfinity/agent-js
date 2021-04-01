@@ -11,7 +11,8 @@
   },
   "workspaces": {
     "packages": [
-      "packages/*"
+      "packages/*",
+      "e2e/*"
     ]
   },
   "devDependencies": {
@@ -24,6 +25,7 @@
     "eslint": "^7.19.0",
     "eslint-plugin-jsdoc": "^31.6.0",
     "jest-expect-message": "^1.0.2",
+    "lerna": "^4.0.0",
     "ts-node": "^9.1.1",
     "typedoc": "^0.20.32",
     "typescript": "^3.6.3"
@@ -34,14 +36,13 @@
   },
   "scripts": {
     "build": "npm run build --workspaces",
-    "postinstall": "cd e2e/node && npm install",
     "lint:fix": "npm run lint -- --fix",
     "lint:e2e": "eslint --cache --cache-location node_modules/.cache/eslint 'e2e/*/**/*.ts*'",
-    "make:docs/reference": "lerna run make:docs/reference",
-    "publish:release": "lerna publish --force-publish=* --no-push --no-git-tag-version",
+    "make:docs/reference": "npm run make:docs/reference --workspaces",
+    "publish:release": "npm run publish --workspaces",
     "e2e": "cd e2e/node && npm run e2e",
     "mitm": "cd e2e/node && npm run mitm",
-    "test:coverage": "lerna run test:coverage --parallel",
+    "test:coverage": "npm run test:coverage --workspaces",
     "test": "jest"
   },
   "repository": {
