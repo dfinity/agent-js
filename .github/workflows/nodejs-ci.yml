@@ -13,7 +13,6 @@ jobs:
         spec:
           - release-0.15 # https://github.com/dfinity-lab/ic-ref/tree/release-0.15
         node:
-          - 12
           - 14
 
     steps:
@@ -23,7 +22,9 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      - run: npm ci
+      - run: npm install -g npm
+
+      - run: npm install
       - run: npm run lint --workspaces
 
       # build monorepo incl. each subpackage

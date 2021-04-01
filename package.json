@@ -24,7 +24,6 @@
     "eslint": "^7.19.0",
     "eslint-plugin-jsdoc": "^31.6.0",
     "jest-expect-message": "^1.0.2",
-    "lerna": "^3.22.1",
     "typedoc": "^0.20.32",
     "typescript": "^3.6.3"
   },
