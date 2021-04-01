@@ -33,7 +33,7 @@ export function lebEncode(value: bigint | number): Buffer {
 
   const pipe = new Pipe();
   while (true) {
-    const i = Number(value & BigInt(0x7F));
+    const i = Number(value & BigInt(0x7f));
     value /= BigInt(0x80);
     if (value === BigInt(0)) {
       pipe.write([i]);
@@ -81,11 +81,11 @@ export function slebEncode(value: bigint | number): Buffer {
   }
   const pipe = new Pipe();
   while (true) {
-      const i = getLowerBytes(value);
-      value /= BigInt(0x80);
+    const i = getLowerBytes(value);
+    value /= BigInt(0x80);
 
-      // prettier-ignore
-      if (   ( isNeg && value === BigInt(0) && (i & 0x40) !== 0)
+    // prettier-ignore
+    if (   ( isNeg && value === BigInt(0) && (i & 0x40) !== 0)
           || (!isNeg && value === BigInt(0) && (i & 0x40) === 0)) {
         pipe.write([i]);
         break;
@@ -168,7 +168,7 @@ export function readUIntLE(pipe: Pipe, byteLength: number): bigint {
   while (++i < byteLength) {
     mul *= BigInt(256);
     const byte = BigInt(safeRead(pipe, 1)[0]);
-    val = val + (mul * byte);
+    val = val + mul * byte;
   }
   return val;
 }

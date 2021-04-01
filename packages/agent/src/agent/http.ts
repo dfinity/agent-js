@@ -143,7 +143,7 @@ export class HttpAgent implements Agent {
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
     const id = await (identity !== undefined ? identity : this._identity);
-    const sender = id?.getPrincipal() || Principal.anonymous();
+    const sender = id?.getPrincipal?.() || Principal.anonymous();
     return this.submit(
       {
         request_type: SubmitRequestType.Call,
@@ -186,7 +186,7 @@ export class HttpAgent implements Agent {
     identity?: Identity | Promise<Identity>,
   ): Promise<QueryResponse> {
     const id = await (identity || this._identity);
-    const sender = id?.getPrincipal() || Principal.anonymous();
+    const sender = id?.getPrincipal?.() || Principal.anonymous();
 
     return this.read(
       {
@@ -206,7 +206,7 @@ export class HttpAgent implements Agent {
     identity?: Identity | Promise<Identity>,
   ): Promise<ReadStateResponse> {
     const id = await (identity || this._identity);
-    const sender = id?.getPrincipal() || Principal.anonymous();
+    const sender = id?.getPrincipal?.() || Principal.anonymous();
 
     return this.read(
       {
@@ -257,7 +257,10 @@ export class HttpAgent implements Agent {
     return p;
   }
 
-  protected async submit(submit: SubmitRequest, identity: Identity): Promise<SubmitResponse> {
+  protected async submit(
+    submit: SubmitRequest,
+    identity: Identity | AnonymousIdentity,
+  ): Promise<SubmitResponse> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let transformedRequest: any = (await this._transform({
       request: {
@@ -273,7 +276,7 @@ export class HttpAgent implements Agent {
     })) as HttpAgentSubmitRequest;
 
     // Apply transform for identity.
-    transformedRequest = await identity.transformRequest(transformedRequest);
+    transformedRequest = await (await identity).transformRequest(transformedRequest);
 
     const body = cbor.encode(transformedRequest.body);
 
@@ -321,7 +324,7 @@ export class HttpAgent implements Agent {
     });
 
     // Apply transform for identity.
-    transformedRequest = await identity.transformRequest(transformedRequest);
+    transformedRequest = await (await identity).transformRequest(transformedRequest);
 
     const body = cbor.encode(transformedRequest.body);
 

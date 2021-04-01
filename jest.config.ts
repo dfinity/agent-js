@@ -1,8 +1,12 @@
 // jest.config.js
-import * as baseConfig from "./jest.config.base";
+import baseConfig from "./jest.config.base";
 
 module.exports = {
   ...baseConfig,
-  projects: ["<rootDir>/packages/*/jest.config.js"],
+  projects: ["<rootDir>/packages/*/jest.config.ts"],
+  moduleNameMapper: {
+    ".json$": "identity-obj-proxy",
+  },
+  moduleDirectories: ["node_modules"],
   collectCoverageFrom: ["<rootDir>/packages/*/src/**/*.{ts,tsx}"],
 };

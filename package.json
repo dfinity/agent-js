@@ -4,16 +4,24 @@
   "private": true,
   "description": "Use an Agent to interact with the Internet Computer from your JavaScript program.",
   "dependencies": {
+    "@types/jest": "^26.0.22",
     "jest": "^26.6.3",
     "jest-cli": "^26.6.3",
     "ts-jest": "^26.5.4"
   },
+  "workspaces": [
+    "packages/**"
+  ],
   "devDependencies": {
+    "@babel/preset-env": "^7.13.12",
+    "@babel/preset-typescript": "^7.13.0",
     "@jest/types": "^26.6.2",
+    "@types/node": "^14.14.37",
     "@typescript-eslint/eslint-plugin": "^4.14.2",
     "@typescript-eslint/parser": "^4.14.2",
     "eslint": "^7.19.0",
     "eslint-plugin-jsdoc": "^31.6.0",
+    "jest-expect-message": "^1.0.2",
     "lerna": "^3.22.1",
     "ts-node": "^9.1.1",
     "typedoc": "^0.20.32",
@@ -30,11 +38,9 @@
     "lint:packages": "lerna run lint",
     "lint": "npm run lint:packages",
     "make:docs/reference": "lerna run make:docs/reference",
-    "postinstall": "lerna run prepare",
-    "preinstall": "echo Please run 'npx lerna bootstrap' instead of npm install.; exit 1",
     "publish:release": "lerna publish --force-publish=* --no-push --no-git-tag-version",
     "test:coverage": "lerna run test:coverage --parallel",
-    "test": "lerna run test --concurrency=1 --stream"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
