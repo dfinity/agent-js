@@ -19,7 +19,6 @@
   "dependencies": {
     "@dfinity/agent": "^0.7.1",
     "@dfinity/authentication": "^0.7.1",
-    "@dollarshaveclub/cloudworker": "^0.1.2",
     "@jest/globals": "^26.6.2",
     "@material-ui/core": "4.11.0",
     "@material-ui/icons": "4.9.1",

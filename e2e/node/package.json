@@ -13,7 +13,6 @@
   "dependencies": {
     "@dfinity/agent": "^0.7.1",
     "@dfinity/authentication": "^0.7.1",
-    "@dollarshaveclub/cloudworker": "^0.1.2",
     "@trust/webcrypto": "^0.9.2",
     "@types/base64-js": "^1.2.5",
     "@types/jest": "^24.0.18",
