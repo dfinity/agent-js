@@ -8,7 +8,13 @@
     "eslint:fix": "npm run lint -- --fix",
     "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' basic canisters utils *.js",
     "lint": "npm run eslint",
-    "mitm": "jest -i basic/mitm.test.ts"
+    "mitm": "jest -i basic/mitm.test.ts",
+    "build": "",
+    "lint:fix": "npm run lint -- --fix",
+    "make:docs/reference": "",
+    "publish:release": "",
+    "test:coverage": "",
+    "test": "jest"
   },
   "dependencies": {
     "@dfinity/agent": "^0.7.1",

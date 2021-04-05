@@ -1,19 +1,17 @@
 {
-    "compilerOptions": {
-      "target": "es2017",
-      "module": "commonjs",
-      "lib": [
-        "dom",
-        "es2015",
-        "es2017"
-      ],
-      "rootDir": "."
-    },
-    "files": [],
-    "references": [
-      { "path": "packages/agent" },
-      { "path": "packages/authentication" },
-      { "path": "packages/bootstrap" },
-      { "path": "packages/identity-provider" }
-    ]
+  "compilerOptions": {
+    "target": "es2017",
+    "module": "commonjs",
+    // Required for buffer-pipe
+    "esModuleInterop": true,
+    "lib": ["dom", "es2015", "es2017"],
+    "rootDir": "."
+  },
+  "files": [],
+  "references": [
+    { "path": "packages/agent" },
+    { "path": "packages/authentication" }
+  ],
+  "include": ["packages/**/types/*"],
+  "resolveJsonModule": true
 }
