@@ -7,8 +7,6 @@ import { idlLabelToId } from './utils/hash';
 import { lebDecode, lebEncode, safeRead, slebDecode, slebEncode } from './utils/leb128';
 import { readIntLE, readUIntLE, writeIntLE, writeUIntLE } from './utils/leb128';
 
-Pipe; //?
-
 // tslint:disable:max-line-length
 /**
  * This module provides a combinator library to create serializers/deserializers

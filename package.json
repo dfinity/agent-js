@@ -35,14 +35,14 @@
     "npm": "^7"
   },
   "scripts": {
-    "build": "npm run build --workspaces",
-    "lint:fix": "npm run lint -- --fix",
     "lint:e2e": "eslint --cache --cache-location node_modules/.cache/eslint 'e2e/*/**/*.ts*'",
-    "make:docs/reference": "npm run make:docs/reference --workspaces",
     "publish:release": "npm run publish --workspaces",
     "e2e": "cd e2e/node && npm run e2e",
     "mitm": "cd e2e/node && npm run mitm",
-    "test:coverage": "npm run test:coverage --workspaces",
+    "build": "",
+    "lint:fix": "",
+    "make:docs/reference": "",
+    "test:coverage": "",
     "test": "jest"
   },
   "repository": {

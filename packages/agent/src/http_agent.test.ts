@@ -156,7 +156,6 @@ test('use anonymous principal if unspecified', async () => {
   const methodName = 'greet';
   const arg = Buffer.from([]) as BinaryBlob;
 
-  canisterId; //?
   const { requestId } = await httpAgent.call(canisterId, {
     methodName,
     arg,
