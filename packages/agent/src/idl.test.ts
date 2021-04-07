@@ -80,6 +80,7 @@ test('IDL encoding (int)', () => {
 test('IDL encoding (nat)', () => {
   // Nat
   test_(IDL.Nat, BigInt(42), '4449444c00017d2a', 'Nat');
+  test_(IDL.Nat, BigInt(0), '4449444c00017d00', 'Nat of 0');
   test_(IDL.Nat, BigInt(1234567890), '4449444c00017dd285d8cc04', 'Positive Nat');
   test_(IDL.Nat, BigInt('60000000000000000'), '4449444c00017d808098f4e9b5ca6a', 'Positive BigInt');
   testEncode(IDL.Opt(IDL.Nat), [42], '4449444c016e7d0100012a', 'Nested Nat (number)');
