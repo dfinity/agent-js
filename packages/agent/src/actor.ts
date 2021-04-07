@@ -242,7 +242,7 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
       const agent = options.agent || actor[metadataSymbol].agent || getDefaultAgent();
       const cid = actor[metadataSymbol].canisterId;
 
-      const { maxAttempts, throttleDurationInMSecs } = { ...options, ...actor[metadataSymbol] };
+      const { maxAttempts, throttleDurationInMSecs } = { ...actor[metadataSymbol], ...options };
       const arg = IDL.encode(func.argTypes, args) as BinaryBlob;
       const { requestId, response } = await agent.call(cid, { methodName, arg });
 
@@ -318,7 +318,7 @@ async function _requestStatusAndLoop<T>(
     case RequestStatusResponseStatus.Received:
     case RequestStatusResponseStatus.Unknown:
     case RequestStatusResponseStatus.Processing:
-      if (--attempts === 0) {
+      if (--attempts <= 0) {
         throw new Error(
           `Failed to retrieve a reply for request after ${maxAttempts} attempts:\n` +
             `  Request ID: ${requestIdToHex(requestId)}\n` +

@@ -40,7 +40,7 @@ test("withOptions", async () => {
   expect(async () => {
     await getManagementCanister({}).provisional_create_canister_with_cycles.withOptions({
       maxAttempts: 0,
-    })({ amount: [1e12 ]});
+    })({ amount: [1e12] });
   }).toThrow();
 
   // Make sure this doesn't fail.
