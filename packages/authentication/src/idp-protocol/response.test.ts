@@ -96,7 +96,7 @@ test('ic-id-protocol/response createSendResponseUri', async () => {
   const responseUri = icidResponse.createSendResponseUri(new URL(redirectUri), authenticationResponse);
   expect(responseUri).toBeTruthy();
   expect(typeof responseUri).toEqual('string')
-  expect(responseUri).toEqual(`${redirectUri}#accessToken=accessTokenValue&expiresIn=2099000000&scope=a+b&tokenType=bearer&type=AuthenticationResponse`)
+  expect(responseUri).toEqual(`${redirectUri}#access_token=accessTokenValue&expires_in=2099000000&scope=a+b&token_type=bearer`)
 });
 
 describe('ic-id-protocol parseScopeString', () => {

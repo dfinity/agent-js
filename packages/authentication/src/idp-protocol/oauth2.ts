@@ -3,13 +3,13 @@
  */
 
 // https://tools.ietf.org/html/rfc6749#section-4.2.2
-export interface OAuth2AccessTokenResponse {
+export type OAuth2AccessTokenResponse = {
   access_token: string; // REQUIRED.  The access token issued by the authorization server.
   token_type: 'bearer'; // default 'bearer' REQUIRED.  The type of the token issued as described in Section 7.1.
   expires_in: number; // The lifetime in seconds of the access token.
   state?: string;
   scope?: string;
-}
+};
 
 /**
  * This should be compatible with OAuth 2.0 Authorization Request.
@@ -106,8 +106,8 @@ export function accessTokenResponseFromQueryString(
     throw new Error(`unexpected oauth2 token_type: ${token_type}`);
   }
 
-  const scope = searchParams.get('scope');
-  const state = searchParams.get('state');
+  const scope = searchParams.get('scope') ?? undefined;
+  const state = searchParams.get('state') ?? undefined;
 
   const response: OAuth2AccessTokenResponse = {
     access_token,

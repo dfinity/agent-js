@@ -1,5 +1,4 @@
 import { BinaryBlob, blobFromHex, SignIdentity, Principal } from '@dfinity/agent';
-import BigNumber from 'bignumber.js';
 import { DelegationChain } from './delegation';
 import { Ed25519KeyIdentity } from './ed25519';
 
@@ -35,14 +34,14 @@ test('delegation signs with proper keys (3)', async () => {
     delegations: [
       {
         delegation: {
-          expiration: new BigNumber('1609459200000000000'),
+          expiration: BigInt('1609459200000000000'),
           pubkey: h`302A300506032B6570032100CECC1507DC1DDD7295951C290888F095ADB9044D1B73D696E6DF065D683BD4FC`,
         },
         signature: h`B106D135E5AD7459DC67DB68A4946FDBE603E650DF4035957DB7F0FB54E7467BB463116A2AD025E1887CD1F29025E0F3607B09924ABBBBEBFAF921B675C8FF08`,
       },
       {
         delegation: {
-          expiration: new BigNumber('1609459200000000000'),
+          expiration: BigInt('1609459200000000000'),
           pubkey: h`302A300506032B65700321003B6A27BCCEB6A42D62A3A8D02A6F0D73653215771DE243A63AC048A18B59DA29`,
         },
         signature: h`5E40F3D171E499A691092E5B961B5447921091BCF8C6409CB5641541F4DC1390F501C5DFB16B10DF29D429CD153B9E396AF4E883ED3CFA090D28E214DB14C308`,

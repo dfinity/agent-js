@@ -2,12 +2,10 @@
 # that are.
 **
 
-!src/**/*.d.ts
-!src/**/*.js
-!.tsc-out/**/*
+!lib/**
 !types/**/*.d.ts
 !package.json
 !README.md
 
 # The following line further removes all test files (which matches .js and .d.ts).
-src/**/*.test.*
+lib/**/*.test.*

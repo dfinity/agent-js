@@ -1,0 +1,19 @@
+{
+  "canisters": {
+    "agent_docs": {
+      "type": "assets",
+      "source": ["packages/agent/docs/reference"]
+    },
+    "authentication_docs": {
+      "type": "assets",
+      "source": ["packages/authentication/docs/reference"]
+    }
+  },
+  "dfx": "0.7.0-beta.2",
+  "networks": {
+    "alpha": {
+      "providers": ["https://mercury.dfinity.network"],
+      "type": "persistent"
+    }
+  }
+}

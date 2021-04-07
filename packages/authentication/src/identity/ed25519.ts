@@ -126,15 +126,19 @@ export class Ed25519KeyIdentity extends SignIdentity {
     return this.generate(slipSeed);
   }
 
+  public static fromParsedJson(obj: JsonnableEd25519KeyIdentity): Ed25519KeyIdentity {
+    const [publicKeyDer, privateKeyRaw] = obj;
+    return new Ed25519KeyIdentity(
+      Ed25519PublicKey.fromDer(blobFromHex(publicKeyDer)),
+      blobFromHex(privateKeyRaw),
+    );
+  }
+
   public static fromJSON(json: string): Ed25519KeyIdentity {
     const parsed = JSON.parse(json);
     if (Array.isArray(parsed)) {
-      const [publicKeyDer, privateKeyRaw] = parsed;
-      if (typeof publicKeyDer === 'string' && typeof privateKeyRaw === 'string') {
-        return new Ed25519KeyIdentity(
-          Ed25519PublicKey.fromDer(blobFromHex(publicKeyDer)),
-          blobFromHex(privateKeyRaw),
-        );
+      if (typeof parsed[0] === 'string' && typeof parsed[1] === 'string') {
+        return this.fromParsedJson([parsed[0], parsed[1]]);
       } else {
         throw new Error('Deserialization error: JSON must have at least 2 items.');
       }

@@ -15,6 +15,13 @@ describe('Principal', () => {
     expect(Principal.fromText('2vxsx-fae').isAnonymous()).toBe(true);
   });
 
+  it('errors out on invalid checksums', () => {
+    // These are taken from above with the first character changed to make an invalid crc32.
+    expect(() => Principal.fromText('0chl6-4hpzw-vqaaa-aaaaa-c').toHex()).toThrow();
+    expect(() => Principal.fromText('0aaaa-aa').toHex()).toThrow();
+    expect(() => Principal.fromText('0vxsx-fae').toHex()).toThrow();
+  });
+
   it('errors out on parsing invalid characters', () => {
     expect(() => Principal.fromText('Hello world!')).toThrow();
   });

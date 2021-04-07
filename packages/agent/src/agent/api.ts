@@ -27,16 +27,6 @@ export interface Agent {
 
   status(): Promise<JsonObject>;
 
-  createCanister(): Promise<SubmitResponse>;
-
-  install(
-    canisterId: Principal | string,
-    fields: {
-      module: BinaryBlob;
-      arg?: BinaryBlob;
-    },
-  ): Promise<SubmitResponse>;
-
   query(canisterId: Principal | string, fields: QueryFields): Promise<QueryResponse>;
 
   makeActorFactory(actorInterfaceFactory: IDL.InterfaceFactory): ActorFactory;

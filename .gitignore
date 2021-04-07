@@ -82,6 +82,9 @@ build_info.json
 # Next.js build output
 .next
 
+# Dfx files
+.dfx
+
 # Nuxt.js build / generate output
 .nuxt
 dist

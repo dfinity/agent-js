@@ -1,17 +1,5 @@
 {
-  "packages": [
-    "apps/*",
-    "demos/sample-javascript",
-    "e2e/*",
-    "packages/*",
-    "workers/*"
-  ],
-  "hoist": [
-    "@typescript-eslint/eslint-plugin",
-    "@typescript-eslint/parser",
-    "eslint",
-    "eslint-plugin-jsdoc",
-    "typescript"
-  ],
-  "version": "0.6.25-beta.0"
+  "packages": ["e2e/*", "packages/*"],
+  "hoist": true,
+  "version": "0.6.28"
 }

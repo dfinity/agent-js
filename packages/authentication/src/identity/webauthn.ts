@@ -7,7 +7,7 @@ import {
   PublicKey,
   SignIdentity,
 } from '@dfinity/agent';
-import borc = require('borc');
+import borc from 'borc';
 import * as tweetnacl from 'tweetnacl';
 
 function _coseToDerEncodedBlob(cose: ArrayBuffer): DerEncodedBlob {
@@ -95,6 +95,7 @@ async function _createCredential(): Promise<PublicKeyCredential | null> {
       authenticatorSelection: {
         userVerification: 'preferred',
       },
+      attestation: 'direct',
       challenge: _createChallengeBuffer(),
       pubKeyCredParams: [{ type: 'public-key', alg: PubKeyCoseAlgo.ECDSA_WITH_SHA256 }],
       rp: {

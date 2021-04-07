@@ -1,5 +1,4 @@
 // tslint:disable:max-classes-per-file
-import BigNumber from 'bignumber.js';
 import Pipe from './utils/buffer-pipe';
 import { Buffer } from 'buffer/';
 import { Principal as PrincipalId } from './principal';
@@ -404,8 +403,8 @@ export class TextClass extends PrimitiveType<string> {
 
   public decodeValue(b: Pipe, t: Type) {
     this.checkType(t);
-    const len = lebDecode(b).toNumber();
-    const buf = safeRead(b, len);
+    const len = lebDecode(b);
+    const buf = safeRead(b, Number(len));
     if (!isValidUTF8(buf)) {
       throw new Error('Not valid UTF8 text');
     }
@@ -424,18 +423,18 @@ export class TextClass extends PrimitiveType<string> {
 /**
  * Represents an IDL Int
  */
-export class IntClass extends PrimitiveType<BigNumber> {
+export class IntClass extends PrimitiveType<bigint> {
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitInt(this, d);
   }
 
-  public covariant(x: any): x is BigNumber {
+  public covariant(x: any): x is bigint {
     // We allow encoding of JavaScript plain numbers.
-    // But we will always decode to BigNumber.
-    return (BigNumber.isBigNumber(x) && x.isInteger()) || Number.isInteger(x);
+    // But we will always decode to bigint.
+    return typeof x === 'bigint' || Number.isInteger(x);
   }
 
-  public encodeValue(x: BigNumber | number) {
+  public encodeValue(x: bigint | number) {
     return slebEncode(x);
   }
 
@@ -452,29 +451,26 @@ export class IntClass extends PrimitiveType<BigNumber> {
     return 'int';
   }
 
-  public valueToString(x: BigNumber) {
-    return x.toFixed();
+  public valueToString(x: bigint) {
+    return x.toString();
   }
 }
 
 /**
  * Represents an IDL Nat
  */
-export class NatClass extends PrimitiveType<BigNumber> {
+export class NatClass extends PrimitiveType<bigint> {
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitNat(this, d);
   }
 
-  public covariant(x: any): x is BigNumber {
+  public covariant(x: any): x is bigint {
     // We allow encoding of JavaScript plain numbers.
-    // But we will always decode to BigNumber.
-    return (
-      (BigNumber.isBigNumber(x) && x.isInteger() && !x.isNegative()) ||
-      (Number.isInteger(x) && x >= 0)
-    );
+    // But we will always decode to bigint.
+    return (typeof x === 'bigint' && x >= BigInt(0)) || (Number.isInteger(x) && x >= 0);
   }
 
-  public encodeValue(x: BigNumber | number) {
+  public encodeValue(x: bigint | number) {
     return lebEncode(x);
   }
 
@@ -491,8 +487,8 @@ export class NatClass extends PrimitiveType<BigNumber> {
     return 'nat';
   }
 
-  public valueToString(x: BigNumber) {
-    return x.toFixed();
+  public valueToString(x: bigint) {
+    return x.toString();
   }
 }
 
@@ -551,7 +547,7 @@ export class FloatClass extends PrimitiveType<number> {
 /**
  * Represents an IDL fixed-width Int(n)
  */
-export class FixedIntClass extends PrimitiveType<BigNumber | number> {
+export class FixedIntClass extends PrimitiveType<bigint | number> {
   constructor(private _bits: number) {
     super();
   }
@@ -560,20 +556,20 @@ export class FixedIntClass extends PrimitiveType<BigNumber | number> {
     return v.visitFixedInt(this, d);
   }
 
-  public covariant(x: any): x is BigNumber {
-    const min = new BigNumber(2).pow(this._bits - 1).negated();
-    const max = new BigNumber(2).pow(this._bits - 1).minus(1);
-    if (BigNumber.isBigNumber(x) && x.isInteger()) {
-      return x.gte(min) && x.lte(max);
+  public covariant(x: any): x is bigint {
+    const min = BigInt(2) ** BigInt(this._bits - 1) * BigInt(-1);
+    const max = BigInt(2) ** BigInt(this._bits - 1) - BigInt(1);
+    if (typeof x === 'bigint') {
+      return x >= min && x <= max;
     } else if (Number.isInteger(x)) {
-      const v = new BigNumber(x);
-      return v.gte(min) && v.lte(max);
+      const v = BigInt(x);
+      return v >= min && v <= max;
     } else {
       return false;
     }
   }
 
-  public encodeValue(x: BigNumber | number) {
+  public encodeValue(x: bigint | number) {
     return writeIntLE(x, this._bits / 8);
   }
 
@@ -586,7 +582,7 @@ export class FixedIntClass extends PrimitiveType<BigNumber | number> {
     this.checkType(t);
     const num = readIntLE(b, this._bits / 8);
     if (this._bits <= 32) {
-      return num.toNumber();
+      return Number(num);
     } else {
       return num;
     }
@@ -596,7 +592,7 @@ export class FixedIntClass extends PrimitiveType<BigNumber | number> {
     return `int${this._bits}`;
   }
 
-  public valueToString(x: BigNumber | number) {
+  public valueToString(x: bigint | number) {
     return x.toString();
   }
 }
@@ -604,7 +600,7 @@ export class FixedIntClass extends PrimitiveType<BigNumber | number> {
 /**
  * Represents an IDL fixed-width Nat(n)
  */
-export class FixedNatClass extends PrimitiveType<BigNumber | number> {
+export class FixedNatClass extends PrimitiveType<bigint | number> {
   constructor(private _bits: number) {
     super();
   }
@@ -613,19 +609,19 @@ export class FixedNatClass extends PrimitiveType<BigNumber | number> {
     return v.visitFixedNat(this, d);
   }
 
-  public covariant(x: any): x is BigNumber {
-    const max = new BigNumber(2).pow(this._bits);
-    if (BigNumber.isBigNumber(x) && x.isInteger() && !x.isNegative()) {
-      return x.lt(max);
+  public covariant(x: any): x is bigint {
+    const max = BigInt(2) ** BigInt(this._bits);
+    if (typeof x === 'bigint' && x > BigInt(0)) {
+      return x < max;
     } else if (Number.isInteger(x) && x >= 0) {
-      const v = new BigNumber(x);
-      return v.lt(max);
+      const v = BigInt(x);
+      return v < max;
     } else {
       return false;
     }
   }
 
-  public encodeValue(x: BigNumber | number) {
+  public encodeValue(x: bigint | number) {
     return writeUIntLE(x, this._bits / 8);
   }
 
@@ -638,7 +634,7 @@ export class FixedNatClass extends PrimitiveType<BigNumber | number> {
     this.checkType(t);
     const num = readUIntLE(b, this._bits / 8);
     if (this._bits <= 32) {
-      return num.toNumber();
+      return Number(num);
     } else {
       return num;
     }
@@ -648,7 +644,7 @@ export class FixedNatClass extends PrimitiveType<BigNumber | number> {
     return `nat${this._bits}`;
   }
 
-  public valueToString(x: BigNumber | number) {
+  public valueToString(x: bigint | number) {
     return x.toString();
   }
 }
@@ -688,7 +684,7 @@ export class VecClass<T> extends ConstructType<T[]> {
     if (!(vec instanceof VecClass)) {
       throw new Error('Not a vector type');
     }
-    const len = lebDecode(b).toNumber();
+    const len = Number(lebDecode(b));
     const rets: any[] = [];
     for (let i = 0; i < len; i++) {
       rets.push(this._type.decodeValue(b, vec._type));
@@ -991,7 +987,7 @@ export class VariantClass extends ConstructType<Record<string, any>> {
     if (!(variant instanceof VariantClass)) {
       throw new Error('Not a variant type');
     }
-    const idx = lebDecode(b).toNumber();
+    const idx = Number(lebDecode(b));
     if (idx >= variant._fields.length) {
       throw Error('Invalid variant index: ' + idx);
     }
@@ -1107,7 +1103,7 @@ function decodePrincipalId(b: Pipe): PrincipalId {
   if (x !== '01') {
     throw new Error('Cannot decode principal');
   }
-  const len = lebDecode(b).toNumber();
+  const len = Number(lebDecode(b));
   const hex = safeRead(b, len).toString('hex').toUpperCase();
   return PrincipalId.fromHex(hex);
 }
@@ -1208,7 +1204,7 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
     }
     const canister = decodePrincipalId(b);
 
-    const mLen = lebDecode(b).toNumber();
+    const mLen = Number(lebDecode(b));
     const buf = safeRead(b, mLen);
     if (!isValidUTF8(buf)) {
       throw new Error('Not valid UTF8 method name');
@@ -1293,6 +1289,19 @@ export class ServiceClass extends ConstructType<PrincipalId> {
 }
 
 /**
+ *
+ * @param x
+ * @returns {string}
+ */
+function toReadableString(x: unknown): string {
+  if (typeof x === 'bigint') {
+    return `BigInt(${x})`;
+  } else {
+    return JSON.stringify(x);
+  }
+}
+
+/**
  * Encode a array of values
  * @returns {Buffer} serialised value
  */
@@ -1311,7 +1320,7 @@ export function encode(argTypes: Array<Type<any>>, args: any[]): BinaryBlob {
   const vals = Buffer.concat(
     zipWith(argTypes, args, (t, x) => {
       if (!t.covariant(x)) {
-        throw new Error(`Invalid ${t.display()} argument: "${JSON.stringify(x)}"`);
+        throw new Error(`Invalid ${t.display()} argument: ${toReadableString(x)}`);
       }
 
       return t.encodeValue(x);
@@ -1340,24 +1349,24 @@ export function decode(retTypes: Type[], bytes: Buffer): JsonValue[] {
 
   function readTypeTable(pipe: Pipe): [Array<[IDLTypeIds, any]>, number[]] {
     const typeTable: Array<[IDLTypeIds, any]> = [];
-    const len = lebDecode(pipe).toNumber();
+    const len = Number(lebDecode(pipe));
 
     for (let i = 0; i < len; i++) {
-      const ty = slebDecode(pipe).toNumber();
+      const ty = Number(slebDecode(pipe));
       switch (ty) {
         case IDLTypeIds.Opt:
         case IDLTypeIds.Vector: {
-          const t = slebDecode(pipe).toNumber();
+          const t = Number(slebDecode(pipe));
           typeTable.push([ty, t]);
           break;
         }
         case IDLTypeIds.Record:
         case IDLTypeIds.Variant: {
           const fields = [];
-          let objectLength = lebDecode(pipe).toNumber();
+          let objectLength = Number(lebDecode(pipe));
           let prevHash;
           while (objectLength--) {
-            const hash = lebDecode(pipe).toNumber();
+            const hash = Number(lebDecode(pipe));
             if (hash >= Math.pow(2, 32)) {
               throw new Error('field id out of 32-bit range');
             }
@@ -1365,7 +1374,7 @@ export function decode(retTypes: Type[], bytes: Buffer): JsonValue[] {
               throw new Error('field id collision or not sorted');
             }
             prevHash = hash;
-            const t = slebDecode(pipe).toNumber();
+            const t = Number(slebDecode(pipe));
             fields.push([hash, t]);
           }
           typeTable.push([ty, fields]);
@@ -1373,20 +1382,20 @@ export function decode(retTypes: Type[], bytes: Buffer): JsonValue[] {
         }
         case IDLTypeIds.Func: {
           for (let k = 0; k < 2; k++) {
-            let funcLength = lebDecode(pipe).toNumber();
+            let funcLength = Number(lebDecode(pipe));
             while (funcLength--) {
               slebDecode(pipe);
             }
           }
-          const annLen = lebDecode(pipe).toNumber();
+          const annLen = Number(lebDecode(pipe));
           safeRead(pipe, annLen);
           typeTable.push([ty, undefined]);
           break;
         }
         case IDLTypeIds.Service: {
-          let servLength = lebDecode(pipe).toNumber();
+          let servLength = Number(lebDecode(pipe));
           while (servLength--) {
-            const l = lebDecode(pipe).toNumber();
+            const l = Number(lebDecode(pipe));
             safeRead(pipe, l);
             slebDecode(pipe);
           }
@@ -1399,9 +1408,9 @@ export function decode(retTypes: Type[], bytes: Buffer): JsonValue[] {
     }
 
     const rawList: number[] = [];
-    const length = lebDecode(pipe).toNumber();
+    const length = Number(lebDecode(pipe));
     for (let i = 0; i < length; i++) {
-      rawList.push(slebDecode(pipe).toNumber());
+      rawList.push(Number(slebDecode(pipe)));
     }
     return [typeTable, rawList];
   }

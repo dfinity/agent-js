@@ -42,40 +42,34 @@ describe('@dfinity/authentication Authenticator', () => {
     });
     function createNewIdentity() {
       const identity = Ed25519KeyIdentity.generate(crypto.getRandomValues(new Uint8Array(32)));
-      return identity
+      return identity;
     }
     const identity2 = createNewIdentity();
-    let listenerCallCount = 0;
     // Will need to store this function ref to be able to pass it to removeListener
-    let firstListener: () => void;
+    const firstListener = jest.fn();
     async function testAddEventListener() {
-      await new Promise((resolve) => {
-        firstListener = listener;
-        authenticator.addEventListener(IdentityChangedEventIdentifier, firstListener)
-  
-        eventTarget.dispatchEvent(IdentityChangedEvent({ identity: createIdentityDescriptor(identity2) }));
-    
-        function listener() {
-          listenerCallCount++;
-          resolve();
-        }
+      await new Promise(() => {
+        authenticator.addEventListener(IdentityChangedEventIdentifier, firstListener);
+
+        eventTarget.dispatchEvent(
+          IdentityChangedEvent({ identity: createIdentityDescriptor(identity2) }),
+        );
       });
     }
 
-    await Promise.race([
-      new Promise((resolve,reject) => setInterval(() => reject(new Error('testAddEventListener timeout')), 3000)),
-      testAddEventListener(),
-    ])
-    expect(listenerCallCount).toEqual(1);
+    testAddEventListener();
+    expect(firstListener).toBeCalledTimes(1);
 
     // Now removeEventListener and ensure our first listener isn't called
-    const listenerCallCountBeforeRemoveListener = listenerCallCount
+    const listenerCallCountBeforeRemoveListener = firstListener.mock.calls.length;
     authenticator.removeEventListener(IdentityChangedEventIdentifier, firstListener);
     // dispatch event, which should have no listeners
-    eventTarget.dispatchEvent(IdentityChangedEvent({
-      identity: createIdentityDescriptor(createNewIdentity())
-    }));
+    eventTarget.dispatchEvent(
+      IdentityChangedEvent({
+        identity: createIdentityDescriptor(createNewIdentity()),
+      }),
+    );
 
-    expect(listenerCallCount).toEqual(listenerCallCountBeforeRemoveListener);
-  })
+    expect(firstListener).toBeCalledTimes(listenerCallCountBeforeRemoveListener);
+  });
 });
