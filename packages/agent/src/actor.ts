@@ -35,7 +35,7 @@ export type ActorSubclass<T = Record<string, ActorMethod>> = Actor & T;
  */
 export interface ActorMethod<Args extends unknown[] = [], Ret extends unknown = unknown> {
   (...args: Args): Promise<Ret>;
-  withOptions(options: CallConfig): (...args: Args) => Promise<Ret>;
+  withOptions(options: ActorConfig): (...args: Args) => Promise<Ret>;
 }
 
 /**
@@ -216,7 +216,7 @@ export type ActorConstructor = new (config: ActorConfig) => ActorSubclass;
 export type ActorFactory = (config: ActorConfig) => ActorSubclass;
 
 function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClass): ActorMethod {
-  let caller: (options: CallConfig, ...args: unknown[]) => Promise<unknown>;
+  let caller: (options: ActorConfig, ...args: unknown[]) => Promise<unknown>;
   if (func.annotations.includes('query')) {
     caller = async (options: CallConfig, ...args: unknown[]) => {
       const agent = options.agent || actor[metadataSymbol].agent || getDefaultAgent();
@@ -238,20 +238,21 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
       }
     };
   } else {
-    caller = async (options: CallConfig, ...args: unknown[]) => {
+    caller = async (options: ActorConfig, ...args: unknown[]) => {
       const agent = options.agent || actor[metadataSymbol].agent || getDefaultAgent();
-      const cid = actor[metadataSymbol].canisterId;
-
-      const { maxAttempts, throttleDurationInMSecs } = { ...actor[metadataSymbol], ...options };
+      const { canisterId, maxAttempts, throttleDurationInMSecs } = {
+        ...actor[metadataSymbol],
+        ...options,
+      };
       const arg = IDL.encode(func.argTypes, args) as BinaryBlob;
-      const { requestId, response } = await agent.call(cid, { methodName, arg });
+      const { requestId, response } = await agent.call(canisterId, { methodName, arg });
 
       if (!response.ok) {
         throw new Error(
           [
             'Call failed:',
             `  Method: ${methodName}(${args})`,
-            `  Canister ID: ${cid.toHex()}`,
+            `  Canister ID: ${canisterId.toHex()}`,
             `  Request ID: ${requestIdToHex(requestId)}`,
             `  HTTP status code: ${response.status}`,
             `  HTTP status text: ${response.statusText}`,
@@ -279,7 +280,7 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
   }
 
   const handler = (...args: unknown[]) => caller({}, ...args);
-  handler.withOptions = (options: CallConfig) => {
+  handler.withOptions = (options: ActorConfig) => {
     return (...args: unknown[]) => caller(options, ...args);
   };
   return handler as ActorMethod;
