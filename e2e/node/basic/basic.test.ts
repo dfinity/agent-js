@@ -37,11 +37,13 @@ test("createCanister", async () => {
 
 test("withOptions", async () => {
   // Make sure this fails.
-  expect(async () => {
+  await expect((async () => {
     await getManagementCanister({}).provisional_create_canister_with_cycles.withOptions({
-      canisterId: 'abcde-gg',
+      canisterId: 'abcde-gghhi',
     })({ amount: [1e12] });
-  }).toThrow();
+  })())
+    .rejects
+    .toThrow();
 
   // Make sure this doesn't fail.
   await getManagementCanister({}).provisional_create_canister_with_cycles({ amount: [1e12 ]});
