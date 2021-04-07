@@ -11,6 +11,7 @@
     "module": "ES2020",
     "moduleResolution": "node",
     "outDir": "./lib/esm",
+    "resolveJsonModule": true,
     "rootDir": "./src",
     "sourceMap": true,
     "strict": true,

@@ -14,6 +14,7 @@
     "paths": {
       "@dfinity/agent": ["src"]
     },
+    "resolveJsonModule": true,
     "rootDir": "./src",
     "sourceMap": true,
     "strict": true,

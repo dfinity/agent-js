@@ -22,10 +22,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - if: ${{ inputs.canary }}
-        run: npx lerna publish --canary --yes
+        run: npm run publish --canary --yes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - if: ${{ ! inputs.canary }}
-        run: npx lerna publish --yes
+        run: npm run publish --yes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
