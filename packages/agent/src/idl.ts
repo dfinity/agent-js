@@ -467,7 +467,7 @@ export class NatClass extends PrimitiveType<bigint> {
   public covariant(x: any): x is bigint {
     // We allow encoding of JavaScript plain numbers.
     // But we will always decode to bigint.
-    return (typeof x === 'bigint' && x > BigInt(0)) || (Number.isInteger(x) && x >= 0);
+    return (typeof x === 'bigint' && x >= BigInt(0)) || (Number.isInteger(x) && x >= 0);
   }
 
   public encodeValue(x: bigint | number) {
@@ -1288,9 +1288,14 @@ export class ServiceClass extends ConstructType<PrincipalId> {
   }
 }
 
+/**
+ *
+ * @param x
+ * @returns {string}
+ */
 function toReadableString(x: unknown): string {
   if (typeof x === 'bigint') {
-    return `${x}n`;
+    return `BigInt(${x})`;
   } else {
     return JSON.stringify(x);
   }
