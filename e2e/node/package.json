@@ -14,7 +14,7 @@
     "make:docs/reference": "",
     "publish:release": "",
     "test:coverage": "",
-    "test": "jest"
+    "test": ""
   },
   "dependencies": {
     "@dfinity/agent": "^0.7.1",
