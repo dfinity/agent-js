@@ -1,11 +1,35 @@
 import { AuthenticationRequest, createAuthenticationRequestUrl } from '../idp-protocol/request';
-import {
-  createCustomEvent,
-} from '../id-dom-events';
-import {
-  BootstrapChangeIdentityCommand,
-  BootstrapChangeIdentityCommandIdentifier,
-} from '../bootstrap-messages/BootstrapChangeIdentityCommand';
+
+export const BootstrapChangeIdentityCommandIdentifier = 'https://internetcomputer.org/ns/dfinity/bootstrap/ChangeIdentityCommand' as const;
+
+export type CustomEventWithDetail<T, D> = CustomEvent<D> & { type: T };
+
+/**
+ * Create a CustomEvent with proper typescript awareness of .type
+ * @param type - Event Type as a string
+ * @param options - Normal CustomEvent option
+ */
+export function createCustomEvent<T extends string, D>(
+  type: T,
+  options: CustomEventInit<D>,
+): CustomEventWithDetail<T, D> {
+  const event = new CustomEvent(type, options) as CustomEventWithDetail<T, D>;
+  return event;
+}
+
+type SignFunction = (challenge: ArrayBuffer) => Promise<ArrayBuffer>;
+
+export type BootstrapChangeIdentityCommandDetail = {
+  authenticationResponse: string;
+  identity: {
+    sign: SignFunction;
+  };
+};
+
+export type BootstrapChangeIdentityCommand = {
+  type: typeof BootstrapChangeIdentityCommandIdentifier;
+  detail: BootstrapChangeIdentityCommandDetail;
+};
 
 export interface IdentityProviderIndicator {
   url: URL;
@@ -17,8 +41,7 @@ export type EnvelopeToIdentityProvider = {
 };
 export type EnvelopeToDocument = {
   to: 'document';
-  message:
-    | BootstrapChangeIdentityCommand;
+  message: BootstrapChangeIdentityCommand;
 };
 export type IdentityProviderAgentEnvelope = EnvelopeToIdentityProvider | EnvelopeToDocument;
 
