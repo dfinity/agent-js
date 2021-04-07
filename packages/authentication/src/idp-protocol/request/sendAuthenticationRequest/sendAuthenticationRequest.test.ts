@@ -1,4 +1,7 @@
-import { IdentityProviderAgent, SendAuthenticationRequestCommand } from './idp-agent';
+import {
+  SendAuthenticationRequestCommand,
+  sendAuthenticationRequest,
+} from './sendAuthenticationRequest';
 import { Principal, blobFromHex, derBlobFromBlob } from '@dfinity/agent';
 import {
   UrlTransport,
@@ -6,8 +9,8 @@ import {
   IdentityProviderAgentEnvelope,
   Transport,
 } from './transport';
-import { unsafeTemporaryIdentityProvider } from '.';
-import { Ed25519KeyIdentity } from '../identity/ed25519';
+import { defaultIdentityProvider } from '../index';
+import { Ed25519KeyIdentity } from '../../../identity/ed25519';
 
 /**
  * Create a Transport that it is useful for testing what gets sent over the transport.
@@ -22,21 +25,6 @@ function createTestTransport() {
   return { sent, transport };
 }
 
-/**
- * Create a @dfinity/agent that is useful for testing.
- * @param transport - custom transport to use to send messages
- */
-function createTestAgent(transport: Transport<IdentityProviderAgentEnvelope>) {
-  const agent = new IdentityProviderAgent({
-    identityProvider: unsafeTemporaryIdentityProvider,
-    transport,
-    location: {
-      href: 'https://example.com/',
-    },
-  });
-  return agent;
-}
-
 const samplePublicKeyHex =
   '305e300c060a2b0601040183b8430101034e00a5010203262001215820e8bdd09933e81019b4acbe17301ac6ccd0f5db8dd892267ee18b620e603bea632258209b125cf1b2f23ab42796a1ee88336dae244d6d8058f3c192d1fa79b1d05ff473';
 
@@ -49,31 +37,35 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
     const canisterPrincipal = Principal.fromText('unvpp-2aaaa-aaaaa-qabsq-cai');
     const redirectUri = new URL(`https://${canisterPrincipal.toText()}.ic0.app/`);
     const { sent, transport } = createTestTransport();
-    const agent = createTestAgent(transport);
-    await agent.sendAuthenticationRequest({
-      session: {
-        identity: {
-          getPublicKey() {
-            return {
-              toDer() {
-                return derBlobFromBlob(blobFromHex(samplePublicKeyHex));
-              },
-            };
+
+    await sendAuthenticationRequest(
+      {
+        session: {
+          identity: {
+            getPublicKey() {
+              return {
+                toDer() {
+                  return derBlobFromBlob(blobFromHex(samplePublicKeyHex));
+                },
+              };
+            },
           },
         },
+        redirectUri,
+        scope: [
+          {
+            type: 'CanisterScope',
+            principal: canisterPrincipal,
+          },
+        ],
       },
-      redirectUri,
-      scope: [
-        {
-          type: 'CanisterScope',
-          principal: canisterPrincipal,
-        },
-      ],
-    });
+      transport,
+      defaultIdentityProvider,
+    );
     expect(sent.length).toEqual(1);
     const { to, message } = sent[0];
     // default IDP to the staging one
-    expect(to).toEqual(unsafeTemporaryIdentityProvider);
+    expect(to).toEqual(defaultIdentityProvider);
     if (message.type !== 'AuthenticationRequest') {
       throw new Error(`Expected AuthentiationRequest`);
     }
@@ -90,7 +82,7 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
     const transport = UrlTransport((url: URL) => {
       urls = [...urls, url];
     });
-    const agent = createTestAgent(transport);
+
     const sendAuthenticationRequestCommand: SendAuthenticationRequestCommand = {
       redirectUri: exampleRedirectUri,
       scope: [],
@@ -98,7 +90,12 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
         identity: Ed25519KeyIdentity.generate(),
       },
     };
-    await agent.sendAuthenticationRequest(sendAuthenticationRequestCommand);
+    await sendAuthenticationRequest(
+      sendAuthenticationRequestCommand,
+      transport,
+      defaultIdentityProvider,
+      exampleRedirectUri,
+    );
     expect(urls.length).toEqual(1);
     const authenticationRequestUrl = urls[0];
     expect(authenticationRequestUrl.toString()).toBeTruthy();
@@ -120,15 +117,20 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
 
     const locationProxy: Location = new Proxy(globalThis.location, {});
     const transport = RedirectTransport(locationProxy);
-    const agent = createTestAgent(transport);
-    const sendAuthenticationRequestCommand: SendAuthenticationRequestCommand = {
+
+    const sampleCommand: SendAuthenticationRequestCommand = {
       redirectUri: exampleRedirectUri,
       scope: [],
       session: {
         identity: Ed25519KeyIdentity.generate(),
       },
     };
-    await agent.sendAuthenticationRequest(sendAuthenticationRequestCommand);
+    await sendAuthenticationRequest(
+      sampleCommand,
+      transport,
+      defaultIdentityProvider,
+      exampleRedirectUri,
+    );
     expect(location.assign).toBeCalledTimes(1);
 
     expect(
@@ -137,6 +139,6 @@ describe('@dfinity/authentication/src/identity-provider/idp-agent', () => {
       new URLSearchParams(new URL(window.location.assign.mock.calls[0][0]).search).get(
         'redirect_uri',
       ),
-    ).toBe(sendAuthenticationRequestCommand.redirectUri?.toString());
+    ).toBe(sampleCommand.redirectUri?.toString());
   });
 });

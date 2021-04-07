@@ -1,4 +1,4 @@
-import { AuthenticationRequest, createAuthenticationRequestUrl } from '../idp-protocol/request';
+import { AuthenticationRequest, createAuthenticationRequestUrl } from '../../request';
 
 export const BootstrapChangeIdentityCommandIdentifier = 'https://internetcomputer.org/ns/dfinity/bootstrap/ChangeIdentityCommand' as const;
 
@@ -31,6 +31,9 @@ export type BootstrapChangeIdentityCommand = {
   detail: BootstrapChangeIdentityCommandDetail;
 };
 
+/**
+ * URL to call out to for OATH
+ */
 export interface IdentityProviderIndicator {
   url: URL;
 }

@@ -1,6 +1,7 @@
-import * as oauth2 from './oauth2';
-import { DelegationChain } from '../identity/delegation';
-import { hexEncodeUintArray } from './bytes';
+import * as oauth2 from '../oauth2';
+import { DelegationChain } from '../../identity/delegation';
+import { hexEncodeUintArray } from '../bytes';
+import { sendAuthenticationRequest } from './sendAuthenticationRequest/sendAuthenticationRequest';
 
 /**
  * Request sent to an ic-id Provider to initiate authentication.
@@ -89,3 +90,12 @@ export function createBearerToken(spec: { delegationChain: DelegationChain }): s
   );
   return bearerToken;
 }
+
+/**
+ * This Identity Provider is an 'Acceptance Testing' environment operated by DFINITY.
+ */
+export const defaultIdentityProvider = {
+  url: new URL('https://auth.ic0.app'),
+};
+
+export { sendAuthenticationRequest };
