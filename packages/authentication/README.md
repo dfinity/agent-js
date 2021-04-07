@@ -25,7 +25,7 @@ import * as authentication from "@dfinity/authentication";
 or using individual exports:
 
 ```
-import { Authenticator, WebAuthnIdentity } from "@dfinity/authentication";
+import { sendAuthenticationRequest, WebAuthnIdentity } from "@dfinity/authentication";
 ```
 
 Note: depends on [@dfinity/agent](https://www.npmjs.com/package/@dfinity/agent)
