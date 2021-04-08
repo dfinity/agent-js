@@ -42,8 +42,8 @@ test("createCanister", () => {
 
 test("withOptions", () => {
   // Make sure this fails.
-  const shouldFail = () =>
-    getManagementCanister(
+  const shouldFail = async () =>
+    await getManagementCanister(
       {}
     ).provisional_create_canister_with_cycles.withOptions({
       canisterId: "abcde-gghhi",
