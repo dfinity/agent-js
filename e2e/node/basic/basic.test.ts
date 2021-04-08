@@ -30,21 +30,32 @@ test("read_state", async () => {
   expect(Math.abs(time - now) < 5).toBe(true);
 });
 
-test("createCanister", async () => {
+test("createCanister", () => {
   // Make sure this doesn't fail.
-  await getManagementCanister({}).provisional_create_canister_with_cycles({ amount: [1e12] });
+  const shouldNotFail = () =>
+    getManagementCanister({}).provisional_create_canister_with_cycles({
+      amount: [1e12],
+    });
+
+  expect(shouldNotFail).not.toThrow();
 });
 
-test("withOptions", async () => {
+test("withOptions", () => {
   // Make sure this fails.
-  await expect((async () => {
-    await getManagementCanister({}).provisional_create_canister_with_cycles.withOptions({
-      canisterId: 'abcde-gghhi',
+  const shouldFail = () =>
+    getManagementCanister(
+      {}
+    ).provisional_create_canister_with_cycles.withOptions({
+      canisterId: "abcde-gghhi",
     })({ amount: [1e12] });
-  })())
-    .rejects
-    .toThrow();
+
+  expect(shouldFail).toThrow();
 
   // Make sure this doesn't fail.
-  await getManagementCanister({}).provisional_create_canister_with_cycles({ amount: [1e12 ]});
+  const shouldNotFail = () =>
+    getManagementCanister({}).provisional_create_canister_with_cycles({
+      amount: [1e12],
+    });
+
+  expect(shouldNotFail).not.toThrow();
 });
