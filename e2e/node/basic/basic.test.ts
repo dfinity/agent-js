@@ -49,7 +49,7 @@ test("withOptions", () => {
       canisterId: "abcde-gghhi",
     })({ amount: [1e12] });
 
-  expect(shouldFail).toThrow();
+  expect(shouldFail).rejects.toThrow();
 
   // Make sure this doesn't fail.
   const shouldNotFail = () =>
