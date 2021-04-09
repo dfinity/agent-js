@@ -102,7 +102,7 @@ test.skip('makeActor', async () => {
   httpAgent.addTransform(makeNonceTransform(() => nonces[nonceCount++]));
 
   const actor = makeActorFactory(actorInterface)({ canisterId, agent: httpAgent });
-  const reply = await actor.greet(argValue);
+  const reply = await (actor as any).greet(argValue);
 
   expect(reply).toEqual(IDL.decode([IDL.Text], expectedReplyArg)[0]);
 
