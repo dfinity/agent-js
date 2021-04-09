@@ -291,9 +291,7 @@ export class DelegationIdentity extends SignIdentity {
     return this._inner.sign(blob);
   }
 
-  public async transformRequest(
-    request: HttpAgentRequest,
-  ): ReturnType<SignIdentity['transformRequest']> {
+  public async transformRequest(request: HttpAgentRequest) {
     const { body, ...fields } = request;
     const requestId = await requestIdOf(body);
     return {

@@ -1,10 +1,10 @@
 import { Buffer } from 'buffer/';
-import { Agent, getDefaultAgent } from './agent';
+import { Agent, getDefaultAgent, ReadStateResponse } from './agent';
 import * as cbor from './cbor';
-import { ReadStateResponse } from './http_agent_types';
 import { hash } from './request_id';
-import { BinaryBlob } from './types';
+import { BinaryBlob, blobFromText } from './types';
 import { blsVerify } from './utils/bls';
+import { Principal } from "./principal";
 
 async function getRootKey(agent: Agent): Promise<BinaryBlob> {
   // TODO add the real root key for Mercury

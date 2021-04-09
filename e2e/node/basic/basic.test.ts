@@ -3,6 +3,7 @@ import {
   Certificate,
   getManagementCanister,
   IDL,
+  Principal,
 } from "@dfinity/agent";
 import httpAgent from "../utils/agent";
 import { Buffer } from "buffer/";
@@ -10,7 +11,7 @@ import { Buffer } from "buffer/";
 test("read_state", async () => {
   const now = Date.now() / 1000;
   const path = [blobFromText("time")];
-  const response = await httpAgent.readState({ paths: [path] });
+  const response = await httpAgent.readState(Principal.fromHex('00000000000000000001'), { paths: [path] });
   const cert = new Certificate(response);
 
   expect(() => cert.lookup(path)).toThrow(

@@ -1,4 +1,4 @@
-import { GlobalInternetComputer } from '../index';
+import { BinaryBlob, GlobalInternetComputer } from '../index';
 import { Agent } from './api';
 
 export * from './api';

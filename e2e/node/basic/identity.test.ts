@@ -17,7 +17,7 @@ function createIdentity(seed: number): SignIdentity {
 function createIdentityActor(
   seed: number,
   canisterId: Principal,
-  idl: IDL.InterfaceFactory
+  idl: IDL.InterfaceFactory,
 ): any {
   const identity = createIdentity(seed);
   const agent1 = new HttpAgent({ source: agent, identity });
@@ -62,8 +62,8 @@ test("identity: two different Ed25519 keys should have a different principal", a
 test("delegation: principal is the same between delegated keys", async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
-  const masterKey = createIdentity(0);
-  const sessionKey = createIdentity(1);
+  const masterKey = createIdentity(2);
+  const sessionKey = createIdentity(3);
 
   const delegation = await DelegationChain.create(
     masterKey,
@@ -95,9 +95,9 @@ test("delegation: principal is the same between delegated keys", async () => {
 test("delegation: works with 3 keys", async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
-  const rootKey = createIdentity(2);
-  const middleKey = createIdentity(1);
-  const bottomKey = createIdentity(0);
+  const rootKey = createIdentity(4);
+  const middleKey = createIdentity(5);
+  const bottomKey = createIdentity(6);
 
   const id1D2 = await DelegationChain.create(rootKey, middleKey.getPublicKey());
   const idDelegated = DelegationIdentity.fromDelegation(
@@ -142,10 +142,10 @@ test("delegation: works with 3 keys", async () => {
 test("delegation: works with 4 keys", async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
-  const rootKey = createIdentity(3);
-  const middleKey = createIdentity(2);
-  const middle2Key = createIdentity(1);
-  const bottomKey = createIdentity(0);
+  const rootKey = createIdentity(7);
+  const middleKey = createIdentity(8);
+  const middle2Key = createIdentity(9);
+  const bottomKey = createIdentity(10);
 
   const rootToMiddle = await DelegationChain.create(
     rootKey,

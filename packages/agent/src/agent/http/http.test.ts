@@ -1,12 +1,12 @@
 import { Buffer } from 'buffer/';
-import { HttpAgent } from './agent';
-import * as cbor from './cbor';
-import { Expiry, makeNonceTransform } from './http_agent_transforms';
-import { CallRequest, Envelope, ReadRequestType, SubmitRequestType } from './http_agent_types';
-import { Principal } from './principal';
-import { requestIdOf } from './request_id';
-import { BinaryBlob } from './types';
-import { Nonce } from './types';
+import { HttpAgent } from '../index';
+import * as cbor from '../../cbor';
+import { Expiry, makeNonceTransform } from './transforms';
+import { CallRequest, Envelope, ReadRequestType, SubmitRequestType } from './types';
+import { Principal } from '../../principal';
+import { requestIdOf } from '../../request_id';
+import { BinaryBlob } from '../../types';
+import { Nonce } from '../../types';
 
 const originalDateNowFn = global.Date.now;
 beforeEach(() => {
@@ -65,7 +65,7 @@ test('call', async () => {
   expect(calls.length).toBe(1);
   expect(requestId).toEqual(expectedRequestId);
 
-  expect(calls[0][0]).toBe('http://localhost/api/v1/submit');
+  expect(calls[0][0]).toBe(`http://localhost/api/v2/canister/${canisterId.toText()}/call`);
   expect(calls[0][1]).toEqual({
     method: 'POST',
     headers: {
@@ -116,13 +116,8 @@ test('queries with the same content should have the same signature', async () =>
     [Buffer.from('request_status') as BinaryBlob, requestId, Buffer.from('reply') as BinaryBlob],
   ];
 
-  const response1 = await httpAgent.readState({
-    paths,
-  });
-
-  const response2 = await httpAgent.readState({
-    paths,
-  });
+  const response1 = await httpAgent.readState(canisterIdent, { paths });
+  const response2 = await httpAgent.readState(canisterIdent, { paths });
 
   const response3 = await httpAgent.query(canisterIdent, { arg, methodName });
   const response4 = await httpAgent.query(canisterIdent, { methodName, arg });
@@ -186,7 +181,7 @@ test('use anonymous principal if unspecified', async () => {
   expect(calls.length).toBe(1);
   expect(requestId).toEqual(expectedRequestId);
 
-  expect(calls[0][0]).toBe('http://localhost/api/v1/submit');
+  expect(calls[0][0]).toBe(`http://localhost/api/v2/canister/${canisterId.toText()}/call`);
   expect(calls[0][1]).toEqual({
     method: 'POST',
     headers: {

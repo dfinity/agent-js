@@ -1,32 +1,38 @@
 import { Buffer } from 'buffer/';
-import { ActorFactory } from '../actor';
-import * as actor from '../actor';
-import { AnonymousIdentity, Identity } from '../auth';
-import * as cbor from '../cbor';
-import { Expiry } from '../http_agent_transforms';
+import { AnonymousIdentity, Identity } from '../../auth';
+import * as cbor from '../../cbor';
+import { Principal } from '../../principal';
+import { requestIdOf } from '../../request_id';
+import { BinaryBlob, JsonObject } from '../../types';
 import {
+  Agent,
+  QueryFields,
+  QueryResponse,
+  ReadStateOptions,
+  ReadStateResponse,
+  SubmitResponse,
+} from '../api';
+import { Expiry } from './transforms';
+import {
+  CallRequest,
   Endpoint,
   HttpAgentRequest,
   HttpAgentRequestTransformFn,
-  HttpAgentSubmitRequest,
-  QueryFields,
-  QueryResponse,
-  ReadRequest,
+  HttpAgentSubmitRequest, QueryRequest,
   ReadRequestType,
-  ReadResponse,
-  ReadStateFields,
-  ReadStateResponse,
-  SubmitRequest,
   SubmitRequestType,
-  SubmitResponse,
-} from '../http_agent_types';
-import * as IDL from '../idl';
-import { Principal } from '../principal';
-import { requestIdOf } from '../request_id';
-import { BinaryBlob, blobFromHex, JsonObject } from '../types';
-import { Agent } from './api';
+} from './types';
 
-const API_VERSION = 'v1';
+export * from './transforms';
+
+export enum RequestStatusResponseStatus {
+  Received = 'received',
+  Processing = 'processing',
+  Replied = 'replied',
+  Rejected = 'rejected',
+  Unknown = 'unknown',
+  Done = 'done',
+}
 
 // Default delta for ingress expiry is 5 minutes.
 const DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS = 5 * 60 * 1000;
@@ -93,6 +99,9 @@ export class HttpAgent implements Agent {
 
   constructor(options: HttpAgentOptions = {}) {
     if (options.source) {
+      if (!(options.source instanceof HttpAgent)) {
+        throw new Error('An Agent\'s source can only be another HttpAgent');
+      }
       this._pipeline = [...options.source._pipeline];
       this._identity = options.source._identity;
       this._fetch = options.source._fetch;
@@ -130,137 +139,34 @@ export class HttpAgent implements Agent {
     this._pipeline.splice(i >= 0 ? i : this._pipeline.length, 0, Object.assign(fn, { priority }));
   }
 
-  public async getPrincipal(): Promise<Principal | null> {
-    return this._identity ? (await this._identity).getPrincipal() : Principal.anonymous();
+  public async getPrincipal(): Promise<Principal> {
+    return (await this._identity).getPrincipal();
   }
 
   public async call(
     canisterId: Principal | string,
-    fields: {
+    options: {
       methodName: string;
       arg: BinaryBlob;
+      effectiveCanisterId?: Principal | string;
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
     const id = await (identity !== undefined ? identity : this._identity);
-    const sender = id?.getPrincipal?.() || Principal.anonymous();
-    return this.submit(
-      {
-        request_type: SubmitRequestType.Call,
-        canister_id: typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId,
-        method_name: fields.methodName,
-        arg: fields.arg,
-        sender: sender.toBlob(),
-        ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
-      },
-      id,
-    );
-  }
-
-  public async install(
-    canisterId: Principal | string,
-    fields: {
-      module: BinaryBlob;
-      arg?: BinaryBlob;
-    },
-    identity?: Identity | Promise<Identity>,
-  ): Promise<SubmitResponse> {
-    const id = await (identity || this._identity);
+    const canister = Principal.from(canisterId);
+    const ecid = options.effectiveCanisterId
+      ? Principal.from(options.effectiveCanisterId)
+      : canister;
     const sender = id?.getPrincipal() || Principal.anonymous();
-    return this.submit(
-      {
-        request_type: SubmitRequestType.InstallCode,
-        canister_id: typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId,
-        module: fields.module,
-        arg: fields.arg || blobFromHex(''),
-        sender: sender.toBlob(),
-        ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
-      },
-      id,
-    );
-  }
+    const submit: CallRequest = {
+      request_type: SubmitRequestType.Call,
+      canister_id: canister,
+      method_name: options.methodName,
+      arg: options.arg,
+      sender: sender.toBlob(),
+      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+    };
 
-  public async query(
-    canisterId: Principal | string,
-    fields: QueryFields,
-    identity?: Identity | Promise<Identity>,
-  ): Promise<QueryResponse> {
-    const id = await (identity || this._identity);
-    const sender = id?.getPrincipal?.() || Principal.anonymous();
-
-    return this.read(
-      {
-        request_type: ReadRequestType.Query,
-        canister_id: typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId,
-        method_name: fields.methodName,
-        arg: fields.arg,
-        sender: sender.toBlob(),
-        ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
-      },
-      id,
-    ) as Promise<QueryResponse>;
-  }
-
-  public async readState(
-    fields: ReadStateFields,
-    identity?: Identity | Promise<Identity>,
-  ): Promise<ReadStateResponse> {
-    const id = await (identity || this._identity);
-    const sender = id?.getPrincipal?.() || Principal.anonymous();
-
-    return this.read(
-      {
-        request_type: ReadRequestType.ReadState,
-        paths: fields.paths,
-        sender: sender.toBlob(),
-        ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
-      },
-      id,
-    ) as Promise<ReadStateResponse>;
-  }
-
-  public async status(): Promise<JsonObject> {
-    const headers: Record<string, string> = this._credentials
-      ? {
-          Authorization: 'Basic ' + btoa(this._credentials),
-        }
-      : {};
-
-    const response = await this._fetch(
-      '' + new URL(`/api/${API_VERSION}/${Endpoint.Status}`, this._host),
-      { headers },
-    );
-
-    if (!response.ok) {
-      throw new Error(
-        `Server returned an error:\n` +
-          `  Code: ${response.status} (${response.statusText})\n` +
-          `  Body: ${await response.text()}\n`,
-      );
-    }
-
-    const buffer = await response.arrayBuffer();
-    return cbor.decode(new Uint8Array(buffer));
-  }
-
-  public makeActorFactory(actorInterfaceFactory: IDL.InterfaceFactory): ActorFactory {
-    return actor.makeActorFactory(actorInterfaceFactory);
-  }
-
-  protected _transform(request: HttpAgentRequest): Promise<HttpAgentRequest> {
-    let p = Promise.resolve(request);
-
-    for (const fn of this._pipeline) {
-      p = p.then(r => fn(r).then(r2 => r2 || r));
-    }
-
-    return p;
-  }
-
-  protected async submit(
-    submit: SubmitRequest,
-    identity: Identity | AnonymousIdentity,
-  ): Promise<SubmitResponse> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let transformedRequest: any = (await this._transform({
       request: {
@@ -271,19 +177,19 @@ export class HttpAgent implements Agent {
           ...(this._credentials ? { Authorization: 'Basic ' + btoa(this._credentials) } : {}),
         },
       },
-      endpoint: Endpoint.Submit,
+      endpoint: Endpoint.Call,
       body: submit,
     })) as HttpAgentSubmitRequest;
 
     // Apply transform for identity.
-    transformedRequest = await (await identity).transformRequest(transformedRequest);
+    transformedRequest = await id.transformRequest(transformedRequest);
 
     const body = cbor.encode(transformedRequest.body);
 
     // Run both in parallel. The fetch is quite expensive, so we have plenty of time to
     // calculate the requestId locally.
     const [response, requestId] = await Promise.all([
-      this._fetch('' + new URL(`/api/${API_VERSION}/${Endpoint.Submit}`, this._host), {
+      this._fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this._host), {
         ...transformedRequest.request,
         body,
       }),
@@ -293,8 +199,8 @@ export class HttpAgent implements Agent {
     if (!response.ok) {
       throw new Error(
         `Server returned an error:\n` +
-          `  Code: ${response.status} (${response.statusText})\n` +
-          `  Body: ${await response.text()}\n`,
+        `  Code: ${response.status} (${response.statusText})\n` +
+        `  Body: ${await response.text()}\n`,
       );
     }
 
@@ -308,7 +214,24 @@ export class HttpAgent implements Agent {
     };
   }
 
-  protected async read(request: ReadRequest, identity: Identity): Promise<ReadResponse> {
+  public async query(
+    canisterId: Principal | string,
+    fields: QueryFields,
+    identity?: Identity | Promise<Identity>,
+  ): Promise<QueryResponse> {
+    const id = await (identity || this._identity);
+    const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
+    const sender = id?.getPrincipal() || Principal.anonymous();
+
+    const request: QueryRequest = {
+      request_type: ReadRequestType.Query,
+      canister_id: canister,
+      method_name: fields.methodName,
+      arg: fields.arg,
+      sender: sender.toBlob(),
+      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+    };
+
     // TODO: remove this any. This can be a Signed or UnSigned request.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let transformedRequest: any = await this._transform({
@@ -319,17 +242,16 @@ export class HttpAgent implements Agent {
           ...(this._credentials ? { Authorization: 'Basic ' + btoa(this._credentials) } : {}),
         },
       },
-      endpoint: Endpoint.Read,
+      endpoint: Endpoint.Query,
       body: request,
     });
 
     // Apply transform for identity.
-    transformedRequest = await (await identity).transformRequest(transformedRequest);
+    transformedRequest = await id.transformRequest(transformedRequest);
 
     const body = cbor.encode(transformedRequest.body);
-
     const response = await this._fetch(
-      '' + new URL(`/api/${API_VERSION}/${Endpoint.Read}`, this._host),
+      '' + new URL(`/api/v2/canister/${canister.toText()}/query`, this._host),
       {
         ...transformedRequest.request,
         body,
@@ -339,10 +261,92 @@ export class HttpAgent implements Agent {
     if (!response.ok) {
       throw new Error(
         `Server returned an error:\n` +
+        `  Code: ${response.status} (${response.statusText})\n` +
+        `  Body: ${await response.text()}\n`,
+      );
+    }
+    return cbor.decode(Buffer.from(await response.arrayBuffer()));
+  }
+
+  public async readState(
+    canisterId: Principal | string,
+    fields: ReadStateOptions,
+    identity?: Identity | Promise<Identity>,
+  ): Promise<ReadStateResponse> {
+    const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
+    const id = await (identity || this._identity);
+    const sender = id?.getPrincipal() || Principal.anonymous();
+
+    // TODO: remove this any. This can be a Signed or UnSigned request.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let transformedRequest: any = await this._transform({
+      request: {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/cbor',
+          ...(this._credentials ? { Authorization: 'Basic ' + btoa(this._credentials) } : {}),
+        },
+      },
+      endpoint: Endpoint.ReadState,
+      body: {
+        request_type: ReadRequestType.ReadState,
+        paths: fields.paths,
+        sender: sender.toBlob(),
+        ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+      },
+    });
+
+    // Apply transform for identity.
+    transformedRequest = await id.transformRequest(transformedRequest);
+
+    const body = cbor.encode(transformedRequest.body);
+
+    const response = await this._fetch(
+      '' + new URL(`/api/v2/canister/${canister}/read_state`, this._host),
+      {
+        ...transformedRequest.request,
+        body,
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Server returned an error:\n` +
+        `  Code: ${response.status} (${response.statusText})\n` +
+        `  Body: ${await response.text()}\n`,
+      );
+    }
+    return cbor.decode(Buffer.from(await response.arrayBuffer()));
+  }
+
+  public async status(): Promise<JsonObject> {
+    const headers: Record<string, string> = this._credentials
+      ? {
+          Authorization: 'Basic ' + btoa(this._credentials),
+        }
+      : {};
+
+    const response = await this._fetch('' + new URL(`/api/v2/status`, this._host), { headers });
+
+    if (!response.ok) {
+      throw new Error(
+        `Server returned an error:\n` +
           `  Code: ${response.status} (${response.statusText})\n` +
           `  Body: ${await response.text()}\n`,
       );
     }
-    return cbor.decode(Buffer.from(await response.arrayBuffer()));
+
+    const buffer = await response.arrayBuffer();
+    return cbor.decode(new Uint8Array(buffer));
+  }
+
+  protected _transform(request: HttpAgentRequest): Promise<HttpAgentRequest> {
+    let p = Promise.resolve(request);
+
+    for (const fn of this._pipeline) {
+      p = p.then(r => fn(r).then(r2 => r2 || r));
+    }
+
+    return p;
   }
 }
