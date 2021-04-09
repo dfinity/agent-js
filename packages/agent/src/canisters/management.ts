@@ -1,18 +1,23 @@
-import { Actor, ActorSubclass, CallConfig } from '../actor';
+import { Actor, ActorMethod, ActorSubclass, CallConfig } from '../actor';
 import { Principal } from '../principal';
 import managementCanisterIdl from './management_idl';
 
 /* tslint:disable */
 export interface ManagementCanisterRecord {
-  provisional_create_canister_with_cycles(arg0: { amount: [] | [number] }): Promise<{ canister_id: Principal }>;
-  install_code(arg0: {
-    mode: { install: null } | { reinstall: null } | { upgrade: null };
-    canister_id: Principal;
-    wasm_module: number[];
-    arg: number[];
-    compute_allocation: [] | [number];
-    memory_allocation: [] | [number];
-  }): Promise<void>;
+  provisional_create_canister_with_cycles: ActorMethod<[{ amount: [] | [number] }], { canister_id: Principal }>;
+  install_code: ActorMethod<
+    [
+      {
+        mode: { install: null } | { reinstall: null } | { upgrade: null };
+        canister_id: Principal;
+        wasm_module: number[];
+        arg: number[];
+        compute_allocation: [] | [number];
+        memory_allocation: [] | [number];
+      },
+    ],
+    void
+  >;
 }
 /* tslint:enable */
 
