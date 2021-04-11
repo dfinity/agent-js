@@ -1,10 +1,7 @@
 // tslint:disable:no-bitwise
-import { BinaryBlob } from '..';
-const {crc32} = require('crc');
 
-// This whole file is from https://lxp32.github.io/docs/a-simple-example-crc32-calculation/,
-// translated to JavaScript.
-
+// This file is translated to JavaScript from
+// https://lxp32.github.io/docs/a-simple-example-crc32-calculation/
 const lookUpTable: Uint32Array = new Uint32Array([
   0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA,
   0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3,
@@ -78,23 +75,14 @@ const lookUpTable: Uint32Array = new Uint32Array([
  */
 export function getCrc32(buf: ArrayBuffer): number {
   const b = new Uint8Array(buf);
-  let crc = 0xFFFFFFFF;
-  let crc2 = 0;
+  let crc = -1;
 
+  // tslint:disable-next-line:prefer-for-of
   for (let i = 0; i < b.length; i++) {
     const byte = b[i];
     const t = (byte ^ crc) & 0xFF;
-    crc = lookUpTable[t] ^ (crc >> 8);
-    crc2 = lookUpTable[(crc2 ^ byte) & 0xff] ^ (crc2 >>> 8);
+    crc = lookUpTable[t] ^ (crc >>> 8);
   }
 
-  const result = crc ^ 0xFFFFFFFF;
-  const result2 = crc2 ^ -1;
-
-  const other = crc32(buf);
-  if (other !== result) {
-    throw new Error('NOT EQUAL ' + other.toString(16) + ' ' + result.toString(16) + ' ' + result2.toString(16));
-  }
-
-  return other;
+  return (crc ^ -1) >>> 0;
 }
