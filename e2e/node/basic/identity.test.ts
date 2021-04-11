@@ -4,7 +4,7 @@ import {
   DelegationChain,
   DelegationIdentity,
   Ed25519KeyIdentity,
-} from "@dfinity/authentication";
+} from "@dfinity/identity";
 import agent from "../utils/agent";
 import identityCanister from "../canisters/identity";
 
