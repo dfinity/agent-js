@@ -1,5 +1,5 @@
 import { Principal, PublicKey } from '@dfinity/agent';
-import { DelegationChain, DelegationIdentity, Ed25519KeyIdentity } from "@dfinity/identity";
+import { DelegationChain } from "@dfinity/identity";
 
 const DEFAULT_IDENTITY_PROVIDER_URL = 'https://auth.ic0.app/authorize';
 

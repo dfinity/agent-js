@@ -11,7 +11,9 @@
   },
   "workspaces": {
     "packages": [
-      "packages/*",
+      "packages/agent",
+      "packages/identity",
+      "packages/authentication",
       "e2e/*",
       "demos/*"
     ]
