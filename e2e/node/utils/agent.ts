@@ -1,5 +1,5 @@
 import { HttpAgent, makeNonceTransform } from "@dfinity/agent";
-import { Ed25519KeyIdentity } from "@dfinity/authentication";
+import { Ed25519KeyIdentity } from "@dfinity/identity";
 
 const identity = Ed25519KeyIdentity.generate();
 export const principal = identity.getPrincipal();
