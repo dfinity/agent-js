@@ -19,13 +19,14 @@ npm i --save @dfinity/authentication
 ### In the browser:
 
 ```
-import * as authentication from "@dfinity/authentication";
+import * as auth from "@dfinity/authentication";
 ```
 
 or using individual exports:
 
 ```
-import { sendAuthenticationRequest, WebAuthnIdentity } from "@dfinity/authentication";
+import { createAuthenticationRequestUrl } from "@dfinity/authentication";
 ```
 
-Note: depends on [@dfinity/agent](https://www.npmjs.com/package/@dfinity/agent)
+Note: depends on [@dfinity/agent](https://www.npmjs.com/package/@dfinity/agent) and
+[@dfinity/identity](https://www.npmjs.com/package/@dfinity/identity).
