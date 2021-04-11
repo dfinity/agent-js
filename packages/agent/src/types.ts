@@ -47,6 +47,9 @@ export function blobToHex(blob: BinaryBlob): string {
 // A Nonce that can be used for calls.
 export type Nonce = BinaryBlob & { __nonce__: void };
 
+/**
+ * Create a random Nonce, based on date and a random suffix.
+ */
 export function makeNonce(): Nonce {
-  return lebEncode(+(+Date.now() + ('' + Math.random()).slice(2, 7))) as Nonce;
+  return lebEncode(BigInt(+Date.now()) * BigInt(100000) + BigInt(Math.random() * 100000)) as Nonce;
 }
