@@ -42,7 +42,6 @@
     "tslint": "tslint --project tsconfig.json --config tslint.json"
   },
   "dependencies": {
-    "@types/crc": "^3.4.0",
     "base64-arraybuffer": "^0.2.0",
     "bignumber.js": "^9.0.0",
     "borc": "^2.1.1",
