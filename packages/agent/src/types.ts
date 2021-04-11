@@ -1,8 +1,12 @@
 import { Buffer } from 'buffer/';
 import { lebEncode } from './utils/leb128';
 
-export interface JsonArray extends Array<JsonValue> {}
-export interface JsonObject extends Record<string, JsonValue> {}
+export interface JsonArray extends Array<JsonValue> {
+}
+
+export interface JsonObject extends Record<string, JsonValue> {
+}
+
 export type JsonValue = boolean | string | number | JsonArray | JsonObject;
 
 // TODO
@@ -51,5 +55,7 @@ export type Nonce = BinaryBlob & { __nonce__: void };
  * Create a random Nonce, based on date and a random suffix.
  */
 export function makeNonce(): Nonce {
-  return lebEncode(BigInt(+Date.now()) * BigInt(100000) + BigInt(Math.random() * 100000)) as Nonce;
+  return lebEncode(
+    BigInt(+Date.now()) * BigInt(100000) + BigInt(Math.floor(Math.random() * 100000)),
+  ) as Nonce;
 }
