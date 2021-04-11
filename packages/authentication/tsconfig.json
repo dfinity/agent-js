@@ -18,5 +18,8 @@
     "target": "es2017"
   },
   "include": ["types/*", "src/**/*"],
-  "references": [{ "path": "../agent" }]
+  "references": [
+    { "path": "../agent" },
+    { "path": "../identity" }
+  ]
 }

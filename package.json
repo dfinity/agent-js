@@ -11,9 +11,9 @@
   },
   "workspaces": {
     "packages": [
-      "demos/*",
+      "packages/*",
       "e2e/*",
-      "packages/*"
+      "demos/*"
     ]
   },
   "devDependencies": {

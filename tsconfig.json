@@ -10,7 +10,8 @@
   "files": [],
   "references": [
     { "path": "packages/agent" },
-    { "path": "packages/authentication" }
+    { "path": "packages/authentication" },
+    { "path": "packages/identity" }
   ],
   "include": ["packages/**/types/*"],
   "resolveJsonModule": true

@@ -17,6 +17,7 @@
     "webpack-dev-server": "^4.0.0-beta.0"
   },
   "scripts": {
+    "build": "webpack",
     "develop": "webpack-dev-server"
   }
 }
