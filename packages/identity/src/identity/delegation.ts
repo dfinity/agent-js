@@ -111,12 +111,7 @@ async function _createSingleDelegation(
   // a user gesture if you await an async call thats not fetch, xhr, or setTimeout.
   const challenge = new Uint8Array([...domainSeparator, ...requestIdOf(delegation)]);
   const signature = await from.sign(blobFromUint8Array(challenge));
-  // This is extremely helpful to have in the debug log when tracking down ic-ref authentication signature errors.
-  console.debug('@dfinity/authentication _createSingleDelegation', {
-    challenge,
-    signature,
-    delegation,
-  });
+
   return {
     delegation,
     signature,
