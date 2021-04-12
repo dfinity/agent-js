@@ -18,7 +18,8 @@ import {
   Endpoint,
   HttpAgentRequest,
   HttpAgentRequestTransformFn,
-  HttpAgentSubmitRequest, QueryRequest,
+  HttpAgentSubmitRequest,
+  QueryRequest,
   ReadRequestType,
   SubmitRequestType,
 } from './types';

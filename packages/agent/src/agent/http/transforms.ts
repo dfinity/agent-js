@@ -34,6 +34,8 @@ export class Expiry {
  */
 export function makeNonceTransform(nonceFn: () => Nonce = makeNonce): HttpAgentRequestTransformFn {
   return async (request: HttpAgentRequest) => {
+    // Nonce are only useful for async calls, to prevent replay attacks. Other types of
+    // calls don't need Nonce so we just skip creating one.
     if (request.endpoint === Endpoint.Call) {
       request.body.nonce = nonceFn();
     }
