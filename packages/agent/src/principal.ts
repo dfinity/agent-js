@@ -62,7 +62,7 @@ export class Principal {
   public toText(): string {
     const checksumArrayBuf = new ArrayBuffer(4);
     const view = new DataView(checksumArrayBuf);
-    view.setUint32(0, getCrc32(this.toHex().toLowerCase()), false);
+    view.setUint32(0, getCrc32(this.toBlob()), false);
     const checksum = Uint8Array.from(Buffer.from(checksumArrayBuf));
 
     const bytes = Uint8Array.from(this._blob);
