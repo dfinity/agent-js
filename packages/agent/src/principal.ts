@@ -17,6 +17,20 @@ export class Principal {
     return new this(blobFromUint8Array(new Uint8Array([...sha, SELF_AUTHENTICATING_SUFFIX])));
   }
 
+  public static from(other: unknown): Principal {
+    if (typeof other === 'string') {
+      return Principal.fromText(other);
+    } else if (
+      typeof other === 'object'
+      && other !== null
+      && (other as Principal)._isPrincipal === true
+    ) {
+      return new Principal((other as Principal)._blob);
+    }
+
+    throw new Error(`Impossible to convert ${JSON.stringify(other)} to Principal.`);
+  }
+
   public static fromHex(hex: string): Principal {
     return new this(blobFromHex(hex));
   }
@@ -62,7 +76,7 @@ export class Principal {
   public toText(): string {
     const checksumArrayBuf = new ArrayBuffer(4);
     const view = new DataView(checksumArrayBuf);
-    view.setUint32(0, getCrc32(this.toHex().toLowerCase()), false);
+    view.setUint32(0, getCrc32(this.toBlob()), false);
     const checksum = Uint8Array.from(Buffer.from(checksumArrayBuf));
 
     const bytes = Uint8Array.from(this._blob);

@@ -1,17 +1,13 @@
 import {
-  ActorFactory,
-  BinaryBlob,
-  CallFields,
+  CallOptions,
   JsonObject,
   Principal,
   QueryFields,
   QueryResponse,
-  ReadStateFields,
+  ReadStateOptions,
   ReadStateResponse,
   SubmitResponse,
 } from '..';
-import * as actor from '../actor';
-import * as IDL from '../idl';
 import { Agent } from './api';
 
 export enum ProxyMessageKind {
@@ -44,7 +40,7 @@ export interface ProxyMessageGetPrincipal extends ProxyMessageBase {
 
 export interface ProxyMessageGetPrincipalResponse extends ProxyMessageBase {
   type: ProxyMessageKind.GetPrincipalResponse;
-  response: string | null;
+  response: string;
 }
 
 export interface ProxyMessageQuery extends ProxyMessageBase {
@@ -59,7 +55,7 @@ export interface ProxyMessageQueryResponse extends ProxyMessageBase {
 
 export interface ProxyMessageCall extends ProxyMessageBase {
   type: ProxyMessageKind.Call;
-  args: [string, CallFields];
+  args: [string, CallOptions];
 }
 
 export interface ProxyMessageCallResponse extends ProxyMessageBase {
@@ -69,7 +65,7 @@ export interface ProxyMessageCallResponse extends ProxyMessageBase {
 
 export interface ProxyMessageReadState extends ProxyMessageBase {
   type: ProxyMessageKind.ReadState;
-  args: [ReadStateFields];
+  args: [string, ReadStateOptions];
 }
 
 export interface ProxyMessageReadStateResponse extends ProxyMessageBase {
@@ -110,7 +106,7 @@ export class ProxyStubAgent {
           this._frontend({
             id: msg.id,
             type: ProxyMessageKind.GetPrincipalResponse,
-            response: response ? response.toText() : null,
+            response: response.toText(),
           });
         });
         break;
@@ -189,28 +185,30 @@ export class ProxyAgent implements Agent {
     }
   }
 
-  public getPrincipal(): Promise<Principal | null> {
+  public async getPrincipal(): Promise<Principal> {
     return this._sendAndWait({
       id: this._nextId++,
       type: ProxyMessageKind.GetPrincipal,
-    }).then(principalOrNull => {
-      if (typeof principalOrNull === 'string') {
-        return Principal.fromText(principalOrNull);
-      } else {
-        return null;
+    }).then(principal => {
+      if (typeof principal !== 'string') {
+        throw new Error('Invalid principal received.');
       }
+      return Principal.fromText(principal);
     });
   }
 
-  public readState(fields: ReadStateFields): Promise<ReadStateResponse> {
+  public readState(
+    canisterId: Principal | string,
+    fields: ReadStateOptions,
+  ): Promise<ReadStateResponse> {
     return this._sendAndWait({
       id: this._nextId++,
       type: ProxyMessageKind.ReadState,
-      args: [fields],
+      args: [canisterId.toString(), fields],
     }) as Promise<ReadStateResponse>;
   }
 
-  public call(canisterId: Principal | string, fields: CallFields): Promise<SubmitResponse> {
+  public call(canisterId: Principal | string, fields: CallOptions): Promise<SubmitResponse> {
     return this._sendAndWait({
       id: this._nextId++,
       type: ProxyMessageKind.Call,
@@ -231,10 +229,6 @@ export class ProxyAgent implements Agent {
       type: ProxyMessageKind.Query,
       args: [canisterId.toString(), fields],
     }) as Promise<QueryResponse>;
-  }
-
-  public makeActorFactory(actorInterfaceFactory: IDL.InterfaceFactory): ActorFactory {
-    return actor.makeActorFactory(actorInterfaceFactory);
   }
 
   private async _sendAndWait(msg: ProxyMessage): Promise<unknown> {

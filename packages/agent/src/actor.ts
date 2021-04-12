@@ -1,8 +1,7 @@
 import { Buffer } from 'buffer/';
-import { Agent, getDefaultAgent } from './agent';
+import { Agent, getDefaultAgent, QueryResponseStatus, RequestStatusResponseStatus } from './agent';
 import { getManagementCanister } from './canisters/management';
 import { Certificate } from './certificate';
-import { QueryResponseStatus, RequestStatusResponseStatus } from './http_agent_types';
 import * as IDL from './idl';
 import { Principal } from './principal';
 import { RequestId, toHex as requestIdToHex } from './request_id';
@@ -15,13 +14,44 @@ export interface CallConfig {
   agent?: Agent;
   maxAttempts?: number;
   throttleDurationInMSecs?: number;
+
+  /**
+   * The canister ID of this Actor.
+   */
+  canisterId?: string | Principal;
+
+  /**
+   * The effective canister ID. This should almost always be ignored.
+   */
+  effectiveCanisterId?: Principal;
 }
 
 /**
  * Configuration that can be passed to customize the Actor behaviour.
  */
 export interface ActorConfig extends CallConfig {
+  /**
+   * The Canister ID of this Actor. This is required for an Actor.
+   */
   canisterId: string | Principal;
+
+  /**
+   * An override function for update calls' CallConfig. This will be called on every calls.
+   */
+  callTransform?(
+    methodName: string,
+    args: unknown[],
+    callConfig: CallConfig,
+  ): Partial<CallConfig> | void;
+
+  /**
+   * An override function for query calls' CallConfig. This will be called on every query.
+   */
+  queryTransform?(
+    methodName: string,
+    args: unknown[],
+    callConfig: CallConfig,
+  ): Partial<CallConfig> | void;
 }
 
 // TODO: move this to proper typing when Candid support TypeScript.
@@ -33,9 +63,9 @@ export type ActorSubclass<T = Record<string, ActorMethod>> = Actor & T;
 /**
  * An actor method type, defined for each methods of the actor service.
  */
-export interface ActorMethod<Args extends unknown[] = [], Ret extends unknown = unknown> {
+export interface ActorMethod<Args extends unknown[] = unknown[], Ret extends unknown = unknown> {
   (...args: Args): Promise<Ret>;
-  withOptions(options: Partial<ActorConfig>): (...args: Args) => Promise<Ret>;
+  withOptions(options: CallConfig): (...args: Args) => Promise<Ret>;
 }
 
 /**
@@ -53,11 +83,9 @@ export enum CanisterInstallMode {
  * a Principal type.
  */
 interface ActorMetadata {
-  canisterId: Principal;
   service: IDL.ServiceClass;
   agent?: Agent;
-  maxAttempts: number;
-  throttleDurationInMSecs: number;
+  config: ActorConfig;
 }
 
 const metadataSymbol = Symbol.for('ic-agent-metadata');
@@ -72,7 +100,7 @@ export class Actor {
    * the default agent (global.ic.agent).
    */
   public static agentOf(actor: Actor): Agent | undefined {
-    return actor[metadataSymbol].agent;
+    return actor[metadataSymbol].config.agent;
   }
 
   /**
@@ -84,7 +112,7 @@ export class Actor {
   }
 
   public static canisterIdOf(actor: Actor): Principal {
-    return actor[metadataSymbol].canisterId;
+    return Principal.from(actor[metadataSymbol].config.canisterId);
   }
 
   public static async install(
@@ -160,9 +188,11 @@ export class Actor {
             : config.canisterId;
 
         super({
-          ...DEFAULT_ACTOR_CONFIG,
-          ...config,
-          canisterId,
+          config: {
+            ...DEFAULT_ACTOR_CONFIG,
+            ...config,
+            canisterId,
+          },
           service,
         });
 
@@ -187,7 +217,7 @@ export class Actor {
   private [metadataSymbol]: ActorMetadata;
 
   protected constructor(metadata: ActorMetadata) {
-    this[metadataSymbol] = metadata;
+    this[metadataSymbol] = Object.freeze(metadata);
   }
 }
 
@@ -206,21 +236,33 @@ function decodeReturnValue(types: IDL.Type[], msg: BinaryBlob) {
   }
 }
 
-const REQUEST_STATUS_RETRY_WAIT_DURATION_IN_MSECS = 500;
+const REQUEST_STATUS_RETRY_WAIT_DURATION_IN_MSECS = 1000;
 const DEFAULT_ACTOR_CONFIG = {
-  maxAttempts: 30,
+  maxAttempts: 300,
   throttleDurationInMSecs: REQUEST_STATUS_RETRY_WAIT_DURATION_IN_MSECS,
 };
 
 export type ActorConstructor = new (config: ActorConfig) => ActorSubclass;
-export type ActorFactory = (config: ActorConfig) => ActorSubclass;
 
 function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClass): ActorMethod {
-  let caller: (options: Partial<ActorConfig>, ...args: unknown[]) => Promise<unknown>;
+  let caller: (options: CallConfig, ...args: unknown[]) => Promise<unknown>;
   if (func.annotations.includes('query')) {
     caller = async (options, ...args) => {
-      const agent = options.agent || actor[metadataSymbol].agent || getDefaultAgent();
-      const cid = options.canisterId || actor[metadataSymbol].canisterId;
+      // First, if there's a config transformation, call it.
+      options = {
+        ...options,
+        ...actor[metadataSymbol].config.queryTransform?.(
+          methodName,
+          args,
+          {
+            ...actor[metadataSymbol].config,
+            ...options,
+          },
+        ),
+      };
+
+      const agent = options.agent || actor[metadataSymbol].config.agent || getDefaultAgent();
+      const cid = options.canisterId || actor[metadataSymbol].config.canisterId;
       const arg = IDL.encode(func.argTypes, args) as BinaryBlob;
 
       const result = await agent.query(cid, { methodName, arg });
@@ -239,20 +281,40 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
     };
   } else {
     caller = async (options, ...args) => {
-      const agent = options.agent || actor[metadataSymbol].agent || getDefaultAgent();
-      const { canisterId, maxAttempts, throttleDurationInMSecs } = {
-        ...actor[metadataSymbol],
+      // First, if there's a config transformation, call it.
+      options = {
+        ...options,
+        ...actor[metadataSymbol].config.callTransform?.(
+          methodName,
+          args,
+          {
+            ...actor[metadataSymbol].config,
+            ...options,
+          },
+        ),
+      };
+
+      const agent = options.agent || actor[metadataSymbol].config.agent || getDefaultAgent();
+      const { canisterId, effectiveCanisterId, maxAttempts, throttleDurationInMSecs } = {
+        ...DEFAULT_ACTOR_CONFIG,
+        ...actor[metadataSymbol].config,
         ...options,
       };
+      const cid = Principal.from(canisterId);
+      const ecid = effectiveCanisterId !== undefined ? Principal.from(effectiveCanisterId) : cid;
       const arg = IDL.encode(func.argTypes, args) as BinaryBlob;
-      const { requestId, response } = await agent.call(canisterId, { methodName, arg });
+      const { requestId, response } = await agent.call(cid, {
+        methodName,
+        arg,
+        effectiveCanisterId: ecid,
+      });
 
       if (!response.ok) {
         throw new Error(
           [
             'Call failed:',
             `  Method: ${methodName}(${args})`,
-            `  Canister ID: ${canisterId}`,
+            `  Canister ID: ${cid}`,
             `  Request ID: ${requestIdToHex(requestId)}`,
             `  HTTP status code: ${response.status}`,
             `  HTTP status text: ${response.statusText}`,
@@ -262,6 +324,7 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
 
       return _requestStatusAndLoop(
         agent,
+        ecid,
         requestId,
         bytes => {
           if (bytes !== undefined) {
@@ -280,14 +343,13 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
   }
 
   const handler = (...args: unknown[]) => caller({}, ...args);
-  handler.withOptions = (options: Partial<ActorConfig>) => {
-    return (...args: unknown[]) => caller(options, ...args);
-  };
+  handler.withOptions = (options: CallConfig) => (...args: unknown[]) => caller(options, ...args);
   return handler as ActorMethod;
 }
 
 async function _requestStatusAndLoop<T>(
   agent: Agent,
+  canisterId: Principal | string,
   requestId: RequestId,
   decoder: (response: BinaryBlob | undefined) => T,
   attempts: number,
@@ -295,7 +357,7 @@ async function _requestStatusAndLoop<T>(
   throttle: number,
 ): Promise<T> {
   const path = [blobFromText('request_status'), requestId];
-  const state = await agent.readState({ paths: [path] });
+  const state = await agent.readState(canisterId, { paths: [path] });
   const cert = new Certificate(state, agent);
   const verified = await cert.verify();
   if (!verified) {
@@ -329,10 +391,18 @@ async function _requestStatusAndLoop<T>(
 
       // Wait a little, then retry.
       return new Promise(resolve => setTimeout(resolve, throttle)).then(() =>
-        _requestStatusAndLoop(agent, requestId, decoder, attempts, maxAttempts, throttle),
+        _requestStatusAndLoop(
+          agent,
+          canisterId,
+          requestId,
+          decoder,
+          attempts,
+          maxAttempts,
+          throttle,
+        ),
       );
 
-    case RequestStatusResponseStatus.Rejected:
+    case RequestStatusResponseStatus.Rejected: {
       const rejectCode = cert.lookup([...path, blobFromText('reject_code')])!.toString();
       const rejectMessage = cert.lookup([...path, blobFromText('reject_message')])!.toString();
       throw new Error(
@@ -341,6 +411,7 @@ async function _requestStatusAndLoop<T>(
           `  Reject code: ${rejectCode}\n` +
           `  Reject text: ${rejectMessage}\n`,
       );
+    }
 
     case RequestStatusResponseStatus.Done:
       // This is _technically_ not an error, but we still didn't see the `Replied` status so
@@ -351,26 +422,4 @@ async function _requestStatusAndLoop<T>(
       );
   }
   throw new Error('unreachable');
-}
-
-// Make an actor from an actor interface.
-//
-// Allows for one HTTP agent for the lifetime of the actor:
-//
-// ```
-// const actor = makeActor(actorInterface)({ agent });
-// const reply = await actor.greet();
-// ```
-//
-// or using a different HTTP agent for the same actor if necessary:
-//
-// ```
-// const actor = makeActor(actorInterface);
-// const reply1 = await actor(agent1).greet();
-// const reply2 = await actor(agent2).greet();
-// ```
-export function makeActorFactory(actorInterfaceFactory: IDL.InterfaceFactory): ActorFactory {
-  return (config: ActorConfig) => {
-    return Actor.createActor(actorInterfaceFactory, config);
-  };
 }
