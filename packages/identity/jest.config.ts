@@ -1,5 +1,5 @@
 import baseConfig from '../../jest.config.base';
-const packageName = 'authentication';
+const packageName = 'identity';
 
 module.exports = {
   ...baseConfig,
