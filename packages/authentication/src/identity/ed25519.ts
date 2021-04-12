@@ -98,10 +98,6 @@ export class Ed25519PublicKey implements PublicKey {
 
 export class Ed25519KeyIdentity extends SignIdentity {
   public static generate(seed?: Uint8Array): Ed25519KeyIdentity {
-    if (seed && seed.length !== 32) {
-      throw new Error('Ed25519 Seed needs to be 32 bytes long.');
-    }
-
     const { publicKey, secretKey } =
       seed === undefined ? tweetnacl.sign.keyPair() : tweetnacl.sign.keyPair.fromSeed(seed);
     return new this(
