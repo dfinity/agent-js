@@ -1,8 +1,8 @@
 import { Buffer } from 'buffer/';
 import * as cbor from 'simple-cbor';
-import { Endpoint, HttpAgentRequest, HttpAgentRequestTransformFn } from './http_agent_types';
-import { makeNonce, Nonce } from './types';
-import { lebEncode } from './utils/leb128';
+import { makeNonce, Nonce } from '../../types';
+import { lebEncode } from '../../utils/leb128';
+import { Endpoint, HttpAgentRequest, HttpAgentRequestTransformFn } from './types';
 
 const NANOSECONDS_PER_MILLISECONDS = BigInt(1000000);
 
@@ -34,7 +34,9 @@ export class Expiry {
  */
 export function makeNonceTransform(nonceFn: () => Nonce = makeNonce): HttpAgentRequestTransformFn {
   return async (request: HttpAgentRequest) => {
-    if (request.endpoint !== Endpoint.Read) {
+    // Nonce are only useful for async calls, to prevent replay attacks. Other types of
+    // calls don't need Nonce so we just skip creating one.
+    if (request.endpoint === Endpoint.Call) {
       request.body.nonce = nonceFn();
     }
   };

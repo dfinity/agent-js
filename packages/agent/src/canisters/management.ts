@@ -26,8 +26,21 @@ export interface ManagementCanisterRecord {
  * @param config
  */
 export function getManagementCanister(config: CallConfig): ActorSubclass<ManagementCanisterRecord> {
+  function transform(methodName: string, args: unknown[], callConfig: CallConfig) {
+    const first = args[0] as any;
+    let effectiveCanisterId = Principal.fromHex('');
+    if (first && typeof first === 'object' && first.canister_id) {
+      effectiveCanisterId = Principal.from(first.canister_id as unknown);
+    }
+    return { effectiveCanisterId };
+  }
+
   return Actor.createActor<ManagementCanisterRecord>(managementCanisterIdl, {
     ...config,
     canisterId: Principal.fromHex(''),
+    ...{
+      callTransform: transform,
+      queryTransform: transform,
+    },
   });
 }

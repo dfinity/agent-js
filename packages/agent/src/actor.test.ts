@@ -1,9 +1,9 @@
 import { Buffer } from 'buffer/';
-import { makeActorFactory } from './actor';
+import { Actor } from './actor';
 import { HttpAgent } from './agent';
+import { Expiry, makeNonceTransform } from './agent/http/transforms';
+import { CallRequest, SubmitRequestType, UnSigned } from './agent/http/types';
 import * as cbor from './cbor';
-import { Expiry, makeNonceTransform } from './http_agent_transforms';
-import { CallRequest, SubmitRequestType, UnSigned } from './http_agent_types';
 import * as IDL from './idl';
 import { Principal } from './principal';
 import { requestIdOf } from './request_id';
@@ -101,8 +101,8 @@ test.skip('makeActor', async () => {
   const httpAgent = new HttpAgent({ fetch: mockFetch });
   httpAgent.addTransform(makeNonceTransform(() => nonces[nonceCount++]));
 
-  const actor = makeActorFactory(actorInterface)({ canisterId, agent: httpAgent });
-  const reply = await (actor as any).greet(argValue);
+  const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
+  const reply = await actor.greet(argValue);
 
   expect(reply).toEqual(IDL.decode([IDL.Text], expectedReplyArg)[0]);
 
@@ -110,7 +110,7 @@ test.skip('makeActor', async () => {
 
   expect(calls.length).toBe(5);
   expect(calls[0]).toEqual([
-    'http://localhost/api/v1/submit',
+    `http://localhost/api/v2/canister/${canisterId.toText()}/call`,
     {
       method: 'POST',
       headers: {
@@ -121,7 +121,7 @@ test.skip('makeActor', async () => {
   ]);
 
   expect(calls[1]).toEqual([
-    'http://localhost/api/v1/read',
+    `http://localhost/api/v2/canister/${canisterId.toText()}/read_state`,
     {
       method: 'POST',
       headers: {
