@@ -106,26 +106,6 @@ export class Ed25519KeyIdentity extends SignIdentity {
     );
   }
 
-  // Derive an Ed25519 key pair according to SLIP 0010:
-  // https://github.com/satoshilabs/slips/blob/master/slip-0010.md
-  public static async fromSeedWithSlip0010(seed: Uint8Array): Promise<Ed25519KeyIdentity> {
-    const encoder = new TextEncoder();
-    const rawKey = encoder.encode('ed25519 seed');
-    const key = await window.crypto.subtle.importKey(
-      'raw',
-      rawKey,
-      {
-        name: 'HMAC',
-        hash: { name: 'SHA-512' },
-      },
-      false,
-      ['sign'],
-    );
-    const result = await window.crypto.subtle.sign('HMAC', key, seed.buffer);
-    const slipSeed = new Uint8Array(result.slice(0, 32));
-    return this.generate(slipSeed);
-  }
-
   public static fromParsedJson(obj: JsonnableEd25519KeyIdentity): Ed25519KeyIdentity {
     const [publicKeyDer, privateKeyRaw] = obj;
     return new Ed25519KeyIdentity(
