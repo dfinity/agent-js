@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "@do-not-publish/ic-node-e2e-tests",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "scripts": {
     "ci": "npm run e2e",
     "e2e": "jest --verbose",
@@ -17,9 +17,9 @@
     "test": ""
   },
   "dependencies": {
-    "@dfinity/agent": "^0.7.1",
-    "@dfinity/authentication": "^0.7.1",
-    "@dfinity/identity": "^0.7.1",
+    "@dfinity/agent": "^0.8.0",
+    "@dfinity/authentication": "^0.8.0",
+    "@dfinity/identity": "^0.8.0",
     "@trust/webcrypto": "^0.9.2",
     "@types/base64-js": "^1.2.5",
     "@types/jest": "^24.0.18",
