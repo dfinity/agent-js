@@ -51,26 +51,6 @@ function _authDataToCose(authData: ArrayBuffer): ArrayBuffer {
   return authData.slice(55 + credentialIdLength);
 }
 
-/**
- * From the documentation;
- * The authData is a byte array described in the spec. Parsing it will involve slicing bytes from
- * the array and converting them into usable objects.
- *
- * See https://webauthn.guide/#registration (subsection "Example: Parsing the authenticator data").
- *
- * @param authData The authData field of the attestation response.
- * @returns The CredentialId key of the authData.
- */
-function _authDataToCredentialId(authData: ArrayBuffer): ArrayBuffer {
-  const dataView = new DataView(new ArrayBuffer(2));
-  const idLenBytes = authData.slice(53, 55);
-  [...new Uint8Array(idLenBytes)].forEach((v, i) => dataView.setUint8(i, v));
-  const credentialIdLength = dataView.getUint16(0);
-
-  // Get the public key object.
-  return authData.slice(55, 55 + credentialIdLength);
-}
-
 export class CosePublicKey implements PublicKey {
   protected _encodedKey: DerEncodedBlob;
   public constructor(protected _cose: BinaryBlob) {
@@ -190,17 +170,12 @@ export class WebAuthnIdentity extends SignIdentity {
     return new this(
       blobFromUint8Array(new Uint8Array(creds.rawId)),
       blobFromUint8Array(new Uint8Array(_authDataToCose(attObject.authData))),
-      _authDataToCredentialId(attObject.authData),
     );
   }
 
   protected _publicKey: CosePublicKey;
 
-  protected constructor(
-    public readonly rawId: BinaryBlob,
-    cose: BinaryBlob,
-    public readonly credentialId?: ArrayBuffer,
-  ) {
+  protected constructor(public readonly rawId: BinaryBlob, cose: BinaryBlob) {
     super();
     this._publicKey = new CosePublicKey(cose);
   }
