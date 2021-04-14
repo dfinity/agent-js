@@ -39,7 +39,7 @@
     "test:coverage": "jest --verbose --collectCoverage"
   },
   "dependencies": {
-    "@dfinity/agent": "^0.8.0",
+    "@dfinity/agent": "^0.8.1",
     "bip39": "^3.0.2",
     "borc": "^2.1.1",
     "buffer": "^5.4.3",

@@ -17,7 +17,7 @@
     "test": ""
   },
   "dependencies": {
-    "@dfinity/agent": "^0.8.0",
+    "@dfinity/agent": "^0.8.1",
     "@dfinity/authentication": "^0.8.1",
     "@dfinity/identity": "^0.8.1",
     "@trust/webcrypto": "^0.9.2",
