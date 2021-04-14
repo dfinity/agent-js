@@ -51,6 +51,26 @@ function _authDataToCose(authData: ArrayBuffer): ArrayBuffer {
   return authData.slice(55 + credentialIdLength);
 }
 
+/**
+ * From the documentation;
+ * The authData is a byte array described in the spec. Parsing it will involve slicing bytes from
+ * the array and converting them into usable objects.
+ *
+ * See https://webauthn.guide/#registration (subsection "Example: Parsing the authenticator data").
+ *
+ * @param authData The authData field of the attestation response.
+ * @returns The CredentialId key of the authData.
+ */
+function _authDataToCredentialId(authData: ArrayBuffer): ArrayBuffer {
+  const dataView = new DataView(new ArrayBuffer(2));
+  const idLenBytes = authData.slice(53, 55);
+  [...new Uint8Array(idLenBytes)].forEach((v, i) => dataView.setUint8(i, v));
+  const credentialIdLength = dataView.getUint16(0);
+
+  // Get the public key object.
+  return authData.slice(55, 55 + credentialIdLength);
+}
+
 export class CosePublicKey implements PublicKey {
   protected _encodedKey: DerEncodedBlob;
   public constructor(protected _cose: BinaryBlob) {
@@ -88,15 +108,18 @@ function _createChallengeBuffer(challenge: string | Uint8Array = '<ic0.app>'): U
  * WebAuthn to get credentials IDs (which give us the public key and allow us to
  * sign), but in the case of the Internet Computer, we don't actually need to register
  * it, so we don't.
+ * @param challenge an optional PublicKeyCredentialCreationOptions Challenge
  */
-async function _createCredential(): Promise<PublicKeyCredential | null> {
+async function _createCredential(
+  challenge?: PublicKeyCredentialCreationOptions['challenge'],
+): Promise<PublicKeyCredential | null> {
   const creds = (await navigator.credentials.create({
     publicKey: {
       authenticatorSelection: {
         userVerification: 'preferred',
       },
       attestation: 'direct',
-      challenge: _createChallengeBuffer(),
+      challenge: challenge ?? _createChallengeBuffer(),
       pubKeyCredParams: [{ type: 'public-key', alg: PubKeyCoseAlgo.ECDSA_WITH_SHA256 }],
       rp: {
         name: 'ic0.app',
@@ -145,9 +168,12 @@ export class WebAuthnIdentity extends SignIdentity {
 
   /**
    * Create an identity.
+   * @param challenge an optional PublicKeyCredentialCreationOptions Challenge
    */
-  public static async create(): Promise<WebAuthnIdentity> {
-    const creds = await _createCredential();
+  public static async create(
+    challenge?: PublicKeyCredentialCreationOptions['challenge'],
+  ): Promise<WebAuthnIdentity> {
+    const creds = await _createCredential(challenge);
 
     if (!creds || creds.type !== 'public-key') {
       throw new Error('Could not create credentials.');
@@ -164,12 +190,17 @@ export class WebAuthnIdentity extends SignIdentity {
     return new this(
       blobFromUint8Array(new Uint8Array(creds.rawId)),
       blobFromUint8Array(new Uint8Array(_authDataToCose(attObject.authData))),
+      _authDataToCredentialId(attObject.authData),
     );
   }
 
   protected _publicKey: CosePublicKey;
 
-  protected constructor(private _rawId: BinaryBlob, cose: BinaryBlob) {
+  protected constructor(
+    public readonly rawId: BinaryBlob,
+    cose: BinaryBlob,
+    public readonly credentialId?: ArrayBuffer,
+  ) {
     super();
     this._publicKey = new CosePublicKey(cose);
   }
@@ -184,7 +215,7 @@ export class WebAuthnIdentity extends SignIdentity {
         allowCredentials: [
           {
             type: 'public-key',
-            id: this._rawId,
+            id: this.rawId,
           },
         ],
         challenge: blob,
@@ -219,7 +250,7 @@ export class WebAuthnIdentity extends SignIdentity {
   public toJSON(): JsonnableWebAuthnIdentitiy {
     return {
       publicKey: this._publicKey.getCose().toString('hex'),
-      rawId: this._rawId.toString('hex'),
+      rawId: this.rawId.toString('hex'),
     };
   }
 }
