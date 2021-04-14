@@ -39,7 +39,7 @@
     "test:coverage": "jest --verbose --collectCoverage"
   },
   "dependencies": {
-    "@dfinity/agent": "^0.8.0",
+    "@dfinity/agent": "^0.8.1",
     "@dfinity/identity": "^0.8.1"
   },
   "devDependencies": {
