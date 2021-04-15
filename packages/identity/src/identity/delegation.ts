@@ -223,7 +223,7 @@ export class DelegationChain {
   /**
    * Creates a DelegationChain object from a list of delegations and a DER-encoded public key.
    *
-   * @param delegations The list of delegations
+   * @param delegations The list of delegations.
    * @param publicKey The DER-encoded public key of the key-pair signing the first delegation.
    */
   public static fromDelegations(delegations: SignedDelegation[], publicKey: DerEncodedBlob): DelegationChain {
