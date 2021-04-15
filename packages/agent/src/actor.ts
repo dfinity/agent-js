@@ -2,10 +2,10 @@ import { Buffer } from 'buffer/';
 import { Agent, getDefaultAgent, QueryResponseStatus } from './agent';
 import { getManagementCanister } from './canisters/management';
 import * as IDL from './idl';
-import * as polling_handler from './polling_handler';
+import { pollForResponse } from './polling_handler';
 import { Principal } from './principal';
 import { toHex as requestIdToHex } from './request_id';
-import { BinaryBlob, blobFromText } from './types';
+import { BinaryBlob } from './types';
 
 /**
  * Configuration to make calls to the Replica.
@@ -322,22 +322,22 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
         );
       }
 
-      return polling_handler.requestStatusAndLoop(
+      const responseBytes = await pollForResponse(
         agent,
         ecid,
         requestId,
         maxAttempts,
         maxAttempts,
         throttleDurationInMSecs,
-      ).then(bytes => {
-        if (bytes !== undefined) {
-          return decodeReturnValue(func.retTypes, bytes);
-        } else if (func.retTypes.length === 0) {
-          return undefined;
-        } else {
-          throw new Error(`Call was returned undefined, but type [${func.retTypes.join(',')}].`);
-        }
-      });
+      );
+
+      if (responseBytes !== undefined) {
+        return decodeReturnValue(func.retTypes, responseBytes);
+      } else if (func.retTypes.length === 0) {
+        return undefined;
+      } else {
+        throw new Error(`Call was returned undefined, but type [${func.retTypes.join(',')}].`);
+      }
     };
   }
 

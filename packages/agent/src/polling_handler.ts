@@ -6,7 +6,7 @@ import { BinaryBlob, blobFromText } from './types';
 
 // Polls the IC to check the status of the given request then
 // returns the response bytes once the request has been processed.
-export async function requestStatusAndLoop(
+export async function pollForResponse(
     agent: Agent,
     canisterId: Principal | string,
     requestId: RequestId,
@@ -48,7 +48,7 @@ export async function requestStatusAndLoop(
 
             // Wait a little, then retry.
             return new Promise(resolve => setTimeout(resolve, throttle)).then(() =>
-                requestStatusAndLoop(
+                pollForResponse(
                     agent,
                     canisterId,
                     requestId,
