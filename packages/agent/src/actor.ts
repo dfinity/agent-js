@@ -1,10 +1,10 @@
 import { Buffer } from 'buffer/';
-import { Agent, getDefaultAgent, QueryResponseStatus, RequestStatusResponseStatus } from './agent';
+import { Agent, getDefaultAgent, QueryResponseStatus } from './agent';
 import { getManagementCanister } from './canisters/management';
-import { Certificate } from './certificate';
 import * as IDL from './idl';
+import * as polling_handler from './polling_handler';
 import { Principal } from './principal';
-import { RequestId, toHex as requestIdToHex } from './request_id';
+import { toHex as requestIdToHex } from './request_id';
 import { BinaryBlob, blobFromText } from './types';
 
 /**
@@ -322,104 +322,26 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
         );
       }
 
-      return _requestStatusAndLoop(
+      return polling_handler.requestStatusAndLoop(
         agent,
         ecid,
         requestId,
-        bytes => {
-          if (bytes !== undefined) {
-            return decodeReturnValue(func.retTypes, bytes);
-          } else if (func.retTypes.length === 0) {
-            return undefined;
-          } else {
-            throw new Error(`Call was returned undefined, but type [${func.retTypes.join(',')}].`);
-          }
-        },
         maxAttempts,
         maxAttempts,
         throttleDurationInMSecs,
-      );
+      ).then(bytes => {
+        if (bytes !== undefined) {
+          return decodeReturnValue(func.retTypes, bytes);
+        } else if (func.retTypes.length === 0) {
+          return undefined;
+        } else {
+          throw new Error(`Call was returned undefined, but type [${func.retTypes.join(',')}].`);
+        }
+      });
     };
   }
 
   const handler = (...args: unknown[]) => caller({}, ...args);
   handler.withOptions = (options: CallConfig) => (...args: unknown[]) => caller(options, ...args);
   return handler as ActorMethod;
-}
-
-async function _requestStatusAndLoop<T>(
-  agent: Agent,
-  canisterId: Principal | string,
-  requestId: RequestId,
-  decoder: (response: BinaryBlob | undefined) => T,
-  attempts: number,
-  maxAttempts: number,
-  throttle: number,
-): Promise<T> {
-  const path = [blobFromText('request_status'), requestId];
-  const state = await agent.readState(canisterId, { paths: [path] });
-  const cert = new Certificate(state, agent);
-  const verified = await cert.verify();
-  if (!verified) {
-    throw new Error('Fail to verify certificate');
-  }
-  const maybeBuf = cert.lookup([...path, blobFromText('status')]);
-  let status;
-  if (typeof maybeBuf === 'undefined') {
-    // Missing requestId means we need to wait
-    status = RequestStatusResponseStatus.Unknown;
-  } else {
-    status = maybeBuf.toString();
-  }
-
-  switch (status) {
-    case RequestStatusResponseStatus.Replied: {
-      const response = cert.lookup([...path, blobFromText('reply')]) as BinaryBlob;
-      return decoder(response);
-    }
-
-    case RequestStatusResponseStatus.Received:
-    case RequestStatusResponseStatus.Unknown:
-    case RequestStatusResponseStatus.Processing:
-      if (--attempts <= 0) {
-        throw new Error(
-          `Failed to retrieve a reply for request after ${maxAttempts} attempts:\n` +
-            `  Request ID: ${requestIdToHex(requestId)}\n` +
-            `  Request status: ${status}\n`,
-        );
-      }
-
-      // Wait a little, then retry.
-      return new Promise(resolve => setTimeout(resolve, throttle)).then(() =>
-        _requestStatusAndLoop(
-          agent,
-          canisterId,
-          requestId,
-          decoder,
-          attempts,
-          maxAttempts,
-          throttle,
-        ),
-      );
-
-    case RequestStatusResponseStatus.Rejected: {
-      const rejectCode = cert.lookup([...path, blobFromText('reject_code')])!.toString();
-      const rejectMessage = cert.lookup([...path, blobFromText('reject_message')])!.toString();
-      throw new Error(
-        `Call was rejected:\n` +
-          `  Request ID: ${requestIdToHex(requestId)}\n` +
-          `  Reject code: ${rejectCode}\n` +
-          `  Reject text: ${rejectMessage}\n`,
-      );
-    }
-
-    case RequestStatusResponseStatus.Done:
-      // This is _technically_ not an error, but we still didn't see the `Replied` status so
-      // we don't know the result and cannot decode it.
-      throw new Error(
-        `Call was marked as done but we never saw the reply:\n` +
-          `  Request ID: ${requestIdToHex(requestId)}\n`,
-      );
-  }
-  throw new Error('unreachable');
 }
