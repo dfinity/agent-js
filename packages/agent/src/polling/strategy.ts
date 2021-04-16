@@ -88,7 +88,7 @@ export function timeout(timeInMsec: number): PollStrategy {
     requestId: RequestId,
     status: RequestStatusResponseStatus,
   ) => {
-    if (Date.now() < end) {
+    if (Date.now() > end) {
       throw new Error(
         `Request timed out after ${timeInMsec} msec:\n` +
           `  Request ID: ${toHex(requestId)}\n` +
