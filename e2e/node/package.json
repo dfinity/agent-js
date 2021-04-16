@@ -36,7 +36,9 @@
     "text-encoding": "^0.7.0",
     "ts-jest": "^24.2.0",
     "typescript": "^3.6.3",
-    "whatwg-fetch": "^3.0.0",
-    "xhr2": "^0.2.0"
+    "whatwg-fetch": "^3.0.0"
+  },
+  "jest": {
+    "preset": "ts-jest"
   }
 }

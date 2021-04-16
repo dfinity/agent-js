@@ -14,8 +14,8 @@
       "packages/agent",
       "packages/identity",
       "packages/authentication",
-      "e2e/*",
-      "demos/*"
+      "e2e/basic",
+      "demos/sample-javascript"
     ]
   },
   "devDependencies": {
