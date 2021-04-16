@@ -4,39 +4,75 @@ import {
   Principal,
   SignIdentity,
 } from '@dfinity/agent';
-import {} from '@dfinity/authentication';
+import { createAuthenticationRequestUrl } from '@dfinity/authentication';
 import {
   DelegationChain,
   DelegationIdentity,
   Ed25519KeyIdentity,
 } from '@dfinity/identity';
 
-// TODO: move this into @dfinity/authentication
-const KEY_LOCALSTORAGE_KEY = "ic-identity";
-const KEY_LOCALSTORAGE_DELEGATION = "ic-delegation";
-const DEFAULT_IDP_URL = "https://auth.ic0.app/authorize";
+const KEY_LOCALSTORAGE_KEY = 'ic-identity';
+const KEY_LOCALSTORAGE_DELEGATION = 'ic-delegation';
 
-interface AuthenticationClientOptions {
+export interface AuthClientOptions {
   identityProvider?: string | URL;
   identity?: SignIdentity;
+  storage?: AuthClientStorage;
 }
 
-export class AuthenticationClient {
-  private _auth: Authenticator;
+export interface AuthClientStorage {
+  get(key: string): Promise<string | null>;
+  set(key: string, value: string): Promise<void>;
+  remove(key: string): Promise<void>;
+}
+
+export class LocalStorage implements AuthClientStorage {
+  constructor(
+    public readonly prefix = 'ic-',
+    private readonly _localStorage?: Storage,
+  ) {}
+
+  public get(key: string): Promise<string | null> {
+    return Promise.resolve(this._getLocalStorage().getItem(this.prefix + key));
+  }
+  public set(key: string, value: string): Promise<void> {
+    this._getLocalStorage().setItem(this.prefix + key, value);
+    return Promise.resolve();
+  }
+  public remove(key: string): Promise<void> {
+    this._getLocalStorage().removeItem(this.prefix + key);
+    return Promise.resolve();
+  }
+
+  private _getLocalStorage() {
+    if (this._localStorage) {
+      return this._localStorage;
+    }
+
+    const ls = typeof window === 'undefined'
+      ? typeof global === 'undefined'
+        ? typeof self === 'undefined'
+          ? undefined
+          : self.localStorage
+        : global.localStorage
+      : window.localStorage;
+
+    if (!ls) {
+      throw new Error('Could not find local storage.');
+    }
+
+    return ls;
+  }
+}
+
+export class AuthClient {
   private _identity: Identity;
   private _key: SignIdentity | null;
   private _chain: DelegationChain | null;
+  private _storage: AuthClientStorage;
 
-  constructor(options: AuthenticationClientOptions = {}) {
-    const idpUrl = new URL(
-      options.identityProvider?.toString() || DEFAULT_IDP_URL
-    );
-
-    this._auth = new Authenticator({
-      identityProvider: {
-        url: idpUrl,
-      },
-    });
+  constructor(options: AuthClientOptions = {}) {
+    this._storage = options.storage ?? new LocalStorage('ic-');
 
     let key = null;
     if (options.identity) {
@@ -76,7 +112,7 @@ export class AuthenticationClient {
             this._identity = DelegationIdentity.fromDelegation(key, chain);
           } else {
             // If any delegation is expired, we logout and ask you to log back in.
-            this.logout({});
+            this._deleteStorage();
           }
         }
       } catch (e) {}
@@ -142,16 +178,11 @@ export class AuthenticationClient {
   }
 
   async logout(options: { returnTo?: string } = {}) {
-    localStorage.removeItem(KEY_LOCALSTORAGE_KEY);
-    localStorage.removeItem(KEY_LOCALSTORAGE_DELEGATION);
-    // Reset this auth client to a non-authenticated state.
-    this._identity = new AnonymousIdentity();
-    this._key = null;
-    this._chain = null;
+    this._deleteStorage();
 
     if (options.returnTo) {
       try {
-        window.history.pushState({}, "", options.returnTo);
+        window.history.pushState({}, '', options.returnTo);
       } catch (e) {
         window.location.href = options.returnTo;
       }
@@ -178,6 +209,16 @@ export class AuthenticationClient {
         options.scope?.map((x) => ({ type: "CanisterScope", principal: x })) ??
         [],
     });
+  }
+
+  private async _deleteStorage() {
+    await this._storage.remove(KEY_LOCALSTORAGE_KEY);
+    await this._storage.remove(KEY_LOCALSTORAGE_DELEGATION);
+
+    // Reset this auth client to a non-authenticated state.
+    this._identity = new AnonymousIdentity();
+    this._key = null;
+    this._chain = null;
   }
 }
 

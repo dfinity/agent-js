@@ -14,6 +14,7 @@
       "packages/agent",
       "packages/identity",
       "packages/authentication",
+      "packages/auth-client",
       "e2e/basic",
       "demos/sample-javascript"
     ]
