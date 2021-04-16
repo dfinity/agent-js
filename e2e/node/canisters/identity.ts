@@ -22,8 +22,8 @@ export default async function (): Promise<{
   if (!cache) {
     const wasm = readFileSync(path.join(__dirname, "identity.wasm"));
 
-    const canisterId = await Actor.createCanister();
-    await Actor.install({ module: blobFromUint8Array(wasm) }, { canisterId });
+    const canisterId = await Actor.createCanister({ agent });
+    await Actor.install({ module: blobFromUint8Array(wasm) }, { canisterId, agent });
     const idl: IDL.InterfaceFactory = ({ IDL }) => {
       return IDL.Service({
         whoami: IDL.Func([], [IDL.Principal], []),
