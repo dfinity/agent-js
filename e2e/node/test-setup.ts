@@ -6,14 +6,7 @@
 //
 // Note that we can use webpack configuration to make some features available to
 // Node.js in a similar way.
-/* eslint-disable @typescript-eslint/no-var-requires */
-/* eslint-env node */
 
 global.crypto = require("@trust/webcrypto");
 global.TextEncoder = require("text-encoding").TextEncoder;
-global.XMLHttpRequest = require("xhr2");
 global.fetch = require("node-fetch");
-
-const { HttpAgent, IDL } = require("@dfinity/agent");
-const agent = require("./utils/agent").default;
-global.ic = { agent, HttpAgent, IDL, canister: undefined };
