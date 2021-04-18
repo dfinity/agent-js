@@ -2,7 +2,7 @@ import { Buffer } from 'buffer/';
 import { Agent, getDefaultAgent, QueryResponseStatus } from './agent';
 import { getManagementCanister } from './canisters/management';
 import * as IDL from './idl';
-import { pollForResponse } from './polling_handler';
+import { pollForResponse, PollStrategy, strategy } from './polling';
 import { Principal } from './principal';
 import { toHex as requestIdToHex } from './request_id';
 import { BinaryBlob } from './types';
@@ -11,9 +11,17 @@ import { BinaryBlob } from './types';
  * Configuration to make calls to the Replica.
  */
 export interface CallConfig {
+  /**
+   * An agent to use in this call, otherwise the actor or call will try to discover the
+   * agent to use.
+   */
   agent?: Agent;
-  maxAttempts?: number;
-  throttleDurationInMSecs?: number;
+
+  /**
+   * A polling strategy that dictates how much and often we should poll the read_state
+   * endpoint to get the result of an update call.
+   */
+  pollingStrategy?: PollStrategy;
 
   /**
    * The canister ID of this Actor.
@@ -98,6 +106,7 @@ export class Actor {
   /**
    * Get the Agent class this Actor would call, or undefined if the Actor would use
    * the default agent (global.ic.agent).
+   * @param actor The actor to get the agent of.
    */
   public static agentOf(actor: Actor): Agent | undefined {
     return actor[metadataSymbol].config.agent;
@@ -150,8 +159,9 @@ export class Actor {
   }
 
   public static async createCanister(config?: CallConfig): Promise<Principal> {
-    const { canister_id: canisterId } = await getManagementCanister(config || {})
-      .provisional_create_canister_with_cycles({ amount: [] });
+    const { canister_id: canisterId } = await getManagementCanister(
+      config || {},
+    ).provisional_create_canister_with_cycles({ amount: [] });
 
     return canisterId;
   }
@@ -236,10 +246,8 @@ function decodeReturnValue(types: IDL.Type[], msg: BinaryBlob) {
   }
 }
 
-const REQUEST_STATUS_RETRY_WAIT_DURATION_IN_MSECS = 1000;
 const DEFAULT_ACTOR_CONFIG = {
-  maxAttempts: 300,
-  throttleDurationInMSecs: REQUEST_STATUS_RETRY_WAIT_DURATION_IN_MSECS,
+  pollingStrategy: strategy.defaultStrategy(),
 };
 
 export type ActorConstructor = new (config: ActorConfig) => ActorSubclass;
@@ -251,14 +259,10 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
       // First, if there's a config transformation, call it.
       options = {
         ...options,
-        ...actor[metadataSymbol].config.queryTransform?.(
-          methodName,
-          args,
-          {
-            ...actor[metadataSymbol].config,
-            ...options,
-          },
-        ),
+        ...actor[metadataSymbol].config.queryTransform?.(methodName, args, {
+          ...actor[metadataSymbol].config,
+          ...options,
+        }),
       };
 
       const agent = options.agent || actor[metadataSymbol].config.agent || getDefaultAgent();
@@ -284,18 +288,14 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
       // First, if there's a config transformation, call it.
       options = {
         ...options,
-        ...actor[metadataSymbol].config.callTransform?.(
-          methodName,
-          args,
-          {
-            ...actor[metadataSymbol].config,
-            ...options,
-          },
-        ),
+        ...actor[metadataSymbol].config.callTransform?.(methodName, args, {
+          ...actor[metadataSymbol].config,
+          ...options,
+        }),
       };
 
       const agent = options.agent || actor[metadataSymbol].config.agent || getDefaultAgent();
-      const { canisterId, effectiveCanisterId, maxAttempts, throttleDurationInMSecs } = {
+      const { canisterId, effectiveCanisterId, pollingStrategy } = {
         ...DEFAULT_ACTOR_CONFIG,
         ...actor[metadataSymbol].config,
         ...options,
@@ -322,14 +322,7 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
         );
       }
 
-      const responseBytes = await pollForResponse(
-        agent,
-        ecid,
-        requestId,
-        maxAttempts,
-        maxAttempts,
-        throttleDurationInMSecs,
-      );
+      const responseBytes = await pollForResponse(agent, ecid, requestId, pollingStrategy);
 
       if (responseBytes !== undefined) {
         return decodeReturnValue(func.retTypes, responseBytes);
