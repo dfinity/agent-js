@@ -24,10 +24,6 @@ const SIGN_TYPE = {
 // This implementation is adjusted from the Ed25519PublicKey.
 // The RAW_KEY_LENGTH and DER_PREFIX are modified accordingly
 export class Secp256k1PublicKey implements PublicKey {
-  public static from(key: PublicKey): Secp256k1PublicKey {
-    return this.fromDer(key.toDer());
-  }
-
   public static fromRaw(rawKey: BinaryBlob): Secp256k1PublicKey {
     return new Secp256k1PublicKey(rawKey);
   }
@@ -174,7 +170,6 @@ export class LedgerIdentity implements Identity {
     } else {
       throw new Error('Request type not supported on Ledger Hardware Wallet');
     }
-
   }
 }
 
