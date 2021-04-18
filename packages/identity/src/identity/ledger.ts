@@ -111,7 +111,7 @@ export class LedgerIdentity implements Identity {
   private readonly _derive_path: string;
   private readonly _principal: Principal;
   private readonly _public_key: Secp256k1PublicKey;
-  private readonly _address: String;
+  private readonly _address: string;
   private readonly _ledger_canister_id: Principal;
   private readonly _governance_canister_id: Principal;
 
@@ -131,7 +131,7 @@ export class LedgerIdentity implements Identity {
   * Required by Ledger.com that the user should beable to press a Button in UI
   * and verify the address/pubkey are the same as on the device screen
   */
-  public async showAddressAndPubKeyOnDevice() {
+  public async showAddressAndPubKeyOnDevice(): Promise<void> {
     const resp = await this._app.showAddressAndPubKey(this._derive_path);
     if (Principal.fromText(resp.addressText) !== this._principal ||
       Secp256k1PublicKey.fromRaw(blobFromUint8Array(resp.publicKey)) !== this._public_key ||
@@ -184,11 +184,11 @@ export class LedgerManager {
     return new this(transport);
   }
 
-  public setLedgerCanisterId(ledger_canister_id: Principal) {
+  public setLedgerCanisterId(ledger_canister_id: Principal): void {
     this._ledger_canister_id = ledger_canister_id;
   }
 
-  public setGovernanceCanisterId(governance_canister_id: Principal) {
+  public setGovernanceCanisterId(governance_canister_id: Principal): void {
     this._governance_canister_id = governance_canister_id;
   }
 
@@ -202,7 +202,7 @@ export class LedgerManager {
     }
     return new LedgerIdentity(this._app, derive_path,
       principal, public_key, address,
-      this._ledger_canister_id!, this._governance_canister_id!);
+      this._ledger_canister_id, this._governance_canister_id);
   }
 
   private readonly _app: DfinityApp;
