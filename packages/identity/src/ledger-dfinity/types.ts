@@ -4,7 +4,7 @@ export interface ResponseBase {
 }
 
 export interface ResponseAddress extends ResponseBase {
-  publicKey: Buffer;
+  publicKey: string;
   address: string;
   addressText: string;
 }

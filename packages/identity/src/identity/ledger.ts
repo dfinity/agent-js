@@ -40,16 +40,19 @@ export class LedgerIdentity implements Identity {
   }
 
   /*
-  * Required by Ledger.com that the user should beable to press a Button in UI
+  * Required by Ledger.com that the user should be able to press a Button in UI
   * and verify the address/pubkey are the same as on the device screen
   */
   public async showAddressAndPubKeyOnDevice(): Promise<void> {
-    const resp = await this._app.showAddressAndPubKey(this._derive_path);
-    if (Principal.fromText(resp.addressText) !== this._principal ||
-      Secp256k1PublicKey.fromRaw(blobFromUint8Array(resp.publicKey)) !== this._public_key ||
-      resp.address != this._address) {
-      throw new Error('Address/PubKey on device mismatch with this Identity');
-    }
+    // Should do the following check when app.showAddressAndPubKey and app.getAddressAndPubKey
+    // has the same return content
+    // const resp = await this._app.showAddressAndPubKey(this._derive_path);
+    // if (Principal.fromText(resp.addressText) !== this._principal ||
+    //   Secp256k1PublicKey.fromRaw(blobFromUint8Array(Buffer.from(resp.publicKey, 'hex'))) !== this._public_key ||
+    //   resp.address != this._address) {
+    //   throw new Error('Address/PubKey on device mismatch with this Identity');
+    // }
+    await this._app.showAddressAndPubKey(this._derive_path);
   }
 
   public getPrincipal(): Principal {
@@ -106,7 +109,7 @@ export class LedgerManager {
   public async getLedgerIdentity(derive_path = "m/44'/223'/0'/0/0"): Promise<LedgerIdentity> {
     const resp = await this._app.getAddressAndPubKey(derive_path);
     const principal = Principal.fromText(resp.addressText);
-    const public_key = Secp256k1PublicKey.fromRaw(blobFromUint8Array(resp.publicKey));
+    const public_key = Secp256k1PublicKey.fromRaw(blobFromUint8Array(Buffer.from(resp.publicKey, 'hex')));
     const address = resp.address;
     if (this._ledger_canister_id === undefined || this._governance_canister_id === undefined) {
       throw new Error('Canister ID of ledger and governance must be set according to the network');
