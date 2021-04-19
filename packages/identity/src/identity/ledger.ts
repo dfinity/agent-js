@@ -1,10 +1,12 @@
 import {
   blobFromUint8Array,
+  CallRequest,
   Cbor,
   Endpoint,
   HttpAgentRequest,
   Identity,
   Principal,
+  ReadRequest,
   SubmitRequestType,
 } from '@dfinity/agent';
 import DfinityApp from '../ledger-dfinity/index';
@@ -62,7 +64,7 @@ export class LedgerIdentity implements Identity {
 
   public async transformRequest(request: HttpAgentRequest): Promise<unknown> {
     const { body, ...fields } = request;
-    const txblob = Buffer.from(Cbor.encode(body));
+    const txblob = prepareCborForLedger(body);
 
     let sign_type: number = SIGN_TYPE.UNSUPPORTED;
     if (body.request_type === SubmitRequestType.Call) {
@@ -95,6 +97,20 @@ export class LedgerIdentity implements Identity {
       throw new Error('Request type not supported on Ledger Hardware Wallet');
     }
   }
+}
+
+/** 
+ * Convert the HttpAgentRequest body into cbor
+ * which can be signed by the Ledger Hardware Wallet
+ * @param request - body of the HttpAgentRequest
+ */
+export function prepareCborForLedger(request: ReadRequest | CallRequest): Buffer {
+  if (request.nonce === undefined) {
+    throw new TypeError('The request body must contains nonce');
+  }
+  return Buffer.from(Cbor.encode({
+    content: request
+  }));
 }
 
 export class LedgerManager {

@@ -2,6 +2,7 @@ import {
   AnonymousIdentity,
   blobFromHex,
   HttpAgent,
+  makeNonceTransform,
   Principal,
 } from '@dfinity/agent';
 import {
@@ -150,6 +151,9 @@ checkAddressBtn.addEventListener("click", async () => {
 sendBtn.addEventListener("click", async () => {
   // Need to run a replica locally which has ledger canister running on it
   const agent = new HttpAgent({ host: "http://127.0.0.1:8888", identity: ledger_identity });
+  // Ledger Hardware Wallet requires that the request must contain a nonce
+  agent.addTransform(makeNonceTransform());
+
   const resp = await agent.call(ledger_canister_id,
     {
       methodName: "send",
