@@ -1,8 +1,14 @@
-import { AnonymousIdentity, HttpAgent, Principal } from '@dfinity/agent';
+import {
+  AnonymousIdentity,
+  blobFromHex,
+  HttpAgent,
+  Principal,
+} from '@dfinity/agent';
 import {
   DelegationChain,
   DelegationIdentity,
-  Ed25519KeyIdentity
+  Ed25519KeyIdentity,
+  LedgerManager,
 } from '@dfinity/identity';
 import {
   createAuthenticationRequestUrl,
@@ -19,6 +25,10 @@ const whoAmIResponseEl = document.getElementById("whoamiResponse");
 const canisterIdEl = document.getElementById("canisterId");
 const principalEl = document.getElementById("principal");
 const idpUrlEl = document.getElementById("idpUrl");
+const connectLedgerBtn = document.getElementById("connectLedgerBtn");
+const ledgerPrincipleEl = document.getElementById("ledgerPrinciple");
+const checkAddressBtn = document.getElementById("checkAddressBtn");
+const sendBtn = document.getElementById("sendBtn");
 
 let identity = new AnonymousIdentity();
 
@@ -107,9 +117,9 @@ whoamiBtn.addEventListener("click", () => {
   });
 
   const canisterId = Principal.fromText(canisterIdEl.value);
-  const actor = agent.makeActorFactory(({IDL}) => IDL.Service({
+  const actor = agent.makeActorFactory(({ IDL }) => IDL.Service({
     whoami: IDL.Func([], [IDL.Principal], []),
-  }))({agent, canisterId});
+  }))({ agent, canisterId });
 
   whoAmIResponseEl.innerText = "Loading..."
 
@@ -117,4 +127,33 @@ whoamiBtn.addEventListener("click", () => {
   actor.whoami().then(principal => {
     whoAmIResponseEl.innerText = principal.toText();
   });
+});
+
+let ledger_manager = undefined;
+let ledger_identity = undefined;
+const ledger_canister_id = Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai');
+const governance_canister_id = Principal.fromText('rrkah-fqaaa-aaaaa-aaaaq-cai');
+
+connectLedgerBtn.addEventListener("click", async () => {
+  ledger_manager = await LedgerManager.fromWebusb();
+  ledger_manager.setLedgerCanisterId(ledger_canister_id);
+  ledger_manager.setGovernanceCanisterId(governance_canister_id);
+
+  ledger_identity = await ledger_manager.getLedgerIdentity();
+  ledgerPrincipleEl.innerText = `Principle: ${ledger_identity.getPrincipal().toText()}`;
+});
+
+checkAddressBtn.addEventListener("click", async () => {
+  await ledger_identity.showAddressAndPubKeyOnDevice();
+});
+
+sendBtn.addEventListener("click", async () => {
+  // Need to run a replica locally which has ledger canister running on it
+  const agent = new HttpAgent({ host: "http://127.0.0.1:8888", identity: ledger_identity });
+  const resp = await agent.call(ledger_canister_id,
+    {
+      methodName: "send",
+      arg: blobFromHex("0A0012050A0308E8071A0308890122220A2001010101010101010101010101010101010101010101010101010101010101012A220A2035548EC29E9D85305850E87A2D2642FE7214FF4BB36334070DEAFC3345C3B127"),
+    });
+  console.log(resp);
 });

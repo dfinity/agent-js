@@ -5,6 +5,7 @@ import {
   HttpAgentRequest,
   Identity,
   Principal,
+  SubmitRequestType,
 } from '@dfinity/agent';
 import DfinityApp from '../ledger-dfinity/index';
 import { ResponseSign } from '../ledger-dfinity/index';
@@ -64,8 +65,9 @@ export class LedgerIdentity implements Identity {
     const txblob = Buffer.from(Cbor.encode(body));
 
     let sign_type: number = SIGN_TYPE.UNSUPPORTED;
-    if (request.endpoint === Endpoint.Call) {
-      if (body.canister_id === this._ledger_canister_id) {
+    if (body.request_type === SubmitRequestType.Call) {
+      // Canister cannot check equality directly
+      if (body.canister_id.toText() === this._ledger_canister_id.toText()) {
         if (body.method_name === 'send') {
           sign_type = SIGN_TYPE.TOKEN_TRANSFER
         }
@@ -78,6 +80,9 @@ export class LedgerIdentity implements Identity {
     if (sign_type !== SIGN_TYPE.UNSUPPORTED) {
       const resp: ResponseSign = await this._app.sign(this._derive_path, sign_type, txblob);
       const signatureRS = resp.signatureRS;
+      if (signatureRS.byteLength != 64) {
+        throw new Error(`Signature must be 64 bytes long (is ${signatureRS.length})`);
+      }
       return {
         ...fields,
         body: {
