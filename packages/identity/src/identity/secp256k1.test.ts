@@ -1,5 +1,5 @@
 import { blobFromHex } from "@dfinity/agent";
-import { Secp256k1PublicKey } from "./ledger";
+import { Secp256k1PublicKey } from "./secp256k1";
 
 const testVectors: Array<[string, string]> = [
   [
