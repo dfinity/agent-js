@@ -1,32 +1,32 @@
-# @dfinity/authentication
+# @dfinity/auth-client
 
-JavaScript and TypeScript library to support manage Identities and enable simple Web Authentication flows for applications on the [Internet Computer](https://dfinity.org/)
+Simple interface to get your web application authenticated with the Internet Identity Service
 
 Visit the [Dfinity Forum](https://forum.dfinity.org/) and [SDK Documentation](https://sdk.dfinity.org/docs/index.html) for more information and support building on the Internet Computer.
 
-Additional API Documentation can be found [here](https://peacock.dev/authentication-docs).
+Additional API Documentation can be found [here](https://peacock.dev/auth-client-docs).
 
 ---
 
 ## Installation
 
-Using authentication:
+Using AuthClient:
 
 ```
-npm i --save @dfinity/authentication
+npm i --save @dfinity/auth-client
 ```
 
 ### In the browser:
 
 ```
-import * as auth from "@dfinity/authentication";
+import * as auth from "@dfinity/auth-client";
 ```
 
 or using individual exports:
 
 ```
-import { createAuthenticationRequestUrl } from "@dfinity/authentication";
+import { AuthClient } from "@dfinity/auth-client";
 ```
 
-Note: depends on [@dfinity/agent](https://www.npmjs.com/package/@dfinity/agent) and
+Note: depends on [@dfinity/agent](https://www.npmjs.com/package/@dfinity/agent), [@dfinity/authentication](https://www.npmjs.com/package/@dfinity/agent), and
 [@dfinity/identity](https://www.npmjs.com/package/@dfinity/identity).

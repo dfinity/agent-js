@@ -39,7 +39,6 @@ async function _deleteStorage(storage: AuthClientStorage) {
   await storage.remove(KEY_LOCALSTORAGE_DELEGATION);
 }
 
-
 export class LocalStorage implements AuthClientStorage {
   constructor(public readonly prefix = 'ic-', private readonly _localStorage?: Storage) {}
 
@@ -175,7 +174,7 @@ export class AuthClient {
   }
 
   public async loginWithRedirect(
-    options: { redirectUri?: string; scope?: Principal[] } = {},
+    options: { redirectUri?: string; scope?: Principal[]; identityProvider?: string } = {},
   ): Promise<void> {
     let key = this._key;
     if (!key) {
@@ -189,6 +188,7 @@ export class AuthClient {
       publicKey: key.getPublicKey(),
       scope: options.scope || [],
       redirectUri: options.redirectUri || window.location.origin,
+      identityProvider: options.identityProvider,
     });
 
     window.location.href = url.toString();

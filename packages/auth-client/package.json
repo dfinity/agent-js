@@ -1,9 +1,9 @@
 {
-  "name": "@dfinity/authentication",
+  "name": "@dfinity/auth-client",
   "version": "0.8.3",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
-  "description": "JavaScript and TypeScript library to manage identity and authentication with the Internet Computer",
+  "description": "JavaScript and TypeScript library to provide a simple integration with an IC Internet Identity",
   "homepage": "https://sdk.dfinity.org/docs/index.html",
   "keywords": [
     "internet computer",
