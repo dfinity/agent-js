@@ -13,9 +13,11 @@
     "packages": [
       "packages/agent",
       "packages/identity",
+      "packages/identity-ledgerhq",
       "packages/authentication",
       "e2e/basic",
-      "demos/sample-javascript"
+      "demos/sample-javascript",
+      "demos/legderhq"
     ]
   },
   "devDependencies": {

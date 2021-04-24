@@ -21,8 +21,6 @@ export class Secp256k1PublicKey implements PublicKey {
   private static RAW_KEY_LENGTH = 65;
 
   // Adding this prefix to a raw public key is sufficient to DER-encode it.
-  // Ledger application has a C implementation here:
-  // https://github.com/Zondax/ledger-dfinity/blob/55ec3e352b3f7fa118b93ca707f8659a4d1ff709/app/src/crypto.c#L74-L97
   private static DER_PREFIX = Uint8Array.from([
     0x30, 0x56, // SEQUENCE
     0x30, 0x10, // SEQUENCE

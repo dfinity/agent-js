@@ -1,0 +1,43 @@
+<html>
+<body>
+<div>
+    <h1>Ledger Hardware Wallet Support</h1>
+    <ol>
+        <li>Connect your Ledger Nano X/S with a usb cable.</li>
+        <li>Enter your PIN code.</li>
+        <li>Open the Dfinity app on the Ledger device.</li>
+        <li>
+            <button id="connectLedgerBtn">Connect</button>
+            Connect and get the Principle.
+        </li>
+        <p id="ledgerPrinciple">Principle: </p>
+        <li>
+            <button id="checkAddressBtn">Show</button>
+            Show the Principle on the device.
+        </li>
+        <li>
+            <label for="proto">Protobuf (in Hex): </label><textarea id="proto"></textarea>
+            <button id="sendBtn">Send</button>
+            Send a ICP Transfer request.
+        </li>
+        <li>
+            <button id="ledgerBalanceBtn">Query Balance</button>
+            Balance: <span id="balanceOut"></span>
+        </li>
+    </ol>
+</div>
+
+<div>
+    <h1>Contact the IC</h1>
+    <label for="hostUrl" style="display: inline-block; width: 120px">Replica URL: </label>
+    <input type="text" id="hostUrl" value="https://gw.dfinity.network/">
+    <br />
+    <label for="canisterId" style="display: inline-block; width: 120px">Canister ID: </label>
+    <input type="text" id="canisterId" value="4k2wq-cqaaa-aaaab-qac7q-cai">
+</div>
+<div>
+    <button id="whoamiBtn">Who Am I?</button>
+    <div id="whoamiResponse"></div>
+</div>
+</body>
+</html>

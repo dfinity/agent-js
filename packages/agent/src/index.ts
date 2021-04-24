@@ -12,13 +12,13 @@ export * from './canisters/asset';
 export * from './canisters/management';
 export * from './request_id';
 export * from './candid';
+export * as polling from './polling';
 
 import { Agent, HttpAgent } from './agent';
 import * as IDL from './idl';
 export { IDL };
 
-import * as Cbor from './cbor';
-export { Cbor };
+export * as Cbor from './cbor';
 
 import * as UICore from './candid/candid-core';
 import * as UI from './candid/candid-ui';
