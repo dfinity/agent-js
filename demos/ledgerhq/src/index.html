@@ -105,13 +105,13 @@ message AccountBalanceResponse {
 }
 
 message SendRequest {
-  Memo memo = 1;     // required
-  Payment payment = 2;     // required
-  ICPTs max_fee = 3;     // required
-  Subaccount from_subaccount = 4;   // optional
-  AccountIdentifier to = 5;   // required
-  BlockHeight created_at = 6;   // optional
-  TimeStamp created_at_time = 7; // optional
+  Memo memo = 1;
+  Payment payment = 2;
+  ICPTs max_fee = 3;
+  Subaccount from_subaccount = 4;
+  AccountIdentifier to = 5;
+  BlockHeight created_at = 6;
+  TimeStamp created_at_time = 7;
 }
 
 message SendResponse {
