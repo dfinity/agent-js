@@ -3,8 +3,8 @@ import {
   blobFromUint8Array,
   derBlobFromBlob,
   DerEncodedBlob,
-  PublicKey
-} from "@dfinity/agent";
+  PublicKey,
+} from '@dfinity/agent';
 
 // This implementation is adjusted from the Ed25519PublicKey.
 // The RAW_KEY_LENGTH and DER_PREFIX are modified accordingly

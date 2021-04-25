@@ -1,178 +1,110 @@
 import {
-  AnonymousIdentity,
-  blobFromHex,
+  blobFromUint8Array,
   HttpAgent,
   makeNonceTransform,
-  Principal,
   polling,
 } from '@dfinity/agent';
-import { LedgerManager } from '@dfinity/identity-ledgerhq';
+import { LedgerIdentity } from '@dfinity/identity-ledgerhq';
 import * as protobufjs from 'protobufjs';
 
-const pbRoot = protobufjs.load
-
-const whoamiBtn = document.getElementById("whoamiBtn");
-const hostUrlEl = document.getElementById("hostUrl");
-const whoAmIResponseEl = document.getElementById("whoamiResponse");
-const canisterIdEl = document.getElementById("canisterId");
-const principalEl = document.getElementById("principal");
-const idpUrlEl = document.getElementById("idpUrl");
-const connectLedgerBtn = document.getElementById("connectLedgerBtn");
-const ledgerPrincipleEl = document.getElementById("ledgerPrinciple");
-const checkAddressBtn = document.getElementById("checkAddressBtn");
-const sendBtn = document.getElementById("sendBtn");
-const ledgerBalanceBtn = document.getElementById("ledgerBalanceBtn");
-
-let identity = new AnonymousIdentity();
-
-// This should not be needed if we want to use the default identity provider
-// which is https://auth.ic0.app/.
-const getIdpElUrl = () => new URL(idpUrlEl.value);
-// Remove the lines above to use the default authenticator.
-
-function login() {
-  identity = Ed25519KeyIdentity.generate();
-  const session = { identity };
-  localStorage.setItem('ic-session', JSON.stringify(session));
-
-  const url = createAuthenticationRequestUrl({
-    publicKey: session.identity.getPublicKey(),
-    scope: [canisterIdEl.value],
-    identityProvider: getIdpElUrl(),
-  });
-
-  window.location.href = url.toString();
-}
-
-function logout() {
-  localStorage.removeItem('ic-session');
-  identity = new AnonymousIdentity();
-  updatePrincipal();
-}
-
-function handleCallback(session) {
-  const maybeAccessToken = getAccessTokenFromWindow();
-  if (maybeAccessToken) {
-    const key = Ed25519KeyIdentity.fromParsedJson(session.identity);
-    const chain = createDelegationChainFromAccessToken(maybeAccessToken);
-    identity = DelegationIdentity.fromDelegation(key, chain);
-
-    localStorage.setItem('ic-session', JSON.stringify({
-      ...session,
-      authenticationResponse: chain.toJSON(),
-    }));
+function toHex(arr) {
+  // Convert to hexadecimal
+  // padd with leading 0 if <16
+  function i2hex(i) {
+    return ('0' + i.toString(16)).slice(-2);
   }
+
+  return Array.from(arr).map(i2hex).join('');
 }
 
-signInBtn.addEventListener("click", login);
-signOutBtn.addEventListener("click", logout);
+async function loadProtobuf(schema, typeName) {
+  const pbRoot = new protobufjs.Root();
 
-function updatePrincipal() {
-  principalEl.innerHTML = `<div>ID: ${identity.getPrincipal().toText()}</div>`;
-}
-
-function init() {
-  // Verify if an identity already exists.
-  const maybeSession = localStorage.getItem('ic-session');
-  if (maybeSession) {
-    let session = JSON.parse(maybeSession);
-    // TODO: move this into Authenticator.
-    if (session.authenticationResponse) {
-      const key = Ed25519KeyIdentity.fromParsedJson(session.identity);
-      const chain = DelegationChain.fromJSON(session.authenticationResponse);
-
-      if (isDelegationValid(chain)) {
-        identity = DelegationIdentity.fromDelegation(key, chain);
-      } else {
-        logout();
-      }
+  const oldFetch = protobufjs.Root.prototype.fetch;
+  pbRoot.fetch = (path, cb) => {
+    if (path !== 'schema.proto') {
+      return oldFetch.call(this, path, cb);
     } else {
-      handleCallback(session);
+      cb(null, schema);
     }
-  }
+  };
 
-  updatePrincipal();
+  const root = await protobufjs.load('schema.proto', pbRoot);
+  return root.lookupType(typeName);
 }
 
-window.onload = init;
+async function encodeProtobuf(schema, typeName, value) {
+  const messageType = await loadProtobuf(schema, typeName);
 
-whoamiBtn.addEventListener("click", () => {
-  if (identity === null) {
-    alert("No identity... Window not loaded?");
-    return;
+  // Encode.
+  const maybeError = messageType.verify(JSON.parse(value));
+
+  if (maybeError) {
+    throw maybeError;
   }
 
-  // We either have an Agent with an anonymous identity (not authenticated),
-  // or already authenticated agent, or parsing the redirect from window.location.
-  const agent = new HttpAgent({
-    host: hostUrlEl.value,
-    identity,
-  });
+  const message = messageType.encode(JSON.parse(value)).finish();
+  return new Uint8Array(message);
+}
 
-  const canisterId = Principal.fromText(canisterIdEl.value);
-  const actor = agent.makeActorFactory(({ IDL }) => IDL.Service({
-    whoami: IDL.Func([], [IDL.Principal], []),
-  }))({ agent, canisterId });
+async function decodeProtobuf(schema, typeName, value) {
+  const messageType = await loadProtobuf(schema, typeName);
+  return await messageType.decode(value);
+}
 
-  whoAmIResponseEl.innerText = "Loading..."
+// Disable all buttons that should only be when connected.
+for (const el of document.getElementsByClassName("connected-only")) {
+  el.disabled = true;
+}
 
-  // Similar to the sample project on dfx new:
-  actor.whoami().then(principal => {
-    whoAmIResponseEl.innerText = principal.toText();
-  });
+let identity = undefined;
+
+document.getElementById("connectLedgerBtn").addEventListener("click", async () => {
+  identity = await LedgerIdentity.fromWebUsb();
+
+  document.getElementById("ledgerPrincipal").innerText = `${identity.getPrincipal().toText()}`;
+  for (const el of document.getElementsByClassName("connected-only")) {
+    el.disabled = false;
+  }
 });
 
-let ledger_manager = undefined;
-let ledger_identity = undefined;
-const ledgerCanisterId = Principal.fromText('rrkah-fqaaa-aaaaa-aaaaq-cai');
-const governanceCanisterId = Principal.fromText('rrkah-fqaaa-aaaaa-aaaaq-cai');
-
-connectLedgerBtn.addEventListener("click", async () => {
-  ledger_manager = await LedgerManager.fromWebUsb({
-    ledgerCanisterId,
-    governanceCanisterId,
-  });
-
-  ledger_identity = await ledger_manager.getLedgerIdentity();
-  ledgerPrincipleEl.innerText = `Principle: ${ledger_identity.getPrincipal().toText()}`;
+document.getElementById("checkAddressBtn").addEventListener("click", async () => {
+  await identity.showAddressAndPubKeyOnDevice();
 });
 
-checkAddressBtn.addEventListener("click", async () => {
-  await ledger_identity.showAddressAndPubKeyOnDevice();
-});
+document.getElementById("sendBtn").addEventListener("click", async () => {
+  const schemaText = document.getElementById("schema").value;
+  const valueText = document.getElementById("value").value;
+  const messageTypeName = document.getElementById("requestType").value;
 
-sendBtn.addEventListener("click", async () => {
-  const hexInput = document.getElementById("proto");
-  const hex = hexInput.value;
+  const payload = await encodeProtobuf(schemaText, messageTypeName, valueText);
+  console.log(toHex(payload));
+
+  const host = document.getElementById("hostUrl").value;
+  const canisterId = document.getElementById("canisterId").value;
 
   // Need to run a replica locally which has ledger canister running on it
-  const agent = new HttpAgent({ host: "http://127.0.0.1:8080", identity: ledger_identity });
+  const agent = new HttpAgent({ host, identity });
   // Ledger Hardware Wallet requires that the request must contain a nonce
   agent.addTransform(makeNonceTransform());
 
-  debugger;
-  const resp = await agent.call(ledger_canister_id, {
-    methodName: "send_pb",
-    arg: blobFromHex(hex),
+  const resp = await agent.call(canisterId, {
+    methodName: document.getElementById("methodName").value,
+    arg: blobFromUint8Array(payload),
   });
 
   const result = await polling.pollForResponse(
     agent,
-    ledger_canister_id,
+    canisterId,
     resp.requestId,
     polling.strategy.defaultStrategy(),
   );
 
-  console.log(resp, result);
-});
+  console.log(toHex(result));
 
-ledgerBalanceBtn.addEventListener("click", async () => {
-  const agent = new HttpAgent({ host: "http://127.0.0.1:8080", identity: ledger_identity });
-  agent.addTransform(makeNonceTransform());
+  // const result = new Uint8Array([8, 8]);
+  const responseTypeName = document.getElementById("responseType").value;
+  const responsePayload = await decodeProtobuf(schemaText, responseTypeName, result);
 
-  const resp = await agent.query(ledger_canister_id, {
-    methodName: "account_balance_pb",
-    arg: blobFromHex("0a220a207db8aaf50bd0a472122e6c01821cc1164bcbd620d515ef2dcfa5be65fb5fcb8b"),
-  });
-  console.log(resp);
+  document.getElementById("responseJson").innerText = JSON.stringify(responsePayload);
 });

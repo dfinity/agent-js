@@ -45,6 +45,8 @@ export interface Identity {
  * An Identity that can sign blobs.
  */
 export abstract class SignIdentity implements Identity {
+  protected _principal: Principal | undefined;
+
   /**
    * Returns the public key that would match this identity's signature.
    */
@@ -60,7 +62,10 @@ export abstract class SignIdentity implements Identity {
    * `Principal.selfAuthenticating()`.
    */
   public getPrincipal(): Principal {
-    return Principal.selfAuthenticating(this.getPublicKey().toDer());
+    if (!this._principal) {
+      this._principal = Principal.selfAuthenticating(this.getPublicKey().toDer());
+    }
+    return this._principal;
   }
 
   /**

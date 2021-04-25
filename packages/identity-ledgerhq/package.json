@@ -29,6 +29,7 @@
   "module": "./lib/esm/index.js",
   "scripts": {
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
+    "build:watch": "tsc -b --watch",
     "bundle": "npm run build",
     "ci": "npm run prettier && npm run lint && npm run test",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
