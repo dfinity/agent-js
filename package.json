@@ -16,8 +16,8 @@
       "packages/identity-ledgerhq",
       "packages/authentication",
       "e2e/basic",
-      "demos/sample-javascript",
-      "demos/legderhq"
+      "demos/ledgerhq",
+      "demos/sample-javascript"
     ]
   },
   "devDependencies": {

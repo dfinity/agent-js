@@ -1,5 +1,5 @@
 {
-  "name": "ic-agent-sample-javascript-app",
+  "name": "ic-agent-ledgerhq-app",
   "private": true,
   "dependencies": {
     "@dfinity/agent": "^0.8.3",
