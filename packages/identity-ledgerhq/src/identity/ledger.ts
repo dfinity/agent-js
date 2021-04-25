@@ -14,15 +14,21 @@ import DfinityApp, { ResponseSign } from '@zondax/ledger-dfinity';
 import { Secp256k1PublicKey } from './secp256k1';
 
 /**
- * Convert the HttpAgentRequest body into cbor
- * which can be signed by the Ledger Hardware Wallet
+ * Convert the HttpAgentRequest body into cbor which can be signed by the Ledger Hardware Wallet.
  * @param request - body of the HttpAgentRequest
  */
 function _prepareCborForLedger(request: ReadRequest | CallRequest): BinaryBlob {
   return Cbor.encode({ content: request });
 }
 
+/**
+ * A Hardware Ledger Internet Computer Agent identity.
+ */
 export class LedgerIdentity extends SignIdentity {
+  /**
+   * Create a LedgerIdentity using the Web USB transport.
+   * @param derivePath The derivation path.
+   */
   public static async fromWebUsb(derivePath = `m/44'/223'/0'/0/0`): Promise<LedgerIdentity> {
     const transport = await TransportWebUSB.create();
     const app = new DfinityApp(transport);
