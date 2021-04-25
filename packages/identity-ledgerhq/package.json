@@ -45,7 +45,7 @@
     "@dfinity/identity": "^0.8.3",
     "@ledgerhq/hw-transport": "^5.49.0",
     "@ledgerhq/hw-transport-webusb": "^5.49.0",
-    "@zondax/ledger-dfinity": "/Users/hansl/Sources/zondax/ledger-dfinity/js"
+    "@zondax/ledger-dfinity": "0.2.1"
   },
   "devDependencies": {
     "@trust/webcrypto": "^0.9.2",
