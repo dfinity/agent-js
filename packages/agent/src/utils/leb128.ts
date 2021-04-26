@@ -52,14 +52,14 @@ export function lebEncode(value: bigint | number): Buffer {
  * @param pipe A Buffer containing the leb encoded bits.
  */
 export function lebDecode(pipe: Pipe): bigint {
-  let shift = BigInt(0);
+  let weight = BigInt(1);
   let value = BigInt(0);
   let byte;
 
   do {
     byte = safeRead(pipe, 1)[0];
-    value += BigInt(byte & 0x7f).valueOf() * BigInt(2) ** shift;
-    shift += BigInt(7);
+    value += BigInt(byte & 0x7f).valueOf() * weight;
+    weight *= BigInt(128);
   } while (byte >= 0x80);
 
   return value;
