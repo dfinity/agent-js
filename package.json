@@ -13,8 +13,10 @@
     "packages": [
       "packages/agent",
       "packages/identity",
+      "packages/identity-ledgerhq",
       "packages/authentication",
       "e2e/basic",
+      "demos/ledgerhq",
       "demos/sample-javascript"
     ]
   },

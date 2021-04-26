@@ -1,8 +1,12 @@
-import { AnonymousIdentity, HttpAgent, Principal } from '@dfinity/agent';
+import {
+  AnonymousIdentity,
+  HttpAgent,
+  Principal,
+} from '@dfinity/agent';
 import {
   DelegationChain,
   DelegationIdentity,
-  Ed25519KeyIdentity
+  Ed25519KeyIdentity,
 } from '@dfinity/identity';
 import {
   createAuthenticationRequestUrl,
@@ -107,9 +111,9 @@ whoamiBtn.addEventListener("click", () => {
   });
 
   const canisterId = Principal.fromText(canisterIdEl.value);
-  const actor = agent.makeActorFactory(({IDL}) => IDL.Service({
+  const actor = agent.makeActorFactory(({ IDL }) => IDL.Service({
     whoami: IDL.Func([], [IDL.Principal], []),
-  }))({agent, canisterId});
+  }))({ agent, canisterId });
 
   whoAmIResponseEl.innerText = "Loading..."
 
