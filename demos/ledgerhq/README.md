@@ -1,4 +1,4 @@
-# sample-javascript, agent-js
+# ledgerhq, agent-js
 
 ## Development
 
