@@ -114,3 +114,20 @@ dist
 .code
 .idea
 .vscode
+
+# Packages code themselves.
+packages/*/dist/
+packages/*/**/*.js
+packages/*/**/*.js.map
+packages/*/**/*.d.ts
+
+# generated docs
+packages/*/docs/reference
+
+# Cannot ignore .d.ts files in types/
+!packages/*/types/**/*.d.ts
+
+# Cannot ignore setup files for webpack and jest, which are still JavaScript.
+!packages/*/webpack.config.js
+!packages/*/jest.config.js
+!packages/*/test-setup.js
