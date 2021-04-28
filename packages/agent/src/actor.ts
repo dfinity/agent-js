@@ -2,7 +2,7 @@ import { Buffer } from 'buffer/';
 import { Agent, getDefaultAgent, QueryResponseStatus } from './agent';
 import { getManagementCanister } from './canisters/management';
 import * as IDL from './idl';
-import { pollForResponse, PollStrategy, strategy } from './polling';
+import { pollForResponse, PollStrategyFactory, strategy } from './polling';
 import { Principal } from './principal';
 import { toHex as requestIdToHex } from './request_id';
 import { BinaryBlob } from './types';
@@ -18,10 +18,10 @@ export interface CallConfig {
   agent?: Agent;
 
   /**
-   * A polling strategy that dictates how much and often we should poll the read_state
-   * endpoint to get the result of an update call.
+   * A polling strategy factory that dictates how much and often we should poll the
+   * read_state endpoint to get the result of an update call.
    */
-  pollingStrategy?: PollStrategy;
+  pollingStrategyFactory?: PollStrategyFactory;
 
   /**
    * The canister ID of this Actor.
@@ -247,7 +247,7 @@ function decodeReturnValue(types: IDL.Type[], msg: BinaryBlob) {
 }
 
 const DEFAULT_ACTOR_CONFIG = {
-  pollingStrategy: strategy.defaultStrategy(),
+  pollingStrategyFactory: strategy.defaultStrategy,
 };
 
 export type ActorConstructor = new (config: ActorConfig) => ActorSubclass;
@@ -295,7 +295,7 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
       };
 
       const agent = options.agent || actor[metadataSymbol].config.agent || getDefaultAgent();
-      const { canisterId, effectiveCanisterId, pollingStrategy } = {
+      const { canisterId, effectiveCanisterId, pollingStrategyFactory } = {
         ...DEFAULT_ACTOR_CONFIG,
         ...actor[metadataSymbol].config,
         ...options,
@@ -322,7 +322,8 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
         );
       }
 
-      const responseBytes = await pollForResponse(agent, ecid, requestId, pollingStrategy);
+      const pollStrategy = pollingStrategyFactory();
+      const responseBytes = await pollForResponse(agent, ecid, requestId, pollStrategy);
 
       if (responseBytes !== undefined) {
         return decodeReturnValue(func.retTypes, responseBytes);
