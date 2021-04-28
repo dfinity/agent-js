@@ -1,4 +1,3 @@
-import { AnonymousIdentity } from '@dfinity/agent';
 import { AuthClient } from './index';
 
 describe('Auth Client', () => {

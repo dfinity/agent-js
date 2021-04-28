@@ -27,7 +27,7 @@ const init = async () => {
     authClient.logout();
   };
 
-  if (location.hash.substring(1).startsWith("access_token")) {
+  if (await authClient.shouldHandleRedirectCallback()) {
     await authClient.handleRedirectCallback();
   }
 };

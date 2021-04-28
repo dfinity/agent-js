@@ -23,9 +23,15 @@ export interface AuthClientOptions {
    * An identity to use as the base
    */
   identity?: SignIdentity;
+  /**
+   * Optional storage with get, set, and remove. Uses LocalStorage by default
+   */
   storage?: AuthClientStorage;
 }
 
+/**
+ * Interface for persisting user authentication data
+ */
 export interface AuthClientStorage {
   get(key: string): Promise<string | null>;
 
@@ -192,5 +198,10 @@ export class AuthClient {
     });
 
     window.location.href = url.toString();
+  }
+
+  public async shouldHandleRedirectCallback() {
+    // TODO - update with postMessage flow once available
+    return location.hash.substring(1).startsWith('access_token');
   }
 }
