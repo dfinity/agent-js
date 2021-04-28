@@ -129,8 +129,6 @@ export class Actor {
       module: BinaryBlob;
       mode?: CanisterInstallMode;
       arg?: BinaryBlob;
-      computerAllocation?: number;
-      memoryAllocation?: number;
     },
     config: ActorConfig,
   ): Promise<void> {
@@ -143,18 +141,12 @@ export class Actor {
       typeof config.canisterId === 'string'
         ? Principal.fromText(config.canisterId)
         : config.canisterId;
-    const computerAllocation: [number] | [] =
-      fields.computerAllocation !== undefined ? [fields.computerAllocation] : [];
-    const memoryAllocation: [number] | [] =
-      fields.memoryAllocation !== undefined ? [fields.memoryAllocation] : [];
 
     await getManagementCanister(config).install_code({
       mode: { [mode]: null } as any,
       arg,
       wasm_module: wasmModule,
       canister_id: canisterId,
-      compute_allocation: computerAllocation,
-      memory_allocation: memoryAllocation,
     });
   }
 
