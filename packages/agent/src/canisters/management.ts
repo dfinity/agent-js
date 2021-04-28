@@ -2,9 +2,19 @@ import { Actor, ActorMethod, ActorSubclass, CallConfig } from '../actor';
 import { Principal } from '../principal';
 import managementCanisterIdl from './management_idl';
 
+export interface CanisterSettings {
+  controller: [] | [Principal];
+  compute_allocation: [] | [bigint];
+  memory_allocation: [] | [bigint];
+  freezing_threshold: [] | [bigint];
+}
+
 /* tslint:disable */
 export interface ManagementCanisterRecord {
-  provisional_create_canister_with_cycles: ActorMethod<[{ amount: [] | [number] }], { canister_id: Principal }>;
+  provisional_create_canister_with_cycles: ActorMethod<[{
+    amount: [] | [number],
+    settings: [] | [CanisterSettings],
+  }], { canister_id: Principal }>;
   install_code: ActorMethod<
     [
       {
@@ -12,8 +22,6 @@ export interface ManagementCanisterRecord {
         canister_id: Principal;
         wasm_module: number[];
         arg: number[];
-        compute_allocation: [] | [number];
-        memory_allocation: [] | [number];
       },
     ],
     void

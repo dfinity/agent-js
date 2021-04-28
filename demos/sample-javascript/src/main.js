@@ -58,6 +58,3 @@ whoamiBtn.addEventListener("click", async () => {
 
   // Similar to the sample project on dfx new:
   actor.whoami().then((principal) => {
-    whoAmIResponseEl.innerText = principal.toText();
-  });
-});

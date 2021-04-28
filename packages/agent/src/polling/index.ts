@@ -5,11 +5,13 @@ import { RequestId, toHex as requestIdToHex } from '../request_id';
 import { BinaryBlob, blobFromText } from '../types';
 
 export * as strategy from './strategy';
+export { defaultStrategy } from './strategy';
 export type PollStrategy = (
   canisterId: Principal,
   requestId: RequestId,
   status: RequestStatusResponseStatus,
 ) => Promise<void>;
+export type PollStrategyFactory = () => PollStrategy;
 
 /**
  * Polls the IC to check the status of the given request then
