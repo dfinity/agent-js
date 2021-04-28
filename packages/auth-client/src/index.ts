@@ -108,7 +108,8 @@ export class AuthClient {
 
     if (key) {
       try {
-        const chainStorage = localStorage.getItem(KEY_LOCALSTORAGE_DELEGATION);
+        const chainStorage = await storage.get(KEY_LOCALSTORAGE_DELEGATION);
+
         if (chainStorage) {
           chain = DelegationChain.fromJSON(chainStorage);
 
@@ -200,7 +201,7 @@ export class AuthClient {
     window.location.href = url.toString();
   }
 
-  public async shouldHandleRedirectCallback() {
+  public async shouldHandleRedirectCallback(): Promise<boolean> {
     // TODO - update with postMessage flow once available
     return location.hash.substring(1).startsWith('access_token');
   }
