@@ -6,10 +6,14 @@
 export default ({ IDL }) => {
   const canister_id = IDL.Principal;
   const wasm_module = IDL.Vec(IDL.Nat8);
+  const CanisterSettings = IDL.Record({
+    compute_allocation: IDL.Opt(IDL.Nat),
+    memory_allocation: IDL.Opt(IDL.Nat),
+  });
   return IDL.Service({
     provisional_create_canister_with_cycles: IDL.Func(
       [
-        IDL.Record({ amount: IDL.Opt(IDL.Nat) }),
+        IDL.Record({ amount: IDL.Opt(IDL.Nat), settings: IDL.Opt(CanisterSettings) }),
       ], [
         IDL.Record({ canister_id: canister_id }),
       ],
@@ -23,8 +27,6 @@ export default ({ IDL }) => {
           canister_id: canister_id,
           wasm_module: wasm_module,
           arg: IDL.Vec(IDL.Nat8),
-          compute_allocation: IDL.Opt(IDL.Nat),
-          memory_allocation: IDL.Opt(IDL.Nat),
         }),
       ],
       [],
