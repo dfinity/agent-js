@@ -3,22 +3,17 @@ import { Principal } from '../principal';
 import managementCanisterIdl from './management_idl';
 
 export interface CanisterSettings {
-  controller?: [] | [Principal];
-  compute_allocation?: [] | [bigint];
-  memory_allocation?: [] | [bigint];
-  freezing_threshold?: [] | [bigint];
+  controller: [] | [Principal];
+  compute_allocation: [] | [bigint];
+  memory_allocation: [] | [bigint];
+  freezing_threshold: [] | [bigint];
 }
 
 /* tslint:disable */
 export interface ManagementCanisterRecord {
-  create_canister: ActorMethod<[{
-    settings?: [] | [CanisterSettings],
-  }], {
-    canister_id: Principal,
-  }>,
   provisional_create_canister_with_cycles: ActorMethod<[{
     amount: [] | [number],
-    settings?: [] | [CanisterSettings],
+    settings: [] | [CanisterSettings],
   }], { canister_id: Principal }>;
   install_code: ActorMethod<
     [

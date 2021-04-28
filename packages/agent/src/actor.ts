@@ -153,7 +153,7 @@ export class Actor {
   public static async createCanister(config?: CallConfig): Promise<Principal> {
     const { canister_id: canisterId } = await getManagementCanister(
       config || {},
-    ).provisional_create_canister_with_cycles({ amount: [] });
+    ).provisional_create_canister_with_cycles({ amount: [], settings: [] });
 
     return canisterId;
   }
