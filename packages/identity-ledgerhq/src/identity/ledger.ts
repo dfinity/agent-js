@@ -34,7 +34,8 @@ export class LedgerIdentity extends SignIdentity {
     const app = new DfinityApp(transport);
 
     const resp = await app.getAddressAndPubKey(derivePath);
-    const principal = (resp as any).principalText as string;
+    // This type doesn't have the right fields in it, so we have to manually type it.
+    const principal = (resp as unknown as { principalText: string }).principalText;
     const publicKey = Secp256k1PublicKey.fromRaw(blobFromUint8Array(resp.publicKey));
     const address = resp.address;
 
