@@ -11,12 +11,16 @@
     "identity_docs": {
       "type": "assets",
       "source": ["packages/identity/docs/reference"]
+    },
+    "identity_ledgerhq_docs": {
+      "type": "assets",
+      "source": ["packages/identity-ledgerhq/docs/reference"]
     }
   },
-  "dfx": "0.7.0-beta.2",
+  "dfx": "0.7.0-beta.4",
   "networks": {
     "alpha": {
-      "providers": ["https://mercury.dfinity.network"],
+      "providers": ["https://boundary.dfinity.network/"],
       "type": "persistent"
     }
   }

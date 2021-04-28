@@ -88,29 +88,31 @@ function _createChallengeBuffer(challenge: string | Uint8Array = '<ic0.app>'): U
  * WebAuthn to get credentials IDs (which give us the public key and allow us to
  * sign), but in the case of the Internet Computer, we don't actually need to register
  * it, so we don't.
- * @param challenge an optional PublicKeyCredentialCreationOptions Challenge
+ * @param credentialCreationOptions an optional CredentialCreationOptions object
  */
 async function _createCredential(
-  challenge?: PublicKeyCredentialCreationOptions['challenge'],
+  credentialCreationOptions?: CredentialCreationOptions,
 ): Promise<PublicKeyCredential | null> {
-  const creds = (await navigator.credentials.create({
-    publicKey: {
-      authenticatorSelection: {
-        userVerification: 'preferred',
-      },
-      attestation: 'direct',
-      challenge: challenge ?? _createChallengeBuffer(),
-      pubKeyCredParams: [{ type: 'public-key', alg: PubKeyCoseAlgo.ECDSA_WITH_SHA256 }],
-      rp: {
-        name: 'ic0.app',
-      },
-      user: {
-        id: tweetnacl.randomBytes(16),
-        name: 'ic0 user',
-        displayName: 'ic0 user',
+  const creds = (await navigator.credentials.create(
+    credentialCreationOptions ?? {
+      publicKey: {
+        authenticatorSelection: {
+          userVerification: 'preferred',
+        },
+        attestation: 'direct',
+        challenge: _createChallengeBuffer(),
+        pubKeyCredParams: [{ type: 'public-key', alg: PubKeyCoseAlgo.ECDSA_WITH_SHA256 }],
+        rp: {
+          name: 'Internet Identity Service',
+        },
+        user: {
+          id: tweetnacl.randomBytes(16),
+          name: 'Internet Identity',
+          displayName: 'Internet Identity',
+        },
       },
     },
-  })) as PublicKeyCredential;
+  )) as PublicKeyCredential;
 
   // Validate that it's the correct type at runtime, since WebAuthn does not HAVE to
   // reply with a PublicKeyCredential.
@@ -148,12 +150,12 @@ export class WebAuthnIdentity extends SignIdentity {
 
   /**
    * Create an identity.
-   * @param challenge an optional PublicKeyCredentialCreationOptions Challenge
+   * @param credentialCreationOptions an optional CredentialCreationOptions Challenge
    */
   public static async create(
-    challenge?: PublicKeyCredentialCreationOptions['challenge'],
+    credentialCreationOptions: CredentialCreationOptions,
   ): Promise<WebAuthnIdentity> {
-    const creds = await _createCredential(challenge);
+    const creds = await _createCredential(credentialCreationOptions);
 
     if (!creds || creds.type !== 'public-key') {
       throw new Error('Could not create credentials.');

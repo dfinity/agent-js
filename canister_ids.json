@@ -1,13 +1,17 @@
 {
   "agent_docs": {
-    "alpha": "7igbu-3qaaa-aaaaa-qaapq-cai",
+    "alpha": "x5cqe-syaaa-aaaaa-aaaxa-cai",
     "ic": "zfznp-5qaaa-aaaaa-qalja-cai"
   },
   "authentication_docs": {
-    "alpha": "2u53r-qyaaa-aaaaa-qaaqa-cai",
+    "alpha": "x2dwq-7aaaa-aaaaa-aaaxq-cai",
     "ic": "zcyl3-qiaaa-aaaaa-qaljq-cai"
   },
   "identity_docs": {
+    "alpha": "vh6yy-miaaa-aaaaa-aaaya-cai",
     "ic": "3caxy-diaaa-aaaaa-qa7qq-cai"
+  },
+  "identity_ledgerhq_docs": {
+    "alpha": "va76m-bqaaa-aaaaa-aaayq-cai"
   }
 }
