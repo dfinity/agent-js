@@ -71,5 +71,10 @@
   },
   "jest": {
     "preset": "ts-jest"
-  }
+  },
+  "files": [
+    "lib",
+    "!lib/**/*.test.*",
+    "types"
+  ]
 }
