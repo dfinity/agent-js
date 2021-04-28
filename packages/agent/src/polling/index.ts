@@ -11,6 +11,7 @@ export type PollStrategy = (
   requestId: RequestId,
   status: RequestStatusResponseStatus,
 ) => Promise<void>;
+export type PollStrategyFactory = () => PollStrategy;
 
 /**
  * Polls the IC to check the status of the given request then
