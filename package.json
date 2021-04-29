@@ -43,8 +43,6 @@
   "scripts": {
     "lint:e2e": "eslint --cache --cache-location node_modules/.cache/eslint 'e2e/*/**/*.ts*'",
     "publish:release": "npm run publish --workspaces",
-    "e2e": "cd e2e/node && npm run e2e",
-    "mitm": "cd e2e/node && npm run mitm",
     "build": "",
     "lint:fix": "",
     "make:docs/reference": "",
