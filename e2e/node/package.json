@@ -4,7 +4,7 @@
   "version": "0.8.4",
   "scripts": {
     "ci": "npm run e2e",
-    "e2e": "jest --verbose --config jest.config.ts",
+    "e2e": "jest --verbose gi",
     "eslint:fix": "npm run lint -- --fix",
     "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' basic canisters utils *.ts",
     "lint": "npm run eslint",
