@@ -224,44 +224,39 @@ export class AuthClient {
     // The event listener is associated with a controller that signals the listener
     // to remove itself as soon as authentication is complete.
     this._abortController = new AbortController();
-    window.addEventListener(
-      'message',
-      async event => {
-        if (event.origin !== identityProviderUrl.origin) {
-          return;
-        }
 
-        const message = event.data;
+    window.addEventListener('message', async event => {
+      if (event.origin !== identityProviderUrl.origin) {
+        return;
+      }
 
-        switch (message.kind) {
-          case 'authorize-ready':
-            // IDP is ready. Send a message to request authorization.
-            this._idpWindow?.postMessage(
-              {
-                kind: 'authorize-client',
-                sessionPublicKey: this._key?.getPublicKey().toDer(),
-                maxTimeToLive: options?.maxTimeToLive,
-              },
-              identityProviderUrl.origin,
-            );
-            break;
-          case 'authorize-client-success':
-            // Create the delegation chain and store it.
-            this._createDelegation(message, event, options?.onSuccess);
-            break;
-          case 'authorize-client-failure':
-            this._idpWindow?.close();
-            options?.onError?.(message.text);
-            this._abortController?.abort(); // Send the abort signal to remove event listener.
-            break;
-          default:
-            break;
-        }
-      },
-      {
-        signal: this._abortController,
-      } as AddEventListenerOptions,
-    );
+      const message = event.data;
+
+      switch (message.kind) {
+        case 'authorize-ready':
+          // IDP is ready. Send a message to request authorization.
+          this._idpWindow?.postMessage(
+            {
+              kind: 'authorize-client',
+              sessionPublicKey: this._key?.getPublicKey().toDer(),
+              maxTimeToLive: options?.maxTimeToLive,
+            },
+            identityProviderUrl.origin,
+          );
+          break;
+        case 'authorize-client-success':
+          // Create the delegation chain and store it.
+          this._createDelegation(message, event, options?.onSuccess);
+          break;
+        case 'authorize-client-failure':
+          this._idpWindow?.close();
+          options?.onError?.(message.text);
+          this._abortController?.abort(); // Send the abort signal to remove event listener.
+          break;
+        default:
+          break;
+      }
+    });
 
     // Open a new window with the IDP provider.
     const w = window.open(identityProviderUrl.toString(), 'idpWindow');
