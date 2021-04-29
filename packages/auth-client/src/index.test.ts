@@ -1,18 +1,21 @@
 import { AuthClient } from './index';
 
-describe('Auth Client', () => {
+describe.only('Auth Client', () => {
   it('should initialize with an AnonymousIdentity', async () => {
     const test = await AuthClient.create();
     expect(await test.isAuthenticated()).toBe(false);
   });
 
-  it('should handle a redirect callback with no token', async () => {
+  it('should login with a popup', async () => {
     const test = await AuthClient.create();
-    expect(await test.handleRedirectCallback()).toBe(null); //?
+    window.open = jest.fn();
+    await test.login();
+    expect(globalThis.open).toBeCalled();
   });
 
-  it.todo('should handle a redirect callback with a token');
-  it.todo('should login with redirect');
+  it.todo('should handle an authorize-client message');
+  it.todo('should handle an authorize-client-success message');
+  it.todo('should handle an authorize-client-failure message');
 
   it('should log users out', async () => {
     const test = await AuthClient.create();

@@ -1,14 +1,22 @@
-import { AnonymousIdentity, Identity, Principal, SignIdentity } from '@dfinity/agent';
 import {
-  createAuthenticationRequestUrl,
-  createDelegationChainFromAccessToken,
-  getAccessTokenFromWindow,
-  isDelegationValid,
-} from '@dfinity/authentication';
-import { DelegationChain, DelegationIdentity, Ed25519KeyIdentity } from '@dfinity/identity';
+  AnonymousIdentity,
+  blobFromUint8Array,
+  derBlobFromBlob,
+  Identity,
+  SignIdentity,
+} from '@dfinity/agent';
+import { isDelegationValid } from '@dfinity/authentication';
+import {
+  Delegation,
+  DelegationChain,
+  DelegationIdentity,
+  Ed25519KeyIdentity,
+} from '@dfinity/identity';
 
 const KEY_LOCALSTORAGE_KEY = 'identity';
 const KEY_LOCALSTORAGE_DELEGATION = 'delegation';
+const IDENTITY_PROVIDER_DEFAULT = 'https://identity.ic0.app';
+const IDENTITY_PROVIDER_ENDPOINT = '#authorize';
 
 /**
  * List of options for creating an {@link AuthClient}.
@@ -88,7 +96,7 @@ export class AuthClient {
   public static async create(options: AuthClientOptions = {}): Promise<AuthClient> {
     const storage = options.storage ?? new LocalStorage('ic-');
 
-    let key = null;
+    let key: null | SignIdentity = null;
     if (options.identity) {
       key = options.identity;
     } else {
@@ -104,7 +112,7 @@ export class AuthClient {
     }
 
     let identity = new AnonymousIdentity();
-    let chain = null;
+    let chain: null | DelegationChain = null;
 
     if (key) {
       try {
@@ -136,7 +144,48 @@ export class AuthClient {
     private _key: SignIdentity | null,
     private _chain: DelegationChain | null,
     private _storage: AuthClientStorage,
+    // A handle on the IdP window.
+    private _idpWindow?: Window,
+    // A controller used to remove the event listener in the login flow.
+    private _abortController?: AbortController,
   ) {}
+
+  private async _createDelegation(
+    message: MessageEvent,
+    event: MessageEvent,
+    onSuccess?: () => void,
+  ) {
+    // eslint-disable-next-line
+    // @ts-ignore (typescript doesn't understand adding an event listener with a signal).
+    const delegations = message.delegations.map(signedDelegation => {
+      return {
+        delegation: new Delegation(
+          signedDelegation.delegation.pubkey,
+          signedDelegation.delegation.expiration,
+          signedDelegation.delegation.targets,
+        ),
+        signature: signedDelegation.signature,
+      };
+    });
+
+    const delegationChain = DelegationChain.fromDelegations(
+      delegations,
+      derBlobFromBlob(blobFromUint8Array(Uint8Array.from(event.data.userPublicKey))),
+    );
+
+    const key = this._key;
+    if (!key) {
+      return;
+    }
+
+    this._chain = delegationChain;
+    await this._storage.set(KEY_LOCALSTORAGE_DELEGATION, JSON.stringify(this._chain.toJSON()));
+    this._identity = DelegationIdentity.fromDelegation(key, this._chain);
+
+    this._idpWindow?.close();
+    onSuccess?.();
+    this._abortController?.abort(); // Send the abort signal to remove event listener.
+  }
 
   public getIdentity(): Identity {
     return this._identity;
@@ -146,21 +195,77 @@ export class AuthClient {
     return !this.getIdentity().getPrincipal().isAnonymous() && this._chain !== null;
   }
 
-  public async handleRedirectCallback(): Promise<Identity | null> {
-    const maybeToken = getAccessTokenFromWindow();
-    if (!maybeToken) {
-      return null;
-    }
-    const key = this._key;
+  public async login(
+    options?: { identityProvider?: string; maxTimeToLive?: BigInt },
+    onSuccess?: (message?: string) => void,
+    onError?: (messate?: string) => void,
+  ): Promise<void> {
+    let key = this._key;
     if (!key) {
-      return null;
+      // Create a new key (whether or not one was in storage).
+      key = Ed25519KeyIdentity.generate();
+      this._key = key;
+      await this._storage.set(KEY_LOCALSTORAGE_KEY, JSON.stringify(key));
     }
 
-    this._chain = createDelegationChainFromAccessToken(maybeToken);
-    await this._storage.set(KEY_LOCALSTORAGE_DELEGATION, JSON.stringify(this._chain.toJSON()));
-    this._identity = DelegationIdentity.fromDelegation(key, this._chain);
+    // Create the URL of the IDP. (e.g. https://XXXX/#authorize)
+    const identityProviderUrl = new URL(options?.identityProvider || IDENTITY_PROVIDER_DEFAULT);
+    // Set the correct hash if it isn't already set.
+    identityProviderUrl.hash = IDENTITY_PROVIDER_ENDPOINT;
 
-    return this._identity;
+    // If `login` has been called previously, then close/remove any previous windows
+    // and event listeners.
+    this._idpWindow?.close();
+    this._abortController?.abort();
+
+    // Add an event listener to handle responses.
+    // The event listener is associated with a controller that signals the listener
+    // to remove itself as soon as authentication is complete.
+    this._abortController = new AbortController();
+    // eslint-disable-next-line
+    // @ts-ignore (typescript doesn't understand adding an event listener with a signal).
+    window.addEventListener(
+      'message',
+      async event => {
+        if (event.origin !== identityProviderUrl.origin) {
+          return;
+        }
+
+        const message = event.data;
+
+        switch (message.kind) {
+          case 'authorize-ready':
+            // IDP is ready. Send a message to request authorization.
+            this._idpWindow?.postMessage(
+              {
+                kind: 'authorize-client',
+                sessionPublicKey: this._key?.getPublicKey().toDer(),
+                maxTimeToLive: options?.maxTimeToLive,
+              },
+              identityProviderUrl.origin,
+            );
+            break;
+          case 'authorize-client-success':
+            // Create the delegation chain and store it.
+            this._createDelegation(message, event, onSuccess);
+            break;
+          case 'authorize-client-failure':
+            this._idpWindow?.close();
+            onError?.(message.text);
+            this._abortController?.abort(); // Send the abort signal to remove event listener.
+            break;
+          default:
+            break;
+        }
+      },
+      { signal: this._abortController.signal },
+    );
+
+    // Open a new window with the IDP provider.
+    const w = window.open(identityProviderUrl.toString(), 'idpWindow');
+    if (w) {
+      this._idpWindow = w;
+    }
   }
 
   public async logout(options: { returnTo?: string } = {}): Promise<void> {
@@ -178,31 +283,5 @@ export class AuthClient {
         window.location.href = options.returnTo;
       }
     }
-  }
-
-  public async loginWithRedirect(
-    options: { redirectUri?: string; scope?: Principal[]; identityProvider?: string } = {},
-  ): Promise<void> {
-    let key = this._key;
-    if (!key) {
-      // Create a new key (whether or not one was in storage).
-      key = Ed25519KeyIdentity.generate();
-      this._key = key;
-      await this._storage.set(KEY_LOCALSTORAGE_KEY, JSON.stringify(key));
-    }
-
-    const url = createAuthenticationRequestUrl({
-      publicKey: key.getPublicKey(),
-      scope: options.scope || [],
-      redirectUri: options.redirectUri || window.location.origin,
-      identityProvider: options.identityProvider,
-    });
-
-    window.location.href = url.toString();
-  }
-
-  public async shouldHandleRedirectCallback(): Promise<boolean> {
-    // TODO - update with postMessage flow once available
-    return location.hash.substring(1).startsWith('access_token');
   }
 }
