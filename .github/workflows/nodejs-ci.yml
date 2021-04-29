@@ -26,10 +26,10 @@ jobs:
       - run: npm install -g npm
 
       - run: npm install
-      - run: npm run lint --workspaces
+      - run: npm run lint --workspaces --if-present
 
       # build monorepo incl. each subpackage
-      - run: npm run build --workspaces
+      - run: npm run build --workspaces --if-present
 
       # test monorepo incl. each subpackage
       - run: npm run test
@@ -101,7 +101,7 @@ jobs:
              &
           sleep 1
 
-      - run: npm run e2e
+      - run: npm run e2e --workspaces --if-present
         env:
           CI: true
           IC_REF_PORT: ${{ steps.ic_ref.outputs.IC_REF_PORT }}
@@ -111,7 +111,7 @@ jobs:
           CI: true
           IC_REF_PORT: 8888
           MITM: true
-        run: npm run mitm
+        run: npm run mitm --workspaces --if-present
 
       - name: clean up
         run: |
