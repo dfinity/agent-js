@@ -171,9 +171,7 @@ export class AuthClient {
 
     const delegationChain = DelegationChain.fromDelegations(
       delegations,
-      derBlobFromBlob(
-        blobFromUint8Array(event.data.userPublicKey),
-      ),
+      derBlobFromBlob(blobFromUint8Array(event.data.userPublicKey)),
     );
 
     const key = this._key;
@@ -226,8 +224,6 @@ export class AuthClient {
     // The event listener is associated with a controller that signals the listener
     // to remove itself as soon as authentication is complete.
     this._abortController = new AbortController();
-    // eslint-disable-next-line
-    // @ts-ignore (typescript doesn't understand adding an event listener with a signal).
     window.addEventListener(
       'message',
       async event => {
@@ -262,7 +258,9 @@ export class AuthClient {
             break;
         }
       },
-      { signal: this._abortController.signal },
+      {
+        signal: this._abortController,
+      } as AddEventListenerOptions,
     );
 
     // Open a new window with the IDP provider.
