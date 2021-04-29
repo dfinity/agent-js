@@ -117,12 +117,9 @@ export class AuthClient {
     if (key) {
       try {
         const chainStorage = await storage.get(KEY_LOCALSTORAGE_DELEGATION);
-        console.log('chainstorage', chainStorage);
 
         if (chainStorage) {
           chain = DelegationChain.fromJSON(chainStorage);
-
-          console.log('delegationValid', isDelegationValid(chain));
 
           // Verify that the delegation isn't expired.
           if (!isDelegationValid(chain)) {
@@ -135,7 +132,7 @@ export class AuthClient {
       } catch (e) {
         console.error(e);
         // If there was a problem loading the chain, delete the key.
-        // await _deleteStorage(storage);
+        await _deleteStorage(storage);
         key = null;
       }
     }
@@ -185,8 +182,6 @@ export class AuthClient {
     }
 
     this._chain = delegationChain;
-    console.log('jsonChain', JSON.stringify(this._chain));
-    console.log('decodedChain', DelegationChain.fromJSON(JSON.stringify(this._chain)));
     await this._storage.set(KEY_LOCALSTORAGE_DELEGATION, JSON.stringify(this._chain.toJSON()));
     this._identity = DelegationIdentity.fromDelegation(key, this._chain);
 
@@ -209,7 +204,6 @@ export class AuthClient {
     onSuccess?: (message?: string) => void;
     onError?: (messate?: string) => void;
   }): Promise<void> {
-    console.log('login with options', options);
     let key = this._key;
     if (!key) {
       // Create a new key (whether or not one was in storage).
@@ -237,7 +231,6 @@ export class AuthClient {
     window.addEventListener(
       'message',
       async event => {
-        console.log('message', event);
         if (event.origin !== identityProviderUrl.origin) {
           return;
         }
