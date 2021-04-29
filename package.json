@@ -15,6 +15,7 @@
       "packages/identity",
       "packages/identity-ledgerhq",
       "packages/authentication",
+      "packages/auth-client",
       "e2e/node",
       "demos/ledgerhq",
       "demos/sample-javascript"
