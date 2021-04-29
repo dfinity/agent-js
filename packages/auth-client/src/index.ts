@@ -114,7 +114,6 @@ export class AuthClient {
     let identity = new AnonymousIdentity();
     let chain: null | DelegationChain = null;
 
-    console.log('key', key);
     if (key) {
       try {
         const chainStorage = await storage.get(KEY_LOCALSTORAGE_DELEGATION);
@@ -176,7 +175,7 @@ export class AuthClient {
     const delegationChain = DelegationChain.fromDelegations(
       delegations,
       derBlobFromBlob(
-        blobFromUint8Array(Uint8Array.from(await event.data.userPublicKey.arrayBuffer())),
+        blobFromUint8Array(event.data.userPublicKey),
       ),
     );
 
