@@ -101,7 +101,7 @@ jobs:
              &
           sleep 1
 
-      - run: npm run e2e
+      - run: npm run ci --workspaces --if-present
         env:
           CI: true
           IC_REF_PORT: ${{ steps.ic_ref.outputs.IC_REF_PORT }}
@@ -111,7 +111,7 @@ jobs:
           CI: true
           IC_REF_PORT: 8888
           MITM: true
-        run: npm run mitm
+        run: npm run mitm --workspaces --if-present
 
       - name: clean up
         run: |
