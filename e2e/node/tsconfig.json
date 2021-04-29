@@ -2,16 +2,14 @@
   "compilerOptions": {
     "incremental": true,
     "target": "es2017",
-    "module": "commonjs",
-    "lib": [
-      "dom",
-      "es2017"
-    ],
+    "module": "esnext",
+    "lib": ["dom", "es2017"],
     "declaration": true,
     "sourceMap": true,
     "tsBuildInfoFile": "./build_info.json",
     "strict": true,
     "esModuleInterop": true,
+    "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true
   },
   "references": [

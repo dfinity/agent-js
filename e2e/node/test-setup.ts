@@ -8,5 +8,5 @@
 // Node.js in a similar way.
 
 global.crypto = require("@trust/webcrypto");
-global.TextEncoder = require("text-encoding").TextEncoder;
+global.TextEncoder = require("text-encoding").TextEncoder; // eslint-disable-line
 global.fetch = require("node-fetch");
