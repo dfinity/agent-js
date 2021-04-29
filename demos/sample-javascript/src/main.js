@@ -18,18 +18,18 @@ const init = async () => {
 
   // Redirect to the identity provider
   signInBtn.onclick = async () => {
-    authClient.loginWithRedirect({
+    authClient.login({
       identityProvider: idpUrlEl.value,
+      onSuccess: async () => {
+        console.log("asdf");
+        principalEl.innerText = await authClient.getIdentity().getPrincipal();
+      },
     });
   };
 
   signOutBtn.onclick = async () => {
     authClient.logout();
   };
-
-  if (await authClient.shouldHandleRedirectCallback()) {
-    await authClient.handleRedirectCallback();
-  }
 };
 
 init();

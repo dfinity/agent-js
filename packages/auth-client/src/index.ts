@@ -114,12 +114,16 @@ export class AuthClient {
     let identity = new AnonymousIdentity();
     let chain: null | DelegationChain = null;
 
+    console.log('key', key);
     if (key) {
       try {
         const chainStorage = await storage.get(KEY_LOCALSTORAGE_DELEGATION);
+        console.log('chainstorage', chainStorage);
 
         if (chainStorage) {
           chain = DelegationChain.fromJSON(chainStorage);
+
+          console.log('delegationValid', isDelegationValid(chain));
 
           // Verify that the delegation isn't expired.
           if (!isDelegationValid(chain)) {
@@ -130,8 +134,9 @@ export class AuthClient {
           }
         }
       } catch (e) {
+        console.error(e);
         // If there was a problem loading the chain, delete the key.
-        await _deleteStorage(storage);
+        // await _deleteStorage(storage);
         key = null;
       }
     }
@@ -170,7 +175,9 @@ export class AuthClient {
 
     const delegationChain = DelegationChain.fromDelegations(
       delegations,
-      derBlobFromBlob(blobFromUint8Array(Uint8Array.from(event.data.userPublicKey))),
+      derBlobFromBlob(
+        blobFromUint8Array(Uint8Array.from(await event.data.userPublicKey.arrayBuffer())),
+      ),
     );
 
     const key = this._key;
@@ -179,6 +186,8 @@ export class AuthClient {
     }
 
     this._chain = delegationChain;
+    console.log('jsonChain', JSON.stringify(this._chain));
+    console.log('decodedChain', DelegationChain.fromJSON(JSON.stringify(this._chain)));
     await this._storage.set(KEY_LOCALSTORAGE_DELEGATION, JSON.stringify(this._chain.toJSON()));
     this._identity = DelegationIdentity.fromDelegation(key, this._chain);
 
@@ -195,11 +204,13 @@ export class AuthClient {
     return !this.getIdentity().getPrincipal().isAnonymous() && this._chain !== null;
   }
 
-  public async login(
-    options?: { identityProvider?: string; maxTimeToLive?: BigInt },
-    onSuccess?: (message?: string) => void,
-    onError?: (messate?: string) => void,
-  ): Promise<void> {
+  public async login(options?: {
+    identityProvider?: string;
+    maxTimeToLive?: BigInt;
+    onSuccess?: (message?: string) => void;
+    onError?: (messate?: string) => void;
+  }): Promise<void> {
+    console.log('login with options', options);
     let key = this._key;
     if (!key) {
       // Create a new key (whether or not one was in storage).
@@ -227,6 +238,7 @@ export class AuthClient {
     window.addEventListener(
       'message',
       async event => {
+        console.log('message', event);
         if (event.origin !== identityProviderUrl.origin) {
           return;
         }
@@ -247,11 +259,11 @@ export class AuthClient {
             break;
           case 'authorize-client-success':
             // Create the delegation chain and store it.
-            this._createDelegation(message, event, onSuccess);
+            this._createDelegation(message, event, options?.onSuccess);
             break;
           case 'authorize-client-failure':
             this._idpWindow?.close();
-            onError?.(message.text);
+            options?.onError?.(message.text);
             this._abortController?.abort(); // Send the abort signal to remove event listener.
             break;
           default:
