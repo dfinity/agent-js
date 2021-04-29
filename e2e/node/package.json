@@ -1,12 +1,12 @@
 {
   "private": true,
-  "name": "ic-node-e2e-tests",
+  "name": "@do-not-publish/ic-node-e2e-tests",
   "version": "0.8.4",
   "scripts": {
     "ci": "npm run e2e",
     "e2e": "jest --verbose",
     "eslint:fix": "npm run lint -- --fix",
-    "eslint": "eslint --ext '.js,.jsx,.ts,.tsx'",
+    "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' basic canisters utils *.js",
     "lint": "npm run eslint",
     "mitm": "jest -i basic/mitm.test.ts",
     "build": "",
