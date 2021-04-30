@@ -121,8 +121,6 @@ describe('Auth Client login', () => {
 
     idpMock.ready();
 
-    // Send an authorize-ready message with a bad origin. It should _not_ result
-    // in a message sent back to the IDP.
     expect(failureFunc).toBeCalledWith("mock error message");
     expect(idpWindow.close).toBeCalled();
   });
@@ -136,9 +134,7 @@ describe('Auth Client login', () => {
       }
     });
     const client = await AuthClient.create();
-    const failureFunc = jest.fn((err) => {
-      console.log("CALLING FAILUE!!!");
-    });
+    const failureFunc = jest.fn();
     await client.login({ onError: failureFunc });
 
     idpMock.ready();

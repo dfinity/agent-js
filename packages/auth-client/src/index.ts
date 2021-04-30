@@ -271,7 +271,6 @@ export class AuthClient {
             // messes up the jest tests for some reason.
             await this._storage.set(KEY_LOCALSTORAGE_DELEGATION, JSON.stringify(this._chain.toJSON()));
           } catch (err) {
-            // Failure has occurred.
             this._handleFailure(err.message, options?.onError)
           }
           break;
