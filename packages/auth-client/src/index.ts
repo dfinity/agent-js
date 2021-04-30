@@ -171,7 +171,7 @@ export class AuthClient {
     private _abortController?: AbortController,
   ) {}
 
-  private async _createDelegation(
+  private _handleSuccess(
     message: InternetIdentityAuthResponseSuccess,
     onSuccess?: () => void,
   ) {
@@ -197,7 +197,6 @@ export class AuthClient {
     }
 
     this._chain = delegationChain;
-    await this._storage.set(KEY_LOCALSTORAGE_DELEGATION, JSON.stringify(this._chain.toJSON()));
     this._identity = DelegationIdentity.fromDelegation(key, this._chain);
 
     this._idpWindow?.close();
@@ -264,12 +263,21 @@ export class AuthClient {
         }
         case 'authorize-client-success':
           // Create the delegation chain and store it.
-          this._createDelegation(message, options?.onSuccess);
+          try {
+            this._handleSuccess(message, options?.onSuccess);
+
+            // Setting the storage is moved out of _handleSuccess to make
+            // it a sync function. Having _handleSuccess as an async function
+            // messes up the jest tests for some reason.
+            if (this._chain) {
+              await this._storage.set(KEY_LOCALSTORAGE_DELEGATION, JSON.stringify(this._chain.toJSON()));
+            }
+          } catch (err) {
+            this._handleFailure(err.message, options?.onError)
+          }
           break;
         case 'authorize-client-failure':
-          this._idpWindow?.close();
-          options?.onError?.(message.text);
-          this._abortController?.abort(); // Send the abort signal to remove event listener.
+          this._handleFailure(message.text, options?.onError);
           break;
         default:
           break;
@@ -285,6 +293,12 @@ export class AuthClient {
     if (w) {
       this._idpWindow = w;
     }
+  }
+
+  private _handleFailure(errorMessage?: string, onError?: (error?: string) => void): void {
+    this._idpWindow?.close();
+    onError?.(errorMessage);
+    this._abortController?.abort(); // Send the abort signal to remove event listener.
   }
 
   public async logout(options: { returnTo?: string } = {}): Promise<void> {
