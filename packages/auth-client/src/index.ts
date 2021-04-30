@@ -4,6 +4,7 @@ import {
   derBlobFromBlob,
   Identity,
   SignIdentity,
+  Principal,
 } from '@dfinity/agent';
 import { isDelegationValid } from '@dfinity/authentication';
 import {
@@ -46,6 +47,25 @@ export interface AuthClientStorage {
   set(key: string, value: string): Promise<void>;
 
   remove(key: string): Promise<void>;
+}
+
+interface InternetIdentityAuthRequest {
+  kind: "authorize-client";
+  sessionPublicKey: Uint8Array;
+  maxTimetoLive?: bigint;
+}
+
+interface InternetIdentityAuthResponseSuccess {
+  kind: "authorize-client-success";
+  delegations: {
+    delegation: {
+      pubkey: Uint8Array;
+      expiration: bigint;
+      targets?: Principal[];
+    };
+    signature: Uint8Array;
+  }[];
+  userPublicKey: Uint8Array;
 }
 
 async function _deleteStorage(storage: AuthClientStorage) {
@@ -152,26 +172,23 @@ export class AuthClient {
   ) {}
 
   private async _createDelegation(
-    message: MessageEvent,
-    event: MessageEvent,
+    message: InternetIdentityAuthResponseSuccess,
     onSuccess?: () => void,
   ) {
-    // eslint-disable-next-line
-    // @ts-ignore (typescript doesn't understand adding an event listener with a signal).
     const delegations = message.delegations.map(signedDelegation => {
       return {
         delegation: new Delegation(
-          signedDelegation.delegation.pubkey,
+          blobFromUint8Array(signedDelegation.delegation.pubkey),
           signedDelegation.delegation.expiration,
           signedDelegation.delegation.targets,
         ),
-        signature: signedDelegation.signature,
+        signature: blobFromUint8Array(signedDelegation.signature),
       };
     });
 
     const delegationChain = DelegationChain.fromDelegations(
       delegations,
-      derBlobFromBlob(blobFromUint8Array(event.data.userPublicKey)),
+      derBlobFromBlob(blobFromUint8Array(message.userPublicKey)),
     );
 
     const key = this._key;
@@ -198,9 +215,9 @@ export class AuthClient {
 
   public async login(options?: {
     identityProvider?: string;
-    maxTimeToLive?: BigInt;
-    onSuccess?: (message?: string) => void;
-    onError?: (messate?: string) => void;
+    maxTimeToLive?: bigint;
+    onSuccess?: () => void;
+    onError?: (error?: string) => void;
   }): Promise<void> {
     let key = this._key;
     if (!key) {
@@ -225,6 +242,8 @@ export class AuthClient {
     // to remove itself as soon as authentication is complete.
     this._abortController = new AbortController();
 
+    // eslint-disable-next-line
+    // @ts-ignore (typescript doesn't understand adding an event listener with a signal).
     window.addEventListener('message', async event => {
       if (event.origin !== identityProviderUrl.origin) {
         return;
@@ -233,20 +252,19 @@ export class AuthClient {
       const message = event.data;
 
       switch (message.kind) {
-        case 'authorize-ready':
+        case 'authorize-ready': {
           // IDP is ready. Send a message to request authorization.
-          this._idpWindow?.postMessage(
-            {
-              kind: 'authorize-client',
-              sessionPublicKey: this._key?.getPublicKey().toDer(),
-              maxTimeToLive: options?.maxTimeToLive,
-            },
-            identityProviderUrl.origin,
-          );
+          const request: InternetIdentityAuthRequest = {
+            kind: 'authorize-client',
+            sessionPublicKey: this._key?.getPublicKey().toDer() as Uint8Array,
+            maxTimetoLive: options?.maxTimeToLive
+          };
+          this._idpWindow?.postMessage(request, identityProviderUrl.origin);
           break;
+        }
         case 'authorize-client-success':
           // Create the delegation chain and store it.
-          this._createDelegation(message, event, options?.onSuccess);
+          this._createDelegation(message, options?.onSuccess);
           break;
         case 'authorize-client-failure':
           this._idpWindow?.close();
@@ -256,6 +274,9 @@ export class AuthClient {
         default:
           break;
       }
+    }, {
+      // Configure the event listener to be removed when the abort signal is triggered.
+      signal: this._abortController.signal
     });
 
     // Open a new window with the IDP provider.
