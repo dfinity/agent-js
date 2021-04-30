@@ -275,7 +275,8 @@ export class AuthClient {
           break;
       }
     }, {
-      // Configure the event listener to be removed when the abort signal is triggered.
+      // eslint-disable-next-line
+      // @ts-ignore Configure the event listener to be removed when the abort signal is triggered.
       signal: this._abortController.signal
     });
 
