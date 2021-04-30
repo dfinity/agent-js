@@ -269,7 +269,9 @@ export class AuthClient {
             // Setting the storage is moved out of _handleSuccess to make
             // it a sync function. Having _handleSuccess as an async function
             // messes up the jest tests for some reason.
-            await this._storage.set(KEY_LOCALSTORAGE_DELEGATION, JSON.stringify(this._chain.toJSON()));
+            if (this._chain) {
+              await this._storage.set(KEY_LOCALSTORAGE_DELEGATION, JSON.stringify(this._chain.toJSON()));
+            }
           } catch (err) {
             this._handleFailure(err.message, options?.onError)
           }

@@ -37,8 +37,13 @@ describe('Auth Client', () => {
   });
 });
 
+// A minimal interface of our interactions with the Window object of the IDP.
+interface IdpWindow {
+  postMessage(message: { kind: string }): void;
+  close(): void;
+}
 
-let idpWindow;
+let idpWindow: IdpWindow;
 let idpMock: IdpMock;
 function setup(options?: { onAuthRequest?: () => void }) {
   // Set the event handler.
@@ -49,6 +54,8 @@ function setup(options?: { onAuthRequest?: () => void }) {
   });
 
   // Mock window.open and window.postMessage since we can't open windows here.
+  // eslint-disable-next-line
+  // @ts-ignore
   global.open = jest.fn(() => {
     idpWindow = {
       postMessage: jest.fn((message) => {
