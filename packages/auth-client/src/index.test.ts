@@ -43,6 +43,7 @@ let idpMock: IdpMock;
 function setup(options?: { onAuthRequest?: () => void }) {
   // Set the event handler.
   global.addEventListener = jest.fn((_, callback) => {
+    // eslint-disable-next-line
     // @ts-ignore
     idpMock = new IdpMock(callback, "https://identity.ic0.app");
   });
@@ -50,7 +51,7 @@ function setup(options?: { onAuthRequest?: () => void }) {
   // Mock window.open and window.postMessage since we can't open windows here.
   global.open = jest.fn(() => {
     idpWindow = {
-      postMessage: jest.fn((message: any) => {
+      postMessage: jest.fn((message) => {
         if (message.kind === "authorize-client") {
           options?.onAuthRequest?.();
         }
