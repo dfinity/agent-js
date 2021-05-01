@@ -3,6 +3,7 @@ import {
   blobFromUint8Array,
   derBlobFromBlob,
   Identity,
+  Principal,
   SignIdentity,
 } from '@dfinity/agent';
 import { isDelegationValid } from '@dfinity/authentication';
@@ -106,6 +107,31 @@ export class LocalStorage implements AuthClientStorage {
   }
 }
 
+interface AuthReadyMessage {
+  kind: 'authorize-ready';
+}
+
+interface AuthResponseSuccess {
+  kind: 'authorize-client-success';
+  delegations: {
+    delegation: {
+      pubkey: Uint8Array;
+      expiration: bigint;
+      targets?: Principal[];
+    };
+    signature: Uint8Array;
+  }[];
+  userPublicKey: Uint8Array;
+}
+
+interface AuthResponseFailure {
+  kind: 'authorize-client-failure';
+  text: string;
+}
+
+type IdentityServiceResponseMessage = AuthReadyMessage | AuthResponse;
+type AuthResponse = AuthResponseSuccess | AuthResponseFailure;
+
 export class AuthClient {
   public static async create(options: AuthClientCreateOptions = {}): Promise<AuthClient> {
     const storage = options.storage ?? new LocalStorage('ic-');
@@ -166,7 +192,7 @@ export class AuthClient {
   ) {}
 
   private async _createDelegation(
-    message: MessageEvent,
+    message: AuthResponseSuccess,
     event: MessageEvent,
     onSuccess?: () => void,
   ) {
@@ -175,11 +201,11 @@ export class AuthClient {
     const delegations = message.delegations.map(signedDelegation => {
       return {
         delegation: new Delegation(
-          signedDelegation.delegation.pubkey,
+          blobFromUint8Array(signedDelegation.delegation.pubkey),
           signedDelegation.delegation.expiration,
           signedDelegation.delegation.targets,
         ),
-        signature: signedDelegation.signature,
+        signature: blobFromUint8Array(signedDelegation.signature),
       };
     });
 
@@ -241,7 +267,7 @@ export class AuthClient {
         return;
       }
 
-      const message = event.data;
+      const message = event.data as IdentityServiceResponseMessage;
 
       switch (message.kind) {
         case 'authorize-ready':
