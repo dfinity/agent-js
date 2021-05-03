@@ -8,6 +8,10 @@
       "type": "assets",
       "source": ["packages/authentication/docs/reference"]
     },
+    "auth_client_docs": {
+      "type": "assets",
+      "source": ["packages/auth-client/docs/reference"]
+    },
     "identity_docs": {
       "type": "assets",
       "source": ["packages/identity/docs/reference"]
@@ -21,6 +25,10 @@
   "networks": {
     "alpha": {
       "providers": ["https://boundary.dfinity.network/"],
+      "type": "persistent"
+    },
+    "mercury": {
+      "providers": ["https://mercury.dfinity.network/"],
       "type": "persistent"
     }
   }
