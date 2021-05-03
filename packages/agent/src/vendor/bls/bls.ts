@@ -1,3 +1,5 @@
+import * as base64Arraybuffer from 'base64-arraybuffer';
+
 /* tslint:disable */
 /* eslint-disable */
 let wasm: InitOutput;
@@ -804,7 +806,7 @@ const wasmBytesBase64 = `
     LjIuNzAgKGI2MzU1YzI3MCk=
 `.replace(/[^0-9a-zA-Z/+]/g, '');
 
-const wasmBytes = require('base64-arraybuffer').decode(wasmBytesBase64);
+const wasmBytes = base64Arraybuffer.decode(wasmBytesBase64);
 
 /**
  * @returns {number}

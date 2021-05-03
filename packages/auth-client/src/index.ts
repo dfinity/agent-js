@@ -22,12 +22,7 @@ const IDENTITY_PROVIDER_ENDPOINT = '#authorize';
 /**
  * List of options for creating an {@link AuthClient}.
  */
-export interface AuthClientOptions {
-  /**
-   * Identity provider. By default, use the identity service.
-   */
-  identityProvider?: string | URL;
-
+export interface AuthClientCreateOptions {
   /**
    * An identity to use as the base
    */
@@ -36,6 +31,25 @@ export interface AuthClientOptions {
    * Optional storage with get, set, and remove. Uses LocalStorage by default
    */
   storage?: AuthClientStorage;
+}
+
+export interface AuthClientLoginOptions {
+  /**
+   * Identity provider. By default, use the identity service.
+   */
+  identityProvider?: string | URL;
+  /**
+   * Experiation of the authentication
+   */
+  maxTimeToLive?: bigint;
+  /**
+   * Callback once login has completed
+   */
+  onSuccess?: () => void;
+  /**
+   * Callback in case authentication fails
+   */
+  onError?: (error?: string) => void;
 }
 
 /**
@@ -113,7 +127,7 @@ export class LocalStorage implements AuthClientStorage {
 }
 
 export class AuthClient {
-  public static async create(options: AuthClientOptions = {}): Promise<AuthClient> {
+  public static async create(options: AuthClientCreateOptions = {}): Promise<AuthClient> {
     const storage = options.storage ?? new LocalStorage('ic-');
 
     let key: null | SignIdentity = null;
@@ -212,12 +226,7 @@ export class AuthClient {
     return !this.getIdentity().getPrincipal().isAnonymous() && this._chain !== null;
   }
 
-  public async login(options?: {
-    identityProvider?: string;
-    maxTimeToLive?: bigint;
-    onSuccess?: () => void;
-    onError?: (error?: string) => void;
-  }): Promise<void> {
+  public async login(options?: AuthClientLoginOptions): Promise<void> {
     let key = this._key;
     if (!key) {
       // Create a new key (whether or not one was in storage).
@@ -227,7 +236,9 @@ export class AuthClient {
     }
 
     // Create the URL of the IDP. (e.g. https://XXXX/#authorize)
-    const identityProviderUrl = new URL(options?.identityProvider || IDENTITY_PROVIDER_DEFAULT);
+    const identityProviderUrl = new URL(
+      options?.identityProvider?.toString() || IDENTITY_PROVIDER_DEFAULT,
+    );
     // Set the correct hash if it isn't already set.
     identityProviderUrl.hash = IDENTITY_PROVIDER_ENDPOINT;
 
