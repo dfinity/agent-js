@@ -3,6 +3,7 @@ import {
   blobFromUint8Array,
   derBlobFromBlob,
   Identity,
+  Principal,
   SignIdentity,
 } from '@dfinity/agent';
 import { isDelegationValid } from '@dfinity/authentication';
@@ -21,12 +22,7 @@ const IDENTITY_PROVIDER_ENDPOINT = '#authorize';
 /**
  * List of options for creating an {@link AuthClient}.
  */
-export interface AuthClientOptions {
-  /**
-   * Identity provider. By default, use the identity service.
-   */
-  identityProvider?: string | URL;
-
+export interface AuthClientCreateOptions {
   /**
    * An identity to use as the base
    */
@@ -35,6 +31,25 @@ export interface AuthClientOptions {
    * Optional storage with get, set, and remove. Uses LocalStorage by default
    */
   storage?: AuthClientStorage;
+}
+
+export interface AuthClientLoginOptions {
+  /**
+   * Identity provider. By default, use the identity service.
+   */
+  identityProvider?: string | URL;
+  /**
+   * Experiation of the authentication
+   */
+  maxTimeToLive?: bigint;
+  /**
+   * Callback once login has completed
+   */
+  onSuccess?: () => void;
+  /**
+   * Callback in case authentication fails
+   */
+  onError?: (error?: string) => void;
 }
 
 /**
@@ -46,6 +61,25 @@ export interface AuthClientStorage {
   set(key: string, value: string): Promise<void>;
 
   remove(key: string): Promise<void>;
+}
+
+interface InternetIdentityAuthRequest {
+  kind: 'authorize-client';
+  sessionPublicKey: Uint8Array;
+  maxTimetoLive?: bigint;
+}
+
+interface InternetIdentityAuthResponseSuccess {
+  kind: 'authorize-client-success';
+  delegations: {
+    delegation: {
+      pubkey: Uint8Array;
+      expiration: bigint;
+      targets?: Principal[];
+    };
+    signature: Uint8Array;
+  }[];
+  userPublicKey: Uint8Array;
 }
 
 async function _deleteStorage(storage: AuthClientStorage) {
@@ -92,8 +126,33 @@ export class LocalStorage implements AuthClientStorage {
   }
 }
 
+interface AuthReadyMessage {
+  kind: 'authorize-ready';
+}
+
+interface AuthResponseSuccess {
+  kind: 'authorize-client-success';
+  delegations: {
+    delegation: {
+      pubkey: Uint8Array;
+      expiration: bigint;
+      targets?: Principal[];
+    };
+    signature: Uint8Array;
+  }[];
+  userPublicKey: Uint8Array;
+}
+
+interface AuthResponseFailure {
+  kind: 'authorize-client-failure';
+  text: string;
+}
+
+type IdentityServiceResponseMessage = AuthReadyMessage | AuthResponse;
+type AuthResponse = AuthResponseSuccess | AuthResponseFailure;
+
 export class AuthClient {
-  public static async create(options: AuthClientOptions = {}): Promise<AuthClient> {
+  public static async create(options: AuthClientCreateOptions = {}): Promise<AuthClient> {
     const storage = options.storage ?? new LocalStorage('ic-');
 
     let key: null | SignIdentity = null;
@@ -147,31 +206,25 @@ export class AuthClient {
     private _storage: AuthClientStorage,
     // A handle on the IdP window.
     private _idpWindow?: Window,
-    // A controller used to remove the event listener in the login flow.
-    private _abortController?: AbortController,
+    // The event handler for processing events from the IdP.
+    private _eventHandler?: (event: MessageEvent) => void,
   ) {}
 
-  private async _createDelegation(
-    message: MessageEvent,
-    event: MessageEvent,
-    onSuccess?: () => void,
-  ) {
-    // eslint-disable-next-line
-    // @ts-ignore (typescript doesn't understand adding an event listener with a signal).
+  private _handleSuccess(message: InternetIdentityAuthResponseSuccess, onSuccess?: () => void) {
     const delegations = message.delegations.map(signedDelegation => {
       return {
         delegation: new Delegation(
-          signedDelegation.delegation.pubkey,
+          blobFromUint8Array(signedDelegation.delegation.pubkey),
           signedDelegation.delegation.expiration,
           signedDelegation.delegation.targets,
         ),
-        signature: signedDelegation.signature,
+        signature: blobFromUint8Array(signedDelegation.signature),
       };
     });
 
     const delegationChain = DelegationChain.fromDelegations(
       delegations,
-      derBlobFromBlob(blobFromUint8Array(event.data.userPublicKey)),
+      derBlobFromBlob(blobFromUint8Array(message.userPublicKey)),
     );
 
     const key = this._key;
@@ -180,12 +233,11 @@ export class AuthClient {
     }
 
     this._chain = delegationChain;
-    await this._storage.set(KEY_LOCALSTORAGE_DELEGATION, JSON.stringify(this._chain.toJSON()));
     this._identity = DelegationIdentity.fromDelegation(key, this._chain);
 
     this._idpWindow?.close();
     onSuccess?.();
-    this._abortController?.abort(); // Send the abort signal to remove event listener.
+    this._removeEventListener();
   }
 
   public getIdentity(): Identity {
@@ -196,12 +248,7 @@ export class AuthClient {
     return !this.getIdentity().getPrincipal().isAnonymous() && this._chain !== null;
   }
 
-  public async login(options?: {
-    identityProvider?: string;
-    maxTimeToLive?: BigInt;
-    onSuccess?: (message?: string) => void;
-    onError?: (messate?: string) => void;
-  }): Promise<void> {
+  public async login(options?: AuthClientLoginOptions): Promise<void> {
     let key = this._key;
     if (!key) {
       // Create a new key (whether or not one was in storage).
@@ -211,63 +258,82 @@ export class AuthClient {
     }
 
     // Create the URL of the IDP. (e.g. https://XXXX/#authorize)
-    const identityProviderUrl = new URL(options?.identityProvider || IDENTITY_PROVIDER_DEFAULT);
+    const identityProviderUrl = new URL(
+      options?.identityProvider?.toString() || IDENTITY_PROVIDER_DEFAULT,
+    );
     // Set the correct hash if it isn't already set.
     identityProviderUrl.hash = IDENTITY_PROVIDER_ENDPOINT;
 
     // If `login` has been called previously, then close/remove any previous windows
     // and event listeners.
     this._idpWindow?.close();
-    this._abortController?.abort();
+    this._removeEventListener();
 
     // Add an event listener to handle responses.
-    // The event listener is associated with a controller that signals the listener
-    // to remove itself as soon as authentication is complete.
-    this._abortController = new AbortController();
-    window.addEventListener(
-      'message',
-      async event => {
-        if (event.origin !== identityProviderUrl.origin) {
-          return;
-        }
-
-        const message = event.data;
-
-        switch (message.kind) {
-          case 'authorize-ready':
-            // IDP is ready. Send a message to request authorization.
-            this._idpWindow?.postMessage(
-              {
-                kind: 'authorize-client',
-                sessionPublicKey: this._key?.getPublicKey().toDer(),
-                maxTimeToLive: options?.maxTimeToLive,
-              },
-              identityProviderUrl.origin,
-            );
-            break;
-          case 'authorize-client-success':
-            // Create the delegation chain and store it.
-            this._createDelegation(message, event, options?.onSuccess);
-            break;
-          case 'authorize-client-failure':
-            this._idpWindow?.close();
-            options?.onError?.(message.text);
-            this._abortController?.abort(); // Send the abort signal to remove event listener.
-            break;
-          default:
-            break;
-        }
-      },
-      {
-        signal: this._abortController,
-      } as AddEventListenerOptions,
-    );
+    this._eventHandler = this._getEventHandler(identityProviderUrl, options);
+    window.addEventListener('message', this._eventHandler);
 
     // Open a new window with the IDP provider.
-    const w = window.open(identityProviderUrl.toString(), 'idpWindow');
-    if (w) {
-      this._idpWindow = w;
+    this._idpWindow = window.open(identityProviderUrl.toString(), 'idpWindow') ?? undefined;
+  }
+
+  private _getEventHandler(identityProviderUrl: URL, options?: AuthClientLoginOptions) {
+    return async (event: MessageEvent) => {
+      if (event.origin !== identityProviderUrl.origin) {
+        return;
+      }
+
+      const message = event.data as IdentityServiceResponseMessage;
+
+      switch (message.kind) {
+        case 'authorize-ready': {
+          // IDP is ready. Send a message to request authorization.
+          const request: InternetIdentityAuthRequest = {
+            kind: 'authorize-client',
+            sessionPublicKey: this._key?.getPublicKey().toDer() as Uint8Array,
+            maxTimetoLive: options?.maxTimeToLive,
+          };
+          this._idpWindow?.postMessage(request, identityProviderUrl.origin);
+          break;
+        }
+        case 'authorize-client-success':
+          // Create the delegation chain and store it.
+          try {
+            this._handleSuccess(message, options?.onSuccess);
+
+            // Setting the storage is moved out of _handleSuccess to make
+            // it a sync function. Having _handleSuccess as an async function
+            // messes up the jest tests for some reason.
+            if (this._chain) {
+              await this._storage.set(
+                KEY_LOCALSTORAGE_DELEGATION,
+                JSON.stringify(this._chain.toJSON()),
+              );
+            }
+          } catch (err) {
+            this._handleFailure(err.message, options?.onError);
+          }
+          break;
+        case 'authorize-client-failure':
+          this._handleFailure(message.text, options?.onError);
+          break;
+        default:
+          break;
+      }
+    };
+  }
+
+  private _handleFailure(errorMessage?: string, onError?: (error?: string) => void): void {
+    this._idpWindow?.close();
+    onError?.(errorMessage);
+    this._removeEventListener();
+  }
+
+  private _removeEventListener() {
+    if (this._eventHandler) {
+      window.removeEventListener('message', this._eventHandler);
     }
+    this._eventHandler = undefined;
   }
 
   public async logout(options: { returnTo?: string } = {}): Promise<void> {
