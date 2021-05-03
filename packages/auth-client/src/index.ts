@@ -181,8 +181,8 @@ export class AuthClient {
     private _storage: AuthClientStorage,
     // A handle on the IdP window.
     private _idpWindow?: Window,
-    // A controller used to remove the event listener in the login flow.
-    private _abortController?: AbortController,
+    // The event handler for processing events from the IdP.
+    private _eventHandler?: (event: Event) => void,
   ) {}
 
   private _handleSuccess(
@@ -215,7 +215,7 @@ export class AuthClient {
 
     this._idpWindow?.close();
     onSuccess?.();
-    this._abortController?.abort(); // Send the abort signal to remove event listener.
+    this._removeEventListener();
   }
 
   public getIdentity(): Identity {
@@ -245,16 +245,18 @@ export class AuthClient {
     // If `login` has been called previously, then close/remove any previous windows
     // and event listeners.
     this._idpWindow?.close();
-    this._abortController?.abort();
+    this._removeEventListener();
 
     // Add an event listener to handle responses.
-    // The event listener is associated with a controller that signals the listener
-    // to remove itself as soon as authentication is complete.
-    this._abortController = new AbortController();
+    this._eventHandler = this._getEventHandler(identityProviderUrl, options);
+    window.addEventListener('message', this._eventHandler);
 
-    // eslint-disable-next-line
-    // @ts-ignore (typescript doesn't understand adding an event listener with a signal).
-    window.addEventListener('message', async event => {
+    // Open a new window with the IDP provider.
+    this._idpWindow = window.open(identityProviderUrl.toString(), 'idpWindow') ?? undefined;
+  }
+
+  private _getEventHandler(identityProviderUrl: URL, options?: AuthClientLoginOptions) {
+    return async (event) => {
       if (event.origin !== identityProviderUrl.origin) {
         return;
       }
@@ -293,23 +295,20 @@ export class AuthClient {
         default:
           break;
       }
-    }, {
-      // eslint-disable-next-line
-      // @ts-ignore Configure the event listener to be removed when the abort signal is triggered.
-      signal: this._abortController.signal
-    });
-
-    // Open a new window with the IDP provider.
-    const w = window.open(identityProviderUrl.toString(), 'idpWindow');
-    if (w) {
-      this._idpWindow = w;
     }
   }
 
   private _handleFailure(errorMessage?: string, onError?: (error?: string) => void): void {
     this._idpWindow?.close();
     onError?.(errorMessage);
-    this._abortController?.abort(); // Send the abort signal to remove event listener.
+    this._removeEventListener();
+  }
+
+  private _removeEventListener() {
+    if (this._eventHandler) {
+      window.removeEventListener('message', this._eventHandler);
+    }
+    this._eventHandler = undefined;
   }
 
   public async logout(options: { returnTo?: string } = {}): Promise<void> {
