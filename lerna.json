@@ -1,13 +1,5 @@
 {
-  "packages": [
-    "demos/*",
-    "e2e/*",
-    "packages/*"
-  ],
+  "packages": ["demos/*", "e2e/*", "packages/*"],
   "hoist": true,
-<<<<<<< HEAD
-  "version": "0.8.5"
-=======
   "version": "0.8.6"
->>>>>>> next
 }
