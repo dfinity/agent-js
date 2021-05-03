@@ -3,8 +3,8 @@ import {
   blobFromUint8Array,
   derBlobFromBlob,
   Identity,
-  SignIdentity,
   Principal,
+  SignIdentity,
 } from '@dfinity/agent';
 import { isDelegationValid } from '@dfinity/authentication';
 import {
@@ -64,13 +64,13 @@ export interface AuthClientStorage {
 }
 
 interface InternetIdentityAuthRequest {
-  kind: "authorize-client";
+  kind: 'authorize-client';
   sessionPublicKey: Uint8Array;
   maxTimetoLive?: bigint;
 }
 
 interface InternetIdentityAuthResponseSuccess {
-  kind: "authorize-client-success";
+  kind: 'authorize-client-success';
   delegations: {
     delegation: {
       pubkey: Uint8Array;
@@ -125,6 +125,31 @@ export class LocalStorage implements AuthClientStorage {
     return ls;
   }
 }
+
+interface AuthReadyMessage {
+  kind: 'authorize-ready';
+}
+
+interface AuthResponseSuccess {
+  kind: 'authorize-client-success';
+  delegations: {
+    delegation: {
+      pubkey: Uint8Array;
+      expiration: bigint;
+      targets?: Principal[];
+    };
+    signature: Uint8Array;
+  }[];
+  userPublicKey: Uint8Array;
+}
+
+interface AuthResponseFailure {
+  kind: 'authorize-client-failure';
+  text: string;
+}
+
+type IdentityServiceResponseMessage = AuthReadyMessage | AuthResponse;
+type AuthResponse = AuthResponseSuccess | AuthResponseFailure;
 
 export class AuthClient {
   public static async create(options: AuthClientCreateOptions = {}): Promise<AuthClient> {
@@ -185,10 +210,7 @@ export class AuthClient {
     private _eventHandler?: (event: MessageEvent) => void,
   ) {}
 
-  private _handleSuccess(
-    message: InternetIdentityAuthResponseSuccess,
-    onSuccess?: () => void,
-  ) {
+  private _handleSuccess(message: InternetIdentityAuthResponseSuccess, onSuccess?: () => void) {
     const delegations = message.delegations.map(signedDelegation => {
       return {
         delegation: new Delegation(
@@ -261,7 +283,7 @@ export class AuthClient {
         return;
       }
 
-      const message = event.data;
+      const message = event.data as IdentityServiceResponseMessage;
 
       switch (message.kind) {
         case 'authorize-ready': {
@@ -269,7 +291,7 @@ export class AuthClient {
           const request: InternetIdentityAuthRequest = {
             kind: 'authorize-client',
             sessionPublicKey: this._key?.getPublicKey().toDer() as Uint8Array,
-            maxTimetoLive: options?.maxTimeToLive
+            maxTimetoLive: options?.maxTimeToLive,
           };
           this._idpWindow?.postMessage(request, identityProviderUrl.origin);
           break;
@@ -283,10 +305,13 @@ export class AuthClient {
             // it a sync function. Having _handleSuccess as an async function
             // messes up the jest tests for some reason.
             if (this._chain) {
-              await this._storage.set(KEY_LOCALSTORAGE_DELEGATION, JSON.stringify(this._chain.toJSON()));
+              await this._storage.set(
+                KEY_LOCALSTORAGE_DELEGATION,
+                JSON.stringify(this._chain.toJSON()),
+              );
             }
           } catch (err) {
-            this._handleFailure(err.message, options?.onError)
+            this._handleFailure(err.message, options?.onError);
           }
           break;
         case 'authorize-client-failure':
@@ -295,7 +320,7 @@ export class AuthClient {
         default:
           break;
       }
-    }
+    };
   }
 
   private _handleFailure(errorMessage?: string, onError?: (error?: string) => void): void {
