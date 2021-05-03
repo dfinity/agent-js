@@ -182,7 +182,7 @@ export class AuthClient {
     // A handle on the IdP window.
     private _idpWindow?: Window,
     // The event handler for processing events from the IdP.
-    private _eventHandler?: (event: Event) => void,
+    private _eventHandler?: (event: MessageEvent) => void,
   ) {}
 
   private _handleSuccess(
@@ -256,7 +256,7 @@ export class AuthClient {
   }
 
   private _getEventHandler(identityProviderUrl: URL, options?: AuthClientLoginOptions) {
-    return async (event) => {
+    return async (event: MessageEvent) => {
       if (event.origin !== identityProviderUrl.origin) {
         return;
       }
