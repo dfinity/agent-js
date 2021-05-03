@@ -63,6 +63,25 @@ export interface AuthClientStorage {
   remove(key: string): Promise<void>;
 }
 
+interface InternetIdentityAuthRequest {
+  kind: 'authorize-client';
+  sessionPublicKey: Uint8Array;
+  maxTimetoLive?: bigint;
+}
+
+interface InternetIdentityAuthResponseSuccess {
+  kind: 'authorize-client-success';
+  delegations: {
+    delegation: {
+      pubkey: Uint8Array;
+      expiration: bigint;
+      targets?: Principal[];
+    };
+    signature: Uint8Array;
+  }[];
+  userPublicKey: Uint8Array;
+}
+
 async function _deleteStorage(storage: AuthClientStorage) {
   await storage.remove(KEY_LOCALSTORAGE_KEY);
   await storage.remove(KEY_LOCALSTORAGE_DELEGATION);
@@ -187,17 +206,11 @@ export class AuthClient {
     private _storage: AuthClientStorage,
     // A handle on the IdP window.
     private _idpWindow?: Window,
-    // A controller used to remove the event listener in the login flow.
-    private _abortController?: AbortController,
+    // The event handler for processing events from the IdP.
+    private _eventHandler?: (event: MessageEvent) => void,
   ) {}
 
-  private async _createDelegation(
-    message: AuthResponseSuccess,
-    event: MessageEvent,
-    onSuccess?: () => void,
-  ) {
-    // eslint-disable-next-line
-    // @ts-ignore (typescript doesn't understand adding an event listener with a signal).
+  private _handleSuccess(message: InternetIdentityAuthResponseSuccess, onSuccess?: () => void) {
     const delegations = message.delegations.map(signedDelegation => {
       return {
         delegation: new Delegation(
@@ -211,7 +224,7 @@ export class AuthClient {
 
     const delegationChain = DelegationChain.fromDelegations(
       delegations,
-      derBlobFromBlob(blobFromUint8Array(event.data.userPublicKey)),
+      derBlobFromBlob(blobFromUint8Array(message.userPublicKey)),
     );
 
     const key = this._key;
@@ -220,12 +233,11 @@ export class AuthClient {
     }
 
     this._chain = delegationChain;
-    await this._storage.set(KEY_LOCALSTORAGE_DELEGATION, JSON.stringify(this._chain.toJSON()));
     this._identity = DelegationIdentity.fromDelegation(key, this._chain);
 
     this._idpWindow?.close();
     onSuccess?.();
-    this._abortController?.abort(); // Send the abort signal to remove event listener.
+    this._removeEventListener();
   }
 
   public getIdentity(): Identity {
@@ -255,14 +267,18 @@ export class AuthClient {
     // If `login` has been called previously, then close/remove any previous windows
     // and event listeners.
     this._idpWindow?.close();
-    this._abortController?.abort();
+    this._removeEventListener();
 
     // Add an event listener to handle responses.
-    // The event listener is associated with a controller that signals the listener
-    // to remove itself as soon as authentication is complete.
-    this._abortController = new AbortController();
+    this._eventHandler = this._getEventHandler(identityProviderUrl, options);
+    window.addEventListener('message', this._eventHandler);
 
-    window.addEventListener('message', async event => {
+    // Open a new window with the IDP provider.
+    this._idpWindow = window.open(identityProviderUrl.toString(), 'idpWindow') ?? undefined;
+  }
+
+  private _getEventHandler(identityProviderUrl: URL, options?: AuthClientLoginOptions) {
+    return async (event: MessageEvent) => {
       if (event.origin !== identityProviderUrl.origin) {
         return;
       }
@@ -270,36 +286,54 @@ export class AuthClient {
       const message = event.data as IdentityServiceResponseMessage;
 
       switch (message.kind) {
-        case 'authorize-ready':
+        case 'authorize-ready': {
           // IDP is ready. Send a message to request authorization.
-          this._idpWindow?.postMessage(
-            {
-              kind: 'authorize-client',
-              sessionPublicKey: this._key?.getPublicKey().toDer(),
-              maxTimeToLive: options?.maxTimeToLive,
-            },
-            identityProviderUrl.origin,
-          );
+          const request: InternetIdentityAuthRequest = {
+            kind: 'authorize-client',
+            sessionPublicKey: this._key?.getPublicKey().toDer() as Uint8Array,
+            maxTimetoLive: options?.maxTimeToLive,
+          };
+          this._idpWindow?.postMessage(request, identityProviderUrl.origin);
           break;
+        }
         case 'authorize-client-success':
           // Create the delegation chain and store it.
-          this._createDelegation(message, event, options?.onSuccess);
+          try {
+            this._handleSuccess(message, options?.onSuccess);
+
+            // Setting the storage is moved out of _handleSuccess to make
+            // it a sync function. Having _handleSuccess as an async function
+            // messes up the jest tests for some reason.
+            if (this._chain) {
+              await this._storage.set(
+                KEY_LOCALSTORAGE_DELEGATION,
+                JSON.stringify(this._chain.toJSON()),
+              );
+            }
+          } catch (err) {
+            this._handleFailure(err.message, options?.onError);
+          }
           break;
         case 'authorize-client-failure':
-          this._idpWindow?.close();
-          options?.onError?.(message.text);
-          this._abortController?.abort(); // Send the abort signal to remove event listener.
+          this._handleFailure(message.text, options?.onError);
           break;
         default:
           break;
       }
-    });
+    };
+  }
 
-    // Open a new window with the IDP provider.
-    const w = window.open(identityProviderUrl.toString(), 'idpWindow');
-    if (w) {
-      this._idpWindow = w;
+  private _handleFailure(errorMessage?: string, onError?: (error?: string) => void): void {
+    this._idpWindow?.close();
+    onError?.(errorMessage);
+    this._removeEventListener();
+  }
+
+  private _removeEventListener() {
+    if (this._eventHandler) {
+      window.removeEventListener('message', this._eventHandler);
     }
+    this._eventHandler = undefined;
   }
 
   public async logout(options: { returnTo?: string } = {}): Promise<void> {
