@@ -4,9 +4,12 @@
  * TODO: Add support for streaming.
  */
 import { Actor, IDL, HttpAgent, Principal } from '@dfinity/agent';
+import { validateBody } from "./validation";
+import * as base64Arraybuffer from 'base64-arraybuffer';
+import * as pako from 'pako';
 
 async function getAgent() {
-  const replicaUrl = new URL("http://localhost:8000");
+  const replicaUrl = new URL("http://localhost:8080/");
   return new HttpAgent({ host: replicaUrl.toString() });
 }
 
@@ -61,9 +64,13 @@ function maybeResolveCanisterIdFromSearchParam(searchParams: URLSearchParams): P
  * @returns A Canister ID or null if none were found.
  */
 function resolveCanisterIdFromUrl(urlString: string): Principal | null {
-  const url = new URL(urlString);
-  return maybeResolveCanisterIdFromHostName(url.hostname)
-    || maybeResolveCanisterIdFromSearchParam(url.searchParams);
+  try {
+    const url = new URL(urlString);
+    return maybeResolveCanisterIdFromHostName(url.hostname)
+      || maybeResolveCanisterIdFromSearchParam(url.searchParams);
+  } catch (_) {
+    return null;
+  }
 }
 
 /**
@@ -148,30 +155,69 @@ export async function handleRequest(request: Request): Promise<Response> {
   const maybeCanisterId = maybeResolveCanisterIdFromHttpRequest(request);
   if (maybeCanisterId) {
     try {
+      const agent = await getAgent();
       const actor = Actor.createActor(canisterIdlFactory, {
-        agent: await getAgent(),
+        agent,
         canisterId: maybeCanisterId,
       });
       const requestHeaders: [string, string][] = [];
       request.headers.forEach((key, value) => requestHeaders.push([key, value]));
 
+      console.log(`Forwarding request to the IC for URL "${url}".`);
       const httpRequest = {
         method: request.method,
         url: url.pathname + url.search,
         headers: requestHeaders,
         body: [...new Uint8Array(await request.arrayBuffer())],
       };
-      const httpResponse: any = await actor.http_request(httpRequest);
 
-      const responseHeaders = new Headers();
+      const httpResponse: any = await actor.http_request(httpRequest);
+      const body = new Uint8Array(httpResponse.body);
+      let response = new Response(body.buffer, {
+        status: httpResponse.status_code,
+      });
+
+      let certificate: ArrayBuffer | undefined;
+      let tree: ArrayBuffer | undefined;
+      let encoding = '';
       for (const [key, value] of httpResponse.headers) {
-        responseHeaders.append(key, value);
+        switch (key.trim().toLowerCase()) {
+          case 'ic-certificate':
+            {
+              const fields = value.split(/,/);
+              for (const f of fields) {
+                const [_0, name, b64Value] = [...f.match(/^(.*)=:(.*):$/)].map(x => x.trim());
+                const value = base64Arraybuffer.decode(b64Value);
+
+                if (name === 'certificate') {
+                  certificate = value;
+                } else if (name === 'tree') {
+                  tree = value;
+                }
+              }
+            }
+            continue;
+          case 'content-encoding':
+            encoding = value.trim();
+            break;
+        }
+
+        response.headers.append(key, value);
       }
 
-      return new Response(new Uint8Array(httpResponse.body), {
-        status: httpResponse.status_code,
-        headers: responseHeaders,
-      });
+      if (encoding === 'gzip') {
+        // decode it before passing it back.
+        const newBody = pako.ungzip(body);
+        response = new Response(newBody, response);
+      }
+
+      if (certificate && tree && await validateBody(maybeCanisterId, body.buffer, certificate, tree, agent)) {
+        return response;
+      } else {
+        console.error('BODY DOES NOT PASS VERIFICATION');
+        return response;
+        // return new Response("Body does not pass verification", { status: 500 });
+      }
     } catch (e) {
       console.error("An error happened:", e);
       return new Response(null, { status: 500 });

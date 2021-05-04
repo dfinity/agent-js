@@ -1,4 +1,3 @@
-import { sha256 } from 'js-sha256';
 import { handleRequest } from './http_request';
 
 declare const self: ServiceWorkerGlobalScope;

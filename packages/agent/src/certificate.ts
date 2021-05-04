@@ -2,9 +2,15 @@ import { Buffer } from 'buffer/';
 import { Agent, getDefaultAgent, ReadStateResponse } from './agent';
 import * as cbor from './cbor';
 import { hash } from './request_id';
-import { BinaryBlob, blobFromText } from './types';
+import {
+  BinaryBlob,
+  blobFromBuffer,
+  blobFromText,
+  blobFromUint8Array,
+  blobToHex,
+  blobToUint8Array,
+} from './types';
 import { blsVerify } from './utils/bls';
-import { Principal } from "./principal";
 
 async function getRootKey(agent: Agent): Promise<BinaryBlob> {
   // TODO add the real root key for Mercury
@@ -30,6 +36,45 @@ export type HashTree =
   | [2, ArrayBuffer, HashTree]
   | [3, ArrayBuffer]
   | [4, ArrayBuffer];
+
+/**
+ * Make a human readable string out of a hash tree.
+ * @param tree
+ */
+export function hashTreeToString(tree: HashTree): string {
+  const indent = (s: string) => s.split('\n').map(x => '  ' + x).join('\n');
+  function labelToString(label: ArrayBuffer): string {
+    const decoder = new TextDecoder(undefined, { fatal: true });
+    try {
+      return JSON.stringify(decoder.decode(label));
+    } catch (e) {
+      return `data(...${label.byteLength} bytes)`;
+    }
+  }
+
+  switch (tree[0]) {
+    case 0: return '()';
+    case 1: {
+      const left = hashTreeToString(tree[1]);
+      const right = hashTreeToString(tree[2]);
+      return `sub(\n left:\n${indent(left)}\n---\n right:\n${indent(right)}\n)`;
+    }
+    case 2: {
+      const label = labelToString(tree[1]);
+      const sub = hashTreeToString(tree[2]);
+      return `label(\n label:\n${indent(label)}\n sub:\n${indent(sub)}\n)`;
+    }
+    case 3: {
+      return `leaf(...${tree[1].byteLength} bytes)`;
+    }
+    case 4: {
+      return `pruned(${blobToHex(blobFromUint8Array(new Uint8Array(tree[1])))}`;
+    }
+    default: {
+      return `unknown(${JSON.stringify(tree[0])})`;
+    }
+  }
+}
 
 interface Delegation extends Record<string, any> {
   subnet_id: Buffer;
@@ -58,6 +103,16 @@ export class Certificate {
     this.cert = cbor.decode(response.certificate);
   }
 
+  public lookupEx(path: Array<ArrayBuffer | string>): ArrayBuffer | undefined {
+    const maybeReturn = this.lookup(path.map(p => {
+      if (typeof p === 'string') {
+        return blobFromText(p);
+      } else {
+        return blobFromUint8Array(new Uint8Array(p));
+      }
+    }));
+    return maybeReturn && blobToUint8Array(blobFromBuffer(maybeReturn));
+  }
   public lookup(path: Buffer[]): Buffer | undefined {
     if (!this.verified) {
       throw new Error('Cannot lookup unverified certificate');
