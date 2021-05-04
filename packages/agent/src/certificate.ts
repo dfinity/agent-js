@@ -4,11 +4,17 @@ import * as cbor from './cbor';
 import { hash } from './request_id';
 import { BinaryBlob, blobFromText } from './types';
 import { blsVerify } from './utils/bls';
-import { Principal } from "./principal";
+import { Principal } from './principal';
 
-async function getRootKey(agent: Agent): Promise<BinaryBlob> {
-  // TODO add the real root key for Mercury
-  return ((await agent.status()) as any).root_key;
+async function getRootKey(agent: Agent, shouldFetchRootKey = false): Promise<BinaryBlob> {
+  if (shouldFetchRootKey) {
+    return ((await agent.status()) as any).root_key;
+  }
+  return blobFromText(`-----BEGIN PUBLIC KEY-----
+  MIGCMB0GDSsGAQQBgtx8BQMBAgEGDCsGAQQBgtx8BQMCAQNhAIFMDm7HH6tYOwi9
+  gTc8JVw8NxsuhIY8mKTx4It0I10U+12cDNVG2WhfkToMCyzFNBWDv0tDkuRn25bW
+  W5u0y3FxEvhHLg1aTRRQX/10hLASkQkcX4e5iINGP5gJGguqrg==
+  -----END PUBLIC KEY-----`);
 }
 
 interface Cert {
@@ -48,14 +54,19 @@ function isBufferEqual(a: Buffer, b: Buffer): boolean {
   return true;
 }
 
-
 export class Certificate {
   private readonly cert: Cert;
   private verified = false;
   private _rootKey: BinaryBlob | null = null;
+  private _shouldFetchRootKey: boolean;
 
-  constructor(response: ReadStateResponse, private _agent: Agent = getDefaultAgent()) {
+  constructor(
+    response: ReadStateResponse,
+    private _agent: Agent = getDefaultAgent(),
+    shouldFetchRootKey?: boolean,
+  ) {
     this.cert = cbor.decode(response.certificate);
+    this._shouldFetchRootKey = shouldFetchRootKey || false;
   }
 
   public lookup(path: Buffer[]): Buffer | undefined {
@@ -79,7 +90,7 @@ export class Certificate {
   private async _checkDelegation(d?: Delegation): Promise<Buffer> {
     if (!d) {
       if (!this._rootKey) {
-        this._rootKey = await getRootKey(this._agent);
+        this._rootKey = await getRootKey(this._agent, this._shouldFetchRootKey);
       }
       return this._rootKey;
     }

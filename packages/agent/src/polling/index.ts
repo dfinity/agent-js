@@ -26,10 +26,11 @@ export async function pollForResponse(
   canisterId: Principal,
   requestId: RequestId,
   strategy: PollStrategy,
+  shouldFetchRootKey?: boolean,
 ): Promise<BinaryBlob> {
   const path = [blobFromText('request_status'), requestId];
   const state = await agent.readState(canisterId, { paths: [path] });
-  const cert = new Certificate(state, agent);
+  const cert = new Certificate(state, agent, shouldFetchRootKey);
   const verified = await cert.verify();
   if (!verified) {
     throw new Error('Fail to verify certificate');
