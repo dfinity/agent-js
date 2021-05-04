@@ -111,17 +111,17 @@ export class HttpAgent implements Agent {
     } else {
       this._fetch = options.fetch || getDefaultFetch() || fetch.bind(global);
     }
-    if (options.host) {
+    if (options.host !== undefined) {
       if (!options.host.match(/^[a-z]+:/) && typeof window !== 'undefined') {
         this._host = new URL(window.location.protocol + '//' + options.host);
       } else {
         this._host = new URL(options.host);
       }
-    } else if (options.source) {
+    } else if (options.source !== undefined) {
       // Safe to ignore here.
       this._host = options.source._host;
     } else {
-      const location = window?.location;
+      const location = typeof window !== "undefined" ? window.location : undefined;
       if (!location) {
         throw new Error('Must specify a host to connect to.');
       }
