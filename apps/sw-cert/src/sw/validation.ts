@@ -1,12 +1,12 @@
 import {
   blobFromUint8Array,
-  // blobToUint8Array,
-  // Cbor as cbor,
+  blobToUint8Array,
+  Cbor as cbor,
   Certificate,
-  // HashTree,
+  HashTree,
   HttpAgent,
-  // reconstruct,
-  Principal,
+  reconstruct,
+  Principal, hashTreeToString, blobToHex,
 } from "@dfinity/agent";
 
 /**
@@ -31,10 +31,24 @@ export async function validateBody(
     return false;
   }
 
-  // const hashTree: HashTree = cbor.decode(new Uint8Array(tree));
-  // const reconstructed = reconstruct(hashTree);
-  // const witness = cert.lookupEx(["http_assets", blobToUint8Array(canisterId.toBlob()), "certified_data"]);
-  //
-  // console.log(witness, reconstructed);
-  return true;
+  const hashTree: HashTree = cbor.decode(new Uint8Array(tree));
+  const reconstructed = await reconstruct(hashTree);
+  const witness = cert.lookupEx(["canister", blobToUint8Array(canisterId.toBlob()), "certified_data"]);
+
+  if (!witness) {
+    throw new Error('Could not find certified data for this canister in the certificate.');
+  }
+
+  let isEqual = true;
+  const witnessView = new Uint8Array(witness);
+  reconstructed.forEach((byte, i) => {
+    if (witnessView[i] !== byte) {
+      isEqual = false;
+    }
+  });
+
+
+  console.log(`Witness ${blobToHex(blobFromUint8Array(new Uint8Array(witness)))} isEqual? ${isEqual}`);
+
+  return isEqual;
 }

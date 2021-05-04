@@ -205,10 +205,11 @@ export async function handleRequest(request: Request): Promise<Response> {
         response.headers.append(key, value);
       }
 
-      if (encoding === 'gzip') {
-        // decode it before passing it back.
-        const newBody = pako.ungzip(body);
-        response = new Response(newBody, response);
+      switch (encoding) {
+        case '': break;
+        case 'gzip': response = new Response(pako.ungzip(body), response); break;
+        case 'deflate': response = new Response(pako.inflate(body), response); break;
+        default: throw new Error(`Unsupported encoding: "${encoding}"`);
       }
 
       if (certificate && tree && await validateBody(maybeCanisterId, body.buffer, certificate, tree, agent)) {
