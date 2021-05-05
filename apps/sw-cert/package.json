@@ -1,0 +1,32 @@
+{
+  "name": "ic-agent-sw-cert-app",
+  "private": true,
+  "dependencies": {
+    "@dfinity/agent": "^0.8.6",
+    "assert": "^2.0.0",
+    "buffer": "^6.0.3",
+    "events": "^3.2.0",
+    "html-webpack-plugin": "^5.1.0",
+    "http-server": "^0.12.3",
+    "js-sha256": "^0.9.0",
+    "process": "^0.11.10",
+    "stream-browserify": "^3.0.0",
+    "ts-loader": "^9.1.1",
+    "typescript": "^4.2.4",
+    "util": "^0.12.3",
+    "webpack": "^5.24.1",
+    "webpack-cli": "^4.5.0",
+    "webpack-dev-server": "^4.0.0-beta.0"
+  },
+  "scripts": {
+    "build": "webpack",
+    "develop": "webpack-dev-server",
+    "start": "npm run build; http-server dist --proxy http://localhost:8000/",
+    "lint:fix": "npm run lint -- --fix",
+    "make:docs/reference": "",
+    "publish:release": "",
+    "test:coverage": "",
+    "test": ""
+  },
+  "version": "0.8.6"
+}
