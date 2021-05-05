@@ -1,12 +1,16 @@
+import { sha256 } from "js-sha256";
 import {
+  blobFromHex,
   blobFromUint8Array,
+  blobToHex,
   blobToUint8Array,
   Cbor as cbor,
   Certificate,
   HashTree,
   HttpAgent,
+  lookupPathEx,
   reconstruct,
-  Principal, hashTreeToString, blobToHex,
+  Principal, hashTreeToString,
 } from "@dfinity/agent";
 
 /**
@@ -20,6 +24,7 @@ import {
  */
 export async function validateBody(
   canisterId: Principal,
+  path: string,
   body: ArrayBuffer,
   certificate: ArrayBuffer,
   tree: ArrayBuffer,
@@ -39,16 +44,38 @@ export async function validateBody(
     throw new Error('Could not find certified data for this canister in the certificate.');
   }
 
-  let isEqual = true;
-  const witnessView = new Uint8Array(witness);
-  reconstructed.forEach((byte, i) => {
-    if (witnessView[i] !== byte) {
-      isEqual = false;
+  // First validate that the Tree is as good as the certification.
+  if (!equal(witness, reconstructed)) {
+    console.error('Witness != Tree passed in ic-certification');
+    return false;
+  }
+
+  // Next, calculate the SHA of the content.
+  const sha = sha256.arrayBuffer(body);
+  const treeSha = lookupPathEx(["http_assets", path], hashTree);
+
+  // First check if treeSha is not undefined.
+  if (!treeSha) {
+    console.log('treeSha undefined??');
+    console.log(hashTreeToString(hashTree));
+    console.log(path);
+  }
+
+  return !!treeSha && equal(sha, treeSha);
+}
+
+function equal(buf1: ArrayBuffer, buf2: ArrayBuffer): boolean {
+  if (buf1.byteLength !== buf2.byteLength) {
+    return false;
+  }
+
+  const a1 = new Uint8Array(buf1);
+  const a2 = new Uint8Array(buf2);
+  for (let i = 0; i < a1.length; i++) {
+    if (a1[i] != a2[i]) {
+      return false;
     }
-  });
+  }
 
-
-  console.log(`Witness ${blobToHex(blobFromUint8Array(new Uint8Array(witness)))} isEqual? ${isEqual}`);
-
-  return isEqual;
+  return true;
 }

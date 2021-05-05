@@ -104,14 +104,10 @@ export class Certificate {
   }
 
   public lookupEx(path: Array<ArrayBuffer | string>): ArrayBuffer | undefined {
-    const maybeReturn = this.lookup(path.map(p => {
-      if (typeof p === 'string') {
-        return blobFromText(p);
-      } else {
-        return blobFromUint8Array(new Uint8Array(p));
-      }
-    }));
-    return maybeReturn && blobToUint8Array(blobFromBuffer(maybeReturn));
+    if (!this.verified) {
+      throw new Error('Cannot lookup unverified certificate');
+    }
+    return lookupPathEx(path, this.cert.tree);
   }
   public lookup(path: Buffer[]): Buffer | undefined {
     if (!this.verified) {
@@ -209,6 +205,25 @@ function domain_sep(s: string): Buffer {
   const buf = Buffer.alloc(1);
   buf.writeUInt8(s.length, 0);
   return Buffer.concat([buf, Buffer.from(s)]);
+}
+
+/**
+ *
+ * @param path
+ * @param tree
+ */
+export function lookupPathEx(
+  path: Array<ArrayBuffer | string>,
+  tree: HashTree,
+): ArrayBuffer | undefined {
+  const maybeReturn = lookup_path(path.map(p => {
+    if (typeof p === 'string') {
+      return blobFromText(p);
+    } else {
+      return blobFromUint8Array(new Uint8Array(p));
+    }
+  }), tree);
+  return maybeReturn && blobToUint8Array(blobFromBuffer(maybeReturn));
 }
 
 /**

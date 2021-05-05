@@ -205,19 +205,27 @@ export async function handleRequest(request: Request): Promise<Response> {
         response.headers.append(key, value);
       }
 
-      switch (encoding) {
-        case '': break;
-        case 'gzip': response = new Response(pako.ungzip(body), response); break;
-        case 'deflate': response = new Response(pako.inflate(body), response); break;
-        default: throw new Error(`Unsupported encoding: "${encoding}"`);
+      let bodyValid = false;
+      if (certificate && tree) {
+        bodyValid = await validateBody(
+          maybeCanisterId,
+          url.pathname,
+          body.buffer,
+          certificate,
+          tree,
+          agent,
+        );
       }
-
-      if (certificate && tree && await validateBody(maybeCanisterId, body.buffer, certificate, tree, agent)) {
-        return response;
+      if (bodyValid) {
+        switch (encoding) {
+          case '': return response;
+          case 'gzip': return new Response(pako.ungzip(body), response);
+          case 'deflate': return new Response(pako.inflate(body), response);
+          default: throw new Error(`Unsupported encoding: "${encoding}"`);
+        }
       } else {
         console.error('BODY DOES NOT PASS VERIFICATION');
-        return response;
-        // return new Response("Body does not pass verification", { status: 500 });
+        return new Response("Body does not pass verification", { status: 500 });
       }
     } catch (e) {
       console.error("An error happened:", e);
