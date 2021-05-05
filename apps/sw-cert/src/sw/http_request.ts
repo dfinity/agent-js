@@ -163,7 +163,6 @@ export async function handleRequest(request: Request): Promise<Response> {
       const requestHeaders: [string, string][] = [];
       request.headers.forEach((key, value) => requestHeaders.push([key, value]));
 
-      console.log(`Forwarding request to the IC for URL "${url}".`);
       const httpRequest = {
         method: request.method,
         url: url.pathname + url.search,
