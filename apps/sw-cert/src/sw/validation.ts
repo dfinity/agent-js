@@ -16,7 +16,7 @@ import {
 /**
  * Validate whether a body is properly certified.
  * @param canisterId
- * @param body An asset body, unencoded (not compressed or transformed).
+ * @param body An asset body, as it appears on the HTTP response (not decoded)
  * @param certificate The certificate to validate the .
  * @param tree The merkle tree returned by the canister.
  * @param agent A JavaScript agent that can validate certificates.
