@@ -80,7 +80,7 @@ function concat(bs: BinaryBlob[]): BinaryBlob {
 /**
  * Get the RequestId of the provided ic-ref request.
  * RequestId is the result of the representation-independent-hash function.
- * https://docs.dfinity.systems/public/#api-hash-of-map
+ * https://sdk.dfinity.org/docs/interface-spec/index.html#hash-of-map
  * @param request - ic-ref request to hash into RequestId
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
