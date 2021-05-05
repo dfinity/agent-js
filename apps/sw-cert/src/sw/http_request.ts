@@ -8,11 +8,6 @@ import { validateBody } from "./validation";
 import * as base64Arraybuffer from 'base64-arraybuffer';
 import * as pako from 'pako';
 
-async function getAgent() {
-  const replicaUrl = new URL("http://localhost:8080/");
-  return new HttpAgent({ host: replicaUrl.toString() });
-}
-
 /**
  * Try to resolve the Canister ID to contact in the domain name.
  * @param hostname The domain name to look up.
@@ -155,7 +150,8 @@ export async function handleRequest(request: Request): Promise<Response> {
   const maybeCanisterId = maybeResolveCanisterIdFromHttpRequest(request);
   if (maybeCanisterId) {
     try {
-      const agent = await getAgent();
+      const replicaUrl = new URL(url.origin);
+      const agent = new HttpAgent({ host: replicaUrl.toString() });
       const actor = Actor.createActor(canisterIdlFactory, {
         agent,
         canisterId: maybeCanisterId,
