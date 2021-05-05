@@ -153,7 +153,7 @@ export class WebAuthnIdentity extends SignIdentity {
    * @param credentialCreationOptions an optional CredentialCreationOptions Challenge
    */
   public static async create(
-    credentialCreationOptions: CredentialCreationOptions,
+    credentialCreationOptions?: CredentialCreationOptions,
   ): Promise<WebAuthnIdentity> {
     const creds = await _createCredential(credentialCreationOptions);
 
