@@ -3,7 +3,7 @@ import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
 import { Principal } from '../../principal';
 import { requestIdOf } from '../../request_id';
-import { BinaryBlob, JsonObject } from '../../types';
+import { BinaryBlob, blobFromHex, JsonObject } from '../../types';
 import {
   Agent,
   QueryFields,
@@ -97,11 +97,14 @@ export class HttpAgent implements Agent {
   private readonly _fetch: typeof fetch;
   private readonly _host: URL;
   private readonly _credentials: string | undefined;
+  public rootKey = blobFromHex(
+    '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100814c0e6ec71fab583b08bd81373c255c3c371b2e84863c98a4f1e08b74235d14fb5d9c0cd546d9685f913a0c0b2cc5341583bf4b4392e467db96d65b9bb4cb717112f8472e0d5a4d14505ffd7484b01291091c5f87b98883463f98091a0baaae',
+  );
 
   constructor(options: HttpAgentOptions = {}) {
     if (options.source) {
       if (!(options.source instanceof HttpAgent)) {
-        throw new Error('An Agent\'s source can only be another HttpAgent');
+        throw new Error("An Agent's source can only be another HttpAgent");
       }
       this._pipeline = [...options.source._pipeline];
       this._identity = options.source._identity;
@@ -121,7 +124,7 @@ export class HttpAgent implements Agent {
       // Safe to ignore here.
       this._host = options.source._host;
     } else {
-      const location = typeof window !== "undefined" ? window.location : undefined;
+      const location = typeof window !== 'undefined' ? window.location : undefined;
       if (!location) {
         throw new Error('Must specify a host to connect to.');
       }
@@ -200,8 +203,8 @@ export class HttpAgent implements Agent {
     if (!response.ok) {
       throw new Error(
         `Server returned an error:\n` +
-        `  Code: ${response.status} (${response.statusText})\n` +
-        `  Body: ${await response.text()}\n`,
+          `  Code: ${response.status} (${response.statusText})\n` +
+          `  Body: ${await response.text()}\n`,
       );
     }
 
@@ -262,8 +265,8 @@ export class HttpAgent implements Agent {
     if (!response.ok) {
       throw new Error(
         `Server returned an error:\n` +
-        `  Code: ${response.status} (${response.statusText})\n` +
-        `  Body: ${await response.text()}\n`,
+          `  Code: ${response.status} (${response.statusText})\n` +
+          `  Body: ${await response.text()}\n`,
       );
     }
     return cbor.decode(Buffer.from(await response.arrayBuffer()));
@@ -313,8 +316,8 @@ export class HttpAgent implements Agent {
     if (!response.ok) {
       throw new Error(
         `Server returned an error:\n` +
-        `  Code: ${response.status} (${response.statusText})\n` +
-        `  Body: ${await response.text()}\n`,
+          `  Code: ${response.status} (${response.statusText})\n` +
+          `  Body: ${await response.text()}\n`,
       );
     }
     return cbor.decode(Buffer.from(await response.arrayBuffer()));
@@ -339,6 +342,18 @@ export class HttpAgent implements Agent {
 
     const buffer = await response.arrayBuffer();
     return cbor.decode(new Uint8Array(buffer));
+  }
+
+  /**
+   * By default, the agent is configured to talk to the main Internet Computer, and verifies responses using a hard-coded public key.
+
+    This function will instruct the agent to ask the endpoint for its public key, and use that instead. This is required when talking to a local test instance, for example.
+
+    *Only use this when you are  _not_ talking to the main Internet Computer, otherwise you are prone to man-in-the-middle attacks! Do not call this function by default.*
+   */
+  public async fetchRootKey(): Promise<void> {
+    // Hex-encoded version of the replica root key
+    this.rootKey = ((await this.status()) as any).root_key;
   }
 
   protected _transform(request: HttpAgentRequest): Promise<HttpAgentRequest> {
