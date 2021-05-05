@@ -168,7 +168,7 @@ export async function handleRequest(request: Request): Promise<Response> {
 
       const httpResponse: any = await actor.http_request(httpRequest);
       const body = new Uint8Array(httpResponse.body);
-      let response = new Response(body.buffer, {
+      const response = new Response(body.buffer, {
         status: httpResponse.status_code,
       });
 

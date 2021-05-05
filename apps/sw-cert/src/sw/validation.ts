@@ -15,7 +15,8 @@ import {
 
 /**
  * Validate whether a body is properly certified.
- * @param canisterId
+ * @param canisterId The canister ID that provided the resource.
+ * @param path The path of the resource requested to be validated (including the prefix `/`).
  * @param body An asset body, as it appears on the HTTP response (not decoded)
  * @param certificate The certificate to validate the .
  * @param tree The merkle tree returned by the canister.
