@@ -14,13 +14,13 @@ function createIdentity(seed: number): SignIdentity {
   return Ed25519KeyIdentity.generate(new Uint8Array(seed1));
 }
 
-function createIdentityActor(
+async function createIdentityActor(
   seed: number,
   canisterId: Principal,
-  idl: IDL.InterfaceFactory,
-): any {
+  idl: IDL.InterfaceFactory
+): Promise<any> {
   const identity = createIdentity(seed);
-  const agent1 = new HttpAgent({ source: agent, identity });
+  const agent1 = new HttpAgent({ source: await agent, identity });
   return Actor.createActor(idl, {
     canisterId,
     agent: agent1,
@@ -42,7 +42,7 @@ test("identity: query and call gives same principal", async () => {
   const { canisterId, idl } = await installIdentityCanister();
   const identity = Actor.createActor(idl, {
     canisterId,
-    agent,
+    agent: await agent,
   }) as any;
   const callPrincipal = await identity.whoami();
   const queryPrincipal = await identity.whoami_query();
@@ -51,8 +51,8 @@ test("identity: query and call gives same principal", async () => {
 
 test("identity: two different Ed25519 keys should have a different principal", async () => {
   const { canisterId, idl } = await installIdentityCanister();
-  const identity1 = createIdentityActor(0, canisterId, idl);
-  const identity2 = createIdentityActor(1, canisterId, idl);
+  const identity1 = await createIdentityActor(0, canisterId, idl);
+  const identity2 = await createIdentityActor(1, canisterId, idl);
 
   const principal1 = await identity1.whoami_query();
   const principal2 = await identity2.whoami_query();
@@ -73,15 +73,15 @@ test("delegation: principal is the same between delegated keys", async () => {
 
   const identityActor1 = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: agent, identity: masterKey }),
+    agent: new HttpAgent({ source: await agent, identity: masterKey }),
   }) as any;
   const identityActor2 = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: agent, identity: sessionKey }),
+    agent: new HttpAgent({ source: await agent, identity: sessionKey }),
   }) as any;
   const identityActor3 = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: agent, identity: id3 }),
+    agent: new HttpAgent({ source: await agent, identity: id3 }),
   }) as any;
 
   const principal1 = await identityActor1.whoami_query();
@@ -114,19 +114,19 @@ test("delegation: works with 3 keys", async () => {
 
   const identityActorBottom = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: agent, identity: bottomKey }),
+    agent: new HttpAgent({ source: await agent, identity: bottomKey }),
   }) as any;
   const identityActorMiddle = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: agent, identity: middleKey }),
+    agent: new HttpAgent({ source: await agent, identity: middleKey }),
   }) as any;
   const identityActorRoot = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: agent, identity: rootKey }),
+    agent: new HttpAgent({ source: await agent, identity: rootKey }),
   }) as any;
   const identityActorDelegated = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: agent, identity: idDelegated }),
+    agent: new HttpAgent({ source: await agent, identity: idDelegated }),
   }) as any;
 
   const principalBottom = await identityActorBottom.whoami_query();
@@ -173,23 +173,23 @@ test("delegation: works with 4 keys", async () => {
 
   const identityActorBottom = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: agent, identity: bottomKey }),
+    agent: new HttpAgent({ source: await agent, identity: bottomKey }),
   }) as any;
   const identityActorMiddle = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: agent, identity: middleKey }),
+    agent: new HttpAgent({ source: await agent, identity: middleKey }),
   }) as any;
   const identityActorMiddle2 = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: agent, identity: middle2Key }),
+    agent: new HttpAgent({ source: await agent, identity: middle2Key }),
   }) as any;
   const identityActorRoot = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: agent, identity: rootKey }),
+    agent: new HttpAgent({ source: await agent, identity: rootKey }),
   }) as any;
   const identityActorDelegated = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: agent, identity: idDelegated }),
+    agent: new HttpAgent({ source: await agent, identity: idDelegated }),
   }) as any;
 
   const principalBottom = await identityActorBottom.whoami_query();

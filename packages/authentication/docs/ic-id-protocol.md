@@ -12,7 +12,7 @@ This protocol is not novel and strives to be a conventional example of a system 
 
 The ic-id-protocol can be used by a software component to:
 * request that the end-user provide your app with proof of ownership over a cryptographic keyPair
-* request an AuthenticationResponse whose contents can be used to make Internet Computer Protocol requests with [Authentication](https://docs.dfinity.systems/public/#authentication), including requesting an access token that only has the capability of interacting with an enuemrated set of Canisters.
+* request an AuthenticationResponse whose contents can be used to make Internet Computer Protocol requests with [Authentication](https://sdk.dfinity.org/docs/interface-spec/#authentication), including requesting an access token that only has the capability of interacting with an enuemrated set of Canisters.
 
 System components communicate in this protocol by passing messages via HTTP. System components and the end-user communicate using a web user-agent's HTTP requests and responses.
 
@@ -40,7 +40,7 @@ At a high level, this is how an RP requests end-user Authentication using ic-id-
 * RP sends AuthenticationRequest to IDP via end-user's web user-agent
 * end-user Authenticates with RP, consents to delegate limitd authority to the Session
 * IDP sends AuthenticationResponse to RP via end-user's web user-agent
-* RP receives AuthenticationResponse access_token, decodes it, and combines the contents with the Session KeyPair *Private* Key in order to make signed, [Authenticated](https://docs.dfinity.systems/public/#authentication) Internet Computer requests.
+* RP receives AuthenticationResponse access_token, decodes it, and combines the contents with the Session KeyPair *Private* Key in order to make signed, [Authenticated](https://sdk.dfinity.org/docs/interface-spec/#authentication) Internet Computer requests.
 
 See below "Relation to OAuth2" for a sequence diagram that corresponds to this story.
 
@@ -243,7 +243,7 @@ Prefer terms defined here before defining new ones:
             <ul>
                 <li><pre>destination=/rp-destination-path</pre></li>
                 <li><pre>gibberish-opqaue-string</pre></li>
-            </ul>        
+            </ul>
         </td>
     </tr>
 </table>

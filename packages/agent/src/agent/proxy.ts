@@ -1,4 +1,6 @@
 import {
+  BinaryBlob,
+  blobFromHex,
   CallOptions,
   JsonObject,
   Principal,
@@ -157,6 +159,7 @@ export class ProxyStubAgent {
 export class ProxyAgent implements Agent {
   private _nextId = 0;
   private _pendingCalls = new Map<number, [(resolve: any) => void, (reject: any) => void]>();
+  public rootKey = null;
 
   constructor(private _backend: (msg: ProxyMessage) => void) {}
 
@@ -237,5 +240,12 @@ export class ProxyAgent implements Agent {
 
       this._backend(msg);
     });
+  }
+
+  public async fetchRootKey(): Promise<BinaryBlob> {
+    // Hex-encoded version of the replica root key
+    const rootKey = ((await this.status()) as any).root_key;
+    this.rootKey = rootKey;
+    return rootKey;
   }
 }

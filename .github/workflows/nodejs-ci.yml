@@ -45,7 +45,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           repository: "dfinity-lab/ic-ref"
-          # Personal Read-only Access Token created by hans.larsen@dfinity.org
+          # Personal Read-only Access Token created by Hans Larsen
           token: ${{ secrets.IC_REF_TOKEN }}
           path: ic-ref
           ref: ${{ matrix.spec }}

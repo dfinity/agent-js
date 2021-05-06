@@ -12,7 +12,7 @@ let cache: {
 /**
  * Create a counter Actor + canisterId
  */
-export default async function (): Promise<{
+export default async function(): Promise<{
   canisterId: Principal;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   actor: any;
@@ -20,8 +20,11 @@ export default async function (): Promise<{
   if (!cache) {
     const wasm = readFileSync(path.join(__dirname, "counter.wasm"));
 
-    const canisterId = await Actor.createCanister({ agent });
-    await Actor.install({ module: blobFromUint8Array(wasm) }, { canisterId, agent });
+    const canisterId = await Actor.createCanister({ agent: await agent });
+    await Actor.install(
+      { module: blobFromUint8Array(wasm) },
+      { canisterId, agent: await agent }
+    );
     const idl: IDL.InterfaceFactory = ({ IDL }) => {
       return IDL.Service({
         inc: IDL.Func([], [], []),
@@ -34,7 +37,7 @@ export default async function (): Promise<{
     cache = {
       canisterId,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      actor: Actor.createActor(idl, { canisterId, agent }) as any,
+      actor: Actor.createActor(idl, { canisterId, agent: await agent }) as any,
     };
   }
 
