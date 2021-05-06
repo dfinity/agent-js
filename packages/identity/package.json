@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/identity",
-  "version": "0.8.7",
+  "version": "0.8.8",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to manage identity with the Internet Computer",
@@ -39,7 +39,7 @@
     "test:coverage": "jest --verbose --collectCoverage"
   },
   "dependencies": {
-    "@dfinity/agent": "^0.8.7",
+    "@dfinity/agent": "^0.8.8",
     "borc": "^2.1.1",
     "buffer": "^5.4.3",
     "buffer-pipe": "0.0.4",
