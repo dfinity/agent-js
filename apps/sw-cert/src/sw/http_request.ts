@@ -8,12 +8,21 @@ import { validateBody } from "./validation";
 import * as base64Arraybuffer from 'base64-arraybuffer';
 import * as pako from 'pako';
 
+const hostnameCanisterIdMap: Record<string, string> = {
+  'identity.ic0.page': 'rdmx6-jaaaa-aaaaa-aaadq-cai',
+}
+
 /**
  * Try to resolve the Canister ID to contact in the domain name.
  * @param hostname The domain name to look up.
  * @returns A Canister ID or null if none were found.
  */
 function maybeResolveCanisterIdFromHostName(hostname: string): Principal | null {
+  const maybeFixed = hostnameCanisterIdMap[hostname];
+  if (maybeFixed) {
+    return Principal.fromText(maybeFixed);
+  }
+
   const maybeLocalhost = hostname.match(/^(?:.*\.)?([a-z0-9-]+)\.localhost$/);
   if (maybeLocalhost) {
     try {
@@ -23,13 +32,12 @@ function maybeResolveCanisterIdFromHostName(hostname: string): Principal | null 
     }
   }
 
-  const maybeIc0App = hostname.match(/^(?:.*\.)?([a-z0-9-]+)\.ic0\.app$/);
-  if (maybeIc0App) {
+  // Try to resolve from the right to the left.
+  const subdomains = hostname.split('.').reverse();
+  for (const domain of subdomains) {
     try {
-      return Principal.fromText(maybeIc0App[1]);
-    } catch (e) {
-      return null;
-    }
+      return Principal.fromText(domain);
+    } catch (e) {}
   }
 
   return null;

@@ -24,7 +24,7 @@
   "scripts": {
     "build": "webpack",
     "develop": "webpack-dev-server",
-    "start": "npm run build; http-server dist --proxy http://localhost:8000/",
+    "start": "npm run build; http-server dist --proxy https://ic0.page/",
     "lint:fix": "npm run lint -- --fix",
     "make:docs/reference": "",
     "publish:release": "",

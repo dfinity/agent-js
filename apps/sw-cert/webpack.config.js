@@ -60,7 +60,6 @@ module.exports = {
       "util": require.resolve("util/"),
     },
   },
-  devtool: 'source-map',
   plugins: [
     new HtmlWebpackPlugin({
       template: 'src/index.html',
