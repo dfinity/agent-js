@@ -2,14 +2,8 @@ import { Buffer } from 'buffer/';
 import { Agent, getDefaultAgent, ReadStateResponse } from './agent';
 import * as cbor from './cbor';
 import { hash } from './request_id';
-import { BinaryBlob, blobFromText } from './types';
+import { BinaryBlob } from './types';
 import { blsVerify } from './utils/bls';
-import { Principal } from "./principal";
-
-async function getRootKey(agent: Agent): Promise<BinaryBlob> {
-  // TODO add the real root key for Mercury
-  return ((await agent.status()) as any).root_key;
-}
 
 interface Cert {
   tree: HashTree;
@@ -48,7 +42,6 @@ function isBufferEqual(a: Buffer, b: Buffer): boolean {
   return true;
 }
 
-
 export class Certificate {
   private readonly cert: Cert;
   private verified = false;
@@ -76,10 +69,19 @@ export class Certificate {
     return res;
   }
 
+  public async fetchRootKey(): Promise<void> {
+    await this._agent.fetchRootKey();
+    this._rootKey = this._agent.rootKey;
+  }
+
   private async _checkDelegation(d?: Delegation): Promise<Buffer> {
     if (!d) {
       if (!this._rootKey) {
-        this._rootKey = await getRootKey(this._agent);
+        if (this._agent.rootKey) {
+          this._rootKey = this._agent.rootKey;
+          return this._rootKey;
+        }
+        this._rootKey = await this._agent.fetchRootKey();
       }
       return this._rootKey;
     }
