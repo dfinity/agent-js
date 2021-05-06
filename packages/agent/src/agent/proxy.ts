@@ -1,4 +1,5 @@
 import {
+  BinaryBlob,
   blobFromHex,
   CallOptions,
   JsonObject,
@@ -158,9 +159,7 @@ export class ProxyStubAgent {
 export class ProxyAgent implements Agent {
   private _nextId = 0;
   private _pendingCalls = new Map<number, [(resolve: any) => void, (reject: any) => void]>();
-  public rootKey = blobFromHex(
-    '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100814c0e6ec71fab583b08bd81373c255c3c371b2e84863c98a4f1e08b74235d14fb5d9c0cd546d9685f913a0c0b2cc5341583bf4b4392e467db96d65b9bb4cb717112f8472e0d5a4d14505ffd7484b01291091c5f87b98883463f98091a0baaae',
-  );
+  public rootKey = null;
 
   constructor(private _backend: (msg: ProxyMessage) => void) {}
 
@@ -243,15 +242,10 @@ export class ProxyAgent implements Agent {
     });
   }
 
-  /**
-   * By default, the agent is configured to talk to the main Internet Computer, and verifies responses using a hard-coded public key.
-
-    This function will instruct the agent to ask the endpoint for its public key, and use that instead. This is required when talking to a local test instance, for example.
-
-    *Only use this when you are  _not_ talking to the main Internet Computer, otherwise you are prone to man-in-the-middle attacks! Do not call this function by default.*
-   */
-  public async fetchRootKey(): Promise<void> {
+  public async fetchRootKey(): Promise<BinaryBlob> {
     // Hex-encoded version of the replica root key
-    this.rootKey = ((await this.status()) as any).root_key;
+    const rootKey = ((await this.status()) as any).root_key;
+    this.rootKey = rootKey;
+    return rootKey;
   }
 }

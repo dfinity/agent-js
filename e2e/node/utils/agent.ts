@@ -9,7 +9,12 @@ if (Number.isNaN(port)) {
   throw new Error("The environment variable IC_REF_PORT is not a number.");
 }
 
-const agent = new HttpAgent({ host: "http://127.0.0.1:" + port, identity });
-agent.addTransform(makeNonceTransform());
+const agent = Promise.resolve(
+  new HttpAgent({ host: "http://127.0.0.1:" + port, identity })
+).then(async (agent) => {
+  await agent.fetchRootKey();
+  agent.addTransform(makeNonceTransform());
+  return agent;
+});
 
 export default agent;

@@ -2,9 +2,8 @@ import { Buffer } from 'buffer/';
 import { Agent, getDefaultAgent, ReadStateResponse } from './agent';
 import * as cbor from './cbor';
 import { hash } from './request_id';
-import { BinaryBlob, blobFromText } from './types';
+import { BinaryBlob } from './types';
 import { blsVerify } from './utils/bls';
-import { Principal } from './principal';
 
 interface Cert {
   tree: HashTree;
@@ -78,7 +77,11 @@ export class Certificate {
   private async _checkDelegation(d?: Delegation): Promise<Buffer> {
     if (!d) {
       if (!this._rootKey) {
-        this._rootKey = this._agent.rootKey;
+        if (this._agent.rootKey) {
+          this._rootKey = this._agent.rootKey;
+          return this._rootKey;
+        }
+        this._rootKey = await this._agent.fetchRootKey();
       }
       return this._rootKey;
     }

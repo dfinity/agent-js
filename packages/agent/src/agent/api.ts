@@ -102,7 +102,7 @@ export interface SubmitResponse {
  * An Agent able to make calls and queries to a Replica.
  */
 export interface Agent {
-  rootKey: BinaryBlob;
+  readonly rootKey: BinaryBlob | null;
   /**
    * Returns the principal ID associated with this agent (by default). It only shows
    * the principal of the default identity in the agent, which is the principal used
@@ -146,11 +146,16 @@ export interface Agent {
   query(canisterId: Principal | string, options: QueryFields): Promise<QueryResponse>;
 
   /**
-   * By default, the agent is configured to talk to the main Internet Computer, and verifies responses using a hard-coded public key.
-
-    This function will instruct the agent to ask the endpoint for its public key, and use that instead. This is required when talking to a local test instance, for example.
-
-    *Only use this when you are  _not_ talking to the main Internet Computer, otherwise you are prone to man-in-the-middle attacks! Do not call this function by default.*
+   * By default, the agent is configured to talk to the main Internet Computer,
+   * and verifies responses using a hard-coded public key.
+   *
+   * This function will instruct the agent to ask the endpoint for its public
+   * key, and use that instead. This is required when talking to a local test
+   * instance, for example.
+   *
+   * Only use this when you are  _not_ talking to the main Internet Computer,
+   * otherwise you are prone to man-in-the-middle attacks! Do not call this
+   * function by default.
    */
-  fetchRootKey(): Promise<void>;
+  fetchRootKey(): Promise<BinaryBlob>;
 }

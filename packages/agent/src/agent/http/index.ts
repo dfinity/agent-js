@@ -3,7 +3,7 @@ import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
 import { Principal } from '../../principal';
 import { requestIdOf } from '../../request_id';
-import { BinaryBlob, blobFromHex, JsonObject } from '../../types';
+import { BinaryBlob, blobFromHex, blobFromUint8Array, JsonObject } from '../../types';
 import {
   Agent,
   QueryFields,
@@ -37,6 +37,13 @@ export enum RequestStatusResponseStatus {
 
 // Default delta for ingress expiry is 5 minutes.
 const DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS = 5 * 60 * 1000;
+
+// Root public key for the IC, encoded as hex
+const IC_ROOT_KEY =
+  '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100814' +
+  'c0e6ec71fab583b08bd81373c255c3c371b2e84863c98a4f1e08b74235d14fb5d9c0cd546d968' +
+  '5f913a0c0b2cc5341583bf4b4392e467db96d65b9bb4cb717112f8472e0d5a4d14505ffd7484' +
+  'b01291091c5f87b98883463f98091a0baaae';
 
 // HttpAgent options that can be used at construction.
 export interface HttpAgentOptions {
@@ -97,9 +104,7 @@ export class HttpAgent implements Agent {
   private readonly _fetch: typeof fetch;
   private readonly _host: URL;
   private readonly _credentials: string | undefined;
-  public rootKey = blobFromHex(
-    '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100814c0e6ec71fab583b08bd81373c255c3c371b2e84863c98a4f1e08b74235d14fb5d9c0cd546d9685f913a0c0b2cc5341583bf4b4392e467db96d65b9bb4cb717112f8472e0d5a4d14505ffd7484b01291091c5f87b98883463f98091a0baaae',
-  );
+  public rootKey = blobFromHex(IC_ROOT_KEY);
 
   constructor(options: HttpAgentOptions = {}) {
     if (options.source) {
@@ -344,16 +349,10 @@ export class HttpAgent implements Agent {
     return cbor.decode(new Uint8Array(buffer));
   }
 
-  /**
-   * By default, the agent is configured to talk to the main Internet Computer, and verifies responses using a hard-coded public key.
-
-    This function will instruct the agent to ask the endpoint for its public key, and use that instead. This is required when talking to a local test instance, for example.
-
-    *Only use this when you are  _not_ talking to the main Internet Computer, otherwise you are prone to man-in-the-middle attacks! Do not call this function by default.*
-   */
-  public async fetchRootKey(): Promise<void> {
+  public async fetchRootKey(): Promise<BinaryBlob> {
     // Hex-encoded version of the replica root key
-    this.rootKey = ((await this.status()) as any).root_key;
+    this.rootKey = blobFromUint8Array(((await this.status()) as any).root_key);
+    return this.rootKey;
   }
 
   protected _transform(request: HttpAgentRequest): Promise<HttpAgentRequest> {

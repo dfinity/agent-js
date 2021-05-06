@@ -9,10 +9,14 @@ import agent from "../utils/agent";
 import { Buffer } from "buffer/";
 
 test("read_state", async () => {
+  const resolvedAgent = await agent;
   const now = Date.now() / 1000;
   const path = [blobFromText("time")];
-  const response = await agent.readState(Principal.fromHex('00000000000000000001'), { paths: [path] });
-  const cert = new Certificate(response, agent);
+  const response = await resolvedAgent.readState(
+    Principal.fromHex("00000000000000000001"),
+    { paths: [path] }
+  );
+  const cert = new Certificate(response, resolvedAgent);
 
   expect(() => cert.lookup(path)).toThrow(
     /Cannot lookup unverified certificate/
@@ -33,21 +37,25 @@ test("read_state", async () => {
 
 test("createCanister", async () => {
   // Make sure this doesn't fail.
-  await getManagementCanister({ agent })
-    .provisional_create_canister_with_cycles({ amount: [1e12], settings: [] });
+  await getManagementCanister({
+    agent: await agent,
+  }).provisional_create_canister_with_cycles({ amount: [1e12], settings: [] });
 });
 
 test("withOptions", async () => {
   // Make sure this fails.
-  await expect((async () => {
-    await getManagementCanister({ agent }).provisional_create_canister_with_cycles.withOptions({
-      canisterId: 'abcde-gghhi',
-    })({ amount: [1e12], settings: [] });
-  })())
-    .rejects
-    .toThrow();
+  await expect(
+    (async () => {
+      await getManagementCanister({
+        agent: await agent,
+      }).provisional_create_canister_with_cycles.withOptions({
+        canisterId: "abcde-gghhi",
+      })({ amount: [1e12], settings: [] });
+    })()
+  ).rejects.toThrow();
 
   // Make sure this doesn't fail.
-  await getManagementCanister({ agent })
-    .provisional_create_canister_with_cycles({ amount: [1e12], settings: [] });
+  await getManagementCanister({
+    agent: await agent,
+  }).provisional_create_canister_with_cycles({ amount: [1e12], settings: [] });
 });
