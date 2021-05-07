@@ -173,11 +173,11 @@ export function readUIntLE(pipe: Pipe, byteLength: number): bigint {
   return val;
 }
 
-export const powTable = {
-  1: BigInt(128 /* 2^7 */),
-  2: BigInt(32768 /* 2^15 */),
-  4: BigInt(2147483648 /* 2^31 */),
-  8: BigInt(9223372036854775808 /* 2^63 */),
+export const powTable: Record<number, bigint> = {
+  1: BigInt(2 ** 7),
+  2: BigInt(2 ** 15),
+  4: BigInt(2 ** 31),
+  8: BigInt('9223372036854775808' /* 2^63 */),
 };
 export function readIntLE(pipe: Pipe, byteLength: number): bigint {
   let val = readUIntLE(pipe, byteLength);

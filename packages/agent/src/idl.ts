@@ -557,8 +557,8 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
   }
 
   public covariant(x: any): x is bigint {
-    const min = powTable(this._bits / 8) * BigInt(-1);
-    const max = powTable(this._bits / 8) - BigInt(1);
+    const min = powTable[this._bits / 8] * BigInt(-1);
+    const max = powTable[this._bits / 8] - BigInt(1);
     if (typeof x === 'bigint') {
       return x >= min && x <= max;
     } else if (Number.isInteger(x)) {
@@ -610,7 +610,7 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
   }
 
   public covariant(x: any): x is bigint {
-    const max = powTable(this._bits / 8) * BigInt(2);
+    const max = powTable[this._bits / 8] * BigInt(2);
     if (typeof x === 'bigint' && x > BigInt(0)) {
       return x < max;
     } else if (Number.isInteger(x) && x >= 0) {
