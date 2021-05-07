@@ -12,9 +12,7 @@ self.addEventListener('install', () => {
 // Intercept and proxy all fetch requests made by the browser or DOM on this scope.
 self.addEventListener('fetch', (event: FetchEvent) => {
   try {
-    console.time("handle");
     const response = handleRequest(event.request);
-    console.timeEnd("handle");
     event.respondWith(response);
   } catch (e) {
     console.error(e.message || e.toString());

@@ -184,7 +184,6 @@ export async function handleRequest(request: Request): Promise<Response> {
   const maybeCanisterId = maybeResolveCanisterIdFromHttpRequest(request);
   if (maybeCanisterId) {
     try {
-      console.time("query");
       const replicaUrl = new URL(url.origin);
       const agent = new HttpAgent({ host: replicaUrl.toString() });
       const actor = Actor.createActor(canisterIdlFactory, {
@@ -202,7 +201,6 @@ export async function handleRequest(request: Request): Promise<Response> {
       };
 
       const httpResponse: any = await actor.http_request(httpRequest);
-      console.time("parse");
       const body = new Uint8Array(httpResponse.body);
       const response = new Response(body.buffer, {
         status: httpResponse.status_code,
@@ -235,9 +233,7 @@ export async function handleRequest(request: Request): Promise<Response> {
 
         response.headers.append(key, value);
       }
-      console.timeEnd("parse");
 
-      console.time("validate");
       let bodyValid = false;
       if (certificate && tree) {
         bodyValid = await validateBody(
@@ -250,7 +246,6 @@ export async function handleRequest(request: Request): Promise<Response> {
         );
       }
       if (bodyValid) {
-        console.timeEnd("query");
         switch (encoding) {
           case '': return response;
           case 'gzip': return new Response(pako.ungzip(body), response);
@@ -259,7 +254,6 @@ export async function handleRequest(request: Request): Promise<Response> {
         }
       } else {
         console.error('BODY DOES NOT PASS VERIFICATION');
-        console.timeEnd("query");
         return new Response("Body does not pass verification", { status: 500 });
       }
     } catch (e) {
