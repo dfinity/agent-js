@@ -1,4 +1,3 @@
-import { sha256 } from "js-sha256";
 import {
   blobFromUint8Array,
   blobToUint8Array,
