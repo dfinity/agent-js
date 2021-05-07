@@ -181,7 +181,7 @@ export const powTable = {
 };
 export function readIntLE(pipe: Pipe, byteLength: number): bigint {
   let val = readUIntLE(pipe, byteLength);
-  const mul = mul_table[byteLength];
+  const mul = powTable[byteLength];
   if (val >= mul) {
     val -= mul * BigInt(2);
   }
