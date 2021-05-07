@@ -10,6 +10,7 @@ module.exports = {
   target: 'web',
   output: {
     path: path.join(__dirname, 'dist'),
+    filename: '[id]-[contenthash].js'
   },
   optimization: {
     splitChunks: {
@@ -60,7 +61,6 @@ module.exports = {
       "util": require.resolve("util/"),
     },
   },
-  devtool: 'source-map',
   plugins: [
     new HtmlWebpackPlugin({
       template: 'src/index.html',

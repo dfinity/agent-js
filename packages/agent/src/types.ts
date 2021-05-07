@@ -48,6 +48,10 @@ export function blobToHex(blob: BinaryBlob): string {
   return blob.toString('hex');
 }
 
+export function blobToUint8Array(blob: BinaryBlob): Uint8Array {
+  return new Uint8Array(blob.slice(0, blob.byteLength));
+}
+
 // A Nonce that can be used for calls.
 export type Nonce = BinaryBlob & { __nonce__: void };
 

@@ -4,10 +4,49 @@
  * TODO: Add support for streaming.
  */
 import { Actor, IDL, HttpAgent, Principal } from '@dfinity/agent';
+import { validateBody } from "./validation";
+import * as base64Arraybuffer from 'base64-arraybuffer';
+import * as pako from 'pako';
 
-async function getAgent() {
-  const replicaUrl = new URL("http://localhost:8000");
-  return new HttpAgent({ host: replicaUrl.toString() });
+const hostnameCanisterIdMap: Record<string, [string, string]> = {
+  'identity.ic0.page': ['rdmx6-jaaaa-aaaaa-aaadq-cai', 'ic0.page'],
+  'identity.ic0.app': ['rdmx6-jaaaa-aaaaa-aaadq-cai', 'ic0.app'],
+};
+
+const swLocation = new URL(self.location.toString());
+const [_swCanisterId, swDomains] = (() => {
+  const maybeSplit = splitHostnameForCanisterId(swLocation.hostname);
+  if (maybeSplit) {
+    return maybeSplit;
+  } else {
+    return [null, swLocation.hostname];
+  }
+})() as [Principal | null, string];
+
+/**
+ * Split a hostname up-to the first valid canister ID from the right.
+ * @param hostname The hostname to analyze.
+ * @returns A canister ID followed by all subdomains that are after it, or null if no
+ *     canister ID were found.
+ */
+function splitHostnameForCanisterId(hostname: string): [Principal, string] | null {
+  const maybeFixed = hostnameCanisterIdMap[hostname];
+  if (maybeFixed) {
+    return [Principal.fromText(maybeFixed[0]), maybeFixed[1]];
+  }
+
+  const subdomains = hostname.split('.').reverse();
+  const topdomains = [];
+  for (const domain of subdomains) {
+    try {
+      const principal = Principal.fromText(domain);
+      return [principal, topdomains.reverse().join('.')];
+    } catch (_) {
+      topdomains.push(domain);
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -16,22 +55,10 @@ async function getAgent() {
  * @returns A Canister ID or null if none were found.
  */
 function maybeResolveCanisterIdFromHostName(hostname: string): Principal | null {
-  const maybeLocalhost = hostname.match(/^(?:.*\.)?([a-z0-9-]+)\.localhost$/);
-  if (maybeLocalhost) {
-    try {
-      return Principal.fromText(maybeLocalhost[1]);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  const maybeIc0App = hostname.match(/^(?:.*\.)?([a-z0-9-]+)\.ic0\.app$/);
-  if (maybeIc0App) {
-    try {
-      return Principal.fromText(maybeIc0App[1]);
-    } catch (e) {
-      return null;
-    }
+  // Try to resolve from the right to the left.
+  const maybeCanisterId = splitHostnameForCanisterId(hostname);
+  if (maybeCanisterId && swDomains === maybeCanisterId[1]) {
+    return maybeCanisterId[0];
   }
 
   return null;
@@ -40,9 +67,18 @@ function maybeResolveCanisterIdFromHostName(hostname: string): Principal | null 
 /**
  * Try to resolve the Canister ID to contact in the search params.
  * @param searchParams The URL Search params.
+ * @param isLocal Whether to resolve headers as if we were running locally.
  * @returns A Canister ID or null if none were found.
  */
-function maybeResolveCanisterIdFromSearchParam(searchParams: URLSearchParams): Principal | null {
+function maybeResolveCanisterIdFromSearchParam(
+  searchParams: URLSearchParams,
+  isLocal: boolean,
+): Principal | null {
+  // Skip this if we're not on localhost.
+  if (isLocal) {
+    return null;
+  }
+
   const maybeCanisterId = searchParams.get("canisterId");
   if (maybeCanisterId) {
     try {
@@ -58,20 +94,26 @@ function maybeResolveCanisterIdFromSearchParam(searchParams: URLSearchParams): P
 /**
  * Try to resolve the Canister ID to contact from a URL string.
  * @param urlString The URL in string format (normally from the request).
+ * @param isLocal Whether to resolve headers as if we were running locally.
  * @returns A Canister ID or null if none were found.
  */
-function resolveCanisterIdFromUrl(urlString: string): Principal | null {
-  const url = new URL(urlString);
-  return maybeResolveCanisterIdFromHostName(url.hostname)
-    || maybeResolveCanisterIdFromSearchParam(url.searchParams);
+function resolveCanisterIdFromUrl(urlString: string, isLocal: boolean): Principal | null {
+  try {
+    const url = new URL(urlString);
+    return maybeResolveCanisterIdFromHostName(url.hostname)
+      || maybeResolveCanisterIdFromSearchParam(url.searchParams, isLocal);
+  } catch (_) {
+    return null;
+  }
 }
 
 /**
  * Try to resolve the Canister ID to contact from headers.
  * @param headers Headers from the HttpRequest.
+ * @param isLocal Whether to resolve headers as if we were running locally.
  * @returns A Canister ID or null if none were found.
  */
-function maybeResolveCanisterIdFromHeaders(headers: Headers): Principal | null {
+function maybeResolveCanisterIdFromHeaders(headers: Headers, isLocal: boolean): Principal | null {
   const maybeHostHeader = headers.get("host");
   if (maybeHostHeader) {
     // Remove the port.
@@ -81,21 +123,23 @@ function maybeResolveCanisterIdFromHeaders(headers: Headers): Principal | null {
     }
   }
 
-  const maybeRefererHeader = headers.get("referer");
-  if (maybeRefererHeader) {
-    const maybeCanisterId = resolveCanisterIdFromUrl(maybeRefererHeader);
-    if (maybeCanisterId) {
-      return maybeCanisterId;
+  if (isLocal) {
+    const maybeRefererHeader = headers.get("referer");
+    if (maybeRefererHeader) {
+      const maybeCanisterId = resolveCanisterIdFromUrl(maybeRefererHeader, isLocal);
+      if (maybeCanisterId) {
+        return maybeCanisterId;
+      }
     }
   }
 
   return null;
 }
 
-function maybeResolveCanisterIdFromHttpRequest(request: Request) {
-  return resolveCanisterIdFromUrl(request.referrer)
-    || maybeResolveCanisterIdFromHeaders(request.headers)
-    || resolveCanisterIdFromUrl(request.url);
+function maybeResolveCanisterIdFromHttpRequest(request: Request, isLocal: boolean) {
+  return (isLocal && resolveCanisterIdFromUrl(request.referrer, isLocal))
+    || maybeResolveCanisterIdFromHeaders(request.headers, isLocal)
+    || resolveCanisterIdFromUrl(request.url, isLocal);
 }
 
 const canisterIdlFactory: IDL.InterfaceFactory = ({ IDL }) => {
@@ -145,11 +189,14 @@ export async function handleRequest(request: Request): Promise<Response> {
   /**
    * We try to do an HTTP Request query.
    */
-  const maybeCanisterId = maybeResolveCanisterIdFromHttpRequest(request);
+  const isLocal = (swDomains === "localhost");
+  const maybeCanisterId = maybeResolveCanisterIdFromHttpRequest(request, isLocal);
   if (maybeCanisterId) {
     try {
+      const replicaUrl = new URL(url.origin);
+      const agent = new HttpAgent({ host: replicaUrl.toString() });
       const actor = Actor.createActor(canisterIdlFactory, {
-        agent: await getAgent(),
+        agent,
         canisterId: maybeCanisterId,
       });
       const requestHeaders: [string, string][] = [];
@@ -161,23 +208,78 @@ export async function handleRequest(request: Request): Promise<Response> {
         headers: requestHeaders,
         body: [...new Uint8Array(await request.arrayBuffer())],
       };
-      const httpResponse: any = await actor.http_request(httpRequest);
 
-      const responseHeaders = new Headers();
+      const httpResponse: any = await actor.http_request(httpRequest);
+      const body = new Uint8Array(httpResponse.body);
+      const response = new Response(body.buffer, {
+        status: httpResponse.status_code,
+      });
+
+      let certificate: ArrayBuffer | undefined;
+      let tree: ArrayBuffer | undefined;
+      let encoding = '';
       for (const [key, value] of httpResponse.headers) {
-        responseHeaders.append(key, value);
+        switch (key.trim().toLowerCase()) {
+          case 'ic-certificate':
+            {
+              const fields = value.split(/,/);
+              for (const f of fields) {
+                const [_0, name, b64Value] = [...f.match(/^(.*)=:(.*):$/)].map(x => x.trim());
+                const value = base64Arraybuffer.decode(b64Value);
+
+                if (name === 'certificate') {
+                  certificate = value;
+                } else if (name === 'tree') {
+                  tree = value;
+                }
+              }
+            }
+            continue;
+          case 'content-encoding':
+            encoding = value.trim();
+            break;
+        }
+
+        response.headers.append(key, value);
       }
 
-      return new Response(new Uint8Array(httpResponse.body), {
-        status: httpResponse.status_code,
-        headers: responseHeaders,
-      });
+      let bodyValid = false;
+      if (certificate && tree) {
+        bodyValid = await validateBody(
+          maybeCanisterId,
+          url.pathname,
+          body.buffer,
+          certificate,
+          tree,
+          agent,
+        );
+      }
+      if (bodyValid) {
+        switch (encoding) {
+          case '': return response;
+          case 'gzip': return new Response(pako.ungzip(body), response);
+          case 'deflate': return new Response(pako.inflate(body), response);
+          default: throw new Error(`Unsupported encoding: "${encoding}"`);
+        }
+      } else {
+        console.error('BODY DOES NOT PASS VERIFICATION');
+        return new Response("Body does not pass verification", { status: 500 });
+      }
     } catch (e) {
       console.error("An error happened:", e);
       return new Response(null, { status: 500 });
     }
   }
 
-  console.error("Could not find the canister ID.");
-  return new Response(null, { status: 404 });
+  // Last check. IF this is not part of the same domain, then we simply let it load as is.
+  // The same domain will always load using our service worker, and not the same domain
+  // would load by reference. If you want security for your users at that point you
+  // should use SRI to make sure the resource matches.
+  if (!url.hostname.endsWith(swDomains)) {
+    // todo: Do we need to check for headers and certify the content here?
+    return await fetch(request);
+  }
+
+  console.error(`URL ${JSON.stringify(url.toString())} did not resolve to a canister ID.`);
+  return new Response("Could not find the canister ID.", { status: 404 });
 }
