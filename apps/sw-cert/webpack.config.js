@@ -7,6 +7,7 @@ module.exports = {
     bundle: path.join(__dirname, 'src/index.ts'),
   },
   mode: 'production',
+  devtool: 'source-map',
   target: 'web',
   output: {
     path: path.join(__dirname, 'dist'),

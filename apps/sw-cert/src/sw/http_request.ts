@@ -8,8 +8,45 @@ import { validateBody } from "./validation";
 import * as base64Arraybuffer from 'base64-arraybuffer';
 import * as pako from 'pako';
 
-const hostnameCanisterIdMap: Record<string, string> = {
-  'identity.ic0.page': 'rdmx6-jaaaa-aaaaa-aaadq-cai',
+const hostnameCanisterIdMap: Record<string, [string, string]> = {
+  'identity.ic0.page': ['rdmx6-jaaaa-aaaaa-aaadq-cai', 'ic0.page'],
+  'identity.ic0.app': ['rdmx6-jaaaa-aaaaa-aaadq-cai', 'ic0.app'],
+};
+
+const swLocation = new URL(self.location.toString());
+const [_swCanisterId, swDomains] = (() => {
+  const maybeSplit = splitHostnameForCanisterId(swLocation.hostname);
+  if (maybeSplit) {
+    return maybeSplit;
+  } else {
+    return [null, swLocation.hostname];
+  }
+})() as [Principal | null, string];
+
+/**
+ * Split a hostname up-to the first valid canister ID from the right.
+ * @param hostname The hostname to analyze.
+ * @returns A canister ID followed by all subdomains that are after it, or null if no
+ *     canister ID were found.
+ */
+function splitHostnameForCanisterId(hostname: string): [Principal, string] | null {
+  const maybeFixed = hostnameCanisterIdMap[hostname];
+  if (maybeFixed) {
+    return [Principal.fromText(maybeFixed[0]), maybeFixed[1]];
+  }
+
+  const subdomains = hostname.split('.').reverse();
+  const topdomains = [];
+  for (const domain of subdomains) {
+    try {
+      const principal = Principal.fromText(domain);
+      return [principal, topdomains.reverse().join('.')];
+    } catch (_) {
+      topdomains.push(domain);
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -18,26 +55,10 @@ const hostnameCanisterIdMap: Record<string, string> = {
  * @returns A Canister ID or null if none were found.
  */
 function maybeResolveCanisterIdFromHostName(hostname: string): Principal | null {
-  const maybeFixed = hostnameCanisterIdMap[hostname];
-  if (maybeFixed) {
-    return Principal.fromText(maybeFixed);
-  }
-
-  const maybeLocalhost = hostname.match(/^(?:.*\.)?([a-z0-9-]+)\.localhost$/);
-  if (maybeLocalhost) {
-    try {
-      return Principal.fromText(maybeLocalhost[1]);
-    } catch (e) {
-      return null;
-    }
-  }
-
   // Try to resolve from the right to the left.
-  const subdomains = hostname.split('.').reverse();
-  for (const domain of subdomains) {
-    try {
-      return Principal.fromText(domain);
-    } catch (e) {}
+  const maybeCanisterId = splitHostnameForCanisterId(hostname);
+  if (maybeCanisterId && swDomains === maybeCanisterId[1]) {
+    return maybeCanisterId[0];
   }
 
   return null;
@@ -49,6 +70,11 @@ function maybeResolveCanisterIdFromHostName(hostname: string): Principal | null 
  * @returns A Canister ID or null if none were found.
  */
 function maybeResolveCanisterIdFromSearchParam(searchParams: URLSearchParams): Principal | null {
+  // Skip this if we're not on localhost.
+  if (swDomains !== "localhost") {
+    return null;
+  }
+
   const maybeCanisterId = searchParams.get("canisterId");
   if (maybeCanisterId) {
     try {
@@ -158,6 +184,7 @@ export async function handleRequest(request: Request): Promise<Response> {
   const maybeCanisterId = maybeResolveCanisterIdFromHttpRequest(request);
   if (maybeCanisterId) {
     try {
+      console.time("query");
       const replicaUrl = new URL(url.origin);
       const agent = new HttpAgent({ host: replicaUrl.toString() });
       const actor = Actor.createActor(canisterIdlFactory, {
@@ -175,6 +202,7 @@ export async function handleRequest(request: Request): Promise<Response> {
       };
 
       const httpResponse: any = await actor.http_request(httpRequest);
+      console.time("parse");
       const body = new Uint8Array(httpResponse.body);
       const response = new Response(body.buffer, {
         status: httpResponse.status_code,
@@ -207,7 +235,9 @@ export async function handleRequest(request: Request): Promise<Response> {
 
         response.headers.append(key, value);
       }
+      console.timeEnd("parse");
 
+      console.time("validate");
       let bodyValid = false;
       if (certificate && tree) {
         bodyValid = await validateBody(
@@ -220,6 +250,7 @@ export async function handleRequest(request: Request): Promise<Response> {
         );
       }
       if (bodyValid) {
+        console.timeEnd("query");
         switch (encoding) {
           case '': return response;
           case 'gzip': return new Response(pako.ungzip(body), response);
@@ -228,6 +259,7 @@ export async function handleRequest(request: Request): Promise<Response> {
         }
       } else {
         console.error('BODY DOES NOT PASS VERIFICATION');
+        console.timeEnd("query");
         return new Response("Body does not pass verification", { status: 500 });
       }
     } catch (e) {
@@ -236,6 +268,16 @@ export async function handleRequest(request: Request): Promise<Response> {
     }
   }
 
-  console.error("Could not find the canister ID.");
-  return new Response(null, { status: 404 });
+  // Last check. IF this is not part of the same domain, then we simply let it load as is.
+  // The same domain will always load using our service worker, and not the same domain
+  // would load by reference. If you want security for your users at that point you
+  // should use SRI to make sure the resource matches.
+  if (!url.hostname.endsWith(swDomains)) {
+    const response = await fetch(request);
+    // todo: Check for headers if there are any.
+    return response;
+  }
+
+  console.error(`URL ${JSON.stringify(url.toString())} did not resolve to a canister ID.`);
+  return new Response("Could not find the canister ID.", { status: 404 });
 }

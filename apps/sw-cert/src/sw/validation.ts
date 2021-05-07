@@ -1,8 +1,6 @@
 import { sha256 } from "js-sha256";
 import {
-  blobFromHex,
   blobFromUint8Array,
-  blobToHex,
   blobToUint8Array,
   Cbor as cbor,
   Certificate,
@@ -52,7 +50,7 @@ export async function validateBody(
   }
 
   // Next, calculate the SHA of the content.
-  const sha = sha256.arrayBuffer(body);
+  const sha = await crypto.subtle.digest("SHA-256", body);
   const treeSha = lookupPathEx(["http_assets", path], hashTree);
 
   // First check if treeSha is not undefined.
