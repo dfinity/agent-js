@@ -173,9 +173,15 @@ export function readUIntLE(pipe: Pipe, byteLength: number): bigint {
   return val;
 }
 
+export const powTable = {
+  1: BigInt(128 /* 2^7 */),
+  2: BigInt(32768 /* 2^15 */),
+  4: BigInt(2147483648 /* 2^31 */),
+  8: BigInt(9223372036854775808 /* 2^63 */),
+};
 export function readIntLE(pipe: Pipe, byteLength: number): bigint {
   let val = readUIntLE(pipe, byteLength);
-  const mul = BigInt(2) ** (BigInt(8) * BigInt(byteLength - 1) + BigInt(7));
+  const mul = mul_table[byteLength];
   if (val >= mul) {
     val -= mul * BigInt(2);
   }
