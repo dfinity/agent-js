@@ -601,7 +601,7 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
  * Represents an IDL fixed-width Nat(n)
  */
 export class FixedNatClass extends PrimitiveType<bigint | number> {
-  constructor(private _bits: number) {
+  constructor(public readonly bits: number) {
     super();
   }
 
@@ -610,7 +610,7 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
   }
 
   public covariant(x: any): x is bigint {
-    const max = BigInt(2) ** BigInt(this._bits);
+    const max = BigInt(2) ** BigInt(this.bits);
     if (typeof x === 'bigint' && x > BigInt(0)) {
       return x < max;
     } else if (Number.isInteger(x) && x >= 0) {
@@ -622,18 +622,18 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
   }
 
   public encodeValue(x: bigint | number) {
-    return writeUIntLE(x, this._bits / 8);
+    return writeUIntLE(x, this.bits / 8);
   }
 
   public encodeType() {
-    const offset = Math.log2(this._bits) - 3;
+    const offset = Math.log2(this.bits) - 3;
     return slebEncode(-5 - offset);
   }
 
   public decodeValue(b: Pipe, t: Type) {
     this.checkType(t);
-    const num = readUIntLE(b, this._bits / 8);
-    if (this._bits <= 32) {
+    const num = readUIntLE(b, this.bits / 8);
+    if (this.bits <= 32) {
       return Number(num);
     } else {
       return num;
@@ -641,7 +641,7 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
   }
 
   get name() {
-    return `nat${this._bits}`;
+    return `nat${this.bits}`;
   }
 
   public valueToString(x: bigint | number) {
@@ -654,8 +654,14 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
  * @param {Type} t
  */
 export class VecClass<T> extends ConstructType<T[]> {
+  // If true, this vector is really a blob and we can just use memcpy.
+  private _blobOptimization = false;
+
   constructor(protected _type: Type<T>) {
     super();
+    if (_type instanceof FixedNatClass && _type.bits === 8) {
+      this._blobOptimization = true;
+    }
   }
 
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
@@ -668,6 +674,10 @@ export class VecClass<T> extends ConstructType<T[]> {
 
   public encodeValue(x: T[]) {
     const len = lebEncode(x.length);
+    if (this._blobOptimization) {
+      return Buffer.concat([len, Buffer.from(x as unknown as number[])]);
+    }
+
     return Buffer.concat([len, ...x.map(d => this._type.encodeValue(d))]);
   }
 
@@ -679,13 +689,17 @@ export class VecClass<T> extends ConstructType<T[]> {
     typeTable.add(this, Buffer.concat([opCode, buffer]));
   }
 
-  public decodeValue(b: Pipe, t: Type): any[] {
+  public decodeValue(b: Pipe, t: Type): T[] {
     const vec = this.checkType(t);
     if (!(vec instanceof VecClass)) {
       throw new Error('Not a vector type');
     }
     const len = Number(lebDecode(b));
-    const rets: any[] = [];
+    if (this._blobOptimization) {
+      return [...new Uint8Array(b.read(len))] as unknown as T[];
+    }
+
+    const rets: T[] = [];
     for (let i = 0; i < len; i++) {
       rets.push(this._type.decodeValue(b, vec._type));
     }
