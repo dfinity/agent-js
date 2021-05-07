@@ -40,9 +40,9 @@ test('sleb', () => {
   expect(slebEncode(BigInt('0x1234567890abcdef1234567890abcdef')).toString('hex')).toBe(
     'ef9baf8589cf959a92deb7de8a929eabb424',
   );
-  expect(
-    slebEncode(-BigInt('0x1234567890abcdef1234567890abcdef')).toString('hex'),
-  ).toBe('91e4d0faf6b0eae5eda1c8a1f5ede1d4cb5b');
+  expect(slebEncode(-BigInt('0x1234567890abcdef1234567890abcdef')).toString('hex')).toBe(
+    '91e4d0faf6b0eae5eda1c8a1f5ede1d4cb5b',
+  );
   expect(slebEncode(BigInt('2000000')).toString('hex')).toBe('8089fa00');
   expect(slebEncode(BigInt('60000000000000000')).toString('hex')).toBe('808098f4e9b5caea00');
 
@@ -59,15 +59,21 @@ test('sleb', () => {
 
 test('IntLE', () => {
   expect(writeIntLE(42, 2).toString('hex')).toBe('2a00');
-  expect(writeIntLE(-42, 3).toString('hex')).toBe('d6ffff');
-  expect(writeIntLE(1234567890, 5).toString('hex')).toBe('d202964900');
-  expect(writeUIntLE(1234567890, 5).toString('hex')).toBe('d202964900');
-  expect(writeIntLE(-1234567890, 5).toString('hex')).toBe('2efd69b6ff');
-  expect(readIntLE(new Pipe(Buffer.from('d202964900', 'hex')), 5).toString()).toBe('1234567890');
-  expect(readUIntLE(new Pipe(Buffer.from('d202964900', 'hex')), 5).toString()).toBe('1234567890');
-  expect(readIntLE(new Pipe(Buffer.from('2efd69b6ff', 'hex')), 5).toString()).toBe('-1234567890');
-  expect(readIntLE(new Pipe(Buffer.from('d6ffffffff', 'hex')), 5).toString()).toBe('-42');
-  expect(readUIntLE(new Pipe(Buffer.from('d6ffffffff', 'hex')), 5).toString()).toBe(
+  expect(writeIntLE(-42, 4).toString('hex')).toBe('d6ffffff');
+  expect(writeIntLE(1234567890, 8).toString('hex')).toBe('d202964900000000');
+  expect(writeUIntLE(1234567890, 8).toString('hex')).toBe('d202964900000000');
+  expect(writeIntLE(-1234567890, 8).toString('hex')).toBe('2efd69b6ffffffff');
+  expect(readIntLE(new Pipe(Buffer.from('d202964900000000', 'hex')), 8).toString()).toBe(
+    '1234567890',
+  );
+  expect(readUIntLE(new Pipe(Buffer.from('d202964900000000', 'hex')), 8).toString()).toBe(
+    '1234567890',
+  );
+  expect(readIntLE(new Pipe(Buffer.from('2efd69b6ffffffff', 'hex')), 8).toString()).toBe(
+    '-1234567890',
+  );
+  expect(readIntLE(new Pipe(Buffer.from('d6ffffffffffffff', 'hex')), 8).toString()).toBe('-42');
+  expect(readUIntLE(new Pipe(Buffer.from('d6ffffffff000000', 'hex')), 8).toString()).toBe(
     '1099511627734',
   );
 });

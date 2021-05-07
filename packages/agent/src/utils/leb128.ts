@@ -180,8 +180,11 @@ export const powTable: Record<number, bigint> = {
   8: BigInt('9223372036854775808' /* 2^63 */),
 };
 export function readIntLE(pipe: Pipe, byteLength: number): bigint {
-  let val = readUIntLE(pipe, byteLength);
+  if (!powTable.hasOwnProperty(byteLength)) {
+    throw new Error(`${byteLength} byte number not supported`);
+  }
   const mul = powTable[byteLength];
+  let val = readUIntLE(pipe, byteLength);
   if (val >= mul) {
     val -= mul * BigInt(2);
   }
