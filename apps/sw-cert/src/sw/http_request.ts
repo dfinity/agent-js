@@ -67,11 +67,15 @@ function maybeResolveCanisterIdFromHostName(hostname: string): Principal | null 
 /**
  * Try to resolve the Canister ID to contact in the search params.
  * @param searchParams The URL Search params.
+ * @param isLocal Whether to resolve headers as if we were running locally.
  * @returns A Canister ID or null if none were found.
  */
-function maybeResolveCanisterIdFromSearchParam(searchParams: URLSearchParams): Principal | null {
+function maybeResolveCanisterIdFromSearchParam(
+  searchParams: URLSearchParams,
+  isLocal: boolean,
+): Principal | null {
   // Skip this if we're not on localhost.
-  if (swDomains !== "localhost") {
+  if (isLocal) {
     return null;
   }
 
@@ -90,13 +94,14 @@ function maybeResolveCanisterIdFromSearchParam(searchParams: URLSearchParams): P
 /**
  * Try to resolve the Canister ID to contact from a URL string.
  * @param urlString The URL in string format (normally from the request).
+ * @param isLocal Whether to resolve headers as if we were running locally.
  * @returns A Canister ID or null if none were found.
  */
-function resolveCanisterIdFromUrl(urlString: string): Principal | null {
+function resolveCanisterIdFromUrl(urlString: string, isLocal: boolean): Principal | null {
   try {
     const url = new URL(urlString);
     return maybeResolveCanisterIdFromHostName(url.hostname)
-      || maybeResolveCanisterIdFromSearchParam(url.searchParams);
+      || maybeResolveCanisterIdFromSearchParam(url.searchParams, isLocal);
   } catch (_) {
     return null;
   }
@@ -105,9 +110,10 @@ function resolveCanisterIdFromUrl(urlString: string): Principal | null {
 /**
  * Try to resolve the Canister ID to contact from headers.
  * @param headers Headers from the HttpRequest.
+ * @param isLocal Whether to resolve headers as if we were running locally.
  * @returns A Canister ID or null if none were found.
  */
-function maybeResolveCanisterIdFromHeaders(headers: Headers): Principal | null {
+function maybeResolveCanisterIdFromHeaders(headers: Headers, isLocal: boolean): Principal | null {
   const maybeHostHeader = headers.get("host");
   if (maybeHostHeader) {
     // Remove the port.
@@ -117,21 +123,23 @@ function maybeResolveCanisterIdFromHeaders(headers: Headers): Principal | null {
     }
   }
 
-  const maybeRefererHeader = headers.get("referer");
-  if (maybeRefererHeader) {
-    const maybeCanisterId = resolveCanisterIdFromUrl(maybeRefererHeader);
-    if (maybeCanisterId) {
-      return maybeCanisterId;
+  if (isLocal) {
+    const maybeRefererHeader = headers.get("referer");
+    if (maybeRefererHeader) {
+      const maybeCanisterId = resolveCanisterIdFromUrl(maybeRefererHeader, isLocal);
+      if (maybeCanisterId) {
+        return maybeCanisterId;
+      }
     }
   }
 
   return null;
 }
 
-function maybeResolveCanisterIdFromHttpRequest(request: Request) {
-  return resolveCanisterIdFromUrl(request.referrer)
-    || maybeResolveCanisterIdFromHeaders(request.headers)
-    || resolveCanisterIdFromUrl(request.url);
+function maybeResolveCanisterIdFromHttpRequest(request: Request, isLocal: boolean) {
+  return (isLocal && resolveCanisterIdFromUrl(request.referrer, isLocal))
+    || maybeResolveCanisterIdFromHeaders(request.headers, isLocal)
+    || resolveCanisterIdFromUrl(request.url, isLocal);
 }
 
 const canisterIdlFactory: IDL.InterfaceFactory = ({ IDL }) => {
@@ -181,7 +189,8 @@ export async function handleRequest(request: Request): Promise<Response> {
   /**
    * We try to do an HTTP Request query.
    */
-  const maybeCanisterId = maybeResolveCanisterIdFromHttpRequest(request);
+  const isLocal = (swDomains === "localhost");
+  const maybeCanisterId = maybeResolveCanisterIdFromHttpRequest(request, isLocal);
   if (maybeCanisterId) {
     try {
       const replicaUrl = new URL(url.origin);
@@ -267,9 +276,8 @@ export async function handleRequest(request: Request): Promise<Response> {
   // would load by reference. If you want security for your users at that point you
   // should use SRI to make sure the resource matches.
   if (!url.hostname.endsWith(swDomains)) {
-    const response = await fetch(request);
-    // todo: Check for headers if there are any.
-    return response;
+    // todo: Do we need to check for headers and certify the content here?
+    return await fetch(request);
   }
 
   console.error(`URL ${JSON.stringify(url.toString())} did not resolve to a canister ID.`);
