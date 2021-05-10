@@ -1,4 +1,3 @@
-import { sha256 } from 'js-sha256';
 import { handleRequest } from './http_request';
 
 declare const self: ServiceWorkerGlobalScope;
@@ -13,7 +12,8 @@ self.addEventListener('install', () => {
 // Intercept and proxy all fetch requests made by the browser or DOM on this scope.
 self.addEventListener('fetch', (event: FetchEvent) => {
   try {
-    event.respondWith(handleRequest(event.request))
+    const response = handleRequest(event.request);
+    event.respondWith(response);
   } catch (e) {
     console.error(e.message || e.toString());
     if (DEBUG) {
