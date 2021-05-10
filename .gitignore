@@ -114,3 +114,10 @@ dist
 .code
 .idea
 .vscode
+
+# Generated Docs
+docs/agent
+docs/auth-client
+docs/authentication
+docs/identity
+docs/identity-ledgerhq

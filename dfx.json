@@ -1,35 +1,8 @@
 {
   "canisters": {
-    "agent_docs": {
+    "docs": {
       "type": "assets",
-      "source": ["packages/agent/docs/reference"]
-    },
-    "authentication_docs": {
-      "type": "assets",
-      "source": ["packages/authentication/docs/reference"]
-    },
-    "auth_client_docs": {
-      "type": "assets",
-      "source": ["packages/auth-client/docs/reference"]
-    },
-    "identity_docs": {
-      "type": "assets",
-      "source": ["packages/identity/docs/reference"]
-    },
-    "identity_ledgerhq_docs": {
-      "type": "assets",
-      "source": ["packages/identity-ledgerhq/docs/reference"]
-    }
-  },
-  "dfx": "0.7.0-beta.4",
-  "networks": {
-    "alpha": {
-      "providers": ["https://boundary.dfinity.network/"],
-      "type": "persistent"
-    },
-    "mercury": {
-      "providers": ["https://mercury.dfinity.network/"],
-      "type": "persistent"
+      "source": ["docs"]
     }
   }
 }
