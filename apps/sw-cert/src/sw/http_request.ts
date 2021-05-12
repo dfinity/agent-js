@@ -11,6 +11,8 @@ import * as pako from 'pako';
 const hostnameCanisterIdMap: Record<string, [string, string]> = {
   'identity.ic0.page': ['rdmx6-jaaaa-aaaaa-aaadq-cai', 'ic0.page'],
   'identity.ic0.app': ['rdmx6-jaaaa-aaaaa-aaadq-cai', 'ic0.app'],
+  'nns.ic0.page': ['qoctq-giaaa-aaaaa-aaaea-cai', 'ic0.page'],
+  'nns.ic0.app': ['qoctq-giaaa-aaaaa-aaaea-cai', 'ic0.app'],
 };
 
 const swLocation = new URL(self.location.toString());
