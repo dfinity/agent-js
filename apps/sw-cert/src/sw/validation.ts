@@ -65,6 +65,13 @@ export async function validateBody(
     treeSha = lookupPathEx(["http_assets", "/index.html"], hashTree);
   }
 
+  if (!treeSha) {
+    // The tree returned in the certification header is wrong. Return false.
+    // We don't throw here, just invalidate the request.
+    console.error(`Invalid Tree in the header. Does not contain path ${JSON.stringify(path)}`);
+    return false;
+  }
+
   return !!treeSha && equal(sha, treeSha);
 }
 
