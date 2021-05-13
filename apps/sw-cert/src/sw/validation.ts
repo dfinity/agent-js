@@ -18,6 +18,7 @@ import {
  * @param certificate The certificate to validate the .
  * @param tree The merkle tree returned by the canister.
  * @param agent A JavaScript agent that can validate certificates.
+ * @param isLocal Whether we're running in a local mode.
  * @returns True if the body is valid.
  */
 export async function validateBody(
@@ -27,8 +28,15 @@ export async function validateBody(
   certificate: ArrayBuffer,
   tree: ArrayBuffer,
   agent: HttpAgent,
+  isLocal = false,
 ): Promise<boolean> {
   const cert = new Certificate({ certificate: blobFromUint8Array(new Uint8Array(certificate)) }, agent);
+
+  // If we're running locally, update the key manually.
+  if (isLocal) {
+    await cert.fetchRootKey();
+  }
+
   // Make sure the certificate is valid.
   if (!(await cert.verify())) {
     return false;
@@ -50,13 +58,11 @@ export async function validateBody(
 
   // Next, calculate the SHA of the content.
   const sha = await crypto.subtle.digest("SHA-256", body);
-  const treeSha = lookupPathEx(["http_assets", path], hashTree);
+  let treeSha = lookupPathEx(["http_assets", path], hashTree);
 
-  // First check if treeSha is not undefined.
   if (!treeSha) {
-    console.log('treeSha undefined??');
-    console.log(hashTreeToString(hashTree));
-    console.log(path);
+    // Allow fallback to `index.html`.
+    treeSha = lookupPathEx(["http_assets", "/index.html"], hashTree);
   }
 
   return !!treeSha && equal(sha, treeSha);
