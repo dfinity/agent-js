@@ -66,7 +66,7 @@ export interface AuthClientStorage {
 interface InternetIdentityAuthRequest {
   kind: 'authorize-client';
   sessionPublicKey: Uint8Array;
-  maxTimetoLive?: bigint;
+  maxTimeToLive?: bigint;
 }
 
 interface InternetIdentityAuthResponseSuccess {
@@ -291,7 +291,7 @@ export class AuthClient {
           const request: InternetIdentityAuthRequest = {
             kind: 'authorize-client',
             sessionPublicKey: this._key?.getPublicKey().toDer() as Uint8Array,
-            maxTimetoLive: options?.maxTimeToLive,
+            maxTimeToLive: options?.maxTimeToLive,
           };
           this._idpWindow?.postMessage(request, identityProviderUrl.origin);
           break;
