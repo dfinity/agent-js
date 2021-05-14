@@ -8,6 +8,7 @@ module.exports = {
   },
   mode: 'production',
   target: 'web',
+  devtool: 'source-map',
   output: {
     path: path.join(__dirname, 'dist'),
     filename: '[id]-[contenthash].js'
