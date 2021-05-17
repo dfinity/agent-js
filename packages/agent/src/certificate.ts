@@ -121,11 +121,6 @@ export class Certificate {
     return res;
   }
 
-  public async fetchRootKey(): Promise<void> {
-    await this._agent.fetchRootKey();
-    this._rootKey = this._agent.rootKey;
-  }
-
   private async _checkDelegation(d?: Delegation): Promise<Buffer> {
     if (!d) {
       if (!this._rootKey) {
@@ -133,7 +128,8 @@ export class Certificate {
           this._rootKey = this._agent.rootKey;
           return this._rootKey;
         }
-        this._rootKey = await this._agent.fetchRootKey();
+
+        throw new Error(`Agent does not have a rootKey. Do you need to call 'fetchRootKey'?`);
       }
       return this._rootKey;
     }
@@ -141,8 +137,12 @@ export class Certificate {
     if (!(await cert.verify())) {
       throw new Error('fail to verify delegation certificate');
     }
-    const res = cert.lookup([Buffer.from('subnet'), d.subnet_id, Buffer.from('public_key')])!;
-    return Promise.resolve(res);
+
+    const lookup = cert.lookupEx(['subnet', d.subnet_id, 'public_key']);
+    if (!lookup) {
+      throw new Error(`Could not find subnet key for subnet 0x${d.subnet_id.toString('hex')}`);
+    }
+    return Buffer.from(lookup);
   }
 }
 

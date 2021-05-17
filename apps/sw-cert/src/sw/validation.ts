@@ -34,7 +34,7 @@ export async function validateBody(
 
   // If we're running locally, update the key manually.
   if (isLocal) {
-    await cert.fetchRootKey();
+    await agent.fetchRootKey();
   }
 
   // Make sure the certificate is valid.
