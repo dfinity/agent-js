@@ -75,5 +75,8 @@ module.exports = {
       Buffer: [require.resolve('buffer/'), 'Buffer'],
       process: require.resolve('process/browser'),
     }),
+    new webpack.EnvironmentPlugin({
+      FORCE_FETCH_ROOT_KEY: false,
+    }),
   ],
 };

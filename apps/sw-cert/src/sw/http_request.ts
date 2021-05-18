@@ -15,6 +15,8 @@ const hostnameCanisterIdMap: Record<string, [string, string]> = {
   'nns.ic0.app': ['qoctq-giaaa-aaaaa-aaaea-cai', 'ic0.app'],
 };
 
+const shouldFetchRootKey: boolean = !!(process?.env?.FORCE_FETCH_ROOT_KEY) || false;
+
 const swLocation = new URL(self.location.toString());
 const [_swCanisterId, swDomains] = (() => {
   const maybeSplit = splitHostnameForCanisterId(swLocation.hostname);
@@ -276,7 +278,7 @@ export async function handleRequest(request: Request): Promise<Response> {
           certificate,
           tree,
           agent,
-          isLocal,
+          shouldFetchRootKey,
         );
 
         if (!bodyValid) {
