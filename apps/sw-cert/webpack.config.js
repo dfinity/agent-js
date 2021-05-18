@@ -11,7 +11,8 @@ module.exports = {
   devtool: 'source-map',
   output: {
     path: path.join(__dirname, 'dist'),
-    filename: '[id]-[contenthash].js'
+    filename: '[id]-[contenthash].js',
+    publicPath: '/'
   },
   optimization: {
     splitChunks: {
