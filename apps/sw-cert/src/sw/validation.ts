@@ -7,7 +7,7 @@ import {
   HttpAgent,
   lookupPathEx,
   reconstruct,
-  Principal, hashTreeToString,
+  Principal,
 } from "@dfinity/agent";
 
 /**
@@ -18,7 +18,7 @@ import {
  * @param certificate The certificate to validate the .
  * @param tree The merkle tree returned by the canister.
  * @param agent A JavaScript agent that can validate certificates.
- * @param isLocal Whether we're running in a local mode.
+ * @param shouldFetchRootKey Whether should fetch the root key if it isn't available.
  * @returns True if the body is valid.
  */
 export async function validateBody(
@@ -28,12 +28,12 @@ export async function validateBody(
   certificate: ArrayBuffer,
   tree: ArrayBuffer,
   agent: HttpAgent,
-  isLocal = false,
+  shouldFetchRootKey = false,
 ): Promise<boolean> {
   const cert = new Certificate({ certificate: blobFromUint8Array(new Uint8Array(certificate)) }, agent);
 
   // If we're running locally, update the key manually.
-  if (isLocal) {
+  if (shouldFetchRootKey) {
     await agent.fetchRootKey();
   }
 
