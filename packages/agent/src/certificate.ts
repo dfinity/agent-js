@@ -1,6 +1,7 @@
 import { Buffer } from 'buffer/';
 import { Agent, getDefaultAgent, ReadStateResponse } from './agent';
 import * as cbor from './cbor';
+import { AgentError } from './errors';
 import { hash } from './request_id';
 import {
   BinaryBlob,
@@ -11,6 +12,16 @@ import {
   blobToUint8Array,
 } from './types';
 import { blsVerify } from './utils/bls';
+
+/**
+ * A certificate needs to be verified (using {@link Certificate.prototype.verify})
+ * before it can be used.
+ */
+export class UnverifiedCertificateError extends AgentError {
+  constructor() {
+    super(`Cannot lookup unverified certificate. Call 'verify()' first.`);
+  }
+}
 
 interface Cert {
   tree: HashTree;
@@ -25,6 +36,7 @@ const enum NodeId {
   Leaf = 3,
   Pruned = 4,
 }
+
 export type HashTree =
   | [0]
   | [1, HashTree, HashTree]
@@ -98,15 +110,11 @@ export class Certificate {
   }
 
   public lookupEx(path: Array<ArrayBuffer | string>): ArrayBuffer | undefined {
-    if (!this.verified) {
-      throw new Error('Cannot lookup unverified certificate');
-    }
+    this.checkState();
     return lookupPathEx(path, this.cert.tree);
   }
   public lookup(path: Buffer[]): Buffer | undefined {
-    if (!this.verified) {
-      throw new Error('Cannot lookup unverified certificate');
-    }
+    this.checkState();
     return lookup_path(path, this.cert.tree);
   }
 
@@ -124,6 +132,12 @@ export class Certificate {
   public async fetchRootKey(): Promise<void> {
     await this._agent.fetchRootKey();
     this._rootKey = this._agent.rootKey;
+  }
+
+  protected checkState(): void {
+    if (!this.verified) {
+      throw new UnverifiedCertificateError();
+    }
   }
 
   private async _checkDelegation(d?: Delegation): Promise<Buffer> {

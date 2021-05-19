@@ -104,6 +104,7 @@ export class HttpAgent implements Agent {
   private readonly _fetch: typeof fetch;
   private readonly _host: URL;
   private readonly _credentials: string | undefined;
+  private _rootKeyFetched = false;
   public rootKey = blobFromHex(IC_ROOT_KEY);
 
   constructor(options: HttpAgentOptions = {}) {
@@ -350,8 +351,11 @@ export class HttpAgent implements Agent {
   }
 
   public async fetchRootKey(): Promise<BinaryBlob> {
-    // Hex-encoded version of the replica root key
-    this.rootKey = blobFromUint8Array(((await this.status()) as any).root_key);
+    if (!this._rootKeyFetched) {
+      // Hex-encoded version of the replica root key
+      this.rootKey = blobFromUint8Array(((await this.status()) as any).root_key);
+      this._rootKeyFetched = true;
+    }
     return this.rootKey;
   }
 
