@@ -1,5 +1,3 @@
-import { Buffer } from 'buffer/';
-import { BinaryBlob, blobFromHex, blobFromUint8Array, blobToHex } from './types';
 import { decode, encode } from './utils/base32';
 import { getCrc32 } from './utils/getCrc';
 import { sha224 } from './utils/sha224';
@@ -7,14 +5,20 @@ import { sha224 } from './utils/sha224';
 const SELF_AUTHENTICATING_SUFFIX = 2;
 const ANONYMOUS_SUFFIX = 4;
 
+const fromHexString = (hexString: string) =>
+  new Uint8Array((hexString.match(/.{1,2}/g) ?? []).map(byte => parseInt(byte, 16)));
+
+const toHexString = (bytes: Uint8Array) =>
+  bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
+
 export class Principal {
   public static anonymous(): Principal {
-    return new this(blobFromUint8Array(new Uint8Array([ANONYMOUS_SUFFIX])));
+    return new this(new Uint8Array([ANONYMOUS_SUFFIX]));
   }
 
-  public static selfAuthenticating(publicKey: BinaryBlob): Principal {
+  public static selfAuthenticating(publicKey: Uint8Array): Principal {
     const sha = sha224(publicKey);
-    return new this(blobFromUint8Array(new Uint8Array([...sha, SELF_AUTHENTICATING_SUFFIX])));
+    return new this(new Uint8Array([...sha, SELF_AUTHENTICATING_SUFFIX]));
   }
 
   public static from(other: unknown): Principal {
@@ -25,14 +29,14 @@ export class Principal {
       other !== null &&
       (other as Principal)._isPrincipal === true
     ) {
-      return new Principal((other as Principal)._blob);
+      return new Principal((other as Principal)._arr);
     }
 
     throw new Error(`Impossible to convert ${JSON.stringify(other)} to Principal.`);
   }
 
   public static fromHex(hex: string): Principal {
-    return new this(blobFromHex(hex));
+    return new this(fromHexString(hex));
   }
 
   public static fromText(text: string): Principal {
@@ -41,7 +45,7 @@ export class Principal {
     let arr = decode(canisterIdNoDash);
     arr = arr.slice(4, arr.length);
 
-    const principal = new this(blobFromUint8Array(arr));
+    const principal = new this(arr);
     if (principal.toText() !== text) {
       throw new Error(`Principal "${principal.toText()}" does not have a valid checksum.`);
     }
@@ -49,37 +53,33 @@ export class Principal {
     return principal;
   }
 
-  public static fromBlob(blob: BinaryBlob): Principal {
-    return new this(blob);
+  public static fromUint8Array(arr: Uint8Array): Principal {
+    return new this(arr);
   }
 
   public readonly _isPrincipal = true;
 
-  protected constructor(private _blob: BinaryBlob) {}
+  protected constructor(private _arr: Uint8Array) {}
 
   public isAnonymous(): boolean {
-    return this._blob.byteLength === 1 && this._blob[0] === ANONYMOUS_SUFFIX;
+    return this._arr.byteLength === 1 && this._arr[0] === ANONYMOUS_SUFFIX;
   }
 
-  public toBlob(): BinaryBlob {
-    return this._blob;
-  }
-
-  public toHash() {
-    return this._blob;
+  public toUint8Array(): Uint8Array {
+    return this._arr;
   }
 
   public toHex(): string {
-    return blobToHex(this._blob).toUpperCase();
+    return toHexString(this._arr).toUpperCase();
   }
 
   public toText(): string {
     const checksumArrayBuf = new ArrayBuffer(4);
     const view = new DataView(checksumArrayBuf);
-    view.setUint32(0, getCrc32(this.toBlob()), false);
+    view.setUint32(0, getCrc32(this._arr));
     const checksum = Uint8Array.from(Buffer.from(checksumArrayBuf));
 
-    const bytes = Uint8Array.from(this._blob);
+    const bytes = Uint8Array.from(this._arr);
     const array = new Uint8Array([...checksum, ...bytes]);
 
     const result = encode(array);
