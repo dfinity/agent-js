@@ -8,9 +8,11 @@ module.exports = {
   },
   mode: 'production',
   target: 'web',
+  devtool: 'source-map',
   output: {
     path: path.join(__dirname, 'dist'),
-    filename: '[id]-[contenthash].js'
+    filename: '[id]-[contenthash].js',
+    publicPath: '/'
   },
   optimization: {
     splitChunks: {
@@ -72,6 +74,9 @@ module.exports = {
     new webpack.ProvidePlugin({
       Buffer: [require.resolve('buffer/'), 'Buffer'],
       process: require.resolve('process/browser'),
+    }),
+    new webpack.EnvironmentPlugin({
+      FORCE_FETCH_ROOT_KEY: false,
     }),
   ],
 };

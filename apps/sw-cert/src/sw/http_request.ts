@@ -11,7 +11,15 @@ import * as pako from 'pako';
 const hostnameCanisterIdMap: Record<string, [string, string]> = {
   'identity.ic0.page': ['rdmx6-jaaaa-aaaaa-aaadq-cai', 'ic0.page'],
   'identity.ic0.app': ['rdmx6-jaaaa-aaaaa-aaadq-cai', 'ic0.app'],
+  'nns.ic0.page': ['qoctq-giaaa-aaaaa-aaaea-cai', 'ic0.page'],
+  'nns.ic0.app': ['qoctq-giaaa-aaaaa-aaaea-cai', 'ic0.app'],
+  'chat.ic0.page': ['l4kjv-xyaaa-aaaae-qaaba-cai', 'ic0.page'],
+  'chat.ic0.app': ['l4kjv-xyaaa-aaaae-qaaba-cai', 'ic0.app'],
+  'dscvr.ic0.page': ['h5aet-waaaa-aaaab-qaamq-cai', 'ic0.page'],
+  'dscvr.ic0.app': ['h5aet-waaaa-aaaab-qaamq-cai', 'ic0.app'],
 };
+
+const shouldFetchRootKey: boolean = !!(process?.env?.FORCE_FETCH_ROOT_KEY) || false;
 
 const swLocation = new URL(self.location.toString());
 const [_swCanisterId, swDomains] = (() => {
@@ -75,7 +83,7 @@ function maybeResolveCanisterIdFromSearchParam(
   isLocal: boolean,
 ): Principal | null {
   // Skip this if we're not on localhost.
-  if (isLocal) {
+  if (!isLocal) {
     return null;
   }
 
@@ -163,6 +171,22 @@ const canisterIdlFactory: IDL.InterfaceFactory = ({ IDL }) => {
 }
 
 /**
+ * Decode a body (ie. deflate or gunzip it) based on its content-encoding.
+ * @param body The body to decode.
+ * @param encoding Its content-encoding associated header.
+ */
+function decodeBody(body: Uint8Array, encoding: string): Uint8Array {
+  switch (encoding) {
+    case 'identity':
+    case '':
+      return body;
+    case 'gzip': return pako.ungzip(body);
+    case 'deflate': return pako.inflate(body);
+    default: throw new Error(`Unsupported encoding: "${encoding}"`);
+  }
+}
+
+/**
  * Box a request, send it to the canister, and handle its response, creating a Response
  * object.
  * @param request The request received from the browser.
@@ -200,7 +224,12 @@ export async function handleRequest(request: Request): Promise<Response> {
         canisterId: maybeCanisterId,
       });
       const requestHeaders: [string, string][] = [];
-      request.headers.forEach((key, value) => requestHeaders.push([key, value]));
+      request.headers.forEach((value, key) => requestHeaders.push([key, value]));
+
+      // If the accept encoding isn't given, add it because we want to save bandwidth.
+      if (!request.headers.has("Accept-Encoding")) {
+        requestHeaders.push(["Accept-Encoding", "gzip, deflate, identity"]);
+      }
 
       const httpRequest = {
         method: request.method,
@@ -210,10 +239,7 @@ export async function handleRequest(request: Request): Promise<Response> {
       };
 
       const httpResponse: any = await actor.http_request(httpRequest);
-      const body = new Uint8Array(httpResponse.body);
-      const response = new Response(body.buffer, {
-        status: httpResponse.status_code,
-      });
+      const headers = new Headers();
 
       let certificate: ArrayBuffer | undefined;
       let tree: ArrayBuffer | undefined;
@@ -240,11 +266,15 @@ export async function handleRequest(request: Request): Promise<Response> {
             break;
         }
 
-        response.headers.append(key, value);
+        headers.append(key, value);
       }
+
+      const body = new Uint8Array(httpResponse.body);
+      const identity = decodeBody(body, encoding);
 
       let bodyValid = false;
       if (certificate && tree) {
+        // Try to validate the body as is.
         bodyValid = await validateBody(
           maybeCanisterId,
           url.pathname,
@@ -252,15 +282,28 @@ export async function handleRequest(request: Request): Promise<Response> {
           certificate,
           tree,
           agent,
+          shouldFetchRootKey,
         );
+
+        if (!bodyValid) {
+          // If that didn't work, try to validate its identity version. This is for
+          // backward compatibility.
+          bodyValid = await validateBody(
+            maybeCanisterId,
+            url.pathname,
+            identity.buffer,
+            certificate,
+            tree,
+            agent,
+            isLocal,
+          )
+        }
       }
       if (bodyValid) {
-        switch (encoding) {
-          case '': return response;
-          case 'gzip': return new Response(pako.ungzip(body), response);
-          case 'deflate': return new Response(pako.inflate(body), response);
-          default: throw new Error(`Unsupported encoding: "${encoding}"`);
-        }
+        return new Response(identity.buffer, {
+          status: httpResponse.status_code,
+          headers,
+        });
       } else {
         console.error('BODY DOES NOT PASS VERIFICATION');
         return new Response("Body does not pass verification", { status: 500 });

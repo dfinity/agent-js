@@ -1,11 +1,63 @@
 import { Buffer } from 'buffer/';
-import { Agent, getDefaultAgent, QueryResponseStatus } from './agent';
+import {
+  Agent,
+  getDefaultAgent,
+  QueryResponseRejected,
+  QueryResponseStatus,
+  ReplicaRejectCode, SubmitResponse
+} from './agent';
 import { getManagementCanister } from './canisters/management';
+import { AgentError } from './errors';
 import * as IDL from './idl';
 import { pollForResponse, PollStrategyFactory, strategy } from './polling';
 import { Principal } from './principal';
-import { toHex as requestIdToHex } from './request_id';
+import { RequestId, toHex as requestIdToHex } from './request_id';
 import { BinaryBlob } from './types';
+
+export class ActorCallError extends AgentError {
+  constructor(
+    public readonly canisterId: Principal,
+    public readonly methodName: string,
+    public readonly type: 'query' | 'update',
+    public readonly props: Record<string, string>,
+  ) {
+    super([
+      `Call failed:`,
+      `  Canister: ${canisterId.toText()}`,
+      `  Method: ${methodName} (${type})`,
+      ...Object.getOwnPropertyNames(props).map(n => `  "${n}": ${JSON.stringify(props[n])}`),
+    ].join('\n'));
+  }
+}
+
+export class QueryCallRejectedError extends ActorCallError {
+  constructor(
+    canisterId: Principal,
+    methodName: string,
+    public readonly result: QueryResponseRejected,
+  ) {
+    super(canisterId, methodName, 'query', {
+      Status: result.status,
+      Code: ReplicaRejectCode[result.reject_code] ?? `Unknown Code "${result.reject_code}"`,
+      Message: result.reject_message,
+    });
+  }
+}
+
+export class UpdateCallRejectedError extends ActorCallError {
+  constructor(
+    canisterId: Principal,
+    methodName: string,
+    public readonly requestId: RequestId,
+    public readonly response: SubmitResponse['response'],
+  ) {
+    super(canisterId, methodName, 'update', {
+      'Request ID': requestIdToHex(requestId),
+      'HTTP status code': response.status.toString(),
+      'HTTP status text': response.statusText,
+    });
+  }
+}
 
 /**
  * Configuration to make calls to the Replica.
@@ -258,18 +310,14 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
       };
 
       const agent = options.agent || actor[metadataSymbol].config.agent || getDefaultAgent();
-      const cid = options.canisterId || actor[metadataSymbol].config.canisterId;
+      const cid = Principal.from(options.canisterId || actor[metadataSymbol].config.canisterId);
       const arg = IDL.encode(func.argTypes, args) as BinaryBlob;
 
       const result = await agent.query(cid, { methodName, arg });
 
       switch (result.status) {
         case QueryResponseStatus.Rejected:
-          throw new Error(
-            `Query failed:\n` +
-              `  Status: ${result.status}\n` +
-              `  Message: ${result.reject_message}\n`,
-          );
+          throw new QueryCallRejectedError(cid, methodName, result);
 
         case QueryResponseStatus.Replied:
           return decodeReturnValue(func.retTypes, result.reply.arg);
@@ -302,16 +350,7 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
       });
 
       if (!response.ok) {
-        throw new Error(
-          [
-            'Call failed:',
-            `  Method: ${methodName}(${args})`,
-            `  Canister ID: ${cid}`,
-            `  Request ID: ${requestIdToHex(requestId)}`,
-            `  HTTP status code: ${response.status}`,
-            `  HTTP status text: ${response.statusText}`,
-          ].join('\n'),
-        );
+        throw new UpdateCallRejectedError(cid, methodName, requestId, response);
       }
 
       const pollStrategy = pollingStrategyFactory();

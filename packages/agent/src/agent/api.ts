@@ -6,7 +6,7 @@ import { BinaryBlob, JsonObject } from '../types';
  * Codes used by the replica for rejecting a message.
  * See {@link https://sdk.dfinity.org/docs/interface-spec/#reject-codes | the interface spec}.
  */
-export const enum ReplicaRejectCode {
+export enum ReplicaRejectCode {
   SysFatal = 1,
   SysTransient = 2,
   DestinationInvalid = 3,
