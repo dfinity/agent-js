@@ -20,8 +20,7 @@ const hostnameCanisterIdMap: Record<string, [string, string]> = {
   "dscvr.ic0.app": ["h5aet-waaaa-aaaab-qaamq-cai", "ic0.app"],
 };
 
-const shouldFetchRootKey: boolean =
-  !!process?.env?.FORCE_FETCH_ROOT_KEY || false;
+const shouldFetchRootKey: boolean = !!process.env.FORCE_FETCH_ROOT_KEY || false;
 
 const swLocation = new URL(self.location.toString());
 const [_swCanisterId, swDomains] = (() => {
