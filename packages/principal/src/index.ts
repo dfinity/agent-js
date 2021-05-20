@@ -57,7 +57,7 @@ export class Principal {
 
   protected constructor(private _blob: BinaryBlob) {}
 
-  public isAnonymous() {
+  public isAnonymous(): boolean {
     return this._blob.byteLength === 1 && this._blob[0] === ANONYMOUS_SUFFIX;
   }
 
@@ -65,7 +65,7 @@ export class Principal {
     return this._blob;
   }
 
-  public toHash() {
+  public toHash(): BinaryBlob {
     return this._blob;
   }
 
@@ -91,7 +91,7 @@ export class Principal {
     return matches.join('-');
   }
 
-  public toString() {
+  public toString(): string {
     return this.toText();
   }
 }
