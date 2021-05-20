@@ -3,8 +3,8 @@ import {
   Certificate,
   getManagementCanister,
   IDL,
-  Principal,
 } from "@dfinity/agent";
+import { Principal } from "@dfinity/principal";
 import agent from "../utils/agent";
 import { Buffer } from "buffer/";
 

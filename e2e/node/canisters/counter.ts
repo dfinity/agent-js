@@ -1,4 +1,5 @@
-import { Actor, blobFromUint8Array, Principal, IDL } from "@dfinity/agent";
+import { Actor, blobFromUint8Array, IDL } from "@dfinity/agent";
+import { Principal } from "@dfinity/principal";
 import { readFileSync } from "fs";
 import path from "path";
 import agent from "../utils/agent";
@@ -12,7 +13,7 @@ let cache: {
 /**
  * Create a counter Actor + canisterId
  */
-export default async function(): Promise<{
+export default async function (): Promise<{
   canisterId: Principal;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   actor: any;
