@@ -1,32 +1,23 @@
-# @dfinity/authentication
+# @dfinity/principal
 
-JavaScript and TypeScript library to support manage Identities and enable simple Web Authentication flows for applications on the [Internet Computer](https://dfinity.org/)
+JavaScript and TypeScript library to work with Internet Computer Principals
 
 Visit the [Dfinity Forum](https://forum.dfinity.org/) and [SDK Documentation](https://sdk.dfinity.org/docs/index.html) for more information and support building on the Internet Computer.
 
-Additional API Documentation can be found [here](https://peacock.dev/authentication-docs).
+Additional API Documentation can be found [here](https://peacock.dev/principal-docs).
 
 ---
 
 ## Installation
 
-Using authentication:
+Using Principal:
 
 ```
-npm i --save @dfinity/authentication
+npm i --save @dfinity/principal
 ```
 
 ### In the browser:
 
 ```
-import * as auth from "@dfinity/authentication";
+import { Principal } from "@dfinity/principal";
 ```
-
-or using individual exports:
-
-```
-import { createAuthenticationRequestUrl } from "@dfinity/authentication";
-```
-
-Note: depends on [@dfinity/agent](https://www.npmjs.com/package/@dfinity/agent) and
-[@dfinity/identity](https://www.npmjs.com/package/@dfinity/identity).
