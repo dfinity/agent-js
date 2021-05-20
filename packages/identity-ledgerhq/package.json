@@ -40,9 +40,12 @@
     "test": "jest",
     "test:coverage": "jest --verbose --collectCoverage"
   },
-  "dependencies": {
+  "peerDependencies": {
     "@dfinity/agent": "^0.8.9",
     "@dfinity/identity": "^0.8.9",
+    "@dfinity/principal": "^0.8.9"
+  },
+  "dependencies": {
     "@ledgerhq/hw-transport": "^5.49.0",
     "@ledgerhq/hw-transport-webusb": "^5.49.0",
     "@zondax/ledger-dfinity": "0.2.1"

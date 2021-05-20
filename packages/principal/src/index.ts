@@ -65,7 +65,7 @@ export class Principal {
     return this._blob;
   }
 
-  public toHash(): BinaryBlob {
+  public toHash() {
     return this._blob;
   }
 
