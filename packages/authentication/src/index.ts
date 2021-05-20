@@ -1,4 +1,5 @@
-import { Principal, PublicKey } from '@dfinity/agent';
+import { PublicKey } from '@dfinity/agent';
+import { Principal } from '@dfinity/principal';
 import { DelegationChain } from '@dfinity/identity';
 
 const DEFAULT_IDENTITY_PROVIDER_URL = 'https://auth.ic0.app/authorize';
@@ -65,13 +66,19 @@ export function createAuthenticationRequestUrl(options: CreateUrlOptions): URL {
   url.searchParams.set('response_type', 'token');
   url.searchParams.set('login_hint', options.publicKey.toDer().toString('hex'));
   url.searchParams.set('redirect_uri', options.redirectUri ?? _getDefaultLocation());
-  url.searchParams.set('scope', options.scope.map(p => {
-    if (typeof p === 'string') {
-      return Principal.fromText(p);
-    } else {
-      return p;
-    }
-  }).map(p => p.toString()).join(' '));
+  url.searchParams.set(
+    'scope',
+    options.scope
+      .map(p => {
+        if (typeof p === 'string') {
+          return Principal.fromText(p);
+        } else {
+          return p;
+        }
+      })
+      .map(p => p.toString())
+      .join(' '),
+  );
   url.searchParams.set('state', '');
 
   return url;
@@ -97,7 +104,7 @@ export function getAccessTokenFromWindow(): AccessToken | null {
 export function getAccessTokenFromURL(url: URL | string): AccessToken | null {
   // Remove the `#` at the start.
   const hashParams = new URLSearchParams(new URL(url.toString()).hash.substr(1));
-  return hashParams.get('access_token') as (AccessToken | null);
+  return hashParams.get('access_token') as AccessToken | null;
 }
 
 /**
@@ -106,19 +113,18 @@ export function getAccessTokenFromURL(url: URL | string): AccessToken | null {
  */
 export function createDelegationChainFromAccessToken(accessToken: AccessToken): DelegationChain {
   // Transform the HEXADECIMAL string into the JSON it represents.
-  if (/[^0-9a-fA-F]/.test(accessToken) || (accessToken.length % 2)) {
+  if (/[^0-9a-fA-F]/.test(accessToken) || accessToken.length % 2) {
     throw new Error('Invalid hexadecimal string for accessToken.');
   }
   const chainJson = [...accessToken]
     .reduce((acc, curr, i) => {
       // tslint:disable-next-line:no-bitwise
-      acc[i / 2 | 0] = (acc[i / 2 | 0] || '') + curr;
+      acc[(i / 2) | 0] = (acc[(i / 2) | 0] || '') + curr;
       return acc;
     }, [] as string[])
     .map(x => Number.parseInt(x, 16))
     .map(x => String.fromCharCode(x))
     .join('');
-
 
   return DelegationChain.fromJSON(chainJson);
 }
@@ -143,9 +149,9 @@ export function isDelegationValid(chain: DelegationChain, checks?: DelegationVal
   const maybeScope = checks?.scope;
   if (maybeScope) {
     if (Array.isArray(maybeScope)) {
-      scopes.push(...maybeScope.map(s => (typeof s === 'string') ? Principal.fromText(s) : s));
+      scopes.push(...maybeScope.map(s => (typeof s === 'string' ? Principal.fromText(s) : s)));
     } else {
-      scopes.push((typeof maybeScope === 'string') ? Principal.fromText(maybeScope) : maybeScope);
+      scopes.push(typeof maybeScope === 'string' ? Principal.fromText(maybeScope) : maybeScope);
     }
   }
 

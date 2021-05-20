@@ -1,5 +1,5 @@
 import * as IDL from '../idl';
-import { Principal } from '../principal';
+import { Principal } from '@dfinity/principal';
 import * as UI from './candid-core';
 
 // tslint:disable:max-classes-per-file

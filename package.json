@@ -16,6 +16,7 @@
       "packages/identity-ledgerhq",
       "packages/authentication",
       "packages/auth-client",
+      "packages/principal",
       "apps/sw-cert",
       "e2e/node",
       "demos/ledgerhq",

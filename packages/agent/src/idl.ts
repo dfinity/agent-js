@@ -1,7 +1,7 @@
 // tslint:disable:max-classes-per-file
 import Pipe from 'buffer-pipe';
 import { Buffer } from 'buffer/';
-import { Principal as PrincipalId } from './principal';
+import { Principal as PrincipalId } from '@dfinity/principal';
 import { BinaryBlob, blobFromBuffer, JsonValue } from './types';
 import { idlLabelToId } from './utils/hash';
 import { lebDecode, lebEncode, safeRead, slebDecode, slebEncode } from './utils/leb128';
@@ -675,7 +675,7 @@ export class VecClass<T> extends ConstructType<T[]> {
   public encodeValue(x: T[]) {
     const len = lebEncode(x.length);
     if (this._blobOptimization) {
-      return Buffer.concat([len, Buffer.from(x as unknown as number[])]);
+      return Buffer.concat([len, Buffer.from((x as unknown) as number[])]);
     }
 
     return Buffer.concat([len, ...x.map(d => this._type.encodeValue(d))]);
@@ -696,7 +696,7 @@ export class VecClass<T> extends ConstructType<T[]> {
     }
     const len = Number(lebDecode(b));
     if (this._blobOptimization) {
-      return [...new Uint8Array(b.read(len))] as unknown as T[];
+      return ([...new Uint8Array(b.read(len))] as unknown) as T[];
     }
 
     const rets: T[] = [];

@@ -1,5 +1,5 @@
 import { Actor, ActorMethod, ActorSubclass, CallConfig } from '../actor';
-import { Principal } from '../principal';
+import { Principal } from '@dfinity/principal';
 import managementCanisterIdl from './management_idl';
 
 export interface CanisterSettings {
@@ -11,10 +11,15 @@ export interface CanisterSettings {
 
 /* tslint:disable */
 export interface ManagementCanisterRecord {
-  provisional_create_canister_with_cycles: ActorMethod<[{
-    amount: [] | [number],
-    settings: [] | [CanisterSettings],
-  }], { canister_id: Principal }>;
+  provisional_create_canister_with_cycles: ActorMethod<
+    [
+      {
+        amount: [] | [number];
+        settings: [] | [CanisterSettings];
+      },
+    ],
+    { canister_id: Principal }
+  >;
   install_code: ActorMethod<
     [
       {

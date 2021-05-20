@@ -1,4 +1,5 @@
-import { Principal, RequestId, RequestStatusResponseStatus, toHex } from '..';
+import { Principal } from '@dfinity/principal';
+import { RequestId, RequestStatusResponseStatus, toHex } from '..';
 import { PollStrategy } from './index';
 
 export type Predicate<T> = (

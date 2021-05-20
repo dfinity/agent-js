@@ -1,6 +1,6 @@
 import { Buffer } from 'buffer/';
 import { decode, encode } from './cbor';
-import { Principal } from './principal';
+import { Principal } from '@dfinity/principal';
 import { BinaryBlob, blobToHex } from './types';
 
 test('round trip', () => {

@@ -3,9 +3,9 @@ import {
   blobFromUint8Array,
   derBlobFromBlob,
   Identity,
-  Principal,
   SignIdentity,
 } from '@dfinity/agent';
+import { Principal } from '@dfinity/principal';
 import { isDelegationValid } from '@dfinity/authentication';
 import {
   Delegation,

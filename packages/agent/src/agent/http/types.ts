@@ -1,4 +1,4 @@
-import { Principal } from '../../principal';
+import { Principal } from '@dfinity/principal';
 import { BinaryBlob } from '../../types';
 import { Expiry } from './transforms';
 
@@ -13,7 +13,8 @@ export const enum Endpoint {
 
 // An HttpAgent request, before it gets encoded and sent to the server.
 // We create an empty request that we will fill later.
-export type HttpAgentRequest = HttpAgentQueryRequest
+export type HttpAgentRequest =
+  | HttpAgentQueryRequest
   | HttpAgentSubmitRequest
   | HttpAgentReadStateRequest;
 

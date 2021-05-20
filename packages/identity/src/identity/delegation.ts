@@ -5,11 +5,11 @@ import {
   derBlobFromBlob,
   DerEncodedBlob,
   HttpAgentRequest,
-  Principal,
   PublicKey,
   requestIdOf,
   SignIdentity,
 } from '@dfinity/agent';
+import { Principal } from '@dfinity/principal';
 import { Buffer } from 'buffer/';
 import * as cbor from 'simple-cbor';
 
@@ -204,7 +204,7 @@ export class DelegationChain {
       return {
         delegation: new Delegation(
           _parseBlob(pubkey),
-          BigInt(`0x${expiration}`),  // expiration in JSON is an hexa string (See toJSON() below).
+          BigInt(`0x${expiration}`), // expiration in JSON is an hexa string (See toJSON() below).
           targets &&
             targets.map((t: unknown) => {
               if (typeof t !== 'string') {
@@ -226,7 +226,10 @@ export class DelegationChain {
    * @param delegations The list of delegations.
    * @param publicKey The DER-encoded public key of the key-pair signing the first delegation.
    */
-  public static fromDelegations(delegations: SignedDelegation[], publicKey: DerEncodedBlob): DelegationChain {
+  public static fromDelegations(
+    delegations: SignedDelegation[],
+    publicKey: DerEncodedBlob,
+  ): DelegationChain {
     return new this(delegations, publicKey);
   }
 

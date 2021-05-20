@@ -7,8 +7,8 @@ import {
   HttpAgent,
   lookupPathEx,
   reconstruct,
-  Principal,
 } from "@dfinity/agent";
+import { Principal } from "@dfinity/principal";
 
 /**
  * Validate whether a body is properly certified.
@@ -28,9 +28,12 @@ export async function validateBody(
   certificate: ArrayBuffer,
   tree: ArrayBuffer,
   agent: HttpAgent,
-  shouldFetchRootKey = false,
+  shouldFetchRootKey = false
 ): Promise<boolean> {
-  const cert = new Certificate({ certificate: blobFromUint8Array(new Uint8Array(certificate)) }, agent);
+  const cert = new Certificate(
+    { certificate: blobFromUint8Array(new Uint8Array(certificate)) },
+    agent
+  );
 
   // If we're running locally, update the key manually.
   if (shouldFetchRootKey) {
@@ -44,15 +47,21 @@ export async function validateBody(
 
   const hashTree: HashTree = cbor.decode(new Uint8Array(tree));
   const reconstructed = await reconstruct(hashTree);
-  const witness = cert.lookupEx(["canister", blobToUint8Array(canisterId.toBlob()), "certified_data"]);
+  const witness = cert.lookupEx([
+    "canister",
+    blobToUint8Array(canisterId.toBlob()),
+    "certified_data",
+  ]);
 
   if (!witness) {
-    throw new Error('Could not find certified data for this canister in the certificate.');
+    throw new Error(
+      "Could not find certified data for this canister in the certificate."
+    );
   }
 
   // First validate that the Tree is as good as the certification.
   if (!equal(witness, reconstructed)) {
-    console.error('Witness != Tree passed in ic-certification');
+    console.error("Witness != Tree passed in ic-certification");
     return false;
   }
 
@@ -68,7 +77,11 @@ export async function validateBody(
   if (!treeSha) {
     // The tree returned in the certification header is wrong. Return false.
     // We don't throw here, just invalidate the request.
-    console.error(`Invalid Tree in the header. Does not contain path ${JSON.stringify(path)}`);
+    console.error(
+      `Invalid Tree in the header. Does not contain path ${JSON.stringify(
+        path
+      )}`
+    );
     return false;
   }
 

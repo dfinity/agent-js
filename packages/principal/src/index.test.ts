@@ -1,5 +1,4 @@
-import { Principal } from './principal';
-
+import { Principal } from '.';
 
 describe('Principal', () => {
   it('encodes properly', () => {
@@ -26,4 +25,3 @@ describe('Principal', () => {
     expect(() => Principal.fromText('Hello world!')).toThrow();
   });
 });
-

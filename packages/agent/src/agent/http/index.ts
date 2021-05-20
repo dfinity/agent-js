@@ -1,7 +1,7 @@
 import { Buffer } from 'buffer/';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
-import { Principal } from '../../principal';
+import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 import { BinaryBlob, blobFromHex, blobFromUint8Array, JsonObject } from '../../types';
 import {

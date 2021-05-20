@@ -3,7 +3,6 @@ import {
   blobFromHex,
   CallOptions,
   JsonObject,
-  Principal,
   QueryFields,
   QueryResponse,
   ReadStateOptions,
@@ -11,6 +10,7 @@ import {
   SubmitResponse,
 } from '..';
 import { Agent } from './api';
+import { Principal } from '@dfinity/principal';
 
 export enum ProxyMessageKind {
   Error = 'err',

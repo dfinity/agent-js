@@ -4,13 +4,14 @@ import {
   getDefaultAgent,
   QueryResponseRejected,
   QueryResponseStatus,
-  ReplicaRejectCode, SubmitResponse
+  ReplicaRejectCode,
+  SubmitResponse,
 } from './agent';
 import { getManagementCanister } from './canisters/management';
 import { AgentError } from './errors';
 import * as IDL from './idl';
 import { pollForResponse, PollStrategyFactory, strategy } from './polling';
-import { Principal } from './principal';
+import { Principal } from '@dfinity/principal';
 import { RequestId, toHex as requestIdToHex } from './request_id';
 import { BinaryBlob } from './types';
 
@@ -21,12 +22,14 @@ export class ActorCallError extends AgentError {
     public readonly type: 'query' | 'update',
     public readonly props: Record<string, string>,
   ) {
-    super([
-      `Call failed:`,
-      `  Canister: ${canisterId.toText()}`,
-      `  Method: ${methodName} (${type})`,
-      ...Object.getOwnPropertyNames(props).map(n => `  "${n}": ${JSON.stringify(props[n])}`),
-    ].join('\n'));
+    super(
+      [
+        `Call failed:`,
+        `  Canister: ${canisterId.toText()}`,
+        `  Method: ${methodName} (${type})`,
+        ...Object.getOwnPropertyNames(props).map(n => `  "${n}": ${JSON.stringify(props[n])}`),
+      ].join('\n'),
+    );
   }
 }
 

@@ -3,7 +3,7 @@ import { HttpAgent } from '../index';
 import * as cbor from '../../cbor';
 import { Expiry, makeNonceTransform } from './transforms';
 import { CallRequest, Envelope, ReadRequestType, SubmitRequestType } from './types';
-import { Principal } from '../../principal';
+import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 import { BinaryBlob } from '../../types';
 import { Nonce } from '../../types';
