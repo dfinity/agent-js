@@ -116,8 +116,8 @@ dist
 .vscode
 
 # Generated Docs
-docs/agent
-docs/auth-client
-docs/authentication
-docs/identity
-docs/identity-ledgerhq
+docs/generated/agent
+docs/generated/auth-client
+docs/generated/authentication
+docs/generated/identity
+docs/generated/identity-ledgerhq

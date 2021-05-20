@@ -32,7 +32,7 @@
     "ci": "npm run prettier && npm run lint && npm run test",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
-    "make:docs/reference": "typedoc src/index.ts --out ../../docs/auth-client --excludeInternal",
+    "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/auth-client --excludeInternal",
     "prettier": "prettier --check \"src/**/*.ts\"",
     "prettier:write": "npm run prettier -- --write",
     "test": "jest",

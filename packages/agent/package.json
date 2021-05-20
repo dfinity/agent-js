@@ -34,7 +34,7 @@
     "eslint:fix": "npm run lint -- --fix",
     "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' src/index.ts src/auth.ts src/request_id.ts src/request_id.test.ts",
     "lint": "npm run eslint",
-    "make:docs/reference": "typedoc src/index.ts --out ../../docs/agent --excludeInternal",
+    "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/agent --excludeInternal",
     "prettier:write": "npm run prettier -- --write",
     "prettier": "prettier --check \"src/**/*.ts\"",
     "test": "jest --verbose",
