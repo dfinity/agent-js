@@ -4,7 +4,7 @@
 import { Buffer } from 'buffer/';
 import { Principal } from '@dfinity/principal';
 import { hash, requestIdOf } from './request_id';
-import { BinaryBlob, blobFromHex, blobFromUint8Array, blobToHex } from './types';
+import { BinaryBlob, blobFromHex, blobFromUint8Array, blobToHex } from '../../candid/src/types';
 
 const testHashOfBlob = async (input: BinaryBlob, expected: string) => {
   const hashed = await hash(input);

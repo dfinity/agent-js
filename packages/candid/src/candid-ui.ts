@@ -1,4 +1,4 @@
-import * as IDL from '../idl';
+import * as IDL from './idl';
 import { Principal } from '@dfinity/principal';
 import * as UI from './candid-core';
 

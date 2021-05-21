@@ -13,7 +13,7 @@ import * as IDL from './idl';
 import { pollForResponse, PollStrategyFactory, strategy } from './polling';
 import { Principal } from '@dfinity/principal';
 import { RequestId, toHex as requestIdToHex } from './request_id';
-import { BinaryBlob } from './types';
+import { BinaryBlob } from '../../candid/src/types';
 
 export class ActorCallError extends AgentError {
   constructor(

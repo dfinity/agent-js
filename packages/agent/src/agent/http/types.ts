@@ -1,5 +1,5 @@
 import type { Principal } from '@dfinity/principal';
-import { BinaryBlob } from '../../types';
+import { BinaryBlob } from '../../../../candid/src/types';
 import { Expiry } from './transforms';
 
 /**

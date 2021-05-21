@@ -1,7 +1,7 @@
 import { sha256 as jsSha256 } from 'js-sha256';
 import borc from 'borc';
 import { Buffer } from 'buffer/';
-import { BinaryBlob, blobFromBuffer, blobFromUint8Array, blobToHex } from './types';
+import { BinaryBlob, blobFromBuffer, blobFromUint8Array, blobToHex } from '../../candid/src/types';
 import { lebEncode } from './utils/leb128';
 import { Principal } from '@dfinity/principal';
 

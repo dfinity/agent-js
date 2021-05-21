@@ -12,6 +12,7 @@
   "workspaces": {
     "packages": [
       "packages/principal",
+      "packages/candid",
       "packages/agent",
       "packages/identity",
       "packages/identity-ledgerhq",

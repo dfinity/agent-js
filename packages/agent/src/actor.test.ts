@@ -7,7 +7,7 @@ import * as cbor from './cbor';
 import * as IDL from './idl';
 import { Principal } from '@dfinity/principal';
 import { requestIdOf } from './request_id';
-import { blobFromHex, Nonce } from './types';
+import { blobFromHex, Nonce } from '../../candid/src/types';
 
 const originalDateNowFn = global.Date.now;
 beforeEach(() => {

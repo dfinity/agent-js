@@ -1,4 +1,4 @@
-import * as IDL from '../idl';
+import * as IDL from './idl';
 
 // tslint:disable:max-classes-per-file
 

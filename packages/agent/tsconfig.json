@@ -21,5 +21,13 @@
     "target": "es2017",
     "tsBuildInfoFile": "./build_info.json"
   },
-  "include": ["types/*", "src/**/*.ts"]
+  "include": [
+    "types/*",
+    "src/**/*.ts",
+    "../candid/src/types.ts",
+    "../candid/src/utils/bls.test.ts",
+    "../candid/src/utils/leb128.test.ts",
+    "../candid/src/utils/hash.test.ts",
+    "../candid/src/idl.test.ts"
+  ]
 }
