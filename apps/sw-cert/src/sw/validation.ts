@@ -49,7 +49,7 @@ export async function validateBody(
   const reconstructed = await reconstruct(hashTree);
   const witness = cert.lookupEx([
     "canister",
-    blobToUint8Array(canisterId.toBlob()),
+    canisterId.toUint8Array(),
     "certified_data",
   ]);
 

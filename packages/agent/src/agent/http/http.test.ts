@@ -48,7 +48,7 @@ test('call', async () => {
     // are checking that signature does not impact the request id.
     arg,
     nonce,
-    sender: principal.toBlob(),
+    sender: principal,
     ingress_expiry: new Expiry(300000),
   };
 
@@ -106,10 +106,10 @@ test('queries with the same content should have the same signature', async () =>
   const requestId = await requestIdOf({
     request_type: SubmitRequestType.Call,
     nonce,
-    canister_id: Principal.fromText(canisterIdent),
+    canister_id: Principal.fromText(canisterIdent).toString(),
     method_name: methodName,
     arg,
-    sender: principal.toBlob(),
+    sender: principal,
   });
 
   const paths = [
@@ -164,7 +164,7 @@ test('use anonymous principal if unspecified', async () => {
     // are checking that signature does not impact the request id.
     arg,
     nonce,
-    sender: principal.toBlob(),
+    sender: principal,
     ingress_expiry: new Expiry(300000),
   };
 

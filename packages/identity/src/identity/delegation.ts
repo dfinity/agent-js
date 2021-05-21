@@ -43,7 +43,7 @@ export class Delegation {
       pubkey: cbor.value.bytes(this.pubkey),
       expiration: cbor.value.u64(this.expiration.toString(16), 16),
       ...(this.targets && {
-        targets: cbor.value.array(this.targets.map(t => cbor.value.bytes(t.toBlob()))),
+        targets: cbor.value.array(this.targets.map(t => cbor.value.bytes(t.toUint8Array()))),
       }),
     });
   }
@@ -55,7 +55,7 @@ export class Delegation {
     return {
       expiration: this.expiration.toString(16),
       pubkey: this.pubkey.toString('hex'),
-      ...(this.targets && { targets: this.targets.map(p => p.toBlob().toString('hex')) }),
+      ...(this.targets && { targets: this.targets.map(p => p.toHex()) }),
     };
   }
 }
@@ -248,7 +248,7 @@ export class DelegationChain {
             expiration: delegation.expiration.toString(16),
             pubkey: delegation.pubkey.toString('hex'),
             ...(targets && {
-              targets: targets.map(t => t.toBlob().toString('hex')),
+              targets: targets.map(t => t.toHex()),
             }),
           },
           signature: signature.toString('hex'),

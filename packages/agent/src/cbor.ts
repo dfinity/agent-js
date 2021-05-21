@@ -29,7 +29,7 @@ class PrincipalEncoder implements CborEncoder<Principal> {
   }
 
   public encode(v: Principal): cbor.CborValue {
-    return cbor.value.bytes(v.toBlob());
+    return cbor.value.bytes(v.toUint8Array().buffer);
   }
 }
 

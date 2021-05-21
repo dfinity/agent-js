@@ -1,4 +1,4 @@
-import { Principal } from '@dfinity/principal';
+import type { Principal } from '@dfinity/principal';
 import { BinaryBlob } from '../../types';
 import { Expiry } from './transforms';
 
@@ -62,7 +62,7 @@ export interface CallRequest extends Record<string, any> {
   canister_id: Principal;
   method_name: string;
   arg: BinaryBlob;
-  sender: BinaryBlob;
+  sender: Uint8Array | Principal;
   ingress_expiry: Expiry;
 }
 // tslint:enable:camel-case
@@ -84,7 +84,7 @@ export interface QueryRequest extends Record<string, any> {
   canister_id: Principal;
   method_name: string;
   arg: BinaryBlob;
-  sender: BinaryBlob;
+  sender: Uint8Array | Principal;
   ingress_expiry: Expiry;
 }
 
@@ -92,7 +92,7 @@ export interface ReadStateRequest extends Record<string, any> {
   request_type: ReadRequestType.ReadState;
   paths: BinaryBlob[][];
   ingress_expiry: Expiry;
-  sender: BinaryBlob;
+  sender: Uint8Array | Principal;
 }
 
 export type ReadRequest = QueryRequest | ReadStateRequest;

@@ -52,7 +52,7 @@ test('empty canister ID', () => {
   const outputA = output.a;
 
   expect(buf2hex((outputA as any) as Uint8Array)).toBe(inputA.toHex());
-  expect(Principal.fromBlob(outputA as any).toText()).toBe('aaaaa-aa');
+  expect(Principal.fromUint8Array(outputA as any).toText()).toBe('aaaaa-aa');
 });
 
 function buf2hex(buffer: Uint8Array) {

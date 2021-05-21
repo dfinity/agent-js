@@ -1,4 +1,5 @@
-import { Actor, HttpAgent, Principal } from "@dfinity/agent";
+import { Actor, HttpAgent } from "@dfinity/agent";
+import { Principal } from "@dfinity/principal";
 import { AuthClient } from "@dfinity/auth-client";
 
 const signInBtn = document.getElementById("signinBtn");

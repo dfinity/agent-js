@@ -117,7 +117,7 @@ test.skip('requestIdOf for sender_delegation signature', async () => {
   // This one uses Principals as targets
   const delegation3 = {
     ...delegation1,
-    targets: delegation1.targets.map(t => Principal.fromBlob(t)),
+    targets: delegation1.targets.map(t => Principal.fromText(t.toString())),
   };
   const delegation3ActualHashBytes = await requestIdOf(delegation3);
   expect(blobToHex(delegation3ActualHashBytes)).toEqual(
