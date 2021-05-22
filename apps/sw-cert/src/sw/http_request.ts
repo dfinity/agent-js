@@ -9,14 +9,8 @@ import * as base64Arraybuffer from 'base64-arraybuffer';
 import * as pako from 'pako';
 
 const hostnameCanisterIdMap: Record<string, [string, string]> = {
-  'identity.ic0.page': ['rdmx6-jaaaa-aaaaa-aaadq-cai', 'ic0.page'],
   'identity.ic0.app': ['rdmx6-jaaaa-aaaaa-aaadq-cai', 'ic0.app'],
-  'nns.ic0.page': ['qoctq-giaaa-aaaaa-aaaea-cai', 'ic0.page'],
   'nns.ic0.app': ['qoctq-giaaa-aaaaa-aaaea-cai', 'ic0.app'],
-  'chat.ic0.page': ['7rzzy-aaaaa-aaaaf-aaaaq-cai', 'ic0.page'],
-  'chat.ic0.app': ['7rzzy-aaaaa-aaaaf-aaaaq-cai', 'ic0.app'],
-  'dscvr.ic0.page': ['h5aet-waaaa-aaaab-qaamq-cai', 'ic0.page'],
-  'dscvr.ic0.app': ['h5aet-waaaa-aaaab-qaamq-cai', 'ic0.app'],
 };
 
 const shouldFetchRootKey: boolean = !!(process.env.FORCE_FETCH_ROOT_KEY) || false;
