@@ -47,7 +47,11 @@ export async function validateBody(
 
   const hashTree: HashTree = cbor.decode(new Uint8Array(tree));
   const reconstructed = await reconstruct(hashTree);
-  const witness = cert.lookupEx(['canister', canisterId.toUint8Array(), 'certified_data']);
+  const witness = cert.lookupEx([
+    'canister',
+    blobToUint8Array(canisterId.toBlob()),
+    'certified_data',
+  ]);
 
   if (!witness) {
     throw new Error('Could not find certified data for this canister in the certificate.');

@@ -1,14 +1,9 @@
 {
   "defaultSeverity": "error",
-  "extends": [
-    "tslint:recommended"
-  ],
+  "extends": ["tslint:recommended"],
   "jsRules": {},
   "linterOptions": {
-    "exclude": [
-      "src/IDL.js",
-      "src/IDL.test.js"
-    ]
+    "exclude": ["src/IDL.js", "src/IDL.test.js"]
   },
   "rules": {
     "max-classes-per-file": false,
@@ -22,12 +17,7 @@
     "arrow-parens": [true, "ban-single-arg-parens"],
     "space-before-function-paren": [false],
     "variable-name": {
-      "options": [
-        "ban-keywords",
-        "check-format",
-        "allow-leading-underscore",
-        "allow-pascal-case"
-      ]
+      "options": ["ban-keywords", "check-format", "allow-leading-underscore", "allow-pascal-case"]
     }
   },
   "rulesDirectory": []

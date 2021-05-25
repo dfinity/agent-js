@@ -40,9 +40,9 @@ test('sleb', () => {
   expect(slebEncode(BigInt('0x1234567890abcdef1234567890abcdef')).toString('hex')).toBe(
     'ef9baf8589cf959a92deb7de8a929eabb424',
   );
-  expect(
-    slebEncode(-BigInt('0x1234567890abcdef1234567890abcdef')).toString('hex'),
-  ).toBe('91e4d0faf6b0eae5eda1c8a1f5ede1d4cb5b');
+  expect(slebEncode(-BigInt('0x1234567890abcdef1234567890abcdef')).toString('hex')).toBe(
+    '91e4d0faf6b0eae5eda1c8a1f5ede1d4cb5b',
+  );
   expect(slebEncode(BigInt('2000000')).toString('hex')).toBe('8089fa00');
   expect(slebEncode(BigInt('60000000000000000')).toString('hex')).toBe('808098f4e9b5caea00');
 

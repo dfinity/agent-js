@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       canary:
-        default: "true"
+        default: 'true'
 
 jobs:
   release:
