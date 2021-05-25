@@ -1,4 +1,3 @@
-
 function updateStatus(message: string) {
   const statusEl = document.getElementById('status');
   if (statusEl) {
@@ -11,10 +10,12 @@ window.addEventListener('load', async () => {
   if (!window.navigator.serviceWorker) {
     updateStatus(
       `This web browser cannot interact with the Internet Computer securely.
-       Please try new web browser software.`
+       Please try new web browser software.`,
     );
   } else {
-    console.log("Installing a service worker to proxy and validate raw content into the browser...");
+    console.log(
+      'Installing a service worker to proxy and validate raw content into the browser...',
+    );
     // Ok, let's install the service worker...
     // note: if the service worker was already installed, when the browser requested <domain>/, it would have
     // proxied the response from <domain>/<canister-id>/, so this bootstrap file would never been
@@ -23,7 +24,9 @@ window.addEventListener('load', async () => {
     // Webpack recognizes this special syntax so it's okay to ignore that this isn't a string.
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const reg = await navigator.serviceWorker.register(new URL("./sw/sw.ts", import.meta.url) as any);
+    const reg = await navigator.serviceWorker.register(
+      new URL('./sw/sw.ts', import.meta.url) as any,
+    );
     if (reg.installing) {
       const sw = reg.installing || reg.waiting;
       sw.onstatechange = () => {
@@ -36,7 +39,9 @@ window.addEventListener('load', async () => {
       // would have obtained the underlying raw content from the canister, validated it, and proxied
       // it to the browser. This might be either a disabled SW or the user did a hard reload on the
       // page.
-      setTimeout(function() { window.location.reload(); }, 800)
+      setTimeout(function() {
+        window.location.reload();
+      }, 800);
     }
   }
 });
