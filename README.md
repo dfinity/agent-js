@@ -25,8 +25,6 @@ commands to keep in mind;
   but there is no guarantee that the `next` branch will work with the latest published dfx.
   Once you have a replica running locally, you must pass the port to the e2e tests using the
   `IC_REF_PORT` environment vairable. If that variable is not set, the tests will fail.
-- To run the entire ci, use `npm run ci`. This will validate syntax and linting, as well
-  as running tests (both unit and e2e).
 
 ### Publishing
 

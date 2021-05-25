@@ -18,7 +18,6 @@ jobs:
         spec:
           - release-0.16 # https://github.com/dfinity-lab/ic-ref/tree/release-0.16
         node:
-          - 12
           - 14
     steps:
       - uses: actions/checkout@v2

@@ -34,6 +34,7 @@
     "husky": "^6.0.0",
     "jest-expect-message": "^1.0.2",
     "lerna": "^4.0.0",
+    "prettier": "^2.3.0",
     "pretty-quick": "^3.1.0",
     "ts-node": "^9.1.1",
     "typedoc": "^0.20.32",
@@ -52,8 +53,8 @@
     "test:coverage": "",
     "test": "jest",
     "prepare": "husky install",
-    "prettier:check": "npx -p prettier@latest -p pretty-quick pretty-quick --check",
-    "prettier:format": "npx -p prettier@latest -p pretty-quick pretty-quick"
+    "prettier:check": "npx -p prettier -p pretty-quick pretty-quick --check",
+    "prettier:format": "npx -p prettier -p pretty-quick pretty-quick"
   },
   "repository": {
     "type": "git",
