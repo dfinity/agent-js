@@ -51,7 +51,9 @@
     "make:docs/reference": "",
     "test:coverage": "",
     "test": "jest",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "prettier:check": "npx -p prettier@latest -p pretty-quick pretty-quick --check",
+    "prettier:format": "npx -p prettier@latest -p pretty-quick pretty-quick"
   },
   "repository": {
     "type": "git",
