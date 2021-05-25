@@ -22,11 +22,28 @@ export class Secp256k1PublicKey implements PublicKey {
 
   // Adding this prefix to a raw public key is sufficient to DER-encode it.
   private static DER_PREFIX = Uint8Array.from([
-    0x30, 0x56, // SEQUENCE
-    0x30, 0x10, // SEQUENCE
-    0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01, // OID ECDSA
-    0x06, 0x05, 0x2b, 0x81, 0x04, 0x00, 0x0a, // OID secp256k1
-    0x03, 0x42, // BIT STRING
+    0x30,
+    0x56, // SEQUENCE
+    0x30,
+    0x10, // SEQUENCE
+    0x06,
+    0x07,
+    0x2a,
+    0x86,
+    0x48,
+    0xce,
+    0x3d,
+    0x02,
+    0x01, // OID ECDSA
+    0x06,
+    0x05,
+    0x2b,
+    0x81,
+    0x04,
+    0x00,
+    0x0a, // OID secp256k1
+    0x03,
+    0x42, // BIT STRING
     0x00, // no padding
   ]);
 
@@ -59,7 +76,7 @@ export class Secp256k1PublicKey implements PublicKey {
     if (!this.derEncode(rawKey).equals(key)) {
       throw new TypeError(
         'secp256k1 DER-encoded public key is invalid. A valid secp256k1 DER-encoded public key ' +
-        `must have the following prefix: ${Secp256k1PublicKey.DER_PREFIX}`,
+          `must have the following prefix: ${Secp256k1PublicKey.DER_PREFIX}`,
       );
     }
 

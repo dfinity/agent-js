@@ -36,14 +36,14 @@ module.exports = {
   },
   resolve: {
     alias: {
-      process: "process/browser"
+      process: 'process/browser',
     },
     fallback: {
-      "assert": require.resolve("assert/"),
-      "buffer": require.resolve("buffer/"),
-      "events": require.resolve("events/"),
-      "stream": require.resolve("stream-browserify/"),
-      "util": require.resolve("util/"),
+      assert: require.resolve('assert/'),
+      buffer: require.resolve('buffer/'),
+      events: require.resolve('events/'),
+      stream: require.resolve('stream-browserify/'),
+      util: require.resolve('util/'),
     },
   },
   devtool: 'source-map',

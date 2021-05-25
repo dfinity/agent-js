@@ -1,6 +1,5 @@
 import { Principal } from './principal';
 
-
 describe('Principal', () => {
   it('encodes properly', () => {
     expect(Principal.fromHex('efcdab000000000001').toText()).toBe('2chl6-4hpzw-vqaaa-aaaaa-c');
@@ -26,4 +25,3 @@ describe('Principal', () => {
     expect(() => Principal.fromText('Hello world!')).toThrow();
   });
 });
-

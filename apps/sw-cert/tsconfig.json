@@ -5,12 +5,7 @@
     "baseUrl": "./",
     "forceConsistentCasingInFileNames": true,
     "incremental": true,
-    "lib": [
-      "ES2020",
-      "DOM",
-      "ScriptHost",
-      "WebWorker"
-    ],
+    "lib": ["ES2020", "DOM", "ScriptHost", "WebWorker"],
     "module": "ESNext",
     "moduleResolution": "node",
     "outDir": "./lib/esm",
@@ -20,8 +15,5 @@
     "strict": true,
     "target": "es2017"
   },
-  "references": [
-    { "path": "../agent" },
-    { "path": "../identity" }
-  ]
+  "references": [{ "path": "../agent" }, { "path": "../identity" }]
 }

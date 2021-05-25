@@ -13,8 +13,9 @@ export class Expiry {
 
   constructor(deltaInMSec: number) {
     // Use bigint because it can overflow the maximum number allowed in a double float.
-    this._value = (BigInt(Date.now()) + BigInt(deltaInMSec) - REPLICA_PERMITTED_DRIFT_MILLISECONDS)
-      * NANOSECONDS_PER_MILLISECONDS;
+    this._value =
+      (BigInt(Date.now()) + BigInt(deltaInMSec) - REPLICA_PERMITTED_DRIFT_MILLISECONDS) *
+      NANOSECONDS_PER_MILLISECONDS;
   }
 
   public toCBOR(): cbor.CborValue {

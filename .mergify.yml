@@ -1,8 +1,8 @@
 pull_request_rules:
   - name: Automatic merge
     conditions:
-      - "#approved-reviews-by>=1"
-      - "#changes-requested-reviews-by=0"
+      - '#approved-reviews-by>=1'
+      - '#changes-requested-reviews-by=0'
       - status-success=conventional-pr-title
       - label=automerge-squash
     actions:

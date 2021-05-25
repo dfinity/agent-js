@@ -1,9 +1,4 @@
-import {
-  blobFromUint8Array,
-  HttpAgent,
-  makeNonceTransform,
-  polling,
-} from '@dfinity/agent';
+import { blobFromUint8Array, HttpAgent, makeNonceTransform, polling } from '@dfinity/agent';
 import { LedgerIdentity } from '@dfinity/identity-ledgerhq';
 import * as protobufjs from 'protobufjs';
 
@@ -53,35 +48,35 @@ async function decodeProtobuf(schema, typeName, value) {
 }
 
 // Disable all buttons that should only be when connected.
-for (const el of document.getElementsByClassName("connected-only")) {
+for (const el of document.getElementsByClassName('connected-only')) {
   el.disabled = true;
 }
 
 let identity = undefined;
 
-document.getElementById("connectLedgerBtn").addEventListener("click", async () => {
+document.getElementById('connectLedgerBtn').addEventListener('click', async () => {
   identity = await LedgerIdentity.fromWebUsb();
 
-  document.getElementById("ledgerPrincipal").innerText = `${identity.getPrincipal().toText()}`;
-  for (const el of document.getElementsByClassName("connected-only")) {
+  document.getElementById('ledgerPrincipal').innerText = `${identity.getPrincipal().toText()}`;
+  for (const el of document.getElementsByClassName('connected-only')) {
     el.disabled = false;
   }
 });
 
-document.getElementById("checkAddressBtn").addEventListener("click", async () => {
+document.getElementById('checkAddressBtn').addEventListener('click', async () => {
   await identity.showAddressAndPubKeyOnDevice();
 });
 
-document.getElementById("sendBtn").addEventListener("click", async () => {
-  const schemaText = document.getElementById("schema").value;
-  const valueText = document.getElementById("value").value;
-  const messageTypeName = document.getElementById("requestType").value;
+document.getElementById('sendBtn').addEventListener('click', async () => {
+  const schemaText = document.getElementById('schema').value;
+  const valueText = document.getElementById('value').value;
+  const messageTypeName = document.getElementById('requestType').value;
 
   const payload = await encodeProtobuf(schemaText, messageTypeName, valueText);
   console.log(toHex(payload));
 
-  const host = document.getElementById("hostUrl").value;
-  const canisterId = document.getElementById("canisterId").value;
+  const host = document.getElementById('hostUrl').value;
+  const canisterId = document.getElementById('canisterId').value;
 
   // Need to run a replica locally which has ledger canister running on it
   const agent = new HttpAgent({ host, identity });
@@ -89,7 +84,7 @@ document.getElementById("sendBtn").addEventListener("click", async () => {
   agent.addTransform(makeNonceTransform());
 
   const resp = await agent.call(canisterId, {
-    methodName: document.getElementById("methodName").value,
+    methodName: document.getElementById('methodName').value,
     arg: blobFromUint8Array(payload),
   });
 
@@ -103,8 +98,8 @@ document.getElementById("sendBtn").addEventListener("click", async () => {
   console.log(toHex(result));
 
   // const result = new Uint8Array([8, 8]);
-  const responseTypeName = document.getElementById("responseType").value;
+  const responseTypeName = document.getElementById('responseType').value;
   const responsePayload = await decodeProtobuf(schemaText, responseTypeName, result);
 
-  document.getElementById("responseJson").innerText = JSON.stringify(responsePayload);
+  document.getElementById('responseJson').innerText = JSON.stringify(responsePayload);
 });

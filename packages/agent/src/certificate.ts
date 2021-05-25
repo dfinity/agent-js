@@ -49,7 +49,11 @@ export type HashTree =
  * @param tree
  */
 export function hashTreeToString(tree: HashTree): string {
-  const indent = (s: string) => s.split('\n').map(x => '  ' + x).join('\n');
+  const indent = (s: string) =>
+    s
+      .split('\n')
+      .map(x => '  ' + x)
+      .join('\n');
   function labelToString(label: ArrayBuffer): string {
     const decoder = new TextDecoder(undefined, { fatal: true });
     try {
@@ -60,7 +64,8 @@ export function hashTreeToString(tree: HashTree): string {
   }
 
   switch (tree[0]) {
-    case 0: return '()';
+    case 0:
+      return '()';
     case 1: {
       const left = hashTreeToString(tree[1]);
       const right = hashTreeToString(tree[2]);
@@ -233,13 +238,16 @@ export function lookupPathEx(
   path: Array<ArrayBuffer | string>,
   tree: HashTree,
 ): ArrayBuffer | undefined {
-  const maybeReturn = lookup_path(path.map(p => {
-    if (typeof p === 'string') {
-      return blobFromText(p);
-    } else {
-      return blobFromUint8Array(new Uint8Array(p));
-    }
-  }), tree);
+  const maybeReturn = lookup_path(
+    path.map(p => {
+      if (typeof p === 'string') {
+        return blobFromText(p);
+      } else {
+        return blobFromUint8Array(new Uint8Array(p));
+      }
+    }),
+    tree,
+  );
   return maybeReturn && blobToUint8Array(blobFromBuffer(maybeReturn));
 }
 

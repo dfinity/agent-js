@@ -21,9 +21,9 @@ export class Principal {
     if (typeof other === 'string') {
       return Principal.fromText(other);
     } else if (
-      typeof other === 'object'
-      && other !== null
-      && (other as Principal)._isPrincipal === true
+      typeof other === 'object' &&
+      other !== null &&
+      (other as Principal)._isPrincipal === true
     ) {
       return new Principal((other as Principal)._blob);
     }

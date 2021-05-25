@@ -864,7 +864,7 @@ async function init(): Promise<InitOutput> {
   const imports = {};
   const { instance, module } = await load(wasmBytes, imports);
 
-  wasm = (instance.exports as any) as InitOutput;
+  wasm = instance.exports as any as InitOutput;
   (init as any).__wbindgen_wasm_module = module;
 
   return wasm;

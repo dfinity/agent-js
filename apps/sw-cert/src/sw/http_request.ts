@@ -4,7 +4,7 @@
  * TODO: Add support for streaming.
  */
 import { Actor, IDL, HttpAgent, Principal } from '@dfinity/agent';
-import { validateBody } from "./validation";
+import { validateBody } from './validation';
 import * as base64Arraybuffer from 'base64-arraybuffer';
 import * as pako from 'pako';
 
@@ -13,7 +13,7 @@ const hostnameCanisterIdMap: Record<string, [string, string]> = {
   'nns.ic0.app': ['qoctq-giaaa-aaaaa-aaaea-cai', 'ic0.app'],
 };
 
-const shouldFetchRootKey: boolean = !!(process.env.FORCE_FETCH_ROOT_KEY) || false;
+const shouldFetchRootKey: boolean = !!process.env.FORCE_FETCH_ROOT_KEY || false;
 
 const swLocation = new URL(self.location.toString());
 const [_swCanisterId, swDomains] = (() => {
@@ -81,7 +81,7 @@ function maybeResolveCanisterIdFromSearchParam(
     return null;
   }
 
-  const maybeCanisterId = searchParams.get("canisterId");
+  const maybeCanisterId = searchParams.get('canisterId');
   if (maybeCanisterId) {
     try {
       return Principal.fromText(maybeCanisterId);
@@ -102,8 +102,10 @@ function maybeResolveCanisterIdFromSearchParam(
 function resolveCanisterIdFromUrl(urlString: string, isLocal: boolean): Principal | null {
   try {
     const url = new URL(urlString);
-    return maybeResolveCanisterIdFromHostName(url.hostname)
-      || maybeResolveCanisterIdFromSearchParam(url.searchParams, isLocal);
+    return (
+      maybeResolveCanisterIdFromHostName(url.hostname) ||
+      maybeResolveCanisterIdFromSearchParam(url.searchParams, isLocal)
+    );
   } catch (_) {
     return null;
   }
@@ -116,17 +118,19 @@ function resolveCanisterIdFromUrl(urlString: string, isLocal: boolean): Principa
  * @returns A Canister ID or null if none were found.
  */
 function maybeResolveCanisterIdFromHeaders(headers: Headers, isLocal: boolean): Principal | null {
-  const maybeHostHeader = headers.get("host");
+  const maybeHostHeader = headers.get('host');
   if (maybeHostHeader) {
     // Remove the port.
-    const maybeCanisterId = maybeResolveCanisterIdFromHostName(maybeHostHeader.replace(/:\d+$/, ''));
+    const maybeCanisterId = maybeResolveCanisterIdFromHostName(
+      maybeHostHeader.replace(/:\d+$/, ''),
+    );
     if (maybeCanisterId) {
       return maybeCanisterId;
     }
   }
 
   if (isLocal) {
-    const maybeRefererHeader = headers.get("referer");
+    const maybeRefererHeader = headers.get('referer');
     if (maybeRefererHeader) {
       const maybeCanisterId = resolveCanisterIdFromUrl(maybeRefererHeader, isLocal);
       if (maybeCanisterId) {
@@ -139,9 +143,11 @@ function maybeResolveCanisterIdFromHeaders(headers: Headers, isLocal: boolean): 
 }
 
 function maybeResolveCanisterIdFromHttpRequest(request: Request, isLocal: boolean) {
-  return (isLocal && resolveCanisterIdFromUrl(request.referrer, isLocal))
-    || maybeResolveCanisterIdFromHeaders(request.headers, isLocal)
-    || resolveCanisterIdFromUrl(request.url, isLocal);
+  return (
+    (isLocal && resolveCanisterIdFromUrl(request.referrer, isLocal)) ||
+    maybeResolveCanisterIdFromHeaders(request.headers, isLocal) ||
+    resolveCanisterIdFromUrl(request.url, isLocal)
+  );
 }
 
 const canisterIdlFactory: IDL.InterfaceFactory = ({ IDL }) => {
@@ -162,7 +168,7 @@ const canisterIdlFactory: IDL.InterfaceFactory = ({ IDL }) => {
   return IDL.Service({
     http_request: IDL.Func([HttpRequest], [HttpResponse], ['query']),
   });
-}
+};
 
 /**
  * Decode a body (ie. deflate or gunzip it) based on its content-encoding.
@@ -174,9 +180,12 @@ function decodeBody(body: Uint8Array, encoding: string): Uint8Array {
     case 'identity':
     case '':
       return body;
-    case 'gzip': return pako.ungzip(body);
-    case 'deflate': return pako.inflate(body);
-    default: throw new Error(`Unsupported encoding: "${encoding}"`);
+    case 'gzip':
+      return pako.ungzip(body);
+    case 'deflate':
+      return pako.inflate(body);
+    default:
+      throw new Error(`Unsupported encoding: "${encoding}"`);
   }
 }
 
@@ -207,7 +216,7 @@ export async function handleRequest(request: Request): Promise<Response> {
   /**
    * We try to do an HTTP Request query.
    */
-  const isLocal = (swDomains === "localhost");
+  const isLocal = swDomains === 'localhost';
   const maybeCanisterId = maybeResolveCanisterIdFromHttpRequest(request, isLocal);
   if (maybeCanisterId) {
     try {
@@ -221,8 +230,8 @@ export async function handleRequest(request: Request): Promise<Response> {
       request.headers.forEach((value, key) => requestHeaders.push([key, value]));
 
       // If the accept encoding isn't given, add it because we want to save bandwidth.
-      if (!request.headers.has("Accept-Encoding")) {
-        requestHeaders.push(["Accept-Encoding", "gzip, deflate, identity"]);
+      if (!request.headers.has('Accept-Encoding')) {
+        requestHeaders.push(['Accept-Encoding', 'gzip, deflate, identity']);
       }
 
       const httpRequest = {
@@ -290,7 +299,7 @@ export async function handleRequest(request: Request): Promise<Response> {
             tree,
             agent,
             isLocal,
-          )
+          );
         }
       }
       if (bodyValid) {
@@ -300,10 +309,10 @@ export async function handleRequest(request: Request): Promise<Response> {
         });
       } else {
         console.error('BODY DOES NOT PASS VERIFICATION');
-        return new Response("Body does not pass verification", { status: 500 });
+        return new Response('Body does not pass verification', { status: 500 });
       }
     } catch (e) {
-      console.error("An error happened:", e);
+      console.error('An error happened:', e);
       return new Response(null, { status: 500 });
     }
   }
@@ -318,5 +327,5 @@ export async function handleRequest(request: Request): Promise<Response> {
   }
 
   console.error(`URL ${JSON.stringify(url.toString())} did not resolve to a canister ID.`);
-  return new Response("Could not find the canister ID.", { status: 404 });
+  return new Response('Could not find the canister ID.', { status: 404 });
 }

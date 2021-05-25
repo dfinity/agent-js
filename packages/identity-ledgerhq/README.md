@@ -17,14 +17,12 @@ npm i --save @dfinity/identity-ledgerhq
 ### In the browser:
 
 ```javascript
-import { LedgerIdentity } from "@dfinity/identity-ledgerhq";
+import { LedgerIdentity } from '@dfinity/identity-ledgerhq';
 
 // ...
 const identity = await LedgerIdentity.fromWebUsb();
 const agent = new HttpAgent({ identity });
 ```
-
-
 
 Note: depends on [@dfinity/agent](https://www.npmjs.com/package/@dfinity/agent) and
 [@dfinity/identity](https://www.npmjs.com/package/@dfinity/identity).
