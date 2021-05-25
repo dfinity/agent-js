@@ -1,0 +1,16 @@
+name: Check Formatting
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - edited
+      - synchronize
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - run: npm install -g npm
+      - run: npm install prettier pretty-quick
+      - run: npm run prettier:check
