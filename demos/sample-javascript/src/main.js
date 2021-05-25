@@ -1,14 +1,14 @@
-import { Actor, HttpAgent, Principal } from "@dfinity/agent";
-import { AuthClient } from "@dfinity/auth-client";
+import { Actor, HttpAgent, Principal } from '@dfinity/agent';
+import { AuthClient } from '@dfinity/auth-client';
 
-const signInBtn = document.getElementById("signinBtn");
-const signOutBtn = document.getElementById("signoutBtn");
-const whoamiBtn = document.getElementById("whoamiBtn");
-const hostUrlEl = document.getElementById("hostUrl");
-const whoAmIResponseEl = document.getElementById("whoamiResponse");
-const canisterIdEl = document.getElementById("canisterId");
-const principalEl = document.getElementById("principal");
-const idpUrlEl = document.getElementById("idpUrl");
+const signInBtn = document.getElementById('signinBtn');
+const signOutBtn = document.getElementById('signoutBtn');
+const whoamiBtn = document.getElementById('whoamiBtn');
+const hostUrlEl = document.getElementById('hostUrl');
+const whoAmIResponseEl = document.getElementById('whoamiResponse');
+const canisterIdEl = document.getElementById('canisterId');
+const principalEl = document.getElementById('principal');
+const idpUrlEl = document.getElementById('idpUrl');
 
 let authClient;
 
@@ -33,7 +33,7 @@ const init = async () => {
 
 init();
 
-whoamiBtn.addEventListener("click", async () => {
+whoamiBtn.addEventListener('click', async () => {
   const identity = await authClient.getIdentity();
 
   // We either have an Agent with an anonymous identity (not authenticated),
@@ -53,10 +53,10 @@ whoamiBtn.addEventListener("click", async () => {
     canisterId,
   });
 
-  whoAmIResponseEl.innerText = "Loading...";
+  whoAmIResponseEl.innerText = 'Loading...';
 
   // Similar to the sample project on dfx new:
-  actor.whoami().then((principal) => {
+  actor.whoami().then(principal => {
     whoAmIResponseEl.innerText = principal.toText();
   });
 });

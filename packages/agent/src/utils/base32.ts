@@ -27,7 +27,7 @@ export function encode(input: Uint8Array): string {
   function encodeByte(byte: number) {
     if (skip < 0) {
       // we have a carry from the previous byte
-      bits |= (byte >> (-skip));
+      bits |= byte >> -skip;
     } else {
       // no carry
       bits = (byte << skip) & 248;
@@ -48,7 +48,7 @@ export function encode(input: Uint8Array): string {
     return 0;
   }
 
-  for (let i = 0; i < input.length;) {
+  for (let i = 0; i < input.length; ) {
     i += encodeByte(input[i]);
   }
 
@@ -64,7 +64,7 @@ export function decode(input: string): Uint8Array {
   // current byte we're producing.
   let byte = 0;
 
-  const output = new Uint8Array((input.length * 4 / 3) | 0);
+  const output = new Uint8Array(((input.length * 4) / 3) | 0);
   let o = 0;
 
   function decodeChar(char: string) {

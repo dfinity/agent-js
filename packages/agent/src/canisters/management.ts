@@ -11,10 +11,15 @@ export interface CanisterSettings {
 
 /* tslint:disable */
 export interface ManagementCanisterRecord {
-  provisional_create_canister_with_cycles: ActorMethod<[{
-    amount: [] | [number],
-    settings: [] | [CanisterSettings],
-  }], { canister_id: Principal }>;
+  provisional_create_canister_with_cycles: ActorMethod<
+    [
+      {
+        amount: [] | [number];
+        settings: [] | [CanisterSettings];
+      },
+    ],
+    { canister_id: Principal }
+  >;
   install_code: ActorMethod<
     [
       {

@@ -71,9 +71,11 @@ export class LedgerIdentity extends SignIdentity {
     const resp: ResponseSign = await this._app.sign(this.derivePath, Buffer.from(blob));
     const signatureRS = resp.signatureRS;
     if (!signatureRS) {
-      throw new Error(`A ledger error happened during signature:\n`
-        + `Code: ${resp.returnCode}\n`
-        + `Message: ${JSON.stringify(resp.errorMessage)}\n`);
+      throw new Error(
+        `A ledger error happened during signature:\n` +
+          `Code: ${resp.returnCode}\n` +
+          `Message: ${JSON.stringify(resp.errorMessage)}\n`,
+      );
     }
 
     if (signatureRS?.byteLength !== 64) {

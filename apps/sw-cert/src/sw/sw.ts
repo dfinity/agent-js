@@ -21,7 +21,7 @@ self.addEventListener('fetch', (event: FetchEvent) => {
         new Response(e.message || e.toString(), {
           status: 501,
         }),
-      )
+      );
     }
     event.respondWith(new Response('Internal Error', { status: 502 }));
   }
