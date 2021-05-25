@@ -10,8 +10,8 @@ import {
   blobFromUint8Array,
   blobToHex,
   blobToUint8Array,
-} from '../../candid/src/types';
-import { blsVerify } from './utils/bls';
+} from '@dfinity/candid';
+import { blsVerify } from '@dfinity/candid';
 
 /**
  * A certificate needs to be verified (using {@link Certificate.prototype.verify})

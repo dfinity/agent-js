@@ -3,12 +3,7 @@ import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
 import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
-import {
-  BinaryBlob,
-  blobFromHex,
-  blobFromUint8Array,
-  JsonObject,
-} from '../../../../candid/src/types';
+import { BinaryBlob, blobFromHex, blobFromUint8Array, JsonObject } from '@dfinity/candid';
 import {
   Agent,
   QueryFields,

@@ -6,22 +6,15 @@ export * from './auth';
 export * from './certificate';
 export * from './agent/http/transforms';
 export * from './agent/http/types';
-export * from '../../candid/src/types';
 export * from './canisters/asset';
 export * from './canisters/management';
 export * from './request_id';
-export * from './candid';
 export * as polling from './polling';
 
 import { Agent, HttpAgent } from './agent';
-import * as IDL from './idl';
-export { IDL };
+import { IDL } from '@dfinity/candid';
 
 export * as Cbor from './cbor';
-
-import * as UICore from './candid/candid-core';
-import * as UI from './candid/candid-ui';
-export { UICore, UI };
 
 export interface GlobalInternetComputer {
   ic: {

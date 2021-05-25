@@ -1,7 +1,7 @@
 import { Buffer } from 'buffer/';
 import { decode, encode } from './cbor';
 import { Principal } from '@dfinity/principal';
-import { BinaryBlob, blobToHex } from '../../candid/src/types';
+import { BinaryBlob, blobToHex } from '@dfinity/candid';
 
 test('round trip', () => {
   interface Data {

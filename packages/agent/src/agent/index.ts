@@ -1,4 +1,5 @@
-import { BinaryBlob, GlobalInternetComputer } from '../index';
+import { GlobalInternetComputer } from '../index';
+import { BinaryBlob } from '@dfinity/candid';
 import { Agent } from './api';
 
 export * from './api';

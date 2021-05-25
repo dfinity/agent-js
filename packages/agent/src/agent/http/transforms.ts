@@ -1,7 +1,6 @@
 import { Buffer } from 'buffer/';
 import * as cbor from 'simple-cbor';
-import { makeNonce, Nonce } from '../../../../candid/src/types';
-import { lebEncode } from '../../utils/leb128';
+import { makeNonce, Nonce, lebEncode } from '@dfinity/candid';
 import { Endpoint, HttpAgentRequest, HttpAgentRequestTransformFn } from './types';
 
 const NANOSECONDS_PER_MILLISECONDS = BigInt(1000000);
