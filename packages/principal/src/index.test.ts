@@ -1,4 +1,4 @@
-import { Principal } from './principal';
+import { Principal } from '.';
 
 describe('Principal', () => {
   it('encodes properly', () => {

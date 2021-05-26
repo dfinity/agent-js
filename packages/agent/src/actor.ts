@@ -11,7 +11,7 @@ import { getManagementCanister } from './canisters/management';
 import { AgentError } from './errors';
 import * as IDL from './idl';
 import { pollForResponse, PollStrategyFactory, strategy } from './polling';
-import { Principal } from './principal';
+import { Principal } from '@dfinity/principal';
 import { RequestId, toHex as requestIdToHex } from './request_id';
 import { BinaryBlob } from './types';
 

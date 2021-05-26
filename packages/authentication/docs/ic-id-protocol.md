@@ -40,7 +40,7 @@ At a high level, this is how an RP requests end-user Authentication using ic-id-
 - RP sends AuthenticationRequest to IDP via end-user's web user-agent
 - end-user Authenticates with RP, consents to delegate limitd authority to the Session
 - IDP sends AuthenticationResponse to RP via end-user's web user-agent
-- RP receives AuthenticationResponse access_token, decodes it, and combines the contents with the Session KeyPair _Private_ Key in order to make signed, [Authenticated](https://sdk.dfinity.org/docs/interface-spec/#authentication) Internet Computer requests.
+- RP receives AuthenticationResponse access*token, decodes it, and combines the contents with the Session KeyPair \_Private* Key in order to make signed, [Authenticated](https://sdk.dfinity.org/docs/interface-spec/#authentication) Internet Computer requests.
 
 See below "Relation to OAuth2" for a sequence diagram that corresponds to this story.
 

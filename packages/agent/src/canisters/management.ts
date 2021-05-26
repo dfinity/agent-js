@@ -1,5 +1,5 @@
 import { Actor, ActorMethod, ActorSubclass, CallConfig } from '../actor';
-import { Principal } from '../principal';
+import { Principal } from '@dfinity/principal';
 import managementCanisterIdl from './management_idl';
 
 export interface CanisterSettings {

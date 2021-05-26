@@ -1,4 +1,4 @@
-import { Principal } from '../principal';
+import { Principal } from '@dfinity/principal';
 import { RequestId } from '../request_id';
 import { BinaryBlob, JsonObject } from '../types';
 

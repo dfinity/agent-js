@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Actor, HttpAgent, IDL, Principal, SignIdentity } from '@dfinity/agent';
+import { Actor, HttpAgent, IDL, SignIdentity } from '@dfinity/agent';
+import { Principal } from '@dfinity/principal';
 import { DelegationChain, DelegationIdentity, Ed25519KeyIdentity } from '@dfinity/identity';
 import agent from '../utils/agent';
 import identityCanister from '../canisters/identity';

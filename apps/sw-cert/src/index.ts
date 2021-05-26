@@ -39,7 +39,7 @@ window.addEventListener('load', async () => {
       // would have obtained the underlying raw content from the canister, validated it, and proxied
       // it to the browser. This might be either a disabled SW or the user did a hard reload on the
       // page.
-      setTimeout(function () {
+      setTimeout(function() {
         window.location.reload();
       }, 800);
     }

@@ -3,7 +3,8 @@
  *
  * TODO: Add support for streaming.
  */
-import { Actor, IDL, HttpAgent, Principal } from '@dfinity/agent';
+import { Actor, IDL, HttpAgent } from '@dfinity/agent';
+import { Principal } from '@dfinity/principal';
 import { validateBody } from './validation';
 import * as base64Arraybuffer from 'base64-arraybuffer';
 import * as pako from 'pako';

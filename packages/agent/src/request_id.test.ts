@@ -2,7 +2,7 @@
 // https://github.com/dfinity-lab/dfinity/blob/5fef1450c9ab16ccf18381379149e504b11c8218/docs/spec/public/index.adoc#request-ids
 
 import { Buffer } from 'buffer/';
-import { Principal } from './principal';
+import { Principal } from '@dfinity/principal';
 import { hash, requestIdOf } from './request_id';
 import { BinaryBlob, blobFromHex, blobFromUint8Array, blobToHex } from './types';
 
@@ -117,7 +117,7 @@ test.skip('requestIdOf for sender_delegation signature', async () => {
   // This one uses Principals as targets
   const delegation3 = {
     ...delegation1,
-    targets: delegation1.targets.map(t => Principal.fromBlob(t)),
+    targets: delegation1.targets.map(t => Principal.fromText(t.toString())),
   };
   const delegation3ActualHashBytes = await requestIdOf(delegation3);
   expect(blobToHex(delegation3ActualHashBytes)).toEqual(

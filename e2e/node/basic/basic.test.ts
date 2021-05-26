@@ -1,4 +1,5 @@
-import { blobFromText, Certificate, getManagementCanister, IDL, Principal } from '@dfinity/agent';
+import { blobFromText, Certificate, getManagementCanister, IDL } from '@dfinity/agent';
+import { Principal } from '@dfinity/principal';
 import agent from '../utils/agent';
 import { Buffer } from 'buffer/';
 

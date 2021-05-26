@@ -1,6 +1,6 @@
 import { Buffer } from 'buffer/';
 import { decode, encode } from './cbor';
-import { Principal } from './principal';
+import { Principal } from '@dfinity/principal';
 import { BinaryBlob, blobToHex } from './types';
 
 test('round trip', () => {
@@ -36,7 +36,7 @@ test('round trip', () => {
   const { c: outputC, e: outputE, f: outputF, ...outputRest } = output;
 
   expect(blobToHex(outputC)).toBe(blobToHex(inputC));
-  expect(buf2hex(outputE as any as Uint8Array).toUpperCase()).toBe(inputE.toHex());
+  expect(buf2hex((outputE as any) as Uint8Array).toUpperCase()).toBe(inputE.toHex());
 
   expect(outputRest).toEqual(inputRest);
 });
@@ -51,8 +51,8 @@ test('empty canister ID', () => {
   const inputA = input.a;
   const outputA = output.a;
 
-  expect(buf2hex(outputA as any as Uint8Array)).toBe(inputA.toHex());
-  expect(Principal.fromBlob(outputA as any).toText()).toBe('aaaaa-aa');
+  expect(buf2hex((outputA as any) as Uint8Array)).toBe(inputA.toHex());
+  expect(Principal.fromUint8Array(outputA as any).toText()).toBe('aaaaa-aa');
 });
 
 function buf2hex(buffer: Uint8Array) {

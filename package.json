@@ -11,6 +11,7 @@
   },
   "workspaces": {
     "packages": [
+      "packages/principal",
       "packages/agent",
       "packages/identity",
       "packages/identity-ledgerhq",
