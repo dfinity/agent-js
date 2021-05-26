@@ -16,9 +16,11 @@ describe('isDelegationValid', () => {
     const past = new Date(Date.now() - 1000);
 
     // Create a valid delegation.
-    expect(isDelegationValid(await DelegationChain.create(root, session.getPublicKey(), future)))
-      .toBe(true);
-    expect(isDelegationValid(await DelegationChain.create(root, session.getPublicKey(), past)))
-      .toBe(false);
+    expect(
+      isDelegationValid(await DelegationChain.create(root, session.getPublicKey(), future)),
+    ).toBe(true);
+    expect(
+      isDelegationValid(await DelegationChain.create(root, session.getPublicKey(), past)),
+    ).toBe(false);
   });
 });

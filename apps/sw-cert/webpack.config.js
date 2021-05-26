@@ -12,7 +12,7 @@ module.exports = {
   output: {
     path: path.join(__dirname, 'dist'),
     filename: '[id]-[contenthash].js',
-    publicPath: '/'
+    publicPath: '/',
   },
   optimization: {
     splitChunks: {
@@ -44,7 +44,7 @@ module.exports = {
         exclude: /node_modules/,
         use: [
           {
-            loader: 'ts-loader'
+            loader: 'ts-loader',
           },
         ],
       },
@@ -52,24 +52,22 @@ module.exports = {
   },
   resolve: {
     alias: {
-      process: "process/browser"
+      process: 'process/browser',
     },
     extensions: ['.tsx', '.ts', '.js'],
     fallback: {
-      "assert": require.resolve("assert/"),
-      "buffer": require.resolve("buffer/"),
-      "events": require.resolve("events/"),
-      "stream": require.resolve("stream-browserify/"),
-      "util": require.resolve("util/"),
+      assert: require.resolve('assert/'),
+      buffer: require.resolve('buffer/'),
+      events: require.resolve('events/'),
+      stream: require.resolve('stream-browserify/'),
+      util: require.resolve('util/'),
     },
   },
   plugins: [
     new HtmlWebpackPlugin({
       template: 'src/index.html',
       filename: 'index.html',
-      chunks: [
-        "bundle",
-      ],
+      chunks: ['bundle'],
     }),
     new webpack.ProvidePlugin({
       Buffer: [require.resolve('buffer/'), 'Buffer'],

@@ -1,55 +1,55 @@
 <html>
-<head>
+  <head>
     <style>
-        section h4 {
-            margin-bottom: 0;
-        }
-        section input {
-            width: 100%;
-            font-family: monospace;
-        }
+      section h4 {
+        margin-bottom: 0;
+      }
+      section input {
+        width: 100%;
+        font-family: monospace;
+      }
     </style>
-</head>
-<body>
-<h1>Ledger Hardware Wallet Support</h1>
-<div>
-    <ol>
+  </head>
+  <body>
+    <h1>Ledger Hardware Wallet Support</h1>
+    <div>
+      <ol>
         <li>Connect your Ledger Nano X/S with a usb cable.</li>
         <li>Enter your PIN code.</li>
         <li>Open the Dfinity app on the Ledger device.</li>
         <li>
-            Connect and get the Principal:
-            <button id="connectLedgerBtn">Connect</button>
+          Connect and get the Principal:
+          <button id="connectLedgerBtn">Connect</button>
         </li>
-    </ol>
-</div>
+      </ol>
+    </div>
 
-<section>
-    <h2>Principal Id</h2>
-    <code id="ledgerPrincipal">&nbsp;</code>
-</section>
-<section>
-    <h2>Actions:</h2>
-    <li>
+    <section>
+      <h2>Principal Id</h2>
+      <code id="ledgerPrincipal">&nbsp;</code>
+    </section>
+    <section>
+      <h2>Actions:</h2>
+      <li>
         <button id="checkAddressBtn" class="connected-only">Show</button>
         Show the Principal on the device.
-    </li>
-</section>
+      </li>
+    </section>
 
-<section>
-    <h2>Send message (Proto)</h2>
+    <section>
+      <h2>Send message (Proto)</h2>
 
-    <h4>Replica URL</h4>
-    <input type="text" id="hostUrl" value="http://127.0.0.1:8080/">
+      <h4>Replica URL</h4>
+      <input type="text" id="hostUrl" value="http://127.0.0.1:8080/" />
 
-    <h4>Canister ID</h4>
-    <input type="text" id="canisterId" value="rrkah-fqaaa-aaaaa-aaaaq-cai">
+      <h4>Canister ID</h4>
+      <input type="text" id="canisterId" value="rrkah-fqaaa-aaaaa-aaaaq-cai" />
 
-    <h4>Method</h4>
-    <input type="text" id="methodName" value="send_pb">
+      <h4>Method</h4>
+      <input type="text" id="methodName" value="send_pb" />
 
-    <h4>Proto Schema</h4>
-    <textarea id="schema" cols="80" rows="20" style="width: 100%">
+      <h4>Proto Schema</h4>
+      <textarea id="schema" cols="80" rows="20" style="width: 100%">
 syntax = "proto3";
 
 message TimeStamp {
@@ -117,11 +117,12 @@ message SendRequest {
 message SendResponse {
   BlockHeight resulting_height = 1;
 }
-</textarea>
+</textarea
+      >
 
-    <h4>Proto Argument (in JSON, using camelCase)</h4>
-    <input id="requestType" type="text" value="SendRequest" />
-    <textarea id="value" cols="80" rows="20" style="width: 100%">
+      <h4>Proto Argument (in JSON, using camelCase)</h4>
+      <input id="requestType" type="text" value="SendRequest" />
+      <textarea id="value" cols="80" rows="20" style="width: 100%">
 {
   "memo": {
     "memo": 0
@@ -149,14 +150,14 @@ message SendResponse {
     ]
   }
 }
-</textarea>
+</textarea
+      >
 
-    <h4>Response (in JSON)</h4>
-    <input id="responseType" type="text" value="SendResponse" />
-    <textarea id="responseJson" cols="80" rows="5" style="width: 100%">
-    </textarea>
+      <h4>Response (in JSON)</h4>
+      <input id="responseType" type="text" value="SendResponse" />
+      <textarea id="responseJson" cols="80" rows="5" style="width: 100%"> </textarea>
 
-    <div><button id="sendBtn" class="connected-only">Send</button></div>
-</section>
-</body>
+      <div><button id="sendBtn" class="connected-only">Send</button></div>
+    </section>
+  </body>
 </html>

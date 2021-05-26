@@ -29,12 +29,9 @@
   "scripts": {
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
     "bundle": "npm run build",
-    "ci": "npm run prettier && npm run lint && npm run test",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
     "make:docs/reference": "typedoc src/index.ts --out docs/reference --excludeInternal",
-    "prettier": "prettier --check \"src/**/*.ts\"",
-    "prettier:write": "npm run prettier -- --write",
     "test": "jest",
     "test:coverage": "jest --verbose --collectCoverage"
   },
@@ -54,7 +51,6 @@
     "jest": "^26.6.3",
     "jest-expect-message": "^1.0.2",
     "node-fetch": "2.6.1",
-    "prettier": "^2.0.5",
     "text-encoding": "^0.7.0",
     "ts-jest": "^26.5.4",
     "tslint": "^5.20.0",

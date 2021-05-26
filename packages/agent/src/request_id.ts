@@ -1,8 +1,13 @@
 import { sha256 as jsSha256 } from 'js-sha256';
 import borc from 'borc';
 import { Buffer } from 'buffer/';
-import { BinaryBlob, blobFromBuffer, blobFromUint8Array, blobToHex } from '@dfinity/candid';
-import { lebEncode } from '@dfinity/candid';
+import {
+  BinaryBlob,
+  blobFromBuffer,
+  blobFromUint8Array,
+  blobToHex,
+  lebEncode,
+} from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 
 export type RequestId = BinaryBlob & { __requestId__: void };

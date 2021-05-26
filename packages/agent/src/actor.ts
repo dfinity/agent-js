@@ -266,9 +266,9 @@ export class Actor {
     interfaceFactory: IDL.InterfaceFactory,
     configuration: ActorConfig,
   ): ActorSubclass<T> {
-    return (new (this.createActorClass(interfaceFactory))(
+    return new (this.createActorClass(interfaceFactory))(
       configuration,
-    ) as unknown) as ActorSubclass<T>;
+    ) as unknown as ActorSubclass<T>;
   }
 
   private [metadataSymbol]: ActorMetadata;
@@ -370,6 +370,9 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
   }
 
   const handler = (...args: unknown[]) => caller({}, ...args);
-  handler.withOptions = (options: CallConfig) => (...args: unknown[]) => caller(options, ...args);
+  handler.withOptions =
+    (options: CallConfig) =>
+    (...args: unknown[]) =>
+      caller(options, ...args);
   return handler as ActorMethod;
 }

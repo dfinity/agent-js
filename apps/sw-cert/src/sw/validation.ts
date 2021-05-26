@@ -7,8 +7,8 @@ import {
   HttpAgent,
   lookupPathEx,
   reconstruct,
-} from "@dfinity/agent";
-import { Principal } from "@dfinity/principal";
+} from '@dfinity/agent';
+import { Principal } from '@dfinity/principal';
 
 /**
  * Validate whether a body is properly certified.
@@ -28,11 +28,11 @@ export async function validateBody(
   certificate: ArrayBuffer,
   tree: ArrayBuffer,
   agent: HttpAgent,
-  shouldFetchRootKey = false
+  shouldFetchRootKey = false,
 ): Promise<boolean> {
   const cert = new Certificate(
     { certificate: blobFromUint8Array(new Uint8Array(certificate)) },
-    agent
+    agent,
   );
 
   // If we're running locally, update the key manually.
@@ -47,41 +47,31 @@ export async function validateBody(
 
   const hashTree: HashTree = cbor.decode(new Uint8Array(tree));
   const reconstructed = await reconstruct(hashTree);
-  const witness = cert.lookupEx([
-    "canister",
-    canisterId.toUint8Array(),
-    "certified_data",
-  ]);
+  const witness = cert.lookupEx(['canister', canisterId.toUint8Array(), 'certified_data']);
 
   if (!witness) {
-    throw new Error(
-      "Could not find certified data for this canister in the certificate."
-    );
+    throw new Error('Could not find certified data for this canister in the certificate.');
   }
 
   // First validate that the Tree is as good as the certification.
   if (!equal(witness, reconstructed)) {
-    console.error("Witness != Tree passed in ic-certification");
+    console.error('Witness != Tree passed in ic-certification');
     return false;
   }
 
   // Next, calculate the SHA of the content.
-  const sha = await crypto.subtle.digest("SHA-256", body);
-  let treeSha = lookupPathEx(["http_assets", path], hashTree);
+  const sha = await crypto.subtle.digest('SHA-256', body);
+  let treeSha = lookupPathEx(['http_assets', path], hashTree);
 
   if (!treeSha) {
     // Allow fallback to `index.html`.
-    treeSha = lookupPathEx(["http_assets", "/index.html"], hashTree);
+    treeSha = lookupPathEx(['http_assets', '/index.html'], hashTree);
   }
 
   if (!treeSha) {
     // The tree returned in the certification header is wrong. Return false.
     // We don't throw here, just invalidate the request.
-    console.error(
-      `Invalid Tree in the header. Does not contain path ${JSON.stringify(
-        path
-      )}`
-    );
+    console.error(`Invalid Tree in the header. Does not contain path ${JSON.stringify(path)}`);
     return false;
   }
 

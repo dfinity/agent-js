@@ -11,21 +11,21 @@ This protocol is not novel and strives to be a conventional example of a system 
 ## Introduction
 
 The ic-id-protocol can be used by a software component to:
-* request that the end-user provide your app with proof of ownership over a cryptographic keyPair
-* request an AuthenticationResponse whose contents can be used to make Internet Computer Protocol requests with [Authentication](https://sdk.dfinity.org/docs/interface-spec/#authentication), including requesting an access token that only has the capability of interacting with an enuemrated set of Canisters.
+
+- request that the end-user provide your app with proof of ownership over a cryptographic keyPair
+- request an AuthenticationResponse whose contents can be used to make Internet Computer Protocol requests with [Authentication](https://sdk.dfinity.org/docs/interface-spec/#authentication), including requesting an access token that only has the capability of interacting with an enuemrated set of Canisters.
 
 System components communicate in this protocol by passing messages via HTTP. System components and the end-user communicate using a web user-agent's HTTP requests and responses.
 
-
 ### Terms
 
-* <dfn>Relying Party</dfn> (aka 'RP'): see https://en.wikipedia.org/wiki/Relying_party
+- <dfn>Relying Party</dfn> (aka 'RP'): see https://en.wikipedia.org/wiki/Relying_party
 
-* <dfn>Identity Provider</dfn> (aka 'IDP'): see https://en.wikipedia.org/wiki/Identity_provider
+- <dfn>Identity Provider</dfn> (aka 'IDP'): see https://en.wikipedia.org/wiki/Identity_provider
 
-* <dfn>Session</dfn>: <blockquote>Continuous period of time during which an End-User accesses a Relying Party relying on the Authentication of the End-User performed by the OpenID Provider. </blockquote>--<cite>https://openid.net/specs/openid-connect-session-1_0.html#Terminology</cite>
+- <dfn>Session</dfn>: <blockquote>Continuous period of time during which an End-User accesses a Relying Party relying on the Authentication of the End-User performed by the OpenID Provider. </blockquote>--<cite>https://openid.net/specs/openid-connect-session-1_0.html#Terminology</cite>
 
-* <dfn>Session KeyPair</dfn>: keyPair that identifies a Session
+- <dfn>Session KeyPair</dfn>: keyPair that identifies a Session
 
 [1]: https://tools.ietf.org/html/rfc6749
 [2]: https://openid.net/specs/openid-connect-core-1_0.html
@@ -34,13 +34,13 @@ System components communicate in this protocol by passing messages via HTTP. Sys
 
 At a high level, this is how an RP requests end-user Authentication using ic-id-protocol.
 
-* Assumption: end-user is visiting an RP for the first time
-* A Relying Party (aka 'RP') (e.g. an IC Canister) creates a new ed25519 keyPair to identify an authentication Session of end-user interaction with the RP, and stores this Session KeyPair somewhere durable.
-* RP builds AuthenticationRequest whose `login_hint` corresponds to the Session KeyPair Public Key
-* RP sends AuthenticationRequest to IDP via end-user's web user-agent
-* end-user Authenticates with RP, consents to delegate limitd authority to the Session
-* IDP sends AuthenticationResponse to RP via end-user's web user-agent
-* RP receives AuthenticationResponse access_token, decodes it, and combines the contents with the Session KeyPair *Private* Key in order to make signed, [Authenticated](https://sdk.dfinity.org/docs/interface-spec/#authentication) Internet Computer requests.
+- Assumption: end-user is visiting an RP for the first time
+- A Relying Party (aka 'RP') (e.g. an IC Canister) creates a new ed25519 keyPair to identify an authentication Session of end-user interaction with the RP, and stores this Session KeyPair somewhere durable.
+- RP builds AuthenticationRequest whose `login_hint` corresponds to the Session KeyPair Public Key
+- RP sends AuthenticationRequest to IDP via end-user's web user-agent
+- end-user Authenticates with RP, consents to delegate limitd authority to the Session
+- IDP sends AuthenticationResponse to RP via end-user's web user-agent
+- RP receives AuthenticationResponse access*token, decodes it, and combines the contents with the Session KeyPair \_Private* Key in order to make signed, [Authenticated](https://sdk.dfinity.org/docs/interface-spec/#authentication) Internet Computer requests.
 
 See below "Relation to OAuth2" for a sequence diagram that corresponds to this story.
 
@@ -50,17 +50,18 @@ See below "Relation to OAuth2" for a sequence diagram that corresponds to this s
 
 The overall authentication process is most similar to the OAuth2 Implicit Grant Flow.
 
->  The implicit grant is a simplified authorization code flow optimized
-   for clients implemented in a browser using a scripting language such
-   as JavaScript.  In the implicit flow, instead of issuing the client
-   an authorization code, the client is issued an access token directly
-   (as the result of the resource owner authorization).  The grant type
-   is implicit, as no intermediate credentials (such as an authorization
-   code) are issued (and later used to obtain an access token).
+> The implicit grant is a simplified authorization code flow optimized
+> for clients implemented in a browser using a scripting language such
+> as JavaScript. In the implicit flow, instead of issuing the client
+> an authorization code, the client is issued an access token directly
+> (as the result of the resource owner authorization). The grant type
+> is implicit, as no intermediate credentials (such as an authorization
+> code) are issued (and later used to obtain an access token).
 >
 > -- <cite>https://tools.ietf.org/html/rfc6749#section-1.3.2</cite>
 
 From [OAuth2#4.2 Implicit Grant](https://tools.ietf.org/html/rfc6749#section-4.2):
+
 ```
 The implicit grant type is used to obtain access tokens (it does not
 support the issuance of refresh tokens) and is optimized for public
@@ -165,14 +166,17 @@ applications residing on the same device.
 ### AuthenticationRequest
 
 Similar to:
-* https://tools.ietf.org/html/rfc6749#section-4.2.1
+
+- https://tools.ietf.org/html/rfc6749#section-4.2.1
 
 Differences from the above:
-* `redirect_uri` is required
-* `scope` is required, and includes extra documentation about the interpretation of this space-delimited-string parameter for requesting authorization for scoped capabilities to specific Internet Computer Canisters on behalf of the end-user (access tokens authorized to interact with all canisters are not supported yet to maximize end-user safety)
+
+- `redirect_uri` is required
+- `scope` is required, and includes extra documentation about the interpretation of this space-delimited-string parameter for requesting authorization for scoped capabilities to specific Internet Computer Canisters on behalf of the end-user (access tokens authorized to interact with all canisters are not supported yet to maximize end-user safety)
 
 Prefer terms defined here before defining new ones:
-* https://openid.net/specs/openid-connect-core-1_0.html#ImplicitAuthRequest
+
+- https://openid.net/specs/openid-connect-core-1_0.html#ImplicitAuthRequest
 
 <table>
     <thead>
@@ -251,13 +255,16 @@ Prefer terms defined here before defining new ones:
 ### AuthenticationResponseSuccess
 
 Similar to:
-* https://tools.ietf.org/html/rfc6749#section-4.2.2
+
+- https://tools.ietf.org/html/rfc6749#section-4.2.2
 
 Differences from the above:
-* none so far
+
+- none so far
 
 Prefer terms defined here before defining new ones:
-* https://openid.net/specs/openid-connect-core-1_0.html#ImplicitAuthResponse
+
+- https://openid.net/specs/openid-connect-core-1_0.html#ImplicitAuthResponse
 
 <table>
     <thead>
@@ -335,25 +342,27 @@ The following table is a registry of these errors:
 ## Known Implementations
 
 Identity Provider
-* @dfinity/identity-provider
-    * test environment (no SLA): https://identity-provider.sdk-test.dfinity.network/ - not yet fully compliant, but soon will be
-    * source: https://github.com/dfinity/agent-js/tree/identity-provider/2021-01-04/packages/identity-provider
+
+- @dfinity/identity-provider
+  - test environment (no SLA): https://identity-provider.sdk-test.dfinity.network/ - not yet fully compliant, but soon will be
+  - source: https://github.com/dfinity/agent-js/tree/identity-provider/2021-01-04/packages/identity-provider
 
 Relying Party
-* @dfinity/identity-provider-rp-demo
-    * test environment (no SLA): https://identity-provider.sdk-test.dfinity.network/relying-party-demo
-    * source: https://github.com/dfinity/agent-js/tree/identity-provider/2021-01-04/packages/identity-provider/src/relying-party-demo
-* webauthn_tester:
-    * test environment (no SLA): https://pbh67-jaaaa-aaaab-aaavq-cai.ic0.app/
-    * source: https://github.com/dfinity/webauthn_tester
-* ic-whoami:
-    * source: https://github.com/gobengo/ic-whoami
+
+- @dfinity/identity-provider-rp-demo
+  - test environment (no SLA): https://identity-provider.sdk-test.dfinity.network/relying-party-demo
+  - source: https://github.com/dfinity/agent-js/tree/identity-provider/2021-01-04/packages/identity-provider/src/relying-party-demo
+- webauthn_tester:
+  - test environment (no SLA): https://pbh67-jaaaa-aaaab-aaavq-cai.ic0.app/
+  - source: https://github.com/dfinity/webauthn_tester
+- ic-whoami:
+  - source: https://github.com/gobengo/ic-whoami
 
 Other Tools
-* none yet
+
+- none yet
 
 ## Acknowledgements
 
-* https://dfinity.org
-* https://cseweb.ucsd.edu/~btackmann/ - Researcher for broader Internet Computer Authentication architecture, of which this is a small enabling protocol. Thanks for your patience, education, hard work, and for meeting at odd hours so many times due to time zone differences.
-
+- https://dfinity.org
+- https://cseweb.ucsd.edu/~btackmann/ - Researcher for broader Internet Computer Authentication architecture, of which this is a small enabling protocol. Thanks for your patience, education, hard work, and for meeting at odd hours so many times due to time zone differences.

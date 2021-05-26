@@ -12,11 +12,8 @@ export default ({ IDL }) => {
   });
   return IDL.Service({
     provisional_create_canister_with_cycles: IDL.Func(
-      [
-        IDL.Record({ amount: IDL.Opt(IDL.Nat), settings: IDL.Opt(CanisterSettings) }),
-      ], [
-        IDL.Record({ canister_id: canister_id }),
-      ],
+      [IDL.Record({ amount: IDL.Opt(IDL.Nat), settings: IDL.Opt(CanisterSettings) })],
+      [IDL.Record({ canister_id: canister_id })],
       [],
     ),
     create_canister: IDL.Func([], [IDL.Record({ canister_id: canister_id })], []),
