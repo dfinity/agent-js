@@ -1,4 +1,5 @@
-import { blobFromUint8Array, HttpAgent, makeNonceTransform, polling } from '@dfinity/agent';
+import { HttpAgent, makeNonceTransform, polling } from '@dfinity/agent';
+import { blobFromUint8Array } from '@dfinity/candid';
 import { LedgerIdentity } from '@dfinity/identity-ledgerhq';
 import * as protobufjs from 'protobufjs';
 

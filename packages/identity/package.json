@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "borc": "^2.1.1",
-    "buffer": "^5.4.3",
+    "buffer": "^6.0.3",
     "buffer-pipe": "0.0.4",
     "tweetnacl": "^1.0.1"
   },
