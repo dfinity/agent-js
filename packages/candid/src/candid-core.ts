@@ -110,6 +110,7 @@ export abstract class InputForm {
   public render(dom: HTMLElement): void {
     if (this.ui.open && this.ui.event) {
       dom.appendChild(this.ui.open);
+      // eslint-disable-next-line
       const form = this;
       form.ui.open!.addEventListener(form.ui.event!, () => {
         // Remove old form
@@ -139,6 +140,7 @@ export class RecordForm extends InputForm {
   public generateForm(): void {
     this.form = this.fields.map(([key, type]) => {
       const input = this.ui.render(type);
+      // eslint-disable-next-line
       if (this.ui.labelMap && this.ui.labelMap.hasOwnProperty(key)) {
         input.label = this.ui.labelMap[key] + ' ';
       } else {
