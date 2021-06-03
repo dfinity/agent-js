@@ -1,4 +1,4 @@
-import { blobFromHex, blobFromUint8Array } from '@dfinity/agent';
+import { blobFromHex, blobFromUint8Array } from '@dfinity/candid';
 import { Buffer } from 'buffer/';
 import { Ed25519KeyIdentity, Ed25519PublicKey } from './ed25519';
 

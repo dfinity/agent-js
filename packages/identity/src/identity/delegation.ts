@@ -1,14 +1,11 @@
+import { HttpAgentRequest, PublicKey, requestIdOf, SignIdentity } from '@dfinity/agent';
 import {
   BinaryBlob,
   blobFromHex,
   blobFromUint8Array,
   derBlobFromBlob,
   DerEncodedBlob,
-  HttpAgentRequest,
-  PublicKey,
-  requestIdOf,
-  SignIdentity,
-} from '@dfinity/agent';
+} from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { Buffer } from 'buffer/';
 import * as cbor from 'simple-cbor';

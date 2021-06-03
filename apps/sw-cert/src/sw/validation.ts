@@ -1,6 +1,4 @@
 import {
-  blobFromUint8Array,
-  blobToUint8Array,
   Cbor as cbor,
   Certificate,
   HashTree,
@@ -8,6 +6,7 @@ import {
   lookupPathEx,
   reconstruct,
 } from '@dfinity/agent';
+import { blobFromUint8Array, blobToUint8Array } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 
 /**

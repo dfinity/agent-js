@@ -1,4 +1,5 @@
-import { Actor, blobFromUint8Array, IDL } from '@dfinity/agent';
+import { Actor } from '@dfinity/agent';
+import { blobFromUint8Array, IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { readFileSync } from 'fs';
 import path from 'path';
