@@ -1,5 +1,5 @@
 {
-  "packages": ["demos/*", "e2e/*", "packages/*"],
+  "packages": ["apps/*", "demos/*", "e2e/*", "packages/*"],
   "hoist": true,
   "version": "0.9.0"
 }
