@@ -1,6 +1,6 @@
 name: Check PR title
 on:
-  pull_request:
+  pull_request_target:
     types:
       - opened
       - reopened
@@ -17,3 +17,5 @@ jobs:
           failure-state: Title does not follow the specification.
           context-name: conventional-pr-title
           preset: conventional-changelog-angular@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
