@@ -611,7 +611,7 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
 
   public covariant(x: any): x is bigint {
     const max = BigInt(2) ** BigInt(this.bits);
-    if (typeof x === 'bigint' && x > BigInt(0)) {
+    if (typeof x === 'bigint' && x >= BigInt(0)) {
       return x < max;
     } else if (Number.isInteger(x) && x >= 0) {
       const v = BigInt(x);
