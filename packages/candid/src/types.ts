@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-empty-interface */
+/* eslint-disable jsdoc/require-jsdoc */
 import { Buffer } from 'buffer/';
 import { lebEncode } from './utils/leb128';
 

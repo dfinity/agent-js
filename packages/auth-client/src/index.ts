@@ -1,10 +1,5 @@
-import {
-  AnonymousIdentity,
-  blobFromUint8Array,
-  derBlobFromBlob,
-  Identity,
-  SignIdentity,
-} from '@dfinity/agent';
+import { AnonymousIdentity, Identity, SignIdentity } from '@dfinity/agent';
+import { blobFromUint8Array, derBlobFromBlob } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { isDelegationValid } from '@dfinity/authentication';
 import {

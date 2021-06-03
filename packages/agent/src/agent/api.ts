@@ -1,6 +1,6 @@
 import { Principal } from '@dfinity/principal';
 import { RequestId } from '../request_id';
-import { BinaryBlob, JsonObject } from '../types';
+import { BinaryBlob, JsonObject } from '@dfinity/candid';
 
 /**
  * Codes used by the replica for rejecting a message.

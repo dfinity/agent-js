@@ -2,7 +2,7 @@ import { Agent, RequestStatusResponseStatus } from '../agent';
 import { Certificate } from '../certificate';
 import { Principal } from '@dfinity/principal';
 import { RequestId, toHex as requestIdToHex } from '../request_id';
-import { BinaryBlob, blobFromText } from '../types';
+import { BinaryBlob, blobFromText } from '@dfinity/candid';
 
 export * as strategy from './strategy';
 export { defaultStrategy } from './strategy';

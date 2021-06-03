@@ -10,7 +10,7 @@ import {
   blobFromUint8Array,
   blobToHex,
   blobToUint8Array,
-} from './types';
+} from '@dfinity/candid';
 import { blsVerify } from './utils/bls';
 
 /**
