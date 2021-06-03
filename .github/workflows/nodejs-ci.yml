@@ -11,7 +11,7 @@ jobs:
         os: [ubuntu-18.04]
         ghc: ['8.8.4']
         spec:
-          - release-0.16 # https://github.com/dfinity-lab/ic-ref/tree/release-0.16
+          - '0.16.1'
         node:
           - 12
           - 14
@@ -44,10 +44,9 @@ jobs:
       # IC ref checkout and build.
       - uses: actions/checkout@v2
         with:
-          repository: 'dfinity-lab/ic-ref'
+          repository: 'dfinity/ic-hs'
           # Personal Read-only Access Token created by Hans Larsen
-          token: ${{ secrets.IC_REF_TOKEN }}
-          path: ic-ref
+          path: ic-hs
           ref: ${{ matrix.spec }}
 
       - name: Cache ~/.cabal/store
@@ -55,7 +54,7 @@ jobs:
         with:
           path: |
             ~/.cabal/store
-          key: cabal-${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('ic-ref/impl/cabal.project', 'ic-ref/impl/cabal.project.freeze') }}
+          key: cabal-${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('ic-hs/cabal.project', 'ic-hs/cabal.project.freeze') }}
           restore-keys: cabal-${{ runner.os }}-${{ matrix.ghc }}-
 
       - uses: actions/setup-haskell@v1.1.3
@@ -79,7 +78,7 @@ jobs:
           cabal --version
           ghc-${{ matrix.ghc }} --version
           mkdir -p $HOME/bin
-          cd ic-ref/impl
+          cd ic-hs
           cabal update
           cabal install -w ghc-${{ matrix.ghc }} --overwrite-policy=always  --installdir=$HOME/bin
 
