@@ -28,7 +28,7 @@ jobs:
       # upgrade npm version in package.json to the tag used in the release.
       - run: npm version ${{ github.event.release.tag_name }}
       # build the project
-      - run: npm run build
+      - run: npm run build --workspaces
       # run tests just in case
       - run: npm test
       - run: npm config set '//registry.npmjs.org/:_authToken' "${{ secrets.NPM_TOKEN }}"
