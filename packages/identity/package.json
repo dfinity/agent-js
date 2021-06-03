@@ -32,6 +32,7 @@
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
     "make:docs/reference": "typedoc src/index.ts --out docs/reference",
+    "release": "npm publish",
     "test": "jest",
     "test:coverage": "jest --verbose --collectCoverage"
   },
