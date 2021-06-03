@@ -675,7 +675,7 @@ export class VecClass<T> extends ConstructType<T[]> {
   public encodeValue(x: T[]) {
     const len = lebEncode(x.length);
     if (this._blobOptimization) {
-      return Buffer.concat([len, Buffer.from((x as unknown) as number[])]);
+      return Buffer.concat([len, Buffer.from(x as unknown as number[])]);
     }
 
     return Buffer.concat([len, ...x.map(d => this._type.encodeValue(d))]);
@@ -696,7 +696,7 @@ export class VecClass<T> extends ConstructType<T[]> {
     }
     const len = Number(lebDecode(b));
     if (this._blobOptimization) {
-      return ([...new Uint8Array(b.read(len))] as unknown) as T[];
+      return [...new Uint8Array(b.read(len))] as unknown as T[];
     }
 
     const rets: T[] = [];
@@ -817,6 +817,7 @@ export class RecordClass extends ConstructType<Record<string, any>> {
     return (
       typeof x === 'object' &&
       this._fields.every(([k, t]) => {
+        // eslint-disable-next-line
         if (!x.hasOwnProperty(k)) {
           throw new Error(`Record is missing key "${k}".`);
         }
@@ -966,6 +967,7 @@ export class VariantClass extends ConstructType<Record<string, any>> {
       typeof x === 'object' &&
       Object.entries(x).length === 1 &&
       this._fields.every(([k, v]) => {
+        // eslint-disable-next-line
         return !x.hasOwnProperty(k) || v.covariant(x[k]);
       })
     );
@@ -974,6 +976,7 @@ export class VariantClass extends ConstructType<Record<string, any>> {
   public encodeValue(x: Record<string, any>) {
     for (let i = 0; i < this._fields.length; i++) {
       const [name, type] = this._fields[i];
+      // eslint-disable-next-line
       if (x.hasOwnProperty(name)) {
         const idx = lebEncode(i);
         const buf = type.encodeValue(x[name]);
@@ -1029,6 +1032,7 @@ export class VariantClass extends ConstructType<Record<string, any>> {
 
   public valueToString(x: Record<string, any>) {
     for (const [name, type] of this._fields) {
+      // eslint-disable-next-line
       if (x.hasOwnProperty(name)) {
         const value = type.valueToString(x[name]);
         if (value === 'null') {
@@ -1613,30 +1617,71 @@ export const Nat64 = new FixedNatClass(64);
 
 export const Principal = new PrincipalClass();
 
+/**
+ *
+ * @param types array of any types
+ * @returns TupleClass from those types
+ */
 export function Tuple<T extends any[]>(...types: T): TupleClass<T> {
   return new TupleClass(types);
 }
+/**
+ *
+ * @param t IDL Type
+ * @returns VecClass from that type
+ */
 export function Vec<T>(t: Type<T>): VecClass<T> {
   return new VecClass(t);
 }
+/**
+ *
+ * @param t IDL Type
+ * @returns OptClass of Type
+ */
 export function Opt<T>(t: Type<T>): OptClass<T> {
   return new OptClass(t);
 }
-
+/**
+ *
+ * @param t Record of string and IDL Type
+ * @returns RecordClass of string and Type
+ */
 export function Record(t: Record<string, Type>): RecordClass {
   return new RecordClass(t);
 }
-export function Variant(fields: Record<string, Type>) {
+
+/**
+ *
+ * @param fields Record of string and IDL Type
+ * @returns VariantClass
+ */
+export function Variant(fields: Record<string, Type>): VariantClass {
   return new VariantClass(fields);
 }
-export function Rec() {
+/**
+ *
+ * @returns new RecClass
+ */
+export function Rec(): RecClass {
   return new RecClass();
 }
 
-export function Func(args: Type[], ret: Type[], annotations: string[] = []) {
+/**
+ *
+ * @param args array of IDL Types
+ * @param ret array of IDL Types
+ * @param annotations array of strings, [] by default
+ * @returns new FuncClass
+ */
+export function Func(args: Type[], ret: Type[], annotations: string[] = []): FuncClass {
   return new FuncClass(args, ret, annotations);
 }
 
+/**
+ *
+ * @param t Record of string and FuncClass
+ * @returns ServiceClass
+ */
 export function Service(t: Record<string, FuncClass>): ServiceClass {
   return new ServiceClass(t);
 }

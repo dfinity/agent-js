@@ -9,11 +9,11 @@ import {
 } from './agent';
 import { getManagementCanister } from './canisters/management';
 import { AgentError } from './errors';
-import * as IDL from './idl';
+import { IDL } from '@dfinity/candid';
 import { pollForResponse, PollStrategyFactory, strategy } from './polling';
 import { Principal } from '@dfinity/principal';
 import { RequestId, toHex as requestIdToHex } from './request_id';
-import { BinaryBlob } from './types';
+import { BinaryBlob } from '@dfinity/candid';
 
 export class ActorCallError extends AgentError {
   constructor(

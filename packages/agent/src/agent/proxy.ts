@@ -1,14 +1,12 @@
 import {
-  BinaryBlob,
-  blobFromHex,
   CallOptions,
-  JsonObject,
   QueryFields,
   QueryResponse,
   ReadStateOptions,
   ReadStateResponse,
   SubmitResponse,
 } from '..';
+import { BinaryBlob, blobFromHex, JsonObject } from '@dfinity/candid';
 import { Agent } from './api';
 import { Principal } from '@dfinity/principal';
 

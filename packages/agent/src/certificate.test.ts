@@ -31,7 +31,8 @@ test('hash tree', async () => {
   ];
   const tree: Cert.HashTree = cbor.decode(cborEncode);
   expect(tree).toMatchObject(expected);
-  expect(await Cert.reconstruct(tree)).toEqual(
+
+  expect(Buffer.from(await Cert.reconstruct(tree))).toEqual(
     Buffer.from('eb5c5b2195e62d996b84c9bcc8259d19a83786a2f59e0878cec84c811f669aa0', 'hex'),
   );
 });
@@ -71,7 +72,7 @@ test('pruned hash tree', async () => {
   ];
   const tree: Cert.HashTree = cbor.decode(cborEncode);
   expect(tree).toMatchObject(expected);
-  expect(await Cert.reconstruct(tree)).toEqual(
+  expect(Buffer.from(await Cert.reconstruct(tree))).toEqual(
     Buffer.from('eb5c5b2195e62d996b84c9bcc8259d19a83786a2f59e0878cec84c811f669aa0', 'hex'),
   );
 });

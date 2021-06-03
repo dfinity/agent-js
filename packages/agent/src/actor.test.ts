@@ -4,10 +4,9 @@ import { HttpAgent } from './agent';
 import { Expiry, makeNonceTransform } from './agent/http/transforms';
 import { CallRequest, SubmitRequestType, UnSigned } from './agent/http/types';
 import * as cbor from './cbor';
-import * as IDL from './idl';
+import { IDL, blobFromHex, Nonce } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { requestIdOf } from './request_id';
-import { blobFromHex, Nonce } from './types';
 
 const originalDateNowFn = global.Date.now;
 beforeEach(() => {

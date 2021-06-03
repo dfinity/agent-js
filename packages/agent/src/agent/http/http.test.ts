@@ -5,8 +5,8 @@ import { Expiry, makeNonceTransform } from './transforms';
 import { CallRequest, Envelope, ReadRequestType, SubmitRequestType } from './types';
 import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
-import { BinaryBlob } from '../../types';
-import { Nonce } from '../../types';
+import { BinaryBlob } from '@dfinity/candid';
+import { Nonce } from '@dfinity/candid';
 
 const originalDateNowFn = global.Date.now;
 beforeEach(() => {
