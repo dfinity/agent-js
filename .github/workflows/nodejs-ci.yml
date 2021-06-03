@@ -78,6 +78,7 @@ jobs:
           cabal --version
           ghc-${{ matrix.ghc }} --version
           mkdir -p $HOME/bin
+          cd ic-hs
           cabal update
           cabal install -w ghc-${{ matrix.ghc }} --overwrite-policy=always  --installdir=$HOME/bin
 
