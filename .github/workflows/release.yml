@@ -26,8 +26,6 @@ jobs:
       # set up git since we will later push to the repo
       - run: git config --global user.name "GitHub CD bot"
       - run: git config --global user.email "npm@dfinity.org"
-      # upgrade npm version in package.json to the tag used in the release.
-      - run: npm version ${{ github.event.release.tag_name }}
       # build the project
       - run: npm run build --workspaces
       # run tests just in case
@@ -39,8 +37,3 @@ jobs:
       - run: npm whoami
       # publish to NPM -> there is one caveat, continue reading for the fix
       - run: npm publish --workspaces --access public
-      # push the version changes to GitHub
-      - run: git push
-        env:
-          # The secret is passed automatically. Nothing to configure.
-          github-token: ${{ secrets.GITHUB_TOKEN }}
