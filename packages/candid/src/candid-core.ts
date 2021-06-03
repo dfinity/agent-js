@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-this-alias */
 import * as IDL from './idl';
 
 // tslint:disable:max-classes-per-file
