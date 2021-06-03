@@ -6,6 +6,7 @@ on:
 
 jobs:
   build:
+    environment: Release
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
