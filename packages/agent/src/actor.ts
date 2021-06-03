@@ -1,10 +1,6 @@
 import { Buffer } from 'buffer/';
 import {
   Agent,
-  getDefaultAgent,
-  QueryResponseRejected,
-  QueryResponseStatus,
-  ReplicaRejectCode,
   SubmitResponse,
 } from './agent';
 import { getManagementCanister } from './canisters/management';
