@@ -11,7 +11,7 @@ jobs:
         os: [ubuntu-18.04]
         ghc: ['8.8.4']
         spec:
-          - release-0.16
+          - '0.16.1'
         node:
           - 12
           - 14
