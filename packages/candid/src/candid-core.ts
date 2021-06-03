@@ -110,8 +110,8 @@ export abstract class InputForm {
   public render(dom: HTMLElement): void {
     if (this.ui.open && this.ui.event) {
       dom.appendChild(this.ui.open);
-      // eslint-disable-next-line
       const form = this;
+      // eslint-disable-next-line
       form.ui.open!.addEventListener(form.ui.event!, () => {
         // Remove old form
         if (form.ui.container) {
