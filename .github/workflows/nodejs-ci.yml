@@ -54,7 +54,7 @@ jobs:
         with:
           path: |
             ~/.cabal/store
-          key: cabal-${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('ic-hs/impl/cabal.project', 'ic-hs/impl/cabal.project.freeze') }}
+          key: cabal-${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('ic-hs/cabal.project', 'ic-hs/cabal.project.freeze') }}
           restore-keys: cabal-${{ runner.os }}-${{ matrix.ghc }}-
 
       - uses: actions/setup-haskell@v1.1.3
