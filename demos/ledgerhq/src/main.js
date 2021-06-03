@@ -1,8 +1,3 @@
-import { HttpAgent, makeNonceTransform, polling } from '@dfinity/agent';
-import { blobFromUint8Array } from '@dfinity/candid';
-import { LedgerIdentity } from '@dfinity/identity-ledgerhq';
-import * as protobufjs from 'protobufjs';
-
 function toHex(arr) {
   // Convert to hexadecimal
   // padd with leading 0 if <16
@@ -14,6 +9,7 @@ function toHex(arr) {
 }
 
 async function loadProtobuf(schema, typeName) {
+  const protobufjs = await import('protobufjs');
   const pbRoot = new protobufjs.Root();
 
   const oldFetch = protobufjs.Root.prototype.fetch;
@@ -56,6 +52,7 @@ for (const el of document.getElementsByClassName('connected-only')) {
 let identity = undefined;
 
 document.getElementById('connectLedgerBtn').addEventListener('click', async () => {
+  const { LedgerIdentity } = await import('@dfinity/identity-ledgerhq');
   identity = await LedgerIdentity.fromWebUsb();
 
   document.getElementById('ledgerPrincipal').innerText = `${identity.getPrincipal().toText()}`;
@@ -69,6 +66,10 @@ document.getElementById('checkAddressBtn').addEventListener('click', async () =>
 });
 
 document.getElementById('sendBtn').addEventListener('click', async () => {
+  const { blobFromUint8Array, HttpAgent, makeNonceTransform, polling } = await import(
+    '@dfinity/agent'
+  );
+
   const schemaText = document.getElementById('schema').value;
   const valueText = document.getElementById('value').value;
   const messageTypeName = document.getElementById('requestType').value;
