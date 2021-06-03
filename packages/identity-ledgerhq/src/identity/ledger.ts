@@ -1,14 +1,13 @@
 import {
-  blobFromUint8Array,
-  BinaryBlob,
   CallRequest,
   Cbor,
   HttpAgentRequest,
-  Principal,
   PublicKey,
   ReadRequest,
   SignIdentity,
 } from '@dfinity/agent';
+import { blobFromUint8Array, BinaryBlob } from '@dfinity/candid';
+import { Principal } from '@dfinity/principal';
 import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 import DfinityApp, { ResponseSign } from '@zondax/ledger-dfinity';
 import { Secp256k1PublicKey } from './secp256k1';
@@ -71,9 +70,11 @@ export class LedgerIdentity extends SignIdentity {
     const resp: ResponseSign = await this._app.sign(this.derivePath, Buffer.from(blob));
     const signatureRS = resp.signatureRS;
     if (!signatureRS) {
-      throw new Error(`A ledger error happened during signature:\n`
-        + `Code: ${resp.returnCode}\n`
-        + `Message: ${JSON.stringify(resp.errorMessage)}\n`);
+      throw new Error(
+        `A ledger error happened during signature:\n` +
+          `Code: ${resp.returnCode}\n` +
+          `Message: ${JSON.stringify(resp.errorMessage)}\n`,
+      );
     }
 
     if (signatureRS?.byteLength !== 64) {

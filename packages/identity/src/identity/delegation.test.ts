@@ -1,4 +1,6 @@
-import { BinaryBlob, blobFromHex, Principal, SignIdentity } from '@dfinity/agent';
+import { SignIdentity } from '@dfinity/agent';
+import { BinaryBlob, blobFromHex } from '@dfinity/candid';
+import { Principal } from '@dfinity/principal';
 import { DelegationChain } from './delegation';
 import { Ed25519KeyIdentity } from './ed25519';
 

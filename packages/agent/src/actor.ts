@@ -4,15 +4,16 @@ import {
   getDefaultAgent,
   QueryResponseRejected,
   QueryResponseStatus,
-  ReplicaRejectCode, SubmitResponse
+  ReplicaRejectCode,
+  SubmitResponse,
 } from './agent';
 import { getManagementCanister } from './canisters/management';
 import { AgentError } from './errors';
-import * as IDL from './idl';
+import { IDL } from '@dfinity/candid';
 import { pollForResponse, PollStrategyFactory, strategy } from './polling';
-import { Principal } from './principal';
+import { Principal } from '@dfinity/principal';
 import { RequestId, toHex as requestIdToHex } from './request_id';
-import { BinaryBlob } from './types';
+import { BinaryBlob } from '@dfinity/candid';
 
 export class ActorCallError extends AgentError {
   constructor(
@@ -21,12 +22,14 @@ export class ActorCallError extends AgentError {
     public readonly type: 'query' | 'update',
     public readonly props: Record<string, string>,
   ) {
-    super([
-      `Call failed:`,
-      `  Canister: ${canisterId.toText()}`,
-      `  Method: ${methodName} (${type})`,
-      ...Object.getOwnPropertyNames(props).map(n => `  "${n}": ${JSON.stringify(props[n])}`),
-    ].join('\n'));
+    super(
+      [
+        `Call failed:`,
+        `  Canister: ${canisterId.toText()}`,
+        `  Method: ${methodName} (${type})`,
+        ...Object.getOwnPropertyNames(props).map(n => `  "${n}": ${JSON.stringify(props[n])}`),
+      ].join('\n'),
+    );
   }
 }
 
@@ -263,9 +266,9 @@ export class Actor {
     interfaceFactory: IDL.InterfaceFactory,
     configuration: ActorConfig,
   ): ActorSubclass<T> {
-    return (new (this.createActorClass(interfaceFactory))(
+    return new (this.createActorClass(interfaceFactory))(
       configuration,
-    ) as unknown) as ActorSubclass<T>;
+    ) as unknown as ActorSubclass<T>;
   }
 
   private [metadataSymbol]: ActorMetadata;
@@ -367,6 +370,9 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
   }
 
   const handler = (...args: unknown[]) => caller({}, ...args);
-  handler.withOptions = (options: CallConfig) => (...args: unknown[]) => caller(options, ...args);
+  handler.withOptions =
+    (options: CallConfig) =>
+    (...args: unknown[]) =>
+      caller(options, ...args);
   return handler as ActorMethod;
 }

@@ -25,8 +25,6 @@ commands to keep in mind;
   but there is no guarantee that the `next` branch will work with the latest published dfx.
   Once you have a replica running locally, you must pass the port to the e2e tests using the
   `IC_REF_PORT` environment vairable. If that variable is not set, the tests will fail.
-- To run the entire ci, use `npm run ci`. This will validate syntax and linting, as well
-  as running tests (both unit and e2e).
 
 ### Publishing
 
@@ -41,7 +39,7 @@ To publish to NPM, create a branch and run the following commands;
 This will change your code locally, so create a `chore: release VERSION_NUMBER` commit and
 push. Once the PR is created get someone to review it.
 
-Then, when you have merged and pulled down the committed tag, run `npm run publish --workspaces` to publish all packages.
+Then, when you have merged the new versions, open https://github.com/dfinity/agent-js/releases/new, click the "Draft a new release" button, enter the new tag version, and click "Publish release".
 
 ### Publishing Docs
 
@@ -77,3 +75,7 @@ Monorepo-related scripts run in this order, but are usually invoked by `npm inst
   - It copies devtools dependencies from ./packages/agent-js-devtools/node_modules -> ./node_modules
 - build - Build (`npm run build`) each subpackage in ./packages/
 - test - Run `npm test` in each subpackage
+
+### Formatting
+
+To save time on formatting, we use automated formatting for this repo using prettier. You can either use git pre-commit hooks or run the command `npm exec prettier:format` before submitting your PR to have your changes pass. We check formatting on CI.

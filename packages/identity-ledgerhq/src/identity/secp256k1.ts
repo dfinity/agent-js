@@ -1,10 +1,5 @@
-import {
-  BinaryBlob,
-  blobFromUint8Array,
-  derBlobFromBlob,
-  DerEncodedBlob,
-  PublicKey,
-} from '@dfinity/agent';
+import { PublicKey } from '@dfinity/agent';
+import { BinaryBlob, blobFromUint8Array, derBlobFromBlob, DerEncodedBlob } from '@dfinity/candid';
 
 // This implementation is adjusted from the Ed25519PublicKey.
 // The RAW_KEY_LENGTH and DER_PREFIX are modified accordingly
@@ -21,6 +16,7 @@ export class Secp256k1PublicKey implements PublicKey {
   private static RAW_KEY_LENGTH = 65;
 
   // Adding this prefix to a raw public key is sufficient to DER-encode it.
+  // prettier-ignore
   private static DER_PREFIX = Uint8Array.from([
     0x30, 0x56, // SEQUENCE
     0x30, 0x10, // SEQUENCE
@@ -59,7 +55,7 @@ export class Secp256k1PublicKey implements PublicKey {
     if (!this.derEncode(rawKey).equals(key)) {
       throw new TypeError(
         'secp256k1 DER-encoded public key is invalid. A valid secp256k1 DER-encoded public key ' +
-        `must have the following prefix: ${Secp256k1PublicKey.DER_PREFIX}`,
+          `must have the following prefix: ${Secp256k1PublicKey.DER_PREFIX}`,
       );
     }
 

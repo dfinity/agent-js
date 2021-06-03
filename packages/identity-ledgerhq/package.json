@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/identity-ledgerhq",
-  "version": "0.8.9",
+  "version": "0.9.0",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to manage identity and authentication with the Internet Computer",
@@ -31,18 +31,19 @@
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
     "build:watch": "tsc -b --watch",
     "bundle": "npm run build",
-    "ci": "npm run prettier && npm run lint && npm run test",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
-    "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/identity-ledgerhq --excludeInternal",
-    "prettier": "prettier --check \"src/**/*.ts\"",
-    "prettier:write": "npm run prettier -- --write",
+    "make:docs/reference": "typedoc src/index.ts --out docs/reference --excludeInternal",
+    "release": "npm publish",
     "test": "jest",
     "test:coverage": "jest --verbose --collectCoverage"
   },
+  "peerDependencies": {
+    "@dfinity/agent": "^0.9.0",
+    "@dfinity/identity": "^0.9.0",
+    "@dfinity/principal": "^0.9.0"
+  },
   "dependencies": {
-    "@dfinity/agent": "^0.8.9",
-    "@dfinity/identity": "^0.8.9",
     "@ledgerhq/hw-transport": "^5.49.0",
     "@ledgerhq/hw-transport-webusb": "^5.49.0",
     "@zondax/ledger-dfinity": "0.2.1"
@@ -59,7 +60,6 @@
     "jest": "^26.6.3",
     "jest-expect-message": "^1.0.2",
     "node-fetch": "2.6.1",
-    "prettier": "^2.0.5",
     "text-encoding": "^0.7.0",
     "ts-jest": "^26.5.4",
     "tslint": "^5.20.0",

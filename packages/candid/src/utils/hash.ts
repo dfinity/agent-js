@@ -14,6 +14,11 @@ function idlHash(s: string): number {
   return h;
 }
 
+/**
+ *
+ * @param label string
+ * @returns number representing hashed label
+ */
 export function idlLabelToId(label: string): number {
   if (/^_\d+_$/.test(label) || /^_0x[0-9a-fA-F]+_$/.test(label)) {
     const num = +label.slice(1, -1);

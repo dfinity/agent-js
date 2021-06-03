@@ -1,8 +1,8 @@
 import { Buffer } from 'buffer/';
 import { HttpAgentRequest } from './agent/http/types';
-import { Principal } from './principal';
+import { Principal } from '@dfinity/principal';
 import { requestIdOf } from './request_id';
-import { BinaryBlob, blobFromBuffer, DerEncodedBlob } from './types';
+import { BinaryBlob, blobFromBuffer, DerEncodedBlob } from '@dfinity/candid';
 
 const domainSeparator = Buffer.from(new TextEncoder().encode('\x0Aic-request'));
 

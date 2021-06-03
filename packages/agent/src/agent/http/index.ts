@@ -1,9 +1,9 @@
 import { Buffer } from 'buffer/';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
-import { Principal } from '../../principal';
+import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
-import { BinaryBlob, blobFromHex, blobFromUint8Array, JsonObject } from '../../types';
+import { BinaryBlob, blobFromHex, blobFromUint8Array, JsonObject } from '@dfinity/candid';
 import {
   Agent,
   QueryFields,
@@ -162,18 +162,20 @@ export class HttpAgent implements Agent {
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
-    const id = await (identity !== undefined ? identity : this._identity);
+    const id = (await (identity !== undefined ? await identity : await this._identity)) as Identity;
     const canister = Principal.from(canisterId);
     const ecid = options.effectiveCanisterId
       ? Principal.from(options.effectiveCanisterId)
       : canister;
-    const sender = id?.getPrincipal() || Principal.anonymous();
+
+    const sender: Principal = id.getPrincipal() || Principal.anonymous();
+
     const submit: CallRequest = {
       request_type: SubmitRequestType.Call,
       canister_id: canister,
       method_name: options.methodName,
       arg: options.arg,
-      sender: sender.toBlob(),
+      sender: sender,
       ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
     };
 
@@ -229,7 +231,7 @@ export class HttpAgent implements Agent {
     fields: QueryFields,
     identity?: Identity | Promise<Identity>,
   ): Promise<QueryResponse> {
-    const id = await (identity || this._identity);
+    const id = await (identity !== undefined ? await identity : await this._identity);
     const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
     const sender = id?.getPrincipal() || Principal.anonymous();
 
@@ -238,7 +240,7 @@ export class HttpAgent implements Agent {
       canister_id: canister,
       method_name: fields.methodName,
       arg: fields.arg,
-      sender: sender.toBlob(),
+      sender: sender,
       ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
     };
 
@@ -284,7 +286,7 @@ export class HttpAgent implements Agent {
     identity?: Identity | Promise<Identity>,
   ): Promise<ReadStateResponse> {
     const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
-    const id = await (identity || this._identity);
+    const id = await (identity !== undefined ? await identity : await this._identity);
     const sender = id?.getPrincipal() || Principal.anonymous();
 
     // TODO: remove this any. This can be a Signed or UnSigned request.
@@ -301,7 +303,7 @@ export class HttpAgent implements Agent {
       body: {
         request_type: ReadRequestType.ReadState,
         paths: fields.paths,
-        sender: sender.toBlob(),
+        sender: sender,
         ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
       },
     });

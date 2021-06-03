@@ -1,3 +1,4 @@
+import { KeyPair, PublicKey, SignIdentity } from '@dfinity/agent';
 import {
   BinaryBlob,
   blobFromHex,
@@ -5,11 +6,8 @@ import {
   blobToHex,
   derBlobFromBlob,
   DerEncodedBlob,
-  KeyPair,
-  PublicKey,
-  SignIdentity,
   blobFromBuffer,
-} from '@dfinity/agent';
+} from '@dfinity/candid';
 import { Buffer } from 'buffer/';
 import * as tweetnacl from 'tweetnacl';
 

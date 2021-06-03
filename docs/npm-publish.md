@@ -45,8 +45,10 @@ It should be
    ```
    # For testing, use something like:
    new_agent_js_version_number='0.0.0-dev.0'
+
    # When releasing alongside `dfx`/sdk, you should use (without leading '#'):
    # new_agent_js_version=$NEW_DFX_VERSION
+
    npm version $new_agent_js_version
    ```
 

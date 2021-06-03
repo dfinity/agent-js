@@ -1,15 +1,12 @@
+import { HttpAgentRequest, PublicKey, requestIdOf, SignIdentity } from '@dfinity/agent';
 import {
   BinaryBlob,
   blobFromHex,
   blobFromUint8Array,
   derBlobFromBlob,
   DerEncodedBlob,
-  HttpAgentRequest,
-  Principal,
-  PublicKey,
-  requestIdOf,
-  SignIdentity,
-} from '@dfinity/agent';
+} from '@dfinity/candid';
+import { Principal } from '@dfinity/principal';
 import { Buffer } from 'buffer/';
 import * as cbor from 'simple-cbor';
 
@@ -43,7 +40,7 @@ export class Delegation {
       pubkey: cbor.value.bytes(this.pubkey),
       expiration: cbor.value.u64(this.expiration.toString(16), 16),
       ...(this.targets && {
-        targets: cbor.value.array(this.targets.map(t => cbor.value.bytes(t.toBlob()))),
+        targets: cbor.value.array(this.targets.map(t => cbor.value.bytes(t.toUint8Array()))),
       }),
     });
   }
@@ -55,7 +52,7 @@ export class Delegation {
     return {
       expiration: this.expiration.toString(16),
       pubkey: this.pubkey.toString('hex'),
-      ...(this.targets && { targets: this.targets.map(p => p.toBlob().toString('hex')) }),
+      ...(this.targets && { targets: this.targets.map(p => p.toHex()) }),
     };
   }
 }
@@ -204,7 +201,7 @@ export class DelegationChain {
       return {
         delegation: new Delegation(
           _parseBlob(pubkey),
-          BigInt(`0x${expiration}`),  // expiration in JSON is an hexa string (See toJSON() below).
+          BigInt(`0x${expiration}`), // expiration in JSON is an hexa string (See toJSON() below).
           targets &&
             targets.map((t: unknown) => {
               if (typeof t !== 'string') {
@@ -226,7 +223,10 @@ export class DelegationChain {
    * @param delegations The list of delegations.
    * @param publicKey The DER-encoded public key of the key-pair signing the first delegation.
    */
-  public static fromDelegations(delegations: SignedDelegation[], publicKey: DerEncodedBlob): DelegationChain {
+  public static fromDelegations(
+    delegations: SignedDelegation[],
+    publicKey: DerEncodedBlob,
+  ): DelegationChain {
     return new this(delegations, publicKey);
   }
 
@@ -245,7 +245,7 @@ export class DelegationChain {
             expiration: delegation.expiration.toString(16),
             pubkey: delegation.pubkey.toString('hex'),
             ...(targets && {
-              targets: targets.map(t => t.toBlob().toString('hex')),
+              targets: targets.map(t => t.toHex()),
             }),
           },
           signature: signature.toString('hex'),

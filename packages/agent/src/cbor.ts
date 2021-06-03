@@ -6,8 +6,8 @@ import borc from 'borc';
 import { Buffer } from 'buffer/';
 import * as cbor from 'simple-cbor';
 import { CborEncoder, SelfDescribeCborSerializer } from 'simple-cbor';
-import { Principal } from './principal';
-import { BinaryBlob, blobFromBuffer, blobFromHex } from './types';
+import { Principal } from '@dfinity/principal';
+import { BinaryBlob, blobFromBuffer, blobFromHex } from '@dfinity/candid';
 
 // We are using hansl/simple-cbor for CBOR serialization, to avoid issues with
 // encoding the uint64 values that the HTTP handler of the client expects for
@@ -29,7 +29,7 @@ class PrincipalEncoder implements CborEncoder<Principal> {
   }
 
   public encode(v: Principal): cbor.CborValue {
-    return cbor.value.bytes(v.toBlob());
+    return cbor.value.bytes(v.toUint8Array().buffer);
   }
 }
 

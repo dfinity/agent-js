@@ -1,5 +1,5 @@
-import { Principal } from '../../principal';
-import { BinaryBlob } from '../../types';
+import type { Principal } from '@dfinity/principal';
+import { BinaryBlob } from '@dfinity/candid';
 import { Expiry } from './transforms';
 
 /**
@@ -13,7 +13,8 @@ export const enum Endpoint {
 
 // An HttpAgent request, before it gets encoded and sent to the server.
 // We create an empty request that we will fill later.
-export type HttpAgentRequest = HttpAgentQueryRequest
+export type HttpAgentRequest =
+  | HttpAgentQueryRequest
   | HttpAgentSubmitRequest
   | HttpAgentReadStateRequest;
 
@@ -61,7 +62,7 @@ export interface CallRequest extends Record<string, any> {
   canister_id: Principal;
   method_name: string;
   arg: BinaryBlob;
-  sender: BinaryBlob;
+  sender: Uint8Array | Principal;
   ingress_expiry: Expiry;
 }
 // tslint:enable:camel-case
@@ -83,7 +84,7 @@ export interface QueryRequest extends Record<string, any> {
   canister_id: Principal;
   method_name: string;
   arg: BinaryBlob;
-  sender: BinaryBlob;
+  sender: Uint8Array | Principal;
   ingress_expiry: Expiry;
 }
 
@@ -91,7 +92,7 @@ export interface ReadStateRequest extends Record<string, any> {
   request_type: ReadRequestType.ReadState;
   paths: BinaryBlob[][];
   ingress_expiry: Expiry;
-  sender: BinaryBlob;
+  sender: Uint8Array | Principal;
 }
 
 export type ReadRequest = QueryRequest | ReadStateRequest;

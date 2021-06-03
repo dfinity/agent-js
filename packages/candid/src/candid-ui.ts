@@ -1,5 +1,5 @@
-import * as IDL from '../idl';
-import { Principal } from '../principal';
+import * as IDL from './idl';
+import { Principal } from '@dfinity/principal';
 import * as UI from './candid-core';
 
 // tslint:disable:max-classes-per-file
@@ -175,6 +175,11 @@ function parsePrimitive(t: IDL.Type, config: UI.ParseConfig, d: string) {
   }
 }
 
+/**
+ *
+ * @param t an IDL type
+ * @returns an input for that type
+ */
 export function renderInput(t: IDL.Type): InputBox {
   return t.accept(new Render(), null);
 }
@@ -184,6 +189,13 @@ interface ValueConfig {
   value: any;
 }
 
+/**
+ *
+ * @param t an IDL Type
+ * @param input an InputBox
+ * @param value any
+ * @returns rendering that value to the provided input
+ */
 export function renderValue(t: IDL.Type, input: InputBox, value: any) {
   return t.accept(new RenderValue(), { input, value });
 }
@@ -192,6 +204,7 @@ class RenderValue extends IDL.Visitor<ValueConfig, void> {
   public visitType<T>(t: IDL.Type<T>, d: ValueConfig) {
     (d.input.ui.input as HTMLInputElement).value = t.valueToString(d.value);
   }
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   public visitNull(t: IDL.NullClass, d: ValueConfig) {}
   public visitText(t: IDL.TextClass, d: ValueConfig) {
     (d.input.ui.input as HTMLInputElement).value = d.value;

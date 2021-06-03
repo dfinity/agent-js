@@ -1,12 +1,11 @@
+import { PublicKey, SignIdentity } from '@dfinity/agent';
 import {
   BinaryBlob,
   blobFromHex,
   blobFromUint8Array,
   derBlobFromBlob,
   DerEncodedBlob,
-  PublicKey,
-  SignIdentity,
-} from '@dfinity/agent';
+} from '@dfinity/candid';
 import borc from 'borc';
 import * as tweetnacl from 'tweetnacl';
 

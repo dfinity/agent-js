@@ -1,12 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Actor, HttpAgent, IDL, Principal, SignIdentity } from "@dfinity/agent";
-import {
-  DelegationChain,
-  DelegationIdentity,
-  Ed25519KeyIdentity,
-} from "@dfinity/identity";
-import agent from "../utils/agent";
-import identityCanister from "../canisters/identity";
+import { Actor, HttpAgent, SignIdentity } from '@dfinity/agent';
+import { IDL } from '@dfinity/candid';
+import { Principal } from '@dfinity/principal';
+import { DelegationChain, DelegationIdentity, Ed25519KeyIdentity } from '@dfinity/identity';
+import agent from '../utils/agent';
+import identityCanister from '../canisters/identity';
 
 function createIdentity(seed: number): SignIdentity {
   const seed1 = new Array(32).fill(0);
@@ -17,7 +15,7 @@ function createIdentity(seed: number): SignIdentity {
 async function createIdentityActor(
   seed: number,
   canisterId: Principal,
-  idl: IDL.InterfaceFactory
+  idl: IDL.InterfaceFactory,
 ): Promise<any> {
   const identity = createIdentity(seed);
   const agent1 = new HttpAgent({ source: await agent, identity });
@@ -38,7 +36,7 @@ async function installIdentityCanister(): Promise<{
   };
 }
 
-test("identity: query and call gives same principal", async () => {
+test('identity: query and call gives same principal', async () => {
   const { canisterId, idl } = await installIdentityCanister();
   const identity = Actor.createActor(idl, {
     canisterId,
@@ -49,7 +47,7 @@ test("identity: query and call gives same principal", async () => {
   expect(callPrincipal).toEqual(queryPrincipal);
 });
 
-test("identity: two different Ed25519 keys should have a different principal", async () => {
+test('identity: two different Ed25519 keys should have a different principal', async () => {
   const { canisterId, idl } = await installIdentityCanister();
   const identity1 = await createIdentityActor(0, canisterId, idl);
   const identity2 = await createIdentityActor(1, canisterId, idl);
@@ -59,16 +57,13 @@ test("identity: two different Ed25519 keys should have a different principal", a
   expect(principal1).not.toEqual(principal2);
 });
 
-test("delegation: principal is the same between delegated keys", async () => {
+test('delegation: principal is the same between delegated keys', async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
   const masterKey = createIdentity(2);
   const sessionKey = createIdentity(3);
 
-  const delegation = await DelegationChain.create(
-    masterKey,
-    sessionKey.getPublicKey()
-  );
+  const delegation = await DelegationChain.create(masterKey, sessionKey.getPublicKey());
   const id3 = DelegationIdentity.fromDelegation(sessionKey, delegation);
 
   const identityActor1 = Actor.createActor(idl, {
@@ -92,7 +87,7 @@ test("delegation: principal is the same between delegated keys", async () => {
   expect(principal2).not.toEqual(principal3);
 });
 
-test("delegation: works with 3 keys", async () => {
+test('delegation: works with 3 keys', async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
   const rootKey = createIdentity(4);
@@ -102,14 +97,9 @@ test("delegation: works with 3 keys", async () => {
   const id1D2 = await DelegationChain.create(rootKey, middleKey.getPublicKey());
   const idDelegated = DelegationIdentity.fromDelegation(
     bottomKey,
-    await DelegationChain.create(
-      middleKey,
-      bottomKey.getPublicKey(),
-      undefined,
-      {
-        previous: id1D2,
-      }
-    )
+    await DelegationChain.create(middleKey, bottomKey.getPublicKey(), undefined, {
+      previous: id1D2,
+    }),
   );
 
   const identityActorBottom = Actor.createActor(idl, {
@@ -139,7 +129,7 @@ test("delegation: works with 3 keys", async () => {
   expect(principalRoot).toEqual(principalDelegated);
 });
 
-test("delegation: works with 4 keys", async () => {
+test('delegation: works with 4 keys', async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
   const rootKey = createIdentity(7);
@@ -147,28 +137,20 @@ test("delegation: works with 4 keys", async () => {
   const middle2Key = createIdentity(9);
   const bottomKey = createIdentity(10);
 
-  const rootToMiddle = await DelegationChain.create(
-    rootKey,
-    middleKey.getPublicKey()
-  );
+  const rootToMiddle = await DelegationChain.create(rootKey, middleKey.getPublicKey());
   const middleToMiddle2 = await DelegationChain.create(
     middleKey,
     middle2Key.getPublicKey(),
     undefined,
     {
       previous: rootToMiddle,
-    }
+    },
   );
   const idDelegated = DelegationIdentity.fromDelegation(
     bottomKey,
-    await DelegationChain.create(
-      middle2Key,
-      bottomKey.getPublicKey(),
-      undefined,
-      {
-        previous: middleToMiddle2,
-      }
-    )
+    await DelegationChain.create(middle2Key, bottomKey.getPublicKey(), undefined, {
+      previous: middleToMiddle2,
+    }),
   );
 
   const identityActorBottom = Actor.createActor(idl, {

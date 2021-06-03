@@ -4,10 +4,9 @@ import { HttpAgent } from './agent';
 import { Expiry, makeNonceTransform } from './agent/http/transforms';
 import { CallRequest, SubmitRequestType, UnSigned } from './agent/http/types';
 import * as cbor from './cbor';
-import * as IDL from './idl';
-import { Principal } from './principal';
+import { IDL, blobFromHex, Nonce } from '@dfinity/candid';
+import { Principal } from '@dfinity/principal';
 import { requestIdOf } from './request_id';
-import { blobFromHex, Nonce } from './types';
 
 const originalDateNowFn = global.Date.now;
 beforeEach(() => {
@@ -72,7 +71,7 @@ test.skip('makeActor', async () => {
 
   const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
   const principal = await Principal.anonymous();
-  const sender = principal.toBlob();
+  const sender = principal.toUint8Array();
 
   const nonces = [
     Buffer.from([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce,
@@ -106,7 +105,7 @@ test.skip('makeActor', async () => {
 
   expect(reply).toEqual(IDL.decode([IDL.Text], expectedReplyArg)[0]);
 
-  const { calls, results } = mockFetch.mock;
+  const { calls } = mockFetch.mock;
 
   expect(calls.length).toBe(5);
   expect(calls[0]).toEqual([

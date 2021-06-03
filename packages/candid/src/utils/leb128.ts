@@ -1,3 +1,4 @@
+/* eslint-disable no-constant-condition */
 // tslint:disable:no-bitwise
 // Note: this file uses buffer-pipe, which on Node only, uses the Node Buffer
 //       implementation, which isn't compatible with the NPM buffer package
@@ -10,6 +11,12 @@ import BigNumber from 'bignumber.js';
 import Pipe from 'buffer-pipe';
 import { Buffer } from 'buffer/';
 
+/**
+ *
+ * @param pipe Pipe from buffer-pipe
+ * @param num number
+ * @returns Buffer
+ */
 export function safeRead(pipe: Pipe, num: number): Buffer {
   if (pipe.buffer.length < num) {
     throw new Error('unexpected end of buffer');
@@ -133,6 +140,12 @@ export function slebDecode(pipe: Pipe): bigint {
   return -value - BigInt(1);
 }
 
+/**
+ *
+ * @param value bigint or number
+ * @param byteLength number
+ * @returns Buffer
+ */
 export function writeUIntLE(value: bigint | number, byteLength: number): Buffer {
   if (BigInt(value) < BigInt(0)) {
     throw new Error('Cannot write negative values.');
@@ -140,6 +153,12 @@ export function writeUIntLE(value: bigint | number, byteLength: number): Buffer 
   return writeIntLE(value, byteLength);
 }
 
+/**
+ *
+ * @param value bigint | number
+ * @param byteLength number
+ * @returns Buffer
+ */
 export function writeIntLE(value: bigint | number, byteLength: number): Buffer {
   value = BigInt(value);
 
@@ -161,6 +180,12 @@ export function writeIntLE(value: bigint | number, byteLength: number): Buffer {
   return new Buffer(pipe.buffer);
 }
 
+/**
+ *
+ * @param pipe Pipe from buffer-pipe
+ * @param byteLength number
+ * @returns bigint
+ */
 export function readUIntLE(pipe: Pipe, byteLength: number): bigint {
   let val = BigInt(safeRead(pipe, 1)[0]);
   let mul = BigInt(1);
@@ -173,6 +198,12 @@ export function readUIntLE(pipe: Pipe, byteLength: number): bigint {
   return val;
 }
 
+/**
+ *
+ * @param pipe Pipe from buffer-pipe
+ * @param byteLength number
+ * @returns bigint
+ */
 export function readIntLE(pipe: Pipe, byteLength: number): bigint {
   let val = readUIntLE(pipe, byteLength);
   const mul = BigInt(2) ** (BigInt(8) * BigInt(byteLength - 1) + BigInt(7));

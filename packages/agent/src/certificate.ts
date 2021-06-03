@@ -10,7 +10,7 @@ import {
   blobFromUint8Array,
   blobToHex,
   blobToUint8Array,
-} from './types';
+} from '@dfinity/candid';
 import { blsVerify } from './utils/bls';
 
 /**
@@ -49,7 +49,11 @@ export type HashTree =
  * @param tree
  */
 export function hashTreeToString(tree: HashTree): string {
-  const indent = (s: string) => s.split('\n').map(x => '  ' + x).join('\n');
+  const indent = (s: string) =>
+    s
+      .split('\n')
+      .map(x => '  ' + x)
+      .join('\n');
   function labelToString(label: ArrayBuffer): string {
     const decoder = new TextDecoder(undefined, { fatal: true });
     try {
@@ -60,7 +64,8 @@ export function hashTreeToString(tree: HashTree): string {
   }
 
   switch (tree[0]) {
-    case 0: return '()';
+    case 0:
+      return '()';
     case 1: {
       const left = hashTreeToString(tree[1]);
       const right = hashTreeToString(tree[2]);
@@ -129,11 +134,6 @@ export class Certificate {
     return res;
   }
 
-  public async fetchRootKey(): Promise<void> {
-    await this._agent.fetchRootKey();
-    this._rootKey = this._agent.rootKey;
-  }
-
   protected checkState(): void {
     if (!this.verified) {
       throw new UnverifiedCertificateError();
@@ -147,7 +147,8 @@ export class Certificate {
           this._rootKey = this._agent.rootKey;
           return this._rootKey;
         }
-        this._rootKey = await this._agent.fetchRootKey();
+
+        throw new Error(`Agent does not have a rootKey. Do you need to call 'fetchRootKey'?`);
       }
       return this._rootKey;
     }
@@ -155,8 +156,12 @@ export class Certificate {
     if (!(await cert.verify())) {
       throw new Error('fail to verify delegation certificate');
     }
-    const res = cert.lookup([Buffer.from('subnet'), d.subnet_id, Buffer.from('public_key')])!;
-    return Promise.resolve(res);
+
+    const lookup = cert.lookupEx(['subnet', d.subnet_id, 'public_key']);
+    if (!lookup) {
+      throw new Error(`Could not find subnet key for subnet 0x${d.subnet_id.toString('hex')}`);
+    }
+    return Buffer.from(lookup);
   }
 }
 
@@ -233,13 +238,16 @@ export function lookupPathEx(
   path: Array<ArrayBuffer | string>,
   tree: HashTree,
 ): ArrayBuffer | undefined {
-  const maybeReturn = lookup_path(path.map(p => {
-    if (typeof p === 'string') {
-      return blobFromText(p);
-    } else {
-      return blobFromUint8Array(new Uint8Array(p));
-    }
-  }), tree);
+  const maybeReturn = lookup_path(
+    path.map(p => {
+      if (typeof p === 'string') {
+        return blobFromText(p);
+      } else {
+        return blobFromUint8Array(new Uint8Array(p));
+      }
+    }),
+    tree,
+  );
   return maybeReturn && blobToUint8Array(blobFromBuffer(maybeReturn));
 }
 

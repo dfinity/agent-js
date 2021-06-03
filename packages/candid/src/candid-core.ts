@@ -1,4 +1,5 @@
-import * as IDL from '../idl';
+/* eslint-disable @typescript-eslint/no-this-alias */
+import * as IDL from './idl';
 
 // tslint:disable:max-classes-per-file
 
@@ -111,6 +112,7 @@ export abstract class InputForm {
     if (this.ui.open && this.ui.event) {
       dom.appendChild(this.ui.open);
       const form = this;
+      // eslint-disable-next-line
       form.ui.open!.addEventListener(form.ui.event!, () => {
         // Remove old form
         if (form.ui.container) {
@@ -139,6 +141,7 @@ export class RecordForm extends InputForm {
   public generateForm(): void {
     this.form = this.fields.map(([key, type]) => {
       const input = this.ui.render(type);
+      // eslint-disable-next-line
       if (this.ui.labelMap && this.ui.labelMap.hasOwnProperty(key)) {
         input.label = this.ui.labelMap[key] + ' ';
       } else {

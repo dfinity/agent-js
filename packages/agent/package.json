@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/agent",
-  "version": "0.8.9",
+  "version": "0.9.0",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to interact with the Internet Computer",
@@ -30,24 +30,26 @@
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
     "build:watch": "tsc -b --watch",
     "bundle": "npm run build",
-    "ci": "npm run prettier && npm run lint && npm run test",
     "eslint:fix": "npm run lint -- --fix",
     "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' src/index.ts src/auth.ts src/request_id.ts src/request_id.test.ts",
     "lint": "npm run eslint",
-    "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/agent --excludeInternal",
-    "prettier:write": "npm run prettier -- --write",
-    "prettier": "prettier --check \"src/**/*.ts\"",
+    "make:docs/reference": "typedoc src/index.ts --out docs/reference --excludeInternal",
+    "release": "npm publish",
     "test": "jest --verbose",
     "test:coverage": "jest --verbose --collectCoverage",
     "tslint:fix": "npm run lint -- --fix",
     "tslint": "tslint --project tsconfig.json --config tslint.json"
   },
+  "peerDependencies": {
+    "@dfinity/candid": "^0.9.0",
+    "@dfinity/principal": "^0.9.0"
+  },
   "dependencies": {
     "base64-arraybuffer": "^0.2.0",
     "bignumber.js": "^9.0.0",
     "borc": "^2.1.1",
-    "buffer": "^5.4.3",
-    "buffer-pipe": "0.0.4",
+    "buffer": "^6.0.3",
+    "buffer-pipe": "^0.0.4",
     "js-sha256": "0.9.0",
     "simple-cbor": "^0.4.1"
   },
@@ -61,7 +63,6 @@
     "jest": "^26.6.3",
     "jest-expect-message": "^1.0.2",
     "node-fetch": "2.6.1",
-    "prettier": "^2.0.5",
     "text-encoding": "^0.7.0",
     "ts-jest": "^26.5.4",
     "tslint": "^5.20.0",
