@@ -121,3 +121,5 @@ docs/generated/auth-client
 docs/generated/authentication
 docs/generated/identity
 docs/generated/identity-ledgerhq
+docs/generated/principal
+docs/generated/candid

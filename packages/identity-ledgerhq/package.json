@@ -33,7 +33,7 @@
     "bundle": "npm run build",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
-    "make:docs/reference": "typedoc src/index.ts --out docs/reference --excludeInternal",
+    "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/identity-ledgerhq --excludeInternal",
     "release": "npm publish",
     "test": "jest",
     "test:coverage": "jest --verbose --collectCoverage"
