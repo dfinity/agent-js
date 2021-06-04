@@ -61,28 +61,22 @@ const packages = workspaces
   .filter(workspace => workspace.includes('packages'))
   .map(packagePath => packagePath.replace('packages', '@dfinity'));
 
-const promises = workspaces.map(workspace => {
-  return new Promise((resolve, reject) => {
-    const packagePath = path.resolve(__dirname, '..', workspace, 'package.json');
-    const json = fs.readFile(packagePath, (err, buffer) => {
-      if (err) reject(err);
-      const json = JSON.parse(buffer.toString());
-      json.version = newVersion;
-      if (json.peerDependencies) {
-        json.peerDependencies = updateDeps(json.peerDependencies);
-      }
-      if (json.dependencies) {
-        json.dependencies = updateDeps(json.dependencies);
-      }
-      if (json.devDependencies) {
-        json.devDependencies = updateDeps(json.devDependencies);
-      }
+workspaces.forEach(async workspace => {
+  const packagePath = path.resolve(__dirname, '..', workspace, 'package.json');
+  const json = JSON.parse(fs.readFileSync(packagePath).toString());
 
-      fs.writeFile(packagePath, JSON.stringify(json), {}, () => {
-        resolve('success');
-      });
-    });
-  });
+  json.version = newVersion;
+  if (json.peerDependencies) {
+    json.peerDependencies = updateDeps(json.peerDependencies);
+  }
+  if (json.dependencies) {
+    json.dependencies = updateDeps(json.dependencies);
+  }
+  if (json.devDependencies) {
+    json.devDependencies = updateDeps(json.devDependencies);
+  }
+
+  fs.writeFileSync(packagePath, JSON.stringify(json));
 });
 function updateDeps(dependencies: Record<string, string>) {
   for (const dep in dependencies) {
@@ -95,51 +89,31 @@ function updateDeps(dependencies: Record<string, string>) {
   return dependencies;
 }
 // Update version in root package.json
-promises.push(
-  new Promise((resolve, reject) => {
-    fs.writeFile(
-      path.resolve(__dirname, '..', 'package.json'),
-      JSON.stringify(rootPackage),
+fs.writeFileSync(path.resolve(__dirname, '..', 'package.json'), JSON.stringify(rootPackage));
+
+// Prettier format the modified package.json files
+exec(`npm run prettier:format`, error => {
+  if (error) {
+    throw new Error(JSON.stringify(error));
+  }
+
+  if (argv.publish) {
+    // Publish packages to npm using provided tag
+    console.log('Publishing packages to npm with tag' + argv.tag);
+    exec(
+      `npm publish --workspaces${argv.tag ? ` --tag ${argv.tag}` : ''} --access-public`,
       error => {
         if (error) {
-          reject(error);
+          throw new Error(JSON.stringify(error));
         }
-        resolve('success');
-      },
-    );
-  }),
-);
-
-Promise.all(promises)
-  .then(() => {
-    // Prettier format the modified package.json files
-    exec(`npm run prettier:format`, error => {
-      if (error) {
-        throw new Error(JSON.stringify(error));
-      }
-
-      if (argv.publish) {
-        // Publish packages to npm using provided tag
-        console.log('Publishing packages to npm with tag' + argv.tag);
-        exec(
-          `npm publish --workspaces${argv.tag ? ` --tag ${argv.tag}` : ''} --access-public`,
-          error => {
-            if (error) {
-              throw new Error(JSON.stringify(error));
-            }
-            // wrap up
-            console.log('success!');
-            console.timeEnd('script duration');
-          },
-        );
-      } else {
         // wrap up
         console.log('success!');
         console.timeEnd('script duration');
-      }
-    });
-  })
-  .catch(err => {
+      },
+    );
+  } else {
+    // wrap up
+    console.log('success!');
     console.timeEnd('script duration');
-    throw new Error(err);
-  });
+  }
+});
