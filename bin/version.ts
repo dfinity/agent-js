@@ -17,6 +17,11 @@ const argv = yargs
     type: 'string',
     default: 'latest',
   })
+  .option('publish', {
+    description: 'Should the packages be published?',
+    type: 'boolean',
+    default: false,
+  })
   .default({ tag: 'set-version' })
   .help()
   .alias('help', 'h').argv;
@@ -45,6 +50,8 @@ const newVersion = (() => {
   }
   return [major, minor, patch, ...rest].join('.');
 })();
+
+rootPackage.version = newVersion;
 
 console.log('New version will be: ' + newVersion);
 
@@ -87,6 +94,21 @@ function updateDeps(dependencies: Record<string, string>) {
   }
   return dependencies;
 }
+// Update version in root package.json
+promises.push(
+  new Promise((resolve, reject) => {
+    fs.writeFile(
+      path.resolve(__dirname, '..', 'package.json'),
+      JSON.stringify(rootPackage),
+      error => {
+        if (error) {
+          reject(error);
+        }
+        resolve('success');
+      },
+    );
+  }),
+);
 
 Promise.all(promises)
   .then(() => {
@@ -96,15 +118,25 @@ Promise.all(promises)
         throw new Error(JSON.stringify(error));
       }
 
-      // Publish packages to npm using provided tag
-      exec(`npm publish --workspaces ${argv.tag ? `--tag ${argv.tag}` : ''}`, error => {
-        if (error) {
-          throw new Error(JSON.stringify(error));
-        }
+      if (argv.publish) {
+        // Publish packages to npm using provided tag
+        console.log('Publishing packages to npm with tag' + argv.tag);
+        exec(
+          `npm publish --workspaces${argv.tag ? ` --tag ${argv.tag}` : ''} --access-public`,
+          error => {
+            if (error) {
+              throw new Error(JSON.stringify(error));
+            }
+            // wrap up
+            console.log('success!');
+            console.timeEnd('script duration');
+          },
+        );
+      } else {
         // wrap up
         console.log('success!');
         console.timeEnd('script duration');
-      });
+      }
     });
   })
   .catch(err => {
