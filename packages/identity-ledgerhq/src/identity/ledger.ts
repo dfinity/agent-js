@@ -8,7 +8,6 @@ import {
 } from '@dfinity/agent';
 import { blobFromUint8Array, BinaryBlob } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
-import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 import DfinityApp, { ResponseSign } from '@zondax/ledger-dfinity';
 import { Secp256k1PublicKey } from './secp256k1';
 
@@ -29,7 +28,8 @@ export class LedgerIdentity extends SignIdentity {
    * @param derivePath The derivation path.
    */
   public static async fromWebUsb(derivePath = `m/44'/223'/0'/0/0`): Promise<LedgerIdentity> {
-    const transport = await TransportWebUSB.create();
+    const TransportClass = await import('@ledgerhq/hw-transport-webhid');
+    const transport = await TransportClass.create();
     const app = new DfinityApp(transport);
 
     const resp = await app.getAddressAndPubKey(derivePath);
