@@ -20,7 +20,7 @@ npm i --save @dfinity/identity-ledgerhq
 import { LedgerIdentity } from '@dfinity/identity-ledgerhq';
 
 // ...
-const identity = await LedgerIdentity.fromWebUsb();
+const identity = await LedgerIdentity.create();
 const agent = new HttpAgent({ identity });
 ```
 

@@ -27,7 +27,7 @@ export class LedgerIdentity extends SignIdentity {
    * Create a LedgerIdentity using the Web USB transport.
    * @param derivePath The derivation path.
    */
-  public static async fromWebUsb(derivePath = `m/44'/223'/0'/0/0`): Promise<LedgerIdentity> {
+  public static async create(derivePath = `m/44'/223'/0'/0/0`): Promise<LedgerIdentity> {
     const TransportClass = (await import('@ledgerhq/hw-transport-webhid')).default;
     const transport = await TransportClass.create();
     const app = new DfinityApp(transport);
