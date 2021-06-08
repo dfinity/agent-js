@@ -21,197 +21,195 @@ afterEach(() => {
   global.fetch = originalFetch;
 });
 
-describe('http agent tests', () => {
-  test('call', async () => {
-    const mockFetch: jest.Mock = jest.fn((resource, init) => {
-      return Promise.resolve(
-        new Response(null, {
-          status: 200,
-        }),
-      );
-    });
-
-    const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
-    const nonce = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
-    const principal = Principal.anonymous();
-
-    const httpAgent = new HttpAgent({ fetch: mockFetch });
-    httpAgent.addTransform(makeNonceTransform(() => nonce));
-
-    const methodName = 'greet';
-    const arg = Buffer.from([]) as BinaryBlob;
-
-    const { requestId } = await httpAgent.call(canisterId, {
-      methodName,
-      arg,
-    });
-
-    const mockPartialRequest = {
-      request_type: SubmitRequestType.Call,
-      canister_id: canisterId,
-      method_name: methodName,
-      // We need a request id for the signature and at the same time we
-      // are checking that signature does not impact the request id.
-      arg,
-      nonce,
-      sender: principal,
-      ingress_expiry: new Expiry(300000),
-    };
-
-    const mockPartialsRequestId = await requestIdOf(mockPartialRequest);
-
-    const expectedRequest = {
-      content: mockPartialRequest,
-    };
-
-    const expectedRequestId = await requestIdOf(expectedRequest.content);
-    expect(expectedRequestId).toEqual(mockPartialsRequestId);
-
-    const { calls, results } = mockFetch.mock;
-    expect(calls.length).toBe(1);
-    expect(requestId).toEqual(expectedRequestId);
-
-    expect(calls[0][0]).toBe(`http://localhost/api/v2/canister/${canisterId.toText()}/call`);
-    expect(calls[0][1]).toEqual({
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/cbor',
-      },
-      body: cbor.encode(expectedRequest),
-    });
+test('call', async () => {
+  const mockFetch: jest.Mock = jest.fn((resource, init) => {
+    return Promise.resolve(
+      new Response(null, {
+        status: 200,
+      }),
+    );
   });
 
-  test.todo('query');
+  const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+  const nonce = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
+  const principal = Principal.anonymous();
 
-  test('queries with the same content should have the same signature', async () => {
-    const mockResponse = {
-      status: 'replied',
-      reply: { arg: Buffer.from([]) as BinaryBlob },
-    };
+  const httpAgent = new HttpAgent({ fetch: mockFetch });
+  httpAgent.addTransform(makeNonceTransform(() => nonce));
 
-    const mockFetch: jest.Mock = jest.fn((resource, init) => {
-      const body = cbor.encode(mockResponse);
-      return Promise.resolve(
-        new Response(body, {
-          status: 200,
-        }),
-      );
-    });
+  const methodName = 'greet';
+  const arg = Buffer.from([]) as BinaryBlob;
 
-    const canisterIdent = '2chl6-4hpzw-vqaaa-aaaaa-c';
-    const nonce = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
-
-    const principal = await Principal.anonymous();
-
-    const httpAgent = new HttpAgent({ fetch: mockFetch });
-    httpAgent.addTransform(makeNonceTransform(() => nonce));
-
-    const methodName = 'greet';
-    const arg = Buffer.from([]) as BinaryBlob;
-
-    const requestId = await requestIdOf({
-      request_type: SubmitRequestType.Call,
-      nonce,
-      canister_id: Principal.fromText(canisterIdent).toString(),
-      method_name: methodName,
-      arg,
-      sender: principal,
-    });
-
-    const paths = [
-      [Buffer.from('request_status') as BinaryBlob, requestId, Buffer.from('reply') as BinaryBlob],
-    ];
-
-    const response1 = await httpAgent.readState(canisterIdent, { paths });
-    const response2 = await httpAgent.readState(canisterIdent, { paths });
-
-    const response3 = await httpAgent.query(canisterIdent, { arg, methodName });
-    const response4 = await httpAgent.query(canisterIdent, { methodName, arg });
-
-    const { calls } = mockFetch.mock;
-    expect(calls.length).toBe(4);
-
-    expect(calls[0]).toEqual(calls[1]);
-    expect(response1).toEqual(response2);
-
-    expect(calls[2]).toEqual(calls[3]);
-    expect(response3).toEqual(response4);
+  const { requestId } = await httpAgent.call(canisterId, {
+    methodName,
+    arg,
   });
 
-  test('use anonymous principal if unspecified', async () => {
-    const mockFetch: jest.Mock = jest.fn((resource, init) => {
-      return Promise.resolve(
-        new Response(null, {
-          status: 200,
-        }),
-      );
-    });
+  const mockPartialRequest = {
+    request_type: SubmitRequestType.Call,
+    canister_id: canisterId,
+    method_name: methodName,
+    // We need a request id for the signature and at the same time we
+    // are checking that signature does not impact the request id.
+    arg,
+    nonce,
+    sender: principal,
+    ingress_expiry: new Expiry(300000),
+  };
 
-    const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
-    const nonce = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
-    const principal = Principal.anonymous();
+  const mockPartialsRequestId = await requestIdOf(mockPartialRequest);
 
-    const httpAgent = new HttpAgent({ fetch: mockFetch });
-    httpAgent.addTransform(makeNonceTransform(() => nonce));
+  const expectedRequest = {
+    content: mockPartialRequest,
+  };
 
-    const methodName = 'greet';
-    const arg = Buffer.from([]) as BinaryBlob;
+  const expectedRequestId = await requestIdOf(expectedRequest.content);
+  expect(expectedRequestId).toEqual(mockPartialsRequestId);
 
-    const { requestId } = await httpAgent.call(canisterId, {
-      methodName,
-      arg,
-    });
+  const { calls, results } = mockFetch.mock;
+  expect(calls.length).toBe(1);
+  expect(requestId).toEqual(expectedRequestId);
 
-    const mockPartialRequest: CallRequest = {
-      request_type: SubmitRequestType.Call,
-      canister_id: canisterId,
-      method_name: methodName,
-      // We need a request id for the signature and at the same time we
-      // are checking that signature does not impact the request id.
-      arg,
-      nonce,
-      sender: principal,
-      ingress_expiry: new Expiry(300000),
-    };
+  expect(calls[0][0]).toBe(`http://localhost/api/v2/canister/${canisterId.toText()}/call`);
+  expect(calls[0][1]).toEqual({
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/cbor',
+    },
+    body: cbor.encode(expectedRequest),
+  });
+});
 
-    const mockPartialsRequestId = await requestIdOf(mockPartialRequest);
+test.todo('query');
 
-    const expectedRequest: Envelope<CallRequest> = {
-      content: mockPartialRequest,
-    };
+test('queries with the same content should have the same signature', async () => {
+  const mockResponse = {
+    status: 'replied',
+    reply: { arg: Buffer.from([]) as BinaryBlob },
+  };
 
-    const expectedRequestId = await requestIdOf(expectedRequest.content);
-    expect(expectedRequestId).toEqual(mockPartialsRequestId);
-
-    const { calls, results } = mockFetch.mock;
-    expect(calls.length).toBe(1);
-    expect(requestId).toEqual(expectedRequestId);
-
-    expect(calls[0][0]).toBe(`http://localhost/api/v2/canister/${canisterId.toText()}/call`);
-    expect(calls[0][1]).toEqual({
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/cbor',
-      },
-      body: cbor.encode(expectedRequest),
-    });
+  const mockFetch: jest.Mock = jest.fn((resource, init) => {
+    const body = cbor.encode(mockResponse);
+    return Promise.resolve(
+      new Response(body, {
+        status: 200,
+      }),
+    );
   });
 
-  describe('getDefaultFetch', () => {
-    it('should throw error for defaultFetch with no window or global fetch', () => {
-      delete global.window;
-      delete global.fetch;
-      const generateAgent = () => new HttpAgent({ host: 'localhost:8000' });
-      expect(generateAgent).toThrow();
-    });
-    it('should fall back to global.fetch if window is not available', () => {
-      global.fetch = window.fetch;
-      delete global.window;
-      new HttpAgent({ host: 'localhost:8000' });
-    });
+  const canisterIdent = '2chl6-4hpzw-vqaaa-aaaaa-c';
+  const nonce = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
 
-    it("should use fetch from window if it's available", () => {
-      new HttpAgent({ host: 'localhost:8000' });
-    });
+  const principal = await Principal.anonymous();
+
+  const httpAgent = new HttpAgent({ fetch: mockFetch });
+  httpAgent.addTransform(makeNonceTransform(() => nonce));
+
+  const methodName = 'greet';
+  const arg = Buffer.from([]) as BinaryBlob;
+
+  const requestId = await requestIdOf({
+    request_type: SubmitRequestType.Call,
+    nonce,
+    canister_id: Principal.fromText(canisterIdent).toString(),
+    method_name: methodName,
+    arg,
+    sender: principal,
+  });
+
+  const paths = [
+    [Buffer.from('request_status') as BinaryBlob, requestId, Buffer.from('reply') as BinaryBlob],
+  ];
+
+  const response1 = await httpAgent.readState(canisterIdent, { paths });
+  const response2 = await httpAgent.readState(canisterIdent, { paths });
+
+  const response3 = await httpAgent.query(canisterIdent, { arg, methodName });
+  const response4 = await httpAgent.query(canisterIdent, { methodName, arg });
+
+  const { calls } = mockFetch.mock;
+  expect(calls.length).toBe(4);
+
+  expect(calls[0]).toEqual(calls[1]);
+  expect(response1).toEqual(response2);
+
+  expect(calls[2]).toEqual(calls[3]);
+  expect(response3).toEqual(response4);
+});
+
+test('use anonymous principal if unspecified', async () => {
+  const mockFetch: jest.Mock = jest.fn((resource, init) => {
+    return Promise.resolve(
+      new Response(null, {
+        status: 200,
+      }),
+    );
+  });
+
+  const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+  const nonce = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
+  const principal = Principal.anonymous();
+
+  const httpAgent = new HttpAgent({ fetch: mockFetch });
+  httpAgent.addTransform(makeNonceTransform(() => nonce));
+
+  const methodName = 'greet';
+  const arg = Buffer.from([]) as BinaryBlob;
+
+  const { requestId } = await httpAgent.call(canisterId, {
+    methodName,
+    arg,
+  });
+
+  const mockPartialRequest: CallRequest = {
+    request_type: SubmitRequestType.Call,
+    canister_id: canisterId,
+    method_name: methodName,
+    // We need a request id for the signature and at the same time we
+    // are checking that signature does not impact the request id.
+    arg,
+    nonce,
+    sender: principal,
+    ingress_expiry: new Expiry(300000),
+  };
+
+  const mockPartialsRequestId = await requestIdOf(mockPartialRequest);
+
+  const expectedRequest: Envelope<CallRequest> = {
+    content: mockPartialRequest,
+  };
+
+  const expectedRequestId = await requestIdOf(expectedRequest.content);
+  expect(expectedRequestId).toEqual(mockPartialsRequestId);
+
+  const { calls, results } = mockFetch.mock;
+  expect(calls.length).toBe(1);
+  expect(requestId).toEqual(expectedRequestId);
+
+  expect(calls[0][0]).toBe(`http://localhost/api/v2/canister/${canisterId.toText()}/call`);
+  expect(calls[0][1]).toEqual({
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/cbor',
+    },
+    body: cbor.encode(expectedRequest),
+  });
+});
+
+describe('getDefaultFetch', () => {
+  it('should throw error for defaultFetch with no window or global fetch', () => {
+    delete global.window;
+    delete global.fetch;
+    const generateAgent = () => new HttpAgent({ host: 'localhost:8000' });
+    expect(generateAgent).toThrow();
+  });
+  it('should fall back to global.fetch if window is not available', () => {
+    global.fetch = window.fetch;
+    delete global.window;
+    new HttpAgent({ host: 'localhost:8000' });
+  });
+
+  it("should use fetch from window if it's available", () => {
+    new HttpAgent({ host: 'localhost:8000' });
   });
 });
