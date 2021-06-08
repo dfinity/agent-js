@@ -33,7 +33,7 @@
     "eslint:fix": "npm run lint -- --fix",
     "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' src/index.ts src/auth.ts src/request_id.ts src/request_id.test.ts",
     "lint": "npm run eslint",
-    "make:docs/reference": "typedoc src/index.ts --out docs/reference --excludeInternal",
+    "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/agent --excludeInternal",
     "release": "npm publish",
     "test": "jest --verbose",
     "test:coverage": "jest --verbose --collectCoverage",
