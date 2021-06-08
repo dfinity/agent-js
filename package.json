@@ -52,7 +52,7 @@
     "publish:release": "npm run publish --workspaces",
     "build": "",
     "lint:fix": "",
-    "make:docs/reference": "",
+    "make:docs": "npm run make:docs/reference --workspaces --if-present; ",
     "test:coverage": "",
     "test": "jest",
     "prepare": "husky install",

@@ -9,7 +9,8 @@ This source code repository contains multiple npm packages, each under `./packag
 ### Getting Started
 
 1. Clone the git repository.
-2. Run `npm install`
+2. Run `npm i -g npm`
+3. Run `npm install`
 
 After that, you probably want to dive into a specific package in [./packages](./packages).
 
@@ -33,13 +34,16 @@ To publish to NPM, create a branch and run the following commands;
 - `npm install`. Makes sure everything is installed and up to date locally;
 - `npm run build --workspaces`. Builds all the applications and packages.
 - `npm run test`. Just in case.
-- `lerna version VERSION_NUMBER`. The `VERSION_NUMBER` should be set to
-  the version to be published (e.g. `0.6.30`). The `DIST_TAG` argument can be ignored
+- One of:
+  - `npm exec lerna version VERSION_NUMBER —-no-push`. The `VERSION_NUMBER` should be set to
+    the version to be published (e.g. `0.6.30`). The `DIST_TAG` argument can be ignored
+  - `npm exec lerna version minor --no-push` to increment the minor version number only.
+  - `npm exec lerna version patch --no-push` to increment the patch version number only.
 
 This will change your code locally, so create a `chore: release VERSION_NUMBER` commit and
 push. Once the PR is created get someone to review it.
 
-Then, when you have merged the new versions, open https://github.com/dfinity/agent-js/releases/new, click the "Draft a new release" button, enter the new tag version, and click "Publish release".
+Then, when you have merged the new versions, open https://github.com/dfinity/agent-js/releases/new, click the "Draft a new release" button, enter the new tag version in form `v#.#.#`, and click "Publish release".
 
 ### Publishing Docs
 

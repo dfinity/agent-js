@@ -33,7 +33,7 @@
     "bundle": "npm run build",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
-    "make:docs/reference": "typedoc src/index.ts --out docs/reference --excludeInternal",
+    "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/identity-ledgerhq --excludeInternal",
     "release": "npm publish",
     "test": "jest",
     "test:coverage": "jest --verbose --collectCoverage"
@@ -45,14 +45,13 @@
   },
   "dependencies": {
     "@ledgerhq/hw-transport": "^5.49.0",
-    "@ledgerhq/hw-transport-webusb": "^5.49.0",
+    "@ledgerhq/hw-transport-webhid": "^5.49.0",
     "@zondax/ledger-dfinity": "0.2.1"
   },
   "devDependencies": {
     "@trust/webcrypto": "^0.9.2",
     "@types/jest": "^24.9.1",
     "@types/ledgerhq__hw-transport": "^4.21.3",
-    "@types/ledgerhq__hw-transport-webusb": "^4.70.1",
     "@typescript-eslint/eslint-plugin": "^4.14.2",
     "@typescript-eslint/parser": "^4.14.2",
     "eslint": "^7.19.0",
