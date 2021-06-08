@@ -11,7 +11,6 @@
     "mitm": "jest -i basic/mitm.test.ts",
     "build": "",
     "lint:fix": "npm run lint -- --fix",
-    "make:docs/reference": "",
     "publish:release": "",
     "test:coverage": "",
     "test": ""

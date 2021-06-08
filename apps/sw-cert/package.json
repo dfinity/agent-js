@@ -25,7 +25,6 @@
     "develop": "webpack-dev-server",
     "start": "npm run build; http-server dist --proxy https://ic0.app/",
     "lint:fix": "npm run lint -- --fix",
-    "make:docs/reference": "",
     "publish:release": "",
     "test:coverage": "",
     "test": ""
