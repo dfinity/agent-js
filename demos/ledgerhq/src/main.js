@@ -53,7 +53,7 @@ let identity = undefined;
 
 document.getElementById('connectLedgerBtn').addEventListener('click', async () => {
   const { LedgerIdentity } = await import('@dfinity/identity-ledgerhq');
-  identity = await LedgerIdentity.fromWebUsb();
+  identity = await LedgerIdentity.create();
 
   document.getElementById('ledgerPrincipal').innerText = `${identity.getPrincipal().toText()}`;
   for (const el of document.getElementsByClassName('connected-only')) {
