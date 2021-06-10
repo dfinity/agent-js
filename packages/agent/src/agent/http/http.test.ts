@@ -2,18 +2,23 @@ import { Buffer } from 'buffer/';
 import { HttpAgent } from '../index';
 import * as cbor from '../../cbor';
 import { Expiry, makeNonceTransform } from './transforms';
-import { CallRequest, Envelope, ReadRequestType, SubmitRequestType } from './types';
+import { CallRequest, Envelope, SubmitRequestType } from './types';
 import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 import { BinaryBlob } from '@dfinity/candid';
 import { Nonce } from '@dfinity/candid';
 
 const originalDateNowFn = global.Date.now;
+const originalWindow = global.window;
+const originalFetch = global.fetch;
 beforeEach(() => {
   global.Date.now = jest.fn(() => new Date(1000000).getTime());
 });
+
 afterEach(() => {
   global.Date.now = originalDateNowFn;
+  global.window = originalWindow;
+  global.fetch = originalFetch;
 });
 
 test('call', async () => {
@@ -188,5 +193,23 @@ test('use anonymous principal if unspecified', async () => {
       'Content-Type': 'application/cbor',
     },
     body: cbor.encode(expectedRequest),
+  });
+});
+
+describe('getDefaultFetch', () => {
+  it('should throw error for defaultFetch with no window or global fetch', () => {
+    delete global.window;
+    delete global.fetch;
+    const generateAgent = () => new HttpAgent({ host: 'localhost:8000' });
+    expect(generateAgent).toThrow();
+  });
+  it('should fall back to global.fetch if window is not available', () => {
+    global.fetch = window.fetch;
+    delete global.window;
+    new HttpAgent({ host: 'localhost:8000' });
+  });
+
+  it("should use fetch from window if it's available", () => {
+    new HttpAgent({ host: 'localhost:8000' });
   });
 });
