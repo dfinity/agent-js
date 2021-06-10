@@ -30,10 +30,6 @@ jobs:
       - run: npm run build --workspaces
       # run tests just in case
       - run: npm test
-      # update versions and dependencies using tag
-      - run: npm run version -- ${GITHUB_REF#refs/tags/v}
-      # commit changes to main branch
-      - run: git add .; git commit -m "Releases ${GITHUB_REF#refs/tags/v}"; git push origin HEAD:main;
       # publish to NPM
       - run: npm config set '//registry.npmjs.org/:_authToken' "$NPM_TOKEN"
         env:
