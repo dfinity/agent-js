@@ -1,6 +1,8 @@
+import { blobToHex } from '@dfinity/candid';
 import { Buffer } from 'buffer/';
 import * as cbor from './cbor';
 import * as Cert from './certificate';
+import { bufToHex } from './utils/buffer';
 
 function label(str: string): ArrayBuffer {
   return Buffer.from(str).buffer;
