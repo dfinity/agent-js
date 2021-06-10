@@ -85,6 +85,7 @@ function updateDeps(dependencies: Record<string, string>) {
   return dependencies;
 }
 // Update version in root package.json
+rootPackage.version = newVersion;
 fs.writeFileSync(path.resolve(__dirname, '..', 'package.json'), JSON.stringify(rootPackage));
 
 // Prettier format the modified package.json files
