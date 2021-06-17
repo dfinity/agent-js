@@ -140,7 +140,7 @@ export class Certificate {
 
     const lookup = cert.lookupEx(['subnet', d.subnet_id, 'public_key']);
     if (!lookup) {
-      throw new Error(`Could not find subnet key for subnet 0x${d.subnet_id.toString('hex')}`);
+      throw new Error(`Could not find subnet key for subnet 0x${d.subnet_id.toString()}`);
     }
     return lookup;
   }
