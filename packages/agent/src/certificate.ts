@@ -2,9 +2,16 @@ import { Buffer } from 'buffer/';
 import { Agent, getDefaultAgent, ReadStateResponse } from './agent';
 import * as cbor from './cbor';
 import { AgentError } from './errors';
-import { BinaryBlob, blobFromText, blobFromUint8Array, blobToHex } from '@dfinity/candid';
+import { hash } from './request_id';
+import {
+  BinaryBlob,
+  blobFromBuffer,
+  blobFromText,
+  blobFromUint8Array,
+  blobToHex,
+  blobToUint8Array,
+} from '@dfinity/candid';
 import { blsVerify } from './utils/bls';
-import { compareUint8, hexToUint8, hash, concatBuffers, compareBuffers } from './utils/buffer';
 
 /**
  * A certificate needs to be verified (using {@link Certificate.prototype.verify})
@@ -18,7 +25,7 @@ export class UnverifiedCertificateError extends AgentError {
 
 interface Cert {
   tree: HashTree;
-  signature: ArrayBuffer;
+  signature: Buffer;
   delegation?: Delegation;
 }
 
@@ -82,8 +89,20 @@ export function hashTreeToString(tree: HashTree): string {
 }
 
 interface Delegation extends Record<string, any> {
-  subnet_id: ArrayBuffer;
-  certificate: ArrayBuffer;
+  subnet_id: Buffer;
+  certificate: Buffer;
+}
+
+function isBufferEqual(a: Buffer, b: Buffer): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 export class Certificate {
@@ -99,17 +118,17 @@ export class Certificate {
     this.checkState();
     return lookupPathEx(path, this.cert.tree);
   }
-  public lookup(path: ArrayBuffer[]): ArrayBuffer | undefined {
+  public lookup(path: Buffer[]): Buffer | undefined {
     this.checkState();
     return lookup_path(path, this.cert.tree);
   }
 
   public async verify(): Promise<boolean> {
-    const rootHash = new Uint8Array(await reconstruct(this.cert.tree));
+    const rootHash = await reconstruct(this.cert.tree);
     const derKey = await this._checkDelegation(this.cert.delegation);
-    const sig = new Uint8Array(this.cert.signature);
-    const key = new Uint8Array(extractDER(derKey));
-    const msg = new Uint8Array(concatBuffers([domain_sep('ic-state-root'), rootHash]));
+    const sig = this.cert.signature;
+    const key = extractDER(derKey);
+    const msg = Buffer.concat([domain_sep('ic-state-root'), rootHash]);
     const res = await blsVerify(key, sig, msg);
     this.verified = res;
     return res;
@@ -121,7 +140,7 @@ export class Certificate {
     }
   }
 
-  private async _checkDelegation(d?: Delegation): Promise<ArrayBuffer> {
+  private async _checkDelegation(d?: Delegation): Promise<Buffer> {
     if (!d) {
       if (!this._rootKey) {
         if (this._agent.rootKey) {
@@ -140,71 +159,74 @@ export class Certificate {
 
     const lookup = cert.lookupEx(['subnet', d.subnet_id, 'public_key']);
     if (!lookup) {
-      throw new Error(`Could not find subnet key for subnet 0x${d.subnet_id.toString()}`);
+      throw new Error(`Could not find subnet key for subnet 0x${d.subnet_id.toString('hex')}`);
     }
-    return lookup;
+    return Buffer.from(lookup);
   }
 }
 
-const DER_PREFIX = hexToUint8(
+const DER_PREFIX = Buffer.from(
   '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100',
+  'hex',
 );
-
 const KEY_LENGTH = 96;
 
-function extractDER(buf: ArrayBuffer): ArrayBuffer {
-  const expectedLength = DER_PREFIX.byteLength + KEY_LENGTH;
-  if (buf.byteLength !== expectedLength) {
+function extractDER(buf: Buffer): Buffer {
+  const expectedLength = DER_PREFIX.length + KEY_LENGTH;
+  if (buf.length !== expectedLength) {
     throw new TypeError(`BLS DER-encoded public key must be ${expectedLength} bytes long`);
   }
-  const prefix = buf.slice(0, DER_PREFIX.byteLength);
-  if (compareUint8(new Uint8Array(prefix), DER_PREFIX)) {
+  const prefix = buf.slice(0, DER_PREFIX.length);
+  if (!isBufferEqual(prefix, DER_PREFIX)) {
     throw new TypeError(
       `BLS DER-encoded public key is invalid. Expect the following prefix: ${DER_PREFIX}, but get ${prefix}`,
     );
   }
 
-  return buf.slice(DER_PREFIX.byteLength);
+  return buf.slice(DER_PREFIX.length);
 }
 
 /**
  * @param t
  */
-export async function reconstruct(t: HashTree): Promise<ArrayBuffer> {
+export async function reconstruct(t: HashTree): Promise<Buffer> {
   switch (t[0]) {
     case NodeId.Empty:
-      return hash(domain_sep('ic-hashtree-empty') as ArrayBuffer);
+      return hash(domain_sep('ic-hashtree-empty') as BinaryBlob);
     case NodeId.Pruned:
-      return t[1] as ArrayBuffer;
+      return Buffer.from(t[1] as ArrayBuffer);
     case NodeId.Leaf:
       return hash(
-        concatBuffers([domain_sep('ic-hashtree-leaf'), t[1] as ArrayBuffer]) as ArrayBuffer,
+        Buffer.concat([
+          domain_sep('ic-hashtree-leaf'),
+          Buffer.from(t[1] as ArrayBuffer),
+        ]) as BinaryBlob,
       );
     case NodeId.Labeled:
       return hash(
-        concatBuffers([
+        Buffer.concat([
           domain_sep('ic-hashtree-labeled'),
-          t[1] as ArrayBuffer,
-          await reconstruct(t[2] as HashTree),
-        ]) as ArrayBuffer,
+          Buffer.from(t[1] as ArrayBuffer),
+          Buffer.from(await reconstruct(t[2] as HashTree)),
+        ]) as BinaryBlob,
       );
     case NodeId.Fork:
       return hash(
-        concatBuffers([
+        Buffer.concat([
           domain_sep('ic-hashtree-fork'),
-          await reconstruct(t[1] as HashTree),
-          await reconstruct(t[2] as HashTree),
-        ]) as ArrayBuffer,
+          Buffer.from(await reconstruct(t[1] as HashTree)),
+          Buffer.from(await reconstruct(t[2] as HashTree)),
+        ]) as BinaryBlob,
       );
     default:
       throw new Error('unreachable');
   }
 }
 
-function domain_sep(s: string): ArrayBuffer {
+function domain_sep(s: string): Buffer {
   const buf = Buffer.alloc(1);
   buf.writeUInt8(s.length, 0);
-  return concatBuffers([buf, Buffer.from(s)]);
+  return Buffer.concat([buf, Buffer.from(s)]);
 }
 
 /**
@@ -226,14 +248,14 @@ export function lookupPathEx(
     }),
     tree,
   );
-  return maybeReturn && new Uint8Array(maybeReturn).buffer;
+  return maybeReturn && blobToUint8Array(blobFromBuffer(maybeReturn));
 }
 
 /**
  * @param path
  * @param tree
  */
-export function lookup_path(path: ArrayBuffer[], tree: HashTree): ArrayBuffer | undefined {
+export function lookup_path(path: Buffer[], tree: HashTree): Buffer | undefined {
   if (path.length === 0) {
     switch (tree[0]) {
       case NodeId.Leaf: {
@@ -259,14 +281,14 @@ function flatten_forks(t: HashTree): HashTree[] {
       return [t];
   }
 }
-function find_label(l: ArrayBuffer, trees: HashTree[]): HashTree | undefined {
+function find_label(l: Buffer, trees: HashTree[]): HashTree | undefined {
   if (trees.length === 0) {
     return undefined;
   }
   for (const t of trees) {
     if (t[0] === NodeId.Labeled) {
       const p = Buffer.from(t[1] as ArrayBuffer);
-      if (compareBuffers(l, p)) {
+      if (isBufferEqual(l, p)) {
         return t[2];
       }
     }
