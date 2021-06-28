@@ -69,8 +69,8 @@ export const ED25519_OID = Uint8Array.from([
 
 export const wrapDER = (cose: ArrayBuffer, oid: Uint8Array): Uint8Array => {
   // The Bit String header needs to include the unused bit count byte in its length
-  const bitStringHeader = 2 + encodeLenBytes(cose.byteLength + 1);
-  const len = oid.byteLength + bitStringHeader + cose.byteLength;
+  const bitStringHeaderLength = 2 + encodeLenBytes(cose.byteLength + 1);
+  const len = oid.byteLength + bitStringHeaderLength + cose.byteLength;
   let offset = 0;
   const buf = new Uint8Array(1 + encodeLenBytes(len) + len);
   // Sequence
