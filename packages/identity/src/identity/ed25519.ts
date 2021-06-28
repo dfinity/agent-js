@@ -29,10 +29,6 @@ export class Ed25519PublicKey implements PublicKey {
   private static RAW_KEY_LENGTH = 32;
 
   private static derEncode(publicKey: BinaryBlob): DerEncodedBlob {
-    // TODO: Validation before encoding is weird, is this necessary?
-    if (publicKey.byteLength !== this.RAW_KEY_LENGTH) {
-      throw new Error('An Ed25519 public key must be exactly 32bytes long');
-    }
     return derBlobFromBlob(blobFromUint8Array(wrapDER(publicKey, ED25519_OID)));
   }
 
