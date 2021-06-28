@@ -10,6 +10,7 @@ import {
 } from '@dfinity/candid';
 import { Buffer } from 'buffer/';
 import * as tweetnacl from 'tweetnacl';
+import { ED25519_OID, unwrapDER, wrapDER } from './der';
 
 export class Ed25519PublicKey implements PublicKey {
   public static from(key: PublicKey): Ed25519PublicKey {
@@ -27,53 +28,20 @@ export class Ed25519PublicKey implements PublicKey {
   // The length of Ed25519 public keys is always 32 bytes.
   private static RAW_KEY_LENGTH = 32;
 
-  // Adding this prefix to a raw public key is sufficient to DER-encode it.
-  // See https://github.com/dfinity/agent-js/issues/42#issuecomment-716356288
-  private static DER_PREFIX = Uint8Array.from([
-    ...[48, 42], // SEQUENCE
-    ...[48, 5], // SEQUENCE
-    ...[6, 3], // OBJECT
-    ...[43, 101, 112], // Ed25519 OID
-    ...[3], // OBJECT
-    ...[Ed25519PublicKey.RAW_KEY_LENGTH + 1], // BIT STRING
-    ...[0], // 'no padding'
-  ]);
-
   private static derEncode(publicKey: BinaryBlob): DerEncodedBlob {
-    if (publicKey.byteLength !== Ed25519PublicKey.RAW_KEY_LENGTH) {
-      const bl = publicKey.byteLength;
-      throw new TypeError(
-        `ed25519 public key must be ${Ed25519PublicKey.RAW_KEY_LENGTH} bytes long (is ${bl})`,
-      );
+    // TODO: Validation before encoding is weird, is this necessary?
+    if (publicKey.byteLength !== this.RAW_KEY_LENGTH) {
+      throw new Error('An Ed25519 public key must be exactly 32bytes long');
     }
-
-    // https://github.com/dfinity/agent-js/issues/42#issuecomment-716356288
-    const derPublicKey = Uint8Array.from([
-      ...Ed25519PublicKey.DER_PREFIX,
-      ...new Uint8Array(publicKey),
-    ]);
-
-    return derBlobFromBlob(blobFromUint8Array(derPublicKey));
+    return derBlobFromBlob(blobFromUint8Array(wrapDER(publicKey, ED25519_OID)));
   }
 
   private static derDecode(key: BinaryBlob): BinaryBlob {
-    const expectedLength = Ed25519PublicKey.DER_PREFIX.length + Ed25519PublicKey.RAW_KEY_LENGTH;
-    if (key.byteLength !== expectedLength) {
-      const bl = key.byteLength;
-      throw new TypeError(
-        `Ed25519 DER-encoded public key must be ${expectedLength} bytes long (is ${bl})`,
-      );
+    const unwrapped = unwrapDER(key, ED25519_OID);
+    if (unwrapped.length !== this.RAW_KEY_LENGTH) {
+      throw new Error('An Ed25519 public key must be exactly 32bytes long');
     }
-
-    const rawKey = blobFromUint8Array(key.subarray(Ed25519PublicKey.DER_PREFIX.length));
-    if (!this.derEncode(rawKey).equals(key)) {
-      throw new TypeError(
-        'Ed25519 DER-encoded public key is invalid. A valid Ed25519 DER-encoded public key ' +
-          `must have the following prefix: ${Ed25519PublicKey.DER_PREFIX}`,
-      );
-    }
-
-    return rawKey;
+    return blobFromUint8Array(unwrapped);
   }
 
   private readonly rawKey: BinaryBlob;

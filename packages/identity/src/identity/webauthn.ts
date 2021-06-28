@@ -8,26 +8,10 @@ import {
 } from '@dfinity/candid';
 import borc from 'borc';
 import * as tweetnacl from 'tweetnacl';
+import { DER_COSE_OID, wrapDER } from './der';
 
 function _coseToDerEncodedBlob(cose: ArrayBuffer): DerEncodedBlob {
-  const c = new Uint8Array(cose);
-
-  if (c.byteLength > 230) {
-    // 'Tis true, 'tis too much.
-    throw new Error('Cannot encode byte length of more than 230.');
-  }
-
-  // prettier-ignore
-  const der = new Uint8Array([
-    0x30, 0x10 + c.byteLength + 1,  // Sequence of length 16 + c.length.
-    0x30, 0x0C,  // Sequence of length 12
-    // OID 1.3.6.1.4.1.56387.1.1
-    0x06, 0x0A, 0x2B, 0x06, 0x01, 0x04, 0x01, 0x83, 0xB8, 0x43, 0x01, 0x01,
-    0x03, 1 + c.byteLength, 0x00,  // BIT String of length c.length.
-    ...c,
-  ]);
-
-  return derBlobFromBlob(blobFromUint8Array(der));
+  return derBlobFromBlob(blobFromUint8Array(wrapDER(cose, DER_COSE_OID)));
 }
 
 /**
