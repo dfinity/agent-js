@@ -55,22 +55,35 @@ const decodeLenBytes = (buf: Uint8Array, offset: number): number => {
   throw new Error('Length too long (> 4 bytes)');
 };
 
+/**
+ * A DER encoded `SEQUENCE(OID)` for DER-encoded-COSE
+ */
 export const DER_COSE_OID = Uint8Array.from([
   ...[0x30, 0x0c], // SEQUENCE
   ...[0x06, 0x0a], // OID with 10 bytes
   ...[0x2b, 0x06, 0x01, 0x04, 0x01, 0x83, 0xb8, 0x43, 0x01, 0x01], // DER encoded COSE
 ]);
 
+/**
+ * A DER encoded `SEQUENCE(OID)` for the Ed25519 algorithm
+ */
 export const ED25519_OID = Uint8Array.from([
   ...[0x30, 0x05], // SEQUENCE
   ...[0x06, 0x03], // OID with 3 bytes
   ...[0x2b, 0x65, 0x70], // id-Ed25519 OID
 ]);
 
-export const wrapDER = (cose: ArrayBuffer, oid: Uint8Array): Uint8Array => {
+/**
+ * Wraps the given `payload` in a DER encoding tagged with the given encoded `oid` like so:
+ * `SEQUENCE(oid, BITSTRING(payload))`
+ *
+ * @param paylod The payload to encode as the bit string
+ * @param oid The DER encoded (and SEQUENCE wrapped!) OID to tag the payload with
+ */
+export const wrapDER = (payload: ArrayBuffer, oid: Uint8Array): Uint8Array => {
   // The Bit String header needs to include the unused bit count byte in its length
-  const bitStringHeaderLength = 2 + encodeLenBytes(cose.byteLength + 1);
-  const len = oid.byteLength + bitStringHeaderLength + cose.byteLength;
+  const bitStringHeaderLength = 2 + encodeLenBytes(payload.byteLength + 1);
+  const len = oid.byteLength + bitStringHeaderLength + payload.byteLength;
   let offset = 0;
   const buf = new Uint8Array(1 + encodeLenBytes(len) + len);
   // Sequence
@@ -84,14 +97,23 @@ export const wrapDER = (cose: ArrayBuffer, oid: Uint8Array): Uint8Array => {
 
   // Bit String Header
   buf[offset++] = 0x03;
-  offset += encodeLen(buf, offset, cose.byteLength + 1);
+  offset += encodeLen(buf, offset, payload.byteLength + 1);
   // 0 padding
   buf[offset++] = 0x00;
-  buf.set(new Uint8Array(cose), offset);
+  buf.set(new Uint8Array(payload), offset);
 
   return buf;
 };
 
+/**
+ * Extracts a payload from the given `derEncoded` data, and checks that it was tagged with the given `oid`.
+ *
+ * `derEncoded = SEQUENCE(oid, BITSTRING(payload))`
+ *
+ * @param derEncoded The DER encoded and tagged data
+ * @param oid The DER encoded (and SEQUENCE wrapped!) expected OID
+ * @returns The unwrapped payload
+ */
 export const unwrapDER = (derEncoded: ArrayBuffer, oid: Uint8Array): Uint8Array => {
   let offset = 0;
   const expect = (n: number, msg: string) => {
