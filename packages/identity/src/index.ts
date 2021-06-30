@@ -6,3 +6,4 @@ export {
   SignedDelegation,
 } from './identity/delegation';
 export { WebAuthnIdentity } from './identity/webauthn';
+export { wrapDER, unwrapDER, DER_COSE_OID, ED25519_OID } from './identity/der';
