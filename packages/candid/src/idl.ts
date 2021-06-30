@@ -175,7 +175,7 @@ export abstract class Type<T = any> {
   }
 
   public valueToString(x: T): string {
-    return JSON.stringify(x, (_, v) => (typeof v === 'bigint' ? v.toString : v));
+    return JSON.stringify(x, (_, v) => (typeof v === 'bigint' ? v.toString() : v));
   }
 
   /* Implement `T` in the IDL spec, only needed for non-primitive types */
