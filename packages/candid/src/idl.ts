@@ -175,7 +175,7 @@ export abstract class Type<T = any> {
   }
 
   public valueToString(x: T): string {
-    return JSON.stringify(x);
+    return JSON.stringify(x, (_, v) => (typeof v === 'bigint' ? v.toString : v));
   }
 
   /* Implement `T` in the IDL spec, only needed for non-primitive types */
@@ -675,7 +675,7 @@ export class VecClass<T> extends ConstructType<T[]> {
   public encodeValue(x: T[]) {
     const len = lebEncode(x.length);
     if (this._blobOptimization) {
-      return Buffer.concat([len, Buffer.from(x as unknown as number[])]);
+      return Buffer.concat([len, Buffer.from((x as unknown) as number[])]);
     }
 
     return Buffer.concat([len, ...x.map(d => this._type.encodeValue(d))]);
@@ -696,7 +696,7 @@ export class VecClass<T> extends ConstructType<T[]> {
     }
     const len = Number(lebDecode(b));
     if (this._blobOptimization) {
-      return [...new Uint8Array(b.read(len))] as unknown as T[];
+      return ([...new Uint8Array(b.read(len))] as unknown) as T[];
     }
 
     const rets: T[] = [];
@@ -1312,11 +1312,7 @@ export class ServiceClass extends ConstructType<PrincipalId> {
  * @returns {string}
  */
 function toReadableString(x: unknown): string {
-  if (typeof x === 'bigint') {
-    return `BigInt(${x})`;
-  } else {
-    return JSON.stringify(x);
-  }
+  return JSON.stringify(x, (_, v) => (typeof v === 'bigint' ? `BigInt(${v})` : v));
 }
 
 /**
