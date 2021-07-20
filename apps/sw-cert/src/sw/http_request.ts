@@ -315,8 +315,8 @@ export async function handleRequest(request: Request): Promise<Response> {
         return new Response('Body does not pass verification', { status: 500 });
       }
     } catch (e) {
-      console.error('An error happened:', e);
-      return new Response(null, { status: 500 });
+      console.error('Failed to fetch response:', e);
+      return new Response(`Failed to fetch response: ${e.toString()}`, { status: 500 });
     }
   }
 
