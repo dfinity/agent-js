@@ -9,5 +9,6 @@
 
 global.crypto = require('@trust/webcrypto');
 global.TextEncoder = require('text-encoding').TextEncoder;
+global.TextDecoder = require('text-encoding').TextDecoder;
 global.MessageChannel = require('worker_threads').MessageChannel;
 require('whatwg-fetch');

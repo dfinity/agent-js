@@ -6,7 +6,7 @@ import {
   ReadStateResponse,
   SubmitResponse,
 } from '..';
-import { BinaryBlob, blobFromHex, JsonObject } from '@dfinity/candid';
+import { JsonObject } from '@dfinity/candid';
 import { Agent } from './api';
 import { Principal } from '@dfinity/principal';
 
@@ -240,7 +240,7 @@ export class ProxyAgent implements Agent {
     });
   }
 
-  public async fetchRootKey(): Promise<BinaryBlob> {
+  public async fetchRootKey(): Promise<ArrayBuffer> {
     // Hex-encoded version of the replica root key
     const rootKey = ((await this.status()) as any).root_key;
     this.rootKey = rootKey;

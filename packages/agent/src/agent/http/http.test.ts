@@ -1,12 +1,9 @@
-import { Buffer } from 'buffer/';
-import { HttpAgent } from '../index';
+import { HttpAgent, Nonce } from '../index';
 import * as cbor from '../../cbor';
 import { Expiry, makeNonceTransform } from './transforms';
 import { CallRequest, Envelope, SubmitRequestType } from './types';
 import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
-import { BinaryBlob } from '@dfinity/candid';
-import { Nonce } from '@dfinity/candid';
 
 const originalDateNowFn = global.Date.now;
 const originalWindow = global.window;
@@ -31,14 +28,14 @@ test('call', async () => {
   });
 
   const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
-  const nonce = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
+  const nonce = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
   const principal = Principal.anonymous();
 
-  const httpAgent = new HttpAgent({ fetch: mockFetch });
+  const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://localhost' });
   httpAgent.addTransform(makeNonceTransform(() => nonce));
 
   const methodName = 'greet';
-  const arg = Buffer.from([]) as BinaryBlob;
+  const arg = new Uint8Array([]);
 
   const { requestId } = await httpAgent.call(canisterId, {
     methodName,
@@ -85,7 +82,7 @@ test.todo('query');
 test('queries with the same content should have the same signature', async () => {
   const mockResponse = {
     status: 'replied',
-    reply: { arg: Buffer.from([]) as BinaryBlob },
+    reply: { arg: new Uint8Array([]) },
   };
 
   const mockFetch: jest.Mock = jest.fn((resource, init) => {
@@ -98,15 +95,15 @@ test('queries with the same content should have the same signature', async () =>
   });
 
   const canisterIdent = '2chl6-4hpzw-vqaaa-aaaaa-c';
-  const nonce = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
+  const nonce = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
 
   const principal = await Principal.anonymous();
 
-  const httpAgent = new HttpAgent({ fetch: mockFetch });
+  const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://localhost' });
   httpAgent.addTransform(makeNonceTransform(() => nonce));
 
   const methodName = 'greet';
-  const arg = Buffer.from([]) as BinaryBlob;
+  const arg = new Uint8Array([]);
 
   const requestId = await requestIdOf({
     request_type: SubmitRequestType.Call,
@@ -118,7 +115,7 @@ test('queries with the same content should have the same signature', async () =>
   });
 
   const paths = [
-    [Buffer.from('request_status') as BinaryBlob, requestId, Buffer.from('reply') as BinaryBlob],
+    [new TextEncoder().encode('request_status'), requestId, new TextEncoder().encode('reply')],
   ];
 
   const response1 = await httpAgent.readState(canisterIdent, { paths });
@@ -140,21 +137,21 @@ test('queries with the same content should have the same signature', async () =>
 test('use anonymous principal if unspecified', async () => {
   const mockFetch: jest.Mock = jest.fn((resource, init) => {
     return Promise.resolve(
-      new Response(null, {
+      new Response(new Uint8Array([]), {
         status: 200,
       }),
     );
   });
 
   const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
-  const nonce = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
+  const nonce = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
   const principal = Principal.anonymous();
 
-  const httpAgent = new HttpAgent({ fetch: mockFetch });
+  const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://localhost' });
   httpAgent.addTransform(makeNonceTransform(() => nonce));
 
   const methodName = 'greet';
-  const arg = Buffer.from([]) as BinaryBlob;
+  const arg = new Uint8Array([]);
 
   const { requestId } = await httpAgent.call(canisterId, {
     methodName,
@@ -204,7 +201,6 @@ describe('getDefaultFetch', () => {
     expect(generateAgent).toThrow();
   });
   it('should fall back to global.fetch if window is not available', () => {
-    global.fetch = window.fetch;
     delete global.window;
     new HttpAgent({ host: 'localhost:8000' });
   });

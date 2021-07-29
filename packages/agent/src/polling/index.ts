@@ -1,8 +1,8 @@
+import { Principal } from '@dfinity/principal';
 import { Agent, RequestStatusResponseStatus } from '../agent';
 import { Certificate } from '../certificate';
-import { Principal } from '@dfinity/principal';
-import { RequestId, toHex as requestIdToHex } from '../request_id';
-import { BinaryBlob, blobFromText } from '@dfinity/candid';
+import { RequestId } from '../request_id';
+import { toHex } from '../utils/buffer';
 
 export * as strategy from './strategy';
 export { defaultStrategy } from './strategy';
@@ -26,15 +26,15 @@ export async function pollForResponse(
   canisterId: Principal,
   requestId: RequestId,
   strategy: PollStrategy,
-): Promise<BinaryBlob> {
-  const path = [blobFromText('request_status'), requestId];
+): Promise<ArrayBuffer> {
+  const path = [new TextEncoder().encode('request_status'), requestId];
   const state = await agent.readState(canisterId, { paths: [path] });
   const cert = new Certificate(state, agent);
   const verified = await cert.verify();
   if (!verified) {
     throw new Error('Fail to verify certificate');
   }
-  const maybeBuf = cert.lookup([...path, blobFromText('status')]);
+  const maybeBuf = cert.lookup([...path, new TextEncoder().encode('status')]);
   let status;
   if (typeof maybeBuf === 'undefined') {
     // Missing requestId means we need to wait
@@ -45,7 +45,7 @@ export async function pollForResponse(
 
   switch (status) {
     case RequestStatusResponseStatus.Replied: {
-      return cert.lookup([...path, blobFromText('reply')]) as BinaryBlob;
+      return cert.lookup([...path, new TextEncoder().encode('reply')])!;
     }
 
     case RequestStatusResponseStatus.Received:
@@ -56,11 +56,15 @@ export async function pollForResponse(
       return pollForResponse(agent, canisterId, requestId, strategy);
 
     case RequestStatusResponseStatus.Rejected: {
-      const rejectCode = cert.lookup([...path, blobFromText('reject_code')])!.toString();
-      const rejectMessage = cert.lookup([...path, blobFromText('reject_message')])!.toString();
+      const rejectCode = cert
+        .lookup([...path, new TextEncoder().encode('reject_code')])!
+        .toString();
+      const rejectMessage = cert
+        .lookup([...path, new TextEncoder().encode('reject_message')])!
+        .toString();
       throw new Error(
         `Call was rejected:\n` +
-          `  Request ID: ${requestIdToHex(requestId)}\n` +
+          `  Request ID: ${toHex(requestId)}\n` +
           `  Reject code: ${rejectCode}\n` +
           `  Reject text: ${rejectMessage}\n`,
       );
@@ -71,7 +75,7 @@ export async function pollForResponse(
       // we don't know the result and cannot decode it.
       throw new Error(
         `Call was marked as done but we never saw the reply:\n` +
-          `  Request ID: ${requestIdToHex(requestId)}\n`,
+          `  Request ID: ${toHex(requestId)}\n`,
       );
   }
   throw new Error('unreachable');

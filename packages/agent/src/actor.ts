@@ -12,8 +12,8 @@ import { AgentError } from './errors';
 import { IDL } from '@dfinity/candid';
 import { pollForResponse, PollStrategyFactory, strategy } from './polling';
 import { Principal } from '@dfinity/principal';
-import { RequestId, toHex as requestIdToHex } from './request_id';
-import { BinaryBlob } from '@dfinity/candid';
+import { RequestId } from './request_id';
+import { toHex } from './utils/buffer';
 
 export class ActorCallError extends AgentError {
   constructor(
@@ -55,7 +55,7 @@ export class UpdateCallRejectedError extends ActorCallError {
     public readonly response: SubmitResponse['response'],
   ) {
     super(canisterId, methodName, 'update', {
-      'Request ID': requestIdToHex(requestId),
+      'Request ID': toHex(requestId),
       'HTTP status code': response.status.toString(),
       'HTTP status text': response.statusText,
     });
@@ -181,17 +181,17 @@ export class Actor {
 
   public static async install(
     fields: {
-      module: BinaryBlob;
+      module: ArrayBuffer;
       mode?: CanisterInstallMode;
-      arg?: BinaryBlob;
+      arg?: ArrayBuffer;
     },
     config: ActorConfig,
   ): Promise<void> {
     const mode = fields.mode === undefined ? CanisterInstallMode.Install : fields.mode;
     // Need to transform the arg into a number array.
-    const arg = fields.arg ? [...fields.arg] : [];
+    const arg = fields.arg ? [...new Uint8Array(fields.arg)] : [];
     // Same for module.
-    const wasmModule = [...fields.module];
+    const wasmModule = [...new Uint8Array(fields.module)];
     const canisterId =
       typeof config.canisterId === 'string'
         ? Principal.fromText(config.canisterId)
@@ -216,8 +216,8 @@ export class Actor {
   public static async createAndInstallCanister(
     interfaceFactory: IDL.InterfaceFactory,
     fields: {
-      module: BinaryBlob;
-      arg?: BinaryBlob;
+      module: ArrayBuffer;
+      arg?: ArrayBuffer;
     },
     config?: CallConfig,
   ): Promise<ActorSubclass> {
@@ -281,7 +281,7 @@ export class Actor {
 // IDL functions can have multiple return values, so decoding always
 // produces an array. Ensure that functions with single or zero return
 // values behave as expected.
-function decodeReturnValue(types: IDL.Type[], msg: BinaryBlob) {
+function decodeReturnValue(types: IDL.Type[], msg: ArrayBuffer) {
   const returnValues = IDL.decode(types, Buffer.from(msg));
   switch (returnValues.length) {
     case 0:
@@ -314,7 +314,7 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
 
       const agent = options.agent || actor[metadataSymbol].config.agent || getDefaultAgent();
       const cid = Principal.from(options.canisterId || actor[metadataSymbol].config.canisterId);
-      const arg = IDL.encode(func.argTypes, args) as BinaryBlob;
+      const arg = IDL.encode(func.argTypes, args);
 
       const result = await agent.query(cid, { methodName, arg });
 
@@ -345,7 +345,7 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
       };
       const cid = Principal.from(canisterId);
       const ecid = effectiveCanisterId !== undefined ? Principal.from(effectiveCanisterId) : cid;
-      const arg = IDL.encode(func.argTypes, args) as BinaryBlob;
+      const arg = IDL.encode(func.argTypes, args);
       const { requestId, response } = await agent.call(cid, {
         methodName,
         arg,

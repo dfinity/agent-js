@@ -1,6 +1,6 @@
 import { Principal } from '@dfinity/principal';
 import { RequestId } from '../request_id';
-import { BinaryBlob, JsonObject } from '@dfinity/candid';
+import { JsonObject } from '@dfinity/candid';
 
 /**
  * Codes used by the replica for rejecting a message.
@@ -21,7 +21,7 @@ export interface ReadStateOptions {
   /**
    * A list of paths to read the state of.
    */
-  paths: BinaryBlob[][];
+  paths: ArrayBuffer[][];
 }
 
 /**
@@ -40,7 +40,7 @@ export interface QueryResponseBase {
 
 export interface QueryResponseReplied extends QueryResponseBase {
   status: QueryResponseStatus.Replied;
-  reply: { arg: BinaryBlob };
+  reply: { arg: ArrayBuffer };
 }
 
 export interface QueryResponseRejected extends QueryResponseBase {
@@ -61,7 +61,7 @@ export interface QueryFields {
   /**
    * A binary encoded argument. This is already encoded and will be sent as is.
    */
-  arg: BinaryBlob;
+  arg: ArrayBuffer;
 }
 
 /**
@@ -76,7 +76,7 @@ export interface CallOptions {
   /**
    * A binary encoded argument. This is already encoded and will be sent as is.
    */
-  arg: BinaryBlob;
+  arg: ArrayBuffer;
 
   /**
    * An effective canister ID, used for routing. This should only be mentioned if
@@ -86,7 +86,7 @@ export interface CallOptions {
 }
 
 export interface ReadStateResponse {
-  certificate: BinaryBlob;
+  certificate: ArrayBuffer;
 }
 
 export interface SubmitResponse {
@@ -102,7 +102,7 @@ export interface SubmitResponse {
  * An Agent able to make calls and queries to a Replica.
  */
 export interface Agent {
-  readonly rootKey: BinaryBlob | null;
+  readonly rootKey: ArrayBuffer | null;
   /**
    * Returns the principal ID associated with this agent (by default). It only shows
    * the principal of the default identity in the agent, which is the principal used
@@ -157,5 +157,5 @@ export interface Agent {
    * otherwise you are prone to man-in-the-middle attacks! Do not call this
    * function by default.
    */
-  fetchRootKey(): Promise<BinaryBlob>;
+  fetchRootKey(): Promise<ArrayBuffer>;
 }

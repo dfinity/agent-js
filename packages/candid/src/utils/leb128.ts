@@ -7,9 +7,11 @@
 //       actually return `new Buffer(pipe.buffer)`.
 // TODO: The best solution would be to have our own buffer type around
 //       Uint8Array which is standard.
-import BigNumber from 'bignumber.js';
-import Pipe from 'buffer-pipe';
-import { Buffer } from 'buffer/';
+import { PipeArrayBuffer as Pipe } from './buffer';
+
+function eob(): never {
+  throw new Error('unexpected end of buffer');
+}
 
 /**
  *
@@ -17,11 +19,19 @@ import { Buffer } from 'buffer/';
  * @param num number
  * @returns Buffer
  */
-export function safeRead(pipe: Pipe, num: number): Buffer {
-  if (pipe.buffer.length < num) {
-    throw new Error('unexpected end of buffer');
+export function safeRead(pipe: Pipe, num: number): ArrayBuffer {
+  if (pipe.byteLength < num) {
+    eob();
   }
   return pipe.read(num);
+}
+
+export function safeReadUint8(pipe: Pipe): number {
+  const byte = pipe.readUint8();
+  if (byte === undefined) {
+    eob();
+  }
+  return byte;
 }
 
 /**
@@ -29,7 +39,7 @@ export function safeRead(pipe: Pipe, num: number): Buffer {
  * nearest integer.
  * @param value The number to encode.
  */
-export function lebEncode(value: bigint | number): Buffer {
+export function lebEncode(value: bigint | number): ArrayBuffer {
   if (typeof value === 'number') {
     value = BigInt(value);
   }
@@ -43,14 +53,14 @@ export function lebEncode(value: bigint | number): Buffer {
     const i = Number(value & BigInt(0x7f));
     value /= BigInt(0x80);
     if (value === BigInt(0)) {
-      pipe.write([i]);
+      pipe.write(new Uint8Array([i]));
       break;
     } else {
-      pipe.write([i | 0x80]);
+      pipe.write(new Uint8Array([i | 0x80]));
     }
   }
 
-  return new Buffer(pipe.buffer);
+  return pipe.buffer;
 }
 
 /**
@@ -64,7 +74,7 @@ export function lebDecode(pipe: Pipe): bigint {
   let byte;
 
   do {
-    byte = safeRead(pipe, 1)[0];
+    byte = safeReadUint8(pipe);
     value += BigInt(byte & 0x7f).valueOf() * weight;
     weight *= BigInt(128);
   } while (byte >= 0x80);
@@ -77,7 +87,7 @@ export function lebDecode(pipe: Pipe): bigint {
  * will be floored to the nearest integer.
  * @param value The number to encode.
  */
-export function slebEncode(value: bigint | number): Buffer {
+export function slebEncode(value: bigint | number): ArrayBuffer {
   if (typeof value === 'number') {
     value = BigInt(value);
   }
@@ -94,10 +104,10 @@ export function slebEncode(value: bigint | number): Buffer {
     // prettier-ignore
     if (   ( isNeg && value === BigInt(0) && (i & 0x40) !== 0)
           || (!isNeg && value === BigInt(0) && (i & 0x40) === 0)) {
-        pipe.write([i]);
+        pipe.write(new Uint8Array([i]));
         break;
       } else {
-        pipe.write([i | 0x80]);
+        pipe.write(new Uint8Array([i | 0x80]));
       }
   }
 
@@ -110,7 +120,7 @@ export function slebEncode(value: bigint | number): Buffer {
       return Number(bytes);
     }
   }
-  return new Buffer(pipe.buffer);
+  return pipe.buffer;
 }
 
 /**
@@ -146,7 +156,7 @@ export function slebDecode(pipe: Pipe): bigint {
  * @param byteLength number
  * @returns Buffer
  */
-export function writeUIntLE(value: bigint | number, byteLength: number): Buffer {
+export function writeUIntLE(value: bigint | number, byteLength: number): ArrayBuffer {
   if (BigInt(value) < BigInt(0)) {
     throw new Error('Cannot write negative values.');
   }
@@ -155,11 +165,10 @@ export function writeUIntLE(value: bigint | number, byteLength: number): Buffer 
 
 /**
  *
- * @param value bigint | number
- * @param byteLength number
- * @returns Buffer
+ * @param value
+ * @param byteLength
  */
-export function writeIntLE(value: bigint | number, byteLength: number): Buffer {
+export function writeIntLE(value: bigint | number, byteLength: number): ArrayBuffer {
   value = BigInt(value);
 
   const pipe = new Pipe();
@@ -167,17 +176,17 @@ export function writeIntLE(value: bigint | number, byteLength: number): Buffer {
   let mul = BigInt(256);
   let sub = BigInt(0);
   let byte = Number(value % mul);
-  pipe.write([byte]);
+  pipe.write(new Uint8Array([byte]));
   while (++i < byteLength) {
     if (value < 0 && sub === BigInt(0) && byte !== 0) {
       sub = BigInt(1);
     }
     byte = Number((value / mul - sub) % BigInt(256));
-    pipe.write([byte]);
+    pipe.write(new Uint8Array([byte]));
     mul *= BigInt(256);
   }
 
-  return new Buffer(pipe.buffer);
+  return pipe.buffer;
 }
 
 /**
@@ -187,12 +196,12 @@ export function writeIntLE(value: bigint | number, byteLength: number): Buffer {
  * @returns bigint
  */
 export function readUIntLE(pipe: Pipe, byteLength: number): bigint {
-  let val = BigInt(safeRead(pipe, 1)[0]);
+  let val = BigInt(safeReadUint8(pipe));
   let mul = BigInt(1);
   let i = 0;
   while (++i < byteLength) {
     mul *= BigInt(256);
-    const byte = BigInt(safeRead(pipe, 1)[0]);
+    const byte = BigInt(safeReadUint8(pipe));
     val = val + mul * byte;
   }
   return val;

@@ -57,7 +57,6 @@ module.exports = {
     extensions: ['.tsx', '.ts', '.js'],
     fallback: {
       assert: require.resolve('assert/'),
-      buffer: require.resolve('buffer/'),
       events: require.resolve('events/'),
       stream: require.resolve('stream-browserify/'),
       util: require.resolve('util/'),
@@ -70,7 +69,6 @@ module.exports = {
       chunks: ['bundle'],
     }),
     new webpack.ProvidePlugin({
-      Buffer: [require.resolve('buffer/'), 'Buffer'],
       process: require.resolve('process/browser'),
     }),
     new webpack.EnvironmentPlugin({

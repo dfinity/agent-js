@@ -6,7 +6,6 @@ import {
   lookupPathEx,
   reconstruct,
 } from '@dfinity/agent';
-import { blobFromUint8Array, blobToUint8Array } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 
 /**
@@ -29,10 +28,7 @@ export async function validateBody(
   agent: HttpAgent,
   shouldFetchRootKey = false,
 ): Promise<boolean> {
-  const cert = new Certificate(
-    { certificate: blobFromUint8Array(new Uint8Array(certificate)) },
-    agent,
-  );
+  const cert = new Certificate({ certificate: new Uint8Array(certificate) }, agent);
 
   // If we're running locally, update the key manually.
   if (shouldFetchRootKey) {

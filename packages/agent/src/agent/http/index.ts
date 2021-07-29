@@ -1,9 +1,9 @@
-import { Buffer } from 'buffer/';
+import { JsonObject } from '@dfinity/candid';
+import { Principal } from '@dfinity/principal';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
-import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
-import { BinaryBlob, blobFromHex, blobFromUint8Array, JsonObject } from '@dfinity/candid';
+import { fromHex } from '../../utils/buffer';
 import {
   Agent,
   QueryFields,
@@ -25,6 +25,7 @@ import {
 } from './types';
 
 export * from './transforms';
+export { Nonce, makeNonce } from './types';
 
 export enum RequestStatusResponseStatus {
   Received = 'received',
@@ -99,13 +100,13 @@ function getDefaultFetch(): typeof fetch {
 // other computations so that this class can stay as simple as possible while
 // allowing extensions.
 export class HttpAgent implements Agent {
+  public rootKey = fromHex(IC_ROOT_KEY);
   private readonly _pipeline: HttpAgentRequestTransformFn[] = [];
   private readonly _identity: Promise<Identity>;
   private readonly _fetch: typeof fetch;
   private readonly _host: URL;
   private readonly _credentials: string | undefined;
   private _rootKeyFetched = false;
-  public rootKey = blobFromHex(IC_ROOT_KEY);
 
   constructor(options: HttpAgentOptions = {}) {
     if (options.source) {
@@ -157,7 +158,7 @@ export class HttpAgent implements Agent {
     canisterId: Principal | string,
     options: {
       methodName: string;
-      arg: BinaryBlob;
+      arg: ArrayBuffer;
       effectiveCanisterId?: Principal | string;
     },
     identity?: Identity | Promise<Identity>,
@@ -175,7 +176,7 @@ export class HttpAgent implements Agent {
       canister_id: canister,
       method_name: options.methodName,
       arg: options.arg,
-      sender: sender,
+      sender,
       ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
     };
 
@@ -240,7 +241,7 @@ export class HttpAgent implements Agent {
       canister_id: canister,
       method_name: fields.methodName,
       arg: fields.arg,
-      sender: sender,
+      sender,
       ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
     };
 
@@ -277,7 +278,7 @@ export class HttpAgent implements Agent {
           `  Body: ${await response.text()}\n`,
       );
     }
-    return cbor.decode(Buffer.from(await response.arrayBuffer()));
+    return cbor.decode(await response.arrayBuffer());
   }
 
   public async readState(
@@ -303,7 +304,7 @@ export class HttpAgent implements Agent {
       body: {
         request_type: ReadRequestType.ReadState,
         paths: fields.paths,
-        sender: sender,
+        sender,
         ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
       },
     });
@@ -328,7 +329,7 @@ export class HttpAgent implements Agent {
           `  Body: ${await response.text()}\n`,
       );
     }
-    return cbor.decode(Buffer.from(await response.arrayBuffer()));
+    return cbor.decode(await response.arrayBuffer());
   }
 
   public async status(): Promise<JsonObject> {
@@ -348,14 +349,13 @@ export class HttpAgent implements Agent {
       );
     }
 
-    const buffer = await response.arrayBuffer();
-    return cbor.decode(new Uint8Array(buffer));
+    return cbor.decode(await response.arrayBuffer());
   }
 
-  public async fetchRootKey(): Promise<BinaryBlob> {
+  public async fetchRootKey(): Promise<ArrayBuffer> {
     if (!this._rootKeyFetched) {
       // Hex-encoded version of the replica root key
-      this.rootKey = blobFromUint8Array(((await this.status()) as any).root_key);
+      this.rootKey = ((await this.status()) as any).root_key;
       this._rootKeyFetched = true;
     }
     return this.rootKey;

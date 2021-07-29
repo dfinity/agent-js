@@ -1,11 +1,18 @@
 // tslint:disable:max-classes-per-file
-import Pipe from 'buffer-pipe';
-import { Buffer } from 'buffer/';
 import { Principal as PrincipalId } from '@dfinity/principal';
-import { BinaryBlob, blobFromBuffer, JsonValue } from './types';
+import { JsonValue } from './types';
+import { concat, PipeArrayBuffer as Pipe, toHexString } from './utils/buffer';
 import { idlLabelToId } from './utils/hash';
-import { lebDecode, lebEncode, safeRead, slebDecode, slebEncode } from './utils/leb128';
+import {
+  lebDecode,
+  lebEncode,
+  safeRead,
+  safeReadUint8,
+  slebDecode,
+  slebEncode,
+} from './utils/leb128';
 import { readIntLE, readUIntLE, writeIntLE, writeUIntLE } from './utils/leb128';
+import { TextDecoder } from 'util';
 
 // tslint:disable:max-line-length
 /**
@@ -45,14 +52,14 @@ function zipWith<TX, TY, TR>(xs: TX[], ys: TY[], f: (a: TX, b: TY) => TR): TR[] 
  */
 class TypeTable {
   // List of types. Needs to be an array as the index needs to be stable.
-  private _typs: Buffer[] = [];
+  private _typs: ArrayBuffer[] = [];
   private _idx = new Map<string, number>();
 
   public has(obj: ConstructType) {
     return this._idx.has(obj.name);
   }
 
-  public add<T>(type: ConstructType<T>, buf: Buffer) {
+  public add<T>(type: ConstructType<T>, buf: ArrayBuffer) {
     const idx = this._typs.length;
     this._idx.set(type.name, idx);
     this._typs.push(buf);
@@ -76,8 +83,8 @@ class TypeTable {
 
   public encode() {
     const len = lebEncode(this._typs.length);
-    const buf = Buffer.concat(this._typs);
-    return Buffer.concat([len, buf]);
+    const buf = concat(...this._typs);
+    return concat(len, buf);
   }
 
   public indexOf(typeName: string) {
@@ -196,13 +203,13 @@ export abstract class Type<T = any> {
    * encodeValue() from different types.
    * @internal
    */
-  public abstract encodeValue(x: T): Buffer;
+  public abstract encodeValue(x: T): ArrayBuffer;
 
   /**
    * Implement `I` in the IDL spec.
    * Encode this type for the type table.
    */
-  public abstract encodeType(typeTable: TypeTable): Buffer;
+  public abstract encodeType(typeTable: TypeTable): ArrayBuffer;
 
   public abstract checkType(t: Type): Type;
   public abstract decodeValue(x: Pipe, t: Type): T;
@@ -286,10 +293,8 @@ export class BoolClass extends PrimitiveType<boolean> {
     return typeof x === 'boolean';
   }
 
-  public encodeValue(x: boolean): Buffer {
-    const buf = Buffer.alloc(1);
-    buf.writeInt8(x ? 1 : 0, 0);
-    return buf;
+  public encodeValue(x: boolean): ArrayBuffer {
+    return new Uint8Array([x ? 1 : 0]);
   }
 
   public encodeType() {
@@ -298,13 +303,13 @@ export class BoolClass extends PrimitiveType<boolean> {
 
   public decodeValue(b: Pipe, t: Type) {
     this.checkType(t);
-    const x = safeRead(b, 1).toString('hex');
-    if (x === '00') {
-      return false;
-    } else if (x === '01') {
-      return true;
-    } else {
-      throw new Error('Boolean value out of range');
+    switch (safeReadUint8(b)) {
+      case 0:
+        return false;
+      case 1:
+        return true;
+      default:
+        throw new Error('Boolean value out of range');
     }
   }
 
@@ -326,7 +331,7 @@ export class NullClass extends PrimitiveType<null> {
   }
 
   public encodeValue() {
-    return Buffer.alloc(0);
+    return new ArrayBuffer(0);
   }
 
   public encodeType() {
@@ -356,7 +361,7 @@ export class ReservedClass extends PrimitiveType<any> {
   }
 
   public encodeValue() {
-    return Buffer.alloc(0);
+    return new ArrayBuffer(0);
   }
 
   public encodeType() {
@@ -375,10 +380,6 @@ export class ReservedClass extends PrimitiveType<any> {
   }
 }
 
-function isValidUTF8(buf: Buffer): boolean {
-  return Buffer.compare(new Buffer(buf.toString(), 'utf8'), buf) === 0;
-}
-
 /**
  * Represents an IDL Text
  */
@@ -392,9 +393,9 @@ export class TextClass extends PrimitiveType<string> {
   }
 
   public encodeValue(x: string) {
-    const buf = Buffer.from(x, 'utf8');
-    const len = lebEncode(buf.length);
-    return Buffer.concat([len, buf]);
+    const buf = new TextEncoder().encode(x);
+    const len = lebEncode(buf.byteLength);
+    return concat(len, buf);
   }
 
   public encodeType() {
@@ -405,10 +406,8 @@ export class TextClass extends PrimitiveType<string> {
     this.checkType(t);
     const len = lebDecode(b);
     const buf = safeRead(b, Number(len));
-    if (!isValidUTF8(buf)) {
-      throw new Error('Not valid UTF8 text');
-    }
-    return buf.toString('utf8');
+    const decoder = new TextDecoder('utf8', { fatal: true });
+    return decoder.decode(buf);
   }
 
   get name() {
@@ -511,11 +510,12 @@ export class FloatClass extends PrimitiveType<number> {
   }
 
   public encodeValue(x: number) {
-    const buf = Buffer.allocUnsafe(this._bits / 8);
+    const buf = new ArrayBuffer(this._bits / 8);
+    const view = new DataView(buf);
     if (this._bits === 32) {
-      buf.writeFloatLE(x, 0);
+      view.setFloat32(0, x, true);
     } else {
-      buf.writeDoubleLE(x, 0);
+      view.setFloat64(0, x, true);
     }
     return buf;
   }
@@ -527,11 +527,12 @@ export class FloatClass extends PrimitiveType<number> {
 
   public decodeValue(b: Pipe, t: Type) {
     this.checkType(t);
-    const x = safeRead(b, this._bits / 8);
+    const bytes = safeRead(b, this._bits / 8);
+    const view = new DataView(bytes);
     if (this._bits === 32) {
-      return x.readFloatLE(0);
+      return view.getFloat32(0, true);
     } else {
-      return x.readDoubleLE(0);
+      return view.getFloat64(0, true);
     }
   }
 
@@ -675,10 +676,10 @@ export class VecClass<T> extends ConstructType<T[]> {
   public encodeValue(x: T[]) {
     const len = lebEncode(x.length);
     if (this._blobOptimization) {
-      return Buffer.concat([len, Buffer.from(x as unknown as number[])]);
+      return concat(len, new Uint8Array(x as unknown as number[]));
     }
 
-    return Buffer.concat([len, ...x.map(d => this._type.encodeValue(d))]);
+    return concat(len, ...x.map(d => this._type.encodeValue(d)));
   }
 
   public _buildTypeTableImpl(typeTable: TypeTable) {
@@ -686,7 +687,7 @@ export class VecClass<T> extends ConstructType<T[]> {
 
     const opCode = slebEncode(IDLTypeIds.Vector);
     const buffer = this._type.encodeType(typeTable);
-    typeTable.add(this, Buffer.concat([opCode, buffer]));
+    typeTable.add(this, concat(opCode, buffer));
   }
 
   public decodeValue(b: Pipe, t: Type): T[] {
@@ -739,9 +740,9 @@ export class OptClass<T> extends ConstructType<[T] | []> {
 
   public encodeValue(x: [T] | []) {
     if (x.length === 0) {
-      return Buffer.from([0]);
+      return new Uint8Array([0]);
     } else {
-      return Buffer.concat([Buffer.from([1]), this._type.encodeValue(x[0])]);
+      return concat(new Uint8Array([1]), this._type.encodeValue(x[0]));
     }
   }
 
@@ -750,7 +751,7 @@ export class OptClass<T> extends ConstructType<[T] | []> {
 
     const opCode = slebEncode(IDLTypeIds.Opt);
     const buffer = this._type.encodeType(typeTable);
-    typeTable.add(this, Buffer.concat([opCode, buffer]));
+    typeTable.add(this, concat(opCode, buffer));
   }
 
   public decodeValue(b: Pipe, t: Type): [T] | [] {
@@ -758,13 +759,13 @@ export class OptClass<T> extends ConstructType<[T] | []> {
     if (!(opt instanceof OptClass)) {
       throw new Error('Not an option type');
     }
-    const len = safeRead(b, 1).toString('hex');
-    if (len === '00') {
-      return [];
-    } else if (len === '01') {
-      return [this._type.decodeValue(b, opt._type)];
-    } else {
-      throw new Error('Not an option value');
+    switch (safeReadUint8(b)) {
+      case 0:
+        return [];
+      case 1:
+        return [this._type.decodeValue(b, opt._type)];
+      default:
+        throw new Error('Not an option value');
     }
   }
 
@@ -829,7 +830,7 @@ export class RecordClass extends ConstructType<Record<string, any>> {
   public encodeValue(x: Record<string, any>) {
     const values = this._fields.map(([key]) => x[key]);
     const bufs = zipWith(this._fields, values, ([, c], d) => c.encodeValue(d));
-    return Buffer.concat(bufs);
+    return concat(...bufs);
   }
 
   public _buildTypeTableImpl(T: TypeTable) {
@@ -837,10 +838,10 @@ export class RecordClass extends ConstructType<Record<string, any>> {
     const opCode = slebEncode(IDLTypeIds.Record);
     const len = lebEncode(this._fields.length);
     const fields = this._fields.map(([key, value]) =>
-      Buffer.concat([lebEncode(idlLabelToId(key)), value.encodeType(T)]),
+      concat(lebEncode(idlLabelToId(key)), value.encodeType(T)),
     );
 
-    T.add(this, Buffer.concat([opCode, len, Buffer.concat(fields)]));
+    T.add(this, concat(opCode, len, concat(...fields)));
   }
 
   public decodeValue(b: Pipe, t: Type) {
@@ -912,7 +913,7 @@ export class TupleClass<T extends any[]> extends RecordClass {
 
   public encodeValue(x: any[]) {
     const bufs = zipWith(this._components, x, (c, d) => c.encodeValue(d));
-    return Buffer.concat(bufs);
+    return concat(...bufs);
   }
 
   public decodeValue(b: Pipe, t: Type): T {
@@ -981,7 +982,7 @@ export class VariantClass extends ConstructType<Record<string, any>> {
         const idx = lebEncode(i);
         const buf = type.encodeValue(x[name]);
 
-        return Buffer.concat([idx, buf]);
+        return concat(idx, buf);
       }
     }
     throw Error('Variant has no data: ' + x);
@@ -994,9 +995,9 @@ export class VariantClass extends ConstructType<Record<string, any>> {
     const opCode = slebEncode(IDLTypeIds.Variant);
     const len = lebEncode(this._fields.length);
     const fields = this._fields.map(([key, value]) =>
-      Buffer.concat([lebEncode(idlLabelToId(key)), value.encodeType(typeTable)]),
+      concat(lebEncode(idlLabelToId(key)), value.encodeType(typeTable)),
     );
-    typeTable.add(this, Buffer.concat([opCode, len, ...fields]));
+    typeTable.add(this, concat(opCode, len, ...fields));
   }
 
   public decodeValue(b: Pipe, t: Type) {
@@ -1085,7 +1086,7 @@ export class RecClass<T = any> extends ConstructType<T> {
     if (!this._type) {
       throw Error('Recursive type uninitialized.');
     }
-    typeTable.add(this, Buffer.alloc(0));
+    typeTable.add(this, new Uint8Array([]));
     this._type.buildTypeTable(typeTable);
     typeTable.merge(this, this._type.name);
   }
@@ -1117,13 +1118,13 @@ export class RecClass<T = any> extends ConstructType<T> {
 }
 
 function decodePrincipalId(b: Pipe): PrincipalId {
-  const x = safeRead(b, 1).toString('hex');
-  if (x !== '01') {
+  const x = safeReadUint8(b);
+  if (x !== 1) {
     throw new Error('Cannot decode principal');
   }
+
   const len = Number(lebDecode(b));
-  const hex = safeRead(b, len).toString('hex').toUpperCase();
-  return PrincipalId.fromHex(hex);
+  return PrincipalId.fromUint8Array(new Uint8Array(safeRead(b, len)));
 }
 
 /**
@@ -1138,11 +1139,10 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
     return x && x._isPrincipal;
   }
 
-  public encodeValue(x: PrincipalId): Buffer {
-    const hex = x.toHex();
-    const buf = Buffer.from(hex, 'hex');
-    const len = lebEncode(buf.length);
-    return Buffer.concat([Buffer.from([1]), len, buf]);
+  public encodeValue(x: PrincipalId): ArrayBuffer {
+    const buf = x.toUint8Array();
+    const len = lebEncode(buf.byteLength);
+    return concat(new Uint8Array([1]), len, buf);
   }
 
   public encodeType() {
@@ -1189,15 +1189,14 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
     );
   }
 
-  public encodeValue(x: [PrincipalId, string]): Buffer {
-    const hex = x[0].toHex();
-    const buf = Buffer.from(hex, 'hex');
-    const len = lebEncode(buf.length);
-    const canister = Buffer.concat([Buffer.from([1]), len, buf]);
+  public encodeValue([principal, methodName]: [PrincipalId, string]) {
+    const buf = principal.toUint8Array();
+    const len = lebEncode(buf.byteLength);
+    const canister = concat(new Uint8Array([1]), len, buf);
 
-    const method = Buffer.from(x[1], 'utf8');
-    const methodLen = lebEncode(method.length);
-    return Buffer.concat([Buffer.from([1]), canister, methodLen, method]);
+    const method = new TextEncoder().encode(methodName);
+    const methodLen = lebEncode(method.byteLength);
+    return concat(new Uint8Array([1]), canister, methodLen, method);
   }
 
   public _buildTypeTableImpl(T: TypeTable) {
@@ -1206,28 +1205,27 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
 
     const opCode = slebEncode(IDLTypeIds.Func);
     const argLen = lebEncode(this.argTypes.length);
-    const args = Buffer.concat(this.argTypes.map(arg => arg.encodeType(T)));
+    const args = concat(...this.argTypes.map(arg => arg.encodeType(T)));
     const retLen = lebEncode(this.retTypes.length);
-    const rets = Buffer.concat(this.retTypes.map(arg => arg.encodeType(T)));
+    const rets = concat(...this.retTypes.map(arg => arg.encodeType(T)));
     const annLen = lebEncode(this.annotations.length);
-    const anns = Buffer.concat(this.annotations.map(a => this.encodeAnnotation(a)));
+    const anns = concat(...this.annotations.map(a => this.encodeAnnotation(a)));
 
-    T.add(this, Buffer.concat([opCode, argLen, args, retLen, rets, annLen, anns]));
+    T.add(this, concat(opCode, argLen, args, retLen, rets, annLen, anns));
   }
 
   public decodeValue(b: Pipe): [PrincipalId, string] {
-    const x = safeRead(b, 1).toString('hex');
-    if (x !== '01') {
+    const x = safeReadUint8(b);
+    if (x !== 1) {
       throw new Error('Cannot decode function reference');
     }
     const canister = decodePrincipalId(b);
 
     const mLen = Number(lebDecode(b));
     const buf = safeRead(b, mLen);
-    if (!isValidUTF8(buf)) {
-      throw new Error('Not valid UTF8 method name');
-    }
-    const method = buf.toString('utf8');
+    const decoder = new TextDecoder('utf8', { fatal: true });
+    const method = decoder.decode(buf);
+
     return [canister, method];
   }
 
@@ -1249,11 +1247,11 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
     return `(${args}) → (${rets})${annon}`;
   }
 
-  private encodeAnnotation(ann: string): Buffer {
+  private encodeAnnotation(ann: string): ArrayBuffer {
     if (ann === 'query') {
-      return Buffer.from([1]);
+      return new Uint8Array([1]);
     } else if (ann === 'oneway') {
-      return Buffer.from([2]);
+      return new Uint8Array([2]);
     } else {
       throw new Error('Illeagal function annotation');
     }
@@ -1273,11 +1271,10 @@ export class ServiceClass extends ConstructType<PrincipalId> {
     return x && x._isPrincipal;
   }
 
-  public encodeValue(x: PrincipalId): Buffer {
-    const hex = x.toHex();
-    const buf = Buffer.from(hex, 'hex');
+  public encodeValue(x: PrincipalId) {
+    const buf = x.toUint8Array();
     const len = lebEncode(buf.length);
-    return Buffer.concat([Buffer.from([1]), len, buf]);
+    return concat(new Uint8Array([1]), len, buf);
   }
 
   public _buildTypeTableImpl(T: TypeTable) {
@@ -1285,12 +1282,12 @@ export class ServiceClass extends ConstructType<PrincipalId> {
     const opCode = slebEncode(IDLTypeIds.Service);
     const len = lebEncode(this._fields.length);
     const meths = this._fields.map(([label, func]) => {
-      const labelBuf = Buffer.from(label, 'utf8');
+      const labelBuf = new TextEncoder().encode(label);
       const labelLen = lebEncode(labelBuf.length);
-      return Buffer.concat([labelLen, labelBuf, func.encodeType(T)]);
+      return concat(labelLen, labelBuf, func.encodeType(T));
     });
 
-    T.add(this, Buffer.concat([opCode, len, Buffer.concat(meths)]));
+    T.add(this, concat(opCode, len, ...meths));
   }
 
   public decodeValue(b: Pipe): PrincipalId {
@@ -1323,7 +1320,7 @@ function toReadableString(x: unknown): string {
  * Encode a array of values
  * @returns {Buffer} serialised value
  */
-export function encode(argTypes: Array<Type<any>>, args: any[]): BinaryBlob {
+export function encode(argTypes: Array<Type<any>>, args: any[]): ArrayBuffer {
   if (args.length < argTypes.length) {
     throw Error('Wrong number of message arguments');
   }
@@ -1331,12 +1328,12 @@ export function encode(argTypes: Array<Type<any>>, args: any[]): BinaryBlob {
   const typeTable = new TypeTable();
   argTypes.forEach(t => t.buildTypeTable(typeTable));
 
-  const magic = Buffer.from(magicNumber, 'utf8');
+  const magic = new TextEncoder().encode(magicNumber);
   const table = typeTable.encode();
   const len = lebEncode(args.length);
-  const typs = Buffer.concat(argTypes.map(t => t.encodeType(typeTable)));
-  const vals = Buffer.concat(
-    zipWith(argTypes, args, (t, x) => {
+  const typs = concat(...argTypes.map(t => t.encodeType(typeTable)));
+  const vals = concat(
+    ...zipWith(argTypes, args, (t, x) => {
       if (!t.covariant(x)) {
         throw new Error(`Invalid ${t.display()} argument: ${toReadableString(x)}`);
       }
@@ -1345,7 +1342,7 @@ export function encode(argTypes: Array<Type<any>>, args: any[]): BinaryBlob {
     }),
   );
 
-  return blobFromBuffer(Buffer.concat([magic, table, len, typs, vals]));
+  return concat(magic, table, len, typs, vals);
 }
 
 /**
@@ -1354,13 +1351,13 @@ export function encode(argTypes: Array<Type<any>>, args: any[]): BinaryBlob {
  * @param bytes - hex-encoded string, or buffer.
  * @returns Value deserialised to JS type
  */
-export function decode(retTypes: Type[], bytes: Buffer): JsonValue[] {
+export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
   const b = new Pipe(bytes);
 
   if (bytes.byteLength < magicNumber.length) {
     throw new Error('Message length smaller than magic number');
   }
-  const magic = safeRead(b, magicNumber.length).toString();
+  const magic = new TextDecoder().decode(safeRead(b, magicNumber.length));
   if (magic !== magicNumber) {
     throw new Error('Wrong magic number: ' + magic);
   }
@@ -1546,7 +1543,7 @@ export function decode(retTypes: Type[], bytes: Buffer): JsonValue[] {
     types[ind].decodeValue(b, types[ind]);
   }
 
-  if (b.buffer.length > 0) {
+  if (b.byteLength > 0) {
     throw new Error('decode: Left-over bytes');
   }
 

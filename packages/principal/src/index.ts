@@ -77,7 +77,7 @@ export class Principal {
     const checksumArrayBuf = new ArrayBuffer(4);
     const view = new DataView(checksumArrayBuf);
     view.setUint32(0, getCrc32(this._arr));
-    const checksum = Uint8Array.from(Buffer.from(checksumArrayBuf));
+    const checksum = new Uint8Array(checksumArrayBuf);
 
     const bytes = Uint8Array.from(this._arr);
     const array = new Uint8Array([...checksum, ...bytes]);
