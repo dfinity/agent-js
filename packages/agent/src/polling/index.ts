@@ -40,7 +40,7 @@ export async function pollForResponse(
     // Missing requestId means we need to wait
     status = RequestStatusResponseStatus.Unknown;
   } else {
-    status = maybeBuf.toString();
+    status = new TextDecoder().decode(maybeBuf);
   }
 
   switch (status) {

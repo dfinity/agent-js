@@ -1,3 +1,6 @@
+/**
+ * @jest-environment node
+ */
 import { Certificate, getManagementCanister } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
