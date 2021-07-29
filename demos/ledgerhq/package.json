@@ -2,11 +2,11 @@
   "name": "ic-agent-ledgerhq-app",
   "private": true,
   "dependencies": {
-    "@dfinity/agent": "^0.9.1",
-    "@dfinity/authentication": "^0.9.1",
-    "@dfinity/identity": "^0.9.1",
-    "@dfinity/identity-ledgerhq": "^0.9.1",
-    "@dfinity/principal": "^0.9.1",
+    "@dfinity/agent": "^0.9.2",
+    "@dfinity/authentication": "^0.9.2",
+    "@dfinity/identity": "^0.9.2",
+    "@dfinity/identity-ledgerhq": "^0.9.2",
+    "@dfinity/principal": "^0.9.2",
     "assert": "^2.0.0",
     "buffer": "^6.0.3",
     "events": "^3.2.0",
@@ -27,5 +27,5 @@
     "test:coverage": "",
     "test": ""
   },
-  "version": "0.9.1"
+  "version": "0.9.2"
 }

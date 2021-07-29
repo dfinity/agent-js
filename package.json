@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/agent-monorepo",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "private": true,
   "description": "Use an Agent to interact with the Internet Computer from your JavaScript program.",
   "dependencies": {
@@ -35,7 +35,6 @@
     "eslint-plugin-jsdoc": "^31.6.0",
     "husky": "^6.0.0",
     "jest-expect-message": "^1.0.2",
-    "lerna": "^4.0.0",
     "prettier": "^2.3.0",
     "pretty-quick": "^3.1.0",
     "ts-node": "^9.1.1",
