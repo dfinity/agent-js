@@ -26,6 +26,9 @@ export function safeRead(pipe: Pipe, num: number): ArrayBuffer {
   return pipe.read(num);
 }
 
+/**
+ * @param pipe
+ */
 export function safeReadUint8(pipe: Pipe): number {
   const byte = pipe.readUint8();
   if (byte === undefined) {

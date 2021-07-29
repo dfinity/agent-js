@@ -1318,6 +1318,8 @@ function toReadableString(x: unknown): string {
 
 /**
  * Encode a array of values
+ * @param argTypes
+ * @param args
  * @returns {Buffer} serialised value
  */
 export function encode(argTypes: Array<Type<any>>, args: any[]): ArrayBuffer {

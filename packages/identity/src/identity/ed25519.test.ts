@@ -2,8 +2,6 @@ import { DerEncodedPublicKey } from '@dfinity/agent';
 import { fromHexString } from '../buffer';
 import { Ed25519KeyIdentity, Ed25519PublicKey } from './ed25519';
 
-const Buffer = require('buffer/');
-
 const testVectors: Array<[string, string]> = [
   [
     'B3997656BA51FF6DA37B61D8D549EC80717266ECF48FB5DA52B654412634844C',

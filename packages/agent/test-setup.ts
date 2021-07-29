@@ -8,7 +8,6 @@
 // Node.js in a similar way.
 
 global.crypto = require('@trust/webcrypto');
-global.ArrayBuffer = ArrayBuffer;
 global.TextEncoder = require('text-encoding').TextEncoder;
 global.TextDecoder = require('text-encoding').TextDecoder;
 global.fetch = require('node-fetch');
