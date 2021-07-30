@@ -12,7 +12,6 @@ import {
   slebEncode,
 } from './utils/leb128';
 import { readIntLE, readUIntLE, writeIntLE, writeUIntLE } from './utils/leb128';
-import { TextDecoder } from 'util';
 
 // tslint:disable:max-line-length
 /**
