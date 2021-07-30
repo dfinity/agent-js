@@ -45,7 +45,7 @@ export async function pollForResponse(
 
   switch (status) {
     case RequestStatusResponseStatus.Replied: {
-      return cert.lookupEx([...path, 'reply'])!;
+      return cert.lookup([...path, 'reply'])!;
     }
 
     case RequestStatusResponseStatus.Received:
@@ -56,8 +56,8 @@ export async function pollForResponse(
       return pollForResponse(agent, canisterId, requestId, strategy);
 
     case RequestStatusResponseStatus.Rejected: {
-      const rejectCode = new Uint8Array(cert.lookupEx([...path, 'reject_code'])!)[0];
-      const rejectMessage = new TextDecoder().decode(cert.lookupEx([...path, 'reject_message'])!);
+      const rejectCode = new Uint8Array(cert.lookup([...path, 'reject_code'])!)[0];
+      const rejectMessage = new TextDecoder().decode(cert.lookup([...path, 'reject_message'])!);
       throw new Error(
         `Call was rejected:\n` +
           `  Request ID: ${toHex(requestId)}\n` +

@@ -1358,9 +1358,10 @@ export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
   if (bytes.byteLength < magicNumber.length) {
     throw new Error('Message length smaller than magic number');
   }
-  const magic = new TextDecoder().decode(safeRead(b, magicNumber.length));
+  const magicBuffer = safeRead(b, magicNumber.length);
+  const magic = new TextDecoder().decode(magicBuffer);
   if (magic !== magicNumber) {
-    throw new Error('Wrong magic number: ' + magic);
+    throw new Error('Wrong magic number: ' + JSON.stringify(magic));
   }
 
   function readTypeTable(pipe: Pipe): [Array<[IDLTypeIds, any]>, number[]] {

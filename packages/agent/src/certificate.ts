@@ -108,11 +108,7 @@ export class Certificate {
     this.cert = cbor.decode(new Uint8Array(response.certificate));
   }
 
-  public lookupEx(path: Array<ArrayBuffer | string>): ArrayBuffer | undefined {
-    this.checkState();
-    return lookupPathEx(path, this.cert.tree);
-  }
-  public lookup(path: ArrayBuffer[]): ArrayBuffer | undefined {
+  public lookup(path: Array<ArrayBuffer | string>): ArrayBuffer | undefined {
     this.checkState();
     return lookup_path(path, this.cert.tree);
   }
@@ -151,7 +147,7 @@ export class Certificate {
       throw new Error('fail to verify delegation certificate');
     }
 
-    const lookup = cert.lookupEx(['subnet', d.subnet_id, 'public_key']);
+    const lookup = cert.lookup(['subnet', d.subnet_id, 'public_key']);
     if (!lookup) {
       throw new Error(`Could not find subnet key for subnet 0x${toHex(d.subnet_id)}`);
     }
@@ -218,31 +214,13 @@ function domain_sep(s: string): ArrayBuffer {
 }
 
 /**
- *
  * @param path
  * @param tree
  */
-export function lookupPathEx(
+export function lookup_path(
   path: Array<ArrayBuffer | string>,
   tree: HashTree,
 ): ArrayBuffer | undefined {
-  return lookup_path(
-    path.map(p => {
-      if (typeof p === 'string') {
-        return new TextEncoder().encode(p);
-      } else {
-        return p;
-      }
-    }),
-    tree,
-  );
-}
-
-/**
- * @param path
- * @param tree
- */
-export function lookup_path(path: ArrayBuffer[], tree: HashTree): ArrayBuffer | undefined {
   if (path.length === 0) {
     switch (tree[0]) {
       case NodeId.Leaf: {
@@ -253,7 +231,9 @@ export function lookup_path(path: ArrayBuffer[], tree: HashTree): ArrayBuffer | 
       }
     }
   }
-  const t = find_label(path[0], flatten_forks(tree));
+
+  const label = typeof path[0] === 'string' ? new TextEncoder().encode(path[0]) : path[0];
+  const t = find_label(label, flatten_forks(tree));
   if (t) {
     return lookup_path(path.slice(1), t);
   }
