@@ -32,18 +32,30 @@ export function fromHexString(hexString: string): ArrayBuffer {
  * A class that abstracts a pipe-like ArrayBuffer.
  */
 export class PipeArrayBuffer {
+  /**
+   * The reading view. It's a sliding window as we read and write, pointing to the buffer.
+   * @private
+   */
   private _view: Uint8Array;
+
+  /**
+   * The actual buffer containing the bytes.
+   * @private
+   */
+  private _buffer: ArrayBuffer;
 
   /**
    * Creates a new instance of a pipe
    * @param buffer an optional buffer to start with
    */
   constructor(buffer?: ArrayBuffer) {
-    this._view = new Uint8Array(buffer || []);
+    this._buffer = buffer || new ArrayBuffer(0);
+    this._view = new Uint8Array(this._buffer);
   }
 
   get buffer(): ArrayBuffer {
-    return this._view;
+    // Return a copy of the buffer.
+    return this._view.slice();
   }
 
   get byteLength(): number {
@@ -55,9 +67,9 @@ export class PipeArrayBuffer {
    * @param num The number of bytes to read.
    */
   public read(num: number): ArrayBuffer {
-    const result = this._view.slice(0, num).buffer;
+    const result = this._view.subarray(0, num);
     this._view = this._view.subarray(num);
-    return result;
+    return result.slice().buffer;
   }
 
   public readUint8(): number | undefined {
@@ -71,23 +83,37 @@ export class PipeArrayBuffer {
    * @param buf The bytes to write.
    */
   public write(buf: ArrayBuffer): void {
-    this._view = new Uint8Array([...this._view, ...new Uint8Array(buf)]);
+    const b = new Uint8Array(buf);
+    const offset = this._view.byteLength;
+    if (this._view.byteOffset + this._view.byteLength + b.byteLength >= this._buffer.byteLength) {
+      // Alloc grow the view to include the new bytes.
+      this._alloc(b.byteLength);
+    } else {
+      // Update the view to include the new bytes.
+      this._view = new Uint8Array(
+        this._buffer,
+        this._view.byteOffset,
+        this._view.byteLength + b.byteLength,
+      );
+    }
+
+    this._view.set(b, offset);
   }
 
   /**
    * Whether or not there is more data to read from the buffer
    */
-  get end(): boolean {
+  public get end(): boolean {
     return this._view.byteLength === 0;
   }
 
-  /**
-   * returns the number of bytes read from the stream
-   */
-  // get bytesRead(): number;
-
-  /**
-   * returns the number of bytes wrote to the stream
-   */
-  // get bytesWrote(): number;
+  private _alloc(amount: number) {
+    // Add a little bit of exponential growth.
+    // tslint:disable-next-line:no-bitwise
+    const b = new ArrayBuffer(((this._buffer.byteLength + amount) * 1.2) | 0);
+    const v = new Uint8Array(b, 0, this._view.byteLength + amount);
+    v.set(this._view);
+    this._buffer = b;
+    this._view = v;
+  }
 }
