@@ -47,10 +47,11 @@ export class PipeArrayBuffer {
   /**
    * Creates a new instance of a pipe
    * @param buffer an optional buffer to start with
+   * @param length an optional amount of bytes to use for the length.
    */
-  constructor(buffer?: ArrayBuffer) {
+  constructor(buffer?: ArrayBuffer, length = buffer?.byteLength || 0) {
     this._buffer = buffer || new ArrayBuffer(0);
-    this._view = new Uint8Array(this._buffer);
+    this._view = new Uint8Array(this._buffer, 0, length);
   }
 
   get buffer(): ArrayBuffer {
@@ -87,7 +88,7 @@ export class PipeArrayBuffer {
     const offset = this._view.byteLength;
     if (this._view.byteOffset + this._view.byteLength + b.byteLength >= this._buffer.byteLength) {
       // Alloc grow the view to include the new bytes.
-      this._alloc(b.byteLength);
+      this.alloc(b.byteLength);
     } else {
       // Update the view to include the new bytes.
       this._view = new Uint8Array(
@@ -107,7 +108,11 @@ export class PipeArrayBuffer {
     return this._view.byteLength === 0;
   }
 
-  private _alloc(amount: number) {
+  /**
+   * Allocate a fixed amount of memory in the buffer. This does not affect the view.
+   * @param amount A number of bytes to add to the buffer.
+   */
+  public alloc(amount: number) {
     // Add a little bit of exponential growth.
     // tslint:disable-next-line:no-bitwise
     const b = new ArrayBuffer(((this._buffer.byteLength + amount) * 1.2) | 0);

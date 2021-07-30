@@ -51,7 +51,8 @@ export function lebEncode(value: bigint | number): ArrayBuffer {
     throw new Error('Cannot leb encode negative values.');
   }
 
-  const pipe = new Pipe();
+  const byteLength = (value === BigInt(0) ? 0 : Math.ceil(Math.log2(Number(value)))) + 1;
+  const pipe = new Pipe(new ArrayBuffer(byteLength), 0);
   while (true) {
     const i = Number(value & BigInt(0x7f));
     value /= BigInt(0x80);
@@ -99,7 +100,8 @@ export function slebEncode(value: bigint | number): ArrayBuffer {
   if (isNeg) {
     value = -value - BigInt(1);
   }
-  const pipe = new Pipe();
+  const byteLength = (value === BigInt(0) ? 0 : Math.ceil(Math.log2(Number(value)))) + 1;
+  const pipe = new Pipe(new ArrayBuffer(byteLength), 0);
   while (true) {
     const i = getLowerBytes(value);
     value /= BigInt(0x80);
@@ -174,7 +176,7 @@ export function writeUIntLE(value: bigint | number, byteLength: number): ArrayBu
 export function writeIntLE(value: bigint | number, byteLength: number): ArrayBuffer {
   value = BigInt(value);
 
-  const pipe = new Pipe();
+  const pipe = new Pipe(new ArrayBuffer(Math.min(1, byteLength)), 0);
   let i = 0;
   let mul = BigInt(256);
   let sub = BigInt(0);
