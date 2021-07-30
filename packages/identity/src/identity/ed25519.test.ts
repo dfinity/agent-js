@@ -33,15 +33,6 @@ test('DER decoding of ED25519 keys', async () => {
   });
 });
 
-test('DER encoding of invalid keys', async () => {
-  expect(() => {
-    Ed25519PublicKey.fromRaw(blobFromUint8Array(Buffer.alloc(31, 0))).toDer();
-  }).toThrow();
-  expect(() => {
-    Ed25519PublicKey.fromRaw(blobFromUint8Array(Buffer.alloc(31, 0))).toDer();
-  }).toThrow();
-});
-
 test('DER decoding of invalid keys', async () => {
   // Too short.
   expect(() => {
