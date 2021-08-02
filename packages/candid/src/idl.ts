@@ -181,7 +181,7 @@ export abstract class Type<T = any> {
   }
 
   public valueToString(x: T): string {
-    return JSON.stringify(x);
+    return toReadableString(x);
   }
 
   /* Implement `T` in the IDL spec, only needed for non-primitive types */
@@ -1308,11 +1308,9 @@ export class ServiceClass extends ConstructType<PrincipalId> {
  * @returns {string}
  */
 function toReadableString(x: unknown): string {
-  if (typeof x === 'bigint') {
-    return `BigInt(${x})`;
-  } else {
-    return JSON.stringify(x);
-  }
+  return JSON.stringify(x, (_key, value) =>
+    typeof value === 'bigint' ? `BigInt(${value})` : value,
+  );
 }
 
 /**
