@@ -402,3 +402,7 @@ test('IDL encoding (multiple arguments)', () => {
   );
   test_args([], [], '4449444c0000', 'empty args');
 });
+
+test('Stringify bigint', () => {
+  expect(() => IDL.encode([IDL.Nat], [{ x: BigInt(42) }])).toThrow(/Invalid nat argument/);
+});
