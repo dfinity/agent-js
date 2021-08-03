@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/principal",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to work with Internet Computer principals",
