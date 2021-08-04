@@ -52,5 +52,5 @@ const actor = Actor.createActor(idlFactory, {
 });
 ```
 
-Note: depends on [@dfinity/agent](https://www.npmjs.com/package/@dfinity/agent), [@dfinity/authentication](https://www.npmjs.com/package/@dfinity/agent), and
+Note: depends on [@dfinity/agent](https://www.npmjs.com/package/@dfinity/agent), [@dfinity/authentication](https://www.npmjs.com/package/@dfinity/authentication), and
 [@dfinity/identity](https://www.npmjs.com/package/@dfinity/identity).
