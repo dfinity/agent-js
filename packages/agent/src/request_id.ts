@@ -1,53 +1,37 @@
-import { sha256 as jsSha256 } from 'js-sha256';
-import borc from 'borc';
-import { Buffer } from 'buffer/';
-import {
-  BinaryBlob,
-  blobFromBuffer,
-  blobFromUint8Array,
-  blobToHex,
-  lebEncode,
-} from '@dfinity/candid';
+import { lebEncode } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
+import borc from 'borc';
+import { sha256 as jsSha256 } from 'js-sha256';
+import { compare, concat } from './utils/buffer';
 
-export type RequestId = BinaryBlob & { __requestId__: void };
-/**
- * get RequestId as hex-encoded blob.
- * @param requestId - RequestId to hex
- */
-export function toHex(requestId: RequestId): string {
-  return blobToHex(requestId);
-}
+export type RequestId = ArrayBuffer & { __requestId__: void };
 
 /**
  * sha256 hash the provided Buffer
  * @param data - input to hash function
  */
-export function hash(data: Buffer): BinaryBlob {
-  const hashed: ArrayBuffer = jsSha256.create().update(data).arrayBuffer();
-  return blobFromUint8Array(new Uint8Array(hashed));
+export function hash(data: ArrayBuffer): ArrayBuffer {
+  return jsSha256.create().update(new Uint8Array(data)).arrayBuffer();
 }
 
 interface ToHashable {
   toHash(): unknown;
 }
 
-function hashValue(value: unknown): BinaryBlob {
+function hashValue(value: unknown): ArrayBuffer {
   if (value instanceof borc.Tagged) {
     return hashValue(value.value);
   } else if (typeof value === 'string') {
     return hashString(value);
   } else if (typeof value === 'number') {
     return hash(lebEncode(value));
-  } else if (Buffer.isBuffer(value)) {
-    return hash(blobFromUint8Array(new Uint8Array(value)));
-  } else if (value instanceof Uint8Array || value instanceof ArrayBuffer) {
-    return hash(blobFromUint8Array(new Uint8Array(value)));
+  } else if (value instanceof ArrayBuffer || ArrayBuffer.isView(value)) {
+    return hash(value as ArrayBuffer);
   } else if (Array.isArray(value)) {
     const vals = value.map(hashValue);
-    return hash(Buffer.concat(vals) as BinaryBlob);
+    return hash(concat(...vals));
   } else if (value instanceof Principal) {
-    return hash(blobFromUint8Array(value.toUint8Array()));
+    return hash(value.toUint8Array());
   } else if (
     typeof value === 'object' &&
     value !== null &&
@@ -62,7 +46,7 @@ function hashValue(value: unknown): BinaryBlob {
     // Do this check much later than the other bigint check because this one is much less
     // type-safe.
     // So we want to try all the high-assurance type guards before this 'probable' one.
-    return hash(lebEncode(value) as BinaryBlob);
+    return hash(lebEncode(value));
   }
   throw Object.assign(new Error(`Attempt to hash a value of unsupported type: ${value}`), {
     // include so logs/callers can understand the confusing value.
@@ -71,19 +55,10 @@ function hashValue(value: unknown): BinaryBlob {
   });
 }
 
-const hashString = (value: string): BinaryBlob => {
-  const encoder = new TextEncoder();
-  const encoded = encoder.encode(value);
-  return hash(Buffer.from(encoded));
+const hashString = (value: string): ArrayBuffer => {
+  const encoded = new TextEncoder().encode(value);
+  return hash(encoded);
 };
-
-/**
- * Concatenate many blobs.
- * @param bs - blobs to concatenate
- */
-function concat(bs: BinaryBlob[]): BinaryBlob {
-  return blobFromBuffer(Buffer.concat(bs));
-}
 
 /**
  * Get the RequestId of the provided ic-ref request.
@@ -93,22 +68,22 @@ function concat(bs: BinaryBlob[]): BinaryBlob {
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function requestIdOf(request: Record<string, any>): RequestId {
-  const hashed: Array<[BinaryBlob, BinaryBlob]> = Object.entries(request)
+  const hashed: Array<[ArrayBuffer, ArrayBuffer]> = Object.entries(request)
     .filter(([, value]) => value !== undefined)
     .map(([key, value]: [string, unknown]) => {
       const hashedKey = hashString(key);
       const hashedValue = hashValue(value);
 
-      return [hashedKey, hashedValue] as [BinaryBlob, BinaryBlob];
+      return [hashedKey, hashedValue] as [ArrayBuffer, ArrayBuffer];
     });
 
-  const traversed: Array<[BinaryBlob, BinaryBlob]> = hashed;
+  const traversed: Array<[ArrayBuffer, ArrayBuffer]> = hashed;
 
-  const sorted: Array<[BinaryBlob, BinaryBlob]> = traversed.sort(([k1], [k2]) => {
-    return Buffer.compare(Buffer.from(k1), Buffer.from(k2));
+  const sorted: Array<[ArrayBuffer, ArrayBuffer]> = traversed.sort(([k1], [k2]) => {
+    return compare(k1, k2);
   });
 
-  const concatenated: BinaryBlob = concat(sorted.map(concat));
+  const concatenated: ArrayBuffer = concat(...sorted.map(x => concat(...x)));
   const requestId = hash(concatenated) as RequestId;
   return requestId;
 }

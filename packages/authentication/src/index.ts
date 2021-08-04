@@ -1,8 +1,12 @@
 import { PublicKey } from '@dfinity/agent';
-import { Principal } from '@dfinity/principal';
 import { DelegationChain } from '@dfinity/identity';
+import { Principal } from '@dfinity/principal';
 
 const DEFAULT_IDENTITY_PROVIDER_URL = 'https://auth.ic0.app/authorize';
+
+function toHexString(bytes: ArrayBuffer): string {
+  return new Uint8Array(bytes).reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
+}
 
 function _getDefaultLocation() {
   if (typeof window === 'undefined') {
@@ -64,7 +68,7 @@ export type AccessToken = string & { _BRAND: 'access_token' };
 export function createAuthenticationRequestUrl(options: CreateUrlOptions): URL {
   const url = new URL(options.identityProvider?.toString() ?? DEFAULT_IDENTITY_PROVIDER_URL);
   url.searchParams.set('response_type', 'token');
-  url.searchParams.set('login_hint', options.publicKey.toDer().toString('hex'));
+  url.searchParams.set('login_hint', toHexString(options.publicKey.toDer()));
   url.searchParams.set('redirect_uri', options.redirectUri ?? _getDefaultLocation());
   url.searchParams.set(
     'scope',

@@ -3,10 +3,9 @@ import {
   Certificate,
   HashTree,
   HttpAgent,
-  lookupPathEx,
+  lookup_path,
   reconstruct,
 } from '@dfinity/agent';
-import { blobFromUint8Array, blobToUint8Array } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 
 /**
@@ -29,10 +28,7 @@ export async function validateBody(
   agent: HttpAgent,
   shouldFetchRootKey = false,
 ): Promise<boolean> {
-  const cert = new Certificate(
-    { certificate: blobFromUint8Array(new Uint8Array(certificate)) },
-    agent,
-  );
+  const cert = new Certificate({ certificate: new Uint8Array(certificate) }, agent);
 
   // If we're running locally, update the key manually.
   if (shouldFetchRootKey) {
@@ -46,7 +42,7 @@ export async function validateBody(
 
   const hashTree: HashTree = cbor.decode(new Uint8Array(tree));
   const reconstructed = await reconstruct(hashTree);
-  const witness = cert.lookupEx(['canister', canisterId.toUint8Array(), 'certified_data']);
+  const witness = cert.lookup(['canister', canisterId.toUint8Array(), 'certified_data']);
 
   if (!witness) {
     throw new Error('Could not find certified data for this canister in the certificate.');
@@ -60,11 +56,11 @@ export async function validateBody(
 
   // Next, calculate the SHA of the content.
   const sha = await crypto.subtle.digest('SHA-256', body);
-  let treeSha = lookupPathEx(['http_assets', path], hashTree);
+  let treeSha = lookup_path(['http_assets', path], hashTree);
 
   if (!treeSha) {
     // Allow fallback to `index.html`.
-    treeSha = lookupPathEx(['http_assets', '/index.html'], hashTree);
+    treeSha = lookup_path(['http_assets', '/index.html'], hashTree);
   }
 
   if (!treeSha) {

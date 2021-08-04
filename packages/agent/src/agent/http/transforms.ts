@@ -1,7 +1,6 @@
-import { Buffer } from 'buffer/';
+import { lebEncode } from '@dfinity/candid';
 import * as cbor from 'simple-cbor';
-import { makeNonce, Nonce, lebEncode } from '@dfinity/candid';
-import { Endpoint, HttpAgentRequest, HttpAgentRequestTransformFn } from './types';
+import { Endpoint, HttpAgentRequest, HttpAgentRequestTransformFn, makeNonce, Nonce } from './types';
 
 const NANOSECONDS_PER_MILLISECONDS = BigInt(1000000);
 
@@ -22,7 +21,7 @@ export class Expiry {
     return cbor.value.u64(this._value.toString(16), 16);
   }
 
-  public toHash(): Buffer {
+  public toHash(): ArrayBuffer {
     return lebEncode(this._value);
   }
 }

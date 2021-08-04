@@ -37,10 +37,6 @@
     "test": "jest",
     "test:coverage": "jest --verbose --collectCoverage"
   },
-  "dependencies": {
-    "buffer": "^6.0.3",
-    "buffer-pipe": "^0.0.4"
-  },
   "devDependencies": {
     "@types/jest": "^24.9.1",
     "@typescript-eslint/eslint-plugin": "^4.14.2",

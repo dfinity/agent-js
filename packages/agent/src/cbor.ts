@@ -3,11 +3,10 @@
 // tslint:disable-next-line: max-line-length
 // https://github.com/dfinity-lab/dfinity/blob/9bca65f8edd65701ea6bdb00e0752f9186bbc893/docs/spec/public/index.adoc#cbor-encoding-of-requests-and-responses
 import borc from 'borc';
-import { Buffer } from 'buffer/';
 import * as cbor from 'simple-cbor';
 import { CborEncoder, SelfDescribeCborSerializer } from 'simple-cbor';
 import { Principal } from '@dfinity/principal';
-import { BinaryBlob, blobFromBuffer, blobFromHex } from '@dfinity/candid';
+import { concat, fromHex } from './utils/buffer';
 
 // We are using hansl/simple-cbor for CBOR serialization, to avoid issues with
 // encoding the uint64 values that the HTTP handler of the client expects for
@@ -29,11 +28,11 @@ class PrincipalEncoder implements CborEncoder<Principal> {
   }
 
   public encode(v: Principal): cbor.CborValue {
-    return cbor.value.bytes(v.toUint8Array().buffer);
+    return cbor.value.bytes(v.toUint8Array());
   }
 }
 
-class BufferEncoder implements CborEncoder<Buffer> {
+class BufferEncoder implements CborEncoder<ArrayBuffer> {
   public get name() {
     return 'Buffer';
   }
@@ -43,10 +42,10 @@ class BufferEncoder implements CborEncoder<Buffer> {
   }
 
   public match(value: any): boolean {
-    return Buffer.isBuffer(value);
+    return value instanceof ArrayBuffer || ArrayBuffer.isView(value);
   }
 
-  public encode(v: Buffer): cbor.CborValue {
+  public encode(v: ArrayBuffer): cbor.CborValue {
     return cbor.value.bytes(new Uint8Array(v));
   }
 }
@@ -67,9 +66,9 @@ class BigIntEncoder implements CborEncoder<BigInt> {
   public encode(v: bigint): cbor.CborValue {
     // Always use a bigint encoding.
     if (v > BigInt(0)) {
-      return cbor.value.tagged(2, cbor.value.bytes(blobFromHex(v.toString(16))));
+      return cbor.value.tagged(2, cbor.value.bytes(fromHex(v.toString(16))));
     } else {
-      return cbor.value.tagged(3, cbor.value.bytes(blobFromHex((BigInt('-1') * v).toString(16))));
+      return cbor.value.tagged(3, cbor.value.bytes(fromHex((BigInt('-1') * v).toString(16))));
     }
   }
 }
@@ -84,9 +83,12 @@ export enum CborTag {
   Semantic = 55799,
 }
 
-export const encode = (value: any): BinaryBlob => {
-  return blobFromBuffer(Buffer.from(serializer.serialize(value)));
-};
+/**
+ * Encode a JavaScript value into CBOR.
+ */
+export function encode(value: any): ArrayBuffer {
+  return serializer.serialize(value);
+}
 
 function decodePositiveBigInt(buf: Uint8Array): bigint {
   const len = buf.byteLength;
@@ -99,9 +101,25 @@ function decodePositiveBigInt(buf: Uint8Array): bigint {
   return res;
 }
 
-export function decode<T>(input: Uint8Array): T {
-  const decoder = new borc.Decoder({
-    size: input.byteLength,
+// A BORC subclass that decodes byte strings to ArrayBuffer instead of the Buffer class.
+class Uint8ArrayDecoder extends borc.Decoder {
+  public createByteString(raw: ArrayBuffer[]): ArrayBuffer {
+    return concat(...raw);
+  }
+
+  public createByteStringFromHeap(start: number, end: number): ArrayBuffer {
+    if (start === end) {
+      return new ArrayBuffer(0);
+    }
+
+    return new Uint8Array((this as any)._heap.slice(start, end));
+  }
+}
+
+export function decode<T>(input: ArrayBuffer): T {
+  const buffer = new Uint8Array(input);
+  const decoder = new Uint8ArrayDecoder({
+    size: buffer.byteLength,
     tags: {
       // Override tags 2 and 3 for BigInt support (borc supports only BigNumber).
       2: val => decodePositiveBigInt(val),
@@ -109,6 +127,6 @@ export function decode<T>(input: Uint8Array): T {
       [CborTag.Semantic]: (value: T): T => value,
     },
   });
-  const result = decoder.decodeFirst(input);
-  return result;
+
+  return decoder.decodeFirst(buffer);
 }

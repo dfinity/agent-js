@@ -1,5 +1,5 @@
 import { Actor } from '@dfinity/agent';
-import { blobFromUint8Array, IDL } from '@dfinity/candid';
+import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { readFileSync } from 'fs';
 import path from 'path';
@@ -22,10 +22,10 @@ export default async function (): Promise<{
   idl: IDL.InterfaceFactory;
 }> {
   if (!cache) {
-    const wasm = readFileSync(path.join(__dirname, 'identity.wasm'));
+    const module = readFileSync(path.join(__dirname, 'identity.wasm'));
 
     const canisterId = await Actor.createCanister({ agent: await agent });
-    await Actor.install({ module: blobFromUint8Array(wasm) }, { canisterId, agent: await agent });
+    await Actor.install({ module }, { canisterId, agent: await agent });
     const idl: IDL.InterfaceFactory = ({ IDL }) => {
       return IDL.Service({
         whoami: IDL.Func([], [IDL.Principal], []),

@@ -1,5 +1,9 @@
+/**
+ * Need this to setup the proper ArrayBuffer type (otherwise in Jest ArrayBuffer isn't
+ * an instance of ArrayBuffer).
+ * @jest-environment node
+ */
 import { SignIdentity } from '@dfinity/agent';
-import { BinaryBlob, blobFromHex } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { DelegationChain } from './delegation';
 import { Ed25519KeyIdentity } from './ed25519';
@@ -7,10 +11,6 @@ import { Ed25519KeyIdentity } from './ed25519';
 function createIdentity(seed: number): SignIdentity {
   const s = new Uint8Array([seed, ...new Array(31).fill(0)]);
   return Ed25519KeyIdentity.generate(s);
-}
-
-function h(text: TemplateStringsArray): BinaryBlob {
-  return blobFromHex(text.join(''));
 }
 
 test('delegation signs with proper keys (3)', async () => {
@@ -36,23 +36,28 @@ test('delegation signs with proper keys (3)', async () => {
     delegations: [
       {
         delegation: {
-          expiration: BigInt('1609459200000000000'),
-          pubkey: h`302A300506032B6570032100CECC1507DC1DDD7295951C290888F095ADB9044D1B73D696E6DF065D683BD4FC`,
+          expiration: '1655f29d787c0000',
+          pubkey:
+            '302a300506032b6570032100cecc1507dc1ddd7295951c290888f095adb9044d1b73d696e6df065d683bd4fc',
         },
-        signature: h`B106D135E5AD7459DC67DB68A4946FDBE603E650DF4035957DB7F0FB54E7467BB463116A2AD025E1887CD1F29025E0F3607B09924ABBBBEBFAF921B675C8FF08`,
+        signature:
+          'b106d135e5ad7459dc67db68a4946fdbe603e650df4035957db7f0fb54e7467bb463116a2ad025e1887cd1f29025e0f3607b09924abbbbebfaf921b675c8ff08',
       },
       {
         delegation: {
-          expiration: BigInt('1609459200000000000'),
-          pubkey: h`302A300506032B65700321003B6A27BCCEB6A42D62A3A8D02A6F0D73653215771DE243A63AC048A18B59DA29`,
+          expiration: '1655f29d787c0000',
+          pubkey:
+            '302a300506032b65700321003b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29',
         },
-        signature: h`5E40F3D171E499A691092E5B961B5447921091BCF8C6409CB5641541F4DC1390F501C5DFB16B10DF29D429CD153B9E396AF4E883ED3CFA090D28E214DB14C308`,
+        signature:
+          '5e40f3d171e499a691092e5b961b5447921091bcf8c6409cb5641541f4dc1390f501c5dfb16b10df29d429cd153b9e396af4e883ed3cfa090d28e214db14c308',
       },
     ],
-    publicKey: h`302A300506032B65700321006B79C57E6A095239282C04818E96112F3F03A4001BA97A564C23852A3F1EA5FC`,
+    publicKey:
+      '302a300506032b65700321006b79c57e6a095239282c04818e96112f3f03a4001ba97a564c23852a3f1ea5fc',
   };
 
-  expect(middleToBottom).toEqual(golden);
+  expect(middleToBottom.toJSON()).toEqual(golden);
 });
 
 test('DelegationChain can be serialized to and from JSON', async () => {
@@ -79,7 +84,8 @@ test('DelegationChain can be serialized to and from JSON', async () => {
   );
 
   const rootToMiddleJson = JSON.stringify(rootToMiddle);
-  // All strings in the JSON should be hex so it is clear how to decode this as different versions of `toJSON` evolve.
+  // All strings in the JSON should be hex so it is clear how to decode this as different versions
+  // of `toJSON` evolve.
   JSON.parse(rootToMiddleJson, (key, value) => {
     if (typeof value === 'string') {
       const byte = parseInt(value, 16);

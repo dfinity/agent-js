@@ -15,7 +15,6 @@
     "principal",
     "authentication",
     "dfx",
-    "candid",
     "motoko",
     "javascript",
     "typescript",
@@ -42,8 +41,6 @@
   },
   "dependencies": {
     "borc": "^2.1.1",
-    "buffer": "^6.0.3",
-    "buffer-pipe": "0.0.4",
     "tweetnacl": "^1.0.1"
   },
   "devDependencies": {

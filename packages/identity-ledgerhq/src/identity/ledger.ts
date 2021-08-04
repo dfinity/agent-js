@@ -4,18 +4,19 @@ import {
   HttpAgentRequest,
   PublicKey,
   ReadRequest,
+  Signature,
   SignIdentity,
 } from '@dfinity/agent';
-import { blobFromUint8Array, BinaryBlob } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import DfinityApp, { ResponseSign } from '@zondax/ledger-dfinity';
+import { Buffer } from 'buffer/';
 import { Secp256k1PublicKey } from './secp256k1';
 
 /**
  * Convert the HttpAgentRequest body into cbor which can be signed by the Ledger Hardware Wallet.
  * @param request - body of the HttpAgentRequest
  */
-function _prepareCborForLedger(request: ReadRequest | CallRequest): BinaryBlob {
+function _prepareCborForLedger(request: ReadRequest | CallRequest): ArrayBuffer {
   return Cbor.encode({ content: request });
 }
 
@@ -35,10 +36,10 @@ export class LedgerIdentity extends SignIdentity {
     const resp = await app.getAddressAndPubKey(derivePath);
     // This type doesn't have the right fields in it, so we have to manually type it.
     const principal = (resp as unknown as { principalText: string }).principalText;
-    const publicKey = Secp256k1PublicKey.fromRaw(blobFromUint8Array(resp.publicKey));
+    const publicKey = Secp256k1PublicKey.fromRaw(resp.publicKey);
     const address = resp.address;
 
-    if (principal !== Principal.selfAuthenticating(publicKey.toDer()).toText()) {
+    if (principal !== Principal.selfAuthenticating(new Uint8Array(publicKey.toDer())).toText()) {
       throw new Error('Principal returned by device does not match public key.');
     }
 
@@ -66,8 +67,9 @@ export class LedgerIdentity extends SignIdentity {
     return this._publicKey;
   }
 
-  public async sign(blob: BinaryBlob): Promise<BinaryBlob> {
-    const resp: ResponseSign = await this._app.sign(this.derivePath, Buffer.from(blob));
+  public async sign(blob: ArrayBuffer): Promise<Signature> {
+    // Force an `as any` because the types are compatible but TypeScript cannot figure it out.
+    const resp: ResponseSign = await this._app.sign(this.derivePath, Buffer.from(blob) as any);
     const signatureRS = resp.signatureRS;
     if (!signatureRS) {
       throw new Error(
@@ -81,7 +83,7 @@ export class LedgerIdentity extends SignIdentity {
       throw new Error(`Signature must be 64 bytes long (is ${signatureRS.length})`);
     }
 
-    return blobFromUint8Array(new Uint8Array(signatureRS));
+    return signatureRS.buffer as Signature;
   }
 
   public async transformRequest(request: HttpAgentRequest): Promise<unknown> {

@@ -1,14 +1,17 @@
+/**
+ * @jest-environment node
+ */
 // tslint:disable
 import * as IDL from './idl';
-import { Buffer } from 'buffer/';
 import { Principal } from '@dfinity/principal';
+import { fromHexString, toHexString } from './utils/buffer';
 
 function testEncode(typ: IDL.Type, val: any, hex: string, _str: string) {
-  expect(IDL.encode([typ], [val]).toString('hex')).toEqual(hex);
+  expect(toHexString(IDL.encode([typ], [val]))).toEqual(hex);
 }
 
 function testDecode(typ: IDL.Type, val: any, hex: string, _str: string) {
-  expect(IDL.decode([typ], Buffer.from(hex, 'hex'))[0]).toEqual(val);
+  expect(IDL.decode([typ], fromHexString(hex))[0]).toEqual(val);
 }
 
 function test_(typ: IDL.Type, val: any, hex: string, str: string) {
@@ -17,22 +20,22 @@ function test_(typ: IDL.Type, val: any, hex: string, str: string) {
 }
 
 function test_args(typs: IDL.Type[], vals: any[], hex: string, _str: string) {
-  expect(IDL.encode(typs, vals)).toEqual(Buffer.from(hex, 'hex'));
-  expect(IDL.decode(typs, Buffer.from(hex, 'hex'))).toEqual(vals);
+  expect(IDL.encode(typs, vals)).toEqual(fromHexString(hex));
+  expect(IDL.decode(typs, fromHexString(hex))).toEqual(vals);
 }
 
 test('IDL encoding (magic number)', () => {
   // Wrong magic number
-  expect(() => IDL.decode([IDL.Nat], Buffer.from('2a'))).toThrow(
+  expect(() => IDL.decode([IDL.Nat], fromHexString('2a'))).toThrow(
     /Message length smaller than magic number/,
   );
-  expect(() => IDL.decode([IDL.Nat], Buffer.from('4449444d2a'))).toThrow(/Wrong magic number:/);
+  expect(() => IDL.decode([IDL.Nat], fromHexString('4449444d2a'))).toThrow(/Wrong magic number:/);
 });
 
 test('IDL encoding (empty)', () => {
   // Empty
   expect(() => IDL.encode([IDL.Empty], [undefined])).toThrow(/Invalid empty argument:/);
-  expect(() => IDL.decode([IDL.Empty], Buffer.from('4449444c00016f', 'hex'))).toThrow(
+  expect(() => IDL.decode([IDL.Empty], fromHexString('4449444c00016f'))).toThrow(
     /Empty cannot appear as an output/,
   );
 });
@@ -54,7 +57,7 @@ test('IDL encoding (text)', () => {
   expect(() => IDL.encode([IDL.Text], [0])).toThrow(/Invalid text argument/);
   expect(() => IDL.encode([IDL.Text], [null])).toThrow(/Invalid text argument/);
   expect(() =>
-    IDL.decode([IDL.Vec(IDL.Nat8)], Buffer.from('4449444c00017107486920e298830a', 'hex')),
+    IDL.decode([IDL.Vec(IDL.Nat8)], fromHexString('4449444c00017107486920e298830a')),
   ).toThrow(/type mismatch: type on the wire text, expect type vec nat8/);
 });
 
@@ -72,7 +75,7 @@ test('IDL encoding (int)', () => {
   test_(IDL.Int, BigInt(-1234567890), '4449444c00017caefaa7b37b', 'Negative Int');
   test_(IDL.Opt(IDL.Int), [BigInt(42)], '4449444c016e7c0100012a', 'Nested Int');
   testEncode(IDL.Opt(IDL.Int), [42], '4449444c016e7c0100012a', 'Nested Int (number)');
-  expect(() => IDL.decode([IDL.Int], Buffer.from('4449444c00017d2a', 'hex'))).toThrow(
+  expect(() => IDL.decode([IDL.Int], fromHexString('4449444c00017d2a'))).toThrow(
     /type mismatch: type on the wire nat, expect type int/,
   );
 });
@@ -92,7 +95,8 @@ test('IDL encoding (float64)', () => {
   test_(IDL.Float64, 3, '4449444c0001720000000000000840', 'Float');
   test_(IDL.Float64, 6, '4449444c0001720000000000001840', 'Float');
   test_(IDL.Float64, 0.5, '4449444c000172000000000000e03f', 'Float');
-  test_(IDL.Float64, Number.NaN, '4449444c000172010000000000f07f', 'NaN');
+  test_(IDL.Float64, Number.NaN, '4449444c000172000000000000f87f', 'NaN');
+  testDecode(IDL.Float64, Number.NaN, '4449444c000172010000000000f07f', 'NaN');
   test_(IDL.Float64, Number.POSITIVE_INFINITY, '4449444c000172000000000000f07f', '+infinity');
   test_(IDL.Float64, Number.NEGATIVE_INFINITY, '4449444c000172000000000000f0ff', '-infinity');
   test_(IDL.Float64, Number.EPSILON, '4449444c000172000000000000b03c', 'eps');
@@ -273,7 +277,7 @@ test('IDL encoding (principal)', () => {
   expect(() => IDL.encode([IDL.Principal], ['w7x7r-cok77-xa'])).toThrow(
     /Invalid principal argument/,
   );
-  expect(() => IDL.decode([IDL.Principal], Buffer.from('4449444c00016803caffee', 'hex'))).toThrow(
+  expect(() => IDL.decode([IDL.Principal], fromHexString('4449444c00016803caffee'))).toThrow(
     /Cannot decode principal/,
   );
 });

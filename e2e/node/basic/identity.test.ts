@@ -1,3 +1,6 @@
+/**
+ * @jest-environment node
+ */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Actor, HttpAgent, SignIdentity } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';

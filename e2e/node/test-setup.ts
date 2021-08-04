@@ -9,4 +9,5 @@
 
 global.crypto = require('@trust/webcrypto');
 global.TextEncoder = require('text-encoding').TextEncoder; // eslint-disable-line
+global.TextDecoder = require('text-encoding').TextDecoder; // eslint-disable-line
 global.fetch = require('node-fetch');

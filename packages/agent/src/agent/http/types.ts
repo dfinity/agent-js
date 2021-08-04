@@ -1,6 +1,6 @@
 import type { Principal } from '@dfinity/principal';
-import { BinaryBlob } from '@dfinity/candid';
 import { Expiry } from './transforms';
+import { lebEncode } from '@dfinity/candid';
 
 /**
  * @internal
@@ -40,8 +40,8 @@ export interface HttpAgentReadStateRequest extends HttpAgentBaseRequest {
 
 export interface Signed<T> {
   content: T;
-  sender_pubkey: BinaryBlob;
-  sender_sig: BinaryBlob;
+  sender_pubkey: ArrayBuffer;
+  sender_sig: ArrayBuffer;
 }
 
 export interface UnSigned<T> {
@@ -61,7 +61,7 @@ export interface CallRequest extends Record<string, any> {
   request_type: SubmitRequestType.Call;
   canister_id: Principal;
   method_name: string;
-  arg: BinaryBlob;
+  arg: ArrayBuffer;
   sender: Uint8Array | Principal;
   ingress_expiry: Expiry;
 }
@@ -83,16 +83,34 @@ export interface QueryRequest extends Record<string, any> {
   request_type: ReadRequestType.Query;
   canister_id: Principal;
   method_name: string;
-  arg: BinaryBlob;
+  arg: ArrayBuffer;
   sender: Uint8Array | Principal;
   ingress_expiry: Expiry;
 }
 
 export interface ReadStateRequest extends Record<string, any> {
   request_type: ReadRequestType.ReadState;
-  paths: BinaryBlob[][];
+  paths: ArrayBuffer[][];
   ingress_expiry: Expiry;
   sender: Uint8Array | Principal;
 }
 
 export type ReadRequest = QueryRequest | ReadStateRequest;
+
+// A Nonce that can be used for calls.
+export type Nonce = Uint8Array & { __nonce__: void };
+
+/**
+ * Create a random Nonce, based on date and a random suffix.
+ */
+export function makeNonce(): Nonce {
+  // Encode 128 bits.
+  const buffer = new ArrayBuffer(16);
+  const view = new DataView(buffer);
+  const value = BigInt(+Date.now()) * BigInt(100000) + BigInt(Math.floor(Math.random() * 100000));
+  view.setBigUint64(0, value);
+  // tslint:disable-next-line:no-bitwise
+  view.setBigUint64(1, value >> BigInt(64));
+
+  return buffer as Nonce;
+}

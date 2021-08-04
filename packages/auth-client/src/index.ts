@@ -1,6 +1,10 @@
-import { AnonymousIdentity, Identity, SignIdentity } from '@dfinity/agent';
-import { blobFromUint8Array, derBlobFromBlob } from '@dfinity/candid';
-import { Principal } from '@dfinity/principal';
+import {
+  AnonymousIdentity,
+  DerEncodedPublicKey,
+  Identity,
+  Signature,
+  SignIdentity,
+} from '@dfinity/agent';
 import { isDelegationValid } from '@dfinity/authentication';
 import {
   Delegation,
@@ -8,6 +12,7 @@ import {
   DelegationIdentity,
   Ed25519KeyIdentity,
 } from '@dfinity/identity';
+import { Principal } from '@dfinity/principal';
 
 const KEY_LOCALSTORAGE_KEY = 'identity';
 const KEY_LOCALSTORAGE_DELEGATION = 'delegation';
@@ -209,17 +214,17 @@ export class AuthClient {
     const delegations = message.delegations.map(signedDelegation => {
       return {
         delegation: new Delegation(
-          blobFromUint8Array(signedDelegation.delegation.pubkey),
+          signedDelegation.delegation.pubkey,
           signedDelegation.delegation.expiration,
           signedDelegation.delegation.targets,
         ),
-        signature: blobFromUint8Array(signedDelegation.signature),
+        signature: signedDelegation.signature.buffer as Signature,
       };
     });
 
     const delegationChain = DelegationChain.fromDelegations(
       delegations,
-      derBlobFromBlob(blobFromUint8Array(message.userPublicKey)),
+      message.userPublicKey.buffer as DerEncodedPublicKey,
     );
 
     const key = this._key;
@@ -285,7 +290,7 @@ export class AuthClient {
           // IDP is ready. Send a message to request authorization.
           const request: InternetIdentityAuthRequest = {
             kind: 'authorize-client',
-            sessionPublicKey: this._key?.getPublicKey().toDer() as Uint8Array,
+            sessionPublicKey: new Uint8Array(this._key?.getPublicKey().toDer() as ArrayBuffer),
             maxTimeToLive: options?.maxTimeToLive,
           };
           this._idpWindow?.postMessage(request, identityProviderUrl.origin);

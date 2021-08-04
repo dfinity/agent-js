@@ -1,3 +1,6 @@
+/**
+ * @jest-environment node
+ */
 import counterCanister from '../canisters/counter';
 
 test('counter', async () => {

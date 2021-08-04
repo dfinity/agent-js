@@ -1,6 +1,4 @@
 declare module 'borc' {
-  import { Buffer } from 'buffer/';
-
   class Decoder {
     constructor(opts: { size: number; tags: Record<number, (val: any) => any> });
 
@@ -9,7 +7,7 @@ declare module 'borc' {
 
   export function decodeFirst(input: ArrayBuffer): any;
 
-  export function encode(o: any): Buffer;
+  export function encode(o: any): Uint8Array;
 
   class Tagged {
     tag: number;

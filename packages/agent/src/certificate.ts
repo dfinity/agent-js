@@ -1,17 +1,9 @@
-import { Buffer } from 'buffer/';
 import { Agent, getDefaultAgent, ReadStateResponse } from './agent';
 import * as cbor from './cbor';
 import { AgentError } from './errors';
 import { hash } from './request_id';
-import {
-  BinaryBlob,
-  blobFromBuffer,
-  blobFromText,
-  blobFromUint8Array,
-  blobToHex,
-  blobToUint8Array,
-} from '@dfinity/candid';
 import { blsVerify } from './utils/bls';
+import { concat, fromHex, toHex } from './utils/buffer';
 
 /**
  * A certificate needs to be verified (using {@link Certificate.prototype.verify})
@@ -25,7 +17,7 @@ export class UnverifiedCertificateError extends AgentError {
 
 interface Cert {
   tree: HashTree;
-  signature: Buffer;
+  signature: ArrayBuffer;
   delegation?: Delegation;
 }
 
@@ -38,11 +30,11 @@ const enum NodeId {
 }
 
 export type HashTree =
-  | [0]
-  | [1, HashTree, HashTree]
-  | [2, ArrayBuffer, HashTree]
-  | [3, ArrayBuffer]
-  | [4, ArrayBuffer];
+  | [NodeId.Empty]
+  | [NodeId.Fork, HashTree, HashTree]
+  | [NodeId.Labeled, ArrayBuffer, HashTree]
+  | [NodeId.Leaf, ArrayBuffer]
+  | [NodeId.Pruned, ArrayBuffer];
 
 /**
  * Make a human readable string out of a hash tree.
@@ -64,23 +56,23 @@ export function hashTreeToString(tree: HashTree): string {
   }
 
   switch (tree[0]) {
-    case 0:
+    case NodeId.Empty:
       return '()';
-    case 1: {
+    case NodeId.Fork: {
       const left = hashTreeToString(tree[1]);
       const right = hashTreeToString(tree[2]);
       return `sub(\n left:\n${indent(left)}\n---\n right:\n${indent(right)}\n)`;
     }
-    case 2: {
+    case NodeId.Labeled: {
       const label = labelToString(tree[1]);
       const sub = hashTreeToString(tree[2]);
       return `label(\n label:\n${indent(label)}\n sub:\n${indent(sub)}\n)`;
     }
-    case 3: {
+    case NodeId.Leaf: {
       return `leaf(...${tree[1].byteLength} bytes)`;
     }
-    case 4: {
-      return `pruned(${blobToHex(blobFromUint8Array(new Uint8Array(tree[1])))}`;
+    case NodeId.Pruned: {
+      return `pruned(${toHex(new Uint8Array(tree[1]))}`;
     }
     default: {
       return `unknown(${JSON.stringify(tree[0])})`;
@@ -89,16 +81,18 @@ export function hashTreeToString(tree: HashTree): string {
 }
 
 interface Delegation extends Record<string, any> {
-  subnet_id: Buffer;
-  certificate: Buffer;
+  subnet_id: ArrayBuffer;
+  certificate: ArrayBuffer;
 }
 
-function isBufferEqual(a: Buffer, b: Buffer): boolean {
-  if (a.length !== b.length) {
+function isBufferEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
+  if (a.byteLength !== b.byteLength) {
     return false;
   }
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) {
+  const a8 = new Uint8Array(a);
+  const b8 = new Uint8Array(b);
+  for (let i = 0; i < a8.length; i++) {
+    if (a8[i] !== b8[i]) {
       return false;
     }
   }
@@ -108,17 +102,13 @@ function isBufferEqual(a: Buffer, b: Buffer): boolean {
 export class Certificate {
   private readonly cert: Cert;
   private verified = false;
-  private _rootKey: BinaryBlob | null = null;
+  private _rootKey: ArrayBuffer | null = null;
 
   constructor(response: ReadStateResponse, private _agent: Agent = getDefaultAgent()) {
-    this.cert = cbor.decode(response.certificate);
+    this.cert = cbor.decode(new Uint8Array(response.certificate));
   }
 
-  public lookupEx(path: Array<ArrayBuffer | string>): ArrayBuffer | undefined {
-    this.checkState();
-    return lookupPathEx(path, this.cert.tree);
-  }
-  public lookup(path: Buffer[]): Buffer | undefined {
+  public lookup(path: Array<ArrayBuffer | string>): ArrayBuffer | undefined {
     this.checkState();
     return lookup_path(path, this.cert.tree);
   }
@@ -128,8 +118,8 @@ export class Certificate {
     const derKey = await this._checkDelegation(this.cert.delegation);
     const sig = this.cert.signature;
     const key = extractDER(derKey);
-    const msg = Buffer.concat([domain_sep('ic-state-root'), rootHash]);
-    const res = await blsVerify(key, sig, msg);
+    const msg = concat(domain_sep('ic-state-root'), rootHash);
+    const res = await blsVerify(new Uint8Array(key), new Uint8Array(sig), new Uint8Array(msg));
     this.verified = res;
     return res;
   }
@@ -140,7 +130,7 @@ export class Certificate {
     }
   }
 
-  private async _checkDelegation(d?: Delegation): Promise<Buffer> {
+  private async _checkDelegation(d?: Delegation): Promise<ArrayBuffer> {
     if (!d) {
       if (!this._rootKey) {
         if (this._agent.rootKey) {
@@ -157,116 +147,93 @@ export class Certificate {
       throw new Error('fail to verify delegation certificate');
     }
 
-    const lookup = cert.lookupEx(['subnet', d.subnet_id, 'public_key']);
+    const lookup = cert.lookup(['subnet', d.subnet_id, 'public_key']);
     if (!lookup) {
-      throw new Error(`Could not find subnet key for subnet 0x${d.subnet_id.toString('hex')}`);
+      throw new Error(`Could not find subnet key for subnet 0x${toHex(d.subnet_id)}`);
     }
-    return Buffer.from(lookup);
+    return lookup;
   }
 }
 
-const DER_PREFIX = Buffer.from(
+const DER_PREFIX = fromHex(
   '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100',
-  'hex',
 );
 const KEY_LENGTH = 96;
 
-function extractDER(buf: Buffer): Buffer {
-  const expectedLength = DER_PREFIX.length + KEY_LENGTH;
-  if (buf.length !== expectedLength) {
+function extractDER(buf: ArrayBuffer): ArrayBuffer {
+  const expectedLength = DER_PREFIX.byteLength + KEY_LENGTH;
+  if (buf.byteLength !== expectedLength) {
     throw new TypeError(`BLS DER-encoded public key must be ${expectedLength} bytes long`);
   }
-  const prefix = buf.slice(0, DER_PREFIX.length);
+  const prefix = buf.slice(0, DER_PREFIX.byteLength);
   if (!isBufferEqual(prefix, DER_PREFIX)) {
     throw new TypeError(
       `BLS DER-encoded public key is invalid. Expect the following prefix: ${DER_PREFIX}, but get ${prefix}`,
     );
   }
 
-  return buf.slice(DER_PREFIX.length);
+  return buf.slice(DER_PREFIX.byteLength);
 }
 
 /**
  * @param t
  */
-export async function reconstruct(t: HashTree): Promise<Buffer> {
+export async function reconstruct(t: HashTree): Promise<ArrayBuffer> {
   switch (t[0]) {
     case NodeId.Empty:
-      return hash(domain_sep('ic-hashtree-empty') as BinaryBlob);
+      return hash(domain_sep('ic-hashtree-empty'));
     case NodeId.Pruned:
-      return Buffer.from(t[1] as ArrayBuffer);
+      return t[1] as ArrayBuffer;
     case NodeId.Leaf:
-      return hash(
-        Buffer.concat([
-          domain_sep('ic-hashtree-leaf'),
-          Buffer.from(t[1] as ArrayBuffer),
-        ]) as BinaryBlob,
-      );
+      return hash(concat(domain_sep('ic-hashtree-leaf'), t[1] as ArrayBuffer));
     case NodeId.Labeled:
       return hash(
-        Buffer.concat([
+        concat(
           domain_sep('ic-hashtree-labeled'),
-          Buffer.from(t[1] as ArrayBuffer),
-          Buffer.from(await reconstruct(t[2] as HashTree)),
-        ]) as BinaryBlob,
+          t[1] as ArrayBuffer,
+          await reconstruct(t[2] as HashTree),
+        ),
       );
     case NodeId.Fork:
       return hash(
-        Buffer.concat([
+        concat(
           domain_sep('ic-hashtree-fork'),
-          Buffer.from(await reconstruct(t[1] as HashTree)),
-          Buffer.from(await reconstruct(t[2] as HashTree)),
-        ]) as BinaryBlob,
+          await reconstruct(t[1] as HashTree),
+          await reconstruct(t[2] as HashTree),
+        ),
       );
     default:
       throw new Error('unreachable');
   }
 }
 
-function domain_sep(s: string): Buffer {
-  const buf = Buffer.alloc(1);
-  buf.writeUInt8(s.length, 0);
-  return Buffer.concat([buf, Buffer.from(s)]);
+function domain_sep(s: string): ArrayBuffer {
+  const len = new Uint8Array([s.length]);
+  const str = new TextEncoder().encode(s);
+  return concat(len, str);
 }
 
 /**
- *
  * @param path
  * @param tree
  */
-export function lookupPathEx(
+export function lookup_path(
   path: Array<ArrayBuffer | string>,
   tree: HashTree,
 ): ArrayBuffer | undefined {
-  const maybeReturn = lookup_path(
-    path.map(p => {
-      if (typeof p === 'string') {
-        return blobFromText(p);
-      } else {
-        return blobFromUint8Array(new Uint8Array(p));
-      }
-    }),
-    tree,
-  );
-  return maybeReturn && blobToUint8Array(blobFromBuffer(maybeReturn));
-}
-
-/**
- * @param path
- * @param tree
- */
-export function lookup_path(path: Buffer[], tree: HashTree): Buffer | undefined {
   if (path.length === 0) {
     switch (tree[0]) {
       case NodeId.Leaf: {
-        return Buffer.from(tree[1] as ArrayBuffer);
+        return new Uint8Array(tree[1]).buffer;
       }
       default: {
         return undefined;
       }
     }
   }
-  const t = find_label(path[0], flatten_forks(tree));
+
+  const label = typeof path[0] === 'string' ? new TextEncoder().encode(path[0]) : path[0];
+  const t = find_label(label, flatten_forks(tree));
   if (t) {
     return lookup_path(path.slice(1), t);
   }
@@ -281,13 +248,13 @@ function flatten_forks(t: HashTree): HashTree[] {
       return [t];
   }
 }
-function find_label(l: Buffer, trees: HashTree[]): HashTree | undefined {
+function find_label(l: ArrayBuffer, trees: HashTree[]): HashTree | undefined {
   if (trees.length === 0) {
     return undefined;
   }
   for (const t of trees) {
     if (t[0] === NodeId.Labeled) {
-      const p = Buffer.from(t[1] as ArrayBuffer);
+      const p = t[1] as ArrayBuffer;
       if (isBufferEqual(l, p)) {
         return t[2];
       }
