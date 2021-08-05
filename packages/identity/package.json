@@ -40,7 +40,9 @@
     "@dfinity/principal": "^0.9.3"
   },
   "dependencies": {
+    "@types/secp256k1": "^4.0.3",
     "borc": "^2.1.1",
+    "secp256k1": "^4.0.2",
     "tweetnacl": "^1.0.1"
   },
   "devDependencies": {
