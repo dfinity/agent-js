@@ -27,6 +27,10 @@ commands to keep in mind;
   Once you have a replica running locally, you must pass the port to the e2e tests using the
   `IC_REF_PORT` environment vairable. If that variable is not set, the tests will fail.
 
+### Contributing
+
+If you are interested in contributing to this project, please read the [contributing guidelines](./CONTRIBUTING.md).
+
 ### Publishing
 
 To publish to NPM, create a branch and run the following commands;
