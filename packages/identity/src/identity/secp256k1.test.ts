@@ -1,87 +1,113 @@
-import { DerEncodedPublicKey, PublicKey } from '@dfinity/agent';
-import { fromHexString, toHexString } from '../buffer';
+import { DerEncodedPublicKey } from '@dfinity/agent';
+import { blobFromHex, blobFromUint8Array, blobToUint8Array, DerEncodedBlob } from '@dfinity/candid';
+import { randomBytes } from 'crypto';
+import { sha256 } from 'js-sha256';
+import Secp256k1 from 'secp256k1';
 import { Secp256k1KeyIdentity, Secp256k1PublicKey } from './secp256k1';
 
-import { randomBytes } from 'crypto';
-import secp256k1 from 'secp256k1/elliptic';
+function fromHexString(hexString: string): ArrayBuffer {
+  return new Uint8Array((hexString.match(/.{1,2}/g) ?? []).map(byte => parseInt(byte, 16))).buffer;
+}
 
-const generateRandPubKey = () => {
-  let privKey;
-  do {
-    privKey = Uint8Array.from(randomBytes(32));
-  } while (!secp256k1.privateKeyVerify(privKey));
+// DER KEY SECP256K1 PREFIX = 3056301006072a8648ce3d020106052b8104000a03420004
+const testVectors: Array<[string, string]> = [
+  [
+    '0401ec030acd7d1199f73ae3469329c114944e0693c89502f850bcc6bad397a5956767c79b410c29ac6f587eec84878020fdb54ba002a79b02aa153fe47b6ffd33',
+    '3056301006072a8648ce3d020106052b8104000a0342000401ec030acd7d1199f73ae3469329c114944e0693c89502f850bcc6bad397a5956767c79b410c29ac6f587eec84878020fdb54ba002a79b02aa153fe47b6ffd33',
+  ],
+  [
+    '04eb3cbc81bdfa1d13c410151308b4ac65cc328620e368fe5302e2cf2cb7175132999dc2afff871a68afd66d76dd9c7c3911748e8e54ee2fb71df1a97bb4811c8c',
+    '3056301006072a8648ce3d020106052b8104000a03420004eb3cbc81bdfa1d13c410151308b4ac65cc328620e368fe5302e2cf2cb7175132999dc2afff871a68afd66d76dd9c7c3911748e8e54ee2fb71df1a97bb4811c8c',
+  ],
+  [
+    '04fdac09ea93a1b9b744b5f19f091ada7978ceb2f045875bca8ef9b75fa8061704e76de023c6a23d77a118c5c8d0f5efaf0dbbfcc3702d5590604717f639f6f00d',
+    '3056301006072a8648ce3d020106052b8104000a03420004fdac09ea93a1b9b744b5f19f091ada7978ceb2f045875bca8ef9b75fa8061704e76de023c6a23d77a118c5c8d0f5efaf0dbbfcc3702d5590604717f639f6f00d',
+  ],
+];
 
-  privKey; //?
+test('DER encoding of SECP256K1 keys', async () => {
+  testVectors.forEach(([rawPublicKeyHex, derEncodedPublicKeyHex]) => {
+    const publicKey = Secp256k1PublicKey.fromRaw(fromHexString(rawPublicKeyHex));
+    const expectedDerPublicKey = fromHexString(derEncodedPublicKeyHex);
+    expect(publicKey.toDer()).toEqual(expectedDerPublicKey);
+  });
+});
 
-  const pubKey = secp256k1.publicKeyCreate(privKey); //?
+test.only('DER decoding of SECP256K1 keys', async () => {
+  testVectors.forEach(([rawPublicKeyHex, derEncodedPublicKeyHex]) => {
+    const derPublicKey = fromHexString(derEncodedPublicKeyHex) as DerEncodedPublicKey;
+    const expectedPublicKey = fromHexString(rawPublicKeyHex);
+    expect(new Uint8Array(Secp256k1PublicKey.fromDer(derPublicKey).toRaw())).toEqual(
+      new Uint8Array(expectedPublicKey),
+    );
+  });
+});
 
-  toHexString(pubKey).toUpperCase(); //?
+test('DER decoding of invalid keys', async () => {
+  // Too short.
+  expect(() => {
+    Secp256k1PublicKey.fromDer(
+      fromHexString(
+        '3056301006072a8648ce3d020106052b8104000a0342000401ec030acd7d1199f73ae3469329c114944e0693c89502f850bcc6bad397a5956767c79b410c29ac6f587eec84878020fdb54ba002a79b02aa153fe47b6',
+      ) as DerEncodedBlob,
+    );
+  }).toThrow();
+  // Too long.
+  expect(() => {
+    Secp256k1PublicKey.fromDer(
+      fromHexString(
+        '3056301006072a8648ce3d020106052b8104000a0342000401ec030acd7d1199f73ae3469329c114944e0693c89502f850bcc6bad397a5956767c79b410c29ac6f587eec84878020fdb54ba002a79b02aa153fe47b6ffd33' +
+          '1b42211ce',
+      ) as DerEncodedBlob,
+    );
+  }).toThrow();
 
-  pubKey.length; //?
-};
+  // Invalid DER-encoding.
+  expect(() => {
+    Secp256k1PublicKey.fromDer(
+      fromHexString(
+        '0693c89502f850bcc6bad397a5956767c79b410c29ac6f54fdac09ea93a1b9b744b5f19f091ada7978ceb2f045875bca8ef9b75fa8061704e76de023c6a23d77a118c5c8d0f5efaf0dbbfcc3702d5590604717f639f6f00d',
+      ) as DerEncodedBlob,
+    );
+  }).toThrow();
+});
 
-// ED25519 tests for reference
+test('fails with improper seed', () => {
+  expect(() => Secp256k1KeyIdentity.generate(new Uint8Array(new Array(31).fill(0)))).toThrow();
+  expect(() => Secp256k1KeyIdentity.generate(new Uint8Array(new Array(33).fill(0)))).toThrow();
+});
 
-// test('DER encoding of ED25519 keys', async () => {
-//   testVectors.forEach(([rawPublicKeyHex, derEncodedPublicKeyHex]) => {
-//     const publicKey = Secp256k1PublicKey.fromRaw(fromHexString(rawPublicKeyHex));
-//     const expectedDerPublicKey = fromHexString(derEncodedPublicKeyHex);
-//     expect(publicKey.toDer()).toEqual(expectedDerPublicKey);
-//   });
-// });
+test('same seed generates same identity', () => {
+  const seed = new Uint8Array(randomBytes(32));
+  const id = Secp256k1KeyIdentity.generate(seed);
+  const id2 = Secp256k1KeyIdentity.generate(seed);
+  expect(new Uint8Array(id.getPublicKey().toDer())).toEqual(
+    new Uint8Array(id2.getPublicKey().toDer()),
+  );
+});
 
-// test('DER decoding of ED25519 keys', async () => {
-//   testVectors.forEach(([rawPublicKeyHex, derEncodedPublicKeyHex]) => {
-//     const derPublicKey = fromHexString(derEncodedPublicKeyHex) as DerEncodedPublicKey;
-//     const expectedPublicKey = fromHexString(rawPublicKeyHex);
-//     expect(new Uint8Array(Secp256k1PublicKey.fromDer(derPublicKey).toRaw())).toEqual(
-//       new Uint8Array(expectedPublicKey),
-//     );
-//   });
-// });
+test('can encode and decode to/from JSON', () => {
+  const key = Secp256k1KeyIdentity.generate();
+  const json = JSON.stringify(key);
+  const key2 = Secp256k1KeyIdentity.fromJSON(json);
 
-// test('DER decoding of invalid keys', async () => {
-//   // Too short.
-//   expect(() => {
-//     Secp256k1PublicKey.fromDer(
-//       fromHexString(
-//         '302A300506032B6570032100B3997656BA51FF6DA37B61D8D549EC80717266ECF48FB5DA52B65441263484',
-//       ) as DerEncodedPublicKey,
-//     );
-//   }).toThrow();
-//   // Too long.
-//   expect(() => {
-//     Secp256k1PublicKey.fromDer(
-//       fromHexString(
-//         '302A300506032B6570032100B3997656BA51FF6DA37B61D8D549EC8071726' +
-//           '6ECF48FB5DA52B654412634844C00',
-//       ) as DerEncodedPublicKey,
-//     );
-//   }).toThrow();
+  expect(new Uint8Array(key.getPublicKey().toDer())).toEqual(
+    new Uint8Array(key2.getPublicKey().toDer()),
+  );
+});
 
-//   // Invalid DER-encoding.
-//   expect(() => {
-//     Secp256k1PublicKey.fromDer(
-//       fromHexString(
-//         '002A300506032B6570032100B3997656BA51FF6DA37B61D8D549EC80717266ECF48FB5DA52B654412634844C',
-//       ) as DerEncodedPublicKey,
-//     );
-//   }).toThrow();
-// });
-
-// test('fails with improper seed', () => {
-//   expect(() => Secp256k1KeyIdentity.generate(new Uint8Array(new Array(31).fill(0)))).toThrow();
-//   expect(() => Secp256k1KeyIdentity.generate(new Uint8Array(new Array(33).fill(0)))).toThrow();
-// });
-
-// test('can encode and decode to/from JSON', async () => {
-//   const seed = new Array(32).fill(0);
-//   const key = Secp256k1KeyIdentity.generate(new Uint8Array(seed));
-
-//   const json = JSON.stringify(key);
-//   const key2 = Secp256k1KeyIdentity.fromJSON(json);
-
-//   expect(new Uint8Array(key.getPublicKey().toDer())).toEqual(
-//     new Uint8Array(key2.getPublicKey().toDer()),
-//   );
-// });
+test('message signature is valid', async () => {
+  const identity = Secp256k1KeyIdentity.generate();
+  const rawPublicKey = identity.getPublicKey().toRaw();
+  const message = 'Hello world. Secp256k1 test here';
+  const challenge = new TextEncoder().encode(message);
+  const signature = await identity.sign(blobFromUint8Array(challenge));
+  const hash = sha256.create();
+  hash.update(challenge);
+  const isValid = Secp256k1.ecdsaVerify(
+    blobToUint8Array(signature),
+    new Uint8Array(hash.digest()),
+    rawPublicKey,
+  );
+  expect(isValid).toBe(true);
+});
