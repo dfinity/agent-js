@@ -1,5 +1,4 @@
-import { DerEncodedBlob } from '@dfinity/agent';
-import { blobFromHex, blobFromUint8Array, blobToUint8Array } from '@dfinity/candid';
+import { blobFromHex, blobFromUint8Array, blobToUint8Array, DerEncodedBlob } from '@dfinity/candid';
 import { randomBytes } from 'crypto';
 import { sha256 } from 'js-sha256';
 import Secp256k1 from 'secp256k1';
@@ -78,7 +77,7 @@ test('fails with improper seed', () => {
 });
 
 test('same seed generates same identity', () => {
-  const seed = randomBytes(32);
+  const seed = new Uint8Array(randomBytes(32));
   const id = Secp256k1KeyIdentity.generate(seed);
   const id2 = Secp256k1KeyIdentity.generate(seed);
   expect(new Uint8Array(id.getPublicKey().toDer())).toEqual(

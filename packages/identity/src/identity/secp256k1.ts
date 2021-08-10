@@ -8,9 +8,9 @@ import {
   blobToHex,
   BinaryBlob,
   derBlobFromBlob,
-  blobFromBuffer,
+  DerEncodedBlob,
 } from '@dfinity/candid';
-import { PublicKey, SignIdentity, DerEncodedBlob } from '@dfinity/agent';
+import { PublicKey, SignIdentity } from '@dfinity/agent';
 import { randomBytes } from 'crypto';
 
 declare type PublicKeyHex = string;
@@ -113,14 +113,14 @@ export class Secp256k1KeyIdentity extends SignIdentity {
       throw new Error('Secp256k1 Seed needs to be 32 bytes long.');
     }
     // TODO: Add seed parameter --> derive PK from it
-    let privateKey = seed || randomBytes(32); // TODO: REMOVE THIS SINCE IT'S OVERWRITING THE SEED
+    let privateKey = seed || new Uint8Array(randomBytes(32)); // TODO: REMOVE THIS SINCE IT'S OVERWRITING THE SEED
     while (!Secp256k1.privateKeyVerify(privateKey)) {
-      privateKey = randomBytes(32);
+      privateKey = new Uint8Array(randomBytes(32));
     }
     const publicKeyRaw = Secp256k1.publicKeyCreate(privateKey, false);
     return new this(
       Secp256k1PublicKey.fromRaw(blobFromUint8Array(publicKeyRaw)),
-      blobFromBuffer(privateKey as any), // TODO: CHECK WHY THIS TYPE CHECK FAILS SMH
+      blobFromUint8Array(privateKey),
     );
   }
 
@@ -199,7 +199,7 @@ export class Secp256k1KeyIdentity extends SignIdentity {
   /**
    * Return the public key.
    */
-  public getPublicKey(): PublicKey {
+  public getPublicKey(): Secp256k1PublicKey {
     return this._publicKey;
   }
 
