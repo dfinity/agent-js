@@ -88,6 +88,7 @@ test('same seed generates same identity', () => {
 test('can encode and decode to/from JSON', () => {
   const key = Secp256k1KeyIdentity.generate();
   const json = JSON.stringify(key);
+
   const key2 = Secp256k1KeyIdentity.fromJSON(json);
 
   expect(new Uint8Array(key.getPublicKey().toDer())).toEqual(
@@ -97,12 +98,16 @@ test('can encode and decode to/from JSON', () => {
 
 test('message signature is valid', async () => {
   const identity = Secp256k1KeyIdentity.generate();
-  const rawPublicKey = identity.getPublicKey().toDer();
+  const rawPublicKey = identity.getPublicKey().toRaw();
+
+  rawPublicKey.byteLength; //?
+
   const message = 'Hello world. Secp256k1 test here';
   const challenge = new TextEncoder().encode(message);
   const signature = await identity.sign(challenge);
   const hash = sha256.create();
   hash.update(challenge);
+
   const isValid = Secp256k1.ecdsaVerify(
     new Uint8Array(signature),
     new Uint8Array(hash.digest()),

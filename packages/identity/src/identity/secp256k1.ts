@@ -93,6 +93,7 @@ export class Secp256k1PublicKey implements PublicKey {
 
   // `fromRaw` and `fromDer` should be used for instantiation, not this constructor.
   private constructor(key: ArrayBuffer) {
+    key.byteLength; //?
     this.rawKey = key;
     this.derKey = Secp256k1PublicKey.derEncode(key);
   }
@@ -111,19 +112,22 @@ export class Secp256k1KeyIdentity extends SignIdentity {
     if (seed && seed.length !== 32) {
       throw new Error('Secp256k1 Seed needs to be 32 bytes long.');
     }
-    // TODO: Add seed parameter --> derive PK from it
-    let privateKey = seed || new Uint8Array(randomBytes(32)); // TODO: REMOVE THIS SINCE IT'S OVERWRITING THE SEED
+
+    let privateKey = seed || new Uint8Array(randomBytes(32));
+
     while (!Secp256k1.privateKeyVerify(privateKey)) {
       privateKey = new Uint8Array(randomBytes(32));
     }
     const publicKeyRaw = Secp256k1.publicKeyCreate(privateKey, false);
-    return new this(Secp256k1PublicKey.fromRaw(publicKeyRaw), privateKey);
+
+    const publicKey = Secp256k1PublicKey.fromRaw(publicKeyRaw);
+    return new this(publicKey, privateKey);
   }
 
   public static fromParsedJson(obj: JsonableSecp256k1Identity): Secp256k1KeyIdentity {
     const [publicKeyRaw, privateKeyRaw] = obj;
     return new Secp256k1KeyIdentity(
-      Secp256k1PublicKey.fromDer(fromHexString(publicKeyRaw) as DerEncodedPublicKey),
+      Secp256k1PublicKey.fromRaw(fromHexString(publicKeyRaw) as DerEncodedPublicKey),
       fromHexString(privateKeyRaw),
     );
   }
@@ -153,10 +157,9 @@ export class Secp256k1KeyIdentity extends SignIdentity {
 
   protected _publicKey: Secp256k1PublicKey;
 
-  // `fromRaw` and `fromDer` should be used for instantiation, not this constructor.
-  protected constructor(publicKey: PublicKey, protected _privateKey: ArrayBuffer) {
+  protected constructor(publicKey: Secp256k1PublicKey, protected _privateKey: ArrayBuffer) {
     super();
-    this._publicKey = Secp256k1PublicKey.from(publicKey);
+    this._publicKey = publicKey;
   }
 
   /**
@@ -179,7 +182,7 @@ export class Secp256k1KeyIdentity extends SignIdentity {
   /**
    * Return the public key.
    */
-  public getPublicKey(): PublicKey {
+  public getPublicKey(): Secp256k1PublicKey {
     return this._publicKey;
   }
 
