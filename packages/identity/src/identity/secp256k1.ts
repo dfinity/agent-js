@@ -32,7 +32,7 @@ export class Secp256k1PublicKey implements PublicKey {
     return new Secp256k1PublicKey(this.derDecode(derKey));
   }
   // The length of secp256k1 public keys is always 65 bytes.
-  private static RAW_KEY_LENGTH = 65;
+  private static RAW_KEY_LENGTH = [23, 65];
 
   // Adding this prefix to a raw public key is sufficient to DER-encode it.
   // prettier-ignore
@@ -46,7 +46,8 @@ export class Secp256k1PublicKey implements PublicKey {
   ]);
 
   private static derEncode(publicKey: ArrayBuffer): DerEncodedPublicKey {
-    if (publicKey.byteLength !== Secp256k1PublicKey.RAW_KEY_LENGTH) {
+    publicKey.byteLength;
+    if (!Secp256k1PublicKey.RAW_KEY_LENGTH.includes(publicKey.byteLength)) {
       const bl = publicKey.byteLength;
       throw new TypeError(
         `secp256k1 public key must be ${Secp256k1PublicKey.RAW_KEY_LENGTH} bytes long (is ${bl})`,
@@ -62,16 +63,21 @@ export class Secp256k1PublicKey implements PublicKey {
   }
 
   private static derDecode(key: DerEncodedPublicKey): ArrayBuffer {
-    const expectedLength = Secp256k1PublicKey.DER_PREFIX.length + Secp256k1PublicKey.RAW_KEY_LENGTH;
-    if (key.byteLength !== expectedLength) {
+    const validLength = Secp256k1PublicKey.RAW_KEY_LENGTH.find(
+      value => Secp256k1PublicKey.DER_PREFIX.length + value === key.byteLength,
+    );
+
+    if (!validLength) {
       const bl = key.byteLength;
       throw new TypeError(
-        `secp256k1 DER-encoded public key must be ${expectedLength} bytes long (is ${bl})`,
+        `secp256k1 DER-encoded public key must be one of the following lengths: ${JSON.stringify(
+          Secp256k1PublicKey.RAW_KEY_LENGTH.map(v => v + Secp256k1PublicKey.DER_PREFIX.length),
+        )}. Provided bytes have a length of ${bl}`,
       );
     }
 
     const rawKey = key.slice(0, Secp256k1PublicKey.DER_PREFIX.length);
-    if (!compare(rawKey, key)) {
+    if (compare(rawKey, Secp256k1PublicKey.DER_PREFIX) !== 0) {
       throw new TypeError(
         'secp256k1 DER-encoded public key is invalid. A valid secp256k1 DER-encoded public key ' +
           `must have the following prefix: ${Secp256k1PublicKey.DER_PREFIX}`,
