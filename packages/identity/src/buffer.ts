@@ -14,6 +14,11 @@ export function toHexString(bytes: ArrayBuffer): string {
   return new Uint8Array(bytes).reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
 }
 
+/**
+ * Compares two ArrayBuffers and returns 0 if they are identical
+ * @param b1 {ArrayBuffer} Buffer 1
+ * @param b2 {ArrayBuffer} Buffer 2
+ */
 export function compare(b1: ArrayBuffer, b2: ArrayBuffer): number {
   if (b1.byteLength !== b2.byteLength) {
     return b1.byteLength - b2.byteLength;
