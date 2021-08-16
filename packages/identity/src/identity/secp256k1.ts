@@ -6,18 +6,11 @@ import { sha256 } from 'js-sha256';
 import { PublicKey, SignIdentity } from '@dfinity/agent';
 import { randomBytes } from 'crypto';
 import { compare, fromHexString, toHexString } from '../buffer';
+import { SECP256K1_OID } from './der';
 
 declare type PublicKeyHex = string;
 declare type SecretKeyHex = string;
 export declare type JsonableSecp256k1Identity = [PublicKeyHex, SecretKeyHex];
-
-const PEM_BEGIN = '-----BEGIN PRIVATE KEY-----';
-
-const PEM_END = '-----END PRIVATE KEY-----';
-
-const PRIV_KEY_INIT = '308184020100301006072a8648ce3d020106052b8104000a046d306b0201010420';
-
-const KEY_SEPARATOR = 'a144034200';
 
 export class Secp256k1PublicKey implements PublicKey {
   public static from(key: PublicKey): Secp256k1PublicKey {
@@ -34,17 +27,6 @@ export class Secp256k1PublicKey implements PublicKey {
   // The length of secp256k1 public keys is always 65 bytes.
   private static RAW_KEY_LENGTH = [23, 65];
 
-  // Adding this prefix to a raw public key is sufficient to DER-encode it.
-  // prettier-ignore
-  private static DER_PREFIX = Uint8Array.from([
-    0x30, 0x56, // SEQUENCE
-    0x30, 0x10, // SEQUENCE
-    0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01, // OID ECDSA
-    0x06, 0x05, 0x2b, 0x81, 0x04, 0x00, 0x0a, // OID secp256k1
-    0x03, 0x42, // BIT STRING
-    0x00, // no padding
-  ]);
-
   private static derEncode(publicKey: ArrayBuffer): DerEncodedPublicKey {
     publicKey.byteLength;
     if (!Secp256k1PublicKey.RAW_KEY_LENGTH.includes(publicKey.byteLength)) {
@@ -54,33 +36,30 @@ export class Secp256k1PublicKey implements PublicKey {
       );
     }
 
-    const derPublicKey = Uint8Array.from([
-      ...Secp256k1PublicKey.DER_PREFIX,
-      ...new Uint8Array(publicKey),
-    ]);
+    const derPublicKey = Uint8Array.from([...SECP256K1_OID, ...new Uint8Array(publicKey)]);
 
     return derPublicKey.buffer as DerEncodedPublicKey;
   }
 
   private static derDecode(key: DerEncodedPublicKey): ArrayBuffer {
     const validLength = Secp256k1PublicKey.RAW_KEY_LENGTH.find(
-      value => Secp256k1PublicKey.DER_PREFIX.length + value === key.byteLength,
+      value => SECP256K1_OID.length + value === key.byteLength,
     );
 
     if (!validLength) {
       const bl = key.byteLength;
       throw new TypeError(
         `secp256k1 DER-encoded public key must be one of the following lengths: ${JSON.stringify(
-          Secp256k1PublicKey.RAW_KEY_LENGTH.map(v => v + Secp256k1PublicKey.DER_PREFIX.length),
+          Secp256k1PublicKey.RAW_KEY_LENGTH.map(v => v + SECP256K1_OID.length),
         )}. Provided bytes have a length of ${bl}`,
       );
     }
 
-    const rawKey = key.slice(0, Secp256k1PublicKey.DER_PREFIX.length);
-    if (compare(rawKey, Secp256k1PublicKey.DER_PREFIX) !== 0) {
+    const rawKey = key.slice(0, SECP256K1_OID.length);
+    if (compare(rawKey, SECP256K1_OID) !== 0) {
       throw new TypeError(
         'secp256k1 DER-encoded public key is invalid. A valid secp256k1 DER-encoded public key ' +
-          `must have the following prefix: ${Secp256k1PublicKey.DER_PREFIX}`,
+          `must have the following prefix: ${SECP256K1_OID}`,
       );
     }
 
@@ -93,7 +72,7 @@ export class Secp256k1PublicKey implements PublicKey {
 
   // `fromRaw` and `fromDer` should be used for instantiation, not this constructor.
   private constructor(key: ArrayBuffer) {
-    key.byteLength; //?
+    key.byteLength;
     this.rawKey = key;
     this.derKey = Secp256k1PublicKey.derEncode(key);
   }

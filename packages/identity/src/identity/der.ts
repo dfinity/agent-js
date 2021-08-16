@@ -74,6 +74,35 @@ export const ED25519_OID = Uint8Array.from([
 ]);
 
 /**
+ * PLACEHOLDER - DO NOT MERGE THIS
+ */
+export const SECP256K1_OID = Uint8Array.from([
+  0x30,
+  0x56, // SEQUENCE
+  0x30,
+  0x10, // SEQUENCE
+  0x06,
+  0x07,
+  0x2a,
+  0x86,
+  0x48,
+  0xce,
+  0x3d,
+  0x02,
+  0x01, // OID ECDSA
+  0x06,
+  0x05,
+  0x2b,
+  0x81,
+  0x04,
+  0x00,
+  0x0a, // OID secp256k1
+  0x03,
+  0x42, // BIT STRING
+  0x00, // no padding
+]);
+
+/**
  * Wraps the given `payload` in a DER encoding tagged with the given encoded `oid` like so:
  * `SEQUENCE(oid, BITSTRING(payload))`
  *
