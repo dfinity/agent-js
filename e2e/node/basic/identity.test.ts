@@ -5,7 +5,12 @@
 import { Actor, HttpAgent, SignIdentity } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
-import { DelegationChain, DelegationIdentity, Ed25519KeyIdentity } from '@dfinity/identity';
+import {
+  DelegationChain,
+  DelegationIdentity,
+  Ed25519KeyIdentity,
+  Secp256k1KeyIdentity,
+} from '@dfinity/identity';
 import agent from '../utils/agent';
 import identityCanister from '../canisters/identity';
 
@@ -15,12 +20,31 @@ function createIdentity(seed: number): SignIdentity {
   return Ed25519KeyIdentity.generate(new Uint8Array(seed1));
 }
 
+function createSecp256k1Identity(seed?: number): SignIdentity {
+  const seed1 = new Array(32).fill(0);
+  if (seed) seed1[0] = seed;
+  return Secp256k1KeyIdentity.generate(new Uint8Array(seed1));
+}
+
 async function createIdentityActor(
   seed: number,
   canisterId: Principal,
   idl: IDL.InterfaceFactory,
 ): Promise<any> {
   const identity = createIdentity(seed);
+  const agent1 = new HttpAgent({ source: await agent, identity });
+  return Actor.createActor(idl, {
+    canisterId,
+    agent: agent1,
+  }) as any;
+}
+
+async function createSecp256k1IdentityActor(
+  seed: number,
+  canisterId: Principal,
+  idl: IDL.InterfaceFactory,
+): Promise<any> {
+  const identity = createSecp256k1Identity(seed);
   const agent1 = new HttpAgent({ source: await agent, identity });
   return Actor.createActor(idl, {
     canisterId,
@@ -54,6 +78,16 @@ test('identity: two different Ed25519 keys should have a different principal', a
   const { canisterId, idl } = await installIdentityCanister();
   const identity1 = await createIdentityActor(0, canisterId, idl);
   const identity2 = await createIdentityActor(1, canisterId, idl);
+
+  const principal1 = await identity1.whoami_query();
+  const principal2 = await identity2.whoami_query();
+  expect(principal1).not.toEqual(principal2);
+});
+
+test('identity: two different Secp256k1 keys should have a different principal', async () => {
+  const { canisterId, idl } = await installIdentityCanister();
+  const identity1 = await createSecp256k1IdentityActor(0, canisterId, idl);
+  const identity2 = await createSecp256k1IdentityActor(1, canisterId, idl);
 
   const principal1 = await identity1.whoami_query();
   const principal2 = await identity2.whoami_query();
