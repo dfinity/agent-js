@@ -2,9 +2,8 @@
 import { DerEncodedPublicKey, KeyPair, Signature } from '@dfinity/agent';
 import Secp256k1 from 'secp256k1';
 import { sha256 } from 'js-sha256';
-
+import { randomBytes } from 'tweetnacl';
 import { PublicKey, SignIdentity } from '@dfinity/agent';
-import { randomBytes } from 'crypto';
 import { compare, fromHexString, toHexString } from '../buffer';
 import { SECP256K1_OID } from './der';
 
