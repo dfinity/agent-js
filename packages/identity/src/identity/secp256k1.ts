@@ -4,8 +4,8 @@ import Secp256k1 from 'secp256k1';
 import { sha256 } from 'js-sha256';
 import { randomBytes } from 'tweetnacl';
 import { PublicKey, SignIdentity } from '@dfinity/agent';
-import { compare, fromHexString, toHexString } from '../buffer';
-import { SECP256K1_OID } from './der';
+import { fromHexString, toHexString } from '../buffer';
+import { SECP256K1_OID, unwrapDER, wrapDER } from './der';
 
 declare type PublicKeyHex = string;
 declare type SecretKeyHex = string;
@@ -23,46 +23,13 @@ export class Secp256k1PublicKey implements PublicKey {
   public static fromDer(derKey: DerEncodedPublicKey): Secp256k1PublicKey {
     return new Secp256k1PublicKey(this.derDecode(derKey));
   }
-  // The length of secp256k1 public keys is always 65 bytes.
-  private static RAW_KEY_LENGTH = [23, 65];
 
   private static derEncode(publicKey: ArrayBuffer): DerEncodedPublicKey {
-    publicKey.byteLength;
-    if (!Secp256k1PublicKey.RAW_KEY_LENGTH.includes(publicKey.byteLength)) {
-      const bl = publicKey.byteLength;
-      throw new TypeError(
-        `secp256k1 public key must be ${Secp256k1PublicKey.RAW_KEY_LENGTH} bytes long (is ${bl})`,
-      );
-    }
-
-    const derPublicKey = Uint8Array.from([...SECP256K1_OID, ...new Uint8Array(publicKey)]);
-
-    return derPublicKey.buffer as DerEncodedPublicKey;
+    return wrapDER(publicKey, SECP256K1_OID).buffer as DerEncodedPublicKey;
   }
 
   private static derDecode(key: DerEncodedPublicKey): ArrayBuffer {
-    const validLength = Secp256k1PublicKey.RAW_KEY_LENGTH.find(
-      value => SECP256K1_OID.length + value === key.byteLength,
-    );
-
-    if (!validLength) {
-      const bl = key.byteLength;
-      throw new TypeError(
-        `secp256k1 DER-encoded public key must be one of the following lengths: ${JSON.stringify(
-          Secp256k1PublicKey.RAW_KEY_LENGTH.map(v => v + SECP256K1_OID.length),
-        )}. Provided bytes have a length of ${bl}`,
-      );
-    }
-
-    const rawKey = key.slice(0, SECP256K1_OID.length);
-    if (compare(rawKey, SECP256K1_OID) !== 0) {
-      throw new TypeError(
-        'secp256k1 DER-encoded public key is invalid. A valid secp256k1 DER-encoded public key ' +
-          `must have the following prefix: ${SECP256K1_OID}`,
-      );
-    }
-
-    return rawKey;
+    return unwrapDER(key, SECP256K1_OID);
   }
 
   private readonly rawKey: ArrayBuffer;
