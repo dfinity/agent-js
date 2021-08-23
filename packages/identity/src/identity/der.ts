@@ -1,4 +1,4 @@
-const bufEquals = (b1: ArrayBuffer, b2: ArrayBuffer): boolean => {
+export const bufEquals = (b1: ArrayBuffer, b2: ArrayBuffer): boolean => {
   if (b1.byteLength !== b2.byteLength) return false;
   const u1 = new Uint8Array(b1);
   const u2 = new Uint8Array(b2);
@@ -8,7 +8,7 @@ const bufEquals = (b1: ArrayBuffer, b2: ArrayBuffer): boolean => {
   return true;
 };
 
-const encodeLenBytes = (len: number): number => {
+export const encodeLenBytes = (len: number): number => {
   if (len <= 0x7f) {
     return 1;
   } else if (len <= 0xff) {
@@ -22,7 +22,11 @@ const encodeLenBytes = (len: number): number => {
   }
 };
 
-const encodeLen = (buf: Uint8Array, offset: number, len: number): number => {
+export const encodeLen = (buf: Uint8Array, offset: number, len: number): number => {
+  buf[offset]; //?
+  len;
+  0x7f; //?
+
   if (len <= 0x7f) {
     buf[offset] = len;
     return 1;

@@ -3,9 +3,8 @@
  * an instance of ArrayBuffer).
  * @jest-environment node
  */
-import { SignIdentity } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
-import { fromHexString, toHexString } from '../buffer';
+import { fromHexString } from '../buffer';
 import { DelegationChain } from './delegation';
 import { Ed25519KeyIdentity } from './ed25519';
 
