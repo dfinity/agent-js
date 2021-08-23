@@ -1,4 +1,4 @@
-import { bufEquals, encodeLenBytes, encodeLen } from './der';
+import { bufEquals, encodeLenBytes, encodeLen, decodeLenBytes, decodeLen } from './der';
 
 describe('bufEquals tests', () => {
   test('equal buffers', () => {
@@ -24,13 +24,6 @@ describe('encodeLenBytes', () => {
     expect(encodeLenBytes(byteLength)).toEqual(1);
   });
   test('Length of up to 255', () => {
-    0x7f < 0xff; //?
-    0x7f; //?
-    0xff; //?
-    0xffff; //?
-    0xffffff; //?
-    0xff < 0xffff; //?
-
     const min = Uint8Array.from(new Array(128)).byteLength;
     expect(encodeLenBytes(min)).toEqual(2);
     const max = Uint8Array.from(new Array(255)).byteLength;
@@ -90,5 +83,81 @@ describe('encodeLen', () => {
   test('Over maximum length', () => {
     const shouldFail = () => encodeLen(buf, 0, 16777216);
     expect(shouldFail).toThrowError('Length too long (> 4 bytes)');
+  });
+});
+
+describe('DecodeLenBytes', () => {
+  test('encoded length of zero', () => {
+    // length of buf doesn't matter
+    const buf = Uint8Array.from(new Array(2));
+    // 129 signifies a DER length of 2
+    buf[0] = 128;
+    const shouldFail = () => decodeLenBytes(buf, 0);
+    expect(shouldFail).toThrowError('Invalid length 0');
+  });
+  test('encoded length of 1', () => {
+    const buf = Uint8Array.of(100);
+    expect(decodeLenBytes(buf, 0)).toBe(1);
+  });
+  test('encoded length of 2', () => {
+    const buf = Uint8Array.from(new Array(2));
+    // 129 signifies a DER length of 2
+    buf[0] = 129;
+    expect(decodeLenBytes(buf, 0)).toBe(2);
+  });
+  test('encoded length of 3', () => {
+    const buf = Uint8Array.from(new Array(2));
+    // 130 signifies a DER length of 3
+    buf[0] = 130;
+    expect(decodeLenBytes(buf, 0)).toBe(3);
+  });
+  test('encoded length of 4', () => {
+    const buf = Uint8Array.from(new Array(2));
+    // 131 signifies a DER length of 4
+    buf[0] = 131;
+    expect(decodeLenBytes(buf, 0)).toBe(4);
+  });
+  test('encoded length of 4', () => {
+    const buf = Uint8Array.from(new Array(2));
+    buf[0] = 132;
+    const shouldFail = () => decodeLenBytes(buf, 0);
+    expect(shouldFail).toThrowError('Length too long');
+  });
+});
+
+describe('decodeLen', () => {
+  test('encoded length of 1', () => {
+    const buf = Uint8Array.of(1);
+    expect(decodeLen(buf, 0)).toBe(1);
+  });
+  test('encoded length of 2', () => {
+    const buf = Uint8Array.from(new Array(10));
+    buf[0] = 129;
+    // returns value stored at index 1
+    buf[1] = 5;
+
+    expect(decodeLen(buf, 0)).toBe(5);
+  });
+  test('encoded length of 3', () => {
+    const buf = Uint8Array.from(new Array(10));
+    buf[0] = 130;
+    // returns value stored at index 2
+    buf[2] = 5;
+    expect(decodeLen(buf, 0)).toBe(5);
+  });
+  test('encoded length of 4', () => {
+    const buf = Uint8Array.from(new Array(10));
+    buf[0] = 131;
+    buf[1] = 1;
+    buf[2] = 1;
+    buf[3] = 1;
+    // returns value encoded by summing buf[offset + 3] and left-shifts of the values at index 1, and 2
+    expect(decodeLen(buf, 0)).toBe(65793);
+  });
+  test('length of over 4 bytes', () => {
+    const buf = Uint8Array.from(new Array(10));
+    buf[0] = 133;
+    const shouldFail = () => decodeLen(buf, 0);
+    expect(shouldFail).toThrowError('Length too long');
   });
 });

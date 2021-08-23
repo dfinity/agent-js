@@ -23,9 +23,7 @@ export const encodeLenBytes = (len: number): number => {
 };
 
 export const encodeLen = (buf: Uint8Array, offset: number, len: number): number => {
-  buf[offset]; //?
-  len;
-  0x7f; //?
+  buf[offset];
 
   if (len <= 0x7f) {
     buf[offset] = len;
@@ -50,7 +48,7 @@ export const encodeLen = (buf: Uint8Array, offset: number, len: number): number 
   }
 };
 
-const decodeLenBytes = (buf: Uint8Array, offset: number): number => {
+export const decodeLenBytes = (buf: Uint8Array, offset: number): number => {
   if (buf[offset] < 0x80) return 1;
   if (buf[offset] === 0x80) throw new Error('Invalid length 0');
   if (buf[offset] === 0x81) return 2;
@@ -59,7 +57,7 @@ const decodeLenBytes = (buf: Uint8Array, offset: number): number => {
   throw new Error('Length too long (> 4 bytes)');
 };
 
-const decodeLen = (buf: Uint8Array, offset: number): number => {
+export const decodeLen = (buf: Uint8Array, offset: number): number => {
   const lenBytes = decodeLenBytes(buf, offset);
   if (lenBytes === 1) return buf[offset];
   else if (lenBytes === 2) return buf[offset + 1];
