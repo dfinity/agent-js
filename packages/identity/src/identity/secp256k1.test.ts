@@ -95,7 +95,7 @@ describe('Secp256k1KeyIdentity Tests', () => {
 
   test('fromJSON rejects if JSON does not have at least two items', () => {
     const key = Secp256k1KeyIdentity.generate();
-    const [privateKey] = key.toJSON(); //?
+    const [privateKey] = key.toJSON();
     const json = JSON.stringify([privateKey]);
 
     const shouldFail = () => {

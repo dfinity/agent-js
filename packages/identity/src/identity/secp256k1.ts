@@ -12,6 +12,11 @@ declare type SecretKeyHex = string;
 export declare type JsonableSecp256k1Identity = [PublicKeyHex, SecretKeyHex];
 
 export class Secp256k1PublicKey implements PublicKey {
+  /**
+   * Construct Secp256k1PublicKey from an existing PublicKey
+   * @param {PublicKey} key
+   * @returns {Secp256k1PublicKey} Instance of Secp256k1PublicKey
+   */
   public static from(key: PublicKey): Secp256k1PublicKey {
     return this.fromDer(key.toDer());
   }
@@ -84,10 +89,21 @@ export class Secp256k1KeyIdentity extends SignIdentity {
     throw new Error(`Deserialization error: Invalid JSON type for string: ${JSON.stringify(json)}`);
   }
 
+  /**
+   * generates an identity from a public and private key. Please ensure that you are generating these keys securely and protect the user's private key
+   * @param {ArrayBuffer} publicKey
+   * @param {ArrayBuffer} privateKey
+   * @returns {Secp256k1KeyIdentity}
+   */
   public static fromKeyPair(publicKey: ArrayBuffer, privateKey: ArrayBuffer): Secp256k1KeyIdentity {
     return new Secp256k1KeyIdentity(Secp256k1PublicKey.fromRaw(publicKey), privateKey);
   }
 
+  /**
+   * generates an identity from an existing secret key, and is the correct method to generate an identity from a seed phrase. Please ensure you protect the user's private key.
+   * @param {ArrayBuffer} secretKey
+   * @returns {Secp256k1KeyIdentity}
+   */
   public static fromSecretKey(secretKey: ArrayBuffer): Secp256k1KeyIdentity {
     const publicKey = Secp256k1.publicKeyCreate(new Uint8Array(secretKey), false);
     const identity = Secp256k1KeyIdentity.fromKeyPair(publicKey, new Uint8Array(secretKey));
@@ -102,7 +118,8 @@ export class Secp256k1KeyIdentity extends SignIdentity {
   }
 
   /**
-   * Serialize this key to JSON.
+   * Serialize this key to JSON-serializable object.
+   * @returns {JsonableSecp256k1Identity}
    */
   public toJSON(): JsonableSecp256k1Identity {
     return [toHexString(this._publicKey.toRaw()), toHexString(this._privateKey)];
@@ -110,6 +127,7 @@ export class Secp256k1KeyIdentity extends SignIdentity {
 
   /**
    * Return a copy of the key pair.
+   * @returns {KeyPair}
    */
   public getKeyPair(): KeyPair {
     return {
@@ -120,6 +138,7 @@ export class Secp256k1KeyIdentity extends SignIdentity {
 
   /**
    * Return the public key.
+   * @returns {Secp256k1PublicKey}
    */
   public getPublicKey(): Secp256k1PublicKey {
     return this._publicKey;
@@ -127,7 +146,8 @@ export class Secp256k1KeyIdentity extends SignIdentity {
 
   /**
    * Signs a blob of data, with this identity's private key.
-   * @param challenge - challenge to sign with this identity's secretKey, producing a signature
+   * @param {ArrayBuffer} challenge - challenge to sign with this identity's secretKey, producing a signature
+   * @returns {Promise<Signature>} signature
    */
   public async sign(challenge: ArrayBuffer): Promise<Signature> {
     const hash = sha256.create();
