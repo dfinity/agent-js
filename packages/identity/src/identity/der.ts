@@ -59,9 +59,9 @@ const decodeLen = (buf: Uint8Array, offset: number): number => {
   const lenBytes = decodeLenBytes(buf, offset);
   if (lenBytes === 1) return buf[offset];
   else if (lenBytes === 2) return buf[offset + 1];
-  else if (lenBytes === 3) return buf[offset + 1] << (8 + buf[offset + 2]);
+  else if (lenBytes === 3) return (buf[offset + 1] << 8) + buf[offset + 2];
   else if (lenBytes === 4)
-    return (buf[offset + 1] << (16 + buf[offset + 2])) << (8 + buf[offset + 3]);
+    return (buf[offset + 1] << 16) + (buf[offset + 2] << 8) + buf[offset + 3];
   throw new Error('Length too long (> 4 bytes)');
 };
 
