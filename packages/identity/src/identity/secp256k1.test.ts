@@ -9,6 +9,11 @@ function fromHexString(hexString: string): ArrayBuffer {
 }
 
 // DER KEY SECP256K1 PREFIX = 3056301006072a8648ce3d020106052b8104000a03420004
+// These test vectors contain the hex encoding of the corresponding raw and DER versions
+// of secp256k1 keys that were generated using OpenSSL as follows:
+// openssl ecparam -name secp256k1 -genkey -noout -out private.ec.key
+// openssl ec -in private.ec.key -pubout -outform DER -out ecpubkey.der
+// hexdump -ve '1/1 "%.2x"' ecpubkey.der
 const testVectors: Array<[string, string]> = [
   [
     '0401ec030acd7d1199f73ae3469329c114944e0693c89502f850bcc6bad397a5956767c79b410c29ac6f587eec84878020fdb54ba002a79b02aa153fe47b6ffd33',
@@ -41,16 +46,6 @@ describe('Secp256k1PublicKey Tests', () => {
     });
   });
 
-  test('DER decoding of SECP256K1 keys', async () => {
-    testVectors.forEach(([rawPublicKeyHex, derEncodedPublicKeyHex]) => {
-      const derEncoded = Secp256k1PublicKey.fromRaw(fromHexString(rawPublicKeyHex)).toDer();
-
-      const testCase = fromHexString(derEncodedPublicKeyHex);
-
-      expect(derEncoded).toEqual(testCase);
-    });
-  });
-
   test('DER decoding of invalid keys', async () => {
     // Too short.
     expect(() => {
@@ -59,7 +54,7 @@ describe('Secp256k1PublicKey Tests', () => {
           '3056301006072a8648ce3d020106052b8104000a0342000401ec030acd7d1199f73ae3469329c114944e0693c89502f850bcc6bad397a5956767c79b410c29ac6f587eec84878020fdb54ba002a79b02aa153fe47b6',
         ) as DerEncodedPublicKey,
       );
-    }).toThrow();
+    }).toThrowError('DER payload mismatch: Expected length 65 actual length 63');
     // Too long.
     expect(() => {
       Secp256k1PublicKey.fromDer(
@@ -68,7 +63,7 @@ describe('Secp256k1PublicKey Tests', () => {
             '1b42211ce',
         ) as DerEncodedPublicKey,
       );
-    }).toThrow();
+    }).toThrowError('DER payload mismatch: Expected length 65 actual length 70');
 
     // Invalid DER-encoding.
     expect(() => {
@@ -77,7 +72,7 @@ describe('Secp256k1PublicKey Tests', () => {
           '0693c89502f850bcc6bad397a5956767c79b410c29ac6f54fdac09ea93a1b9b744b5f19f091ada7978ceb2f045875bca8ef9b75fa8061704e76de023c6a23d77a118c5c8d0f5efaf0dbbfcc3702d5590604717f639f6f00d',
         ) as DerEncodedPublicKey,
       );
-    }).toThrow();
+    }).toThrowError('Expected: sequence');
   });
 });
 

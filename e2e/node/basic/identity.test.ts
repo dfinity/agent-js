@@ -16,6 +16,9 @@ import identityCanister from '../canisters/identity';
 import { fromHexString } from '@dfinity/candid/lib/cjs/utils/buffer';
 
 // 10 Stable Keys to test against for reproducible delegations
+// These test keys are the hex-encoded values secret keys of test cases
+// we created using the deprecated Ed25519KeyIdentity.generate seed,
+// passing the numbers one through 10.
 const seededKeys = [
   '00000000000000000000000000000000000000000000000000000000000000003b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29',
   '0100000000000000000000000000000000000000000000000000000000000000cecc1507dc1ddd7295951c290888f095adb9044d1b73d696e6df065d683bd4fc',
