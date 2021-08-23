@@ -176,10 +176,10 @@ test('delegation: works with 3 keys', async () => {
 test('delegation: works with 4 keys', async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
-  const rootKey = createIdentity(7);
-  const middleKey = createIdentity(8);
-  const middle2Key = createIdentity(9);
-  const bottomKey = createIdentity(10);
+  const rootKey = createIdentity(6);
+  const middleKey = createIdentity(7);
+  const middle2Key = createIdentity(8);
+  const bottomKey = createIdentity(9);
 
   const rootToMiddle = await DelegationChain.create(rootKey, middleKey.getPublicKey());
   const middleToMiddle2 = await DelegationChain.create(
