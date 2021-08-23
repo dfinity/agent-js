@@ -53,12 +53,8 @@ export class Secp256k1PublicKey implements PublicKey {
 }
 
 export class Secp256k1KeyIdentity extends SignIdentity {
-  public static generate(seed?: Uint8Array): Secp256k1KeyIdentity {
-    if (seed && seed.length !== 32) {
-      throw new Error('Secp256k1 Seed needs to be 32 bytes long.');
-    }
-
-    let privateKey = seed || new Uint8Array(randomBytes(32));
+  public static generate(): Secp256k1KeyIdentity {
+    let privateKey = new Uint8Array(randomBytes(32));
 
     while (!Secp256k1.privateKeyVerify(privateKey)) {
       privateKey = new Uint8Array(randomBytes(32));
@@ -72,7 +68,7 @@ export class Secp256k1KeyIdentity extends SignIdentity {
   public static fromParsedJson(obj: JsonableSecp256k1Identity): Secp256k1KeyIdentity {
     const [publicKeyRaw, privateKeyRaw] = obj;
     return new Secp256k1KeyIdentity(
-      Secp256k1PublicKey.fromRaw(fromHexString(publicKeyRaw) as DerEncodedPublicKey),
+      Secp256k1PublicKey.fromRaw(fromHexString(publicKeyRaw)),
       fromHexString(privateKeyRaw),
     );
   }
@@ -84,8 +80,6 @@ export class Secp256k1KeyIdentity extends SignIdentity {
         return this.fromParsedJson([parsed[0], parsed[1]]);
       }
       throw new Error('Deserialization error: JSON must have at least 2 items.');
-    } else if (typeof parsed === 'object' && parsed !== null) {
-      throw new Error('Deprecated JSON format for Ed25519 keys.');
     }
     throw new Error(`Deserialization error: Invalid JSON type for string: ${JSON.stringify(json)}`);
   }

@@ -71,20 +71,6 @@ test('DER decoding of invalid keys', async () => {
   }).toThrow();
 });
 
-test('fails with improper seed', () => {
-  expect(() => Secp256k1KeyIdentity.generate(new Uint8Array(new Array(31).fill(0)))).toThrow();
-  expect(() => Secp256k1KeyIdentity.generate(new Uint8Array(new Array(33).fill(0)))).toThrow();
-});
-
-test('same seed generates same identity', () => {
-  const seed = new Uint8Array(randomBytes(32));
-  const id = Secp256k1KeyIdentity.generate(seed);
-  const id2 = Secp256k1KeyIdentity.generate(seed);
-  expect(new Uint8Array(id.getPublicKey().toDer())).toEqual(
-    new Uint8Array(id2.getPublicKey().toDer()),
-  );
-});
-
 test('can encode and decode to/from JSON', () => {
   const key = Secp256k1KeyIdentity.generate();
   const json = JSON.stringify(key);
@@ -99,8 +85,6 @@ test('can encode and decode to/from JSON', () => {
 test('message signature is valid', async () => {
   const identity = Secp256k1KeyIdentity.generate();
   const rawPublicKey = identity.getPublicKey().toRaw();
-
-  rawPublicKey.byteLength; //?
 
   const message = 'Hello world. Secp256k1 test here';
   const challenge = new TextEncoder().encode(message);
