@@ -64,14 +64,8 @@ test('DER decoding of invalid keys', async () => {
   }).toThrow();
 });
 
-test('fails with improper seed', () => {
-  expect(() => Ed25519KeyIdentity.generate(new Uint8Array(new Array(31).fill(0)))).toThrow();
-  expect(() => Ed25519KeyIdentity.generate(new Uint8Array(new Array(33).fill(0)))).toThrow();
-});
-
 test('can encode and decode to/from JSON', async () => {
-  const seed = new Array(32).fill(0);
-  const key = Ed25519KeyIdentity.generate(new Uint8Array(seed));
+  const key = Ed25519KeyIdentity.generate();
 
   const json = JSON.stringify(key);
   const key2 = Ed25519KeyIdentity.fromJSON(json);

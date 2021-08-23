@@ -13,17 +13,24 @@ import {
 } from '@dfinity/identity';
 import agent from '../utils/agent';
 import identityCanister from '../canisters/identity';
+import { fromHexString } from '@dfinity/candid/lib/cjs/utils/buffer';
+
+// 10 Stable Keys to test against for reproducible delegations
+const seededKeys = [
+  '00000000000000000000000000000000000000000000000000000000000000003b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29',
+  '0100000000000000000000000000000000000000000000000000000000000000cecc1507dc1ddd7295951c290888f095adb9044d1b73d696e6df065d683bd4fc',
+  '02000000000000000000000000000000000000000000000000000000000000006b79c57e6a095239282c04818e96112f3f03a4001ba97a564c23852a3f1ea5fc',
+  '0300000000000000000000000000000000000000000000000000000000000000dadbd184a2d526f1ebdd5c06fdad9359b228759b4d7f79d66689fa254aad8546',
+  '04000000000000000000000000000000000000000000000000000000000000009be3287795907809407e14439ff198d5bfc7dce6f9bc743cb369146f610b4801',
+  '0500000000000000000000000000000000000000000000000000000000000000f4bd46521ce7b57899ae6f4ca09eddec689327a86a2232d4a3f2a4f39ac68a9e',
+  '060000000000000000000000000000000000000000000000000000000000000034790764308e0b7b5f7cc9d5cdd29845fd82a03df53d2cffef3c0228547487c5',
+  '0700000000000000000000000000000000000000000000000000000000000000a2fa2f4a355ba2e907a53009e9e37caddf7ac7e66a08ba07631f553072b3f24c',
+  '0800000000000000000000000000000000000000000000000000000000000000d4c5061b81c4682b27a0cfc6459cd9d7892eb60a43f73dd1060b6c478aa7c3d8',
+  '0900000000000000000000000000000000000000000000000000000000000000bb5c672482b0dcca91a21a4ed63b15afde8aa1378da72cd01b349589d6e7dd6a',
+];
 
 function createIdentity(seed: number): SignIdentity {
-  const seed1 = new Array(32).fill(0);
-  seed1[0] = seed;
-  return Ed25519KeyIdentity.generate(new Uint8Array(seed1));
-}
-
-function createSecp256k1Identity(seed?: number): SignIdentity {
-  const seed1 = new Array(32).fill(0);
-  if (seed) seed1[0] = seed;
-  return Secp256k1KeyIdentity.generate(new Uint8Array(seed1));
+  return Ed25519KeyIdentity.fromSecretKey(fromHexString(seededKeys[seed]));
 }
 
 async function createIdentityActor(
@@ -44,7 +51,7 @@ async function createSecp256k1IdentityActor(
   canisterId: Principal,
   idl: IDL.InterfaceFactory,
 ): Promise<any> {
-  const identity = createSecp256k1Identity(seed);
+  const identity = Secp256k1KeyIdentity.generate();
   const agent1 = new HttpAgent({ source: await agent, identity });
   return Actor.createActor(idl, {
     canisterId,
