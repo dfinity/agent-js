@@ -121,6 +121,16 @@ describe('Secp256k1KeyIdentity Tests', () => {
     );
   });
 
+  test('fromSecretKey throws if bytelength is off', () => {
+    const shouldFail = () => {
+      const key = Secp256k1KeyIdentity.generate();
+      const { secretKey } = key.getKeyPair();
+      const shortArray = new Uint8Array(secretKey).subarray(1, 32);
+      Secp256k1KeyIdentity.fromSecretKey(Uint8Array.from(shortArray).subarray(1, 32));
+    };
+    expect(shouldFail).toThrowError('Expected private key to be an Uint8Array with length 32');
+  });
+
   test('getKeyPair should return a copy of the key pair', () => {
     const key = Secp256k1KeyIdentity.generate();
     const keyPair = key.getKeyPair();

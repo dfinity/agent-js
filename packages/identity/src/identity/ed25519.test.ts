@@ -64,6 +64,27 @@ test('DER decoding of invalid keys', async () => {
   }).toThrow();
 });
 
+test('fromSecretKey should generate an identity', () => {
+  const key = Ed25519KeyIdentity.generate();
+  const { secretKey } = key.getKeyPair();
+
+  const key2 = Ed25519KeyIdentity.fromSecretKey(secretKey);
+
+  expect(new Uint8Array(key.getPublicKey().toDer())).toEqual(
+    new Uint8Array(key2.getPublicKey().toDer()),
+  );
+});
+
+test('fromSecretKey throws if bytelength is off', () => {
+  const shouldFail = () => {
+    const key = Ed25519KeyIdentity.generate();
+    const { secretKey } = key.getKeyPair();
+    const shortArray = new Uint8Array(secretKey).subarray(1, 32);
+    Ed25519KeyIdentity.fromSecretKey(Uint8Array.from(shortArray).subarray(1, 32));
+  };
+  expect(shouldFail).toThrowError('bad secret key size');
+});
+
 test('can encode and decode to/from JSON', async () => {
   const key = Ed25519KeyIdentity.generate();
 

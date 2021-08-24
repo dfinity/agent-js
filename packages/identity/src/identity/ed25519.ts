@@ -76,8 +76,6 @@ export class Ed25519KeyIdentity extends SignIdentity {
       } else {
         throw new Error('Deserialization error: JSON must have at least 2 items.');
       }
-    } else if (typeof parsed === 'object' && parsed !== null) {
-      throw new Error('Deprecated JSON format for Ed25519 keys.');
     }
     throw new Error(`Deserialization error: Invalid JSON type for string: ${JSON.stringify(json)}`);
   }
