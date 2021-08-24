@@ -23,8 +23,6 @@ export const encodeLenBytes = (len: number): number => {
 };
 
 export const encodeLen = (buf: Uint8Array, offset: number, len: number): number => {
-  buf[offset];
-
   if (len <= 0x7f) {
     buf[offset] = len;
     return 1;

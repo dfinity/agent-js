@@ -78,19 +78,19 @@ describe('Secp256k1PublicKey Tests', () => {
 
 describe('Secp256k1KeyIdentity Tests', () => {
   test('can encode and decode to/from JSON', () => {
-    const key = Secp256k1KeyIdentity.generate();
-    const json = JSON.stringify(key);
+    const identity = Secp256k1KeyIdentity.generate();
+    const json = JSON.stringify(identity);
 
-    const key2 = Secp256k1KeyIdentity.fromJSON(json);
+    const identity2 = Secp256k1KeyIdentity.fromJSON(json);
 
-    expect(new Uint8Array(key.getPublicKey().toDer())).toEqual(
-      new Uint8Array(key2.getPublicKey().toDer()),
+    expect(new Uint8Array(identity.getPublicKey().toDer())).toEqual(
+      new Uint8Array(identity2.getPublicKey().toDer()),
     );
   });
 
   test('fromJSON rejects if JSON does not have at least two items', () => {
-    const key = Secp256k1KeyIdentity.generate();
-    const [privateKey] = key.toJSON();
+    const identity = Secp256k1KeyIdentity.generate();
+    const [privateKey] = identity.toJSON();
     const json = JSON.stringify([privateKey]);
 
     const shouldFail = () => {
@@ -111,20 +111,20 @@ describe('Secp256k1KeyIdentity Tests', () => {
   });
 
   test('fromSecretKey should generate an identity', () => {
-    const key = Secp256k1KeyIdentity.generate();
-    const { secretKey } = key.getKeyPair();
+    const identity = Secp256k1KeyIdentity.generate();
+    const { secretKey } = identity.getKeyPair();
 
-    const key2 = Secp256k1KeyIdentity.fromSecretKey(secretKey);
+    const identity2 = Secp256k1KeyIdentity.fromSecretKey(secretKey);
 
-    expect(new Uint8Array(key.getPublicKey().toDer())).toEqual(
-      new Uint8Array(key2.getPublicKey().toDer()),
+    expect(new Uint8Array(identity.getPublicKey().toDer())).toEqual(
+      new Uint8Array(identity2.getPublicKey().toDer()),
     );
   });
 
   test('fromSecretKey throws if bytelength is off', () => {
     const shouldFail = () => {
-      const key = Secp256k1KeyIdentity.generate();
-      const { secretKey } = key.getKeyPair();
+      const identity = Secp256k1KeyIdentity.generate();
+      const { secretKey } = identity.getKeyPair();
       const shortArray = new Uint8Array(secretKey).subarray(1, 32);
       Secp256k1KeyIdentity.fromSecretKey(Uint8Array.from(shortArray).subarray(1, 32));
     };
@@ -132,8 +132,8 @@ describe('Secp256k1KeyIdentity Tests', () => {
   });
 
   test('getKeyPair should return a copy of the key pair', () => {
-    const key = Secp256k1KeyIdentity.generate();
-    const keyPair = key.getKeyPair();
+    const identity = Secp256k1KeyIdentity.generate();
+    const keyPair = identity.getKeyPair();
 
     expect(keyPair.publicKey).toBeTruthy();
     expect(keyPair.secretKey).toBeTruthy();
