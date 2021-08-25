@@ -58,12 +58,34 @@ export class Secp256k1PublicKey implements PublicKey {
 }
 
 export class Secp256k1KeyIdentity extends SignIdentity {
-  public static generate(): Secp256k1KeyIdentity {
-    let privateKey = new Uint8Array(randomBytes(32));
-
-    while (!Secp256k1.privateKeyVerify(privateKey)) {
-      privateKey = new Uint8Array(randomBytes(32));
+  /**
+   * Generates an identity. If a seed is provided, the keys are generated from the
+   * seed according to BIP 0032. Otherwise, the key pair is randomly generated.
+   * This method throws an error in case the seed is not 32 bytes long or invalid
+   * for use as a private key.
+   * @param {Uint8Array} seed the optional seed
+   * @returns {Secp256k1KeyIdentity}
+   */
+  public static generate(seed?: Uint8Array): Secp256k1KeyIdentity {
+    if (seed && seed.byteLength !== 32) {
+      throw new Error('Secp256k1 Seed needs to be 32 bytes long.');
     }
+    let privateKey: Uint8Array;
+
+    if (seed) {
+      // private key from seed according to https://en.bitcoin.it/wiki/BIP_0032
+      // master key generation:
+      privateKey = seed;
+      if (!Secp256k1.privateKeyVerify(privateKey)) {
+        throw new Error('The seed is invalid.');
+      }
+    } else {
+      privateKey = new Uint8Array(randomBytes(32));
+      while (!Secp256k1.privateKeyVerify(privateKey)) {
+        privateKey = new Uint8Array(randomBytes(32));
+      }
+    }
+
     const publicKeyRaw = Secp256k1.publicKeyCreate(privateKey, false);
 
     const publicKey = Secp256k1PublicKey.fromRaw(publicKeyRaw);

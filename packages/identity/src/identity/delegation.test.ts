@@ -3,32 +3,21 @@
  * an instance of ArrayBuffer).
  * @jest-environment node
  */
+import { SignIdentity } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
-import { fromHexString } from '../buffer';
 import { DelegationChain } from './delegation';
 import { Ed25519KeyIdentity } from './ed25519';
 
-function createDelegationCases(): [Ed25519KeyIdentity, Ed25519KeyIdentity, Ed25519KeyIdentity] {
-  const root = Ed25519KeyIdentity.fromSecretKey(
-    fromHexString(
-      '02000000000000000000000000000000000000000000000000000000000000006b79c57e6a095239282c04818e96112f3f03a4001ba97a564c23852a3f1ea5fc',
-    ),
-  );
-  const middle = Ed25519KeyIdentity.fromSecretKey(
-    fromHexString(
-      '0100000000000000000000000000000000000000000000000000000000000000cecc1507dc1ddd7295951c290888f095adb9044d1b73d696e6df065d683bd4fc',
-    ),
-  );
-  const bottom = Ed25519KeyIdentity.fromSecretKey(
-    fromHexString(
-      '00000000000000000000000000000000000000000000000000000000000000003b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29',
-    ),
-  );
-  return [root, middle, bottom];
+function createIdentity(seed: number): SignIdentity {
+  const s = new Uint8Array([seed, ...new Array(31).fill(0)]);
+  return Ed25519KeyIdentity.generate(s);
 }
 
 test('delegation signs with proper keys (3)', async () => {
-  const [root, middle, bottom] = createDelegationCases();
+  const root = createIdentity(2);
+  const middle = createIdentity(1);
+  const bottom = createIdentity(0);
+
   const rootToMiddle = await DelegationChain.create(
     root,
     middle.getPublicKey(),
@@ -72,7 +61,9 @@ test('delegation signs with proper keys (3)', async () => {
 });
 
 test('DelegationChain can be serialized to and from JSON', async () => {
-  const [root, middle, bottom] = createDelegationCases();
+  const root = createIdentity(2);
+  const middle = createIdentity(1);
+  const bottom = createIdentity(0);
 
   const rootToMiddle = await DelegationChain.create(
     root,

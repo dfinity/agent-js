@@ -67,6 +67,11 @@ describe('Ed25519PublicKey Tests', () => {
 });
 
 describe('Ed25519KeyIdentity tests', () => {
+  test('fails with improper seed', () => {
+    expect(() => Ed25519KeyIdentity.generate(new Uint8Array(new Array(31).fill(0)))).toThrow();
+    expect(() => Ed25519KeyIdentity.generate(new Uint8Array(new Array(33).fill(0)))).toThrow();
+  });
+
   test('fromSecretKey should generate an identity', () => {
     const identity = Ed25519KeyIdentity.generate();
     const { secretKey } = identity.getKeyPair();
