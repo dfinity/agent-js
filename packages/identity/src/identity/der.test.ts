@@ -141,9 +141,9 @@ describe('decodeLen', () => {
   test('encoded length of 3', () => {
     const buf = Uint8Array.from(new Array(10));
     buf[0] = 130;
-    // returns value stored at index 2
-    buf[2] = 5;
-    expect(decodeLen(buf, 0)).toBe(5);
+    buf[1] = 1;
+    buf[2] = 1;
+    expect(decodeLen(buf, 0)).toBe(257);
   });
   test('encoded length of 4', () => {
     const buf = Uint8Array.from(new Array(10));
