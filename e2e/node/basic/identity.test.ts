@@ -20,6 +20,12 @@ function createIdentity(seed: number): SignIdentity {
   return Ed25519KeyIdentity.generate(new Uint8Array(seed1));
 }
 
+function createSecpIdentity(seed: number): SignIdentity {
+  const seed1 = new Array(32).fill(0);
+  seed1[0] = seed;
+  return Ed25519KeyIdentity.generate(new Uint8Array(seed1));
+}
+
 async function createIdentityActor(
   seed: number,
   canisterId: Principal,
@@ -38,7 +44,13 @@ async function createSecp256k1IdentityActor(
   idl: IDL.InterfaceFactory,
   seed?: number,
 ): Promise<any> {
-  const identity = Secp256k1KeyIdentity.generate();
+  let seed1: Uint8Array | undefined;
+  if (seed) {
+    seed1 = new Uint8Array(new Array(32).fill(0));
+    seed1[0] = seed;
+  }
+
+  const identity = Secp256k1KeyIdentity.generate(seed1);
   const agent1 = new HttpAgent({ source: await agent, identity });
   return Actor.createActor(idl, {
     canisterId,
@@ -90,16 +102,34 @@ test('identity: two different Secp256k1 keys should have a different principal',
   expect(principal1).not.toEqual(principal2);
 });
 
-test('identity: two Secp256k1 keys with the same key should have the same principal', async () => {
+test('delegation: principal is the same between delegated keys with secp256k1', async () => {
   const { canisterId, idl } = await installIdentityCanister();
-  // Seeded identity
-  const identity1 = await createSecp256k1IdentityActor(canisterId, idl, 0);
-  // Unseeded identity
-  const identity2 = await createSecp256k1IdentityActor(canisterId, idl, 0);
 
-  const principal1 = await identity1.whoami_query();
-  const principal2 = await identity2.whoami_query();
-  expect(principal1).toEqual(principal2);
+  const masterKey = createSecpIdentity(2);
+  const sessionKey = createSecpIdentity(3);
+
+  const delegation = await DelegationChain.create(masterKey, sessionKey.getPublicKey());
+  const id3 = DelegationIdentity.fromDelegation(sessionKey, delegation);
+
+  const identityActor1 = Actor.createActor(idl, {
+    canisterId,
+    agent: new HttpAgent({ source: await agent, identity: masterKey }),
+  }) as any;
+  const identityActor2 = Actor.createActor(idl, {
+    canisterId,
+    agent: new HttpAgent({ source: await agent, identity: sessionKey }),
+  }) as any;
+  const identityActor3 = Actor.createActor(idl, {
+    canisterId,
+    agent: new HttpAgent({ source: await agent, identity: id3 }),
+  }) as any;
+
+  const principal1 = await identityActor1.whoami_query();
+  const principal2 = await identityActor2.whoami_query();
+  const principal3 = await identityActor3.whoami_query();
+  expect(principal1).not.toEqual(principal2);
+  expect(principal1).toEqual(principal3);
+  expect(principal2).not.toEqual(principal3);
 });
 
 test('delegation: principal is the same between delegated keys', async () => {
