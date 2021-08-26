@@ -23,7 +23,7 @@ function createIdentity(seed: number): SignIdentity {
 function createSecpIdentity(seed: number): SignIdentity {
   const seed1 = new Array(32).fill(0);
   seed1[0] = seed;
-  return Ed25519KeyIdentity.generate(new Uint8Array(seed1));
+  return Secp256k1KeyIdentity.generate(new Uint8Array(seed1));
 }
 
 async function createIdentityActor(
