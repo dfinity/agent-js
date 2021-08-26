@@ -136,7 +136,7 @@ describe('Secp256k1KeyIdentity Tests', () => {
     );
   });
 
-  test('generateion from seed rejects if the length is invalid', () => {
+  test('generation from seed rejects if the length is invalid', () => {
     const invalidSeed = new Uint8Array(randomBytes(64));
     const shouldFail = () => Secp256k1KeyIdentity.generate(invalidSeed);
     expect(shouldFail).toThrowError('Secp256k1 Seed needs');
