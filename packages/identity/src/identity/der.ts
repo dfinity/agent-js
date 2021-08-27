@@ -1,4 +1,4 @@
-const bufEquals = (b1: ArrayBuffer, b2: ArrayBuffer): boolean => {
+export const bufEquals = (b1: ArrayBuffer, b2: ArrayBuffer): boolean => {
   if (b1.byteLength !== b2.byteLength) return false;
   const u1 = new Uint8Array(b1);
   const u2 = new Uint8Array(b2);
@@ -8,7 +8,7 @@ const bufEquals = (b1: ArrayBuffer, b2: ArrayBuffer): boolean => {
   return true;
 };
 
-const encodeLenBytes = (len: number): number => {
+export const encodeLenBytes = (len: number): number => {
   if (len <= 0x7f) {
     return 1;
   } else if (len <= 0xff) {
@@ -22,7 +22,7 @@ const encodeLenBytes = (len: number): number => {
   }
 };
 
-const encodeLen = (buf: Uint8Array, offset: number, len: number): number => {
+export const encodeLen = (buf: Uint8Array, offset: number, len: number): number => {
   if (len <= 0x7f) {
     buf[offset] = len;
     return 1;
@@ -46,12 +46,22 @@ const encodeLen = (buf: Uint8Array, offset: number, len: number): number => {
   }
 };
 
-const decodeLenBytes = (buf: Uint8Array, offset: number): number => {
+export const decodeLenBytes = (buf: Uint8Array, offset: number): number => {
   if (buf[offset] < 0x80) return 1;
   if (buf[offset] === 0x80) throw new Error('Invalid length 0');
   if (buf[offset] === 0x81) return 2;
   if (buf[offset] === 0x82) return 3;
   if (buf[offset] === 0x83) return 4;
+  throw new Error('Length too long (> 4 bytes)');
+};
+
+export const decodeLen = (buf: Uint8Array, offset: number): number => {
+  const lenBytes = decodeLenBytes(buf, offset);
+  if (lenBytes === 1) return buf[offset];
+  else if (lenBytes === 2) return buf[offset + 1];
+  else if (lenBytes === 3) return (buf[offset + 1] << 8) + buf[offset + 2];
+  else if (lenBytes === 4)
+    return (buf[offset + 1] << 16) + (buf[offset + 2] << 8) + buf[offset + 3];
   throw new Error('Length too long (> 4 bytes)');
 };
 
@@ -71,6 +81,17 @@ export const ED25519_OID = Uint8Array.from([
   ...[0x30, 0x05], // SEQUENCE
   ...[0x06, 0x03], // OID with 3 bytes
   ...[0x2b, 0x65, 0x70], // id-Ed25519 OID
+]);
+
+/**
+ * A DER encoded `SEQUENCE(OID)` for secp256k1 with the ECDSA algorithm
+ */
+export const SECP256K1_OID = Uint8Array.from([
+  ...[0x30, 0x10], // SEQUENCE
+  ...[0x06, 0x07], // OID with 7 bytes
+  ...[0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01], // OID ECDSA
+  ...[0x06, 0x05], // OID with 5 bytes
+  ...[0x2b, 0x81, 0x04, 0x00, 0x0a], // OID secp256k1
 ]);
 
 /**
@@ -132,7 +153,14 @@ export const unwrapDER = (derEncoded: ArrayBuffer, oid: Uint8Array): Uint8Array 
   offset += oid.byteLength;
 
   expect(0x03, 'bit string');
+  const payloadLen = decodeLen(buf, offset) - 1; // Subtracting 1 to account for the 0 padding
   offset += decodeLenBytes(buf, offset);
   expect(0x00, '0 padding');
-  return buf.slice(offset);
+  const result = buf.slice(offset);
+  if (payloadLen !== result.length) {
+    throw new Error(
+      `DER payload mismatch: Expected length ${payloadLen} actual length ${result.length}`,
+    );
+  }
+  return result;
 };
