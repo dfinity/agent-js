@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Changelog</title>
+  </head>
+  <body>
+    <h1>Agent-JS Changelog</h1>
+
+    <section>
+      <h2>Version 0.10.0</h2>
+      <ul>
+        <li>Adds changelog for agent-js packages</li>
+        <li>
+          Buffer and Pipe refactor
+          <ul>
+            <li>
+              In previous versions of dfinity packages, we relied on Buffer, a polyfilled version of
+              the Node.js Buffer utility. In a significant refactor, we have removed all cases of
+              this, along with Pipe and the nonstandard Blob packages, in favor of ArrayBuffer,
+              Uint8Array, and DataView
+            </li>
+            <li>Utility methods such as <code>blobToUint8Array</code> have been removed.</li>
+            <li>
+              Interfaces that relied on Buffer and related packages have been updated to accept
+              ArrayBuffer, and the type interfaces are updated to reflect this
+            </li>
+          </ul>
+        </li>
+        <li>
+          Secp256k1 Support
+          <ul>
+            <li>
+              Adds two new exports to @dfinity/identity - Secp256k1KeyIdentity and
+              Secp256k1PublicKey
+            </li>
+            <li>
+              API mirrors the ed25519 components, and relies on the
+              <a href="https://www.npmjs.com/package/secp256k1">secp256k1</a> npm package for
+              signing and verification.
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </section>
+  </body>
+</html>
