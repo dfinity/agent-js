@@ -32,6 +32,8 @@ additional detail if necessary
 
 This will automatically link your commit to the GitHub issue, and automatically close it when the pull request is merged.
 
+Please document your changes in the [changelog.html](./docs/generated/changelog.html) file.
+
 ### Continuous Integration (CI)
 
 Changes will have to pass automated tests before they can be merged. If your changes fail the tests, you will have to address the failures and re-run the tests.
