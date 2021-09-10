@@ -1,3 +1,4 @@
+import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { AuthClient } from './index';
 
 /**
@@ -31,6 +32,15 @@ describe('Auth Client', () => {
     const test = await AuthClient.create();
     expect(await test.isAuthenticated()).toBe(false);
     expect(test.getIdentity().getPrincipal().isAnonymous()).toBe(true);
+  });
+
+  it('should initialize with a provided identity', async () => {
+    const identity = Ed25519KeyIdentity.generate();
+    const test = await AuthClient.create({
+      identity,
+    });
+    expect(test.getIdentity().getPrincipal().isAnonymous()).toBe(false);
+    expect(test.getIdentity()).toBe(identity);
   });
 
   it('should log users out', async () => {

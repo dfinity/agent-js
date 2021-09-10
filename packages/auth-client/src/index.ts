@@ -177,7 +177,9 @@ export class AuthClient {
       try {
         const chainStorage = await storage.get(KEY_LOCALSTORAGE_DELEGATION);
 
-        if (chainStorage) {
+        if (options.identity) {
+          identity = options.identity;
+        } else if (chainStorage) {
           chain = DelegationChain.fromJSON(chainStorage);
 
           // Verify that the delegation isn't expired.
