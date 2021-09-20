@@ -7,9 +7,10 @@ function updateStatus(message: string) {
 
 window.addEventListener('load', async () => {
   // Verify user's web browser has necessary support
-  if (!window.navigator.serviceWorker) {
+  let unsupported = [ ["serviceWorker", window.navigator.serviceWorker], ["BigInt", window.BigInt], ["WebAssembly", window.WebAssembly] ].filter(tuple => !tuple[1]).map(tuple => tuple[0]).join(", ");
+  if (unsupported) {
     updateStatus(
-      `This web browser cannot interact with the Internet Computer securely.
+      `This web browser cannot interact with the Internet Computer securely.  (No: ${unsupported})
        Please try new web browser software.`,
     );
   } else {
