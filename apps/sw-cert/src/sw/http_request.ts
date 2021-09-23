@@ -210,6 +210,14 @@ export async function handleRequest(request: Request): Promise<Response> {
   }
 
   /**
+   * If this is to /_/raw/ then we pass it through as a raw HTTP request.
+   */
+  if (!url.hostname.endsWith(swDomains)) {
+    // The certificate is checked by icx-proxy.
+    return await fetch(request);
+  }
+
+  /**
    * We refuse any request to /_/*
    */
   if (url.pathname.startsWith('/_/')) {
