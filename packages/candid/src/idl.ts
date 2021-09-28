@@ -1271,7 +1271,8 @@ export class ServiceClass extends ConstructType<PrincipalId> {
   }
 
   public encodeValue(x: PrincipalId) {
-    const buf = x.toUint8Array();
+    const wrappedX = '_blob' in x ? PrincipalId.fromUint8Array(x._blob) : x;
+    const buf = wrappedX.toUint8Array();
     const len = lebEncode(buf.length);
     return concat(new Uint8Array([1]), len, buf);
   }
