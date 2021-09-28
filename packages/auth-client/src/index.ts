@@ -39,7 +39,7 @@ export interface AuthClientLoginOptions {
    */
   identityProvider?: string | URL;
   /**
-   * Experiation of the authentication in nanoseconds
+   * Expiration of the authentication in nanoseconds
    */
   maxTimeToLive?: bigint;
   /**
