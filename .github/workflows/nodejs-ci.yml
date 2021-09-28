@@ -80,8 +80,6 @@ jobs:
 
       - name: Build ic-ref
         run: |
-          ls -l /opt/ghc/
-          export PATH=/opt/ghc/bin:$PATH
           cabal --version
           ghc-${{ matrix.ghc }} --version
           mkdir -p $HOME/bin
