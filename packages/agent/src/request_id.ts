@@ -18,7 +18,12 @@ interface ToHashable {
   toHash(): unknown;
 }
 
-function hashValue(value: unknown): ArrayBuffer {
+/**
+ *
+ * @param value unknown value
+ * @returns ArrayBuffer
+ */
+export function hashValue(value: unknown): ArrayBuffer {
   if (value instanceof borc.Tagged) {
     return hashValue(value.value);
   } else if (typeof value === 'string') {
@@ -30,8 +35,8 @@ function hashValue(value: unknown): ArrayBuffer {
   } else if (Array.isArray(value)) {
     const vals = value.map(hashValue);
     return hash(concat(...vals));
-  } else if (value instanceof Principal) {
-    return hash(value.toUint8Array());
+  } else if (value && typeof value === 'object' && (value as any)._isPrincipal) {
+    return hash((value as Principal).toUint8Array());
   } else if (
     typeof value === 'object' &&
     value !== null &&
