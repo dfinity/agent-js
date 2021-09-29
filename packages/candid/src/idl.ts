@@ -1126,6 +1126,11 @@ function decodePrincipalId(b: Pipe): PrincipalId {
   return PrincipalId.fromUint8Array(new Uint8Array(safeRead(b, len)));
 }
 
+interface OldPrincipal {
+  _blob: Uint8Array;
+  _isPrincipal: boolean;
+}
+
 /**
  * Represents an IDL principal reference
  */
@@ -1139,7 +1144,8 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
   }
 
   public encodeValue(x: PrincipalId): ArrayBuffer {
-    const buf = x.toUint8Array();
+    const wrappedX = x as OldPrincipal;
+    const buf = wrappedX._blob ? PrincipalId.fromUint8Array(wrappedX._blob) : x.toUint8Array();
     const len = lebEncode(buf.byteLength);
     return concat(new Uint8Array([1]), len, buf);
   }
@@ -1189,7 +1195,10 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
   }
 
   public encodeValue([principal, methodName]: [PrincipalId, string]) {
-    const buf = principal.toUint8Array();
+    const wrappedPrincipal = principal as OldPrincipal;
+    const buf = wrappedPrincipal._blob
+      ? PrincipalId.fromUint8Array(wrappedPrincipal._blob)
+      : principal.toUint8Array();
     const len = lebEncode(buf.byteLength);
     const canister = concat(new Uint8Array([1]), len, buf);
 
@@ -1271,8 +1280,8 @@ export class ServiceClass extends ConstructType<PrincipalId> {
   }
 
   public encodeValue(x: PrincipalId) {
-    const wrappedX = '_blob' in x ? PrincipalId.fromUint8Array(x._blob) : x;
-    const buf = wrappedX.toUint8Array();
+    const wrappedX = x as OldPrincipal;
+    const buf = wrappedX._blob ? PrincipalId.fromUint8Array(wrappedX._blob) : x.toUint8Array();
     const len = lebEncode(buf.length);
     return concat(new Uint8Array([1]), len, buf);
   }
