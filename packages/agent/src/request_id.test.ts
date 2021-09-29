@@ -1,8 +1,9 @@
 // tslint:disable-next-line: max-line-length
 // https://github.com/dfinity-lab/dfinity/blob/5fef1450c9ab16ccf18381379149e504b11c8218/docs/spec/public/index.adoc#request-ids
 import { Principal } from '@dfinity/principal';
-import { hash, requestIdOf } from './request_id';
+import { hash, hashValue, requestIdOf } from './request_id';
 import { fromHex, toHex } from './utils/buffer';
+import borc from 'borc';
 
 const testHashOfBlob = async (input: ArrayBuffer, expected: string) => {
   const hashed = await hash(input);
@@ -111,4 +112,33 @@ test.skip('requestIdOf for sender_delegation signature', async () => {
   };
   const delegation3ActualHashBytes = await requestIdOf(delegation3);
   expect(toHex(delegation3ActualHashBytes)).toEqual(toHex(delegation1ActualHashBytes));
+});
+
+describe('hashValue', () => {
+  it('should hash a string', () => {
+    const value = hashValue('test');
+    expect(value instanceof ArrayBuffer).toBe(true);
+  });
+  it('should hash a borc tagged value', () => {
+    const tagged = hashValue(new borc.Tagged(42, 'hello'));
+    expect(tagged instanceof ArrayBuffer).toBe(true);
+  });
+  it('should hash a number', () => {
+    const value = hashValue(7);
+    expect(value instanceof ArrayBuffer).toBe(true);
+  });
+  it('should hash an array', () => {
+    const value = hashValue([7]);
+    expect(value instanceof ArrayBuffer).toBe(true);
+  });
+  it('should hash a bigint', () => {
+    const value = hashValue(BigInt(7));
+    expect(value instanceof ArrayBuffer).toBe(true);
+  });
+  it('should throw otherwise', () => {
+    const shouldThrow = () => {
+      hashValue({ foo: 'bar' });
+    };
+    expect(shouldThrow).toThrowError('Attempt to hash');
+  });
 });
