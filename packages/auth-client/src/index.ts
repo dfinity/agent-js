@@ -39,7 +39,7 @@ export interface AuthClientLoginOptions {
    */
   identityProvider?: string | URL;
   /**
-   * Experiation of the authentication
+   * Expiration of the authentication in nanoseconds
    */
   maxTimeToLive?: bigint;
   /**
@@ -259,6 +259,10 @@ export class AuthClient {
       await this._storage.set(KEY_LOCALSTORAGE_KEY, JSON.stringify(key));
     }
 
+    // Set default maxTimeToLive to 1 day
+    const defaultTimeToLive =
+      /* days */ BigInt(1) * /* hours */ BigInt(24) * /* nanoseconds */ BigInt(3600000000000);
+
     // Create the URL of the IDP. (e.g. https://XXXX/#authorize)
     const identityProviderUrl = new URL(
       options?.identityProvider?.toString() || IDENTITY_PROVIDER_DEFAULT,
@@ -272,7 +276,10 @@ export class AuthClient {
     this._removeEventListener();
 
     // Add an event listener to handle responses.
-    this._eventHandler = this._getEventHandler(identityProviderUrl, options);
+    this._eventHandler = this._getEventHandler(identityProviderUrl, {
+      maxTimeToLive: defaultTimeToLive,
+      ...options,
+    });
     window.addEventListener('message', this._eventHandler);
 
     // Open a new window with the IDP provider.
