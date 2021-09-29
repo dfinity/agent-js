@@ -30,8 +30,8 @@ function hashValue(value: unknown): ArrayBuffer {
   } else if (Array.isArray(value)) {
     const vals = value.map(hashValue);
     return hash(concat(...vals));
-  } else if (value instanceof Principal) {
-    return hash(value.toUint8Array());
+  } else if (typeof (value as Principal)?.toUint8Array === 'function') {
+    return hash((value as Principal).toUint8Array());
   } else if (
     typeof value === 'object' &&
     value !== null &&
