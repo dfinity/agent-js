@@ -10,6 +10,20 @@
     <h1>Agent-JS Changelog</h1>
 
     <section>
+      <h2>Version 0.10.1</h2>
+      <ul>
+        <li>
+          Fix for the auth-client identity option and added JSDOC comment for the timeToLive option
+        </li>
+        <li>
+          Sets the default Internet Identity expiration to 1 day for the authClient, up from 15
+          minutes
+        </li>
+        <li>
+          No longer checks instanceof Principal in @dfinity/agent, which should allow non-identical
+          versions of packages to interoperate, as long as they share the same API
+        </li>
+      </ul>
       <h2>Version 0.10.0</h2>
       <ul>
         <li>Adds changelog for agent-js packages</li>
