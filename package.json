@@ -5,9 +5,9 @@
   "description": "Use an Agent to interact with the Internet Computer from your JavaScript program.",
   "dependencies": {
     "@types/jest": "^26.0.22",
-    "jest": "^26.6.3",
-    "jest-cli": "^26.6.3",
-    "ts-jest": "^26.5.4"
+    "jest": "^27.3.1",
+    "jest-cli": "^27.3.1",
+    "ts-jest": "^27.0.7"
   },
   "workspaces": {
     "packages": [
@@ -34,8 +34,8 @@
     "eslint": "^7.19.0",
     "eslint-plugin-jsdoc": "^31.6.0",
     "husky": "^6.0.0",
-    "jest-expect-message": "^1.0.2",
     "jest-environment-node": "^27.0.6",
+    "jest-expect-message": "^1.0.2",
     "prettier": "^2.3.0",
     "pretty-quick": "^3.1.0",
     "ts-node": "^9.1.1",
