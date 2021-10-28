@@ -5,11 +5,18 @@ import { CallRequest, Envelope, SubmitRequestType } from './types';
 import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 
+import { JSDOM } from 'jsdom';
+const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
+window.fetch = global.fetch;
+global.window = window;
+
 const originalDateNowFn = global.Date.now;
 const originalWindow = global.window;
 const originalFetch = global.fetch;
 beforeEach(() => {
   global.Date.now = jest.fn(() => new Date(1000000).getTime());
+  global.window = originalWindow;
+  global.fetch = originalFetch;
 });
 
 afterEach(() => {
@@ -194,18 +201,31 @@ test('use anonymous principal if unspecified', async () => {
 });
 
 describe('getDefaultFetch', () => {
+  it("should use fetch from window if it's available", async () => {
+    const generateAgent = () => new HttpAgent({ host: 'localhost:8000' });
+    expect(generateAgent).not.toThrowError();
+  });
+  it('should throw an error if fetch is not available on the window object', async () => {
+    delete window.fetch;
+    const generateAgent = () => new HttpAgent({ host: 'localhost:8000' });
+
+    expect(generateAgent).toThrowError('Fetch implementation was not available');
+  });
   it('should throw error for defaultFetch with no window or global fetch', () => {
     delete global.window;
     delete global.fetch;
     const generateAgent = () => new HttpAgent({ host: 'localhost:8000' });
-    expect(generateAgent).toThrow();
+
+    expect(generateAgent).toThrowError('Fetch implementation was not available');
   });
   it('should fall back to global.fetch if window is not available', () => {
     delete global.window;
-    new HttpAgent({ host: 'localhost:8000' });
-  });
+    global.fetch = originalFetch;
+    const generateAgent = () => new HttpAgent({ host: 'localhost:8000' });
 
-  it("should use fetch from window if it's available", () => {
-    new HttpAgent({ host: 'localhost:8000' });
+    expect(generateAgent).not.toThrowError();
+  });
+  it.skip('should throw an error if window, global, and fetch are not available', () => {
+    // TODO: Figure out how to test the self and default case errors
   });
 });
