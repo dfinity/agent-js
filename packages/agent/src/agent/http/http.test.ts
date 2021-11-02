@@ -1,19 +1,28 @@
-import { Buffer } from 'buffer/';
-import { HttpAgent } from '../index';
+import { HttpAgent, Nonce } from '../index';
 import * as cbor from '../../cbor';
 import { Expiry, makeNonceTransform } from './transforms';
-import { CallRequest, Envelope, ReadRequestType, SubmitRequestType } from './types';
-import { Principal } from '../../principal';
+import { CallRequest, Envelope, SubmitRequestType } from './types';
+import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
-import { BinaryBlob } from '../../types';
-import { Nonce } from '../../types';
+
+import { JSDOM } from 'jsdom';
+const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
+window.fetch = global.fetch;
+global.window = window;
 
 const originalDateNowFn = global.Date.now;
+const originalWindow = global.window;
+const originalFetch = global.fetch;
 beforeEach(() => {
   global.Date.now = jest.fn(() => new Date(1000000).getTime());
+  global.window = originalWindow;
+  global.fetch = originalFetch;
 });
+
 afterEach(() => {
   global.Date.now = originalDateNowFn;
+  global.window = originalWindow;
+  global.fetch = originalFetch;
 });
 
 test('call', async () => {
@@ -26,14 +35,14 @@ test('call', async () => {
   });
 
   const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
-  const nonce = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
+  const nonce = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
   const principal = Principal.anonymous();
 
-  const httpAgent = new HttpAgent({ fetch: mockFetch });
+  const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://localhost' });
   httpAgent.addTransform(makeNonceTransform(() => nonce));
 
   const methodName = 'greet';
-  const arg = Buffer.from([]) as BinaryBlob;
+  const arg = new Uint8Array([]);
 
   const { requestId } = await httpAgent.call(canisterId, {
     methodName,
@@ -48,7 +57,7 @@ test('call', async () => {
     // are checking that signature does not impact the request id.
     arg,
     nonce,
-    sender: principal.toBlob(),
+    sender: principal,
     ingress_expiry: new Expiry(300000),
   };
 
@@ -80,7 +89,7 @@ test.todo('query');
 test('queries with the same content should have the same signature', async () => {
   const mockResponse = {
     status: 'replied',
-    reply: { arg: Buffer.from([]) as BinaryBlob },
+    reply: { arg: new Uint8Array([]) },
   };
 
   const mockFetch: jest.Mock = jest.fn((resource, init) => {
@@ -93,27 +102,27 @@ test('queries with the same content should have the same signature', async () =>
   });
 
   const canisterIdent = '2chl6-4hpzw-vqaaa-aaaaa-c';
-  const nonce = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
+  const nonce = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
 
   const principal = await Principal.anonymous();
 
-  const httpAgent = new HttpAgent({ fetch: mockFetch });
+  const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://localhost' });
   httpAgent.addTransform(makeNonceTransform(() => nonce));
 
   const methodName = 'greet';
-  const arg = Buffer.from([]) as BinaryBlob;
+  const arg = new Uint8Array([]);
 
   const requestId = await requestIdOf({
     request_type: SubmitRequestType.Call,
     nonce,
-    canister_id: Principal.fromText(canisterIdent),
+    canister_id: Principal.fromText(canisterIdent).toString(),
     method_name: methodName,
     arg,
-    sender: principal.toBlob(),
+    sender: principal,
   });
 
   const paths = [
-    [Buffer.from('request_status') as BinaryBlob, requestId, Buffer.from('reply') as BinaryBlob],
+    [new TextEncoder().encode('request_status'), requestId, new TextEncoder().encode('reply')],
   ];
 
   const response1 = await httpAgent.readState(canisterIdent, { paths });
@@ -135,21 +144,21 @@ test('queries with the same content should have the same signature', async () =>
 test('use anonymous principal if unspecified', async () => {
   const mockFetch: jest.Mock = jest.fn((resource, init) => {
     return Promise.resolve(
-      new Response(null, {
+      new Response(new Uint8Array([]), {
         status: 200,
       }),
     );
   });
 
   const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
-  const nonce = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
+  const nonce = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
   const principal = Principal.anonymous();
 
-  const httpAgent = new HttpAgent({ fetch: mockFetch });
+  const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://localhost' });
   httpAgent.addTransform(makeNonceTransform(() => nonce));
 
   const methodName = 'greet';
-  const arg = Buffer.from([]) as BinaryBlob;
+  const arg = new Uint8Array([]);
 
   const { requestId } = await httpAgent.call(canisterId, {
     methodName,
@@ -164,7 +173,7 @@ test('use anonymous principal if unspecified', async () => {
     // are checking that signature does not impact the request id.
     arg,
     nonce,
-    sender: principal.toBlob(),
+    sender: principal,
     ingress_expiry: new Expiry(300000),
   };
 
@@ -188,5 +197,35 @@ test('use anonymous principal if unspecified', async () => {
       'Content-Type': 'application/cbor',
     },
     body: cbor.encode(expectedRequest),
+  });
+});
+
+describe('getDefaultFetch', () => {
+  it("should use fetch from window if it's available", async () => {
+    const generateAgent = () => new HttpAgent({ host: 'localhost:8000' });
+    expect(generateAgent).not.toThrowError();
+  });
+  it('should throw an error if fetch is not available on the window object', async () => {
+    delete window.fetch;
+    const generateAgent = () => new HttpAgent({ host: 'localhost:8000' });
+
+    expect(generateAgent).toThrowError('Fetch implementation was not available');
+  });
+  it('should throw error for defaultFetch with no window or global fetch', () => {
+    delete global.window;
+    delete global.fetch;
+    const generateAgent = () => new HttpAgent({ host: 'localhost:8000' });
+
+    expect(generateAgent).toThrowError('Fetch implementation was not available');
+  });
+  it('should fall back to global.fetch if window is not available', () => {
+    delete global.window;
+    global.fetch = originalFetch;
+    const generateAgent = () => new HttpAgent({ host: 'localhost:8000' });
+
+    expect(generateAgent).not.toThrowError();
+  });
+  it.skip('should throw an error if window, global, and fetch are not available', () => {
+    // TODO: Figure out how to test the self and default case errors
   });
 });

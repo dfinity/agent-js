@@ -1,9 +1,8 @@
 import {
   AnonymousIdentity,
-  blobFromUint8Array,
-  derBlobFromBlob,
+  DerEncodedPublicKey,
   Identity,
-  Principal,
+  Signature,
   SignIdentity,
 } from '@dfinity/agent';
 import { isDelegationValid } from '@dfinity/authentication';
@@ -13,6 +12,7 @@ import {
   DelegationIdentity,
   Ed25519KeyIdentity,
 } from '@dfinity/identity';
+import { Principal } from '@dfinity/principal';
 
 const KEY_LOCALSTORAGE_KEY = 'identity';
 const KEY_LOCALSTORAGE_DELEGATION = 'delegation';
@@ -39,7 +39,7 @@ export interface AuthClientLoginOptions {
    */
   identityProvider?: string | URL;
   /**
-   * Experiation of the authentication
+   * Expiration of the authentication in nanoseconds
    */
   maxTimeToLive?: bigint;
   /**
@@ -66,7 +66,7 @@ export interface AuthClientStorage {
 interface InternetIdentityAuthRequest {
   kind: 'authorize-client';
   sessionPublicKey: Uint8Array;
-  maxTimetoLive?: bigint;
+  maxTimeToLive?: bigint;
 }
 
 interface InternetIdentityAuthResponseSuccess {
@@ -177,7 +177,9 @@ export class AuthClient {
       try {
         const chainStorage = await storage.get(KEY_LOCALSTORAGE_DELEGATION);
 
-        if (chainStorage) {
+        if (options.identity) {
+          identity = options.identity;
+        } else if (chainStorage) {
           chain = DelegationChain.fromJSON(chainStorage);
 
           // Verify that the delegation isn't expired.
@@ -214,17 +216,17 @@ export class AuthClient {
     const delegations = message.delegations.map(signedDelegation => {
       return {
         delegation: new Delegation(
-          blobFromUint8Array(signedDelegation.delegation.pubkey),
+          signedDelegation.delegation.pubkey,
           signedDelegation.delegation.expiration,
           signedDelegation.delegation.targets,
         ),
-        signature: blobFromUint8Array(signedDelegation.signature),
+        signature: signedDelegation.signature.buffer as Signature,
       };
     });
 
     const delegationChain = DelegationChain.fromDelegations(
       delegations,
-      derBlobFromBlob(blobFromUint8Array(message.userPublicKey)),
+      message.userPublicKey.buffer as DerEncodedPublicKey,
     );
 
     const key = this._key;
@@ -257,6 +259,10 @@ export class AuthClient {
       await this._storage.set(KEY_LOCALSTORAGE_KEY, JSON.stringify(key));
     }
 
+    // Set default maxTimeToLive to 1 day
+    const defaultTimeToLive =
+      /* days */ BigInt(1) * /* hours */ BigInt(24) * /* nanoseconds */ BigInt(3600000000000);
+
     // Create the URL of the IDP. (e.g. https://XXXX/#authorize)
     const identityProviderUrl = new URL(
       options?.identityProvider?.toString() || IDENTITY_PROVIDER_DEFAULT,
@@ -270,7 +276,10 @@ export class AuthClient {
     this._removeEventListener();
 
     // Add an event listener to handle responses.
-    this._eventHandler = this._getEventHandler(identityProviderUrl, options);
+    this._eventHandler = this._getEventHandler(identityProviderUrl, {
+      maxTimeToLive: defaultTimeToLive,
+      ...options,
+    });
     window.addEventListener('message', this._eventHandler);
 
     // Open a new window with the IDP provider.
@@ -290,8 +299,8 @@ export class AuthClient {
           // IDP is ready. Send a message to request authorization.
           const request: InternetIdentityAuthRequest = {
             kind: 'authorize-client',
-            sessionPublicKey: this._key?.getPublicKey().toDer() as Uint8Array,
-            maxTimetoLive: options?.maxTimeToLive,
+            sessionPublicKey: new Uint8Array(this._key?.getPublicKey().toDer() as ArrayBuffer),
+            maxTimeToLive: options?.maxTimeToLive,
           };
           this._idpWindow?.postMessage(request, identityProviderUrl.origin);
           break;

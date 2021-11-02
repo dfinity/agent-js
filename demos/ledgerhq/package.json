@@ -2,10 +2,11 @@
   "name": "ic-agent-ledgerhq-app",
   "private": true,
   "dependencies": {
-    "@dfinity/agent": "^0.8.8",
-    "@dfinity/authentication": "^0.8.8",
-    "@dfinity/identity": "^0.8.8",
-    "@dfinity/identity-ledgerhq": "^0.8.8",
+    "@dfinity/agent": "^0.10.1",
+    "@dfinity/authentication": "^0.10.1",
+    "@dfinity/identity": "^0.10.1",
+    "@dfinity/identity-ledgerhq": "^0.10.1",
+    "@dfinity/principal": "^0.10.1",
     "assert": "^2.0.0",
     "buffer": "^6.0.3",
     "events": "^3.2.0",
@@ -22,10 +23,9 @@
     "build": "webpack",
     "develop": "webpack-dev-server",
     "lint:fix": "npm run lint -- --fix",
-    "make:docs/reference": "",
     "publish:release": "",
     "test:coverage": "",
     "test": ""
   },
-  "version": "0.8.8"
+  "version": "0.10.1"
 }

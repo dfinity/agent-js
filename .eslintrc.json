@@ -6,10 +6,7 @@
     "plugin:jsdoc/recommended"
   ],
   "parser": "@typescript-eslint/parser",
-  "plugins": [
-    "@typescript-eslint",
-    "jsdoc"
-  ],
+  "plugins": ["@typescript-eslint", "jsdoc"],
   "rules": {
     "jsdoc/newline-after-description": "off",
     "jsdoc/require-returns-type": "off",

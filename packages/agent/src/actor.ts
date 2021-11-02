@@ -1,11 +1,66 @@
 import { Buffer } from 'buffer/';
-import { Agent, getDefaultAgent, QueryResponseStatus } from './agent';
+import {
+  Agent,
+  getDefaultAgent,
+  QueryResponseRejected,
+  QueryResponseStatus,
+  ReplicaRejectCode,
+  SubmitResponse,
+} from './agent';
 import { getManagementCanister } from './canisters/management';
-import * as IDL from './idl';
+import { AgentError } from './errors';
+import { IDL } from '@dfinity/candid';
 import { pollForResponse, PollStrategyFactory, strategy } from './polling';
-import { Principal } from './principal';
-import { toHex as requestIdToHex } from './request_id';
-import { BinaryBlob } from './types';
+import { Principal } from '@dfinity/principal';
+import { RequestId } from './request_id';
+import { toHex } from './utils/buffer';
+
+export class ActorCallError extends AgentError {
+  constructor(
+    public readonly canisterId: Principal,
+    public readonly methodName: string,
+    public readonly type: 'query' | 'update',
+    public readonly props: Record<string, string>,
+  ) {
+    super(
+      [
+        `Call failed:`,
+        `  Canister: ${canisterId.toText()}`,
+        `  Method: ${methodName} (${type})`,
+        ...Object.getOwnPropertyNames(props).map(n => `  "${n}": ${JSON.stringify(props[n])}`),
+      ].join('\n'),
+    );
+  }
+}
+
+export class QueryCallRejectedError extends ActorCallError {
+  constructor(
+    canisterId: Principal,
+    methodName: string,
+    public readonly result: QueryResponseRejected,
+  ) {
+    super(canisterId, methodName, 'query', {
+      Status: result.status,
+      Code: ReplicaRejectCode[result.reject_code] ?? `Unknown Code "${result.reject_code}"`,
+      Message: result.reject_message,
+    });
+  }
+}
+
+export class UpdateCallRejectedError extends ActorCallError {
+  constructor(
+    canisterId: Principal,
+    methodName: string,
+    public readonly requestId: RequestId,
+    public readonly response: SubmitResponse['response'],
+  ) {
+    super(canisterId, methodName, 'update', {
+      'Request ID': toHex(requestId),
+      'HTTP status code': response.status.toString(),
+      'HTTP status text': response.statusText,
+    });
+  }
+}
 
 /**
  * Configuration to make calls to the Replica.
@@ -126,17 +181,17 @@ export class Actor {
 
   public static async install(
     fields: {
-      module: BinaryBlob;
+      module: ArrayBuffer;
       mode?: CanisterInstallMode;
-      arg?: BinaryBlob;
+      arg?: ArrayBuffer;
     },
     config: ActorConfig,
   ): Promise<void> {
     const mode = fields.mode === undefined ? CanisterInstallMode.Install : fields.mode;
     // Need to transform the arg into a number array.
-    const arg = fields.arg ? [...fields.arg] : [];
+    const arg = fields.arg ? [...new Uint8Array(fields.arg)] : [];
     // Same for module.
-    const wasmModule = [...fields.module];
+    const wasmModule = [...new Uint8Array(fields.module)];
     const canisterId =
       typeof config.canisterId === 'string'
         ? Principal.fromText(config.canisterId)
@@ -161,8 +216,8 @@ export class Actor {
   public static async createAndInstallCanister(
     interfaceFactory: IDL.InterfaceFactory,
     fields: {
-      module: BinaryBlob;
-      arg?: BinaryBlob;
+      module: ArrayBuffer;
+      arg?: ArrayBuffer;
     },
     config?: CallConfig,
   ): Promise<ActorSubclass> {
@@ -211,9 +266,9 @@ export class Actor {
     interfaceFactory: IDL.InterfaceFactory,
     configuration: ActorConfig,
   ): ActorSubclass<T> {
-    return (new (this.createActorClass(interfaceFactory))(
+    return new (this.createActorClass(interfaceFactory))(
       configuration,
-    ) as unknown) as ActorSubclass<T>;
+    ) as unknown as ActorSubclass<T>;
   }
 
   private [metadataSymbol]: ActorMetadata;
@@ -226,7 +281,7 @@ export class Actor {
 // IDL functions can have multiple return values, so decoding always
 // produces an array. Ensure that functions with single or zero return
 // values behave as expected.
-function decodeReturnValue(types: IDL.Type[], msg: BinaryBlob) {
+function decodeReturnValue(types: IDL.Type[], msg: ArrayBuffer) {
   const returnValues = IDL.decode(types, Buffer.from(msg));
   switch (returnValues.length) {
     case 0:
@@ -258,18 +313,14 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
       };
 
       const agent = options.agent || actor[metadataSymbol].config.agent || getDefaultAgent();
-      const cid = options.canisterId || actor[metadataSymbol].config.canisterId;
-      const arg = IDL.encode(func.argTypes, args) as BinaryBlob;
+      const cid = Principal.from(options.canisterId || actor[metadataSymbol].config.canisterId);
+      const arg = IDL.encode(func.argTypes, args);
 
       const result = await agent.query(cid, { methodName, arg });
 
       switch (result.status) {
         case QueryResponseStatus.Rejected:
-          throw new Error(
-            `Query failed:\n` +
-              `  Status: ${result.status}\n` +
-              `  Message: ${result.reject_message}\n`,
-          );
+          throw new QueryCallRejectedError(cid, methodName, result);
 
         case QueryResponseStatus.Replied:
           return decodeReturnValue(func.retTypes, result.reply.arg);
@@ -294,7 +345,7 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
       };
       const cid = Principal.from(canisterId);
       const ecid = effectiveCanisterId !== undefined ? Principal.from(effectiveCanisterId) : cid;
-      const arg = IDL.encode(func.argTypes, args) as BinaryBlob;
+      const arg = IDL.encode(func.argTypes, args);
       const { requestId, response } = await agent.call(cid, {
         methodName,
         arg,
@@ -302,16 +353,7 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
       });
 
       if (!response.ok) {
-        throw new Error(
-          [
-            'Call failed:',
-            `  Method: ${methodName}(${args})`,
-            `  Canister ID: ${cid}`,
-            `  Request ID: ${requestIdToHex(requestId)}`,
-            `  HTTP status code: ${response.status}`,
-            `  HTTP status text: ${response.statusText}`,
-          ].join('\n'),
-        );
+        throw new UpdateCallRejectedError(cid, methodName, requestId, response);
       }
 
       const pollStrategy = pollingStrategyFactory();
@@ -328,6 +370,9 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
   }
 
   const handler = (...args: unknown[]) => caller({}, ...args);
-  handler.withOptions = (options: CallConfig) => (...args: unknown[]) => caller(options, ...args);
+  handler.withOptions =
+    (options: CallConfig) =>
+    (...args: unknown[]) =>
+      caller(options, ...args);
   return handler as ActorMethod;
 }

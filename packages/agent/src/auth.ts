@@ -1,25 +1,34 @@
-import { Buffer } from 'buffer/';
+import { Principal } from '@dfinity/principal';
 import { HttpAgentRequest } from './agent/http/types';
-import { Principal } from './principal';
 import { requestIdOf } from './request_id';
-import { BinaryBlob, blobFromBuffer, DerEncodedBlob } from './types';
+import { concat, toHex } from './utils/buffer';
 
-const domainSeparator = Buffer.from(new TextEncoder().encode('\x0Aic-request'));
+const domainSeparator = new TextEncoder().encode('\x0Aic-request');
 
 /**
  * A Key Pair, containing a secret and public key.
  */
 export interface KeyPair {
-  secretKey: BinaryBlob;
+  secretKey: ArrayBuffer;
   publicKey: PublicKey;
 }
+
+/**
+ * A public key that is DER encoded. This is a branded ArrayBuffer.
+ */
+export type DerEncodedPublicKey = ArrayBuffer & { __derEncodedPublicKey__: void };
+
+/**
+ * A signature array buffer.
+ */
+export type Signature = ArrayBuffer & { __signature__: void };
 
 /**
  * A Public Key implementation.
  */
 export interface PublicKey {
   // Get the public key bytes encoded with DER.
-  toDer(): DerEncodedBlob;
+  toDer(): DerEncodedPublicKey;
 }
 
 /**
@@ -55,7 +64,7 @@ export abstract class SignIdentity implements Identity {
   /**
    * Signs a blob of data, with this identity's private key.
    */
-  public abstract sign(blob: BinaryBlob): Promise<BinaryBlob>;
+  public abstract sign(blob: ArrayBuffer): Promise<Signature>;
 
   /**
    * Get the principal represented by this identity. Normally should be a
@@ -63,7 +72,7 @@ export abstract class SignIdentity implements Identity {
    */
   public getPrincipal(): Principal {
     if (!this._principal) {
-      this._principal = Principal.selfAuthenticating(this.getPublicKey().toDer());
+      this._principal = Principal.selfAuthenticating(new Uint8Array(this.getPublicKey().toDer()));
     }
     return this._principal;
   }
@@ -82,7 +91,7 @@ export abstract class SignIdentity implements Identity {
       body: {
         content: body,
         sender_pubkey: this.getPublicKey().toDer(),
-        sender_sig: await this.sign(blobFromBuffer(Buffer.concat([domainSeparator, requestId]))),
+        sender_sig: await this.sign(concat(domainSeparator, requestId)),
       },
     };
   }
@@ -131,26 +140,7 @@ export function createIdentityDescriptor(
 ): IdentityDescriptor {
   const identityIndicator: IdentityDescriptor =
     'getPublicKey' in identity
-      ? { type: 'PublicKeyIdentity', publicKey: identity.getPublicKey().toDer().toString('hex') }
+      ? { type: 'PublicKeyIdentity', publicKey: toHex(identity.getPublicKey().toDer()) }
       : { type: 'AnonymousIdentity' };
   return identityIndicator;
-}
-
-/**
- * Type Guard for whether the unknown value is an IdentityDescriptor or not.
- * @param value - value to type guard
- */
-export function isIdentityDescriptor(
-  value: unknown | IdentityDescriptor,
-): value is IdentityDescriptor {
-  switch ((value as IdentityDescriptor)?.type) {
-    case 'AnonymousIdentity':
-      return true;
-    case 'PublicKeyIdentity':
-      if (typeof (value as PublicKeyIdentityDescriptor)?.publicKey !== 'string') {
-        return false;
-      }
-      return true;
-  }
-  return false;
 }

@@ -1,14 +1,14 @@
 import {
   CallOptions,
-  JsonObject,
-  Principal,
   QueryFields,
   QueryResponse,
   ReadStateOptions,
   ReadStateResponse,
   SubmitResponse,
 } from '..';
+import { JsonObject } from '@dfinity/candid';
 import { Agent } from './api';
+import { Principal } from '@dfinity/principal';
 
 export enum ProxyMessageKind {
   Error = 'err',
@@ -157,6 +157,7 @@ export class ProxyStubAgent {
 export class ProxyAgent implements Agent {
   private _nextId = 0;
   private _pendingCalls = new Map<number, [(resolve: any) => void, (reject: any) => void]>();
+  public rootKey = null;
 
   constructor(private _backend: (msg: ProxyMessage) => void) {}
 
@@ -237,5 +238,12 @@ export class ProxyAgent implements Agent {
 
       this._backend(msg);
     });
+  }
+
+  public async fetchRootKey(): Promise<ArrayBuffer> {
+    // Hex-encoded version of the replica root key
+    const rootKey = ((await this.status()) as any).root_key;
+    this.rootKey = rootKey;
+    return rootKey;
   }
 }

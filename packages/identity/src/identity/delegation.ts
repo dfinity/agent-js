@@ -1,27 +1,24 @@
 import {
-  BinaryBlob,
-  blobFromHex,
-  blobFromUint8Array,
-  derBlobFromBlob,
-  DerEncodedBlob,
+  DerEncodedPublicKey,
   HttpAgentRequest,
-  Principal,
   PublicKey,
   requestIdOf,
+  Signature,
   SignIdentity,
 } from '@dfinity/agent';
-import { Buffer } from 'buffer/';
+import { Principal } from '@dfinity/principal';
 import * as cbor from 'simple-cbor';
+import { fromHexString, toHexString } from '../buffer';
 
 const domainSeparator = new TextEncoder().encode('\x1Aic-request-auth-delegation');
-const requestDomainSeparator = Buffer.from(new TextEncoder().encode('\x0Aic-request'));
+const requestDomainSeparator = new TextEncoder().encode('\x0Aic-request');
 
-function _parseBlob(value: unknown): BinaryBlob {
+function _parseBlob(value: unknown): ArrayBuffer {
   if (typeof value !== 'string' || value.length < 64) {
     throw new Error('Invalid public key.');
   }
 
-  return blobFromHex(value);
+  return fromHexString(value);
 }
 
 /**
@@ -32,7 +29,7 @@ function _parseBlob(value: unknown): BinaryBlob {
  */
 export class Delegation {
   constructor(
-    public readonly pubkey: BinaryBlob,
+    public readonly pubkey: ArrayBuffer,
     public readonly expiration: bigint,
     public readonly targets?: Principal[],
   ) {}
@@ -43,35 +40,36 @@ export class Delegation {
       pubkey: cbor.value.bytes(this.pubkey),
       expiration: cbor.value.u64(this.expiration.toString(16), 16),
       ...(this.targets && {
-        targets: cbor.value.array(this.targets.map(t => cbor.value.bytes(t.toBlob()))),
+        targets: cbor.value.array(this.targets.map(t => cbor.value.bytes(t.toUint8Array()))),
       }),
     });
   }
 
   public toJSON(): JsonnableDelegation {
     // every string should be hex and once-de-hexed,
-    // discoverable what it is (e.g. de-hex to get JSON with a 'type' property, or de-hex to DER with an OID)
-    // After de-hex, if it's not obvious what it is, it's an ArrayBuffer.
+    // discoverable what it is (e.g. de-hex to get JSON with a 'type' property, or de-hex to DER
+    // with an OID). After de-hex, if it's not obvious what it is, it's an ArrayBuffer.
     return {
       expiration: this.expiration.toString(16),
-      pubkey: this.pubkey.toString('hex'),
-      ...(this.targets && { targets: this.targets.map(p => p.toBlob().toString('hex')) }),
+      pubkey: toHexString(this.pubkey),
+      ...(this.targets && { targets: this.targets.map(p => p.toHex()) }),
     };
   }
 }
 
 /**
  * Type of ReturnType<Delegation.toJSON>.
- * The goal here is to stringify all non-JSON-compatible types to some bytes representation we can stringify as hex.
+ * The goal here is to stringify all non-JSON-compatible types to some bytes representation we can
+ * stringify as hex.
  * (Hex shouldn't be ambiguous ever, because you can encode as DER with semantic OIDs).
- * * expiration is a BigInt of Nanoseconds since epoch as hex
- * * pubkey is hex of DER publicKey
- * * targets is array of strings, where each string is hex of principal blob (*NOT* textual representation)
  */
 interface JsonnableDelegation {
+  // A BigInt of Nanoseconds since epoch as hex
   expiration: string;
+  // Hexadecimal representation of the DER public key.
   pubkey: string;
-  targets?: Array<string>;
+  // Array of strings, where each string is hex of principal blob (*NOT* textual representation).
+  targets?: string[];
 }
 
 /**
@@ -82,7 +80,7 @@ interface JsonnableDelegation {
  */
 export interface SignedDelegation {
   delegation: Delegation;
-  signature: BinaryBlob;
+  signature: Signature;
 }
 
 /**
@@ -109,8 +107,11 @@ async function _createSingleDelegation(
   // Note: To ensure Safari treats this as a user gesture, ensure to not use async methods
   // besides the actualy webauthn functionality (such as `sign`). Safari will de-register
   // a user gesture if you await an async call thats not fetch, xhr, or setTimeout.
-  const challenge = new Uint8Array([...domainSeparator, ...requestIdOf(delegation)]);
-  const signature = await from.sign(blobFromUint8Array(challenge));
+  const challenge = new Uint8Array([
+    ...domainSeparator,
+    ...new Uint8Array(requestIdOf(delegation)),
+  ]);
+  const signature = await from.sign(challenge);
 
   return {
     delegation,
@@ -118,7 +119,7 @@ async function _createSingleDelegation(
   };
 }
 
-interface IJsonnableDelegationChain {
+export interface JsonnableDelegationChain {
   publicKey: string;
   delegations: Array<{
     signature: string;
@@ -173,7 +174,7 @@ export class DelegationChain {
     expiration: Date = new Date(Date.now() + 15 * 60 * 1000),
     options: {
       previous?: DelegationChain;
-      targets?: Array<Principal>;
+      targets?: Principal[];
     } = {},
   ): Promise<DelegationChain> {
     const delegation = await _createSingleDelegation(from, to, expiration, options.targets);
@@ -188,7 +189,7 @@ export class DelegationChain {
    *
    * @param json The JSON string to parse.
    */
-  public static fromJSON(json: string | IJsonnableDelegationChain): DelegationChain {
+  public static fromJSON(json: string | JsonnableDelegationChain): DelegationChain {
     const { publicKey, delegations } = typeof json === 'string' ? JSON.parse(json) : json;
     if (!Array.isArray(delegations)) {
       throw new Error('Invalid delegations.');
@@ -204,7 +205,7 @@ export class DelegationChain {
       return {
         delegation: new Delegation(
           _parseBlob(pubkey),
-          BigInt(`0x${expiration}`),  // expiration in JSON is an hexa string (See toJSON() below).
+          BigInt(`0x${expiration}`), // expiration in JSON is an hexa string (See toJSON() below).
           targets &&
             targets.map((t: unknown) => {
               if (typeof t !== 'string') {
@@ -213,11 +214,11 @@ export class DelegationChain {
               return Principal.fromHex(t);
             }),
         ),
-        signature: _parseBlob(signature),
+        signature: _parseBlob(signature) as Signature,
       };
     });
 
-    return new this(parsedDelegations, derBlobFromBlob(_parseBlob(publicKey)));
+    return new this(parsedDelegations, _parseBlob(publicKey) as DerEncodedPublicKey);
   }
 
   /**
@@ -226,16 +227,19 @@ export class DelegationChain {
    * @param delegations The list of delegations.
    * @param publicKey The DER-encoded public key of the key-pair signing the first delegation.
    */
-  public static fromDelegations(delegations: SignedDelegation[], publicKey: DerEncodedBlob): DelegationChain {
+  public static fromDelegations(
+    delegations: SignedDelegation[],
+    publicKey: DerEncodedPublicKey,
+  ): DelegationChain {
     return new this(delegations, publicKey);
   }
 
   protected constructor(
     public readonly delegations: SignedDelegation[],
-    public readonly publicKey: DerEncodedBlob,
+    public readonly publicKey: DerEncodedPublicKey,
   ) {}
 
-  public toJSON(): IJsonnableDelegationChain {
+  public toJSON(): JsonnableDelegationChain {
     return {
       delegations: this.delegations.map(signedDelegation => {
         const { delegation, signature } = signedDelegation;
@@ -243,15 +247,15 @@ export class DelegationChain {
         return {
           delegation: {
             expiration: delegation.expiration.toString(16),
-            pubkey: delegation.pubkey.toString('hex'),
+            pubkey: toHexString(delegation.pubkey),
             ...(targets && {
-              targets: targets.map(t => t.toBlob().toString('hex')),
+              targets: targets.map(t => t.toHex()),
             }),
           },
-          signature: signature.toString('hex'),
+          signature: toHexString(signature),
         };
       }),
-      publicKey: this.publicKey.toString('hex'),
+      publicKey: toHexString(this.publicKey),
     };
   }
 }
@@ -292,7 +296,7 @@ export class DelegationIdentity extends SignIdentity {
       toDer: () => this._delegation.publicKey,
     };
   }
-  public sign(blob: BinaryBlob): Promise<BinaryBlob> {
+  public sign(blob: ArrayBuffer): Promise<Signature> {
     return this._inner.sign(blob);
   }
 
@@ -304,7 +308,7 @@ export class DelegationIdentity extends SignIdentity {
       body: {
         content: body,
         sender_sig: await this.sign(
-          blobFromUint8Array(Buffer.concat([requestDomainSeparator, requestId])),
+          new Uint8Array([...requestDomainSeparator, ...new Uint8Array(requestId)]),
         ),
         sender_delegation: this._delegation.delegations,
         sender_pubkey: this._delegation.publicKey,

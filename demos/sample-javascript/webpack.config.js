@@ -11,6 +11,9 @@ module.exports = {
   output: {
     path: path.join(__dirname, 'dist'),
   },
+  performance: {
+    hints: false,
+  },
   optimization: {
     splitChunks: {
       chunks: 'all',
@@ -36,14 +39,13 @@ module.exports = {
   },
   resolve: {
     alias: {
-      process: "process/browser"
+      process: 'process/browser',
     },
     fallback: {
-      "assert": require.resolve("assert/"),
-      "buffer": require.resolve("buffer/"),
-      "events": require.resolve("events/"),
-      "stream": require.resolve("stream-browserify/"),
-      "util": require.resolve("util/"),
+      assert: require.resolve('assert/'),
+      events: require.resolve('events/'),
+      stream: require.resolve('stream-browserify/'),
+      util: require.resolve('util/'),
     },
   },
   devtool: 'source-map',
@@ -53,7 +55,6 @@ module.exports = {
       filename: 'index.html',
     }),
     new webpack.ProvidePlugin({
-      Buffer: [require.resolve('buffer/'), 'Buffer'],
       process: require.resolve('process/browser'),
     }),
   ],

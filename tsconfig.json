@@ -14,5 +14,6 @@
     { "path": "packages/identity" }
   ],
   "include": ["packages/**/types/*"],
-  "resolveJsonModule": true
+  "resolveJsonModule": true,
+  "exclude": ["**/src/**/*.test.ts"]
 }

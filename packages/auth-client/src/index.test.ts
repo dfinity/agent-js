@@ -1,3 +1,4 @@
+import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { AuthClient } from './index';
 
 /**
@@ -6,18 +7,22 @@ import { AuthClient } from './index';
 class IdpMock {
   constructor(
     private readonly eventListener: (event: unknown) => void,
-    private readonly origin: string) {}
+    private readonly origin: string,
+  ) {}
 
   ready(origin?: string) {
-    this.send({
-      kind: "authorize-ready"
-    }, origin);
+    this.send(
+      {
+        kind: 'authorize-ready',
+      },
+      origin,
+    );
   }
 
   send(message: unknown, origin?: string) {
     this.eventListener({
       origin: origin ?? this.origin,
-      data: message
+      data: message,
     });
   }
 }
@@ -27,6 +32,15 @@ describe('Auth Client', () => {
     const test = await AuthClient.create();
     expect(await test.isAuthenticated()).toBe(false);
     expect(test.getIdentity().getPrincipal().isAnonymous()).toBe(true);
+  });
+
+  it('should initialize with a provided identity', async () => {
+    const identity = Ed25519KeyIdentity.generate();
+    const test = await AuthClient.create({
+      identity,
+    });
+    expect(test.getIdentity().getPrincipal().isAnonymous()).toBe(false);
+    expect(test.getIdentity()).toBe(identity);
   });
 
   it('should log users out', async () => {
@@ -50,7 +64,7 @@ function setup(options?: { onAuthRequest?: () => void }) {
   global.addEventListener = jest.fn((_, callback) => {
     // eslint-disable-next-line
     // @ts-ignore
-    idpMock = new IdpMock(callback, "https://identity.ic0.app");
+    idpMock = new IdpMock(callback, 'https://identity.ic0.app');
   });
 
   // Mock window.open and window.postMessage since we can't open windows here.
@@ -58,12 +72,12 @@ function setup(options?: { onAuthRequest?: () => void }) {
   // @ts-ignore
   global.open = jest.fn(() => {
     idpWindow = {
-      postMessage: jest.fn((message) => {
-        if (message.kind === "authorize-client") {
+      postMessage: jest.fn(message => {
+        if (message.kind === 'authorize-client') {
           options?.onAuthRequest?.();
         }
       }),
-      close: jest.fn()
+      close: jest.fn(),
     };
     return idpWindow;
   });
@@ -74,18 +88,18 @@ describe('Auth Client login', () => {
     setup();
     const client = await AuthClient.create();
     // Try without #authorize hash.
-    await client.login({ identityProvider: "http://localhost" });
-    expect(global.open).toBeCalledWith("http://localhost/#authorize", "idpWindow");
+    await client.login({ identityProvider: 'http://localhost' });
+    expect(global.open).toBeCalledWith('http://localhost/#authorize', 'idpWindow');
 
     // Try with #authorize hash.
     global.open = jest.fn();
-    await client.login({ identityProvider: "http://localhost#authorize" });
-    expect(global.open).toBeCalledWith("http://localhost/#authorize", "idpWindow");
+    await client.login({ identityProvider: 'http://localhost#authorize' });
+    expect(global.open).toBeCalledWith('http://localhost/#authorize', 'idpWindow');
 
     // Default url
     global.open = jest.fn();
     await client.login();
-    expect(global.open).toBeCalledWith("https://identity.ic0.app/#authorize", "idpWindow");
+    expect(global.open).toBeCalledWith('https://identity.ic0.app/#authorize', 'idpWindow');
   });
 
   it('should ignore authorize-ready events with bad origin', async () => {
@@ -95,7 +109,7 @@ describe('Auth Client login', () => {
 
     // Send an authorize-ready message with a bad origin. It should _not_ result
     // in a message sent back to the IDP.
-    idpMock.ready("bad origin");
+    idpMock.ready('bad origin');
 
     // No response to the IDP canister.
     expect(idpWindow.postMessage).not.toBeCalled();
@@ -118,10 +132,10 @@ describe('Auth Client login', () => {
       onAuthRequest: () => {
         // Send a failure message.
         idpMock.send({
-          kind: "authorize-client-failure",
-          text: "mock error message"
+          kind: 'authorize-client-failure',
+          text: 'mock error message',
         });
-      }
+      },
     });
     const client = await AuthClient.create();
     const failureFunc = jest.fn();
@@ -129,7 +143,7 @@ describe('Auth Client login', () => {
 
     idpMock.ready();
 
-    expect(failureFunc).toBeCalledWith("mock error message");
+    expect(failureFunc).toBeCalledWith('mock error message');
     expect(idpWindow.close).toBeCalled();
   });
 
@@ -137,9 +151,9 @@ describe('Auth Client login', () => {
     setup({
       onAuthRequest: () => {
         idpMock.send({
-          kind: "authorize-client-success",
-        })
-      }
+          kind: 'authorize-client-success',
+        });
+      },
     });
     const client = await AuthClient.create();
     const failureFunc = jest.fn();
@@ -156,17 +170,19 @@ describe('Auth Client login', () => {
       onAuthRequest: () => {
         // Send a valid request.
         idpMock.send({
-          kind: "authorize-client-success",
-          delegations: [{
-            delegation: {
-              pubkey: Uint8Array.from([]),
-              expiration: BigInt(0),
+          kind: 'authorize-client-success',
+          delegations: [
+            {
+              delegation: {
+                pubkey: Uint8Array.from([]),
+                expiration: BigInt(0),
+              },
+              signature: Uint8Array.from([]),
             },
-            signature: Uint8Array.from([]),
-          }],
-          userPublicKey: Uint8Array.from([])
-        })
-      }
+          ],
+          userPublicKey: Uint8Array.from([]),
+        });
+      },
     });
 
     const client = await AuthClient.create();

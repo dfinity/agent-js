@@ -1,20 +1,24 @@
-import { Buffer } from 'buffer/';
+/**
+ * Need this to setup the proper ArrayBuffer type (otherwise in Jest ArrayBuffer isn't
+ * an instance of ArrayBuffer).
+ * @jest-environment node
+ */
 import * as cbor from './cbor';
 import * as Cert from './certificate';
+import { fromHex, toHex } from './utils/buffer';
 
 function label(str: string): ArrayBuffer {
-  return Buffer.from(str).buffer;
+  return new TextEncoder().encode(str);
 }
 
 function pruned(str: string): ArrayBuffer {
-  return Buffer.from(str, 'hex').buffer;
+  return fromHex(str);
 }
 
 test('hash tree', async () => {
-  const cborEncode = Buffer.from(
+  const cborEncode = fromHex(
     '8301830183024161830183018302417882034568656c6c6f810083024179820345776f726c64' +
       '83024162820344676f6f648301830241638100830241648203476d6f726e696e67',
-    'hex',
   );
   const expected: Cert.HashTree = [
     1,
@@ -29,20 +33,20 @@ test('hash tree', async () => {
     ],
     [1, [2, label('c'), [0]], [2, label('d'), [3, label('morning')]]],
   ];
-  const tree: Cert.HashTree = cbor.decode(cborEncode);
+  const tree: Cert.HashTree = cbor.decode(new Uint8Array(cborEncode));
   expect(tree).toMatchObject(expected);
-  expect(await Cert.reconstruct(tree)).toEqual(
-    Buffer.from('eb5c5b2195e62d996b84c9bcc8259d19a83786a2f59e0878cec84c811f669aa0', 'hex'),
+
+  expect(toHex(await Cert.reconstruct(tree))).toEqual(
+    'eb5c5b2195e62d996b84c9bcc8259d19a83786a2f59e0878cec84c811f669aa0',
   );
 });
 
 test('pruned hash tree', async () => {
-  const cborEncode = Buffer.from(
+  const cborEncode = fromHex(
     '83018301830241618301820458201b4feff9bef8131788b0c9dc6dbad6e81e524249c879e9f1' +
       '0f71ce3749f5a63883024179820345776f726c6483024162820458207b32ac0c6ba8ce35ac' +
       '82c255fc7906f7fc130dab2a090f80fe12f9c2cae83ba6830182045820ec8324b8a1f1ac16' +
       'bd2e806edba78006479c9877fed4eb464a25485465af601d830241648203476d6f726e696e67',
-    'hex',
   );
   const expected: Cert.HashTree = [
     1,
@@ -69,10 +73,10 @@ test('pruned hash tree', async () => {
       [2, label('d'), [3, label('morning')]],
     ],
   ];
-  const tree: Cert.HashTree = cbor.decode(cborEncode);
+  const tree: Cert.HashTree = cbor.decode(new Uint8Array(cborEncode));
   expect(tree).toMatchObject(expected);
-  expect(await Cert.reconstruct(tree)).toEqual(
-    Buffer.from('eb5c5b2195e62d996b84c9bcc8259d19a83786a2f59e0878cec84c811f669aa0', 'hex'),
+  expect(toHex(await Cert.reconstruct(tree))).toEqual(
+    'eb5c5b2195e62d996b84c9bcc8259d19a83786a2f59e0878cec84c811f669aa0',
   );
 });
 
@@ -102,14 +106,21 @@ test('lookup', () => {
       [2, label('d'), [3, label('morning')]],
     ],
   ];
-  expect(Cert.lookup_path([Buffer.from('a'), Buffer.from('a')], tree)).toEqual(undefined);
-  expect(Cert.lookup_path([Buffer.from('a'), Buffer.from('y')], tree)).toEqual(
-    Buffer.from('world'),
-  );
-  expect(Cert.lookup_path([Buffer.from('aa')], tree)).toEqual(undefined);
-  expect(Cert.lookup_path([Buffer.from('ax')], tree)).toEqual(undefined);
-  expect(Cert.lookup_path([Buffer.from('b')], tree)).toEqual(undefined);
-  expect(Cert.lookup_path([Buffer.from('bb')], tree)).toEqual(undefined);
-  expect(Cert.lookup_path([Buffer.from('d')], tree)).toEqual(Buffer.from('morning'));
-  expect(Cert.lookup_path([Buffer.from('e')], tree)).toEqual(undefined);
+
+  function toText(buff: ArrayBuffer): string {
+    const decoder = new TextDecoder();
+    let t = decoder.decode(buff);
+    return t;
+  }
+  function fromText(str: string): ArrayBuffer {
+    return new TextEncoder().encode(str);
+  }
+  expect(Cert.lookup_path([fromText('a'), fromText('a')], tree)).toEqual(undefined);
+  expect(toText(Cert.lookup_path([fromText('a'), fromText('y')], tree))).toEqual('world');
+  expect(Cert.lookup_path([fromText('aa')], tree)).toEqual(undefined);
+  expect(Cert.lookup_path([fromText('ax')], tree)).toEqual(undefined);
+  expect(Cert.lookup_path([fromText('b')], tree)).toEqual(undefined);
+  expect(Cert.lookup_path([fromText('bb')], tree)).toEqual(undefined);
+  expect(toText(Cert.lookup_path([fromText('d')], tree))).toEqual('morning');
+  expect(Cert.lookup_path([fromText('e')], tree)).toEqual(undefined);
 });

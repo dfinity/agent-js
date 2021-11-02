@@ -1,12 +1,12 @@
-import { Principal } from '../principal';
+import { Principal } from '@dfinity/principal';
 import { RequestId } from '../request_id';
-import { BinaryBlob, JsonObject } from '../types';
+import { JsonObject } from '@dfinity/candid';
 
 /**
  * Codes used by the replica for rejecting a message.
  * See {@link https://sdk.dfinity.org/docs/interface-spec/#reject-codes | the interface spec}.
  */
-export const enum ReplicaRejectCode {
+export enum ReplicaRejectCode {
   SysFatal = 1,
   SysTransient = 2,
   DestinationInvalid = 3,
@@ -21,7 +21,7 @@ export interface ReadStateOptions {
   /**
    * A list of paths to read the state of.
    */
-  paths: BinaryBlob[][];
+  paths: ArrayBuffer[][];
 }
 
 /**
@@ -40,7 +40,7 @@ export interface QueryResponseBase {
 
 export interface QueryResponseReplied extends QueryResponseBase {
   status: QueryResponseStatus.Replied;
-  reply: { arg: BinaryBlob };
+  reply: { arg: ArrayBuffer };
 }
 
 export interface QueryResponseRejected extends QueryResponseBase {
@@ -61,7 +61,7 @@ export interface QueryFields {
   /**
    * A binary encoded argument. This is already encoded and will be sent as is.
    */
-  arg: BinaryBlob;
+  arg: ArrayBuffer;
 }
 
 /**
@@ -76,7 +76,7 @@ export interface CallOptions {
   /**
    * A binary encoded argument. This is already encoded and will be sent as is.
    */
-  arg: BinaryBlob;
+  arg: ArrayBuffer;
 
   /**
    * An effective canister ID, used for routing. This should only be mentioned if
@@ -86,7 +86,7 @@ export interface CallOptions {
 }
 
 export interface ReadStateResponse {
-  certificate: BinaryBlob;
+  certificate: ArrayBuffer;
 }
 
 export interface SubmitResponse {
@@ -102,6 +102,7 @@ export interface SubmitResponse {
  * An Agent able to make calls and queries to a Replica.
  */
 export interface Agent {
+  readonly rootKey: ArrayBuffer | null;
   /**
    * Returns the principal ID associated with this agent (by default). It only shows
    * the principal of the default identity in the agent, which is the principal used
@@ -142,8 +143,19 @@ export interface Agent {
    *     failed. If the query itself failed but no protocol errors happened, the response will
    *     be of type QueryResponseRejected.
    */
-  query(
-    canisterId: Principal | string,
-    options: QueryFields,
-  ): Promise<QueryResponse>;
+  query(canisterId: Principal | string, options: QueryFields): Promise<QueryResponse>;
+
+  /**
+   * By default, the agent is configured to talk to the main Internet Computer,
+   * and verifies responses using a hard-coded public key.
+   *
+   * This function will instruct the agent to ask the endpoint for its public
+   * key, and use that instead. This is required when talking to a local test
+   * instance, for example.
+   *
+   * Only use this when you are  _not_ talking to the main Internet Computer,
+   * otherwise you are prone to man-in-the-middle attacks! Do not call this
+   * function by default.
+   */
+  fetchRootKey(): Promise<ArrayBuffer>;
 }

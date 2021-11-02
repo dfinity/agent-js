@@ -1,5 +1,5 @@
 import { Actor, ActorSubclass, CallConfig } from '../actor';
-import { Principal } from '../principal';
+import { Principal } from '@dfinity/principal';
 import managementCanisterIdl from './management_idl';
 import _SERVICE from './management_service';
 

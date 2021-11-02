@@ -1,13 +1,11 @@
-import { Buffer } from 'buffer/';
+import { IDL } from '@dfinity/candid';
+import { Principal } from '@dfinity/principal';
 import { Actor } from './actor';
-import { HttpAgent } from './agent';
+import { HttpAgent, Nonce } from './agent';
 import { Expiry, makeNonceTransform } from './agent/http/transforms';
 import { CallRequest, SubmitRequestType, UnSigned } from './agent/http/types';
 import * as cbor from './cbor';
-import * as IDL from './idl';
-import { Principal } from './principal';
 import { requestIdOf } from './request_id';
-import { blobFromHex, Nonce } from './types';
 
 const originalDateNowFn = global.Date.now;
 beforeEach(() => {
@@ -24,7 +22,7 @@ test.skip('makeActor', async () => {
     });
   };
 
-  const expectedReplyArg = blobFromHex(IDL.encode([IDL.Text], ['Hello, World!']).toString('hex'));
+  const expectedReplyArg = IDL.encode([IDL.Text], ['Hello, World!']);
 
   const mockFetch: jest.Mock = jest
     .fn()
@@ -68,18 +66,18 @@ test.skip('makeActor', async () => {
   const methodName = 'greet';
   const argValue = 'Name';
 
-  const arg = blobFromHex(IDL.encode([IDL.Text], [argValue]).toString('hex'));
+  const arg = IDL.encode([IDL.Text], [argValue]);
 
   const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
   const principal = await Principal.anonymous();
-  const sender = principal.toBlob();
+  const sender = principal.toUint8Array();
 
   const nonces = [
-    Buffer.from([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce,
-    Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]) as Nonce,
-    Buffer.from([2, 3, 4, 5, 6, 7, 8, 9]) as Nonce,
-    Buffer.from([3, 4, 5, 6, 7, 8, 9, 0]) as Nonce,
-    Buffer.from([4, 5, 6, 7, 8, 9, 0, 1]) as Nonce,
+    new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce,
+    new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]) as Nonce,
+    new Uint8Array([2, 3, 4, 5, 6, 7, 8, 9]) as Nonce,
+    new Uint8Array([3, 4, 5, 6, 7, 8, 9, 0]) as Nonce,
+    new Uint8Array([4, 5, 6, 7, 8, 9, 0, 1]) as Nonce,
   ];
 
   const expectedCallRequest = {
@@ -106,7 +104,7 @@ test.skip('makeActor', async () => {
 
   expect(reply).toEqual(IDL.decode([IDL.Text], expectedReplyArg)[0]);
 
-  const { calls, results } = mockFetch.mock;
+  const { calls } = mockFetch.mock;
 
   expect(calls.length).toBe(5);
   expect(calls[0]).toEqual([

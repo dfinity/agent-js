@@ -1,34 +1,11 @@
-import {
-  BinaryBlob,
-  blobFromHex,
-  blobFromUint8Array,
-  derBlobFromBlob,
-  DerEncodedBlob,
-  PublicKey,
-  SignIdentity,
-} from '@dfinity/agent';
+import { DerEncodedPublicKey, PublicKey, Signature, SignIdentity } from '@dfinity/agent';
 import borc from 'borc';
 import * as tweetnacl from 'tweetnacl';
+import { fromHexString, toHexString } from '../buffer';
+import { DER_COSE_OID, wrapDER } from './der';
 
-function _coseToDerEncodedBlob(cose: ArrayBuffer): DerEncodedBlob {
-  const c = new Uint8Array(cose);
-
-  if (c.byteLength > 230) {
-    // 'Tis true, 'tis too much.
-    throw new Error('Cannot encode byte length of more than 230.');
-  }
-
-  // prettier-ignore
-  const der = new Uint8Array([
-    0x30, 0x10 + c.byteLength + 1,  // Sequence of length 16 + c.length.
-    0x30, 0x0C,  // Sequence of length 12
-    // OID 1.3.6.1.4.1.56387.1.1
-    0x06, 0x0A, 0x2B, 0x06, 0x01, 0x04, 0x01, 0x83, 0xB8, 0x43, 0x01, 0x01,
-    0x03, 1 + c.byteLength, 0x00,  // BIT String of length c.length.
-    ...c,
-  ]);
-
-  return derBlobFromBlob(blobFromUint8Array(der));
+function _coseToDerEncodedBlob(cose: ArrayBuffer): DerEncodedPublicKey {
+  return wrapDER(cose, DER_COSE_OID).buffer as DerEncodedPublicKey;
 }
 
 /**
@@ -52,16 +29,16 @@ function _authDataToCose(authData: ArrayBuffer): ArrayBuffer {
 }
 
 export class CosePublicKey implements PublicKey {
-  protected _encodedKey: DerEncodedBlob;
-  public constructor(protected _cose: BinaryBlob) {
+  protected _encodedKey: DerEncodedPublicKey;
+  public constructor(protected _cose: ArrayBuffer) {
     this._encodedKey = _coseToDerEncodedBlob(_cose);
   }
 
-  public toDer(): DerEncodedBlob {
+  public toDer(): DerEncodedPublicKey {
     return this._encodedKey;
   }
 
-  public getCose(): BinaryBlob {
+  public getCose(): ArrayBuffer {
     return this._cose;
   }
 }
@@ -145,7 +122,7 @@ export class WebAuthnIdentity extends SignIdentity {
       throw new Error('Invalid JSON string.');
     }
 
-    return new this(blobFromHex(rawId), blobFromHex(publicKey));
+    return new this(fromHexString(rawId), fromHexString(publicKey));
   }
 
   /**
@@ -169,15 +146,12 @@ export class WebAuthnIdentity extends SignIdentity {
     // Parse the attestationObject as CBOR.
     const attObject = borc.decodeFirst(new Uint8Array(response.attestationObject));
 
-    return new this(
-      blobFromUint8Array(new Uint8Array(creds.rawId)),
-      blobFromUint8Array(new Uint8Array(_authDataToCose(attObject.authData))),
-    );
+    return new this(creds.rawId, _authDataToCose(attObject.authData));
   }
 
   protected _publicKey: CosePublicKey;
 
-  protected constructor(public readonly rawId: BinaryBlob, cose: BinaryBlob) {
+  protected constructor(public readonly rawId: ArrayBuffer, cose: ArrayBuffer) {
     super();
     this._publicKey = new CosePublicKey(cose);
   }
@@ -186,7 +160,7 @@ export class WebAuthnIdentity extends SignIdentity {
     return this._publicKey;
   }
 
-  public async sign(blob: BinaryBlob): Promise<BinaryBlob> {
+  public async sign(blob: ArrayBuffer): Promise<Signature> {
     const result = (await navigator.credentials.get({
       publicKey: {
         allowCredentials: [
@@ -215,7 +189,7 @@ export class WebAuthnIdentity extends SignIdentity {
       if (!cbor) {
         throw new Error('failed to encode cbor');
       }
-      return blobFromUint8Array(new Uint8Array(cbor));
+      return cbor.buffer as Signature;
     } else {
       throw new Error('Invalid response from WebAuthn.');
     }
@@ -226,18 +200,18 @@ export class WebAuthnIdentity extends SignIdentity {
    */
   public toJSON(): JsonnableWebAuthnIdentitiy {
     return {
-      publicKey: this._publicKey.getCose().toString('hex'),
-      rawId: this.rawId.toString('hex'),
+      publicKey: toHexString(this._publicKey.getCose()),
+      rawId: toHexString(this.rawId),
     };
   }
 }
 
 /**
  * ReturnType<WebAuthnIdentity.toJSON>
- * * publicKey is hex(der(publicKey))
- * * rawId is the string representation of the local WebAuthn Credential.id (iirc it is base64url encoded)
  */
 export interface JsonnableWebAuthnIdentitiy {
+  // The hexadecimal representation of the DER encoded public key.
   publicKey: string;
+  // The string representation of the local WebAuthn Credential.id (base64url encoded).
   rawId: string;
 }

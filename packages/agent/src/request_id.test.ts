@@ -1,20 +1,19 @@
 // tslint:disable-next-line: max-line-length
 // https://github.com/dfinity-lab/dfinity/blob/5fef1450c9ab16ccf18381379149e504b11c8218/docs/spec/public/index.adoc#request-ids
+import { Principal } from '@dfinity/principal';
+import { hash, hashValue, requestIdOf } from './request_id';
+import { fromHex, toHex } from './utils/buffer';
+import borc from 'borc';
 
-import { Buffer } from 'buffer/';
-import { Principal } from './principal';
-import { hash, requestIdOf } from './request_id';
-import { BinaryBlob, blobFromHex, blobFromUint8Array, blobToHex } from './types';
-
-const testHashOfBlob = async (input: BinaryBlob, expected: string) => {
+const testHashOfBlob = async (input: ArrayBuffer, expected: string) => {
   const hashed = await hash(input);
-  const hex = blobToHex(hashed);
+  const hex = toHex(hashed);
   expect(hex).toBe(expected);
 };
 
 const testHashOfString = async (input: string, expected: string) => {
   const encoded: Uint8Array = new TextEncoder().encode(input);
-  return testHashOfBlob(encoded as BinaryBlob, expected);
+  return testHashOfBlob(encoded, expected);
 };
 
 // This is based on the intermediate hashes of the request components from
@@ -37,7 +36,7 @@ test('hash', async () => {
     '0a3eb2ba16702a387e6321066dd952db7a31f9b5cc92981e0a92dd56802d3df9',
   );
   await testHashOfBlob(
-    Buffer.from([0, 0, 0, 0, 0, 0, 4, 210]) as BinaryBlob,
+    new Uint8Array([0, 0, 0, 0, 0, 0, 4, 210]),
     '4d8c47c3c1c837964011441882d745f7e92d10a40cef0520447c63029eafe396',
   );
   await testHashOfString(
@@ -50,7 +49,7 @@ test('hash', async () => {
   );
   await testHashOfString('arg', 'b25f03dedd69be07f356a06fe35c1b0ddc0de77dcd9066c4be0c6bbde14b23ff');
   await testHashOfBlob(
-    Buffer.from([68, 73, 68, 76, 0, 253, 42]) as BinaryBlob,
+    new Uint8Array([68, 73, 68, 76, 0, 253, 42]),
     '6c0b2ae49718f6995c02ac5700c9c789d7b7862a0d53e6d40a73f1fcd2f70189',
   );
 });
@@ -64,63 +63,82 @@ test('requestIdOf', async () => {
     // 0x00000000000004D2
     // \x00\x00\x00\x00\x00\x00\x04\xD2
     // 0   0   0   0   0   0   4   210
-    canister_id: Buffer.from([0, 0, 0, 0, 0, 0, 4, 210]) as BinaryBlob,
+    canister_id: new Uint8Array([0, 0, 0, 0, 0, 0, 4, 210]),
 
     // DIDL\x00\xFD*
     // D   I   D   L   \x00  \253  *
     // 68  73  68  76  0     253   42
-    arg: Buffer.from([68, 73, 68, 76, 0, 253, 42]) as BinaryBlob,
+    arg: new Uint8Array([68, 73, 68, 76, 0, 253, 42]),
   };
 
   const requestId = await requestIdOf(request);
 
-  expect(blobToHex(requestId)).toEqual(
+  expect(toHex(requestId)).toEqual(
     '8781291c347db32a9d8c10eb62b710fce5a93be676474c42babc74c51858f94b',
   );
 });
 
 test.skip('requestIdOf for sender_delegation signature', async () => {
   // this is what replica wants
-  const expectedHashBytes = Uint8Array.from(
-    blobFromHex('f0c66015041eccb5528fc7fd817bb4d0707369d7e1383d3cdaa074b2b2236824'),
-  );
+  const expectedHashBytes = 'f0c66015041eccb5528fc7fd817bb4d0707369d7e1383d3cdaa074b2b2236824';
   const delegation1 = {
     expiration: BigInt('1611365875951000000'),
-    pubkey: new Uint8Array(
-      blobFromHex(
-        '302a300506032b6570032100819d9fe3ac251039f934cdc925da0b019848af9d650d4136fb5d955cff17f78e',
-      ),
+    pubkey: fromHex(
+      '302a300506032b6570032100819d9fe3ac251039f934cdc925da0b019848af9d650d4136fb5d955cff17f78e',
     ),
     targets: [
-      Uint8Array.from([0, 0, 0, 0, 0, 48, 0, 77, 1, 1]),
-      Uint8Array.from([0, 0, 0, 0, 0, 32, 0, 43, 1, 1]),
-    ].map(ua => blobFromUint8Array(ua)),
+      new Uint8Array([0, 0, 0, 0, 0, 48, 0, 77, 1, 1]),
+      new Uint8Array([0, 0, 0, 0, 0, 32, 0, 43, 1, 1]),
+    ],
   };
   const delegation1ActualHashBytes = await requestIdOf(delegation1);
-  expect(blobToHex(delegation1ActualHashBytes)).toEqual(
-    blobToHex(blobFromUint8Array(expectedHashBytes)),
-  );
+  expect(toHex(delegation1ActualHashBytes)).toEqual(expectedHashBytes);
 
   // Note: this uses `bigint` and blobs, which the rest of this lib uses too.
   // Make sure this works before `delegation1` above (with BigInt)
   const delegation2 = {
     ...delegation1,
-    pubkey: blobFromUint8Array(delegation1.pubkey),
-    targets: delegation1.targets.map(t => blobFromUint8Array(t)),
-    expiration: BigInt(delegation1.expiration.toString(10)),
+    pubkey: delegation1.pubkey,
+    targets: delegation1.targets.map(t => t),
+    expiration: BigInt(delegation1.expiration.toString()),
   };
   const delegation2ActualHashBytes = await requestIdOf(delegation2);
-  expect(blobToHex(delegation2ActualHashBytes)).toEqual(
-    blobToHex(blobFromUint8Array(delegation1ActualHashBytes)),
-  );
+  expect(toHex(delegation2ActualHashBytes)).toEqual(toHex(delegation1ActualHashBytes));
 
   // This one uses Principals as targets
   const delegation3 = {
     ...delegation1,
-    targets: delegation1.targets.map(t => Principal.fromBlob(t)),
+    targets: delegation1.targets.map(t => Principal.fromText(t.toString())),
   };
   const delegation3ActualHashBytes = await requestIdOf(delegation3);
-  expect(blobToHex(delegation3ActualHashBytes)).toEqual(
-    blobToHex(blobFromUint8Array(delegation1ActualHashBytes)),
-  );
+  expect(toHex(delegation3ActualHashBytes)).toEqual(toHex(delegation1ActualHashBytes));
+});
+
+describe('hashValue', () => {
+  it('should hash a string', () => {
+    const value = hashValue('test');
+    expect(value instanceof ArrayBuffer).toBe(true);
+  });
+  it('should hash a borc tagged value', () => {
+    const tagged = hashValue(new borc.Tagged(42, 'hello'));
+    expect(tagged instanceof ArrayBuffer).toBe(true);
+  });
+  it('should hash a number', () => {
+    const value = hashValue(7);
+    expect(value instanceof ArrayBuffer).toBe(true);
+  });
+  it('should hash an array', () => {
+    const value = hashValue([7]);
+    expect(value instanceof ArrayBuffer).toBe(true);
+  });
+  it('should hash a bigint', () => {
+    const value = hashValue(BigInt(7));
+    expect(value instanceof ArrayBuffer).toBe(true);
+  });
+  it('should throw otherwise', () => {
+    const shouldThrow = () => {
+      hashValue({ foo: 'bar' });
+    };
+    expect(shouldThrow).toThrowError('Attempt to hash');
+  });
 });

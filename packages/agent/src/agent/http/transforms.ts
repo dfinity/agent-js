@@ -1,8 +1,6 @@
-import { Buffer } from 'buffer/';
+import { lebEncode } from '@dfinity/candid';
 import * as cbor from 'simple-cbor';
-import { makeNonce, Nonce } from '../../types';
-import { lebEncode } from '../../utils/leb128';
-import { Endpoint, HttpAgentRequest, HttpAgentRequestTransformFn } from './types';
+import { Endpoint, HttpAgentRequest, HttpAgentRequestTransformFn, makeNonce, Nonce } from './types';
 
 const NANOSECONDS_PER_MILLISECONDS = BigInt(1000000);
 
@@ -13,8 +11,9 @@ export class Expiry {
 
   constructor(deltaInMSec: number) {
     // Use bigint because it can overflow the maximum number allowed in a double float.
-    this._value = (BigInt(Date.now()) + BigInt(deltaInMSec) - REPLICA_PERMITTED_DRIFT_MILLISECONDS)
-      * NANOSECONDS_PER_MILLISECONDS;
+    this._value =
+      (BigInt(Date.now()) + BigInt(deltaInMSec) - REPLICA_PERMITTED_DRIFT_MILLISECONDS) *
+      NANOSECONDS_PER_MILLISECONDS;
   }
 
   public toCBOR(): cbor.CborValue {
@@ -22,7 +21,7 @@ export class Expiry {
     return cbor.value.u64(this._value.toString(16), 16);
   }
 
-  public toHash(): Buffer {
+  public toHash(): ArrayBuffer {
     return lebEncode(this._value);
   }
 }

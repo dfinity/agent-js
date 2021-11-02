@@ -1,9 +1,10 @@
-import { Buffer } from 'buffer/';
+import { JsonObject } from '@dfinity/candid';
+import { Principal } from '@dfinity/principal';
+import { AgentError } from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
-import { Principal } from '../../principal';
 import { requestIdOf } from '../../request_id';
-import { BinaryBlob, JsonObject } from '../../types';
+import { fromHex } from '../../utils/buffer';
 import {
   Agent,
   QueryFields,
@@ -25,6 +26,7 @@ import {
 } from './types';
 
 export * from './transforms';
+export { Nonce, makeNonce } from './types';
 
 export enum RequestStatusResponseStatus {
   Received = 'received',
@@ -37,6 +39,19 @@ export enum RequestStatusResponseStatus {
 
 // Default delta for ingress expiry is 5 minutes.
 const DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS = 5 * 60 * 1000;
+
+// Root public key for the IC, encoded as hex
+const IC_ROOT_KEY =
+  '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100814' +
+  'c0e6ec71fab583b08bd81373c255c3c371b2e84863c98a4f1e08b74235d14fb5d9c0cd546d968' +
+  '5f913a0c0b2cc5341583bf4b4392e467db96d65b9bb4cb717112f8472e0d5a4d14505ffd7484' +
+  'b01291091c5f87b98883463f98091a0baaae';
+
+class HttpDefaultFetchError extends AgentError {
+  constructor(public readonly message: string) {
+    super(message);
+  }
+}
 
 // HttpAgent options that can be used at construction.
 export interface HttpAgentOptions {
@@ -61,25 +76,39 @@ export interface HttpAgentOptions {
   };
 }
 
-declare const window: Window & { fetch: typeof fetch };
-declare const global: { fetch: typeof fetch };
-declare const self: { fetch: typeof fetch };
-
 function getDefaultFetch(): typeof fetch {
-  const result =
-    typeof window === 'undefined'
-      ? typeof global === 'undefined'
-        ? typeof self === 'undefined'
-          ? undefined
-          : self.fetch.bind(self)
-        : global.fetch.bind(global)
-      : window.fetch.bind(window);
+  let defaultFetch;
 
-  if (!result) {
-    throw new Error('Could not find default `fetch` implementation.');
+  if (typeof window !== 'undefined') {
+    // Browser context
+    if (window.fetch) {
+      defaultFetch = window.fetch.bind(window);
+    } else {
+      throw new HttpDefaultFetchError(
+        'Fetch implementation was not available. You appear to be in a browser context, but window.fetch was not present.',
+      );
+    }
+  } else if (typeof global !== 'undefined') {
+    // Node context
+    if (global.fetch) {
+      defaultFetch = global.fetch;
+    } else {
+      throw new HttpDefaultFetchError(
+        'Fetch implementation was not available. You appear to be in a Node.js context, but global.fetch was not available.',
+      );
+    }
+  } else if (typeof self !== 'undefined') {
+    if (self.fetch) {
+      defaultFetch = self.fetch;
+    }
   }
 
-  return result;
+  if (defaultFetch) {
+    return defaultFetch;
+  }
+  throw new HttpDefaultFetchError(
+    'Fetch implementation was not available. Please provide fetch to the HttpAgent constructor, or ensure it is available in the window or global context.',
+  );
 }
 
 // A HTTP agent allows users to interact with a client of the internet computer
@@ -92,16 +121,18 @@ function getDefaultFetch(): typeof fetch {
 // other computations so that this class can stay as simple as possible while
 // allowing extensions.
 export class HttpAgent implements Agent {
+  public rootKey = fromHex(IC_ROOT_KEY);
   private readonly _pipeline: HttpAgentRequestTransformFn[] = [];
   private readonly _identity: Promise<Identity>;
   private readonly _fetch: typeof fetch;
   private readonly _host: URL;
   private readonly _credentials: string | undefined;
+  private _rootKeyFetched = false;
 
   constructor(options: HttpAgentOptions = {}) {
     if (options.source) {
       if (!(options.source instanceof HttpAgent)) {
-        throw new Error('An Agent\'s source can only be another HttpAgent');
+        throw new Error("An Agent's source can only be another HttpAgent");
       }
       this._pipeline = [...options.source._pipeline];
       this._identity = options.source._identity;
@@ -121,7 +152,7 @@ export class HttpAgent implements Agent {
       // Safe to ignore here.
       this._host = options.source._host;
     } else {
-      const location = typeof window !== "undefined" ? window.location : undefined;
+      const location = typeof window !== 'undefined' ? window.location : undefined;
       if (!location) {
         throw new Error('Must specify a host to connect to.');
       }
@@ -148,23 +179,25 @@ export class HttpAgent implements Agent {
     canisterId: Principal | string,
     options: {
       methodName: string;
-      arg: BinaryBlob;
+      arg: ArrayBuffer;
       effectiveCanisterId?: Principal | string;
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
-    const id = await (identity !== undefined ? identity : this._identity);
+    const id = (await (identity !== undefined ? await identity : await this._identity)) as Identity;
     const canister = Principal.from(canisterId);
     const ecid = options.effectiveCanisterId
       ? Principal.from(options.effectiveCanisterId)
       : canister;
-    const sender = id?.getPrincipal() || Principal.anonymous();
+
+    const sender: Principal = id.getPrincipal() || Principal.anonymous();
+
     const submit: CallRequest = {
       request_type: SubmitRequestType.Call,
       canister_id: canister,
       method_name: options.methodName,
       arg: options.arg,
-      sender: sender.toBlob(),
+      sender,
       ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
     };
 
@@ -200,8 +233,8 @@ export class HttpAgent implements Agent {
     if (!response.ok) {
       throw new Error(
         `Server returned an error:\n` +
-        `  Code: ${response.status} (${response.statusText})\n` +
-        `  Body: ${await response.text()}\n`,
+          `  Code: ${response.status} (${response.statusText})\n` +
+          `  Body: ${await response.text()}\n`,
       );
     }
 
@@ -220,7 +253,7 @@ export class HttpAgent implements Agent {
     fields: QueryFields,
     identity?: Identity | Promise<Identity>,
   ): Promise<QueryResponse> {
-    const id = await (identity || this._identity);
+    const id = await (identity !== undefined ? await identity : await this._identity);
     const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
     const sender = id?.getPrincipal() || Principal.anonymous();
 
@@ -229,7 +262,7 @@ export class HttpAgent implements Agent {
       canister_id: canister,
       method_name: fields.methodName,
       arg: fields.arg,
-      sender: sender.toBlob(),
+      sender,
       ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
     };
 
@@ -262,11 +295,11 @@ export class HttpAgent implements Agent {
     if (!response.ok) {
       throw new Error(
         `Server returned an error:\n` +
-        `  Code: ${response.status} (${response.statusText})\n` +
-        `  Body: ${await response.text()}\n`,
+          `  Code: ${response.status} (${response.statusText})\n` +
+          `  Body: ${await response.text()}\n`,
       );
     }
-    return cbor.decode(Buffer.from(await response.arrayBuffer()));
+    return cbor.decode(await response.arrayBuffer());
   }
 
   public async readState(
@@ -275,7 +308,7 @@ export class HttpAgent implements Agent {
     identity?: Identity | Promise<Identity>,
   ): Promise<ReadStateResponse> {
     const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
-    const id = await (identity || this._identity);
+    const id = await (identity !== undefined ? await identity : await this._identity);
     const sender = id?.getPrincipal() || Principal.anonymous();
 
     // TODO: remove this any. This can be a Signed or UnSigned request.
@@ -292,7 +325,7 @@ export class HttpAgent implements Agent {
       body: {
         request_type: ReadRequestType.ReadState,
         paths: fields.paths,
-        sender: sender.toBlob(),
+        sender,
         ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
       },
     });
@@ -313,11 +346,11 @@ export class HttpAgent implements Agent {
     if (!response.ok) {
       throw new Error(
         `Server returned an error:\n` +
-        `  Code: ${response.status} (${response.statusText})\n` +
-        `  Body: ${await response.text()}\n`,
+          `  Code: ${response.status} (${response.statusText})\n` +
+          `  Body: ${await response.text()}\n`,
       );
     }
-    return cbor.decode(Buffer.from(await response.arrayBuffer()));
+    return cbor.decode(await response.arrayBuffer());
   }
 
   public async status(): Promise<JsonObject> {
@@ -337,8 +370,16 @@ export class HttpAgent implements Agent {
       );
     }
 
-    const buffer = await response.arrayBuffer();
-    return cbor.decode(new Uint8Array(buffer));
+    return cbor.decode(await response.arrayBuffer());
+  }
+
+  public async fetchRootKey(): Promise<ArrayBuffer> {
+    if (!this._rootKeyFetched) {
+      // Hex-encoded version of the replica root key
+      this.rootKey = ((await this.status()) as any).root_key;
+      this._rootKeyFetched = true;
+    }
+    return this.rootKey;
   }
 
   protected _transform(request: HttpAgentRequest): Promise<HttpAgentRequest> {
