@@ -6,7 +6,7 @@ import _SERVICE from './management_service';
 export type ManagementCanisterRecord = _SERVICE;
 
 /**
- * Create a management canister actor.
+ * Create a management canister actor
  * @param config
  */
 export function getManagementCanister(config: CallConfig): ActorSubclass<ManagementCanisterRecord> {
