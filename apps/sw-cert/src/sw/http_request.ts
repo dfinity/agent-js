@@ -324,7 +324,7 @@ export async function handleRequest(request: Request): Promise<Response> {
   // The same domain will always load using our service worker, and not the same domain
   // would load by reference. If you want security for your users at that point you
   // should use SRI to make sure the resource matches.
-  if (!url.hostname.endsWith(swDomains)) {
+  if (!url.hostname.endsWith(swDomains) || url.hostname.endsWith(`raw.${swDomains}`)) {
     // todo: Do we need to check for headers and certify the content here?
     return await fetch(request);
   }
