@@ -37,7 +37,7 @@ test('createCanister', async () => {
   // Make sure this doesn't fail.
   await getManagementCanister({
     agent: await agent,
-  }).provisional_create_canister_with_cycles({ amount: [1e12], settings: [] });
+  }).provisional_create_canister_with_cycles({ amount: [BigInt(1e12)], settings: [] });
 });
 
 test('withOptions', async () => {
@@ -48,12 +48,12 @@ test('withOptions', async () => {
         agent: await agent,
       }).provisional_create_canister_with_cycles.withOptions({
         canisterId: 'abcde-gghhi',
-      })({ amount: [1e12], settings: [] });
+      })({ amount: [BigInt(1e12)], settings: [] });
     })(),
   ).rejects.toThrow();
 
   // Make sure this doesn't fail.
   await getManagementCanister({
     agent: await agent,
-  }).provisional_create_canister_with_cycles({ amount: [1e12], settings: [] });
+  }).provisional_create_canister_with_cycles({ amount: [BigInt(1e12)], settings: [] });
 });
