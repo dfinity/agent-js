@@ -47,6 +47,10 @@ const IC_ROOT_KEY =
   '5f913a0c0b2cc5341583bf4b4392e467db96d65b9bb4cb717112f8472e0d5a4d14505ffd7484' +
   'b01291091c5f87b98883463f98091a0baaae';
 
+// IC0 domain info
+const IC0_DOMAIN = 'ic0.app';
+const IC0_SUB_DOMAIN = '.ic0.app';
+
 class HttpDefaultFetchError extends AgentError {
   constructor(public readonly message: string) {
     super(message);
@@ -158,6 +162,12 @@ export class HttpAgent implements Agent {
       }
       this._host = new URL(location + '');
     }
+
+    // Rewrite to avoid redirects
+    if (this._host.hostname.endsWith(IC0_SUB_DOMAIN)) {
+      this._host.hostname = IC0_DOMAIN;
+    }
+
     if (options.credentials) {
       const { name, password } = options.credentials;
       this._credentials = `${name}${password ? ':' + password : ''}`;
