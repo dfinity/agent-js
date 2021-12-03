@@ -141,6 +141,30 @@ test('queries with the same content should have the same signature', async () =>
   expect(response3).toEqual(response4);
 });
 
+test('redirect avoid', async () => {
+  function checkUrl(base: string, result: string) {
+    const httpAgent = new HttpAgent({ host: base });
+    expect(httpAgent['_host'].hostname).toBe(result);
+  }
+
+  checkUrl('https://ic0.app', 'ic0.app');
+  checkUrl('https://IC0.app', 'ic0.app');
+  checkUrl('https://foo.ic0.app', 'ic0.app');
+  checkUrl('https://foo.IC0.app', 'ic0.app');
+  checkUrl('https://foo.Ic0.app', 'ic0.app');
+  checkUrl('https://foo.iC0.app', 'ic0.app');
+  checkUrl('https://foo.bar.ic0.app', 'ic0.app');
+  checkUrl('https://ic0.app/foo/', 'ic0.app');
+  checkUrl('https://foo.ic0.app/foo/', 'ic0.app');
+
+  checkUrl('https://ic1.app', 'ic1.app');
+  checkUrl('https://foo.ic1.app', 'foo.ic1.app');
+  checkUrl('https://ic0.app.ic1.app', 'ic0.app.ic1.app');
+
+  checkUrl('https://fooic0.app', 'fooic0.app');
+  checkUrl('https://fooic0.app.ic0.app', 'ic0.app');
+});
+
 test('use anonymous principal if unspecified', async () => {
   const mockFetch: jest.Mock = jest.fn((resource, init) => {
     return Promise.resolve(
