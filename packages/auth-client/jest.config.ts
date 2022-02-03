@@ -2,12 +2,12 @@ import baseConfig from '../../jest.config.base';
 const packageName = 'auth-client';
 
 module.exports = {
+  testEnvironment: 'jsdom',
   ...baseConfig,
-  roots: [`<rootDir>/packages/${packageName}`],
   bail: false,
   moduleDirectories: ['node_modules'],
   modulePaths: [`<rootDir>/packages/${packageName}/src/`],
-  setupFiles: [`<rootDir>/packages/${packageName}/test-setup.ts`],
+  setupFiles: [`./test-setup.ts`],
   setupFilesAfterEnv: ['jest-expect-message'],
   transform: {
     '^.+\\.ts$': 'ts-jest',
@@ -15,5 +15,7 @@ module.exports = {
   collectCoverageFrom: ['src/**/*.{ts,tsx}'],
   name: packageName,
   displayName: packageName,
-  rootDir: '../..',
+  globals: {
+    window: {},
+  },
 };

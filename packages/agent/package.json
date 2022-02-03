@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/agent",
-  "version": "0.10.0",
+  "version": "0.10.2",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to interact with the Internet Computer",
@@ -41,8 +41,8 @@
     "tslint": "tslint --project tsconfig.json --config tslint.json"
   },
   "peerDependencies": {
-    "@dfinity/candid": "^0.10.0",
-    "@dfinity/principal": "^0.10.0"
+    "@dfinity/candid": "^0.10.2",
+    "@dfinity/principal": "^0.10.2"
   },
   "dependencies": {
     "base64-arraybuffer": "^0.2.0",
@@ -58,13 +58,13 @@
     "@typescript-eslint/parser": "^4.14.2",
     "eslint": "^7.19.0",
     "eslint-plugin-jsdoc": "^31.6.0",
-    "jest": "^26.6.3",
+    "jest": "^27.3.1",
     "jest-expect-message": "^1.0.2",
-    "node-fetch": "2.6.1",
+    "node-fetch": "^2.6.7",
     "text-encoding": "^0.7.0",
-    "ts-jest": "^26.5.4",
+    "ts-jest": "^27.0.7",
     "tslint": "^5.20.0",
-    "typedoc": "^0.20.33",
+    "typedoc": "^0.22.11",
     "typescript": "^3.6.3",
     "whatwg-fetch": "^3.0.0"
   },

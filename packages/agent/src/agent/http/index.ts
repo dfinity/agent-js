@@ -1,5 +1,6 @@
 import { JsonObject } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
+import { AgentError } from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
 import { requestIdOf } from '../../request_id';
@@ -46,6 +47,16 @@ const IC_ROOT_KEY =
   '5f913a0c0b2cc5341583bf4b4392e467db96d65b9bb4cb717112f8472e0d5a4d14505ffd7484' +
   'b01291091c5f87b98883463f98091a0baaae';
 
+// IC0 domain info
+const IC0_DOMAIN = 'ic0.app';
+const IC0_SUB_DOMAIN = '.ic0.app';
+
+class HttpDefaultFetchError extends AgentError {
+  constructor(public readonly message: string) {
+    super(message);
+  }
+}
+
 // HttpAgent options that can be used at construction.
 export interface HttpAgentOptions {
   // Another HttpAgent to inherit configuration (pipeline and fetch) of. This
@@ -69,25 +80,39 @@ export interface HttpAgentOptions {
   };
 }
 
-declare const window: Window & { fetch: typeof fetch };
-declare const global: { fetch: typeof fetch };
-declare const self: { fetch: typeof fetch };
-
 function getDefaultFetch(): typeof fetch {
-  const result =
-    typeof window === 'undefined'
-      ? typeof global === 'undefined'
-        ? typeof self === 'undefined'
-          ? undefined
-          : self.fetch.bind(self)
-        : global.fetch.bind(global)
-      : window.fetch.bind(window);
+  let defaultFetch;
 
-  if (!result) {
-    throw new Error('Could not find default `fetch` implementation.');
+  if (typeof window !== 'undefined') {
+    // Browser context
+    if (window.fetch) {
+      defaultFetch = window.fetch.bind(window);
+    } else {
+      throw new HttpDefaultFetchError(
+        'Fetch implementation was not available. You appear to be in a browser context, but window.fetch was not present.',
+      );
+    }
+  } else if (typeof global !== 'undefined') {
+    // Node context
+    if (global.fetch) {
+      defaultFetch = global.fetch;
+    } else {
+      throw new HttpDefaultFetchError(
+        'Fetch implementation was not available. You appear to be in a Node.js context, but global.fetch was not available.',
+      );
+    }
+  } else if (typeof self !== 'undefined') {
+    if (self.fetch) {
+      defaultFetch = self.fetch;
+    }
   }
 
-  return result;
+  if (defaultFetch) {
+    return defaultFetch;
+  }
+  throw new HttpDefaultFetchError(
+    'Fetch implementation was not available. Please provide fetch to the HttpAgent constructor, or ensure it is available in the window or global context.',
+  );
 }
 
 // A HTTP agent allows users to interact with a client of the internet computer
@@ -137,6 +162,12 @@ export class HttpAgent implements Agent {
       }
       this._host = new URL(location + '');
     }
+
+    // Rewrite to avoid redirects
+    if (this._host.hostname.endsWith(IC0_SUB_DOMAIN)) {
+      this._host.hostname = IC0_DOMAIN;
+    }
+
     if (options.credentials) {
       const { name, password } = options.credentials;
       this._credentials = `${name}${password ? ':' + password : ''}`;

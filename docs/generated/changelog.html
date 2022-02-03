@@ -10,6 +10,37 @@
     <h1>Agent-JS Changelog</h1>
 
     <section>
+      <h2>Version 0.10.3</h2>
+      <ul>
+        <li>
+          Updates npm dependencies to resolve warnings for typedoc and node-fetch. No runtime
+          dependencies were affected.
+        </li>
+      </ul>
+      <h2>Version 0.10.2</h2>
+      <ul>
+        <li>
+          Security enhancement - adds a rewrite for urls to subdomains of
+          <pre>*.ic0.app/api</pre>
+          to
+          <pre>ic0.app/api</pre>
+        </li>
+        <li>Improves error messages for when HttpAgent cannot infer fetch implementation</li>
+      </ul>
+      <h2>Version 0.10.1</h2>
+      <ul>
+        <li>
+          Fix for the auth-client identity option and added JSDOC comment for the timeToLive option
+        </li>
+        <li>
+          Sets the default Internet Identity expiration to 1 day for the authClient, up from 15
+          minutes
+        </li>
+        <li>
+          No longer checks instanceof Principal in @dfinity/agent, which should allow non-identical
+          versions of packages to interoperate, as long as they share the same API
+        </li>
+      </ul>
       <h2>Version 0.10.0</h2>
       <ul>
         <li>Adds changelog for agent-js packages</li>

@@ -39,12 +39,21 @@ To publish to NPM, create a branch and run the following commands;
 - `npm install`. Makes sure everything is installed and up to date locally;
 - `npm run build --workspaces`. Builds all the applications and packages.
 - `npm run version [patch|major|minor|version]`. Update the version in each of the packages.
+- Manually update the version in the root package.json file.
+- `npm install`. Updates the versions of the packages in the package-lock.json file.
 - `git checkout -b release/v<#.#.#>`. Check out release branch
 - `git add .`. Check out release branch
 - `git commit -m 'chore: release v<#.#.#>'`. Commit changes
 - Open a pull request from your fork of the repository
 
-Then, when you have merged the new versions, open https://github.com/dfinity/agent-js/releases/new, click the "Draft a new release" button, enter the new tag version in form `v#.#.#`, and click "Publish release".
+Once the change is merged, you can publish to NPM. To publish to NPM, run the following commands;
+
+- `npm run build --workspaces`. This is just for safety
+- `npm publish --workspaces`. Publishes the packages to NPM.
+  - You will need to have authorization to publish the npm packages in our NPM organization. Reach out to IT if you neeed access.
+  - You can add the `--dry-run` flag to see what would have been published and make sure that all the versions and packages look correct.
+
+Then, when you have merged the new versions and published to npm, open https://github.com/dfinity/agent-js/releases/new, click the "Draft a new release" button, enter the new tag version in form `v#.#.#`, and click "Publish release".
 
 ### Publishing Docs
 

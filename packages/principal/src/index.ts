@@ -47,7 +47,9 @@ export class Principal {
 
     const principal = new this(arr);
     if (principal.toText() !== text) {
-      throw new Error(`Principal "${principal.toText()}" does not have a valid checksum.`);
+      throw new Error(
+        `Principal "${principal.toText()}" does not have a valid checksum (original value "${text}" may not be a valid Principal ID).`,
+      );
     }
 
     return principal;
