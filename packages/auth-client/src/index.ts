@@ -19,6 +19,10 @@ const KEY_LOCALSTORAGE_DELEGATION = 'delegation';
 const IDENTITY_PROVIDER_DEFAULT = 'https://identity.ic0.app';
 const IDENTITY_PROVIDER_ENDPOINT = '#authorize';
 
+const INTERRUPT_CHECK_INTERVAL = 500;
+
+export const ERROR_USER_INTERRUPT = 'UserInterrupt';
+
 /**
  * List of options for creating an {@link AuthClient}.
  */
@@ -240,6 +244,7 @@ export class AuthClient {
     this._idpWindow?.close();
     onSuccess?.();
     this._removeEventListener();
+    delete this._idpWindow;
   }
 
   public getIdentity(): Identity {
@@ -284,6 +289,23 @@ export class AuthClient {
 
     // Open a new window with the IDP provider.
     this._idpWindow = window.open(identityProviderUrl.toString(), 'idpWindow') ?? undefined;
+
+    // Check if the _idpWindow is closed by user.
+    this._checkUserInterrupt(() => this._handleFailure(ERROR_USER_INTERRUPT, options?.onError));
+  }
+
+  private _checkUserInterrupt(onInterrupt: () => void) {
+    const check = (): void => {
+      // The _idpWindow is opened and not yet closed by the client
+      if (this._idpWindow) {
+        if (this._idpWindow.closed) {
+          onInterrupt();
+        } else {
+          setTimeout(check, INTERRUPT_CHECK_INTERVAL);
+        }
+      }
+    };
+    check();
   }
 
   private _getEventHandler(identityProviderUrl: URL, options?: AuthClientLoginOptions) {
@@ -336,6 +358,7 @@ export class AuthClient {
     this._idpWindow?.close();
     onError?.(errorMessage);
     this._removeEventListener();
+    delete this._idpWindow;
   }
 
   private _removeEventListener() {
