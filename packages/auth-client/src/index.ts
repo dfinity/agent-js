@@ -291,21 +291,17 @@ export class AuthClient {
     this._idpWindow = window.open(identityProviderUrl.toString(), 'idpWindow') ?? undefined;
 
     // Check if the _idpWindow is closed by user.
-    this._checkUserInterrupt(() => this._handleFailure(ERROR_USER_INTERRUPT, options?.onError));
-  }
-
-  private _checkUserInterrupt(onInterrupt: () => void) {
-    const check = (): void => {
+    const checkInterruption = (): void => {
       // The _idpWindow is opened and not yet closed by the client
       if (this._idpWindow) {
         if (this._idpWindow.closed) {
-          onInterrupt();
+          this._handleFailure(ERROR_USER_INTERRUPT, options?.onError);
         } else {
-          setTimeout(check, INTERRUPT_CHECK_INTERVAL);
+          setTimeout(checkInterruption, INTERRUPT_CHECK_INTERVAL);
         }
       }
     };
-    check();
+    checkInterruption();
   }
 
   private _getEventHandler(identityProviderUrl: URL, options?: AuthClientLoginOptions) {
