@@ -95,7 +95,7 @@ function getDefaultFetch(): typeof fetch {
   } else if (typeof global !== 'undefined') {
     // Node context
     if (global.fetch) {
-      defaultFetch = global.fetch;
+      defaultFetch = global.fetch.bind(global);
     } else {
       throw new HttpDefaultFetchError(
         'Fetch implementation was not available. You appear to be in a Node.js context, but global.fetch was not available.',
@@ -103,7 +103,7 @@ function getDefaultFetch(): typeof fetch {
     }
   } else if (typeof self !== 'undefined') {
     if (self.fetch) {
-      defaultFetch = self.fetch;
+      defaultFetch = self.fetch.bind(self);
     }
   }
 
