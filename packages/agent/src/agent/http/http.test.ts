@@ -6,6 +6,8 @@ import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 
 import { JSDOM } from 'jsdom';
+import { AnonymousIdentity } from '../..';
+import { AgentError } from '../../errors';
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 global.window = window;
@@ -252,4 +254,39 @@ describe('getDefaultFetch', () => {
   it.skip('should throw an error if window, global, and fetch are not available', () => {
     // TODO: Figure out how to test the self and default case errors
   });
+});
+
+describe('invalidate identity', () => {
+  const mockFetch: jest.Mock = jest.fn((resource, init) => {
+    return Promise.resolve(
+      new Response(null, {
+        status: 200,
+      }),
+    );
+  });
+  it('should allow its identity to be invalidated', () => {
+    const identity = new AnonymousIdentity();
+    const agent = new HttpAgent({ identity, fetch: mockFetch, host: 'http://localhost' });
+    const invalidate = () => agent.invalidateIdentity();
+    expect(invalidate).not.toThrowError();
+  });
+  it('should throw an error instead of making a call if its identity is invalidated', async () => {
+    const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+    const identity = new AnonymousIdentity();
+    const agent = new HttpAgent({ identity, fetch: mockFetch, host: 'http://localhost' });
+    agent.invalidateIdentity();
+    await agent
+      .call(canisterId, {
+        methodName: 'test',
+        arg: new ArrayBuffer(16),
+      })
+      .catch((reason: AgentError) => {
+        expect(reason.message).toBe(
+          "This identity has expired due this application's security policy. Please refresh your authentication.",
+        );
+      });
+  });
+});
+describe('replace identity', () => {
+  it.todo('should allow an actor to replace its identity');
 });

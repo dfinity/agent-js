@@ -54,6 +54,13 @@ const IC0_SUB_DOMAIN = '.ic0.app';
 class HttpDefaultFetchError extends AgentError {
   constructor(public readonly message: string) {
     super(message);
+    Object.setPrototypeOf(this, HttpDefaultFetchError.prototype);
+  }
+}
+export class IdentityInvalidError extends AgentError {
+  constructor(public readonly message: string) {
+    super(message);
+    Object.setPrototypeOf(this, IdentityInvalidError.prototype);
   }
 }
 
@@ -127,7 +134,7 @@ function getDefaultFetch(): typeof fetch {
 export class HttpAgent implements Agent {
   public rootKey = fromHex(IC_ROOT_KEY);
   private readonly _pipeline: HttpAgentRequestTransformFn[] = [];
-  private readonly _identity: Promise<Identity>;
+  private _identity: Promise<Identity> | null;
   private readonly _fetch: typeof fetch;
   private readonly _host: URL;
   private readonly _credentials: string | undefined;
@@ -182,6 +189,11 @@ export class HttpAgent implements Agent {
   }
 
   public async getPrincipal(): Promise<Principal> {
+    if (!this._identity) {
+      throw new IdentityInvalidError(
+        "This identity has expired due this application's security policy. Please refresh your authentication.",
+      );
+    }
     return (await this._identity).getPrincipal();
   }
 
@@ -194,6 +206,11 @@ export class HttpAgent implements Agent {
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
+    if (!this._identity) {
+      throw new Error(
+        "This identity has expired due this application's security policy. Please refresh your authentication.",
+      );
+    }
     const id = (await (identity !== undefined ? await identity : await this._identity)) as Identity;
     const canister = Principal.from(canisterId);
     const ecid = options.effectiveCanisterId
@@ -264,6 +281,13 @@ export class HttpAgent implements Agent {
     identity?: Identity | Promise<Identity>,
   ): Promise<QueryResponse> {
     const id = await (identity !== undefined ? await identity : await this._identity);
+
+    if (!this._identity) {
+      throw new IdentityInvalidError(
+        "This identity has expired due this application's security policy. Please refresh your authentication.",
+      );
+    }
+
     const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
     const sender = id?.getPrincipal() || Principal.anonymous();
 
@@ -291,7 +315,7 @@ export class HttpAgent implements Agent {
     });
 
     // Apply transform for identity.
-    transformedRequest = await id.transformRequest(transformedRequest);
+    transformedRequest = await id?.transformRequest(transformedRequest);
 
     const body = cbor.encode(transformedRequest.body);
     const response = await this._fetch(
@@ -319,6 +343,11 @@ export class HttpAgent implements Agent {
   ): Promise<ReadStateResponse> {
     const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
     const id = await (identity !== undefined ? await identity : await this._identity);
+    if (!this._identity) {
+      throw new IdentityInvalidError(
+        "This identity has expired due this application's security policy. Please refresh your authentication.",
+      );
+    }
     const sender = id?.getPrincipal() || Principal.anonymous();
 
     // TODO: remove this any. This can be a Signed or UnSigned request.
@@ -341,7 +370,7 @@ export class HttpAgent implements Agent {
     });
 
     // Apply transform for identity.
-    transformedRequest = await id.transformRequest(transformedRequest);
+    transformedRequest = await id?.transformRequest(transformedRequest);
 
     const body = cbor.encode(transformedRequest.body);
 
@@ -390,6 +419,10 @@ export class HttpAgent implements Agent {
       this._rootKeyFetched = true;
     }
     return this.rootKey;
+  }
+
+  public invalidateIdentity(): void {
+    this._identity = null;
   }
 
   protected _transform(request: HttpAgentRequest): Promise<HttpAgentRequest> {
