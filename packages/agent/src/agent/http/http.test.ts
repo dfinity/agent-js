@@ -6,7 +6,7 @@ import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 
 import { JSDOM } from 'jsdom';
-import { AnonymousIdentity, Identity, SignIdentity } from '../..';
+import { AnonymousIdentity, SignIdentity } from '../..';
 import { Ed25519KeyIdentity } from '../../../../identity/src/identity/ed25519';
 import { AgentError } from '../../errors';
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
