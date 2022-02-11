@@ -1,7 +1,7 @@
 import { JsonObject } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { AgentError } from '../../errors';
-import { AnonymousIdentity, Identity } from '../../auth';
+import { AnonymousIdentity, Identity, SignIdentity } from '../../auth';
 import * as cbor from '../../cbor';
 import { requestIdOf } from '../../request_id';
 import { fromHex } from '../../utils/buffer';
@@ -423,6 +423,10 @@ export class HttpAgent implements Agent {
 
   public invalidateIdentity(): void {
     this._identity = null;
+  }
+
+  public replaceIdentity(identity: Identity): void {
+    this._identity = Promise.resolve(identity);
   }
 
   protected _transform(request: HttpAgentRequest): Promise<HttpAgentRequest> {
