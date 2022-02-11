@@ -6,7 +6,7 @@ import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 
 import { JSDOM } from 'jsdom';
-import { AnonymousIdentity, Identity } from '../..';
+import { AnonymousIdentity, Identity, SignIdentity } from '../..';
 import { Ed25519KeyIdentity } from '../../../../identity/src/identity/ed25519';
 import { AgentError } from '../../errors';
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
@@ -309,6 +309,7 @@ describe('invalidate identity', () => {
   });
 });
 describe('replace identity', () => {
+  const mockFetch: jest.Mock = jest.fn();
   it('should allow an actor to replace its identity', () => {
     const identity = new AnonymousIdentity();
     const agent = new HttpAgent({ identity, fetch: mockFetch, host: 'http://localhost' });
@@ -317,7 +318,7 @@ describe('replace identity', () => {
     const replace = () => agent.replaceIdentity(identity2);
     expect(replace).not.toThrowError();
   });
-  it.only('should use the new identity in calls', async () => {
+  it('should use the new identity in calls', async () => {
     const mockFetch: jest.Mock = jest.fn((resource, init) => {
       return Promise.resolve(
         new Response(null, {
@@ -344,7 +345,7 @@ describe('replace identity', () => {
       });
 
     // Then, add new identity
-    const identity2 = createIdentity(0);
+    const identity2 = createIdentity(0) as unknown as SignIdentity;
     agent.replaceIdentity(identity2);
     await agent.call(canisterId, {
       methodName: 'test',
