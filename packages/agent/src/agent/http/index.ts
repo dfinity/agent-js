@@ -206,12 +206,12 @@ export class HttpAgent implements Agent {
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
-    if (!this._identity) {
+    const id = await (identity !== undefined ? await identity : await this._identity);
+    if (!id) {
       throw new Error(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
       );
     }
-    const id = (await (identity !== undefined ? await identity : await this._identity)) as Identity;
     const canister = Principal.from(canisterId);
     const ecid = options.effectiveCanisterId
       ? Principal.from(options.effectiveCanisterId)
@@ -281,8 +281,7 @@ export class HttpAgent implements Agent {
     identity?: Identity | Promise<Identity>,
   ): Promise<QueryResponse> {
     const id = await (identity !== undefined ? await identity : await this._identity);
-
-    if (!this._identity) {
+    if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
       );
@@ -343,7 +342,7 @@ export class HttpAgent implements Agent {
   ): Promise<ReadStateResponse> {
     const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
     const id = await (identity !== undefined ? await identity : await this._identity);
-    if (!this._identity) {
+    if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
       );
