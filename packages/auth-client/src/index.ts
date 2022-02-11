@@ -45,11 +45,11 @@ export interface AuthClientLoginOptions {
   /**
    * Callback once login has completed
    */
-  onSuccess?: () => void;
+  onSuccess?: (() => void) | (() => Promise<void>);
   /**
    * Callback in case authentication fails
    */
-  onError?: (error?: string) => void;
+  onError?: ((error?: string) => void) | ((error?: string) => Promise<void>);
 }
 
 /**
@@ -284,6 +284,8 @@ export class AuthClient {
 
     // Open a new window with the IDP provider.
     this._idpWindow = window.open(identityProviderUrl.toString(), 'idpWindow') ?? undefined;
+
+    this._eventHandler;
   }
 
   private _getEventHandler(identityProviderUrl: URL, options?: AuthClientLoginOptions) {
