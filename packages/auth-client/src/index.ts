@@ -284,8 +284,6 @@ export class AuthClient {
 
     // Open a new window with the IDP provider.
     this._idpWindow = window.open(identityProviderUrl.toString(), 'idpWindow') ?? undefined;
-
-    this._eventHandler;
   }
 
   private _getEventHandler(identityProviderUrl: URL, options?: AuthClientLoginOptions) {
