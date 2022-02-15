@@ -865,9 +865,7 @@ export class RecordClass extends ConstructType<Record<string, any>> {
         // TODO this assumes null value in opt is represented as []
         x[expectKey] = [];
       } else {
-        throw new Error(
-          'Cannot find required field ' + expectKey + ' with type ' + expectType.display(),
-        );
+        throw new Error('Cannot find required field ' + expectKey);
       }
     }
     return x;
