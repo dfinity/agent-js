@@ -861,6 +861,13 @@ export class RecordClass extends ConstructType<Record<string, any>> {
       idx++;
     }
     if (idx < this._fields.length) {
+      const [expectKey, expectType] = this._fields[idx];
+      if (expectType.toString().startsWith('opt ')) {
+        // TODO this assumes null value in opt is represented as []
+        x[expectKey] = [];
+        idx++;
+        continue;
+      }
       throw new Error('Cannot find field ' + this._fields[idx][0]);
     }
     return x;
