@@ -861,7 +861,11 @@ export class RecordClass extends ConstructType<Record<string, any>> {
       idx++;
     }
     for (const [expectKey, expectType] of this._fields.slice(idx)) {
-      if (expectType instanceof OptClass) {
+      if (
+        expectType instanceof OptClass ||
+        expectType instanceof ReservedClass ||
+        expectType instanceof NullClass
+      ) {
         // TODO this assumes null value in opt is represented as []
         x[expectKey] = [];
       } else {
