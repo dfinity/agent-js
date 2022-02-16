@@ -201,6 +201,12 @@ test('IDL encoding (record)', () => {
 
 test('IDL decoding (skip fields)', () => {
   testDecode(
+    IDL.Record({ a: IDL.Opt(IDL.Text) }),
+    { a: [] },
+    '4449444c016c000100',
+    'optional field',
+  );
+  testDecode(
     IDL.Record({ foo: IDL.Text, bar: IDL.Int }),
     { foo: '💩', bar: BigInt(42) },
     '4449444c016c04017f027ed3e3aa027c868eb702710100012a04f09f92a9',

@@ -45,11 +45,11 @@ export interface AuthClientLoginOptions {
   /**
    * Callback once login has completed
    */
-  onSuccess?: () => void;
+  onSuccess?: (() => void) | (() => Promise<void>);
   /**
    * Callback in case authentication fails
    */
-  onError?: (error?: string) => void;
+  onError?: ((error?: string) => void) | ((error?: string) => Promise<void>);
 }
 
 /**
