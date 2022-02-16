@@ -860,8 +860,13 @@ export class RecordClass extends ConstructType<Record<string, any>> {
       x[expectKey] = expectType.decodeValue(b, type);
       idx++;
     }
-    if (idx < this._fields.length) {
-      throw new Error('Cannot find field ' + this._fields[idx][0]);
+    for (const [expectKey, expectType] of this._fields.slice(idx)) {
+      if (expectType instanceof OptClass || expectType instanceof ReservedClass) {
+        // TODO this assumes null value in opt is represented as []
+        x[expectKey] = [];
+      } else {
+        throw new Error('Cannot find required field ' + expectKey);
+      }
     }
     return x;
   }
