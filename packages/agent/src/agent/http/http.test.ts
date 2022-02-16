@@ -281,31 +281,31 @@ describe('invalidate identity', () => {
       "This identity has expired due this application's security policy. Please refresh your authentication.";
 
     // Test Agent.call
-    await agent
-      .call(canisterId, {
+    try {
+      await agent.call(canisterId, {
         methodName: 'test',
         arg: new ArrayBuffer(16),
-      })
-      .catch((reason: AgentError) => {
-        expect(reason.message).toBe(expectedError);
       });
+    } catch (error) {
+      expect(error.message).toBe(expectedError);
+    }
     // Test Agent.query
-    await agent
-      .query(canisterId, {
+    try {
+      await agent.query(canisterId, {
         methodName: 'test',
         arg: new ArrayBuffer(16),
-      })
-      .catch((reason: AgentError) => {
-        expect(reason.message).toBe(expectedError);
       });
+    } catch (error) {
+      expect(error.message).toBe(expectedError);
+    }
     // Test readState
-    await agent
-      .readState(canisterId, {
+    try {
+      await agent.readState(canisterId, {
         paths: [[new ArrayBuffer(16)]],
-      })
-      .catch((reason: AgentError) => {
-        expect(reason.message).toBe(expectedError);
       });
+    } catch (error) {
+      expect(error.message).toBe(expectedError);
+    }
   });
 });
 describe('replace identity', () => {

@@ -54,13 +54,11 @@ const IC0_SUB_DOMAIN = '.ic0.app';
 class HttpDefaultFetchError extends AgentError {
   constructor(public readonly message: string) {
     super(message);
-    Object.setPrototypeOf(this, HttpDefaultFetchError.prototype);
   }
 }
 export class IdentityInvalidError extends AgentError {
   constructor(public readonly message: string) {
     super(message);
-    Object.setPrototypeOf(this, IdentityInvalidError.prototype);
   }
 }
 
