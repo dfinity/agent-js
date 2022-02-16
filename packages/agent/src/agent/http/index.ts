@@ -208,7 +208,7 @@ export class HttpAgent implements Agent {
   ): Promise<SubmitResponse> {
     const id = await (identity !== undefined ? await identity : await this._identity);
     if (!id) {
-      throw new Error(
+      throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
       );
     }
