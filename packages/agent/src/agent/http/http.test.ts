@@ -6,9 +6,18 @@ import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 
 import { JSDOM } from 'jsdom';
+import { AnonymousIdentity, SignIdentity } from '../..';
+import { Ed25519KeyIdentity } from '../../../../identity/src/identity/ed25519';
+import { AgentError } from '../../errors';
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 global.window = window;
+
+function createIdentity(seed: number): Ed25519KeyIdentity {
+  const seed1 = new Array(32).fill(0);
+  seed1[0] = seed;
+  return Ed25519KeyIdentity.generate(new Uint8Array(seed1));
+}
 
 const originalDateNowFn = global.Date.now;
 const originalWindow = global.window;
@@ -251,5 +260,97 @@ describe('getDefaultFetch', () => {
   });
   it.skip('should throw an error if window, global, and fetch are not available', () => {
     // TODO: Figure out how to test the self and default case errors
+  });
+});
+
+describe('invalidate identity', () => {
+  const mockFetch: jest.Mock = jest.fn();
+  it('should allow its identity to be invalidated', () => {
+    const identity = new AnonymousIdentity();
+    const agent = new HttpAgent({ identity, fetch: mockFetch, host: 'http://localhost' });
+    const invalidate = () => agent.invalidateIdentity();
+    expect(invalidate).not.toThrowError();
+  });
+  it('should throw an error instead of making a call if its identity is invalidated', async () => {
+    const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+    const identity = new AnonymousIdentity();
+    const agent = new HttpAgent({ identity, fetch: mockFetch, host: 'http://localhost' });
+    agent.invalidateIdentity();
+
+    const expectedError =
+      "This identity has expired due this application's security policy. Please refresh your authentication.";
+
+    // Test Agent.call
+    try {
+      await agent.call(canisterId, {
+        methodName: 'test',
+        arg: new ArrayBuffer(16),
+      });
+    } catch (error) {
+      expect(error.message).toBe(expectedError);
+    }
+    // Test Agent.query
+    try {
+      await agent.query(canisterId, {
+        methodName: 'test',
+        arg: new ArrayBuffer(16),
+      });
+    } catch (error) {
+      expect(error.message).toBe(expectedError);
+    }
+    // Test readState
+    try {
+      await agent.readState(canisterId, {
+        paths: [[new ArrayBuffer(16)]],
+      });
+    } catch (error) {
+      expect(error.message).toBe(expectedError);
+    }
+  });
+});
+describe('replace identity', () => {
+  const mockFetch: jest.Mock = jest.fn();
+  it('should allow an actor to replace its identity', () => {
+    const identity = new AnonymousIdentity();
+    const agent = new HttpAgent({ identity, fetch: mockFetch, host: 'http://localhost' });
+
+    const identity2 = new AnonymousIdentity();
+    const replace = () => agent.replaceIdentity(identity2);
+    expect(replace).not.toThrowError();
+  });
+  it('should use the new identity in calls', async () => {
+    const mockFetch: jest.Mock = jest.fn((resource, init) => {
+      return Promise.resolve(
+        new Response(null, {
+          status: 200,
+        }),
+      );
+    });
+    const expectedError =
+      "This identity has expired due this application's security policy. Please refresh your authentication.";
+
+    const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+    const identity = new AnonymousIdentity();
+    const agent = new HttpAgent({ identity, fetch: mockFetch, host: 'http://localhost' });
+    // First invalidate identity
+    agent.invalidateIdentity();
+    await agent
+      .query(canisterId, {
+        methodName: 'test',
+        arg: new ArrayBuffer(16),
+      })
+      .catch((reason: AgentError) => {
+        // This should fail
+        expect(reason.message).toBe(expectedError);
+      });
+
+    // Then, add new identity
+    const identity2 = createIdentity(0) as unknown as SignIdentity;
+    agent.replaceIdentity(identity2);
+    await agent.call(canisterId, {
+      methodName: 'test',
+      arg: new ArrayBuffer(16),
+    });
+    expect(mockFetch).toBeCalledTimes(1);
   });
 });
