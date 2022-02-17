@@ -20,7 +20,7 @@ export function toHex(buffer: ArrayBuffer): string {
   return [...new Uint8Array(buffer)].map(x => x.toString(16).padStart(2, '0')).join('');
 }
 
-const hexRe = /^([0-9A-F]{2})*$/i.compile();
+const hexRe = new RegExp(/^([0-9A-F]{2})*$/i);
 
 /**
  * Transforms a hexadecimal string into an array buffer.
