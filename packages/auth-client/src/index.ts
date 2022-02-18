@@ -338,7 +338,7 @@ export class AuthClient {
               );
             }
           } catch (err) {
-            this._handleFailure(err.message, options?.onError);
+            this._handleFailure((err as Error).message, options?.onError);
           }
           break;
         case 'authorize-client-failure':
