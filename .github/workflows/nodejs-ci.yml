@@ -7,6 +7,7 @@ on:
       - reopened
       - edited
       - synchronize
+  push:
 
 jobs:
   test:
@@ -19,8 +20,8 @@ jobs:
         spec:
           - '0.16.1'
         node:
-          - 12
-          - 14
+          # - 12
+          # - 14
           - 16
 
     steps:
@@ -39,9 +40,9 @@ jobs:
       - run: npm run build --workspaces --if-present
 
       # test monorepo incl. each subpackage
-      - run: npm run test
-        env:
-          CI: true
+      # - run: npm run test
+      #   env:
+      #     CI: true
 
       - uses: actions/setup-python@v2
         with:
