@@ -70,7 +70,7 @@ jobs:
       - run: npm run e2e --workspaces --if-present
         env:
           CI: true
-          REPLICA_PORT: ${{ steps.ic_ref.outputs.REPLICA_PORT }}
+          REPLICA_PORT: 8000
 
       - name: mitm e2e
         env:
