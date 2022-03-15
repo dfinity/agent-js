@@ -79,7 +79,7 @@ test('identity: query and call gives same principal', async () => {
   const callPrincipal = await identity.whoami();
   const queryPrincipal = await identity.whoami_query();
   expect(callPrincipal).toEqual(queryPrincipal);
-});
+}, 60000);
 
 test('identity: two different Ed25519 keys should have a different principal', async () => {
   const { canisterId, idl } = await installIdentityCanister();

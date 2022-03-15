@@ -12,4 +12,4 @@ test('counter', async () => {
   expect(Number(await counter.read())).toEqual(1);
   await counter.inc();
   expect(Number(await counter.read())).toEqual(2);
-});
+}, 60000);
