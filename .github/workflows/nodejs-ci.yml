@@ -7,6 +7,7 @@ on:
       - reopened
       - edited
       - synchronize
+  push:
 
 jobs:
   test:
@@ -14,13 +15,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-18.04]
+        os: [ubuntu-20.04]
         ghc: ['8.8.4']
         spec:
           - '0.16.1'
         node:
-          - 12
-          - 14
+          # - 12
+          # - 14
           - 16
 
     steps:
@@ -39,67 +40,28 @@ jobs:
       - run: npm run build --workspaces --if-present
 
       # test monorepo incl. each subpackage
-      - run: npm run test
-        env:
-          CI: true
+      # - run: npm run test
+      #   env:
+      #     CI: true
 
       - uses: actions/setup-python@v2
         with:
           python-version: '3.8'
       - run: pip3 install mitmproxy~=6.0.2
 
-      # IC ref checkout and build.
-      - uses: actions/checkout@v2
-        with:
-          repository: 'dfinity/ic-hs'
-          # Personal Read-only Access Token created by Hans Larsen
-          path: ic-hs
-          ref: ${{ matrix.spec }}
+      - run: echo y | DFX_VERSION=0.8.5 sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
 
-      - name: Cache ~/.cabal/store
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cabal/store
-          key: cabal-${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('ic-hs/cabal.project', 'ic-hs/cabal.project.freeze') }}
-          restore-keys: cabal-${{ runner.os }}-${{ matrix.ghc }}-
-
-      - uses: actions/setup-haskell@v1.1.3
-        with:
-          ghc-version: ${{ matrix.ghc }}
-          cabal-version: '3.2'
-
-      - name: Cargo cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Build ic-ref
+      - name: running dfx
+        id: dfx
         run: |
-          cabal --version
-          ghc-${{ matrix.ghc }} --version
-          mkdir -p $HOME/bin
-          cd ic-hs
-          cabal update
-          cabal install -w ghc-${{ matrix.ghc }} --overwrite-policy=always  --installdir=$HOME/bin
-
-      - name: Running ic-ref
-        id: ic_ref
-        run: |
-          set -ex
-          $HOME/bin/ic-ref --pick-port --write-port-to $HOME/ic_ref_port &
-          sleep 1
-          echo "::set-output name=IC_REF_PORT::$(cat $HOME/ic_ref_port)"
+          dfx start --background
+          echo "::set-output name=REPLICA_PORT::8000"
 
       - name: Running mitmdump
         id: mitmdump
         run: |
           set -ex
-          mitmdump -p 8888 --mode reverse:http://localhost:${{ steps.ic_ref.outputs.IC_REF_PORT }} \
+          mitmdump -p 8888 --mode reverse:http://localhost:${{ steps.ic_ref.outputs.REPLICA_PORT }} \
              --modify-body '/~s/Hello/Hullo' \
              --modify-headers '/~s/Transfer-Encoding/' \
              &
@@ -108,12 +70,12 @@ jobs:
       - run: npm run e2e --workspaces --if-present
         env:
           CI: true
-          IC_REF_PORT: ${{ steps.ic_ref.outputs.IC_REF_PORT }}
+          REPLICA_PORT: 8000
 
       - name: mitm e2e
         env:
           CI: true
-          IC_REF_PORT: 8888
+          REPLICA_PORT: 8888
           MITM: true
         run: npm run mitm --workspaces --if-present
 

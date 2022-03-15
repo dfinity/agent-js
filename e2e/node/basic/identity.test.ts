@@ -70,6 +70,7 @@ async function installIdentityCanister(): Promise<{
 }
 
 test('identity: query and call gives same principal', async () => {
+  jest.setTimeout(30000);
   const { canisterId, idl } = await installIdentityCanister();
   const identity = Actor.createActor(idl, {
     canisterId,
