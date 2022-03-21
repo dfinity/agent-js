@@ -1,4 +1,4 @@
-name: Node.js CI
+name: Unit tests
 
 on:
   pull_request:

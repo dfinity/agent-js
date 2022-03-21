@@ -1,4 +1,4 @@
-name: Node.js CI
+name: Mitm Test
 
 on:
   pull_request:
@@ -55,15 +55,15 @@ jobs:
         run: |
           set -ex
           mitmdump -p 8888 --mode reverse:http://127.0.0.1:8000 \
-             --modify-body '/~s/Hello/Hullo' \
-             &
+            --modify-headers '/~s/Transfer-Encoding/' \
+            --modify-body '/~s/Hello/Hullo' \
+            &
           sleep 1
-        #  --modify-headers '/~s/Transfer-Encoding/' \
 
       - name: mitm e2e
         env:
           CI: true
-          REPLICA_PORT: 8888
+          REPLICA_PORT: 8000
           MITM: true
         run: npm run mitm --workspaces --if-present
 
