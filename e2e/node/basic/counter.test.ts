@@ -3,6 +3,8 @@
  */
 import counterCanister from '../canisters/counter';
 
+jest.setTimeout(30000);
+jest.retryTimes(3);
 describe('counter', () => {
   it('should greet', async () => {
     const { actor: counter } = await counterCanister();
