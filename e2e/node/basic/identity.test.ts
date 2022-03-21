@@ -69,8 +69,8 @@ async function installIdentityCanister(): Promise<{
   };
 }
 
+jest.setTimeout(30000);
 test('identity: query and call gives same principal', async () => {
-  jest.setTimeout(30000);
   const { canisterId, idl } = await installIdentityCanister();
   const identity = Actor.createActor(idl, {
     canisterId,
@@ -81,6 +81,7 @@ test('identity: query and call gives same principal', async () => {
   expect(callPrincipal).toEqual(queryPrincipal);
 });
 
+jest.setTimeout(30000);
 test('identity: two different Ed25519 keys should have a different principal', async () => {
   const { canisterId, idl } = await installIdentityCanister();
   const identity1 = await createIdentityActor(0, canisterId, idl);
@@ -91,6 +92,7 @@ test('identity: two different Ed25519 keys should have a different principal', a
   expect(principal1).not.toEqual(principal2);
 });
 
+jest.setTimeout(30000);
 test('identity: two different Secp256k1 keys should have a different principal', async () => {
   const { canisterId, idl } = await installIdentityCanister();
   // Seeded identity
@@ -103,6 +105,7 @@ test('identity: two different Secp256k1 keys should have a different principal',
   expect(principal1).not.toEqual(principal2);
 });
 
+jest.setTimeout(30000);
 test('delegation: principal is the same between delegated keys with secp256k1', async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
@@ -133,6 +136,7 @@ test('delegation: principal is the same between delegated keys with secp256k1', 
   expect(principal2).not.toEqual(principal3);
 });
 
+jest.setTimeout(30000);
 test('delegation: principal is the same between delegated keys', async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
@@ -163,6 +167,7 @@ test('delegation: principal is the same between delegated keys', async () => {
   expect(principal2).not.toEqual(principal3);
 });
 
+jest.setTimeout(30000);
 test('delegation: works with 3 keys', async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
@@ -205,6 +210,7 @@ test('delegation: works with 3 keys', async () => {
   expect(principalRoot).toEqual(principalDelegated);
 });
 
+jest.setTimeout(30000);
 test('delegation: works with 4 keys', async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
