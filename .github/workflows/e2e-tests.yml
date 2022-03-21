@@ -23,6 +23,11 @@ jobs:
           # - 12
           # - 14
           - 16
+    services:
+      dfx:
+        image: fleek/dfx
+        ports:
+          - 8000:8000
 
     steps:
       - uses: actions/checkout@v2
@@ -39,29 +44,23 @@ jobs:
       # build monorepo incl. each subpackage
       - run: npm run build --workspaces --if-present
 
-      # test monorepo incl. each subpackage
-      # - run: npm run test
-      #   env:
-      #     CI: true
-
       - uses: actions/setup-python@v2
         with:
           python-version: '3.8'
       - run: pip3 install mitmproxy~=6.0.2
 
-      - run: echo y | DFX_VERSION=0.8.5 sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
+      # - run: echo y | sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
 
-      - name: running dfx
-        id: dfx
-        run: |
-          dfx start --background
-          echo "::set-output name=REPLICA_PORT::8000"
+      # - name: running dfx
+      #   id: dfx
+      #   run: |
+      #     dfx start --background
 
       - name: Running mitmdump
         id: mitmdump
         run: |
           set -ex
-          mitmdump -p 8888 --mode reverse:http://localhost:${{ steps.ic_ref.outputs.REPLICA_PORT }} \
+          mitmdump -p 8888 --mode reverse:http://localhost:8000 \
              --modify-body '/~s/Hello/Hullo' \
              --modify-headers '/~s/Transfer-Encoding/' \
              &
