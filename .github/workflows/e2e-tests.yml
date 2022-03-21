@@ -1,4 +1,4 @@
-name: E2E Tests
+name: End to End
 
 on:
   pull_request:
@@ -19,8 +19,6 @@ jobs:
         spec:
           - '0.16.1'
         node:
-          # - 12
-          # - 14
           - 16
 
     steps:
@@ -38,11 +36,6 @@ jobs:
       # build monorepo incl. each subpackage
       - run: npm run build --workspaces --if-present
 
-      - uses: actions/setup-python@v2
-        with:
-          python-version: '3.8'
-      - run: pip3 install mitmproxy~=6.0.2
-
       - run: echo y | sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
 
       - name: running dfx
@@ -54,8 +47,3 @@ jobs:
         env:
           CI: true
           REPLICA_PORT: 8000
-
-      - name: clean up
-        run: |
-          killall mitmdump
-          killall ic-ref
