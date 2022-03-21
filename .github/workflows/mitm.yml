@@ -58,7 +58,7 @@ jobs:
             --modify-headers '/~s/Transfer-Encoding/' \
             --modify-body '/~s/Hello/Hullo' \
             &
-          sleep 1
+          sleep 5
 
       - name: mitm e2e
         env:
