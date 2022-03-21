@@ -23,11 +23,6 @@ jobs:
           # - 12
           # - 14
           - 16
-    services:
-      dfx:
-        image: fleek/dfx
-        ports:
-          - 8000:8000
 
     steps:
       - uses: actions/checkout@v2
@@ -49,12 +44,12 @@ jobs:
           python-version: '3.8'
       - run: pip3 install mitmproxy~=6.0.2
 
-      # - run: echo y | sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
+      - run: echo y | sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
 
-      # - name: running dfx
-      #   id: dfx
-      #   run: |
-      #     dfx start --background
+      - name: running dfx
+        id: dfx
+        run: |
+          dfx start --background
 
       - name: Running mitmdump
         id: mitmdump
