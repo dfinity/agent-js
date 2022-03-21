@@ -7,6 +7,7 @@ on:
       - reopened
       - edited
       - synchronize
+  push:
 
 jobs:
   test:
@@ -33,7 +34,6 @@ jobs:
       - run: npm install -g npm
 
       - run: npm install
-      - run: npm run lint --workspaces --if-present
 
       # build monorepo incl. each subpackage
       - run: npm run build --workspaces --if-present
@@ -50,10 +50,22 @@ jobs:
         run: |
           dfx start --background
 
-      - run: npm run e2e --workspaces --if-present
+      - name: Running mitmdump
+        id: mitmdump
+        run: |
+          set -ex
+          mitmdump -p 8888 --mode reverse:http://127.0.0.1:8000 \
+             --modify-body '/~s/Hello/Hullo' \
+             &
+          sleep 1
+        #  --modify-headers '/~s/Transfer-Encoding/' \
+
+      - name: mitm e2e
         env:
           CI: true
-          REPLICA_PORT: 8000
+          REPLICA_PORT: 8888
+          MITM: true
+        run: npm run mitm --workspaces --if-present
 
       - name: clean up
         run: |
