@@ -4,4 +4,9 @@
  *
  * @todo https://github.com/dfinity/agent-js/issues/420
  */
-export class AgentError extends Error {}
+export class AgentError extends Error {
+  constructor(public readonly message: string) {
+    super(message);
+    Object.setPrototypeOf(this, AgentError.prototype);
+  }
+}

@@ -25,7 +25,7 @@ commands to keep in mind;
   publicly. Normally you can use a replica distributed with dfx (ie. dfx start in a project),
   but there is no guarantee that the `next` branch will work with the latest published dfx.
   Once you have a replica running locally, you must pass the port to the e2e tests using the
-  `IC_REF_PORT` environment vairable. If that variable is not set, the tests will fail.
+  `REPLICA_PORT` environment vairable. If that variable is not set, the tests will fail.
 
 ### Contributing
 

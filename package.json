@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/agent-monorepo",
-  "version": "0.10.1",
+  "version": "0.10.4",
   "private": true,
   "description": "Use an Agent to interact with the Internet Computer from your JavaScript program.",
   "dependencies": {
@@ -18,7 +18,6 @@
       "packages/identity-ledgerhq",
       "packages/authentication",
       "packages/auth-client",
-      "apps/sw-cert",
       "e2e/node",
       "demos/ledgerhq",
       "demos/sample-javascript"
@@ -39,13 +38,13 @@
     "prettier": "^2.3.0",
     "pretty-quick": "^3.1.0",
     "ts-node": "^9.1.1",
-    "typedoc": "^0.20.32",
-    "typescript": "^3.6.3",
+    "typedoc": "^0.22.11",
+    "typescript": "^4.5.5",
     "yargs": "^15.4.1"
   },
   "engines": {
     "node": "^12 || ^14 || ^16",
-    "npm": "^7.17"
+    "npm": "^7.17 || ^8"
   },
   "scripts": {
     "lint:e2e": "eslint --cache --cache-location node_modules/.cache/eslint 'e2e/*/**/*.ts*'",

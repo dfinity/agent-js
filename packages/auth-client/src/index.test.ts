@@ -1,5 +1,5 @@
 import { Ed25519KeyIdentity } from '@dfinity/identity';
-import { AuthClient } from './index';
+import { AuthClient, ERROR_USER_INTERRUPT } from './index';
 
 /**
  * A class for mocking the IDP service.
@@ -55,6 +55,7 @@ describe('Auth Client', () => {
 interface IdpWindow {
   postMessage(message: { kind: string }): void;
   close(): void;
+  closed: boolean;
 }
 
 let idpWindow: IdpWindow;
@@ -71,15 +72,18 @@ function setup(options?: { onAuthRequest?: () => void }) {
   // eslint-disable-next-line
   // @ts-ignore
   global.open = jest.fn(() => {
-    idpWindow = {
+    const idpWin: IdpWindow = (idpWindow = {
       postMessage: jest.fn(message => {
         if (message.kind === 'authorize-client') {
           options?.onAuthRequest?.();
         }
       }),
-      close: jest.fn(),
-    };
-    return idpWindow;
+      close: jest.fn(() => {
+        idpWin.closed = true;
+      }),
+      closed: false,
+    });
+    return idpWin;
   });
 }
 
@@ -163,6 +167,28 @@ describe('Auth Client login', () => {
 
     expect(failureFunc).toBeCalled();
     expect(idpWindow.close).toBeCalled();
+    client.logout();
+  });
+
+  it('should call onError in an async pattern', async () => {
+    setup({
+      onAuthRequest: () => {
+        idpMock.send({
+          kind: 'authorize-client-success',
+        });
+      },
+    });
+    const client = await AuthClient.create();
+    const cb = jest.fn();
+    const failureFunc = async () => {
+      await cb();
+    };
+    await client.login({ onError: failureFunc });
+
+    idpMock.ready();
+
+    expect(cb).toBeCalled();
+    expect(idpWindow.close).toBeCalled();
   });
 
   it('should call onSuccess if recieved a valid success message', async () => {
@@ -192,6 +218,53 @@ describe('Auth Client login', () => {
     idpMock.ready();
 
     expect(onSuccess).toBeCalled();
+    expect(idpWindow.close).toBeCalled();
+    await client.logout();
+  });
+
+  it('should call onError if the user closed the IDP window', async () => {
+    setup();
+    const client = await AuthClient.create();
+
+    await expect(
+      new Promise<void>((onSuccess, onError) =>
+        (async () => {
+          await client.login({ onSuccess, onError });
+          idpWindow.close();
+        })(),
+      ),
+    ).rejects.toMatch(ERROR_USER_INTERRUPT);
+  });
+  it('should call an async onSuccess if recieved a valid success message', async () => {
+    setup({
+      onAuthRequest: () => {
+        // Send a valid request.
+        idpMock.send({
+          kind: 'authorize-client-success',
+          delegations: [
+            {
+              delegation: {
+                pubkey: Uint8Array.from([]),
+                expiration: BigInt(0),
+              },
+              signature: Uint8Array.from([]),
+            },
+          ],
+          userPublicKey: Uint8Array.from([]),
+        });
+      },
+    });
+
+    const client = await AuthClient.create();
+    const cb = jest.fn();
+    const onSuccess = async () => {
+      cb();
+    };
+    await client.login({ onSuccess: onSuccess });
+
+    idpMock.ready();
+
+    expect(cb).toBeCalled();
     expect(idpWindow.close).toBeCalled();
   });
 });

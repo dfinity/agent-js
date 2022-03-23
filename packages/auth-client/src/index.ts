@@ -19,6 +19,10 @@ const KEY_LOCALSTORAGE_DELEGATION = 'delegation';
 const IDENTITY_PROVIDER_DEFAULT = 'https://identity.ic0.app';
 const IDENTITY_PROVIDER_ENDPOINT = '#authorize';
 
+const INTERRUPT_CHECK_INTERVAL = 500;
+
+export const ERROR_USER_INTERRUPT = 'UserInterrupt';
+
 /**
  * List of options for creating an {@link AuthClient}.
  */
@@ -45,11 +49,11 @@ export interface AuthClientLoginOptions {
   /**
    * Callback once login has completed
    */
-  onSuccess?: () => void;
+  onSuccess?: (() => void) | (() => Promise<void>);
   /**
    * Callback in case authentication fails
    */
-  onError?: (error?: string) => void;
+  onError?: ((error?: string) => void) | ((error?: string) => Promise<void>);
 }
 
 /**
@@ -240,6 +244,7 @@ export class AuthClient {
     this._idpWindow?.close();
     onSuccess?.();
     this._removeEventListener();
+    delete this._idpWindow;
   }
 
   public getIdentity(): Identity {
@@ -284,6 +289,19 @@ export class AuthClient {
 
     // Open a new window with the IDP provider.
     this._idpWindow = window.open(identityProviderUrl.toString(), 'idpWindow') ?? undefined;
+
+    // Check if the _idpWindow is closed by user.
+    const checkInterruption = (): void => {
+      // The _idpWindow is opened and not yet closed by the client
+      if (this._idpWindow) {
+        if (this._idpWindow.closed) {
+          this._handleFailure(ERROR_USER_INTERRUPT, options?.onError);
+        } else {
+          setTimeout(checkInterruption, INTERRUPT_CHECK_INTERVAL);
+        }
+      }
+    };
+    checkInterruption();
   }
 
   private _getEventHandler(identityProviderUrl: URL, options?: AuthClientLoginOptions) {
@@ -320,7 +338,7 @@ export class AuthClient {
               );
             }
           } catch (err) {
-            this._handleFailure(err.message, options?.onError);
+            this._handleFailure((err as Error).message, options?.onError);
           }
           break;
         case 'authorize-client-failure':
@@ -336,6 +354,7 @@ export class AuthClient {
     this._idpWindow?.close();
     onError?.(errorMessage);
     this._removeEventListener();
+    delete this._idpWindow;
   }
 
   private _removeEventListener() {
