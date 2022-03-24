@@ -62,16 +62,18 @@ describe('Auth Client', () => {
     const identity = Ed25519KeyIdentity.generate();
     const mockFetch: jest.Mock = jest.fn();
     // http agent uses identity
-    const httpAgent = new HttpAgent({ fetch: mockFetch, identity });
+
     const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
     const actorInterface = () => {
       return IDL.Service({
         greet: IDL.Func([IDL.Text], [IDL.Text]),
       });
     };
-    const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
+
     // idle function invalidates actor
-    const idleFn = jest.fn(() => Actor.agentOf(actor).invalidateIdentity());
+    const idleFn = jest.fn(() => {
+      Actor.agentOf(actor).invalidateIdentity();
+    });
 
     // setup auth client
     const test = await AuthClient.create({
@@ -81,6 +83,8 @@ describe('Auth Client', () => {
         onIdle: idleFn,
       },
     });
+    const httpAgent = new HttpAgent({ fetch: mockFetch, identity: await test.getIdentity() });
+    const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
     expect(idleFn).not.toHaveBeenCalled();
     // wait for the idle timeout
     jest.advanceTimersByTime(1000);
