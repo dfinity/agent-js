@@ -49,6 +49,10 @@ describe('Auth Client', () => {
     expect(await test.isAuthenticated()).toBe(false);
     expect(test.getIdentity().getPrincipal().isAnonymous()).toBe(true);
   });
+  it('should initialize an idleManager', async () => {
+    const test = await AuthClient.create();
+    expect(test.idleManager).toBeDefined();
+  });
 });
 
 // A minimal interface of our interactions with the Window object of the IDP.

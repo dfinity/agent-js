@@ -13,6 +13,7 @@ import {
   Ed25519KeyIdentity,
 } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
+import IdleManager, { IdleManagerOptions } from './idleManager';
 
 const KEY_LOCALSTORAGE_KEY = 'identity';
 const KEY_LOCALSTORAGE_DELEGATION = 'delegation';
@@ -35,6 +36,19 @@ export interface AuthClientCreateOptions {
    * Optional storage with get, set, and remove. Uses LocalStorage by default
    */
   storage?: AuthClientStorage;
+  /**
+   * Options to handle idle timeouts
+   * @default after 30 minutes, invalidates the identity
+   */
+  idleOptions?: IdleOptions;
+}
+
+export interface IdleOptions extends IdleManagerOptions {
+  /**
+   * Disables idle functionality
+   * @default false
+   */
+  disableIdle?: boolean;
 }
 
 export interface AuthClientLoginOptions {
@@ -202,7 +216,11 @@ export class AuthClient {
       }
     }
 
-    return new this(identity, key, chain, storage);
+    const idleManager = options.idleOptions?.disableIdle
+      ? undefined
+      : new IdleManager({ ...options.idleOptions });
+
+    return new this(identity, key, chain, storage, idleManager);
   }
 
   protected constructor(
@@ -210,6 +228,7 @@ export class AuthClient {
     private _key: SignIdentity | null,
     private _chain: DelegationChain | null,
     private _storage: AuthClientStorage,
+    public idleManager?: IdleManager,
     // A handle on the IdP window.
     private _idpWindow?: Window,
     // The event handler for processing events from the IdP.
@@ -366,6 +385,11 @@ export class AuthClient {
 
   public async logout(options: { returnTo?: string } = {}): Promise<void> {
     _deleteStorage(this._storage);
+
+    // Exit idleManager if it is enabled.
+    if (this._idleManager) {
+      this._idleManager.exit();
+    }
 
     // Reset this auth client to a non-authenticated state.
     this._identity = new AnonymousIdentity();
