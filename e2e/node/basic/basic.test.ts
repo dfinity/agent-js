@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  */
-import { Certificate, getManagementCanister } from '@dfinity/agent';
+import { ActorMethod, CallConfig, Certificate, getManagementCanister } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import agent from '../utils/agent';
@@ -44,9 +44,10 @@ test('withOptions', async () => {
   // Make sure this fails.
   await expect(
     (async () => {
-      await getManagementCanister({
+      const canisterActor = await getManagementCanister({
         agent: await agent,
-      }).provisional_create_canister_with_cycles.withOptions({
+      });
+      await (canisterActor.provisional_create_canister_with_cycles as ActorMethod).withOptions({
         canisterId: 'abcde-gghhi',
       })({ amount: [BigInt(1e12)], settings: [] });
     })(),
