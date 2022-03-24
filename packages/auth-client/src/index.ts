@@ -220,20 +220,32 @@ export class AuthClient {
       ? undefined
       : IdleManager.create(options.idleOptions);
 
-    return new this(identity, key, chain, storage, idleManager);
+    return new this(identity, key, chain, storage, options.idleOptions);
   }
+
+  public readonly idleManager: IdleManager | undefined;
 
   protected constructor(
     private _identity: Identity,
     private _key: SignIdentity | null,
     private _chain: DelegationChain | null,
     private _storage: AuthClientStorage,
-    public idleManager?: IdleManager,
+    private _idleOptions?: IdleOptions,
     // A handle on the IdP window.
     private _idpWindow?: Window,
     // The event handler for processing events from the IdP.
     private _eventHandler?: (event: MessageEvent) => void,
-  ) {}
+  ) {
+    this.idleManager = _idleOptions?.disableIdle
+      ? undefined
+      : IdleManager.create({
+          ..._idleOptions,
+          onIdle: () => {
+            this.logout();
+            _idleOptions?.onIdle?.();
+          },
+        });
+  }
 
   private _handleSuccess(message: InternetIdentityAuthResponseSuccess, onSuccess?: () => void) {
     const delegations = message.delegations.map(signedDelegation => {
@@ -385,11 +397,6 @@ export class AuthClient {
 
   public async logout(options: { returnTo?: string } = {}): Promise<void> {
     _deleteStorage(this._storage);
-
-    // Exit idleManager if it is enabled.
-    if (this.idleManager) {
-      this.idleManager.exit();
-    }
 
     // Reset this auth client to a non-authenticated state.
     this._identity = new AnonymousIdentity();
