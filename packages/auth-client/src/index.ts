@@ -218,7 +218,7 @@ export class AuthClient {
 
     const idleManager = options.idleOptions?.disableIdle
       ? undefined
-      : new IdleManager({ ...options.idleOptions });
+      : IdleManager.create(options.idleOptions);
 
     return new this(identity, key, chain, storage, idleManager);
   }
@@ -387,8 +387,8 @@ export class AuthClient {
     _deleteStorage(this._storage);
 
     // Exit idleManager if it is enabled.
-    if (this._idleManager) {
-      this._idleManager.exit();
+    if (this.idleManager) {
+      this.idleManager.exit();
     }
 
     // Reset this auth client to a non-authenticated state.

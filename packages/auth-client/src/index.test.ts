@@ -1,4 +1,7 @@
+import { Actor, HttpAgent } from '@dfinity/agent';
+import { IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
+import { Principal } from '@dfinity/principal';
 import { AuthClient, ERROR_USER_INTERRUPT } from './index';
 
 /**
@@ -52,6 +55,57 @@ describe('Auth Client', () => {
   it('should initialize an idleManager', async () => {
     const test = await AuthClient.create();
     expect(test.idleManager).toBeDefined();
+  });
+  it('should be able to invalidate an identity after going idle', async () => {
+    jest.useFakeTimers();
+    // setup actor
+    const identity = Ed25519KeyIdentity.generate();
+    const mockFetch: jest.Mock = jest.fn();
+    // http agent uses identity
+    const httpAgent = new HttpAgent({ fetch: mockFetch, identity });
+    const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+    const actorInterface = () => {
+      return IDL.Service({
+        greet: IDL.Func([IDL.Text], [IDL.Text]),
+      });
+    };
+    const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
+    // idle function invalidates actor
+    const idleFn = jest.fn(() => Actor.agentOf(actor).invalidateIdentity());
+
+    // setup auth client
+    const test = await AuthClient.create({
+      identity,
+      idleOptions: {
+        idleTimeout: 1000,
+        onIdle: idleFn,
+      },
+    });
+    expect(idleFn).not.toHaveBeenCalled();
+    // wait for the idle timeout
+    jest.advanceTimersByTime(1000);
+    expect(idleFn).toHaveBeenCalled();
+    const expectedError =
+      "This identity has expired due this application's security policy. Please refresh your authentication.";
+    try {
+      await actor.greet('hello');
+    } catch (error) {
+      expect(error.message).toBe(expectedError);
+    }
+  });
+  it('should not set up an idle timer if the disable option is set', async () => {
+    const idleFn = jest.fn();
+    const test = await AuthClient.create({
+      idleOptions: {
+        idleTimeout: 1000,
+        disableIdle: true,
+      },
+    });
+    expect(idleFn).not.toHaveBeenCalled();
+    expect(test.idleManager).toBeUndefined();
+    // wait for default 30 minute idle timeout
+    jest.advanceTimersByTime(30 * 60 * 1000);
+    expect(idleFn).not.toHaveBeenCalled();
   });
 });
 
@@ -228,7 +282,8 @@ describe('Auth Client login', () => {
 
   it('should call onError if the user closed the IDP window', async () => {
     setup();
-    const client = await AuthClient.create();
+    jest.useRealTimers();
+    const client = await AuthClient.create({ idleOptions: { disableIdle: true } });
 
     await expect(
       new Promise<void>((onSuccess, onError) =>
