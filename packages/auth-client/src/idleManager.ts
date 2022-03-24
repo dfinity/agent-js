@@ -32,7 +32,7 @@ class IdleManager {
   idleTimeout: IdleManagerOptions['idleTimeout'] = 30 * 60 * 1000;
   timeoutID?: number = undefined;
 
-  constructor(options?: IdleManagerOptions) {
+  constructor(options: IdleManagerOptions = {}) {
     const { onIdle, idleTimeout = 30 * 60 * 1000 } = options || {};
     this.onIdle = onIdle;
     this.idleTimeout = idleTimeout;
