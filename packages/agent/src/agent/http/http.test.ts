@@ -1,13 +1,14 @@
 import { HttpAgent, Nonce } from '../index';
 import * as cbor from '../../cbor';
 import { Expiry, makeNonceTransform } from './transforms';
-import { CallRequest, Envelope, SubmitRequestType } from './types';
+import { CallRequest, Envelope, makeNonce, SubmitRequestType } from './types';
 import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 
 import { JSDOM } from 'jsdom';
 import { AnonymousIdentity, SignIdentity } from '../..';
 import { Ed25519KeyIdentity } from '../../../../identity/src/identity/ed25519';
+import { toHexString } from '../../../../identity/src/buffer';
 import { AgentError } from '../../errors';
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
@@ -353,4 +354,11 @@ describe('replace identity', () => {
     });
     expect(mockFetch).toBeCalledTimes(1);
   });
+});
+describe('makeNonce should create unique values', () => {
+  const nonces = new Set();
+  for (let i = 0; i < 100; i++) {
+    nonces.add(toHexString(makeNonce()));
+  }
+  expect(nonces.size).toBe(100);
 });

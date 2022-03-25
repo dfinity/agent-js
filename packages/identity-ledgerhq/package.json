@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/identity-ledgerhq",
-  "version": "0.10.3",
+  "version": "0.10.4",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to manage identity and authentication with the Internet Computer",
@@ -39,9 +39,9 @@
     "test:coverage": "jest --verbose --collectCoverage"
   },
   "peerDependencies": {
-    "@dfinity/agent": "^0.10.3",
-    "@dfinity/identity": "^0.10.3",
-    "@dfinity/principal": "^0.10.3"
+    "@dfinity/agent": "^0.10.4",
+    "@dfinity/identity": "^0.10.4",
+    "@dfinity/principal": "^0.10.4"
   },
   "dependencies": {
     "@ledgerhq/hw-transport": "^5.49.0",

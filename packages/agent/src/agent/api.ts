@@ -1,6 +1,7 @@
 import { Principal } from '@dfinity/principal';
 import { RequestId } from '../request_id';
 import { JsonObject } from '@dfinity/candid';
+import { Identity } from '..';
 
 /**
  * Codes used by the replica for rejecting a message.
@@ -158,4 +159,20 @@ export interface Agent {
    * function by default.
    */
   fetchRootKey(): Promise<ArrayBuffer>;
+  /**
+   * If an application needs to invalidate an identity under certain conditions, an `Agent` may expose an `invalidateIdentity` method.
+   * Invoking this method will set the inner identity used by the `Agent` to `null`.
+   *
+   * A use case for this would be - after a certain period of inactivity, a secure application chooses to invalidate the identity of any `HttpAgent` instances. An invalid identity can be replaced by `Agent.replaceIdentity`
+   */
+  invalidateIdentity?(): void;
+  /**
+   * If an application needs to replace an identity under certain conditions, an `Agent` may expose a `replaceIdentity` method.
+   * Invoking this method will set the inner identity used by the `Agent` to a newly provided identity.
+   *
+   * A use case for this would be - after authenticating using `@dfinity/auth-client`, you can replace the `AnonymousIdentity` of your `Actor` with a `DelegationIdentity`.
+   *
+   * ```Actor.agentOf(defaultActor).replaceIdentity(await authClient.getIdentity());```
+   */
+  replaceIdentity?(identity: Identity): void;
 }

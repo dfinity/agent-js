@@ -107,10 +107,12 @@ export function makeNonce(): Nonce {
   // Encode 128 bits.
   const buffer = new ArrayBuffer(16);
   const view = new DataView(buffer);
-  const value = BigInt(+Date.now()) * BigInt(100000) + BigInt(Math.floor(Math.random() * 100000));
-  view.setBigUint64(0, value);
-  // tslint:disable-next-line:no-bitwise
-  view.setBigUint64(1, value >> BigInt(64));
+  const now = BigInt(+Date.now());
+  const randHi = Math.floor(Math.random() * 0xffffffff);
+  const randLo = Math.floor(Math.random() * 0xffffffff);
+  view.setBigUint64(0, now);
+  view.setUint32(8, randHi);
+  view.setUint32(12, randLo);
 
   return buffer as Nonce;
 }

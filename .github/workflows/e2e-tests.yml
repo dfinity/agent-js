@@ -1,0 +1,49 @@
+name: End to End
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - edited
+      - synchronize
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04]
+        ghc: ['8.8.4']
+        spec:
+          - '0.16.1'
+        node:
+          - 16
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node }}
+
+      - run: npm install -g npm
+
+      - run: npm install
+      - run: npm run lint --workspaces --if-present
+
+      # build monorepo incl. each subpackage
+      - run: npm run build --workspaces --if-present
+
+      - run: echo y | sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
+
+      - name: running dfx
+        id: dfx
+        run: |
+          dfx start --background
+
+      - run: npm run e2e --workspaces --if-present
+        env:
+          CI: true
+          REPLICA_PORT: 8000
