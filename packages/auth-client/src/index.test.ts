@@ -1,4 +1,5 @@
 import { Actor, HttpAgent } from '@dfinity/agent';
+import { AgentError } from '@dfinity/agent/lib/cjs/errors';
 import { IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
@@ -91,7 +92,7 @@ describe('Auth Client', () => {
     try {
       await actor.greet('hello');
     } catch (error) {
-      expect(error.message).toBe(expectedError);
+      expect((error as AgentError).message).toBe(expectedError);
     }
   });
   it('should allow a registeredActor to get refreshed', async () => {
@@ -136,7 +137,7 @@ describe('Auth Client', () => {
     const httpAgent = new HttpAgent({ fetch: mockFetch });
     const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
 
-    Actor.agentOf(actor).invalidateIdentity();
+    Actor.agentOf(actor)?.invalidateIdentity?.();
 
     test.registerActor('default', actor);
 
@@ -146,7 +147,7 @@ describe('Auth Client', () => {
     try {
       await actor.greet('hello');
     } catch (error) {
-      expect(error.message).toBe(expectedError);
+      expect((error as AgentError).message).toBe(expectedError);
     }
 
     await test.login();
