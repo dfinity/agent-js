@@ -1,8 +1,9 @@
+type IdleCB = () => unknown;
 export type IdleManagerOptions = {
   /**
    * Callback after the user has gone idle
    */
-  onIdle?: () => void;
+  callbacks?: IdleCB[];
   /**
    * timeout in ms
    * @default 30 minutes [1_800_000]
@@ -28,7 +29,7 @@ const events = ['mousedown', 'mousemove', 'keypress', 'touchstart', 'wheel'];
  * @param {IdleManagerOptions} options
  */
 class IdleManager {
-  onIdle: IdleManagerOptions['onIdle'] = undefined;
+  callbacks: IdleCB[] = [];
   idleTimeout: IdleManagerOptions['idleTimeout'] = 30 * 60 * 1000;
   timeoutID?: number = undefined;
 
@@ -41,8 +42,8 @@ class IdleManager {
   }
 
   protected constructor(options: IdleManagerOptions = {}) {
-    const { onIdle, idleTimeout = 30 * 60 * 1000 } = options || {};
-    this.onIdle = onIdle;
+    const { callbacks = [], idleTimeout = 30 * 60 * 1000 } = options || {};
+    this.callbacks = [...callbacks];
     this.idleTimeout = idleTimeout;
 
     const resetTimer = this.resetTimer.bind(this);
@@ -78,10 +79,18 @@ class IdleManager {
   }
 
   /**
+   * adds a callback to the list of callbacks
+   * @param {IdleCB} callback
+   */
+  public registerCallback(callback: IdleCB): void {
+    this.callbacks.push(callback);
+  }
+
+  /**
    * Cleans up the idle manager and its listeners
    */
   public exit(): void {
-    this.onIdle?.();
+    this.callbacks.forEach(cb => cb());
     clearTimeout(this.timeoutID);
     window.removeEventListener('load', this.resetTimer, true);
 

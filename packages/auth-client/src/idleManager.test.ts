@@ -5,7 +5,7 @@ jest.useFakeTimers();
 describe('IdleManager tests', () => {
   it('should call its callback after time spent inactive', () => {
     const cb = jest.fn();
-    const manager = IdleManager.create({ onIdle: cb });
+    const manager = IdleManager.create({ callbacks: [cb] });
     expect(cb).not.toHaveBeenCalled();
     // simulate user being inactive for 30 minutes
     jest.advanceTimersByTime(30 * 60 * 1000);
@@ -15,7 +15,7 @@ describe('IdleManager tests', () => {
   it('should delay allow configuration of the timeout', () => {
     const cb = jest.fn();
     const extraDelay = 100;
-    IdleManager.create({ onIdle: cb, idleTimeout: 30 * 60 * 1000 + extraDelay });
+    IdleManager.create({ callbacks: [cb], idleTimeout: 30 * 60 * 1000 + extraDelay });
     expect(cb).not.toHaveBeenCalled();
     // simulate user being inactive for 30 minutes
     jest.advanceTimersByTime(30 * 60 * 1000);
@@ -25,7 +25,7 @@ describe('IdleManager tests', () => {
   });
   it('should delay its callback on keyboard events', () => {
     const cb = jest.fn();
-    const manager = IdleManager.create({ onIdle: cb });
+    const manager = IdleManager.create({ callbacks: [cb] });
     expect(cb).not.toHaveBeenCalled();
     // simulate user being inactive for 25 minutes
     jest.advanceTimersByTime(25 * 60 * 1000);
@@ -41,7 +41,7 @@ describe('IdleManager tests', () => {
   });
   it('should delay its callback on mouse events', () => {
     const cb = jest.fn();
-    const manager = IdleManager.create({ onIdle: cb });
+    const manager = IdleManager.create({ callbacks: [cb] });
     expect(cb).not.toHaveBeenCalled();
     // simulate user being inactive for 25 minutes
     jest.advanceTimersByTime(25 * 60 * 1000);
@@ -59,7 +59,7 @@ describe('IdleManager tests', () => {
 
   it('should delay its callback on touch events', () => {
     const cb = jest.fn();
-    const manager = IdleManager.create({ onIdle: cb });
+    const manager = IdleManager.create({ callbacks: [cb] });
     expect(cb).not.toHaveBeenCalled();
     // simulate user being inactive for 25 minutes
     jest.advanceTimersByTime(25 * 60 * 1000);
@@ -79,7 +79,7 @@ describe('IdleManager tests', () => {
 
     const scrollDebounce = 100;
 
-    const manager = IdleManager.create({ onIdle: cb, captureScroll: true, scrollDebounce });
+    const manager = IdleManager.create({ callbacks: [cb], captureScroll: true, scrollDebounce });
     expect(cb).not.toHaveBeenCalled();
     // simulate user being inactive for 25 minutes
     jest.advanceTimersByTime(25 * 60 * 1000);
