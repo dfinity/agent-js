@@ -1,4 +1,5 @@
 import {
+  Actor,
   AnonymousIdentity,
   DerEncodedPublicKey,
   Identity,
@@ -99,6 +100,8 @@ interface InternetIdentityAuthResponseSuccess {
   }[];
   userPublicKey: Uint8Array;
 }
+
+type ActorMap = Map<string, Actor>;
 
 async function _deleteStorage(storage: AuthClientStorage) {
   await storage.remove(KEY_LOCALSTORAGE_KEY);
@@ -220,31 +223,24 @@ export class AuthClient {
       ? undefined
       : IdleManager.create(options.idleOptions);
 
-    return new this(identity, key, chain, storage, options.idleOptions);
+    return new this(identity, key, chain, storage, idleManager);
   }
 
-  public readonly idleManager: IdleManager | undefined;
+  private readonly actorMap: ActorMap = new Map();
 
   protected constructor(
     private _identity: Identity,
     private _key: SignIdentity | null,
     private _chain: DelegationChain | null,
     private _storage: AuthClientStorage,
-    private _idleOptions?: IdleOptions,
+    public readonly idleManager: IdleManager | undefined,
     // A handle on the IdP window.
     private _idpWindow?: Window,
     // The event handler for processing events from the IdP.
     private _eventHandler?: (event: MessageEvent) => void,
   ) {
-    this.idleManager = _idleOptions?.disableIdle
-      ? undefined
-      : IdleManager.create({
-          ..._idleOptions,
-          onIdle: () => {
-            this.logout();
-            _idleOptions?.onIdle?.();
-          },
-        });
+    const logout = this.logout.bind(this);
+    this.idleManager?.registerCallback(logout);
   }
 
   private _handleSuccess(message: InternetIdentityAuthResponseSuccess, onSuccess?: () => void) {
@@ -271,6 +267,10 @@ export class AuthClient {
 
     this._chain = delegationChain;
     this._identity = DelegationIdentity.fromDelegation(key, this._chain);
+
+    // Update registered actors with new identity
+
+    this.actorMap.forEach(actor => Actor.agentOf(actor)?.replaceIdentity?.(this._identity));
 
     this._idpWindow?.close();
     onSuccess?.();
@@ -393,6 +393,13 @@ export class AuthClient {
       window.removeEventListener('message', this._eventHandler);
     }
     this._eventHandler = undefined;
+  }
+
+  public registerActor(key: string, actor: Actor): void {
+    this.actorMap.set(key, actor);
+    this.idleManager?.registerCallback(() => {
+      Actor.agentOf(actor)?.invalidateIdentity?.();
+    });
   }
 
   public async logout(options: { returnTo?: string } = {}): Promise<void> {

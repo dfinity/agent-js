@@ -70,25 +70,22 @@ describe('Auth Client', () => {
       });
     };
 
-    // idle function invalidates actor
-    const idleFn = jest.fn(() => {
-      Actor.agentOf(actor).invalidateIdentity();
-    });
-
     // setup auth client
     const test = await AuthClient.create({
       identity,
       idleOptions: {
         idleTimeout: 1000,
-        onIdle: idleFn,
       },
     });
-    const httpAgent = new HttpAgent({ fetch: mockFetch, identity: await test.getIdentity() });
+    const httpAgent = new HttpAgent({ fetch: mockFetch });
     const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
-    expect(idleFn).not.toHaveBeenCalled();
+
+    test.registerActor('default', actor);
+
     // wait for the idle timeout
     jest.advanceTimersByTime(1000);
-    expect(idleFn).toHaveBeenCalled();
+
+    // check that the registered actor has been invalidated
     const expectedError =
       "This identity has expired due this application's security policy. Please refresh your authentication.";
     try {
@@ -96,6 +93,68 @@ describe('Auth Client', () => {
     } catch (error) {
       expect(error.message).toBe(expectedError);
     }
+  });
+  it('should allow a registeredActor to get refreshed', async () => {
+    setup({
+      onAuthRequest: () => {
+        // Send a valid request.
+        idpMock.send({
+          kind: 'authorize-client-success',
+          delegations: [
+            {
+              delegation: {
+                pubkey: Uint8Array.from([]),
+                expiration: BigInt(0),
+              },
+              signature: Uint8Array.from([]),
+            },
+          ],
+          userPublicKey: Uint8Array.from([]),
+        });
+      },
+    });
+
+    // setup actor
+    const identity = Ed25519KeyIdentity.generate();
+    const mockFetch: jest.Mock = jest.fn();
+    // http agent uses identity
+
+    const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+    const actorInterface = () => {
+      return IDL.Service({
+        greet: IDL.Func([IDL.Text], [IDL.Text]),
+      });
+    };
+
+    // setup auth client
+    const test = await AuthClient.create({
+      identity,
+      idleOptions: {
+        idleTimeout: 1000,
+      },
+    });
+    const httpAgent = new HttpAgent({ fetch: mockFetch });
+    const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
+
+    Actor.agentOf(actor).invalidateIdentity();
+
+    test.registerActor('default', actor);
+
+    // check that the registered actor has been invalidated
+    const expectedError =
+      "This identity has expired due this application's security policy. Please refresh your authentication.";
+    try {
+      await actor.greet('hello');
+    } catch (error) {
+      expect(error.message).toBe(expectedError);
+    }
+
+    await test.login();
+
+    idpMock.ready();
+
+    // check that the registered actor has been invalidated
+    expect((Actor.agentOf(actor) as any)._identity).toBeTruthy();
   });
   it('should not set up an idle timer if the disable option is set', async () => {
     const idleFn = jest.fn();

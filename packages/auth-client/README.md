@@ -60,12 +60,6 @@ As of 0.10.5, you can now set a timeout for when your identity will be considere
 const authClient = await AuthClient.create({
   idleOptions: {
     idleTimeout: 1000 * 60 * 30, // default is 30 minutes
-    onIdle: () => {
-      // invalidate identity in your actor
-      Actor.agentOf(actor).invalidateIdentity()
-      // prompt user to refresh their authentication
-      refreshLogin();
-    },
     disableIdle: false, // set to true to disable idle timeout
   }
 });
@@ -78,17 +72,14 @@ const actor = Actor.createActor(idlFactory, {
   canisterId,
 });
 
+authClient.registerActor("ii", actor);
+
 refreshLogin() {
-  // prompt the user before refreshing their authentication
-  authClient.login({
-    onSuccess: async () => {
-      // authClient now has an identity
-      const identity = await authClient.getIdentity();
-      // set new identity in your actor without reloading the page
-      Actor.agentOf(actor).replaceIdentity(identity);
-    },
-  });
+  // prompt the user then refresh their authentication
+  authClient.login();
 }
+
+authClient.idleManager?.registerCallback?.(refreshLogin)
 ```
 
 In this code, we create an `authClient` with an idle timeout of 30 minutes. When the user is idle, we invalidate their identity and prompt them to login again.
