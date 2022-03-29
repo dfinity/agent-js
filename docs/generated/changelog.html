@@ -16,6 +16,12 @@
           makeNonce now returns unique values. Previously only the first byte of the nonce was
           populated.
         </li>
+        <li>
+          Introduces IdleManager to the auth-client. You can now use it to detect when the user has
+          been idle for a configurable amount of time, and then to register callbacks for the sake
+          of logging the user out and prompting re-authentication. See the @dfinity/auth-client
+          Readme for more details
+        </li>
       </ul>
       <h2>Version 0.10.3</h2>
       <ul>
