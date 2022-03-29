@@ -5,7 +5,7 @@ jest.useFakeTimers();
 describe('IdleManager tests', () => {
   it('should call its callback after time spent inactive', () => {
     const cb = jest.fn();
-    const manager = IdleManager.create({ onIdle: cb });
+    const manager = IdleManager.create({ onIdle: cb, captureScroll: true });
     expect(cb).not.toHaveBeenCalled();
     // simulate user being inactive for 30 minutes
     jest.advanceTimersByTime(30 * 60 * 1000);

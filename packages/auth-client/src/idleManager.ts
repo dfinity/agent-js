@@ -34,10 +34,36 @@ class IdleManager {
   timeoutID?: number = undefined;
 
   /**
-   * creates an idle manager
-   * @param {IdleManagerOptions} options
+   * Creates an idle manager
+   * @param {IdleManagerOptions} options Optional configuration
+   * @param options.onIdle Callback once user has been idle. Use to prompt for fresh login, and use Actor.agentOf(your_actor).invalidateIdentity() to protect the user
+   * @param options.idleTimeout timeout in ms
+   * @param options.captureScroll capture scroll events
+   * @param options.scrollDebounce scroll debounce time in ms
    */
-  public static create(options: IdleManagerOptions = {}): IdleManager {
+  public static create(
+    options: {
+      /**
+       * Callback after the user has gone idle
+       */
+      onIdle?: IdleCB;
+      /**
+       * timeout in ms
+       * @default 30 minutes [1_800_000]
+       */
+      idleTimeout?: number;
+      /**
+       * capture scroll events
+       * @default false
+       */
+      captureScroll?: boolean;
+      /**
+       * scroll debounce time in ms
+       * @default 100
+       */
+      scrollDebounce?: number;
+    } = {},
+  ): IdleManager {
     return new this(options);
   }
 
