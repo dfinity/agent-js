@@ -101,8 +101,6 @@ interface InternetIdentityAuthResponseSuccess {
   userPublicKey: Uint8Array;
 }
 
-type ActorMap = Map<string, Actor>;
-
 async function _deleteStorage(storage: AuthClientStorage) {
   await storage.remove(KEY_LOCALSTORAGE_KEY);
   await storage.remove(KEY_LOCALSTORAGE_DELEGATION);
@@ -226,8 +224,6 @@ export class AuthClient {
     return new this(identity, key, chain, storage, idleManager);
   }
 
-  private readonly actorMap: ActorMap = new Map();
-
   protected constructor(
     private _identity: Identity,
     private _key: SignIdentity | null,
@@ -267,10 +263,6 @@ export class AuthClient {
 
     this._chain = delegationChain;
     this._identity = DelegationIdentity.fromDelegation(key, this._chain);
-
-    // Update registered actors with new identity
-
-    this.actorMap.forEach(actor => Actor.agentOf(actor)?.replaceIdentity?.(this._identity));
 
     this._idpWindow?.close();
     onSuccess?.();
@@ -393,13 +385,6 @@ export class AuthClient {
       window.removeEventListener('message', this._eventHandler);
     }
     this._eventHandler = undefined;
-  }
-
-  public registerActor(key: string, actor: Actor): void {
-    this.actorMap.set(key, actor);
-    this.idleManager?.registerCallback(() => {
-      Actor.agentOf(actor)?.invalidateIdentity?.();
-    });
   }
 
   public async logout(options: { returnTo?: string } = {}): Promise<void> {
