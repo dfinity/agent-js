@@ -81,7 +81,9 @@ describe('Auth Client', () => {
     const httpAgent = new HttpAgent({ fetch: mockFetch });
     const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
 
-    test.registerActor('default', actor);
+    test.idleManager.registerCallback(() => {
+      Actor.agentOf(actor).invalidateIdentity();
+    });
 
     // wait for the idle timeout
     jest.advanceTimersByTime(1000);
@@ -95,7 +97,12 @@ describe('Auth Client', () => {
       expect((error as AgentError).message).toBe(expectedError);
     }
   });
-  it('should allow a registeredActor to get refreshed', async () => {
+  /**
+   * This test reflects a feature that may be added at a future date,
+   * allowing the authClient to register actors for automatic invalidation
+   * and revalidation of identities
+   */
+  it.skip('should allow a registeredActor to get refreshed', async () => {
     setup({
       onAuthRequest: () => {
         // Send a valid request.
@@ -139,8 +146,6 @@ describe('Auth Client', () => {
 
     Actor.agentOf(actor)?.invalidateIdentity?.();
 
-    test.registerActor('default', actor);
-
     // check that the registered actor has been invalidated
     const expectedError =
       "This identity has expired due this application's security policy. Please refresh your authentication.";
@@ -150,10 +155,7 @@ describe('Auth Client', () => {
       expect((error as AgentError).message).toBe(expectedError);
     }
 
-    await test.login();
-
     idpMock.ready();
-
     // check that the registered actor has been invalidated
     expect((Actor.agentOf(actor) as any)._identity).toBeTruthy();
   });
