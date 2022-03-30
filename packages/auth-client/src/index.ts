@@ -330,6 +330,9 @@ export class AuthClient {
   private _getEventHandler(identityProviderUrl: URL, options?: AuthClientLoginOptions) {
     return async (event: MessageEvent) => {
       if (event.origin !== identityProviderUrl.origin) {
+        console.warn(
+          `WARNING: expected origin '${identityProviderUrl.origin}', got '${event.origin}' (ignoring)`,
+        );
         return;
       }
 
