@@ -54,11 +54,13 @@ export interface IdleOptions extends IdleManagerOptions {
 
 export interface AuthClientLoginOptions {
   /**
-   * Identity provider. By default, use the identity service.
+   * Identity provider
+   * @default "https://identity.ic0.app"
    */
   identityProvider?: string | URL;
   /**
    * Expiration of the authentication in nanoseconds
+   * @default  BigInt(8) hours * BigInt(3_600_000_000_000) nanoseconds
    */
   maxTimeToLive?: bigint;
   /**
@@ -171,7 +173,36 @@ type IdentityServiceResponseMessage = AuthReadyMessage | AuthResponse;
 type AuthResponse = AuthResponseSuccess | AuthResponseFailure;
 
 export class AuthClient {
-  public static async create(options: AuthClientCreateOptions = {}): Promise<AuthClient> {
+  /**
+   * Create an AuthClient to manage authentication and identity
+   * @constructs {@link AuthClient}
+   * @param {AuthClientCreateOptions} options {@link AuthClientCreateOptions}
+   * @param options.identity {@link SignIdentity}
+   * @description Optional Identity to use as the base
+   * @param options.storage {@link AuthClientStorage}
+   * @description Storage mechanism for delegration credentials
+   * @param {IdleOptions} options.idleOptions {@link IdleOptions}
+   * @description Configures an {@link IdleManager}
+   */
+  public static async create(
+    options: {
+      /**
+       * An {@link Identity} to use as the base.
+       *  By default, a new {@link AnonymousIdentity}
+       */
+      identity?: SignIdentity;
+      /**
+       * {@link AuthClientStorage}
+       * @description Optional storage with get, set, and remove. Uses {@link LocalStorage} by default
+       */
+      storage?: AuthClientStorage;
+      /**
+       * Options to handle idle timeouts
+       * @default after 10 minutes, invalidates the identity
+       */
+      idleOptions?: IdleOptions;
+    } = {},
+  ): Promise<AuthClient> {
     const storage = options.storage ?? new LocalStorage('ic-');
 
     let key: null | SignIdentity = null;
@@ -278,7 +309,47 @@ export class AuthClient {
     return !this.getIdentity().getPrincipal().isAnonymous() && this._chain !== null;
   }
 
-  public async login(options?: AuthClientLoginOptions): Promise<void> {
+  /**
+   * AuthClient Login -
+   * Opens up a new window to authenticate with Internet Identity
+   * @param {AuthClientLoginOptions} options
+   * @param options.identityProvider Identity provider
+   * @param options.maxTimeToLive Expiration of the authentication in nanoseconds
+   * @param options.onSuccess Callback once login has completed
+   * @param options.onError Callback in case authentication fails
+   * @example
+   * const authClient = await AuthClient.create();
+   * authClient.login({
+   *  identityProvider: 'http://<canisterID>.localhost:8000',
+   *  maxTimeToLive: BigInt (7) * BigInt(24) * BigInt(3_600_000_000_000) // 1 week
+   *  onSuccess: () => {
+   *    console.log('Login Successful!');
+   *  },
+   *  onError: (error) => {
+   *    console.error('Login Failed: ', error);
+   *  }
+   * });
+   */
+  public async login(options?: {
+    /**
+     * Identity provider
+     * @default "https://identity.ic0.app"
+     */
+    identityProvider?: string | URL;
+    /**
+     * Expiration of the authentication in nanoseconds
+     * @default  BigInt(8) hours * BigInt(3_600_000_000_000) nanoseconds
+     */
+    maxTimeToLive?: bigint;
+    /**
+     * Callback once login has completed
+     */
+    onSuccess?: (() => void) | (() => Promise<void>);
+    /**
+     * Callback in case authentication fails
+     */
+    onError?: ((error?: string) => void) | ((error?: string) => Promise<void>);
+  }): Promise<void> {
     let key = this._key;
     if (!key) {
       // Create a new key (whether or not one was in storage).
@@ -287,9 +358,8 @@ export class AuthClient {
       await this._storage.set(KEY_LOCALSTORAGE_KEY, JSON.stringify(key));
     }
 
-    // Set default maxTimeToLive to 1 day
-    const defaultTimeToLive =
-      /* days */ BigInt(1) * /* hours */ BigInt(24) * /* nanoseconds */ BigInt(3600000000000);
+    // Set default maxTimeToLive to 8 hours
+    const defaultTimeToLive = /* hours */ BigInt(8) * /* nanoseconds */ BigInt(3_600_000_000_000);
 
     // Create the URL of the IDP. (e.g. https://XXXX/#authorize)
     const identityProviderUrl = new URL(
@@ -305,7 +375,7 @@ export class AuthClient {
 
     // Add an event listener to handle responses.
     this._eventHandler = this._getEventHandler(identityProviderUrl, {
-      maxTimeToLive: defaultTimeToLive,
+      maxTimeToLive: options?.maxTimeToLive ?? defaultTimeToLive,
       ...options,
     });
     window.addEventListener('message', this._eventHandler);
