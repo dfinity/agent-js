@@ -1,4 +1,5 @@
 import {
+  Actor,
   AnonymousIdentity,
   DerEncodedPublicKey,
   Identity,
@@ -13,6 +14,7 @@ import {
   Ed25519KeyIdentity,
 } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
+import IdleManager, { IdleManagerOptions } from './idleManager';
 
 const KEY_LOCALSTORAGE_KEY = 'identity';
 const KEY_LOCALSTORAGE_DELEGATION = 'delegation';
@@ -35,6 +37,19 @@ export interface AuthClientCreateOptions {
    * Optional storage with get, set, and remove. Uses LocalStorage by default
    */
   storage?: AuthClientStorage;
+  /**
+   * Options to handle idle timeouts
+   * @default after 30 minutes, invalidates the identity
+   */
+  idleOptions?: IdleOptions;
+}
+
+export interface IdleOptions extends IdleManagerOptions {
+  /**
+   * Disables idle functionality
+   * @default false
+   */
+  disableIdle?: boolean;
 }
 
 export interface AuthClientLoginOptions {
@@ -202,7 +217,11 @@ export class AuthClient {
       }
     }
 
-    return new this(identity, key, chain, storage);
+    const idleManager = options.idleOptions?.disableIdle
+      ? undefined
+      : IdleManager.create(options.idleOptions);
+
+    return new this(identity, key, chain, storage, idleManager);
   }
 
   protected constructor(
@@ -210,11 +229,15 @@ export class AuthClient {
     private _key: SignIdentity | null,
     private _chain: DelegationChain | null,
     private _storage: AuthClientStorage,
+    public readonly idleManager: IdleManager | undefined,
     // A handle on the IdP window.
     private _idpWindow?: Window,
     // The event handler for processing events from the IdP.
     private _eventHandler?: (event: MessageEvent) => void,
-  ) {}
+  ) {
+    const logout = this.logout.bind(this);
+    this.idleManager?.registerCallback(logout);
+  }
 
   private _handleSuccess(message: InternetIdentityAuthResponseSuccess, onSuccess?: () => void) {
     const delegations = message.delegations.map(signedDelegation => {
@@ -307,7 +330,9 @@ export class AuthClient {
   private _getEventHandler(identityProviderUrl: URL, options?: AuthClientLoginOptions) {
     return async (event: MessageEvent) => {
       if (event.origin !== identityProviderUrl.origin) {
-        console.warn(`WARNING: expected origin '${identityProviderUrl.origin}', got '${event.origin}' (ignoring)`);
+        console.warn(
+          `WARNING: expected origin '${identityProviderUrl.origin}', got '${event.origin}' (ignoring)`,
+        );
         return;
       }
 
