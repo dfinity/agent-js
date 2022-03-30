@@ -1,3 +1,4 @@
+/** @module AuthClient */
 import {
   Actor,
   AnonymousIdentity,
@@ -172,17 +173,22 @@ interface AuthResponseFailure {
 type IdentityServiceResponseMessage = AuthReadyMessage | AuthResponse;
 type AuthResponse = AuthResponseSuccess | AuthResponseFailure;
 
+/**
+ * Tool to manage authentication and identity
+ * @see {@link AuthClient}
+ */
 export class AuthClient {
   /**
    * Create an AuthClient to manage authentication and identity
    * @constructs {@link AuthClient}
-   * @param {AuthClientCreateOptions} options {@link AuthClientCreateOptions}
-   * @param options.identity {@link SignIdentity}
-   * @description Optional Identity to use as the base
-   * @param options.storage {@link AuthClientStorage}
-   * @description Storage mechanism for delegration credentials
-   * @param {IdleOptions} options.idleOptions {@link IdleOptions}
-   * @description Configures an {@link IdleManager}
+   * @param {AuthClientCreateOptions} options
+   * @see {@link AuthClientCreateOptions}
+   * @param options.identity Optional Identity to use as the base
+   * @see {@link SignIdentity}
+   * @param options.storage Storage mechanism for delegration credentials
+   * @see {@link AuthClientStorage}
+   * @param {IdleOptions} options.idleOptions Configures an {@link IdleManager}
+   * @see {@link IdleOptions}
    * @example
    * const authClient = await AuthClient.create({
    *   idleOptions: {

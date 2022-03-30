@@ -1,3 +1,4 @@
+/** @module IdleManager */
 type IdleCB = () => unknown;
 export type IdleManagerOptions = {
   /**
@@ -24,9 +25,8 @@ export type IdleManagerOptions = {
 const events = ['mousedown', 'mousemove', 'keypress', 'touchstart', 'wheel'];
 
 /**
- * Detects if the user has been idle for a duration of `idleTimeout` ms, and calls `onIdle`.
- *
- * @param {IdleManagerOptions} options
+ * Detects if the user has been idle for a duration of `idleTimeout` ms, and calls `onIdle` and registered callbacks.
+ * @see {@link IdleManager}
  */
 class IdleManager {
   callbacks: IdleCB[] = [];
@@ -34,9 +34,10 @@ class IdleManager {
   timeoutID?: number = undefined;
 
   /**
-   * Creates an idle manager
+   * Creates an {@link IdleManager}
    * @param {IdleManagerOptions} options Optional configuration
-   * @param options.onIdle Callback once user has been idle. Use to prompt for fresh login, and use Actor.agentOf(your_actor).invalidateIdentity() to protect the user
+   * @see {@link IdleManagerOptions}
+   * @param options.onIdle Callback once user has been idle. Use to prompt for fresh login, and use `Actor.agentOf(your_actor).invalidateIdentity()` to protect the user
    * @param options.idleTimeout timeout in ms
    * @param options.captureScroll capture scroll events
    * @param options.scrollDebounce scroll debounce time in ms
@@ -45,8 +46,9 @@ class IdleManager {
     options: {
       /**
        * Callback after the user has gone idle
+       * @see {@link IdleCB}
        */
-      onIdle?: IdleCB;
+      onIdle?: () => unknown;
       /**
        * timeout in ms
        * @default 10 minutes [600_000]
@@ -67,17 +69,21 @@ class IdleManager {
     return new this(options);
   }
 
+  /**
+   * @protected
+   * @param options {@link IdleManagerOptions}
+   */
   protected constructor(options: IdleManagerOptions = {}) {
     const { onIdle, idleTimeout = 10 * 60 * 1000 } = options || {};
     this.callbacks = onIdle ? [onIdle] : [];
     this.idleTimeout = idleTimeout;
 
-    const resetTimer = this.resetTimer.bind(this);
+    const _resetTimer = this._resetTimer.bind(this);
 
-    window.addEventListener('load', resetTimer, true);
+    window.addEventListener('load', _resetTimer, true);
 
     events.forEach(function (name) {
-      document.addEventListener(name, resetTimer, true);
+      document.addEventListener(name, _resetTimer, true);
     });
 
     // eslint-disable-next-line @typescript-eslint/ban-types
@@ -97,16 +103,15 @@ class IdleManager {
 
     if (options?.captureScroll) {
       // debounce scroll events
-      const scroll = debounce(resetTimer, options?.scrollDebounce ?? 100);
+      const scroll = debounce(_resetTimer, options?.scrollDebounce ?? 100);
       window.addEventListener('scroll', scroll, true);
     }
 
-    resetTimer();
+    _resetTimer();
   }
 
   /**
-   * adds a callback to the list of callbacks
-   * @param {IdleCB} callback
+   * @param {IdleCB} callback function to be called when user goes idle
    */
   public registerCallback(callback: IdleCB): void {
     this.callbacks.push(callback);
@@ -118,15 +123,18 @@ class IdleManager {
   public exit(): void {
     this.callbacks.forEach(cb => cb());
     clearTimeout(this.timeoutID);
-    window.removeEventListener('load', this.resetTimer, true);
+    window.removeEventListener('load', this._resetTimer, true);
 
-    const resetTimer = this.resetTimer.bind(this);
+    const _resetTimer = this._resetTimer.bind(this);
     events.forEach(function (name) {
-      document.removeEventListener(name, resetTimer, true);
+      document.removeEventListener(name, _resetTimer, true);
     });
   }
 
-  resetTimer(): void {
+  /**
+   * Resets the timeouts during cleanup
+   */
+  _resetTimer(): void {
     const exit = this.exit.bind(this);
     window.clearTimeout(this.timeoutID);
     this.timeoutID = window.setTimeout(exit, this.idleTimeout);
