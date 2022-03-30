@@ -81,8 +81,8 @@ describe('Auth Client', () => {
     const httpAgent = new HttpAgent({ fetch: mockFetch });
     const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
 
-    test.idleManager.registerCallback(() => {
-      Actor.agentOf(actor).invalidateIdentity();
+    test.idleManager?.registerCallback(() => {
+      Actor.agentOf(actor)?.invalidateIdentity?.();
     });
 
     // wait for the idle timeout
