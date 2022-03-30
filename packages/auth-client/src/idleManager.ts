@@ -6,7 +6,7 @@ export type IdleManagerOptions = {
   onIdle?: IdleCB;
   /**
    * timeout in ms
-   * @default 30 minutes [1_800_000]
+   * @default 30 minutes [600_000]
    */
   idleTimeout?: number;
   /**
@@ -49,7 +49,7 @@ class IdleManager {
       onIdle?: IdleCB;
       /**
        * timeout in ms
-       * @default 30 minutes [1_800_000]
+       * @default 10 minutes [600_000]
        */
       idleTimeout?: number;
       /**
@@ -68,7 +68,7 @@ class IdleManager {
   }
 
   protected constructor(options: IdleManagerOptions = {}) {
-    const { onIdle, idleTimeout = 30 * 60 * 1000 } = options || {};
+    const { onIdle, idleTimeout = 10 * 60 * 1000 } = options || {};
     this.callbacks = onIdle ? [onIdle] : [];
     this.idleTimeout = idleTimeout;
 
