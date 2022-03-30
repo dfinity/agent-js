@@ -46,7 +46,7 @@ export interface AuthClientCreateOptions {
 
 export interface IdleOptions extends IdleManagerOptions {
   /**
-   * Disables idle functionality
+   * Disables idle functionality for {@link IdleManager}
    * @default false
    */
   disableIdle?: boolean;
@@ -183,6 +183,12 @@ export class AuthClient {
    * @description Storage mechanism for delegration credentials
    * @param {IdleOptions} options.idleOptions {@link IdleOptions}
    * @description Configures an {@link IdleManager}
+   * @example
+   * const authClient = await AuthClient.create({
+   *   idleOptions: {
+   *     disableIdle: true
+   *   }
+   * })
    */
   public static async create(
     options: {
