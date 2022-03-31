@@ -30,7 +30,7 @@ describe('IdleManager tests', () => {
     // simulate user being inactive for 9 minutes
     jest.advanceTimersByTime(9 * 60 * 1000);
     expect(cb).not.toHaveBeenCalled();
-    document.dispatchEvent(new KeyboardEvent('keypress'));
+    document.dispatchEvent(new KeyboardEvent('keydown'));
 
     // wait 5 minutes
     jest.advanceTimersByTime(5 * 60 * 1000);

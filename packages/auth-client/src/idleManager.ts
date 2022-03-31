@@ -22,7 +22,7 @@ export type IdleManagerOptions = {
   scrollDebounce?: number;
 };
 
-const events = ['mousedown', 'mousemove', 'keypress', 'touchstart', 'wheel'];
+const events = ['mousedown', 'mousemove', 'keydown', 'touchstart', 'wheel'];
 
 /**
  * Detects if the user has been idle for a duration of `idleTimeout` ms, and calls `onIdle` and registered callbacks.
