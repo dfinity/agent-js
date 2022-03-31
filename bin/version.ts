@@ -34,8 +34,11 @@ const newVersion = (() => {
     patch = Number(patch) + 1;
   } else if (argv._.includes('minor')) {
     minor = Number(minor) + 1;
+    patch = 0;
   } else if (argv._.includes('major')) {
     major = Number(major) + 1;
+    minor = 0;
+    patch = 0;
   } else {
     // else use the first argument
     return argv._[0].toString();
@@ -53,8 +56,12 @@ const packages = workspaces
   .filter(workspace => workspace.includes('packages'))
   .map(packagePath => packagePath.replace('packages', '@dfinity'));
 
+// Update version in root package.json
+workspaces.push('.');
+
 workspaces.forEach(async workspace => {
   const packagePath = path.resolve(__dirname, '..', workspace, 'package.json');
+  console.log(packagePath);
   const json = JSON.parse(fs.readFileSync(packagePath).toString());
 
   // Set version for package
@@ -74,6 +81,7 @@ workspaces.forEach(async workspace => {
   // Write file
   fs.writeFileSync(packagePath, JSON.stringify(json));
 });
+
 function updateDeps(dependencies: Record<string, string>) {
   for (const dep in dependencies) {
     if (Object.prototype.hasOwnProperty.call(dependencies, dep)) {
@@ -84,16 +92,3 @@ function updateDeps(dependencies: Record<string, string>) {
   }
   return dependencies;
 }
-// Update version in root package.json
-fs.writeFileSync(path.resolve(__dirname, '..', 'package.json'), JSON.stringify(rootPackage));
-
-// Prettier format the modified package.json files
-exec(`npm run prettier:format`, error => {
-  if (error) {
-    throw new Error(JSON.stringify(error));
-  }
-
-  // wrap up
-  console.log('success!');
-  console.timeEnd('script duration');
-});
