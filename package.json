@@ -57,7 +57,8 @@
     "prepare": "husky install",
     "prettier:check": "npx -p prettier -p pretty-quick pretty-quick --check",
     "prettier:format": "npx -p prettier -p pretty-quick pretty-quick",
-    "version": "ts-node bin/version.ts"
+    "version": "ts-node bin/version.ts",
+    "postversion": "npm run prettier:format"
   },
   "repository": {
     "type": "git",
