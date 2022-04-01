@@ -1,5 +1,7 @@
 # @dfinity/auth-client
 
+> 0.10.5 Idle update - see changes [here](#0.10.5-idle-update)
+
 Simple interface to get your web application authenticated with the Internet Identity Service
 
 Visit the [Dfinity Forum](https://forum.dfinity.org/) and [SDK Documentation](https://sdk.dfinity.org/docs/index.html) for more information and support building on the Internet Computer.
@@ -32,8 +34,10 @@ The authClient can log in with
 
 ```js
 authClient.login({
+  // 7 days in nanoseconds
+  maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1000 * 1000 * 1000),
   onSuccess: async () => {
-    // authClient now has an identity
+    handleAuthenticated(authClient);
   },
 });
 ```
@@ -52,15 +56,21 @@ const actor = Actor.createActor(idlFactory, {
 });
 ```
 
-## Idle Timeout
+<h2 id="0.10.5-idle-update">Idle Update</h2>
 
-As of 0.10.5, you can now set a timeout for when your identity will be considered idle, and you can use that to log out or prompt your user to refresh their authentication. This is recommended for applications managing tokens or other valuable information.
+As of 0.10.5, the authClient has two notable new features:
+
+1. the maxTimeToLive is now a set to 8 hours by default, down from 24.
+2. you can now set a timeout for when your identity will be considered idle
+
+These defaults are more conservative, out of the interest of protecting users as more sites are starting to manage ICP and NFT's. You can override these defaults, and opt out of the Idle Manager if you so choose. For more details, see the [forum discussion](https://forum.dfinity.org/t/authclient-update-idle-timeouts).
+
+Additionally, we now support utility methods in Agents to invalidate an identity. It is suggested that you use this method to invalidate an identity once the user goes idle by calling `Actor.getAgent(actor).invalidateIdentity()`. See the below code for an example:
 
 ```js
 const authClient = await AuthClient.create({
   idleOptions: {
-    idleTimeout: 1000 * 60 * 30, // default is 30 minutes
-    disableIdle: false, // set to true to disable idle timeout
+    idleTimeout: 1000 * 60 * 30, // set to 30 minutes
   }
 });
 // ...authClient.login()
@@ -72,14 +82,17 @@ const actor = Actor.createActor(idlFactory, {
   canisterId,
 });
 
-authClient.registerActor("ii", actor);
-
 refreshLogin() {
   // prompt the user then refresh their authentication
-  authClient.login();
+  authClient.login({
+    onSuccess: async () => {
+      const newIdentity = await AuthClient.getIdentity();
+      Actor.getAgent(actor).replaceIdentity(newIdentity);
+    }
+  });
 }
 
-authClient.idleManager?.registerCallback?.(refreshLogin)
+authClient.idleManager?.registerCallback?.(refreshLogin);
 ```
 
 In this code, we create an `authClient` with an idle timeout of 30 minutes. When the user is idle, we invalidate their identity and prompt them to login again.
