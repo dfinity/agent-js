@@ -4,7 +4,6 @@
   "private": true,
   "description": "Use an Agent to interact with the Internet Computer from your JavaScript program.",
   "dependencies": {
-    "@types/jest": "^26.0.22",
     "jest": "^27.3.1",
     "jest-cli": "^27.3.1",
     "ts-jest": "^27.0.7"
@@ -26,7 +25,7 @@
   "devDependencies": {
     "@babel/preset-env": "^7.13.12",
     "@babel/preset-typescript": "^7.13.0",
-    "@jest/types": "^26.6.2",
+    "@types/jest": "^27.4.1",
     "@types/node": "^14.14.37",
     "@typescript-eslint/eslint-plugin": "^4.14.2",
     "@typescript-eslint/parser": "^4.14.2",
@@ -57,7 +56,8 @@
     "prepare": "husky install",
     "prettier:check": "npx -p prettier -p pretty-quick pretty-quick --check",
     "prettier:format": "npx -p prettier -p pretty-quick pretty-quick",
-    "version": "ts-node bin/version.ts"
+    "version": "ts-node bin/version.ts",
+    "postversion": "npm run prettier:format"
   },
   "repository": {
     "type": "git",
