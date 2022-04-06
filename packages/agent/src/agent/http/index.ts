@@ -13,13 +13,14 @@ import {
   ReadStateResponse,
   SubmitResponse,
 } from '../api';
-import { Expiry } from './transforms';
+import { Expiry, makeNonceTransform } from './transforms';
 import {
   CallRequest,
   Endpoint,
   HttpAgentRequest,
   HttpAgentRequestTransformFn,
   HttpAgentSubmitRequest,
+  makeNonce,
   QueryRequest,
   ReadRequestType,
   SubmitRequestType,
@@ -83,6 +84,19 @@ export interface HttpAgentOptions {
     name: string;
     password?: string;
   };
+  /**
+   * Prevents the agent from providing a unique {@link Nonce} with each call.
+   * Enabling may cause rate limiting of identical requests
+   * at the boundary nodes.
+   *
+   * To add your own nonce generation logic, you can use the following:
+   * @example
+   * import {makeNonceTransform, makeNonce} from '@dfinity/agent';
+   * const agent = new HttpAgent({ disableNonce: true });
+   * agent.addTransform(makeNonceTransform(makeNonce);
+   * @default false
+   */
+  disableNonce?: boolean;
 }
 
 function getDefaultFetch(): typeof fetch {
@@ -178,6 +192,11 @@ export class HttpAgent implements Agent {
       this._credentials = `${name}${password ? ':' + password : ''}`;
     }
     this._identity = Promise.resolve(options.identity || new AnonymousIdentity());
+
+    // Add a nonce transform to ensure calls are unique
+    if (!options.disableNonce) {
+      this.addTransform(makeNonceTransform(makeNonce));
+    }
   }
 
   public addTransform(fn: HttpAgentRequestTransformFn, priority = fn.priority || 0): void {
