@@ -8,7 +8,6 @@ module.exports = {
   moduleDirectories: ['node_modules'],
   modulePaths: [`<rootDir>/packages/${packageName}/src/`],
   setupFiles: [`<rootDir>/packages/${packageName}/test-setup.ts`],
-  setupFilesAfterEnv: ['jest-expect-message'],
   transform: {
     '^.+\\.ts$': 'ts-jest',
   },
