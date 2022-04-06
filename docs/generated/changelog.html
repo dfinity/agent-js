@@ -29,10 +29,17 @@
         </li>
         <li>Removes jest-expect-message, which was making test error messages less useful</li>
         <li>
-          HttpAgent now generates a nonce to ensure that calls are unique by default. If you want to
-          opt out or provide your own nonce logic, you can now pass an option of
-          <pre>disableNonce: true</pre>
-          during the agent initialization.
+          <p>
+            HttpAgent now generates a nonce to ensure that calls are unique by default. If you want
+            to opt out or provide your own nonce logic, you can now pass an option of
+            <code>disableNonce: true</code>during the agent initialization.
+          </p>
+          <p>
+            If you are currently using
+            <code>agent.addTransform(makeNonceTransform())</code>
+            , please note that you should remove that logic, or add the <code>disableNonce</code>
+            option to your agent when upgrading.
+          </p>
         </li>
       </ul>
       <h2>Version 0.10.3</h2>
