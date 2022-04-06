@@ -59,7 +59,6 @@
     "eslint": "^7.19.0",
     "eslint-plugin-jsdoc": "^31.6.0",
     "jest": "^27.3.1",
-    "jest-expect-message": "^1.0.2",
     "node-fetch": "^2.6.7",
     "text-encoding": "^0.7.0",
     "ts-jest": "^27.0.7",
