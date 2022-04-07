@@ -528,6 +528,15 @@ test('decode unknown vec of tuples', () => {
   expect(reencoded).toEqual(encoded);
 });
 
+test('decode unknown service', () => {
+  const value = IDL.decode(
+    [IDL.Unknown],
+    fromHexString('4449444c026a0171017d00690103666f6f0001010103caffee'),
+  )[0] as any;
+  expect(value).toEqual(Principal.fromText('w7x7r-cok77-xa'));
+  expect(value.type()).toEqual(IDL.Service({}));
+});
+
 test('decode / encode unknown mutual recursive lists', () => {
   // original types
   const List1 = IDL.Rec();
