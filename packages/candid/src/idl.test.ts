@@ -5,6 +5,7 @@
 import * as IDL from './idl';
 import { Principal } from '@dfinity/principal';
 import { fromHexString, toHexString } from './utils/buffer';
+import { idlLabelToId } from './utils/hash';
 
 function testEncode(typ: IDL.Type, val: any, hex: string, _str: string) {
   expect(toHexString(IDL.encode([typ], [val]))).toEqual(hex);
@@ -415,4 +416,62 @@ test('IDL encoding (multiple arguments)', () => {
 
 test('Stringify bigint', () => {
   expect(() => IDL.encode([IDL.Nat], [{ x: BigInt(42) }])).toThrow(/Invalid nat argument/);
+});
+
+function hashedPropertyName(name: string) {
+  return '_' + idlLabelToId(name) + '_';
+}
+
+test('IDL unknown decoding', () => {
+  const decodedType = IDL.Variant({ _24860_: IDL.Text, _5048165_: IDL.Text });
+  const encoded = '4449444c016b029cc20171e58eb4027101000004676f6f64';
+
+  const value = IDL.decode([IDL.Unknown], fromHexString(encoded))[0] as any;
+  expect(value[hashedPropertyName('ok')]).toEqual('good');
+  expect(value.type()).toEqual(decodedType);
+
+  const reencoded = toHexString(IDL.encode([value.type()], [value]));
+  expect(reencoded).toEqual(encoded);
+});
+
+test('IDL unknown nested decoding', () => {
+  const nestedType = IDL.Record({ foo: IDL.Int32, bar: IDL.Bool });
+  const recordType = IDL.Record({
+    foo: IDL.Int32,
+    bar: nestedType,
+    baz: nestedType,
+    bib: nestedType,
+  });
+
+  const recordUnknownType = IDL.Record({
+    foo: IDL.Int32,
+    bar: IDL.Unknown,
+    baz: nestedType,
+    bib: nestedType,
+  });
+
+  const nestedHashedType = IDL.Record({ _5097222_: IDL.Int32, _4895187_: IDL.Bool });
+  const recordHashedType = IDL.Record({
+    foo: IDL.Int32,
+    bar: nestedHashedType,
+    baz: nestedType,
+    bib: nestedType,
+  });
+
+  const encoded =
+    '4449444c026c02d3e3aa027e868eb702756c04d3e3aa0200dbe3aa0200bbf1aa0200868eb702750101012a000000012a000000012a0000002a000000';
+  const nestedValue = { foo: 42, bar: true };
+  const value = { foo: 42, bar: nestedValue, baz: nestedValue, bib: nestedValue };
+
+  const decodedValue = IDL.decode([recordUnknownType], fromHexString(encoded))[0] as any;
+  expect(decodedValue).toHaveProperty('bar');
+  expect(decodedValue.bar[hashedPropertyName('foo')]).toEqual(42);
+  expect(decodedValue.bar[hashedPropertyName('bar')]).toEqual(true);
+  expect(decodedValue.baz).toEqual(value.baz);
+  expect(decodedValue.bar.type()).toEqual(nestedHashedType);
+
+  const reencoded = toHexString(IDL.encode([recordHashedType], [decodedValue]));
+  // expect(reencoded).toEqual(encoded); does not hold because type table is different
+  const decodedValue2 = IDL.decode([recordType], fromHexString(reencoded))[0] as any;
+  expect(decodedValue2).toEqual(value);
 });
