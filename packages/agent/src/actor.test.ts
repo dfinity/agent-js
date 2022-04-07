@@ -98,7 +98,7 @@ describe('makeActor', () => {
 
     let nonceCount = 0;
 
-    const httpAgent = new HttpAgent({ fetch: mockFetch });
+    const httpAgent = new HttpAgent({ fetch: mockFetch, disableNonce: true });
     httpAgent.addTransform(makeNonceTransform(() => nonces[nonceCount++]));
 
     const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
