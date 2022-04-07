@@ -348,7 +348,31 @@ export class AuthClient {
    *  }
    * });
    */
-  public async login(options?: AuthClientLoginOptions): Promise<void> {
+  public async login(options?: {
+    /**
+     * Identity provider
+     * @default "https://identity.ic0.app"
+     */
+    identityProvider?: string | URL;
+    /**
+     * Expiration of the authentication in nanoseconds
+     * @default  BigInt(8) hours * BigInt(3_600_000_000_000) nanoseconds
+     */
+    maxTimeToLive?: bigint;
+    /**
+     * Auth Window feature config string
+     * @example "toolbar=0,location=0,menubar=0,width=500,height=500,left=100,top=100"
+     */
+    windowOpenerFeatures?: string;
+    /**
+     * Callback once login has completed
+     */
+    onSuccess?: (() => void) | (() => Promise<void>);
+    /**
+     * Callback in case authentication fails
+     */
+    onError?: ((error?: string) => void) | ((error?: string) => Promise<void>);
+  }): Promise<void> {
     let key = this._key;
     if (!key) {
       // Create a new key (whether or not one was in storage).
