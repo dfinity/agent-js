@@ -331,13 +331,15 @@ export class AuthClient {
    * @param {AuthClientLoginOptions} options
    * @param options.identityProvider Identity provider
    * @param options.maxTimeToLive Expiration of the authentication in nanoseconds
+   * @param options.windowOpenerFeatures Configures the opened authentication window
    * @param options.onSuccess Callback once login has completed
    * @param options.onError Callback in case authentication fails
    * @example
    * const authClient = await AuthClient.create();
    * authClient.login({
    *  identityProvider: 'http://<canisterID>.localhost:8000',
-   *  maxTimeToLive: BigInt (7) * BigInt(24) * BigInt(3_600_000_000_000) // 1 week
+   *  maxTimeToLive: BigInt (7) * BigInt(24) * BigInt(3_600_000_000_000), // 1 week
+   *  windowOpenerFeatures: "toolbar=0,location=0,menubar=0,width=500,height=500,left=100,top=100",
    *  onSuccess: () => {
    *    console.log('Login Successful!');
    *  },
