@@ -434,6 +434,10 @@ test('decode / encode unknown variant', () => {
   expect(reencoded).toEqual(encoded);
 });
 
+test('throw on serializing unknown', () => {
+  expect(() => IDL.encode([IDL.Unknown], ['test'])).toThrow('Unknown cannot be serialized');
+});
+
 test('decode unknown text', () => {
   const text = IDL.decode([IDL.Unknown], fromHexString('4449444c00017107486920e298830a'))[0] as any;
   expect(text.valueOf()).toEqual('Hi ☃\n');
@@ -538,7 +542,7 @@ test('decode / encode unknown mutual recursive lists', () => {
   ]);
 
   const reencoded = toHexString(IDL.encode([value.type()], [value]));
-  // expect(reencoded).toEqual(encoded); does not hold because type table gets built differently
+  // expect(reencoded).toEqual(encoded); does not hold because type table is different
   // however the result is still compatible with original types:
   const value2 = IDL.decode([List1], fromHexString(reencoded))[0];
   expect(value2).toEqual([{ head: BigInt(1), tail: [{ head: BigInt(2), tail: [] }] }]);
@@ -582,6 +586,7 @@ test('decode / encode unknown nested record', () => {
 
   const reencoded = toHexString(IDL.encode([recordHashedType], [decodedValue]));
   // expect(reencoded).toEqual(encoded); does not hold because type table is different
+  // however the result is still compatible with original types:
   const decodedValue2 = IDL.decode([recordType], fromHexString(reencoded))[0] as any;
   expect(decodedValue2).toEqual(value);
 });

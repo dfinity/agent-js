@@ -342,7 +342,7 @@ export class UnknownClass extends Type {
   }
 
   protected _buildTypeTableImpl(): void {
-    throw new Error('Method not implemented for unknown.');
+    throw new Error('Unknown cannot be serialized');
   }
 
   get name() {
