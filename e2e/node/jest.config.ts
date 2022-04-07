@@ -8,7 +8,6 @@ const config: Config.InitialOptions = {
   moduleDirectories: ['node_modules'],
   modulePaths: [`<rootDir>/e2e/node/`],
   setupFiles: [`<rootDir>/e2e/node/test-setup.ts`],
-  setupFilesAfterEnv: ['jest-expect-message'],
   transform: {
     '^.+\\.ts$': 'ts-jest',
   },
