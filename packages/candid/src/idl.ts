@@ -313,14 +313,21 @@ export class UnknownClass extends Type {
   }
 
   public decodeValue(b: Pipe, t: Type): any {
-    const decodedValue = t.decodeValue(b, t);
+    let decodedValue = t.decodeValue(b, t);
+
+    if (Object(decodedValue) !== decodedValue) {
+      // decodedValue is primitive. Box it, otherwise we cannot add the type() function.
+      // The type() function is important for primitives because otherwise we cannot tell apart the
+      // different number types.
+      decodedValue = Object(decodedValue);
+    }
+
     let typeFunc;
     if (t instanceof RecClass) {
       typeFunc = () => t.getType();
     } else {
       typeFunc = () => t;
     }
-
     // Do not use 'decodedValue.type = typeFunc' because this would lead to an enumerable property
     // 'type' which means it would be serialized if the value would be candid encoded again.
     // This in turn leads to problems if the decoded value is a variant because these values are
