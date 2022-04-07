@@ -217,17 +217,32 @@ describe('Auth Client login', () => {
     const client = await AuthClient.create();
     // Try without #authorize hash.
     await client.login({ identityProvider: 'http://localhost' });
-    expect(global.open).toBeCalledWith('http://localhost/#authorize', 'idpWindow');
+    expect(global.open).toBeCalledWith('http://localhost/#authorize', 'idpWindow', undefined);
 
     // Try with #authorize hash.
     global.open = jest.fn();
     await client.login({ identityProvider: 'http://localhost#authorize' });
-    expect(global.open).toBeCalledWith('http://localhost/#authorize', 'idpWindow');
+    expect(global.open).toBeCalledWith('http://localhost/#authorize', 'idpWindow', undefined);
 
     // Default url
     global.open = jest.fn();
     await client.login();
-    expect(global.open).toBeCalledWith('https://identity.ic0.app/#authorize', 'idpWindow');
+    expect(global.open).toBeCalledWith(
+      'https://identity.ic0.app/#authorize',
+      'idpWindow',
+      undefined,
+    );
+
+    // Default custom window.open feature
+    global.open = jest.fn();
+    await client.login({
+      windowOpenerFeatures: 'toolbar=0,location=0,menubar=0',
+    });
+    expect(global.open).toBeCalledWith(
+      'https://identity.ic0.app/#authorize',
+      'idpWindow',
+      'toolbar=0,location=0,menubar=0',
+    );
   });
 
   it('should ignore authorize-ready events with bad origin', async () => {

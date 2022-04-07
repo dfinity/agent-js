@@ -1,6 +1,5 @@
 /** @module AuthClient */
 import {
-  Actor,
   AnonymousIdentity,
   DerEncodedPublicKey,
   Identity,
@@ -64,6 +63,11 @@ export interface AuthClientLoginOptions {
    * @default  BigInt(8) hours * BigInt(3_600_000_000_000) nanoseconds
    */
   maxTimeToLive?: bigint;
+  /**
+   * Auth Window feature config string
+   * @example "toolbar=0,location=0,menubar=0,width=500,height=500,left=100,top=100"
+   */
+  windowOpenerFeatures?: string;
   /**
    * Callback once login has completed
    */
@@ -327,13 +331,15 @@ export class AuthClient {
    * @param {AuthClientLoginOptions} options
    * @param options.identityProvider Identity provider
    * @param options.maxTimeToLive Expiration of the authentication in nanoseconds
+   * @param options.windowOpenerFeatures Configures the opened authentication window
    * @param options.onSuccess Callback once login has completed
    * @param options.onError Callback in case authentication fails
    * @example
    * const authClient = await AuthClient.create();
    * authClient.login({
    *  identityProvider: 'http://<canisterID>.localhost:8000',
-   *  maxTimeToLive: BigInt (7) * BigInt(24) * BigInt(3_600_000_000_000) // 1 week
+   *  maxTimeToLive: BigInt (7) * BigInt(24) * BigInt(3_600_000_000_000), // 1 week
+   *  windowOpenerFeatures: "toolbar=0,location=0,menubar=0,width=500,height=500,left=100,top=100",
    *  onSuccess: () => {
    *    console.log('Login Successful!');
    *  },
@@ -353,6 +359,11 @@ export class AuthClient {
      * @default  BigInt(8) hours * BigInt(3_600_000_000_000) nanoseconds
      */
     maxTimeToLive?: bigint;
+    /**
+     * Auth Window feature config string
+     * @example "toolbar=0,location=0,menubar=0,width=500,height=500,left=100,top=100"
+     */
+    windowOpenerFeatures?: string;
     /**
      * Callback once login has completed
      */
@@ -393,7 +404,9 @@ export class AuthClient {
     window.addEventListener('message', this._eventHandler);
 
     // Open a new window with the IDP provider.
-    this._idpWindow = window.open(identityProviderUrl.toString(), 'idpWindow') ?? undefined;
+    this._idpWindow =
+      window.open(identityProviderUrl.toString(), 'idpWindow', options?.windowOpenerFeatures) ??
+      undefined;
 
     // Check if the _idpWindow is closed by user.
     const checkInterruption = (): void => {
