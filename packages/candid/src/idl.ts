@@ -1669,6 +1669,9 @@ export type InterfaceFactory = (idl: {
 // Export Types instances.
 export const Empty = new EmptyClass();
 export const Reserved = new ReservedClass();
+/**
+ * Client-only type for deserializing unknown data. Not supported by Candid, and its use is discouraged.
+ */
 export const Unknown = new UnknownClass();
 export const Bool = new BoolClass();
 export const Null = new NullClass();
