@@ -82,8 +82,6 @@ document.getElementById('sendBtn').addEventListener('click', async () => {
 
   // Need to run a replica locally which has ledger canister running on it
   const agent = new HttpAgent({ host, identity });
-  // Ledger Hardware Wallet requires that the request must contain a nonce
-  agent.addTransform(makeNonceTransform());
 
   const resp = await agent.call(canisterId, {
     methodName: document.getElementById('methodName').value,
