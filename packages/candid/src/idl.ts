@@ -343,7 +343,6 @@ export class UnknownClass extends Type {
   }
 }
 
-
 /**
  * Represents an IDL Bool
  */
