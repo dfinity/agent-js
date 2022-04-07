@@ -49,7 +49,6 @@ test('call', async () => {
   const principal = Principal.anonymous();
 
   const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://localhost' });
-  httpAgent.addTransform(makeNonceTransform(() => nonce));
 
   const methodName = 'greet';
   const arg = new Uint8Array([]);
@@ -116,7 +115,11 @@ test('queries with the same content should have the same signature', async () =>
 
   const principal = await Principal.anonymous();
 
-  const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://localhost' });
+  const httpAgent = new HttpAgent({
+    fetch: mockFetch,
+    host: 'http://localhost',
+    disableNonce: true,
+  });
   httpAgent.addTransform(makeNonceTransform(() => nonce));
 
   const methodName = 'greet';
@@ -188,7 +191,11 @@ test('use anonymous principal if unspecified', async () => {
   const nonce = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
   const principal = Principal.anonymous();
 
-  const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://localhost' });
+  const httpAgent = new HttpAgent({
+    fetch: mockFetch,
+    host: 'http://localhost',
+    disableNonce: true,
+  });
   httpAgent.addTransform(makeNonceTransform(() => nonce));
 
   const methodName = 'greet';
