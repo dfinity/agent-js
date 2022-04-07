@@ -537,6 +537,15 @@ test('decode unknown service', () => {
   expect(value.type()).toEqual(IDL.Service({}));
 });
 
+test('decode unknown func', () => {
+  const value = IDL.decode(
+    [IDL.Unknown],
+    fromHexString('4449444c016a0171017d01010100010103caffee03666f6f'),
+  )[0] as any;
+  expect(value).toEqual([Principal.fromText('w7x7r-cok77-xa'), 'foo']);
+  expect(value.type()).toEqual(IDL.Func([], [], []));
+});
+
 test('decode / encode unknown mutual recursive lists', () => {
   // original types
   const List1 = IDL.Rec();
