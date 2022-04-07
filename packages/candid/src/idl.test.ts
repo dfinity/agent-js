@@ -25,6 +25,10 @@ function test_args(typs: IDL.Type[], vals: any[], hex: string, _str: string) {
   expect(IDL.decode(typs, fromHexString(hex))).toEqual(vals);
 }
 
+function hashedPropertyName(name: string) {
+  return '_' + idlLabelToId(name) + '_';
+}
+
 test('IDL encoding (magic number)', () => {
   // Wrong magic number
   expect(() => IDL.decode([IDL.Nat], fromHexString('2a'))).toThrow(
@@ -417,10 +421,6 @@ test('IDL encoding (multiple arguments)', () => {
 test('Stringify bigint', () => {
   expect(() => IDL.encode([IDL.Nat], [{ x: BigInt(42) }])).toThrow(/Invalid nat argument/);
 });
-
-function hashedPropertyName(name: string) {
-  return '_' + idlLabelToId(name) + '_';
-}
 
 test('decode / encode unknown variant', () => {
   const decodedType = IDL.Variant({ _24860_: IDL.Text, _5048165_: IDL.Text });
