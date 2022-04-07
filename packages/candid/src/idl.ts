@@ -281,6 +281,76 @@ export class EmptyClass extends PrimitiveType<never> {
 }
 
 /**
+ * Represents an IDL Unknown, a placeholder type for deserialization only.
+ * When decoding a value as Unknown, all fields will be retained but the names are only available in
+ * hashed form.
+ * A deserialized unknown will offer it's actual type by calling the `type()` function.
+ * Unknown cannot be serialized and attempting to do so will throw an error.
+ */
+export class UnknownClass extends Type {
+  public checkType(t: Type): Type {
+    throw new Error('Method not implemented for unknown.');
+  }
+
+  public accept<D, R>(v: Visitor<D, R>, d: D): R {
+    throw v.visitType(this, d);
+  }
+
+  public covariant(x: any): x is any {
+    return false;
+  }
+
+  public encodeValue(): never {
+    throw new Error('Unknown cannot appear as a function argument');
+  }
+
+  public valueToString(): never {
+    throw new Error('Unknown cannot appear as a value');
+  }
+
+  public encodeType(): never {
+    throw new Error('Unknown cannot be serialized');
+  }
+
+  public decodeValue(b: Pipe, t: Type): any {
+    let decodedValue = t.decodeValue(b, t);
+
+    if (Object(decodedValue) !== decodedValue) {
+      // decodedValue is primitive. Box it, otherwise we cannot add the type() function.
+      // The type() function is important for primitives because otherwise we cannot tell apart the
+      // different number types.
+      decodedValue = Object(decodedValue);
+    }
+
+    let typeFunc;
+    if (t instanceof RecClass) {
+      typeFunc = () => t.getType();
+    } else {
+      typeFunc = () => t;
+    }
+    // Do not use 'decodedValue.type = typeFunc' because this would lead to an enumerable property
+    // 'type' which means it would be serialized if the value would be candid encoded again.
+    // This in turn leads to problems if the decoded value is a variant because these values are
+    // only allowed to have a single property.
+    Object.defineProperty(decodedValue, 'type', {
+      value: typeFunc,
+      writable: true,
+      enumerable: false,
+      configurable: true,
+    });
+    return decodedValue;
+  }
+
+  protected _buildTypeTableImpl(): void {
+    throw new Error('Unknown cannot be serialized');
+  }
+
+  get name() {
+    return 'Unknown';
+  }
+}
+
+/**
  * Represents an IDL Bool
  */
 export class BoolClass extends PrimitiveType<boolean> {
@@ -1562,6 +1632,7 @@ export type InterfaceFactory = (idl: {
   IDL: {
     Empty: EmptyClass;
     Reserved: ReservedClass;
+    Unknown: UnknownClass;
     Bool: BoolClass;
     Null: NullClass;
     Text: TextClass;
@@ -1598,6 +1669,10 @@ export type InterfaceFactory = (idl: {
 // Export Types instances.
 export const Empty = new EmptyClass();
 export const Reserved = new ReservedClass();
+/**
+ * Client-only type for deserializing unknown data. Not supported by Candid, and its use is discouraged.
+ */
+export const Unknown = new UnknownClass();
 export const Bool = new BoolClass();
 export const Null = new NullClass();
 export const Text = new TextClass();
