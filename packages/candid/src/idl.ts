@@ -927,18 +927,43 @@ export class RecordClass extends ConstructType<Record<string, any>> {
       throw new Error('Not a record type');
     }
     const x: Record<string, any> = {};
-    let idx = 0;
-    for (const [hash, type] of record._fields) {
-      if (idx >= this._fields.length || idlLabelToId(this._fields[idx][0]) !== idlLabelToId(hash)) {
-        // skip field
+
+    let expectedRecordIdx = 0;
+    let actualRecordIdx = 0;
+    while (actualRecordIdx < record._fields.length) {
+      const [hash, type] = record._fields[actualRecordIdx];
+
+      if (expectedRecordIdx >= this._fields.length) {
+        // skip unexpected left over fields present on the wire
         type.decodeValue(b, type);
+        actualRecordIdx++;
         continue;
       }
-      const [expectKey, expectType] = this._fields[idx];
+
+      const [expectKey, expectType] = this._fields[expectedRecordIdx];
+      if (idlLabelToId(this._fields[expectedRecordIdx][0]) !== idlLabelToId(hash)) {
+        // the current field on the wire does not match the expected field
+
+        // skip expected optional fields that are not present on the wire
+        if (expectType instanceof OptClass || expectType instanceof ReservedClass) {
+          x[expectKey] = [];
+          expectedRecordIdx++;
+          continue;
+        }
+
+        // skip unexpected interspersed fields present on the wire
+        type.decodeValue(b, type);
+        actualRecordIdx++;
+        continue;
+      }
+
       x[expectKey] = expectType.decodeValue(b, type);
-      idx++;
+      expectedRecordIdx++;
+      actualRecordIdx++;
     }
-    for (const [expectKey, expectType] of this._fields.slice(idx)) {
+
+    // initialize left over expected optional fields
+    for (const [expectKey, expectType] of this._fields.slice(expectedRecordIdx)) {
       if (expectType instanceof OptClass || expectType instanceof ReservedClass) {
         // TODO this assumes null value in opt is represented as []
         x[expectKey] = [];
