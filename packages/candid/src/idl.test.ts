@@ -160,6 +160,7 @@ test('IDL encoding (array)', () => {
     '4449444c016d7c01000400010203',
     'Array of Ints',
   );
+  IDL.encode([IDL.Vec(IDL.Nat16)], [new Array(200000).fill(42)]);
   expect(() => IDL.encode([IDL.Vec(IDL.Int)], [BigInt(0)])).toThrow(/Invalid vec int argument/);
   expect(() => IDL.encode([IDL.Vec(IDL.Int)], [['fail']])).toThrow(/Invalid vec int argument/);
 });
