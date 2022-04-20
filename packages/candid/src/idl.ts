@@ -750,8 +750,13 @@ export class VecClass<T> extends ConstructType<T[]> {
     if (this._blobOptimization) {
       return concat(len, new Uint8Array(x as unknown as number[]));
     }
-
-    return concat(len, ...x.map(d => this._type.encodeValue(d)));
+    const buf = new Pipe(new ArrayBuffer(len.byteLength + x.length), 0);
+    buf.write(len);
+    for (const d of x) {
+      const encoded = this._type.encodeValue(d);
+      buf.write(new Uint8Array(encoded));
+    }
+    return buf.buffer;
   }
 
   public _buildTypeTableImpl(typeTable: TypeTable) {
