@@ -1,17 +1,20 @@
 // tslint:disable:max-classes-per-file
 import { Principal as PrincipalId } from '@dfinity/principal';
 import { JsonValue } from './types';
-import { concat, PipeArrayBuffer as Pipe, toHexString } from './utils/buffer';
+import { concat, PipeArrayBuffer as Pipe } from './utils/buffer';
 import { idlLabelToId } from './utils/hash';
 import {
   lebDecode,
   lebEncode,
+  readIntLE,
+  readUIntLE,
   safeRead,
   safeReadUint8,
   slebDecode,
   slebEncode,
+  writeIntLE,
+  writeUIntLE,
 } from './utils/leb128';
-import { readIntLE, readUIntLE, writeIntLE, writeUIntLE } from './utils/leb128';
 
 // tslint:disable:max-line-length
 /**
@@ -1327,7 +1330,7 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
     } else if (ann === 'oneway') {
       return new Uint8Array([2]);
     } else {
-      throw new Error('Illeagal function annotation');
+      throw new Error('Illegal function annotation');
     }
   }
 }
@@ -1471,25 +1474,46 @@ export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
           break;
         }
         case IDLTypeIds.Func: {
-          for (let k = 0; k < 2; k++) {
-            let funcLength = Number(lebDecode(pipe));
-            while (funcLength--) {
-              slebDecode(pipe);
+          const args = [];
+          let argLength = Number(lebDecode(pipe));
+          while (argLength--) {
+            args.push(Number(slebDecode(pipe)));
+          }
+          const returnValues = [];
+          let returnValuesLength = Number(lebDecode(pipe));
+          while (returnValuesLength--) {
+            returnValues.push(Number(slebDecode(pipe)));
+          }
+          const annotations = [];
+          let annotationLength = Number(lebDecode(pipe));
+          while (annotationLength--) {
+            const annotation = Number(lebDecode(pipe));
+            switch (annotation) {
+              case 1: {
+                annotations.push('query');
+                break;
+              }
+              case 2: {
+                annotations.push('oneway');
+                break;
+              }
+              default:
+                throw new Error('unknown annotation');
             }
           }
-          const annLen = Number(lebDecode(pipe));
-          safeRead(pipe, annLen);
-          typeTable.push([ty, undefined]);
+          typeTable.push([ty, [args, returnValues, annotations]]);
           break;
         }
         case IDLTypeIds.Service: {
           let servLength = Number(lebDecode(pipe));
+          const methods = [];
           while (servLength--) {
-            const l = Number(lebDecode(pipe));
-            safeRead(pipe, l);
-            slebDecode(pipe);
+            const nameLength = Number(lebDecode(pipe));
+            const funcName = new TextDecoder().decode(safeRead(pipe, nameLength));
+            const funcType = slebDecode(pipe);
+            methods.push([funcName, funcType]);
           }
-          typeTable.push([ty, undefined]);
+          typeTable.push([ty, methods]);
           break;
         }
         default:
@@ -1594,15 +1618,35 @@ export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
         return Variant(fields);
       }
       case IDLTypeIds.Func: {
-        return Func([], [], []);
+        const [args, returnValues, annotations] = entry[1];
+        return Func(
+          args.map((t: number) => getType(t)),
+          returnValues.map((t: number) => getType(t)),
+          annotations,
+        );
       }
       case IDLTypeIds.Service: {
-        return Service({});
+        const rec: Record<string, FuncClass> = {};
+        const methods = entry[1] as [[string, number]];
+        for (const [name, typeRef] of methods) {
+          let type: Type | undefined = getType(typeRef);
+
+          if (type instanceof RecClass) {
+            // unpack reference type
+            type = type.getType();
+          }
+          if (!(type instanceof FuncClass)) {
+            throw new Error('Illegal service definition: services can only contain functions');
+          }
+          rec[name] = type;
+        }
+        return Service(rec);
       }
       default:
         throw new Error('Illegal op_code: ' + entry[0]);
     }
   }
+
   rawTable.forEach((entry, i) => {
     const t = buildType(entry);
     table[i].fill(t);

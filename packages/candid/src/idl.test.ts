@@ -534,7 +534,7 @@ test('decode unknown service', () => {
     fromHexString('4449444c026a0171017d00690103666f6f0001010103caffee'),
   )[0] as any;
   expect(value).toEqual(Principal.fromText('w7x7r-cok77-xa'));
-  expect(value.type()).toEqual(IDL.Service({}));
+  expect(value.type()).toEqual(IDL.Service({ foo: IDL.Func([IDL.Text], [IDL.Nat], []) }));
 });
 
 test('decode unknown func', () => {
@@ -543,7 +543,7 @@ test('decode unknown func', () => {
     fromHexString('4449444c016a0171017d01010100010103caffee03666f6f'),
   )[0] as any;
   expect(value).toEqual([Principal.fromText('w7x7r-cok77-xa'), 'foo']);
-  expect(value.type()).toEqual(IDL.Func([], [], []));
+  expect(value.type()).toEqual(IDL.Func([IDL.Text], [IDL.Nat], ['query']));
 });
 
 test('decode / encode unknown mutual recursive lists', () => {
