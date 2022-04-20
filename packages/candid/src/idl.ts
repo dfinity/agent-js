@@ -1,17 +1,20 @@
 // tslint:disable:max-classes-per-file
 import { Principal as PrincipalId } from '@dfinity/principal';
 import { JsonValue } from './types';
-import { concat, PipeArrayBuffer as Pipe, toHexString } from './utils/buffer';
+import { concat, PipeArrayBuffer as Pipe } from './utils/buffer';
 import { idlLabelToId } from './utils/hash';
 import {
   lebDecode,
   lebEncode,
+  readIntLE,
+  readUIntLE,
   safeRead,
   safeReadUint8,
   slebDecode,
   slebEncode,
+  writeIntLE,
+  writeUIntLE,
 } from './utils/leb128';
-import { readIntLE, readUIntLE, writeIntLE, writeUIntLE } from './utils/leb128';
 
 // tslint:disable:max-line-length
 /**
@@ -1503,12 +1506,14 @@ export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
         }
         case IDLTypeIds.Service: {
           let servLength = Number(lebDecode(pipe));
+          const methods = [];
           while (servLength--) {
-            const l = Number(lebDecode(pipe));
-            safeRead(pipe, l);
-            slebDecode(pipe);
+            const nameLength = Number(lebDecode(pipe));
+            const funcName = new TextDecoder().decode(safeRead(pipe, nameLength));
+            const funcType = slebDecode(pipe);
+            methods.push([funcName, funcType]);
           }
-          typeTable.push([ty, undefined]);
+          typeTable.push([ty, methods]);
           break;
         }
         default:
@@ -1621,7 +1626,21 @@ export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
         );
       }
       case IDLTypeIds.Service: {
-        return Service({});
+        const rec: Record<string, FuncClass> = {};
+        const methods = entry[1] as [[string, number]];
+        for (const [name, typeRef] of methods) {
+          let type: Type | undefined = getType(typeRef);
+
+          if (type instanceof RecClass) {
+            // unpack reference type
+            type = type.getType();
+          }
+          if (!(type instanceof FuncClass)) {
+            throw new Error('Illegal service definition: services can only contain functions');
+          }
+          rec[name] = type;
+        }
+        return Service(rec);
       }
       default:
         throw new Error('Illegal op_code: ' + entry[0]);

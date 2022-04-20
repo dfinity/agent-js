@@ -6,8 +6,6 @@ import * as IDL from './idl';
 import { Principal } from '@dfinity/principal';
 import { fromHexString, toHexString } from './utils/buffer';
 import { idlLabelToId } from './utils/hash';
-import fs from 'fs';
-import { fromHex, toHex } from '@dfinity/agent/lib/cjs/utils/buffer';
 
 function testEncode(typ: IDL.Type, val: any, hex: string, _str: string) {
   expect(toHexString(IDL.encode([typ], [val]))).toEqual(hex);
@@ -536,7 +534,7 @@ test('decode unknown service', () => {
     fromHexString('4449444c026a0171017d00690103666f6f0001010103caffee'),
   )[0] as any;
   expect(value).toEqual(Principal.fromText('w7x7r-cok77-xa'));
-  expect(value.type()).toEqual(IDL.Service({}));
+  expect(value.type()).toEqual(IDL.Service({ foo: IDL.Func([IDL.Text], [IDL.Nat], []) }));
 });
 
 test('decode unknown func', () => {
@@ -546,20 +544,6 @@ test('decode unknown func', () => {
   )[0] as any;
   expect(value).toEqual([Principal.fromText('w7x7r-cok77-xa'), 'foo']);
   expect(value.type()).toEqual(IDL.Func([IDL.Text], [IDL.Nat], ['query']));
-});
-
-test('decode unknown funcasdf', () => {
-  const value = IDL.decode(
-    [IDL.Unknown],
-    fromHexString('4449444c016a0371717a027178010101000101000c696e7374616c6c5f636f6465'),
-  )[0] as any;
-});
-
-it('fooo2', () => {
-  fs.readFile('candid.txt', 'utf8', (err, data) => {
-    const decoded = IDL.decode([IDL.Unknown], fromHex(data))[0] as any;
-    console.log(decoded.type().display());
-  });
 });
 
 test('decode / encode unknown mutual recursive lists', () => {
