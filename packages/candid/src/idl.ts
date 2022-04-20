@@ -924,15 +924,29 @@ export class RecordClass extends ConstructType<Record<string, any>> {
     const x: Record<string, any> = {};
     let idx = 0;
     for (const [hash, type] of record._fields) {
+      let [expectKey, expectType] = this._fields[idx];
+
+      // skip expected optional fields that are not present in the data
+      while (
+        (expectType instanceof OptClass || expectType instanceof ReservedClass) &&
+        idx < this._fields.length &&
+        idlLabelToId(this._fields[idx][0]) !== idlLabelToId(hash)
+      ) {
+        x[expectKey] = [];
+        idx++;
+        [expectKey, expectType] = this._fields[idx];
+      }
+
       if (idx >= this._fields.length || idlLabelToId(this._fields[idx][0]) !== idlLabelToId(hash)) {
-        // skip field
+        // skip unexpected fields present in the data
         type.decodeValue(b, type);
         continue;
       }
-      const [expectKey, expectType] = this._fields[idx];
       x[expectKey] = expectType.decodeValue(b, type);
       idx++;
     }
+
+    // initialize left over expected optional fields
     for (const [expectKey, expectType] of this._fields.slice(idx)) {
       if (expectType instanceof OptClass || expectType instanceof ReservedClass) {
         // TODO this assumes null value in opt is represented as []

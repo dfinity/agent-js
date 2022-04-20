@@ -608,3 +608,23 @@ test('decode / encode unknown nested record', () => {
   const decodedValue2 = IDL.decode([recordType], fromHexString(reencoded))[0] as any;
   expect(decodedValue2).toEqual(value);
 });
+
+test('should correctly decode expected optional fields with lower hash than required fields', () => {
+  const HttpResponse = IDL.Record({
+    body: IDL.Text,
+    headers: IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text)),
+    streaming_strategy: IDL.Opt(IDL.Text),
+    status_code: IDL.Int,
+    upgrade: IDL.Opt(IDL.Bool),
+  });
+  const encoded =
+    '4449444c036c04a2f5ed880471c6a4a19806019ce9c69906029aa1b2f90c7c6d7f6e7e010003666f6f000101c801';
+  const value = IDL.decode([HttpResponse], fromHexString(encoded))[0];
+  expect(value).toEqual({
+    body: 'foo',
+    headers: [],
+    status_code: BigInt(200),
+    streaming_strategy: [],
+    upgrade: [true],
+  });
+});
