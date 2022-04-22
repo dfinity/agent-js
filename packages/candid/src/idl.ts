@@ -741,9 +741,9 @@ export class VecClass<T> extends ConstructType<T[]> {
     return v.visitVec(this, this._type, d);
   }
 
-  public covariant(x: any) {
+  public covariant(x: any): x is T[] {
     // Special case for ArrayBuffer
-    return (ArrayBuffer.isView(x) && (x.length == 0 || this._type.covariant(x[0])))
+    return (ArrayBuffer.isView(x) && (x.byteLength == 0 || this._type.covariant(x[0])))
            || (Array.isArray(x) && x.every(v => this._type.covariant(v)));
   }
 

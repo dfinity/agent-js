@@ -152,6 +152,20 @@ test('IDL encoding (tuple)', () => {
   );
 });
 
+test('IDL encoding (arraybuffer)', () => {
+  // ArrayBuffer, encode only.
+  testEncode(
+    IDL.Vec(IDL.Int8),
+    new Int8Array([0, 1, 2, 3]),
+    '4449444c016d7701000400010203',
+    'Array of Ints',
+  );
+  IDL.encode([IDL.Vec(IDL.Nat8)], [new Uint8Array()]);
+  IDL.encode([IDL.Vec(IDL.Nat8)], [new Uint8Array(100).fill(42)]);
+  IDL.encode([IDL.Vec(IDL.Nat16)], [new Uint16Array(200).fill(42)]);
+  expect(() => IDL.encode([IDL.Vec(IDL.Int8)], [new Uint16Array(10).fill(420)])).toThrow(/Invalid vec int8 argument/);
+});
+
 test('IDL encoding (array)', () => {
   // Array
   test_(
