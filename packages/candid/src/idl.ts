@@ -741,8 +741,10 @@ export class VecClass<T> extends ConstructType<T[]> {
     return v.visitVec(this, this._type, d);
   }
 
-  public covariant(x: any): x is T[] {
-    return Array.isArray(x) && x.every(v => this._type.covariant(v));
+  public covariant(x: any) {
+    // Special case for ArrayBuffer
+    return (ArrayBuffer.isView(x) && (x.length == 0 || this._type.covariant(x[0])))
+           || (Array.isArray(x) && x.every(v => this._type.covariant(v)));
   }
 
   public encodeValue(x: T[]) {
