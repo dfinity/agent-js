@@ -154,19 +154,19 @@ test('IDL encoding (tuple)', () => {
 
 test('IDL encoding (arraybuffer)', () => {
   // ArrayBuffer, encode only.
-  testEncode(
+  test_(
     IDL.Vec(IDL.Nat8),
-    new Int8Array([0, 1, 2, 3]),
+    new Uint8Array([0, 1, 2, 3]),
     '4449444c016d7b01000400010203',
     'Array of Nat8s',
   );
-  testEncode(
+  test_(
     IDL.Vec(IDL.Int8),
     new Int8Array([0, 1, 2, 3]),
     '4449444c016d7701000400010203',
     'Array of Int8s',
   );
-  testEncode(
+  test_(
     IDL.Vec(IDL.Int16),
     new Int16Array([0, 1, 2, 3, 32767, -1]),
     '4449444c016d760100060000010002000300ff7fffff',

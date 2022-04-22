@@ -780,7 +780,31 @@ export class VecClass<T> extends ConstructType<T[]> {
     }
     const len = Number(lebDecode(b));
     if (this._blobOptimization) {
-      return [...new Uint8Array(b.read(len))] as unknown as T[];
+      return new Uint8Array(b.read(len)) as unknown as T[];
+    }
+
+    if (this._type instanceof FixedNatClass) {
+      if (this._type.bits == 8) {
+        return new Uint8Array(b.read(len)) as unknown as T[];
+      }
+      if (this._type.bits == 16) {
+        return new Uint16Array(b.read(len * 2)) as unknown as T[];
+      }
+        if (this._type.bits == 32) {
+        return new Uint32Array(b.read(len * 4)) as unknown as T[];
+      }
+    }
+
+    if (this._type instanceof FixedIntClass) {
+      if (this._type._bits == 8) {
+        return new Int8Array(b.read(len)) as unknown as T[];
+      }
+      if (this._type._bits == 16) {
+        return new Int16Array(b.read(len * 2)) as unknown as T[];
+      }
+        if (this._type._bits == 32) {
+        return new Int32Array(b.read(len * 4)) as unknown as T[];
+      }
     }
 
     const rets: T[] = [];
