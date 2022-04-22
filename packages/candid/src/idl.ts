@@ -790,8 +790,11 @@ export class VecClass<T> extends ConstructType<T[]> {
       if (this._type.bits == 16) {
         return new Uint16Array(b.read(len * 2)) as unknown as T[];
       }
-        if (this._type.bits == 32) {
+      if (this._type.bits == 32) {
         return new Uint32Array(b.read(len * 4)) as unknown as T[];
+      }
+      if (this._type.bits == 64) {
+        return new BigUint64Array(b.read(len * 8)) as unknown as T[];
       }
     }
 
@@ -802,8 +805,11 @@ export class VecClass<T> extends ConstructType<T[]> {
       if (this._type._bits == 16) {
         return new Int16Array(b.read(len * 2)) as unknown as T[];
       }
-        if (this._type._bits == 32) {
+      if (this._type._bits == 32) {
         return new Int32Array(b.read(len * 4)) as unknown as T[];
+      }
+      if (this._type._bits == 64) {
+        return new BigInt64Array(b.read(len * 8)) as unknown as T[];
       }
     }
 
