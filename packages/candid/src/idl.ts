@@ -724,6 +724,10 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
 
 /**
  * Represents an IDL Array
+ *
+ * Arrays of fixed-sized nat/int type (e.g. nat8), are encoded from and decoded to TypedArrays (e.g. Uint8Array).
+ * Arrays of float or other non-primitive types are encoded/decoded as untyped array in Javascript.
+ *
  * @param {Type} t
  */
 export class VecClass<T> extends ConstructType<T[]> {
@@ -779,9 +783,6 @@ export class VecClass<T> extends ConstructType<T[]> {
       throw new Error('Not a vector type');
     }
     const len = Number(lebDecode(b));
-    if (this._blobOptimization) {
-      return new Uint8Array(b.read(len)) as unknown as T[];
-    }
 
     if (this._type instanceof FixedNatClass) {
       if (this._type.bits == 8) {
