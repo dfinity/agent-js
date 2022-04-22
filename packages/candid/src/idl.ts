@@ -621,7 +621,7 @@ export class FloatClass extends PrimitiveType<number> {
  * Represents an IDL fixed-width Int(n)
  */
 export class FixedIntClass extends PrimitiveType<bigint | number> {
-  constructor(private _bits: number) {
+  constructor(public _bits: number) {
     super();
   }
 
@@ -743,7 +743,9 @@ export class VecClass<T> extends ConstructType<T[]> {
 
   public covariant(x: any): x is T[] {
     // Special case for ArrayBuffer
-    return ArrayBuffer.isView(x) || (Array.isArray(x) && x.every(v => this._type.covariant(v)));
+    const bits = this._type instanceof FixedNatClass ? this._type.bits : (this._type instanceof FixedIntClass ? this._type._bits : 0);
+    return (ArrayBuffer.isView(x) && bits == (x as any).BYTES_PER_ELEMENT * 8)
+           || (Array.isArray(x) && x.every(v => this._type.covariant(v)));
   }
 
   public encodeValue(x: T[]) {
