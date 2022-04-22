@@ -753,6 +753,9 @@ export class VecClass<T> extends ConstructType<T[]> {
     if (this._blobOptimization) {
       return concat(len, new Uint8Array(x as unknown as number[]));
     }
+    if (ArrayBuffer.isView(x)) {
+      return concat(len, new Uint8Array(x.buffer));
+    }
     const buf = new Pipe(new ArrayBuffer(len.byteLength + x.length), 0);
     buf.write(len);
     for (const d of x) {
