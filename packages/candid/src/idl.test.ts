@@ -153,7 +153,6 @@ test('IDL encoding (tuple)', () => {
 });
 
 test('IDL encoding (arraybuffer)', () => {
-  // ArrayBuffer, encode only.
   test_(
     IDL.Vec(IDL.Nat8),
     new Uint8Array([0, 1, 2, 3]),
