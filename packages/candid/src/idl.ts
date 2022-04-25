@@ -732,6 +732,11 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
  */
 export class VecClass<T> extends ConstructType<T[]> {
   // If true, this vector is really a blob and we can just use memcpy.
+  //
+  // NOTE:
+  // With support of encoding/dencoding of TypedArrays, this optimization is
+  // only used when plain array of bytes are passed as encoding input in order
+  // to be backward compatible.
   private _blobOptimization = false;
 
   constructor(protected _type: Type<T>) {
