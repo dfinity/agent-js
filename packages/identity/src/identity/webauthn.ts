@@ -76,7 +76,7 @@ async function _createCredential(
         authenticatorSelection: {
           userVerification: 'preferred',
         },
-        attestation: 'direct',
+        attestation: 'none',
         challenge: _createChallengeBuffer(),
         pubKeyCredParams: [{ type: 'public-key', alg: PubKeyCoseAlgo.ECDSA_WITH_SHA256 }],
         rp: {
