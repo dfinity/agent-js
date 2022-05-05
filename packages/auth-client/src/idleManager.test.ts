@@ -1,12 +1,12 @@
-import IdleManager from './idleManager';
+import { IdleManager } from './idleManager';
 
 jest.useFakeTimers();
 
 const { location } = window;
 
 beforeEach(() => {
-  delete window.location;
-  window.location = { reload: jest.fn() };
+  delete (window as any).location;
+  (window as any).location = { reload: jest.fn() };
 });
 
 describe('IdleManager tests', () => {

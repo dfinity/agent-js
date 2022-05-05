@@ -14,7 +14,7 @@ import {
   Ed25519KeyIdentity,
 } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
-import IdleManager, { IdleManagerOptions } from './idleManager';
+import { IdleManager, IdleManagerOptions } from './idleManager';
 
 const KEY_LOCALSTORAGE_KEY = 'identity';
 const KEY_LOCALSTORAGE_DELEGATION = 'delegation';

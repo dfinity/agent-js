@@ -26,9 +26,10 @@ const events = ['mousedown', 'mousemove', 'keydown', 'touchstart', 'wheel'];
 
 /**
  * Detects if the user has been idle for a duration of `idleTimeout` ms, and calls `onIdle` and registered callbacks.
- * @see {@link IdleManager}
+ * By default, the IdleManager will log a user out after 30 minutes of inactivity, and reload the page.
+ * To override these defaults, you can pass an `onIdle` callback, or configure a custom `idleTimeout` in milliseconds
  */
-class IdleManager {
+export class IdleManager {
   callbacks: IdleCB[] = [];
   idleTimeout: IdleManagerOptions['idleTimeout'] = 30 * 60 * 1000;
   timeoutID?: number = undefined;
@@ -153,5 +154,3 @@ class IdleManager {
     this.timeoutID = window.setTimeout(exit, this.idleTimeout);
   }
 }
-
-export default IdleManager;
