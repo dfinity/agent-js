@@ -52,6 +52,8 @@ export interface IdleOptions extends IdleManagerOptions {
   disableIdle?: boolean;
 }
 
+export * from './idleManager';
+
 export interface AuthClientLoginOptions {
   /**
    * Identity provider

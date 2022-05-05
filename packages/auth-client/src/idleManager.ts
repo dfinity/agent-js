@@ -32,6 +32,7 @@ class IdleManager {
   callbacks: IdleCB[] = [];
   idleTimeout: IdleManagerOptions['idleTimeout'] = 30 * 60 * 1000;
   timeoutID?: number = undefined;
+  private _usingDefaultCb = false;
 
   /**
    * Creates an {@link IdleManager}
@@ -75,8 +76,16 @@ class IdleManager {
    */
   protected constructor(options: IdleManagerOptions = {}) {
     const { onIdle, idleTimeout = 10 * 60 * 1000 } = options || {};
-    this.callbacks = onIdle ? [onIdle] : [];
+
+    const defaultIdleCB = () => {
+      window.location.reload();
+    };
+
+    this.callbacks = onIdle ? [onIdle] : [defaultIdleCB];
     this.idleTimeout = idleTimeout;
+
+    // If no callback is passed, set flag that we are using the default callback
+    this._usingDefaultCb = !onIdle;
 
     const _resetTimer = this._resetTimer.bind(this);
 
@@ -114,6 +123,10 @@ class IdleManager {
    * @param {IdleCB} callback function to be called when user goes idle
    */
   public registerCallback(callback: IdleCB): void {
+    if (this._usingDefaultCb) {
+      this.callbacks = [];
+    }
+    this._usingDefaultCb = false;
     this.callbacks.push(callback);
   }
 
@@ -121,7 +134,6 @@ class IdleManager {
    * Cleans up the idle manager and its listeners
    */
   public exit(): void {
-    this.callbacks.forEach(cb => cb());
     clearTimeout(this.timeoutID);
     window.removeEventListener('load', this._resetTimer, true);
 
@@ -129,6 +141,7 @@ class IdleManager {
     events.forEach(function (name) {
       document.removeEventListener(name, _resetTimer, true);
     });
+    this.callbacks.forEach(cb => cb());
   }
 
   /**
