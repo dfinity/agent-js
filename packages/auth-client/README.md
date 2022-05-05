@@ -56,16 +56,39 @@ const actor = Actor.createActor(idlFactory, {
 });
 ```
 
-<h2 id="0.10.5-idle-update">Idle Update</h2>
+<h2 id="0.10.5-idle-update">Idle Management</h2>
 
-As of 0.10.5, the authClient has two notable new features:
+The AuthClient provides two forms of security for session management. The first is built into the Internet Identity delegation - the `maxTimeToLive` option in nanoseconds determines how long the `DelegationIdentity` you get back will be valid for. The second is the Idle Manager, which moniters keyboard, mouse and touchscreen identity. The Idle Manager will automatically log you out if you don't interact with the browser for a period of time.
 
-1. the maxTimeToLive is now a set to 8 hours by default, down from 24.
-2. you can now set a timeout for when your identity will be considered idle
+If you pass no options to the IdleManager, it will log you out after 10 minutes of inactivity by removing the `DelegationIdentity` from localStorage and then calling `window.location.reload()`.
 
-These defaults are more conservative, out of the interest of protecting users as more sites are starting to manage ICP and NFT's. You can override these defaults, and opt out of the Idle Manager if you so choose. For more details, see the [forum discussion](https://forum.dfinity.org/t/authclient-update-idle-timeouts).
+If you pass an `onIdle` option, it will call that function when the user is idle, replacing the default window.location.reload() behavior. You can also register callbacks after the idleManager is created with the `idleManager.registerCallback()` method, which will also replace the default callback.
 
-Additionally, we now support utility methods in Agents to invalidate an identity. It is suggested that you use this method to invalidate an identity once the user goes idle by calling `Actor.getAgent(actor).invalidateIdentity()`. See the below code for an example:
+The full set of options for the IdleManager is:
+
+```js
+  /**
+   * Callback after the user has gone idle
+   */
+  onIdle?: IdleCB;
+  /**
+   * timeout in ms
+   * @default 30 minutes [600_000]
+   */
+  idleTimeout?: number;
+  /**
+   * capture scroll events
+   * @default false
+   */
+  captureScroll?: boolean;
+  /**
+   * scroll debounce time in ms
+   * @default 100
+   */
+  scrollDebounce?: number;
+```
+
+### IdleManager Example Usage
 
 ```js
 const authClient = await AuthClient.create({
