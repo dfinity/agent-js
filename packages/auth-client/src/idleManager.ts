@@ -26,14 +26,13 @@ const events = ['mousedown', 'mousemove', 'keydown', 'touchstart', 'wheel'];
 
 /**
  * Detects if the user has been idle for a duration of `idleTimeout` ms, and calls `onIdle` and registered callbacks.
- * By default, the IdleManager will log a user out after 30 minutes of inactivity, and reload the page.
+ * By default, the IdleManager will log a user out after 10 minutes of inactivity.
  * To override these defaults, you can pass an `onIdle` callback, or configure a custom `idleTimeout` in milliseconds
  */
 export class IdleManager {
   callbacks: IdleCB[] = [];
-  idleTimeout: IdleManagerOptions['idleTimeout'] = 30 * 60 * 1000;
+  idleTimeout: IdleManagerOptions['idleTimeout'] = 10 * 60 * 1000;
   timeoutID?: number = undefined;
-  private _usingDefaultCb = false;
 
   /**
    * Creates an {@link IdleManager}
@@ -78,15 +77,8 @@ export class IdleManager {
   protected constructor(options: IdleManagerOptions = {}) {
     const { onIdle, idleTimeout = 10 * 60 * 1000 } = options || {};
 
-    const defaultIdleCB = () => {
-      window.location.reload();
-    };
-
-    this.callbacks = onIdle ? [onIdle] : [defaultIdleCB];
+    this.callbacks = onIdle ? [onIdle] : [];
     this.idleTimeout = idleTimeout;
-
-    // If no callback is passed, set flag that we are using the default callback
-    this._usingDefaultCb = !onIdle;
 
     const _resetTimer = this._resetTimer.bind(this);
 
@@ -124,10 +116,6 @@ export class IdleManager {
    * @param {IdleCB} callback function to be called when user goes idle
    */
   public registerCallback(callback: IdleCB): void {
-    if (this._usingDefaultCb) {
-      this.callbacks = [];
-    }
-    this._usingDefaultCb = false;
     this.callbacks.push(callback);
   }
 

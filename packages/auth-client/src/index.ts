@@ -50,6 +50,12 @@ export interface IdleOptions extends IdleManagerOptions {
    * @default false
    */
   disableIdle?: boolean;
+
+  /**
+   * Disables default idle behavior - call logout & reload window
+   * @default false
+   */
+  disableDefaultIdleCallback?: boolean;
 }
 
 export * from './idleManager';
@@ -195,6 +201,7 @@ export class AuthClient {
    * @see {@link AuthClientStorage}
    * @param {IdleOptions} options.idleOptions Configures an {@link IdleManager}
    * @see {@link IdleOptions}
+   * Default behavior is to clear stored identity and reload the page when a user goes idle, unless you set the disableDefaultIdleCallback flag or pass in a custom idle callback.
    * @example
    * const authClient = await AuthClient.create({
    *   idleOptions: {
@@ -270,7 +277,7 @@ export class AuthClient {
       ? undefined
       : IdleManager.create(options.idleOptions);
 
-    return new this(identity, key, chain, storage, idleManager);
+    return new this(identity, key, chain, storage, idleManager, options);
   }
 
   protected constructor(
@@ -279,13 +286,26 @@ export class AuthClient {
     private _chain: DelegationChain | null,
     private _storage: AuthClientStorage,
     public readonly idleManager: IdleManager | undefined,
+    private _createOptions?: AuthClientCreateOptions,
     // A handle on the IdP window.
     private _idpWindow?: Window,
     // The event handler for processing events from the IdP.
     private _eventHandler?: (event: MessageEvent) => void,
   ) {
     const logout = this.logout.bind(this);
-    this.idleManager?.registerCallback(logout);
+    /**
+     * Default behavior is to clear stored identity and reload the page.
+     * By either setting the disableDefaultIdleCallback flag or passing in a custom idle callback, we will ignore this config
+     */
+    this.idleManager?.registerCallback(() => {
+      if (
+        !_createOptions?.idleOptions?.onIdle &&
+        !_createOptions?.idleOptions?.disableDefaultIdleCallback
+      ) {
+        logout();
+        location.reload();
+      }
+    });
   }
 
   private _handleSuccess(message: InternetIdentityAuthResponseSuccess, onSuccess?: () => void) {

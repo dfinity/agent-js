@@ -19,21 +19,15 @@ describe('IdleManager tests', () => {
     expect(cb).toHaveBeenCalled();
     manager.exit();
   });
-  it('should automatically reload the page if no other idle callback is registered', () => {
-    IdleManager.create();
-
-    expect(window.location.reload).not.toHaveBeenCalled();
-    // simulate user being inactive for 10 minutes
-    jest.advanceTimersByTime(10 * 60 * 1000);
-    expect(window.location.reload).toHaveBeenCalled();
-  });
   it('should replace the default callback if a callback is passed during creation', () => {
-    IdleManager.create({ onIdle: jest.fn() });
+    const idleFn = jest.fn();
+    IdleManager.create({ onIdle: idleFn });
 
     expect(window.location.reload).not.toHaveBeenCalled();
     // simulate user being inactive for 10 minutes
     jest.advanceTimersByTime(10 * 60 * 1000);
     expect(window.location.reload).not.toHaveBeenCalled();
+    expect(idleFn).toBeCalled();
   });
   it('should replace the default callback if a callback is registered', () => {
     const manager = IdleManager.create();

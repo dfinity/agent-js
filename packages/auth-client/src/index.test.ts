@@ -31,6 +31,13 @@ class IdpMock {
   }
 }
 
+const { location, fetch } = window;
+
+afterEach(() => {
+  delete (window as any).location;
+  (window as any).location = location;
+});
+
 describe('Auth Client', () => {
   it('should initialize with an AnonymousIdentity', async () => {
     const test = await AuthClient.create();
@@ -97,6 +104,34 @@ describe('Auth Client', () => {
       expect((error as AgentError).message).toBe(expectedError);
     }
   });
+  it('should log out after idle and reload the window by default', async () => {
+    delete (window as any).location;
+    (window as any).location = { reload: jest.fn(), fetch };
+    const mockFetch: jest.Mock = jest.fn();
+
+    const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+    const actorInterface = () => {
+      return IDL.Service({
+        greet: IDL.Func([IDL.Text], [IDL.Text]),
+      });
+    };
+
+    // setup auth client
+    const test = await AuthClient.create({
+      identity: await Ed25519KeyIdentity.generate(),
+      idleOptions: {
+        idleTimeout: 1000,
+      },
+    });
+    const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://127.0.0.1:8000' });
+    const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
+
+    // simulate user being inactive for 10 minutes
+    jest.advanceTimersByTime(10 * 60 * 1000);
+
+    expect(window.location.reload).toBeCalled();
+  });
+
   /**
    * This test reflects a feature that may be added at a future date,
    * allowing the authClient to register actors for automatic invalidation
