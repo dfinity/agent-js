@@ -88,12 +88,29 @@ The full set of options for the IdleManager is:
   scrollDebounce?: number;
 ```
 
+Additionally, the AuthClient accepts a couple additional flags to `idleOptions` to control the IdleManager:
+
+```js
+  /**
+   * Disables idle functionality for {@link IdleManager}
+   * @default false
+   */
+  disableIdle?: boolean;
+
+  /**
+   * Disables default idle behavior - call logout & reload window
+   * @default false
+   */
+  disableDefaultIdleCallback?: boolean;
+```
+
 ### IdleManager Example Usage
 
 ```js
 const authClient = await AuthClient.create({
   idleOptions: {
     idleTimeout: 1000 * 60 * 30, // set to 30 minutes
+    disableDefaultIdleCallback: true // disable the default reload behavior
   }
 });
 // ...authClient.login()
