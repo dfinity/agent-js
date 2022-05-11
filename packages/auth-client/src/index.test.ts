@@ -3,7 +3,7 @@ import { AgentError } from '@dfinity/agent/lib/cjs/errors';
 import { IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
-import { AuthClient, ERROR_USER_INTERRUPT } from './index';
+import { AuthClient, AuthClientStorage, ERROR_USER_INTERRUPT } from './index';
 
 /**
  * A class for mocking the IDP service.
@@ -107,6 +107,24 @@ describe('Auth Client', () => {
     }
   });
   it('should log out after idle and reload the window by default', async () => {
+    setup({
+      onAuthRequest: () => {
+        // Send a valid request.
+        idpMock.send({
+          kind: 'authorize-client-success',
+          delegations: [
+            {
+              delegation: {
+                pubkey: Uint8Array.from([]),
+                expiration: BigInt(0),
+              },
+              signature: Uint8Array.from([]),
+            },
+          ],
+          userPublicKey: Uint8Array.from([]),
+        });
+      },
+    });
     delete (window as any).location;
     (window as any).location = { reload: jest.fn(), fetch };
     const mockFetch: jest.Mock = jest.fn();
@@ -118,34 +136,85 @@ describe('Auth Client', () => {
       });
     };
 
+    const storage: AuthClientStorage = {
+      remove: jest.fn(),
+      get: jest.fn(),
+      set: jest.fn(),
+    };
+
     // setup auth client
     const test = await AuthClient.create({
-      identity: await Ed25519KeyIdentity.generate(),
+      storage,
       idleOptions: {
         idleTimeout: 1000,
       },
     });
+
+    // Test login flow
+    await test.login({ identityProvider: 'http://localhost' });
+
+    expect(storage.set).toBeCalled();
+    expect(storage.remove).not.toBeCalled();
+
     const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://127.0.0.1:8000' });
     const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
 
     // simulate user being inactive for 10 minutes
     jest.advanceTimersByTime(10 * 60 * 1000);
 
+    // Storage should be cleared by default after logging out
+    expect(storage.remove).toBeCalled();
+
     expect(window.location.reload).toBeCalled();
   });
   it('should not reload the page if the default callback is disabled', async () => {
+    setup({
+      onAuthRequest: () => {
+        // Send a valid request.
+        idpMock.send({
+          kind: 'authorize-client-success',
+          delegations: [
+            {
+              delegation: {
+                pubkey: Uint8Array.from([]),
+                expiration: BigInt(0),
+              },
+              signature: Uint8Array.from([]),
+            },
+          ],
+          userPublicKey: Uint8Array.from([]),
+        });
+      },
+    });
     delete (window as any).location;
     (window as any).location = { reload: jest.fn(), fetch };
+
+    const storage: AuthClientStorage = {
+      remove: jest.fn(),
+      get: jest.fn(),
+      set: jest.fn(),
+    };
+
     const test = await AuthClient.create({
+      storage,
       idleOptions: {
         idleTimeout: 1000,
         disableDefaultIdleCallback: true,
       },
     });
 
+    // Test login flow
+    await test.login({ identityProvider: 'http://localhost' });
+
+    expect(storage.set).toBeCalled();
+    expect(storage.remove).not.toBeCalled();
+
     // simulate user being inactive for 10 minutes
     jest.advanceTimersByTime(10 * 60 * 1000);
 
+    // Storage should not be cleared
+    expect(storage.remove).not.toBeCalled();
+    // Page should not be reloaded
     expect(window.location.reload).not.toBeCalled();
   });
   it('should not reload the page if a callback is provided', async () => {
