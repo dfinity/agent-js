@@ -152,6 +152,37 @@ test('IDL encoding (tuple)', () => {
   );
 });
 
+test('IDL encoding (arraybuffer)', () => {
+  test_(
+    IDL.Vec(IDL.Nat8),
+    new Uint8Array([0, 1, 2, 3]),
+    '4449444c016d7b01000400010203',
+    'Array of Nat8s',
+  );
+  test_(
+    IDL.Vec(IDL.Int8),
+    new Int8Array([0, 1, 2, 3]),
+    '4449444c016d7701000400010203',
+    'Array of Int8s',
+  );
+  test_(
+    IDL.Vec(IDL.Int16),
+    new Int16Array([0, 1, 2, 3, 32767, -1]),
+    '4449444c016d760100060000010002000300ff7fffff',
+    'Array of Int16s',
+  );
+  test_(
+    IDL.Vec(IDL.Nat64),
+    new BigUint64Array([BigInt(0), BigInt(1), BigInt(1) << BigInt(60), BigInt(13)]),
+    '4449444c016d780100040000000000000000010000000000000000000000000000100d00000000000000',
+    'Array of Nat64s',
+  );
+  IDL.encode([IDL.Vec(IDL.Nat8)], [new Uint8Array()]);
+  IDL.encode([IDL.Vec(IDL.Nat8)], [new Uint8Array(100).fill(42)]);
+  IDL.encode([IDL.Vec(IDL.Nat16)], [new Uint16Array(200).fill(42)]);
+  expect(() => IDL.encode([IDL.Vec(IDL.Int8)], [new Uint16Array(10).fill(420)])).toThrow(/Invalid vec int8 argument/);
+});
+
 test('IDL encoding (array)', () => {
   // Array
   test_(

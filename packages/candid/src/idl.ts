@@ -621,7 +621,7 @@ export class FloatClass extends PrimitiveType<number> {
  * Represents an IDL fixed-width Int(n)
  */
 export class FixedIntClass extends PrimitiveType<bigint | number> {
-  constructor(private _bits: number) {
+  constructor(public _bits: number) {
     super();
   }
 
@@ -724,10 +724,19 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
 
 /**
  * Represents an IDL Array
+ *
+ * Arrays of fixed-sized nat/int type (e.g. nat8), are encoded from and decoded to TypedArrays (e.g. Uint8Array).
+ * Arrays of float or other non-primitive types are encoded/decoded as untyped array in Javascript.
+ *
  * @param {Type} t
  */
 export class VecClass<T> extends ConstructType<T[]> {
   // If true, this vector is really a blob and we can just use memcpy.
+  //
+  // NOTE:
+  // With support of encoding/dencoding of TypedArrays, this optimization is
+  // only used when plain array of bytes are passed as encoding input in order
+  // to be backward compatible.
   private _blobOptimization = false;
 
   constructor(protected _type: Type<T>) {
@@ -742,13 +751,19 @@ export class VecClass<T> extends ConstructType<T[]> {
   }
 
   public covariant(x: any): x is T[] {
-    return Array.isArray(x) && x.every(v => this._type.covariant(v));
+    // Special case for ArrayBuffer
+    const bits = this._type instanceof FixedNatClass ? this._type.bits : (this._type instanceof FixedIntClass ? this._type._bits : 0);
+    return (ArrayBuffer.isView(x) && bits == (x as any).BYTES_PER_ELEMENT * 8)
+           || (Array.isArray(x) && x.every(v => this._type.covariant(v)));
   }
 
   public encodeValue(x: T[]) {
     const len = lebEncode(x.length);
     if (this._blobOptimization) {
       return concat(len, new Uint8Array(x as unknown as number[]));
+    }
+    if (ArrayBuffer.isView(x)) {
+      return concat(len, new Uint8Array(x.buffer));
     }
     const buf = new Pipe(new ArrayBuffer(len.byteLength + x.length), 0);
     buf.write(len);
@@ -773,8 +788,35 @@ export class VecClass<T> extends ConstructType<T[]> {
       throw new Error('Not a vector type');
     }
     const len = Number(lebDecode(b));
-    if (this._blobOptimization) {
-      return [...new Uint8Array(b.read(len))] as unknown as T[];
+
+    if (this._type instanceof FixedNatClass) {
+      if (this._type.bits == 8) {
+        return new Uint8Array(b.read(len)) as unknown as T[];
+      }
+      if (this._type.bits == 16) {
+        return new Uint16Array(b.read(len * 2)) as unknown as T[];
+      }
+      if (this._type.bits == 32) {
+        return new Uint32Array(b.read(len * 4)) as unknown as T[];
+      }
+      if (this._type.bits == 64) {
+        return new BigUint64Array(b.read(len * 8)) as unknown as T[];
+      }
+    }
+
+    if (this._type instanceof FixedIntClass) {
+      if (this._type._bits == 8) {
+        return new Int8Array(b.read(len)) as unknown as T[];
+      }
+      if (this._type._bits == 16) {
+        return new Int16Array(b.read(len * 2)) as unknown as T[];
+      }
+      if (this._type._bits == 32) {
+        return new Int32Array(b.read(len * 4)) as unknown as T[];
+      }
+      if (this._type._bits == 64) {
+        return new BigInt64Array(b.read(len * 8)) as unknown as T[];
+      }
     }
 
     const rets: T[] = [];
