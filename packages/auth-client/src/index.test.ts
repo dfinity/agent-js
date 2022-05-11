@@ -33,6 +33,9 @@ class IdpMock {
 
 const { location, fetch } = window;
 
+beforeEach(() => {
+  jest.useFakeTimers();
+});
 afterEach(() => {
   delete (window as any).location;
   (window as any).location = location;
@@ -65,7 +68,6 @@ describe('Auth Client', () => {
     expect(test.idleManager).toBeDefined();
   });
   it('should be able to invalidate an identity after going idle', async () => {
-    jest.useFakeTimers();
     // setup actor
     const identity = Ed25519KeyIdentity.generate();
     const mockFetch: jest.Mock = jest.fn();
@@ -130,6 +132,38 @@ describe('Auth Client', () => {
     jest.advanceTimersByTime(10 * 60 * 1000);
 
     expect(window.location.reload).toBeCalled();
+  });
+  it('should not reload the page if the default callback is disabled', async () => {
+    delete (window as any).location;
+    (window as any).location = { reload: jest.fn(), fetch };
+    const test = await AuthClient.create({
+      idleOptions: {
+        idleTimeout: 1000,
+        disableDefaultIdleCallback: true,
+      },
+    });
+
+    // simulate user being inactive for 10 minutes
+    jest.advanceTimersByTime(10 * 60 * 1000);
+
+    expect(window.location.reload).not.toBeCalled();
+  });
+  it('should not reload the page if a callback is provided', async () => {
+    delete (window as any).location;
+    (window as any).location = { reload: jest.fn(), fetch };
+    const idleCb = jest.fn();
+    const test = await AuthClient.create({
+      idleOptions: {
+        idleTimeout: 1000,
+        onIdle: idleCb,
+      },
+    });
+
+    // simulate user being inactive for 10 minutes
+    jest.advanceTimersByTime(10 * 60 * 1000);
+
+    expect(window.location.reload).not.toBeCalled();
+    expect(idleCb).toBeCalled();
   });
 
   /**

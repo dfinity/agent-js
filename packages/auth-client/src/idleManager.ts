@@ -130,6 +130,7 @@ export class IdleManager {
     events.forEach(function (name) {
       document.removeEventListener(name, _resetTimer, true);
     });
+    this.callbacks; //?
     this.callbacks.forEach(cb => cb());
   }
 

@@ -272,7 +272,6 @@ export class AuthClient {
         key = null;
       }
     }
-
     const idleManager = options.idleOptions?.disableIdle
       ? undefined
       : IdleManager.create(options.idleOptions);
@@ -286,26 +285,24 @@ export class AuthClient {
     private _chain: DelegationChain | null,
     private _storage: AuthClientStorage,
     public readonly idleManager: IdleManager | undefined,
-    private _createOptions?: AuthClientCreateOptions,
+    private _createOptions: AuthClientCreateOptions | undefined,
     // A handle on the IdP window.
     private _idpWindow?: Window,
     // The event handler for processing events from the IdP.
     private _eventHandler?: (event: MessageEvent) => void,
   ) {
     const logout = this.logout.bind(this);
+    const idleOptions = _createOptions?.idleOptions;
     /**
      * Default behavior is to clear stored identity and reload the page.
      * By either setting the disableDefaultIdleCallback flag or passing in a custom idle callback, we will ignore this config
      */
-    this.idleManager?.registerCallback(() => {
-      if (
-        !_createOptions?.idleOptions?.onIdle &&
-        !_createOptions?.idleOptions?.disableDefaultIdleCallback
-      ) {
+    if (!idleOptions?.onIdle && !idleOptions?.disableDefaultIdleCallback) {
+      this.idleManager?.registerCallback(() => {
         logout();
         location.reload();
-      }
-    });
+      });
+    }
   }
 
   private _handleSuccess(message: InternetIdentityAuthResponseSuccess, onSuccess?: () => void) {
