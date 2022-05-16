@@ -101,8 +101,4 @@ export class SecureStorage implements AuthClientStorage {
     await store.delete(key);
     return;
   }
-
-  private _initializeDb() {
-    //   todo
-  }
 }

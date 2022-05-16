@@ -147,6 +147,13 @@ export class Secp256k1KeyIdentity extends SignIdentity {
     return [toHexString(this._publicKey.toRaw()), toHexString(this._privateKey)];
   }
 
+  public toCryptoKeyPair(): CryptoKeyPair {
+    return {
+      privateKey: crypto.subtle.importKey('raw', this._privateKey),
+      publicKey: new CryptoKey(),
+    };
+  }
+
   /**
    * Return a copy of the key pair.
    * @returns {KeyPair}
