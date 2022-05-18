@@ -4,7 +4,17 @@ import { Principal } from '@dfinity/principal';
 import { fromHexString } from '@dfinity/candid';
 import { Identity } from '../auth';
 import fetch from 'node-fetch';
+import { HttpAgent } from '../agent';
+import { fromHex } from '../utils/buffer';
+
 const testPrincipal = Principal.fromText('renrk-eyaaa-aaaaa-aaada-cai');
+
+// Utils
+const encoder = new TextEncoder();
+const encode = (arg: string): ArrayBuffer => {
+  return new DataView(encoder.encode(arg).buffer).buffer;
+};
+const canisterBuffer = new DataView(testPrincipal.toUint8Array().buffer).buffer;
 
 /* Produced by deploying a dfx new canister and requesting
   | 'Time'
@@ -17,11 +27,12 @@ const testPrincipal = Principal.fromText('renrk-eyaaa-aaaaa-aaada-cai');
 const testCases = [
   {
     certificate:
-      'd9d9f7a2647472656583018301830183024863616e697374657283018301820458204c805d47bd74dbcd6c8ce23ebd2e8287c453895165db6b81d93f1daf1b12004683024a0000000000000001010183018301820458205a1ee5770842c74b6749f4d72e3c1b8c0dafdaff48e113d19da4fda687df0636830183024b636f6e74726f6c6c6572738203584dd9d9f7834a00000000000000000101581d888c23d36055424f2dc2e2fc6bb8a9956b24e86d024eb583d608172302581d9a1e6bf09022ffccbffa69fc8e083bb02d5079d48b3640c086b9bfb102820458203f5d5e50273338954bcfc10b92d92ab1e5acc4bb817c0be6f809538184bd92a682045820fe14201dac08b701acc5eaac0f5df0b59e28a2ad9c657c45884ed803ea2d14b1820458202d41b194a0931a274d874a4de945f104fbcf45de1bb201ec2bbdcb036c21fb0f82045820b7bfa75caf49ccbab490f8c512fbbb5add61590ae630c61028d4d49a212d6a8f820458204a6a7e397f0174c31751e1a90274fe9eb8619d980092433a64906afc048e60ee8301820458204ade10f35dce4ecb49dc653f1b7f8c308c2543e494582398b233f5f63156ed3b83024474696d65820349e8dad6e7b5d1fdf716697369676e61747572655830b228e6bdadb8a842782605070f7ad87295865e55465b81959024880115d4e5b12185ccef96d53ab54346df9bcb3ac7fd',
+      'd9d9f7a2647472656583018301830183024863616e697374657283018204582062d8435a90c86cad23c5ad3308b3a28b0b4ffa22d98d1621ada32e31d535ae488301820458200394d885dc895f6c2edd0c1a81ed025394932e74edbf6897f4b82a374b2fc1e683024a0000000000000006010183018301820458205a1ee5770842c74b6749f4d72e3c1b8c0dafdaff48e113d19da4fda687df0636830183024b636f6e74726f6c6c6572738203582ed9d9f7824a00000000000000030101581d9a1e6bf09022ffccbffa69fc8e083bb02d5079d48b3640c086b9bfb1028302486d657461646174618301830182045820e8071e9c904063629f9ab66d4a447b7a881a964d16757762f424d2ef6c6a776b83024e63616e6469643a736572766963658203584774797065204578616d706c65203d20746578743b0a73657276696365203a207b0a202067726565743a20284578616d706c6529202d3e202874657874292071756572793b0a7d0a820458203676da3cc701ead8143596204d845c31a11d483dccffd5f80e5530660322212883024b6d6f64756c655f6861736882035820896f6c079f96bc3cbef782af1ab1b52847f04700ff916eb49425566995a9a06482045820569fc1732a4b18190ce69dbc0dd099e058ab8a0759d13912d9b35bc285e6a51b82045820f5950b2e68705abf76ae6fedf7cf853a2bd4e62cc68bab9288d4af39befabbc9830182045820bc99716f607cfe2a969782ff6cf90bcdb80708b8cf4de5bf526eefc3a9bfb70c83024474696d65820349d0f4dfc0eedb95f816697369676e61747572655830b2bc8d6ecb68d2b50b86df8f897c1c5b2999746fb8fd1bed1d1539135e9eace3eb3234a19c4e22e51ffbb1237e35bc1b',
   },
 ];
 
-const getStatus = async (paths: Path[]) => {
+// Used for repopulating the certificate
+const getRealStatus = async (paths: Path[]) => {
   const identity = (await Ed25519KeyIdentity.generate(
     new Uint8Array(
       fromHexString('foo23342sd-234-234a-asdf-asdf-asdf-4frsefrsdf-weafasdfe-easdfee'),
@@ -30,20 +41,32 @@ const getStatus = async (paths: Path[]) => {
 
   return await canisterStatus({
     canisterId: testPrincipal,
+    paths,
+    agentOptions: { host: 'http://127.0.0.1:8000', fetch, identity },
+  });
+};
+
+// Mocked status using precomputed certificate
+const getStatus = async (paths: Path[]) => {
+  const agent = new HttpAgent({ host: 'http://127.0.0.1:8000' });
+  await agent.fetchRootKey();
+
+  agent.readState = jest.fn(() =>
+    Promise.resolve({ certificate: fromHex(testCases[0].certificate) }),
+  );
+
+  return await canisterStatus({
+    canisterId: testPrincipal,
     // Note: Subnet is not currently working due to a bug
     paths,
-    agentOptions: {
-      host: 'http://127.0.0.1:8000',
-      identity,
-      fetch,
-    },
+    agent,
   });
 };
 
 describe('Canister Status utility', () => {
   it('should query the time', async () => {
     const status = await getStatus(['Time']);
-    expect(status.get('Time')).toBeTruthy();
+    expect(status.get('Time')).toStrictEqual(new Date('2022-05-18T23:29:38.621Z'));
   });
   it('should query canister controllers', async () => {
     const status = await getStatus(['Controllers']);
@@ -79,12 +102,6 @@ describe('Canister Status utility', () => {
         decodeStrategy: 'hex',
       },
     ]);
-    // Setup for valid CBOR data
-    const encoder = new TextEncoder();
-    const encode = (arg: string): ArrayBuffer => {
-      return new DataView(encoder.encode(arg).buffer).buffer;
-    };
-    const canisterBuffer = new DataView(testPrincipal.toUint8Array().buffer).buffer;
     const statusCBOR = await getStatus([
       {
         key: 'Controller',
@@ -97,7 +114,26 @@ describe('Canister Status utility', () => {
     expect(statusHex.get('Time')).toBeTruthy();
     expect(statusCBOR.get('Controller')).toBeTruthy();
   });
-  it.todo('should support valid metadata queries');
+  it('should support valid metadata queries', async () => {
+    const status = await getStatus([
+      {
+        kind: 'medadata',
+        path: 'candid:service',
+        key: 'candid',
+        decodeStrategy: 'hex',
+      },
+    ]);
+    const statusEncoded = await getStatus([
+      {
+        kind: 'medadata',
+        path: encode('candid:service'),
+        key: 'candid',
+        decodeStrategy: 'hex',
+      },
+    ]);
+    expect(status.get('candid')).toBeTruthy();
+    expect(statusEncoded.get('candid')).toBeTruthy();
+  });
   it('should support multiple requests', async () => {
     const status = await getStatus(['Time', 'Controllers']);
     expect(status.get('Time')).toBeTruthy();
@@ -105,7 +141,7 @@ describe('Canister Status utility', () => {
   });
   it('should support multiple requests with a failure', async () => {
     // Deliberately requesting a bad value
-    const consoleSpy = jest.spyOn(console, 'error');
+    const consoleSpy = jest.spyOn(console, 'warn');
     const status = await getStatus([
       'Time',
       // Subnet and this arbitrary path should fail

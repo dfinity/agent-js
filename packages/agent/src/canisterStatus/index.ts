@@ -16,14 +16,18 @@ type StatusCustom = string | ArrayBuffer | ArrayBuffer[] | bigint;
  */
 export type Status = StatusTime | StatusControllers | StatusText | StatusCustom | null;
 
-type CustomPath = {
+interface CustomPath {
   key: string;
   path: ArrayBuffer[];
   decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'raw';
-};
-type MetaData = {
-  type: 'public' | 'private';
-};
+}
+interface MetaData {
+  kind: 'medadata';
+  key: string;
+  path: string | ArrayBuffer;
+  decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'raw';
+}
+
 export type Path =
   | 'Time'
   | 'Controllers'
@@ -47,17 +51,18 @@ type CanisterStatusOptions = {
   canisterId: Principal;
   paths?: Path[] | Set<Path>;
   agentOptions?: HttpAgentOptions;
+  agent?: HttpAgent;
 };
 
 export const canisterStatus = async (options: CanisterStatusOptions): Promise<CanisterStatus> => {
-  const { canisterId, agentOptions, paths } = options ?? {};
+  const { canisterId, agentOptions, agent, paths } = options ?? {};
 
   const uniquePaths = [...new Set(paths)];
 
   // Set up agent
-  const agent = new HttpAgent(agentOptions);
+  const effectiveAgent = agent ?? new HttpAgent(agentOptions);
   if (options.agentOptions?.host && !options.agentOptions.host.startsWith('https://ic0.app')) {
-    await agent.fetchRootKey();
+    await effectiveAgent.fetchRootKey();
   }
 
   // Map path options to their correct formats
@@ -69,24 +74,29 @@ export const canisterStatus = async (options: CanisterStatusOptions): Promise<Ca
   const promises = uniquePaths.map((path, index) => {
     return (async () => {
       try {
-        const response = await agent.readState(canisterId, {
+        const response = await effectiveAgent.readState(canisterId, {
           paths: [encodedPaths[index]],
         });
-
-        const cert = new Certificate(response, agent);
+        toHex(response.certificate); //?
+        const cert = new Certificate(response, effectiveAgent);
         const verified = await cert.verify();
         if (!verified) {
           throw new Error(
-            'There was a problem certifying the response data. Please verify your connection to the mainnet',
+            'There was a problem certifying the response data. Please verify your connection to the mainnet, or be sure to call fetchRootKey on your agent if you are developing locally',
           );
         }
-
-        encodePath(uniquePaths[index], canisterId); //?
+        console.log(decodeHex(response.certificate));
 
         const data = cert.lookup(encodePath(uniquePaths[index], canisterId));
-
+        data;
         if (!data) {
+          // Typically, the cert lookup will throw
           console.warn(`Expected to find result for path ${path}, but instead found nothing.`);
+          if (typeof path === 'string') {
+            status.set(path, null);
+          } else {
+            status.set(path.key, null);
+          }
         } else {
           switch (path) {
             case 'Time': {
@@ -105,7 +115,7 @@ export const canisterStatus = async (options: CanisterStatusOptions): Promise<Ca
             //   status.set(path, decodeModuleHash(data));
             // }
             case 'Candid': {
-              status.set(path, decodeHex(data));
+              status.set(path, new TextDecoder().decode(data));
               break;
             }
             default: {
@@ -139,7 +149,7 @@ export const canisterStatus = async (options: CanisterStatusOptions): Promise<Ca
         } else {
           status.set(path, null);
         }
-        console.error(`Expected to find result for path ${path}, but instead found nothing.`);
+        console.warn(`Expected to find result for path ${path}, but instead found nothing.`);
       }
     })();
   });
@@ -171,7 +181,17 @@ export const encodePath = (path: Path, canisterId: Principal): ArrayBuffer[] => 
     default: {
       // Check for CustomPath signature
       if ('key' in path && 'path' in path) {
-        return path['path'];
+        // For simplified metadata queries
+        if (typeof path['path'] === 'string' || path['path'] instanceof ArrayBuffer) {
+          const metaPath = path.path;
+          const encoded = typeof metaPath === 'string' ? encode(metaPath) : metaPath;
+
+          return [encode('canister'), canisterBuffer, encode('metadata'), encoded];
+
+          // For non-metadata, return the provided custompath
+        } else {
+          return path['path'];
+        }
       }
     }
   }
@@ -195,7 +215,7 @@ const decodeCbor = (buf: ArrayBuffer): ArrayBuffer[] => {
 // Time is a CBOR-encoded Nat
 const decodeTime = (buf: ArrayBuffer): StatusTime => {
   const decoded = decodeLeb128(buf);
-  return new Date(Number(decoded / BigInt(1000)));
+  return new Date(Number(decoded / BigInt(1_000_000)));
 };
 
 // Controllers are CBOR-encoded buffers, starting with a Tag we don't need
