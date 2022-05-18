@@ -1,6 +1,13 @@
-import IdleManager from './idleManager';
+import { IdleManager } from './idleManager';
 
 jest.useFakeTimers();
+
+const { location } = window;
+
+beforeEach(() => {
+  delete (window as any).location;
+  (window as any).location = { reload: jest.fn() };
+});
 
 describe('IdleManager tests', () => {
   it('should call its callback after time spent inactive', () => {
@@ -11,6 +18,26 @@ describe('IdleManager tests', () => {
     jest.advanceTimersByTime(10 * 60 * 1000);
     expect(cb).toHaveBeenCalled();
     manager.exit();
+  });
+  it('should replace the default callback if a callback is passed during creation', () => {
+    const idleFn = jest.fn();
+    IdleManager.create({ onIdle: idleFn });
+
+    expect(window.location.reload).not.toHaveBeenCalled();
+    // simulate user being inactive for 10 minutes
+    jest.advanceTimersByTime(10 * 60 * 1000);
+    expect(window.location.reload).not.toHaveBeenCalled();
+    expect(idleFn).toBeCalled();
+  });
+  it('should replace the default callback if a callback is registered', () => {
+    const manager = IdleManager.create();
+
+    manager.registerCallback(jest.fn());
+
+    expect(window.location.reload).not.toHaveBeenCalled();
+    // simulate user being inactive for 10 minutes
+    jest.advanceTimersByTime(10 * 60 * 1000);
+    expect(window.location.reload).not.toHaveBeenCalled();
   });
   it('should delay allow configuration of the timeout', () => {
     const cb = jest.fn();
