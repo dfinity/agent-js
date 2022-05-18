@@ -6,6 +6,14 @@ import { Identity } from '../auth';
 import fetch from 'node-fetch';
 const testPrincipal = Principal.fromText('renrk-eyaaa-aaaaa-aaada-cai');
 
+/* Produced by deploying a dfx new canister and requesting
+  | 'Time'
+  | 'Controllers'
+  | 'Subnet'
+  | 'ModuleHash'
+  | 'Candid'
+  in dfx 0.10.0
+  */
 const testCases = [
   {
     certificate:
@@ -47,9 +55,48 @@ describe('Canister Status utility', () => {
   });
   it('should query the candid interface', async () => {
     const status = await getStatus(['Candid']);
-    status.get('Candid'); //?
+    status.get('Candid');
   });
-  it.todo('should support valid custom paths');
+  it('should support valid custom paths', async () => {
+    const status = await getStatus([
+      {
+        key: 'Time',
+        path: [new DataView(new TextEncoder().encode('time').buffer).buffer],
+        decodeStrategy: 'leb128',
+      },
+    ]);
+    const statusRaw = await getStatus([
+      {
+        key: 'Time',
+        path: [new DataView(new TextEncoder().encode('time').buffer).buffer],
+        decodeStrategy: 'raw',
+      },
+    ]);
+    const statusHex = await getStatus([
+      {
+        key: 'Time',
+        path: [new DataView(new TextEncoder().encode('time').buffer).buffer],
+        decodeStrategy: 'hex',
+      },
+    ]);
+    // Setup for valid CBOR data
+    const encoder = new TextEncoder();
+    const encode = (arg: string): ArrayBuffer => {
+      return new DataView(encoder.encode(arg).buffer).buffer;
+    };
+    const canisterBuffer = new DataView(testPrincipal.toUint8Array().buffer).buffer;
+    const statusCBOR = await getStatus([
+      {
+        key: 'Controller',
+        path: [encode('canister'), canisterBuffer, encode('controllers')],
+        decodeStrategy: 'cbor',
+      },
+    ]);
+    expect(status.get('Time')).toBeTruthy();
+    expect(statusRaw.get('Time')).toBeTruthy();
+    expect(statusHex.get('Time')).toBeTruthy();
+    expect(statusCBOR.get('Controller')).toBeTruthy();
+  });
   it.todo('should support valid metadata queries');
   it('should support multiple requests', async () => {
     const status = await getStatus(['Time', 'Controllers']);
@@ -58,15 +105,22 @@ describe('Canister Status utility', () => {
   });
   it('should support multiple requests with a failure', async () => {
     // Deliberately requesting a bad value
-    console.error = jest.fn();
+    const consoleSpy = jest.spyOn(console, 'error');
     const status = await getStatus([
       'Time',
       // Subnet and this arbitrary path should fail
       'Subnet',
-      [[new DataView(new TextEncoder().encode('asdf').buffer).buffer]],
+      {
+        key: 'asdf',
+        path: [new DataView(new TextEncoder().encode('asdf').buffer).buffer],
+        decodeStrategy: 'hex',
+      },
     ]);
     expect(status.get('Time')).toBeTruthy();
-    expect(status.get('asdf' as unknown as Path)).toBe(undefined);
-    expect(console.error).toBeCalledTimes(2);
+    // Expect null for a failed result
+    expect(status.get('asdf' as unknown as Path)).toBe(null);
+    // Expect undefined for unset value
+    expect(status.get('test123')).toBe(undefined);
+    expect(consoleSpy).toBeCalledTimes(2);
   });
 });

@@ -3,15 +3,24 @@ import { Principal } from '@dfinity/principal';
 import { toHex } from '../../src/utils/buffer';
 import { Cbor, Certificate } from '..';
 import { HttpAgent, HttpAgentOptions } from '..';
-import assert from 'assert';
 
 type StatusTime = Date;
 type StatusControllers = Principal[];
-type StatusModuleHash = string;
-type StatusCandid = string;
-type Status = StatusTime | StatusControllers | StatusModuleHash | StatusCandid;
+type StatusText = string;
 
-type CustomPath = ArrayBuffer[][];
+type StatusCustom = string | ArrayBuffer | ArrayBuffer[] | bigint;
+
+/**
+ * Types of an entry on the canisterStatus map.
+ * An entry of null indicates that the request failed, due to lack of permissions or the result being missing.
+ */
+export type Status = StatusTime | StatusControllers | StatusText | StatusCustom | null;
+
+type CustomPath = {
+  key: string;
+  path: ArrayBuffer[];
+  decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'raw';
+};
 type MetaData = {
   type: 'public' | 'private';
 };
@@ -25,7 +34,7 @@ export type Path =
   | CustomPath;
 export type PathSet = Set<Path>;
 
-type CanisterStatus = Map<Path, Status>;
+type CanisterStatus = Map<Path | string, Status>;
 
 /**
  *
@@ -55,7 +64,7 @@ export const canisterStatus = async (options: CanisterStatusOptions): Promise<Ca
   const encodedPaths = uniquePaths.map(path => {
     return encodePath(path, canisterId);
   });
-  const status = new Map<Path, Status>();
+  const status = new Map<string | Path, Status>();
 
   const promises = uniquePaths.map((path, index) => {
     return (async () => {
@@ -72,7 +81,10 @@ export const canisterStatus = async (options: CanisterStatusOptions): Promise<Ca
           );
         }
 
+        encodePath(uniquePaths[index], canisterId); //?
+
         const data = cert.lookup(encodePath(uniquePaths[index], canisterId));
+
         if (!data) {
           console.warn(`Expected to find result for path ${path}, but instead found nothing.`);
         } else {
@@ -86,23 +98,47 @@ export const canisterStatus = async (options: CanisterStatusOptions): Promise<Ca
               break;
             }
             case 'ModuleHash': {
-              status.set(path, decodeModuleHash(data));
+              status.set(path, decodeHex(data));
               break;
             }
             // case 'Subnet': {
             //   status.set(path, decodeModuleHash(data));
             // }
             case 'Candid': {
-              status.set(path, decodeCandid(data));
+              status.set(path, decodeHex(data));
               break;
             }
             default: {
-              path;
-              assert(path);
+              // Check for CustomPath signature
+              if (typeof path !== 'string' && 'key' in path && 'path' in path) {
+                switch (path.decodeStrategy) {
+                  case 'raw':
+                    status.set(path.key, data);
+                    break;
+                  case 'leb128': {
+                    status.set(path.key, decodeLeb128(data));
+                    break;
+                  }
+                  case 'cbor': {
+                    status.set(path.key, decodeCbor(data));
+                    break;
+                  }
+                  case 'hex': {
+                    status.set(path.key, decodeHex(data));
+                    break;
+                  }
+                }
+              }
             }
           }
         }
       } catch (error) {
+        error;
+        if (typeof path !== 'string' && 'key' in path && 'path' in path) {
+          status.set(path.key, null);
+        } else {
+          status.set(path, null);
+        }
         console.error(`Expected to find result for path ${path}, but instead found nothing.`);
       }
     })();
@@ -132,29 +168,41 @@ export const encodePath = (path: Path, canisterId: Principal): ArrayBuffer[] => 
       return [encode('subnet')];
     case 'Candid':
       return [encode('canister'), canisterBuffer, encode('metadata'), encode('candid:service')];
+    default: {
+      // Check for CustomPath signature
+      if ('key' in path && 'path' in path) {
+        return path['path'];
+      }
+    }
   }
+  throw new Error(
+    `An unexpeected error was encountered while encoding your path for canister status. Please ensure that your path, ${path} was formatted correctly.`,
+  );
+};
+
+const decodeHex = (buf: ArrayBuffer): StatusText => {
+  return toHex(buf);
+};
+
+const decodeLeb128 = (buf: ArrayBuffer): bigint => {
+  return lebDecode(new PipeArrayBuffer(buf));
+};
+
+const decodeCbor = (buf: ArrayBuffer): ArrayBuffer[] => {
+  return Cbor.decode(buf);
 };
 
 // Time is a CBOR-encoded Nat
 const decodeTime = (buf: ArrayBuffer): StatusTime => {
-  const decoded = lebDecode(new PipeArrayBuffer(buf));
+  const decoded = decodeLeb128(buf);
   return new Date(Number(decoded / BigInt(1000)));
 };
 
 // Controllers are CBOR-encoded buffers, starting with a Tag we don't need
 const decodeControllers = (buf: ArrayBuffer): StatusControllers => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [tag, ...controllersRaw] = Cbor.decode(buf);
+  const [tag, ...controllersRaw] = decodeCbor(buf);
   return controllersRaw.map((buf: ArrayBuffer) => {
     return Principal.fromUint8Array(new Uint8Array(buf));
   });
-};
-
-// The hash is a straightforward hash
-const decodeModuleHash = (buf: ArrayBuffer): StatusModuleHash => {
-  return toHex(buf);
-};
-
-const decodeCandid = (buf: ArrayBuffer): StatusCandid => {
-  return new TextDecoder().decode(buf);
 };
