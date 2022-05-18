@@ -16,12 +16,12 @@ type StatusCustom = string | ArrayBuffer | ArrayBuffer[] | bigint;
  */
 export type Status = StatusTime | StatusControllers | StatusText | StatusCustom | null;
 
-interface CustomPath {
+export interface CustomPath {
   key: string;
   path: ArrayBuffer[];
   decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'raw';
 }
-interface MetaData {
+export interface MetaData {
   kind: 'medadata';
   key: string;
   path: string | ArrayBuffer;
@@ -38,24 +38,22 @@ export type Path =
   | CustomPath;
 export type PathSet = Set<Path>;
 
-type CanisterStatus = Map<Path | string, Status>;
+export type CanisterStatus = Map<Path | string, Status>;
 
-/**
- *
- * @param {Principal} canisterId canister to check the status of
- * @param {Set<Path>} paths - a Set of {@link Path} to request from the replica
- * @param {HttpAgentOptions | undefined} agentOptions - options for the httpAgent to be used - i.e. identity, host, or fetch implementation
- * @returns {CanisterStatus} object populated with data from the requested paths
- */
-type CanisterStatusOptions = {
+export type CanisterStatusOptions = {
   canisterId: Principal;
   paths?: Path[] | Set<Path>;
   agentOptions?: HttpAgentOptions;
   agent?: HttpAgent;
 };
 
+/**
+ *
+ * @param {CanisterStatusOptions} options {@link CanisterStatusOptions}
+ * @returns {CanisterStatus} object populated with data from the requested paths
+ */
 export const canisterStatus = async (options: CanisterStatusOptions): Promise<CanisterStatus> => {
-  const { canisterId, agentOptions, agent, paths } = options ?? {};
+  const { canisterId, agentOptions, agent, paths } = options;
 
   const uniquePaths = [...new Set(paths)];
 
@@ -77,7 +75,6 @@ export const canisterStatus = async (options: CanisterStatusOptions): Promise<Ca
         const response = await effectiveAgent.readState(canisterId, {
           paths: [encodedPaths[index]],
         });
-        toHex(response.certificate); //?
         const cert = new Certificate(response, effectiveAgent);
         const verified = await cert.verify();
         if (!verified) {
@@ -85,7 +82,6 @@ export const canisterStatus = async (options: CanisterStatusOptions): Promise<Ca
             'There was a problem certifying the response data. Please verify your connection to the mainnet, or be sure to call fetchRootKey on your agent if you are developing locally',
           );
         }
-        console.log(decodeHex(response.certificate));
 
         const data = cert.lookup(encodePath(uniquePaths[index], canisterId));
         data;
