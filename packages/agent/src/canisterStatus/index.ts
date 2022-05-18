@@ -3,13 +3,26 @@ import { Principal } from '@dfinity/principal';
 import { toHex } from '../../src/utils/buffer';
 import { Cbor, Certificate } from '..';
 import { HttpAgent, HttpAgentOptions } from '..';
+import assert from 'assert';
 
 type StatusTime = Date;
 type StatusControllers = Principal[];
 type StatusModuleHash = string;
-type Status = StatusTime | StatusControllers | StatusModuleHash;
+type StatusCandid = string;
+type Status = StatusTime | StatusControllers | StatusModuleHash | StatusCandid;
 
-export type Path = 'Time' | 'Controllers' | 'ModuleHash' | 'Subnet';
+type CustomPath = ArrayBuffer[][];
+type MetaData = {
+  type: 'public' | 'private';
+};
+export type Path =
+  | 'Time'
+  | 'Controllers'
+  | 'Subnet'
+  | 'ModuleHash'
+  | 'Candid'
+  | MetaData
+  | CustomPath;
 export type PathSet = Set<Path>;
 
 type CanisterStatus = Map<Path, Status>;
@@ -42,44 +55,61 @@ export const canisterStatus = async (options: CanisterStatusOptions): Promise<Ca
   const encodedPaths = uniquePaths.map(path => {
     return encodePath(path, canisterId);
   });
-
-  const response = await agent.readState(canisterId, {
-    paths: encodedPaths,
-  });
-
-  const cert = new Certificate(response, agent);
-  const verified = await cert.verify();
-  if (!verified) {
-    throw new Error(
-      'There was a problem certifying the response data. Please verify your connection to the mainnet',
-    );
-  }
-
-  await setImmediate(() => Promise.resolve());
-
   const status = new Map<Path, Status>();
 
-  uniquePaths.forEach(path => {
-    const data = cert.lookup(encodePath(path, canisterId));
-    if (!data) {
-      console.warn(`Expected to find result for path ${path}, but instead found nothing.`);
-    } else {
-      switch (path) {
-        case 'Time': {
-          status.set(path, decodeTime(data));
-          break;
+  const promises = uniquePaths.map((path, index) => {
+    return (async () => {
+      try {
+        const response = await agent.readState(canisterId, {
+          paths: [encodedPaths[index]],
+        });
+
+        const cert = new Certificate(response, agent);
+        const verified = await cert.verify();
+        if (!verified) {
+          throw new Error(
+            'There was a problem certifying the response data. Please verify your connection to the mainnet',
+          );
         }
-        case 'Controllers': {
-          status.set(path, decodeControllers(data));
-          break;
+
+        const data = cert.lookup(encodePath(uniquePaths[index], canisterId));
+        if (!data) {
+          console.warn(`Expected to find result for path ${path}, but instead found nothing.`);
+        } else {
+          switch (path) {
+            case 'Time': {
+              status.set(path, decodeTime(data));
+              break;
+            }
+            case 'Controllers': {
+              status.set(path, decodeControllers(data));
+              break;
+            }
+            case 'ModuleHash': {
+              status.set(path, decodeModuleHash(data));
+              break;
+            }
+            // case 'Subnet': {
+            //   status.set(path, decodeModuleHash(data));
+            // }
+            case 'Candid': {
+              status.set(path, decodeCandid(data));
+              break;
+            }
+            default: {
+              path;
+              assert(path);
+            }
+          }
         }
-        case 'ModuleHash': {
-          status.set(path, decodeModuleHash(data));
-          break;
-        }
+      } catch (error) {
+        console.error(`Expected to find result for path ${path}, but instead found nothing.`);
       }
-    }
+    })();
   });
+
+  // Fetch all values separately, as each option can fail
+  await Promise.all(promises);
 
   return status;
 };
@@ -100,13 +130,18 @@ export const encodePath = (path: Path, canisterId: Principal): ArrayBuffer[] => 
       return [encode('canister'), canisterBuffer, encode('module_hash')];
     case 'Subnet':
       return [encode('subnet')];
+    case 'Candid':
+      return [encode('canister'), canisterBuffer, encode('metadata'), encode('candid:service')];
   }
 };
 
+// Time is a CBOR-encoded Nat
 const decodeTime = (buf: ArrayBuffer): StatusTime => {
   const decoded = lebDecode(new PipeArrayBuffer(buf));
   return new Date(Number(decoded / BigInt(1000)));
 };
+
+// Controllers are CBOR-encoded buffers, starting with a Tag we don't need
 const decodeControllers = (buf: ArrayBuffer): StatusControllers => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [tag, ...controllersRaw] = Cbor.decode(buf);
@@ -114,6 +149,12 @@ const decodeControllers = (buf: ArrayBuffer): StatusControllers => {
     return Principal.fromUint8Array(new Uint8Array(buf));
   });
 };
+
+// The hash is a straightforward hash
 const decodeModuleHash = (buf: ArrayBuffer): StatusModuleHash => {
   return toHex(buf);
+};
+
+const decodeCandid = (buf: ArrayBuffer): StatusCandid => {
+  return new TextDecoder().decode(buf);
 };

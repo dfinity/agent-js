@@ -1,10 +1,10 @@
-import { canisterStatus } from './index';
+import { canisterStatus, Path } from './index';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
 import { fromHexString } from '@dfinity/candid';
 import { Identity } from '../auth';
 import fetch from 'node-fetch';
-const testPrincipal = Principal.fromText('rrkah-fqaaa-aaaaa-aaaaq-cai');
+const testPrincipal = Principal.fromText('renrk-eyaaa-aaaaa-aaada-cai');
 
 const testCases = [
   {
@@ -13,17 +13,17 @@ const testCases = [
   },
 ];
 
-const getStatus = async () => {
+const getStatus = async (paths: Path[]) => {
   const identity = (await Ed25519KeyIdentity.generate(
     new Uint8Array(
       fromHexString('foo23342sd-234-234a-asdf-asdf-asdf-4frsefrsdf-weafasdfe-easdfee'),
     ),
   )) as unknown as Identity;
-  console.log(identity.getPrincipal().toText());
 
   return await canisterStatus({
     canisterId: testPrincipal,
-    paths: ['Time', 'Controllers', 'ModuleHash'],
+    // Note: Subnet is not currently working due to a bug
+    paths,
     agentOptions: {
       host: 'http://127.0.0.1:8000',
       identity,
@@ -34,16 +34,39 @@ const getStatus = async () => {
 
 describe('Canister Status utility', () => {
   it('should query the time', async () => {
-    const status = await getStatus();
-
+    const status = await getStatus(['Time']);
     expect(status.get('Time')).toBeTruthy();
   });
   it('should query canister controllers', async () => {
-    const status = await getStatus();
+    const status = await getStatus(['Controllers']);
     expect(status.get('Controllers')).toBeTruthy();
   });
   it('should query canister module hash', async () => {
-    const status = await getStatus();
+    const status = await getStatus(['ModuleHash']);
     expect(status.get('ModuleHash')).toBeTruthy();
+  });
+  it('should query the candid interface', async () => {
+    const status = await getStatus(['Candid']);
+    status.get('Candid'); //?
+  });
+  it.todo('should support valid custom paths');
+  it.todo('should support valid metadata queries');
+  it('should support multiple requests', async () => {
+    const status = await getStatus(['Time', 'Controllers']);
+    expect(status.get('Time')).toBeTruthy();
+    expect(status.get('Controllers')).toBeTruthy();
+  });
+  it('should support multiple requests with a failure', async () => {
+    // Deliberately requesting a bad value
+    console.error = jest.fn();
+    const status = await getStatus([
+      'Time',
+      // Subnet and this arbitrary path should fail
+      'Subnet',
+      [[new DataView(new TextEncoder().encode('asdf').buffer).buffer]],
+    ]);
+    expect(status.get('Time')).toBeTruthy();
+    expect(status.get('asdf' as unknown as Path)).toBe(undefined);
+    expect(console.error).toBeCalledTimes(2);
   });
 });
