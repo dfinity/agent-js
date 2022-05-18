@@ -26,11 +26,12 @@ const events = ['mousedown', 'mousemove', 'keydown', 'touchstart', 'wheel'];
 
 /**
  * Detects if the user has been idle for a duration of `idleTimeout` ms, and calls `onIdle` and registered callbacks.
- * @see {@link IdleManager}
+ * By default, the IdleManager will log a user out after 10 minutes of inactivity.
+ * To override these defaults, you can pass an `onIdle` callback, or configure a custom `idleTimeout` in milliseconds
  */
-class IdleManager {
+export class IdleManager {
   callbacks: IdleCB[] = [];
-  idleTimeout: IdleManagerOptions['idleTimeout'] = 30 * 60 * 1000;
+  idleTimeout: IdleManagerOptions['idleTimeout'] = 10 * 60 * 1000;
   timeoutID?: number = undefined;
 
   /**
@@ -75,6 +76,7 @@ class IdleManager {
    */
   protected constructor(options: IdleManagerOptions = {}) {
     const { onIdle, idleTimeout = 10 * 60 * 1000 } = options || {};
+
     this.callbacks = onIdle ? [onIdle] : [];
     this.idleTimeout = idleTimeout;
 
@@ -121,7 +123,6 @@ class IdleManager {
    * Cleans up the idle manager and its listeners
    */
   public exit(): void {
-    this.callbacks.forEach(cb => cb());
     clearTimeout(this.timeoutID);
     window.removeEventListener('load', this._resetTimer, true);
 
@@ -129,6 +130,7 @@ class IdleManager {
     events.forEach(function (name) {
       document.removeEventListener(name, _resetTimer, true);
     });
+    this.callbacks.forEach(cb => cb());
   }
 
   /**
@@ -140,5 +142,3 @@ class IdleManager {
     this.timeoutID = window.setTimeout(exit, this.idleTimeout);
   }
 }
-
-export default IdleManager;
