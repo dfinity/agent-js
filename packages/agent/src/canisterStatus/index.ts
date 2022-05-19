@@ -35,11 +35,11 @@ export interface MetaData {
  * Pre-configured fields for canister status paths
  */
 export type Path =
-  | 'Time'
-  | 'Controllers'
-  | 'Subnet'
-  | 'ModuleHash'
-  | 'Candid'
+  | 'time'
+  | 'controllers'
+  | 'subnet'
+  | 'moduleHash'
+  | 'candid'
   | MetaData
   | CustomPath;
 
@@ -62,11 +62,11 @@ export type CanisterStatusOptions = {
  * @returns {Status} object populated with data from the requested paths
  * @example
  * const status = await canisterStatus({
- *   paths: ['Controllers', 'Candid'],
+ *   paths: ['controllers', 'candid'],
  *   ...options
  * });
  *
- * const controllers = status.get('Controllers');
+ * const controllers = status.get('controllers');
  */
 export const request = async (options: {
   canisterId: Principal;
@@ -116,22 +116,19 @@ export const request = async (options: {
           }
         } else {
           switch (path) {
-            case 'Time': {
+            case 'time': {
               status.set(path, decodeTime(data));
               break;
             }
-            case 'Controllers': {
+            case 'controllers': {
               status.set(path, decodeControllers(data));
               break;
             }
-            case 'ModuleHash': {
+            case 'moduleHash': {
               status.set(path, decodeHex(data));
               break;
             }
-            // case 'Subnet': {
-            //   status.set(path, decodeModuleHash(data));
-            // }
-            case 'Candid': {
+            case 'candid': {
               status.set(path, new TextDecoder().decode(data));
               break;
             }
@@ -185,15 +182,15 @@ export const encodePath = (path: Path, canisterId: Principal): ArrayBuffer[] => 
   };
   const canisterBuffer = new DataView(canisterId.toUint8Array().buffer).buffer;
   switch (path) {
-    case 'Time':
+    case 'time':
       return [encode('time')];
-    case 'Controllers':
+    case 'controllers':
       return [encode('canister'), canisterBuffer, encode('controllers')];
-    case 'ModuleHash':
+    case 'moduleHash':
       return [encode('canister'), canisterBuffer, encode('module_hash')];
-    case 'Subnet':
+    case 'subnet':
       return [encode('subnet')];
-    case 'Candid':
+    case 'candid':
       return [encode('canister'), canisterBuffer, encode('metadata'), encode('candid:service')];
     default: {
       // Check for CustomPath signature
@@ -229,7 +226,7 @@ const decodeCbor = (buf: ArrayBuffer): ArrayBuffer[] => {
   return Cbor.decode(buf);
 };
 
-// Time is a LEB128-encoded Nat
+// time is a LEB128-encoded Nat
 const decodeTime = (buf: ArrayBuffer): Date => {
   const decoded = decodeLeb128(buf);
   return new Date(Number(decoded / BigInt(1_000_000)));

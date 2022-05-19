@@ -24,11 +24,11 @@ const encode = (arg: string): ArrayBuffer => {
 const canisterBuffer = new DataView(testPrincipal.toUint8Array().buffer).buffer;
 
 /* Produced by deploying a dfx new canister and requesting
-  | 'Time'
-  | 'Controllers'
-  | 'Subnet'
-  | 'ModuleHash'
-  | 'Candid'
+  | 'time'
+  | 'controllers'
+  | 'subnet'
+  | 'moduleHash'
+  | 'candid'
   in dfx 0.10.0
   */
 const testCases = [
@@ -62,7 +62,7 @@ const getStatus = async (paths: Path[]) => {
 
   return await request({
     canisterId: testPrincipal,
-    // Note: Subnet is not currently working due to a bug
+    // Note: subnet is not currently working due to a bug
     paths,
     agent,
   });
@@ -70,39 +70,39 @@ const getStatus = async (paths: Path[]) => {
 
 describe('Canister Status utility', () => {
   it('should query the time', async () => {
-    const status = await getStatus(['Time']);
-    expect(status.get('Time')).toStrictEqual(new Date('2022-05-18T23:29:38.621Z'));
+    const status = await getStatus(['time']);
+    expect(status.get('time')).toStrictEqual(new Date('2022-05-18T23:29:38.621Z'));
   });
   it('should query canister controllers', async () => {
-    const status = await getStatus(['Controllers']);
-    expect(status.get('Controllers')).toBeTruthy();
+    const status = await getStatus(['controllers']);
+    expect(status.get('controllers')).toBeTruthy();
   });
   it('should query canister module hash', async () => {
-    const status = await getStatus(['ModuleHash']);
-    expect(status.get('ModuleHash')).toBeTruthy();
+    const status = await getStatus(['moduleHash']);
+    expect(status.get('moduleHash')).toBeTruthy();
   });
   it('should query the candid interface', async () => {
-    const status = await getStatus(['Candid']);
-    status.get('Candid');
+    const status = await getStatus(['candid']);
+    status.get('candid');
   });
   it('should support valid custom paths', async () => {
     const status = await getStatus([
       {
-        key: 'Time',
+        key: 'time',
         path: [new DataView(new TextEncoder().encode('time').buffer).buffer],
         decodeStrategy: 'leb128',
       },
     ]);
     const statusRaw = await getStatus([
       {
-        key: 'Time',
+        key: 'time',
         path: [new DataView(new TextEncoder().encode('time').buffer).buffer],
         decodeStrategy: 'raw',
       },
     ]);
     const statusHex = await getStatus([
       {
-        key: 'Time',
+        key: 'time',
         path: [new DataView(new TextEncoder().encode('time').buffer).buffer],
         decodeStrategy: 'hex',
       },
@@ -114,9 +114,9 @@ describe('Canister Status utility', () => {
         decodeStrategy: 'cbor',
       },
     ]);
-    expect(status.get('Time')).toBeTruthy();
-    expect(statusRaw.get('Time')).toBeTruthy();
-    expect(statusHex.get('Time')).toBeTruthy();
+    expect(status.get('time')).toBeTruthy();
+    expect(statusRaw.get('time')).toBeTruthy();
+    expect(statusHex.get('time')).toBeTruthy();
     expect(statusCBOR.get('Controller')).toBeTruthy();
   });
   it('should support valid metadata queries', async () => {
@@ -140,24 +140,24 @@ describe('Canister Status utility', () => {
     expect(statusEncoded.get('candid')).toBeTruthy();
   });
   it('should support multiple requests', async () => {
-    const status = await getStatus(['Time', 'Controllers']);
-    expect(status.get('Time')).toBeTruthy();
-    expect(status.get('Controllers')).toBeTruthy();
+    const status = await getStatus(['time', 'controllers']);
+    expect(status.get('time')).toBeTruthy();
+    expect(status.get('controllers')).toBeTruthy();
   });
   it('should support multiple requests with a failure', async () => {
     // Deliberately requesting a bad value
     const consoleSpy = jest.spyOn(console, 'warn');
     const status = await getStatus([
-      'Time',
-      // Subnet and this arbitrary path should fail
-      'Subnet',
+      'time',
+      // subnet and this arbitrary path should fail
+      'subnet',
       {
         key: 'asdf',
         path: [new DataView(new TextEncoder().encode('asdf').buffer).buffer],
         decodeStrategy: 'hex',
       },
     ]);
-    expect(status.get('Time')).toBeTruthy();
+    expect(status.get('time')).toBeTruthy();
     // Expect null for a failed result
     expect(status.get('asdf' as unknown as Path)).toBe(null);
     // Expect undefined for unset value
