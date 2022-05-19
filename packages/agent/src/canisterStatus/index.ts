@@ -229,7 +229,7 @@ const decodeCbor = (buf: ArrayBuffer): ArrayBuffer[] => {
   return Cbor.decode(buf);
 };
 
-// Time is a CBOR-encoded Nat
+// Time is a LEB128-encoded Nat
 const decodeTime = (buf: ArrayBuffer): Date => {
   const decoded = decodeLeb128(buf);
   return new Date(Number(decoded / BigInt(1_000_000)));
