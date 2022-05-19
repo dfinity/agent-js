@@ -11,7 +11,7 @@
     "directory": "packages/agent"
   },
   "bugs": {
-      "url": "https://github.com/dfinity/agent-js/issues"
+    "url": "https://github.com/dfinity/agent-js/issues"
   },
   "keywords": [
     "internet computer",
