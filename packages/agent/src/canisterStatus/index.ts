@@ -105,7 +105,6 @@ export const request = async (options: {
         }
 
         const data = cert.lookup(encodePath(uniquePaths[index], canisterId));
-        data;
         if (!data) {
           // Typically, the cert lookup will throw
           console.warn(`Expected to find result for path ${path}, but instead found nothing.`);
@@ -124,7 +123,7 @@ export const request = async (options: {
               status.set(path, decodeControllers(data));
               break;
             }
-            case 'moduleHash': {
+            case 'module_hash': {
               status.set(path, decodeHex(data));
               break;
             }
@@ -186,7 +185,7 @@ export const encodePath = (path: Path, canisterId: Principal): ArrayBuffer[] => 
       return [encode('time')];
     case 'controllers':
       return [encode('canister'), canisterBuffer, encode('controllers')];
-    case 'moduleHash':
+    case 'module_hash':
       return [encode('canister'), canisterBuffer, encode('module_hash')];
     case 'subnet':
       return [encode('subnet')];

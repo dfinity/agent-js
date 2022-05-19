@@ -91,8 +91,8 @@ describe('Canister Status utility', () => {
     expect(status.get('controllers')).toMatchSnapshot();
   });
   it('should query canister module hash', async () => {
-    const status = await getStatus(['moduleHash']);
-    expect(status.get('moduleHash')).toMatchSnapshot();
+    const status = await getStatus(['module_hash']);
+    expect(status.get('module_hash')).toMatchSnapshot();
   });
   it('should query the candid interface', async () => {
     const status = await getStatus(['candid']);
