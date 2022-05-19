@@ -47,18 +47,16 @@ export type StatusMap = Map<Path | string, Status>;
 
 export type CanisterStatusOptions = {
   canisterId: Principal;
+  agent: HttpAgent;
   paths?: Path[] | Set<Path>;
-  agentOptions?: HttpAgentOptions;
-  agent?: HttpAgent;
 };
 
 /**
  *
  * @param {CanisterStatusOptions} options {@link CanisterStatusOptions}
  * @param {CanisterStatusOptions['canisterId']} options.canisterId {@link Principal}
- * @param {CanisterStatusOptions['paths']} options.paths {@link Path[]}
- * @param {CanisterStatusOptions['agentOptions']} options.agentOptions {@link HttpAgentOptions} optional configuration for the agent used to make the request
  * @param {CanisterStatusOptions['agent']} options.agent {@link HttpAgent} optional authenticated agent to use to make the canister request. Useful for accessing private metadata under icp:private
+ * @param {CanisterStatusOptions['paths']} options.paths {@link Path[]}
  * @returns {Status} object populated with data from the requested paths
  * @example
  * const status = await canisterStatus({
@@ -70,19 +68,12 @@ export type CanisterStatusOptions = {
  */
 export const request = async (options: {
   canisterId: Principal;
+  agent: HttpAgent;
   paths?: Path[] | Set<Path>;
-  agentOptions?: HttpAgentOptions;
-  agent?: HttpAgent;
 }): Promise<StatusMap> => {
-  const { canisterId, agentOptions, agent, paths } = options;
+  const { canisterId, agent, paths } = options;
 
   const uniquePaths = [...new Set(paths)];
-
-  // Set up agent
-  const effectiveAgent = agent ?? new HttpAgent(agentOptions);
-  if (options.agentOptions?.host && !options.agentOptions.host.startsWith('https://ic0.app')) {
-    await effectiveAgent.fetchRootKey();
-  }
 
   // Map path options to their correct formats
   const encodedPaths = uniquePaths.map(path => {
@@ -93,10 +84,10 @@ export const request = async (options: {
   const promises = uniquePaths.map((path, index) => {
     return (async () => {
       try {
-        const response = await effectiveAgent.readState(canisterId, {
+        const response = await agent.readState(canisterId, {
           paths: [encodedPaths[index]],
         });
-        const cert = new Certificate(response, effectiveAgent);
+        const cert = new Certificate(response, agent);
         const verified = await cert.verify();
         if (!verified) {
           throw new Error(
