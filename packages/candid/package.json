@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/candid",
-  "version": "0.11.1",
+  "version": "0.11.2",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to work with candid interfaces",
@@ -11,7 +11,7 @@
     "directory": "packages/candid"
   },
   "bugs": {
-      "url": "https://github.com/dfinity/agent-js/issues"
+    "url": "https://github.com/dfinity/agent-js/issues"
   },
   "keywords": [
     "internet computer",
