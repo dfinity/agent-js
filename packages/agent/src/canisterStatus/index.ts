@@ -38,7 +38,7 @@ export type Path =
   | 'time'
   | 'controllers'
   | 'subnet'
-  | 'moduleHash'
+  | 'module_hash'
   | 'candid'
   | MetaData
   | CustomPath;
