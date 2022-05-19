@@ -1,26 +1,29 @@
+/** @module CanisterStatus */
+
 import { lebDecode, PipeArrayBuffer } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
-import { toHex } from '../../src/utils/buffer';
-import { Cbor, Certificate } from '..';
-import { HttpAgent, HttpAgentOptions } from '..';
-
-type StatusTime = Date;
-type StatusControllers = Principal[];
-type StatusText = string;
-
-type StatusCustom = string | ArrayBuffer | ArrayBuffer[] | bigint;
+import { HttpAgent, HttpAgentOptions, Cbor, Certificate, toHex } from '..';
 
 /**
  * Types of an entry on the canisterStatus map.
  * An entry of null indicates that the request failed, due to lack of permissions or the result being missing.
  */
-export type Status = StatusTime | StatusControllers | StatusText | StatusCustom | null;
+export type Status = string | ArrayBuffer | Date | ArrayBuffer[] | Principal[] | bigint | null;
 
+/**
+ * Interface to define a custom path. Nested paths will be represented as individual buffers, and can be created from text using {@link TextEncoder}
+ */
 export interface CustomPath {
   key: string;
   path: ArrayBuffer[];
   decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'raw';
 }
+
+/**
+ * Interface to request metadata from the icp:public or icp:private sections.
+ * Similar to {@link CustomPath}, but accepts a simple string argument.
+ * Private metadata will require the ${@link Identity} used by the ${@link HttpAgent} will need to be requested using an identity that controlls the canister.
+ */
 export interface MetaData {
   kind: 'medadata';
   key: string;
@@ -28,6 +31,9 @@ export interface MetaData {
   decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'raw';
 }
 
+/**
+ * Pre-configured fields for canister status paths
+ */
 export type Path =
   | 'Time'
   | 'Controllers'
@@ -36,9 +42,8 @@ export type Path =
   | 'Candid'
   | MetaData
   | CustomPath;
-export type PathSet = Set<Path>;
 
-export type CanisterStatus = Map<Path | string, Status>;
+export type StatusMap = Map<Path | string, Status>;
 
 export type CanisterStatusOptions = {
   canisterId: Principal;
@@ -50,9 +55,25 @@ export type CanisterStatusOptions = {
 /**
  *
  * @param {CanisterStatusOptions} options {@link CanisterStatusOptions}
- * @returns {CanisterStatus} object populated with data from the requested paths
+ * @param {CanisterStatusOptions['canisterId']} options.canisterId {@link Principal}
+ * @param {CanisterStatusOptions['paths']} options.paths {@link Path[]}
+ * @param {CanisterStatusOptions['agentOptions']} options.agentOptions {@link HttpAgentOptions} optional configuration for the agent used to make the request
+ * @param {CanisterStatusOptions['agent']} options.agent {@link HttpAgent} optional authenticated agent to use to make the canister request. Useful for accessing private metadata under icp:private
+ * @returns {Status} object populated with data from the requested paths
+ * @example
+ * const status = await canisterStatus({
+ *   paths: ['Controllers', 'Candid'],
+ *   ...options
+ * });
+ *
+ * const controllers = status.get('Controllers');
  */
-export const canisterStatus = async (options: CanisterStatusOptions): Promise<CanisterStatus> => {
+export const request = async (options: {
+  canisterId: Principal;
+  paths?: Path[] | Set<Path>;
+  agentOptions?: HttpAgentOptions;
+  agent?: HttpAgent;
+}): Promise<StatusMap> => {
   const { canisterId, agentOptions, agent, paths } = options;
 
   const uniquePaths = [...new Set(paths)];
@@ -196,7 +217,7 @@ export const encodePath = (path: Path, canisterId: Principal): ArrayBuffer[] => 
   );
 };
 
-const decodeHex = (buf: ArrayBuffer): StatusText => {
+const decodeHex = (buf: ArrayBuffer): string => {
   return toHex(buf);
 };
 
@@ -209,13 +230,13 @@ const decodeCbor = (buf: ArrayBuffer): ArrayBuffer[] => {
 };
 
 // Time is a CBOR-encoded Nat
-const decodeTime = (buf: ArrayBuffer): StatusTime => {
+const decodeTime = (buf: ArrayBuffer): Date => {
   const decoded = decodeLeb128(buf);
   return new Date(Number(decoded / BigInt(1_000_000)));
 };
 
 // Controllers are CBOR-encoded buffers, starting with a Tag we don't need
-const decodeControllers = (buf: ArrayBuffer): StatusControllers => {
+const decodeControllers = (buf: ArrayBuffer): Principal[] => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [tag, ...controllersRaw] = decodeCbor(buf);
   return controllersRaw.map((buf: ArrayBuffer) => {

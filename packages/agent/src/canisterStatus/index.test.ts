@@ -1,4 +1,4 @@
-import { canisterStatus, Path } from './index';
+import { request, Path } from './index';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
 import { fromHexString } from '@dfinity/candid';
@@ -8,6 +8,13 @@ import { HttpAgent } from '../agent';
 import { fromHex } from '../utils/buffer';
 
 const testPrincipal = Principal.fromText('renrk-eyaaa-aaaaa-aaada-cai');
+
+// bypass bls verification so that an old certificate is accepted
+jest.mock('../utils/bls', () => {
+  return {
+    blsVerify: jest.fn(() => Promise.resolve(true)),
+  };
+});
 
 // Utils
 const encoder = new TextEncoder();
@@ -39,7 +46,7 @@ const getRealStatus = async (paths: Path[]) => {
     ),
   )) as unknown as Identity;
 
-  return await canisterStatus({
+  return await request({
     canisterId: testPrincipal,
     paths,
     agentOptions: { host: 'http://127.0.0.1:8000', fetch, identity },
@@ -48,14 +55,12 @@ const getRealStatus = async (paths: Path[]) => {
 
 // Mocked status using precomputed certificate
 const getStatus = async (paths: Path[]) => {
-  const agent = new HttpAgent({ host: 'http://127.0.0.1:8000' });
-  await agent.fetchRootKey();
-
+  const agent = new HttpAgent({ host: 'https://ic0.app' });
   agent.readState = jest.fn(() =>
     Promise.resolve({ certificate: fromHex(testCases[0].certificate) }),
   );
 
-  return await canisterStatus({
+  return await request({
     canisterId: testPrincipal,
     // Note: Subnet is not currently working due to a bug
     paths,

@@ -119,7 +119,9 @@ export class Certificate {
     const sig = this.cert.signature;
     const key = extractDER(derKey);
     const msg = concat(domain_sep('ic-state-root'), rootHash);
+    blsVerify; //?
     const res = await blsVerify(new Uint8Array(key), new Uint8Array(sig), new Uint8Array(msg));
+    res;
     this.verified = res;
     return res;
   }
