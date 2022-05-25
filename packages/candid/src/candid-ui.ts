@@ -117,14 +117,14 @@ class Parse extends IDL.Visitor<string, any> {
   public visitFloat(t: IDL.FloatClass, v: string): number {
     return parseFloat(v);
   }
-  public visitFixedInt(t: FixedIntClass, v: string): number | bigint {
+  public visitFixedInt(t: IDL.FixedIntClass, v: string): number | bigint {
     if (t._bits <= 32) {
       return parseInt(v, 10);
     } else {
       return BigInt(v);
     }
   }
-  public visitFixedNat(t: FixedNatClass, v: string): number | bigint {
+  public visitFixedNat(t: IDL.FixedNatClass, v: string): number | bigint {
     if (t._bits <= 32) {
       return parseInt(v, 10);
     } else {
@@ -166,17 +166,17 @@ class Random extends IDL.Visitor<string, any> {
     return BigInt(this.generateNumber(false));
   }
   public visitFixedInt(t: IDL.FixedIntClass, v: string): number | bigint {
-    const v = this.generateNumber(true);
+    const x = this.generateNumber(true);
     if (t._bits <= 32) {
-      return v;
+      return x;
     } else {
       return BigInt(v);
     }
   }
   public visitFixedNat(t: IDL.FixedNatClass, v: string): number | bigint {
-    const v = this.generateNumber(false);
+    const x = this.generateNumber(false);
     if (t._bits <= 32) {
-      return v;
+      return x;
     } else {
       return BigInt(v);
     }
