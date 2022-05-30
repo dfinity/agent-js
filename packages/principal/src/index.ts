@@ -96,4 +96,25 @@ export class Principal {
   public toString(): string {
     return this.toText();
   }
+
+  public compareTo(other: Principal): 'lt' | 'eq' | 'gt' {
+    for (let i = 0; i < Math.min(this._arr.length, other._arr.length); i++) {
+      if (this._arr[i] < other._arr[i]) return 'lt';
+      else if (this._arr[i] > other._arr[i]) return 'gt';
+    }
+    // Here, at least one principal is a prefix of the other principal (they could be the same)
+    if (this._arr.length < other._arr.length) return 'lt';
+    if (this._arr.length > other._arr.length) return 'gt';
+    return 'eq';
+  }
+
+  public ltEq(other: Principal): boolean {
+    const cmp = this.compareTo(other);
+    return cmp == 'lt' || cmp == 'eq';
+  }
+
+  public gtEq(other: Principal): boolean {
+    const cmp = this.compareTo(other);
+    return cmp == 'gt' || cmp == 'eq';
+  }
 }

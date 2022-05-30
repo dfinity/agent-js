@@ -1,9 +1,9 @@
-import { Agent, getDefaultAgent, ReadStateResponse } from './agent';
 import * as cbor from './cbor';
 import { AgentError } from './errors';
 import { hash } from './request_id';
 import { blsVerify } from './utils/bls';
 import { concat, fromHex, toHex } from './utils/buffer';
+import { Principal } from '@dfinity/principal';
 
 /**
  * A certificate needs to be verified (using {@link Certificate.prototype.verify})
@@ -102,10 +102,9 @@ function isBufferEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
 export class Certificate {
   private readonly cert: Cert;
   private verified = false;
-  private _rootKey: ArrayBuffer | null = null;
 
-  constructor(response: ReadStateResponse, private _agent: Agent = getDefaultAgent()) {
-    this.cert = cbor.decode(new Uint8Array(response.certificate));
+  constructor(certificate: ArrayBuffer, private _rootKey: Promise<ArrayBuffer>) {
+    this.cert = cbor.decode(new Uint8Array(certificate));
   }
 
   public lookup(path: Array<ArrayBuffer | string>): ArrayBuffer | undefined {
@@ -113,9 +112,9 @@ export class Certificate {
     return lookup_path(path, this.cert.tree);
   }
 
-  public async verify(): Promise<boolean> {
+  public async verify(canisterId: Principal): Promise<boolean> {
     const rootHash = await reconstruct(this.cert.tree);
-    const derKey = await this._checkDelegation(this.cert.delegation);
+    const derKey = await this._checkDelegationAndGetKey(canisterId, this.cert.delegation);
     const sig = this.cert.signature;
     const key = extractDER(derKey);
     const msg = concat(domain_sep('ic-state-root'), rootHash);
@@ -130,28 +129,38 @@ export class Certificate {
     }
   }
 
-  private async _checkDelegation(d?: Delegation): Promise<ArrayBuffer> {
+  private async _checkDelegationAndGetKey(
+    canisterId: Principal,
+    d?: Delegation,
+  ): Promise<ArrayBuffer> {
     if (!d) {
-      if (!this._rootKey) {
-        if (this._agent.rootKey) {
-          this._rootKey = this._agent.rootKey;
-          return this._rootKey;
-        }
-
-        throw new Error(`Agent does not have a rootKey. Do you need to call 'fetchRootKey'?`);
-      }
       return this._rootKey;
     }
-    const cert: Certificate = new Certificate(d as any, this._agent);
-    if (!(await cert.verify())) {
+    const cert: Certificate = new Certificate(d.certificate, this._rootKey);
+    if (!(await cert.verify(canisterId))) {
       throw new Error('fail to verify delegation certificate');
     }
+    const range_lookup = cert.lookup(['subnet', d.subnet_id, 'canister_ranges']);
+    if (!range_lookup) {
+      throw new Error(`Could not find canister ranges for subnet 0x${toHex(d.subnet_id)}`);
+    }
+    const ranges_arr: Array<[Uint8Array, Uint8Array]> = cbor.decode(range_lookup);
+    const ranges: Array<[Principal, Principal]> = ranges_arr.map(v => [
+      Principal.fromUint8Array(v[0]),
+      Principal.fromUint8Array(v[1]),
+    ]);
 
-    const lookup = cert.lookup(['subnet', d.subnet_id, 'public_key']);
-    if (!lookup) {
+    const canister_in_range = ranges.some(r => r[0].ltEq(canisterId) && r[1].gtEq(canisterId));
+    if (!canister_in_range) {
+      throw new Error(
+        `Canister ${canisterId} not in range of delegations for subnet 0x${toHex(d.subnet_id)}`,
+      );
+    }
+    const public_key_lookup = cert.lookup(['subnet', d.subnet_id, 'public_key']);
+    if (!public_key_lookup) {
       throw new Error(`Could not find subnet key for subnet 0x${toHex(d.subnet_id)}`);
     }
-    return lookup;
+    return public_key_lookup;
   }
 }
 

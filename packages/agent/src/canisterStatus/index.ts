@@ -87,8 +87,8 @@ export const request = async (options: {
         const response = await agent.readState(canisterId, {
           paths: [encodedPaths[index]],
         });
-        const cert = new Certificate(response, agent);
-        const verified = await cert.verify();
+        const cert = new Certificate(response.certificate, agent.fetchRootKey());
+        const verified = await cert.verify(canisterId);
         if (!verified) {
           throw new Error(
             'There was a problem certifying the response data. Please verify your connection to the mainnet, or be sure to call fetchRootKey on your agent if you are developing locally',
