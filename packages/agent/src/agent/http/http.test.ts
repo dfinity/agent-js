@@ -363,7 +363,7 @@ describe('replace identity', () => {
   });
 });
 
-describe.only('makeNonce', () => {
+describe('makeNonce', () => {
   it('should create unique values', () => {
     const nonces = new Set();
     for (let i = 0; i < 100; i++) {
@@ -375,26 +375,33 @@ describe.only('makeNonce', () => {
   describe('setBigUint64 polyfill', () => {
     const DataViewConstructor = DataView;
     let spyOnSetUint32: jest.SpyInstance;
+    let usePolyfill = false;
 
-    beforeAll(() =>
+    beforeAll(() => {
+      jest.spyOn(Math, 'random').mockImplementation(() => 0.5);
       jest.spyOn(globalThis, 'DataView').mockImplementation(buffer => {
         const view: DataView = new DataViewConstructor(buffer);
-        view.setBigUint64 = undefined;
+        view.setBigUint64 = usePolyfill ? undefined : view.setBigUint64;
         spyOnSetUint32 = jest.spyOn(view, 'setUint32');
         return view;
-      }),
-    );
-    afterAll(jest.restoreAllMocks);
+      });
+    });
 
-    it('should create unique values using polyfill', () => {
-      const nonces = new Set();
+    afterAll(() => {
+      jest.clearAllMocks();
+      jest.restoreAllMocks();
+    });
 
-      for (let i = 0; i < 100; i++) {
-        nonces.add(toHexString(makeNonce()));
-        expect(spyOnSetUint32).toBeCalledTimes(4);
-      }
+    it('should create same value using polyfill', () => {
+      const originalNonce = toHexString(makeNonce());
+      expect(spyOnSetUint32).toBeCalledTimes(2);
 
-      expect(nonces.size).toBe(100);
+      usePolyfill = true;
+
+      const nonce = toHexString(makeNonce());
+      expect(spyOnSetUint32).toBeCalledTimes(4);
+
+      expect(nonce).toBe(originalNonce);
     });
   });
 });
