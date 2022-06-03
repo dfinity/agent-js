@@ -5,6 +5,8 @@ import { sha224 } from './utils/sha224';
 const SELF_AUTHENTICATING_SUFFIX = 2;
 const ANONYMOUS_SUFFIX = 4;
 
+const MANAGEMENT_CANISTER_PRINCIPAL_HEX_STR = 'aaaaa-aa';
+
 const fromHexString = (hexString: string) =>
   new Uint8Array((hexString.match(/.{1,2}/g) ?? []).map(byte => parseInt(byte, 16)));
 
@@ -14,6 +16,10 @@ const toHexString = (bytes: Uint8Array) =>
 export class Principal {
   public static anonymous(): Principal {
     return new this(new Uint8Array([ANONYMOUS_SUFFIX]));
+  }
+
+  public static managementCanister(): Principal {
+    return this.fromHex(MANAGEMENT_CANISTER_PRINCIPAL_HEX_STR);
   }
 
   public static selfAuthenticating(publicKey: Uint8Array): Principal {
