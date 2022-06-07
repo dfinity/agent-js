@@ -14,6 +14,10 @@ test('read_state', async () => {
   const response = await resolvedAgent.readState(canisterId, {
     paths: [path],
   });
+  const rootKey =
+    resolvedAgent.rootKey == null
+      ? resolvedAgent.fetchRootKey()
+      : Promise.resolve(resolvedAgent.rootKey);
   const cert = new Certificate(response.certificate, resolvedAgent.fetchRootKey());
 
   expect(() => cert.lookup(path)).toThrow(/Cannot lookup unverified certificate/);

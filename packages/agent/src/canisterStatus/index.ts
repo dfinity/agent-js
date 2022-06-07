@@ -87,7 +87,9 @@ export const request = async (options: {
         const response = await agent.readState(canisterId, {
           paths: [encodedPaths[index]],
         });
-        const cert = new Certificate(response.certificate, agent.fetchRootKey());
+        const rootKey =
+          agent.rootKey == null ? agent.fetchRootKey() : Promise.resolve(agent.rootKey);
+        const cert = new Certificate(response.certificate, rootKey);
         const verified = await cert.verify(canisterId);
         if (!verified) {
           throw new Error(

@@ -29,7 +29,8 @@ export async function pollForResponse(
 ): Promise<ArrayBuffer> {
   const path = [new TextEncoder().encode('request_status'), requestId];
   const state = await agent.readState(canisterId, { paths: [path] });
-  const cert = new Certificate(state.certificate, agent.fetchRootKey());
+  const rootKey = agent.rootKey == null ? agent.fetchRootKey() : Promise.resolve(agent.rootKey);
+  const cert = new Certificate(state.certificate, rootKey);
   const verified = await cert.verify(canisterId);
   if (!verified) {
     throw new Error('Fail to verify certificate');
