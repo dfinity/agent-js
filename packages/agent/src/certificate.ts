@@ -142,28 +142,28 @@ export class Certificate {
     }
 
     if (canisterId.compareTo(Principal.managementCanister()) != 'eq') {
-      const range_lookup = cert.lookup(['subnet', d.subnet_id, 'canister_ranges']);
-      if (!range_lookup) {
+      const rangeLookup = cert.lookup(['subnet', d.subnet_id, 'canister_ranges']);
+      if (!rangeLookup) {
         throw new Error(`Could not find canister ranges for subnet 0x${toHex(d.subnet_id)}`);
       }
-      const ranges_arr: Array<[Uint8Array, Uint8Array]> = cbor.decode(range_lookup);
+      const ranges_arr: Array<[Uint8Array, Uint8Array]> = cbor.decode(rangeLookup);
       const ranges: Array<[Principal, Principal]> = ranges_arr.map(v => [
         Principal.fromUint8Array(v[0]),
         Principal.fromUint8Array(v[1]),
       ]);
 
-      const canister_in_range = ranges.some(r => r[0].ltEq(canisterId) && r[1].gtEq(canisterId));
-      if (!canister_in_range) {
+      const canisterInRange = ranges.some(r => r[0].ltEq(canisterId) && r[1].gtEq(canisterId));
+      if (!canisterInRange) {
         throw new Error(
           `Canister ${canisterId} not in range of delegations for subnet 0x${toHex(d.subnet_id)}`,
         );
       }
     }
-    const public_key_lookup = cert.lookup(['subnet', d.subnet_id, 'public_key']);
-    if (!public_key_lookup) {
+    const publicKeyLookup = cert.lookup(['subnet', d.subnet_id, 'public_key']);
+    if (!publicKeyLookup) {
       throw new Error(`Could not find subnet key for subnet 0x${toHex(d.subnet_id)}`);
     }
-    return public_key_lookup;
+    return publicKeyLookup;
   }
 }
 
