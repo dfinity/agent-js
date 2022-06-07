@@ -29,7 +29,7 @@ describe('Principal', () => {
     const anonymous = Principal.anonymous();
     const principal1 = Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai');
     const principal2 = Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai');
-    for (let p of [anonymous, principal1, principal2]) {
+    for (const p of [anonymous, principal1, principal2]) {
       expect(p.compareTo(p)).toBe('eq');
       expect(p.ltEq(p)).toBe(true);
       expect(p.gtEq(p)).toBe(true);
