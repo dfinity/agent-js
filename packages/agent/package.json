@@ -1,10 +1,18 @@
 {
   "name": "@dfinity/agent",
-  "version": "0.11.1",
+  "version": "0.11.3",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to interact with the Internet Computer",
-  "homepage": "https://sdk.dfinity.org/docs/index.html",
+  "homepage": "https://smartcontracts.org",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dfinity/agent-js.git",
+    "directory": "packages/agent"
+  },
+  "bugs": {
+    "url": "https://github.com/dfinity/agent-js/issues"
+  },
   "keywords": [
     "internet computer",
     "internet-computer",
@@ -41,8 +49,8 @@
     "tslint": "tslint --project tsconfig.json --config tslint.json"
   },
   "peerDependencies": {
-    "@dfinity/candid": "^0.11.1",
-    "@dfinity/principal": "^0.11.1"
+    "@dfinity/candid": "^0.11.3",
+    "@dfinity/principal": "^0.11.3"
   },
   "dependencies": {
     "base64-arraybuffer": "^0.2.0",

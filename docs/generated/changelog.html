@@ -10,6 +10,36 @@
     <h1>Agent-JS Changelog</h1>
 
     <section>
+      <h2>Version 0.11.2</h2>
+      <ul>
+        <li>
+          Adds a default callback to the IdleManager that will refresh the page after clearing the
+          storage
+        </li>
+        <li>
+          Adds a new utility method,
+          <pre>canisterStatus</pre>
+          , to @agent/js. Canister status now allows you to query paths from the canister
+          certificate with a simple interface, using the API from the<a
+            href="https://smartcontracts.org/docs/current/references/ic-interface-spec#state-tree-canister-information"
+            >interface specification</a
+          ><br />
+          Comes with nicely configured options for
+          <pre>time</pre>
+          ,
+          <pre>controllers</pre>
+          ,
+          <pre>subnet</pre>
+          ,
+          <pre>module_hash</pre>
+          , and
+          <pre>candid</pre>
+          . Additionally, has a utility for reading custom MetaData set using
+          <a href="https://github.com/dfinity/ic-wasm">ic-wasm</a>, as well as generic custom paths
+          in the format of ArrayBuffers.
+        </li>
+        <li>updates to package.json files for metadata in npm</li>
+      </ul>
       <h2>Version 0.11.1</h2>
       <ul>
         <li>Fix for a corner case that could lead to incorrect decoding of record types.</li>
