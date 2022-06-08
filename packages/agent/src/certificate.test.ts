@@ -7,7 +7,7 @@ import * as cbor from './cbor';
 import * as Cert from './certificate';
 import { fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
-import { AgentError } from './errors';
+import { NodeBuilderFlags } from 'typescript';
 
 function label(str: string): ArrayBuffer {
   return new TextEncoder().encode(str);
@@ -141,12 +141,9 @@ const SAMPLE_CERT: string =
 
 test('delegation works for canisters within the subnet range', async () => {
   const canisterId = Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai');
-  // Test that create doesn't throw
-  const cert = await Cert.Certificate.create(
-    fromHex(SAMPLE_CERT),
-    fromHex(IC_ROOT_KEY),
-    canisterId,
-  );
+  await expect(
+    Cert.Certificate.create(fromHex(SAMPLE_CERT), fromHex(IC_ROOT_KEY), canisterId),
+  ).resolves.not.toThrow();
 });
 
 function fail(reason) {
@@ -156,29 +153,39 @@ function fail(reason) {
 test('delegation check fails for canisters outside of the subnet range', async () => {
   // Use a different principal than the happy path, which isn't in the delegation ranges.
   const canisterId = Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai');
-  try {
-    const cert = await Cert.Certificate.create(
-      fromHex(SAMPLE_CERT),
-      fromHex(IC_ROOT_KEY),
-      canisterId,
-    );
-    fail('The create method should throw on an invalid certificate');
-  } catch (err) {
-    if (!(err instanceof AgentError) || !err.message.includes('Invalid certificate')) {
-      fail(
-        `The create method should throw an ${AgentError.name} mentioning an invalid certificate`,
-      );
-    }
-  }
+  await expect(
+    Cert.Certificate.create(fromHex(SAMPLE_CERT), fromHex(IC_ROOT_KEY), canisterId),
+  ).rejects.toThrow(/Invalid certificate/);
 });
 
 // The only situation in which one can read state of the IC management canister
 // is when the user calls provisional_create_canister_with_cycles. In this case,
 // we shouldn't check the delegations.
 test('delegation check succeeds for the management canister', async () => {
-  const cert = await Cert.Certificate.create(
-    fromHex(SAMPLE_CERT),
-    fromHex(IC_ROOT_KEY),
-    Principal.managementCanister(),
-  );
+  await expect(
+    Cert.Certificate.create(
+      fromHex(SAMPLE_CERT),
+      fromHex(IC_ROOT_KEY),
+      Principal.managementCanister(),
+    ),
+  ).resolves.not.toThrow();
+});
+
+type FakeCert = {
+  tree: Cert.HashTree;
+  signature: ArrayBuffer;
+  delegation?: { subnet_id: ArrayBuffer; certificate: ArrayBuffer };
+};
+
+test('certificate verification fails for an invalid signature', async () => {
+  let badCert: FakeCert = cbor.decode(fromHex(SAMPLE_CERT));
+  badCert.signature = new ArrayBuffer(badCert.signature.byteLength);
+  const badCertEncoded = cbor.encode(badCert);
+  await expect(
+    Cert.Certificate.create(
+      badCertEncoded,
+      fromHex(IC_ROOT_KEY),
+      Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
+    ),
+  ).rejects.toThrow('Invalid certificate');
 });

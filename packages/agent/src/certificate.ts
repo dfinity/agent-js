@@ -100,7 +100,6 @@ function isBufferEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
 
 export class Certificate {
   private readonly cert: Cert;
-  private verified = false;
 
   /**
    * Create a new instance of a certificate, automatically verifying it.
@@ -128,15 +127,21 @@ export class Certificate {
     return lookup_path(path, this.cert.tree);
   }
 
-  private async verify(): Promise<boolean> {
+  private async verify(): Promise<void> {
     const rootHash = await reconstruct(this.cert.tree);
     const derKey = await this._checkDelegationAndGetKey(this.cert.delegation);
     const sig = this.cert.signature;
     const key = extractDER(derKey);
     const msg = concat(domain_sep('ic-state-root'), rootHash);
-    const res = await blsVerify(new Uint8Array(key), new Uint8Array(sig), new Uint8Array(msg));
-    this.verified = res;
-    return res;
+    let sigVer = false;
+    try {
+      sigVer = await blsVerify(new Uint8Array(key), new Uint8Array(sig), new Uint8Array(msg));
+    } catch (err) {
+      sigVer = false;
+    }
+    if (!sigVer) {
+      throw new CertificateVerificationError('Signature verification failed');
+    }
   }
 
   private async _checkDelegationAndGetKey(d?: Delegation): Promise<ArrayBuffer> {
