@@ -13,9 +13,11 @@
       <h2>Version 0.12.0</h2>
       <ul>
         <li>
-          Changes the certificate verification interface and fixed its logic. The constructor now
-          takes a root key, and verification takes a canister ID. Additionally, verification now
-          checks that the delegation is authoritative for the given canister ID.
+          Changed the certificate verification interface and fixed its logic. The public constructor
+          is now static and asynchronous. There is no separate verification method, the check is
+          done automatically in the constructor and newly also checks that the delegation is
+          authoritative for the given canister ID, as required by the Internet Computer interface
+          specification.
         </li>
       </ul>
       <h2>Version 0.11.2</h2>

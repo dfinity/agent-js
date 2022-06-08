@@ -6,12 +6,11 @@ import { concat, fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
 
 /**
- * A certificate needs to be verified (using {@link Certificate.prototype.verify})
- * before it can be used.
+ * A certificate may fail verification with respect to the provided public key
  */
-export class UnverifiedCertificateError extends AgentError {
-  constructor() {
-    super(`Cannot lookup unverified certificate. Call 'verify()' first.`);
+export class CertificateVerificationError extends AgentError {
+  constructor(reason: string) {
+    super(`Invalid certificate: ${reason}`);
   }
 }
 
@@ -103,18 +102,35 @@ export class Certificate {
   private readonly cert: Cert;
   private verified = false;
 
-  constructor(certificate: ArrayBuffer, private _rootKey: Promise<ArrayBuffer>) {
+  /**
+   * Create a new instance of a certificate, automatically verifying it.
+   * @throws {CertificateVerificationError}
+   */
+  public static async create(
+    certificate: ArrayBuffer,
+    rootKey: ArrayBuffer,
+    canisterId: Principal,
+  ): Promise<Certificate> {
+    const cert = new Certificate(certificate, rootKey, canisterId);
+    await cert.verify();
+    return cert;
+  }
+
+  private constructor(
+    certificate: ArrayBuffer,
+    private _rootKey: ArrayBuffer,
+    private _canisterId: Principal,
+  ) {
     this.cert = cbor.decode(new Uint8Array(certificate));
   }
 
   public lookup(path: Array<ArrayBuffer | string>): ArrayBuffer | undefined {
-    this.checkState();
     return lookup_path(path, this.cert.tree);
   }
 
-  public async verify(canisterId: Principal): Promise<boolean> {
+  private async verify(): Promise<boolean> {
     const rootHash = await reconstruct(this.cert.tree);
-    const derKey = await this._checkDelegationAndGetKey(canisterId, this.cert.delegation);
+    const derKey = await this._checkDelegationAndGetKey(this.cert.delegation);
     const sig = this.cert.signature;
     const key = extractDER(derKey);
     const msg = concat(domain_sep('ic-state-root'), rootHash);
@@ -123,28 +139,22 @@ export class Certificate {
     return res;
   }
 
-  protected checkState(): void {
-    if (!this.verified) {
-      throw new UnverifiedCertificateError();
-    }
-  }
-
-  private async _checkDelegationAndGetKey(
-    canisterId: Principal,
-    d?: Delegation,
-  ): Promise<ArrayBuffer> {
+  private async _checkDelegationAndGetKey(d?: Delegation): Promise<ArrayBuffer> {
     if (!d) {
       return this._rootKey;
     }
-    const cert: Certificate = new Certificate(d.certificate, this._rootKey);
-    if (!(await cert.verify(canisterId))) {
-      throw new Error('fail to verify delegation certificate');
-    }
+    const cert: Certificate = await Certificate.create(
+      d.certificate,
+      this._rootKey,
+      this._canisterId,
+    );
 
-    if (canisterId.compareTo(Principal.managementCanister()) != 'eq') {
+    if (this._canisterId.compareTo(Principal.managementCanister()) != 'eq') {
       const rangeLookup = cert.lookup(['subnet', d.subnet_id, 'canister_ranges']);
       if (!rangeLookup) {
-        throw new Error(`Could not find canister ranges for subnet 0x${toHex(d.subnet_id)}`);
+        throw new CertificateVerificationError(
+          `Could not find canister ranges for subnet 0x${toHex(d.subnet_id)}`,
+        );
       }
       const ranges_arr: Array<[Uint8Array, Uint8Array]> = cbor.decode(rangeLookup);
       const ranges: Array<[Principal, Principal]> = ranges_arr.map(v => [
@@ -152,10 +162,14 @@ export class Certificate {
         Principal.fromUint8Array(v[1]),
       ]);
 
-      const canisterInRange = ranges.some(r => r[0].ltEq(canisterId) && r[1].gtEq(canisterId));
+      const canisterInRange = ranges.some(
+        r => r[0].ltEq(this._canisterId) && r[1].gtEq(this._canisterId),
+      );
       if (!canisterInRange) {
-        throw new Error(
-          `Canister ${canisterId} not in range of delegations for subnet 0x${toHex(d.subnet_id)}`,
+        throw new CertificateVerificationError(
+          `Canister ${this._canisterId} not in range of delegations for subnet 0x${toHex(
+            d.subnet_id,
+          )}`,
         );
       }
     }

@@ -3,12 +3,11 @@
  * an instance of ArrayBuffer).
  * @jest-environment node
  */
-import { fromHexString } from '@dfinity/candid';
 import * as cbor from './cbor';
 import * as Cert from './certificate';
 import { fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
-import { verify } from 'crypto';
+import { AgentError } from './errors';
 
 function label(str: string): ArrayBuffer {
   return new TextEncoder().encode(str);
@@ -142,30 +141,44 @@ const SAMPLE_CERT: string =
 
 test('delegation works for canisters within the subnet range', async () => {
   const canisterId = Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai');
-  const cert = new Cert.Certificate(fromHex(SAMPLE_CERT), Promise.resolve(fromHex(IC_ROOT_KEY)));
-  const result = await cert.verify(canisterId);
-  expect(result).toEqual(true);
+  // Test that create doesn't throw
+  const cert = await Cert.Certificate.create(
+    fromHex(SAMPLE_CERT),
+    fromHex(IC_ROOT_KEY),
+    canisterId,
+  );
 });
+
+function fail(reason) {
+  throw new Error(reason);
+}
 
 test('delegation check fails for canisters outside of the subnet range', async () => {
   // Use a different principal than the happy path, which isn't in the delegation ranges.
   const canisterId = Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai');
-  const cert = new Cert.Certificate(fromHex(SAMPLE_CERT), Promise.resolve(fromHex(IC_ROOT_KEY)));
-  // This is a bit crufty; verify returns a boolean, but can also indicate verification errors
-  // by throwing exceptions
   try {
-    const result = await cert.verify(canisterId);
-    expect(result).toEqual(false);
-  } catch (e) {}
+    const cert = await Cert.Certificate.create(
+      fromHex(SAMPLE_CERT),
+      fromHex(IC_ROOT_KEY),
+      canisterId,
+    );
+    fail('The create method should throw on an invalid certificate');
+  } catch (err) {
+    if (!(err instanceof AgentError) || !err.message.includes('Invalid certificate')) {
+      fail(
+        `The create method should throw an ${AgentError.name} mentioning an invalid certificate`,
+      );
+    }
+  }
 });
 
 // The only situation in which one can read state of the IC management canister
 // is when the user calls provisional_create_canister_with_cycles. In this case,
 // we shouldn't check the delegations.
 test('delegation check succeeds for the management canister', async () => {
-  const cert = new Cert.Certificate(fromHex(SAMPLE_CERT), Promise.resolve(fromHex(IC_ROOT_KEY)));
-  // This is a bit crufty; verify returns a boolean, but can also indicate verification errors
-  // by throwing exceptions
-  const result = await cert.verify(Principal.managementCanister());
-  expect(result).toEqual(true);
+  const cert = await Cert.Certificate.create(
+    fromHex(SAMPLE_CERT),
+    fromHex(IC_ROOT_KEY),
+    Principal.managementCanister(),
+  );
 });
