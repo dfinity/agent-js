@@ -154,7 +154,7 @@ export class Certificate {
       this._canisterId,
     );
 
-    if (this._canisterId.compareTo(Principal.managementCanister()) != 'eq') {
+    if (this._canisterId.compareTo(Principal.managementCanister()) !== 'eq') {
       const rangeLookup = cert.lookup(['subnet', d.subnet_id, 'canister_ranges']);
       if (!rangeLookup) {
         throw new CertificateVerificationError(
