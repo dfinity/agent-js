@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/authentication",
-  "version": "0.12.0",
+  "version": "0.11.3",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to manage identity and authentication with the Internet Computer",
@@ -45,9 +45,9 @@
     "test:coverage": "jest --verbose --collectCoverage"
   },
   "peerDependencies": {
-    "@dfinity/agent": "^0.12.0",
-    "@dfinity/identity": "^0.12.0",
-    "@dfinity/principal": "^0.12.0"
+    "@dfinity/agent": "^0.11.3",
+    "@dfinity/identity": "^0.11.3",
+    "@dfinity/principal": "^0.11.3"
   },
   "devDependencies": {
     "@trust/webcrypto": "^0.9.2",
