@@ -18,6 +18,10 @@ export class Principal {
     return new this(new Uint8Array([ANONYMOUS_SUFFIX]));
   }
 
+  /**
+   * Utility method, returning the principal representing the management canister, decoded from the hex string `'aaaaa-aa'`
+   * @returns {Principal} principal of the management canister
+   */
   public static managementCanister(): Principal {
     return this.fromHex(MANAGEMENT_CANISTER_PRINCIPAL_HEX_STR);
   }
@@ -103,6 +107,11 @@ export class Principal {
     return this.toText();
   }
 
+  /**
+   * Utility method taking a Principal to compare against. Used for determining canister ranges in certificate verification
+   * @param {Principal} other - a {@link Principal} to compare
+   * @returns {'lt' | 'eq' | 'gt'} `'lt' | 'eq' | 'gt'` a string, representing less than, equal to, or greater than
+   */
   public compareTo(other: Principal): 'lt' | 'eq' | 'gt' {
     for (let i = 0; i < Math.min(this._arr.length, other._arr.length); i++) {
       if (this._arr[i] < other._arr[i]) return 'lt';
@@ -114,11 +123,21 @@ export class Principal {
     return 'eq';
   }
 
+  /**
+   * Utility method checking whether a provided Principal is less than or equal to the current one using the {@link Principal.compareTo} method
+   * @param other a {@link Principal} to compare
+   * @returns {boolean} boolean
+   */
   public ltEq(other: Principal): boolean {
     const cmp = this.compareTo(other);
     return cmp == 'lt' || cmp == 'eq';
   }
 
+  /**
+   * Utility method checking whether a provided Principal is greater than or equal to the current one using the {@link Principal.compareTo} method
+   * @param other a {@link Principal} to compare
+   * @returns {boolean} boolean
+   */
   public gtEq(other: Principal): boolean {
     const cmp = this.compareTo(other);
     return cmp == 'gt' || cmp == 'eq';
