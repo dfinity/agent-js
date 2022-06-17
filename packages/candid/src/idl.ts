@@ -621,7 +621,7 @@ export class FloatClass extends PrimitiveType<number> {
  * Represents an IDL fixed-width Int(n)
  */
 export class FixedIntClass extends PrimitiveType<bigint | number> {
-  constructor(public _bits: number) {
+  constructor(public readonly _bits: number) {
     super();
   }
 
@@ -674,7 +674,7 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
  * Represents an IDL fixed-width Nat(n)
  */
 export class FixedNatClass extends PrimitiveType<bigint | number> {
-  constructor(public readonly bits: number) {
+  constructor(public readonly _bits: number) {
     super();
   }
 
@@ -683,7 +683,7 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
   }
 
   public covariant(x: any): x is bigint {
-    const max = BigInt(2) ** BigInt(this.bits);
+    const max = BigInt(2) ** BigInt(this._bits);
     if (typeof x === 'bigint' && x >= BigInt(0)) {
       return x < max;
     } else if (Number.isInteger(x) && x >= 0) {
@@ -695,18 +695,18 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
   }
 
   public encodeValue(x: bigint | number) {
-    return writeUIntLE(x, this.bits / 8);
+    return writeUIntLE(x, this._bits / 8);
   }
 
   public encodeType() {
-    const offset = Math.log2(this.bits) - 3;
+    const offset = Math.log2(this._bits) - 3;
     return slebEncode(-5 - offset);
   }
 
   public decodeValue(b: Pipe, t: Type) {
     this.checkType(t);
-    const num = readUIntLE(b, this.bits / 8);
-    if (this.bits <= 32) {
+    const num = readUIntLE(b, this._bits / 8);
+    if (this._bits <= 32) {
       return Number(num);
     } else {
       return num;
@@ -714,7 +714,7 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
   }
 
   get name() {
-    return `nat${this.bits}`;
+    return `nat${this._bits}`;
   }
 
   public valueToString(x: bigint | number) {
@@ -741,7 +741,7 @@ export class VecClass<T> extends ConstructType<T[]> {
 
   constructor(protected _type: Type<T>) {
     super();
-    if (_type instanceof FixedNatClass && _type.bits === 8) {
+    if (_type instanceof FixedNatClass && _type._bits === 8) {
       this._blobOptimization = true;
     }
   }
@@ -752,9 +752,16 @@ export class VecClass<T> extends ConstructType<T[]> {
 
   public covariant(x: any): x is T[] {
     // Special case for ArrayBuffer
-    const bits = this._type instanceof FixedNatClass ? this._type.bits : (this._type instanceof FixedIntClass ? this._type._bits : 0);
-    return (ArrayBuffer.isView(x) && bits == (x as any).BYTES_PER_ELEMENT * 8)
-           || (Array.isArray(x) && x.every(v => this._type.covariant(v)));
+    const bits =
+      this._type instanceof FixedNatClass
+        ? this._type._bits
+        : this._type instanceof FixedIntClass
+        ? this._type._bits
+        : 0;
+    return (
+      (ArrayBuffer.isView(x) && bits == (x as any).BYTES_PER_ELEMENT * 8) ||
+      (Array.isArray(x) && x.every(v => this._type.covariant(v)))
+    );
   }
 
   public encodeValue(x: T[]) {
@@ -790,16 +797,16 @@ export class VecClass<T> extends ConstructType<T[]> {
     const len = Number(lebDecode(b));
 
     if (this._type instanceof FixedNatClass) {
-      if (this._type.bits == 8) {
+      if (this._type._bits == 8) {
         return new Uint8Array(b.read(len)) as unknown as T[];
       }
-      if (this._type.bits == 16) {
+      if (this._type._bits == 16) {
         return new Uint16Array(b.read(len * 2)) as unknown as T[];
       }
-      if (this._type.bits == 32) {
+      if (this._type._bits == 32) {
         return new Uint32Array(b.read(len * 4)) as unknown as T[];
       }
-      if (this._type.bits == 64) {
+      if (this._type._bits == 64) {
         return new BigUint64Array(b.read(len * 8)) as unknown as T[];
       }
     }
