@@ -30,7 +30,11 @@ export async function pollForResponse(
   const path = [new TextEncoder().encode('request_status'), requestId];
   const state = await agent.readState(canisterId, { paths: [path] });
   if (agent.rootKey == null) throw new Error('Agent root key not initialized before polling');
-  const cert = await Certificate.create(state.certificate, agent.rootKey, canisterId);
+  const cert = await Certificate.create({
+    certificate: state.certificate,
+    rootKey: agent.rootKey,
+    canisterId: canisterId,
+  });
   const maybeBuf = cert.lookup([...path, new TextEncoder().encode('status')]);
   let status;
   if (typeof maybeBuf === 'undefined') {

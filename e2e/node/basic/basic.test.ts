@@ -15,7 +15,11 @@ test('read_state', async () => {
     paths: [path],
   });
   if (resolvedAgent.rootKey == null) throw new Error(`The agent doesn't have a root key yet`);
-  const cert = await Certificate.create(response.certificate, resolvedAgent.rootKey, canisterId);
+  const cert = await Certificate.create({
+    certificate: response.certificate,
+    rootKey: resolvedAgent.rootKey,
+    canisterId: canisterId,
+  });
   expect(cert.lookup([new TextEncoder().encode('Time')])).toBe(undefined);
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const rawTime = cert.lookup(path)!;

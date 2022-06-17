@@ -98,19 +98,38 @@ function isBufferEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
   return true;
 }
 
+export interface CreateCertificateOptions {
+  /**
+   * The bytes encoding the certificate to be verified
+   */
+  certificate: ArrayBuffer;
+  /**
+   * The root key against which to verify the certificate
+   * (normally, the root key of the IC main network)
+   */
+  rootKey: ArrayBuffer;
+  /**
+   * The effective canister ID of the request that generated the certificate.
+   */
+  canisterId: Principal;
+}
+
 export class Certificate {
   private readonly cert: Cert;
 
   /**
-   * Create a new instance of a certificate, automatically verifying it.
+   * Create a new instance of a certificate, automatically verifying it. Throws a
+   * CertificateVerificationError if the certificate cannot be verified.
+   * @constructs {@link AuthClient}
+   * @param {CreateCertificateOptions} options
+   * @see {@link CreateCertificateOptions}
+   * @param {ArrayBuffer} options.certificate The bytes of the certificate
+   * @param {ArrayBuffer} options.rootKey The root key to verify against
+   * @param {Principal} options.canisterId The root key to verify against
    * @throws {CertificateVerificationError}
    */
-  public static async create(
-    certificate: ArrayBuffer,
-    rootKey: ArrayBuffer,
-    canisterId: Principal,
-  ): Promise<Certificate> {
-    const cert = new Certificate(certificate, rootKey, canisterId);
+  public static async create(options: CreateCertificateOptions): Promise<Certificate> {
+    const cert = new Certificate(options.certificate, options.rootKey, options.canisterId);
     await cert.verify();
     return cert;
   }
@@ -148,11 +167,11 @@ export class Certificate {
     if (!d) {
       return this._rootKey;
     }
-    const cert: Certificate = await Certificate.create(
-      d.certificate,
-      this._rootKey,
-      this._canisterId,
-    );
+    const cert: Certificate = await Certificate.create({
+      certificate: d.certificate,
+      rootKey: this._rootKey,
+      canisterId: this._canisterId,
+    });
 
     if (this._canisterId.compareTo(Principal.managementCanister()) !== 'eq') {
       const rangeLookup = cert.lookup(['subnet', d.subnet_id, 'canister_ranges']);

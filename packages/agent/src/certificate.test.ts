@@ -142,7 +142,11 @@ const SAMPLE_CERT: string =
 test('delegation works for canisters within the subnet range', async () => {
   const canisterId = Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai');
   await expect(
-    Cert.Certificate.create(fromHex(SAMPLE_CERT), fromHex(IC_ROOT_KEY), canisterId),
+    Cert.Certificate.create({
+      certificate: fromHex(SAMPLE_CERT),
+      rootKey: fromHex(IC_ROOT_KEY),
+      canisterId: canisterId,
+    }),
   ).resolves.not.toThrow();
 });
 
@@ -154,7 +158,11 @@ test('delegation check fails for canisters outside of the subnet range', async (
   // Use a different principal than the happy path, which isn't in the delegation ranges.
   const canisterId = Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai');
   await expect(
-    Cert.Certificate.create(fromHex(SAMPLE_CERT), fromHex(IC_ROOT_KEY), canisterId),
+    Cert.Certificate.create({
+      certificate: fromHex(SAMPLE_CERT),
+      rootKey: fromHex(IC_ROOT_KEY),
+      canisterId: canisterId,
+    }),
   ).rejects.toThrow(/Invalid certificate/);
 });
 
@@ -163,11 +171,11 @@ test('delegation check fails for canisters outside of the subnet range', async (
 // we shouldn't check the delegations.
 test('delegation check succeeds for the management canister', async () => {
   await expect(
-    Cert.Certificate.create(
-      fromHex(SAMPLE_CERT),
-      fromHex(IC_ROOT_KEY),
-      Principal.managementCanister(),
-    ),
+    Cert.Certificate.create({
+      certificate: fromHex(SAMPLE_CERT),
+      rootKey: fromHex(IC_ROOT_KEY),
+      canisterId: Principal.managementCanister(),
+    }),
   ).resolves.not.toThrow();
 });
 
@@ -182,10 +190,10 @@ test('certificate verification fails for an invalid signature', async () => {
   badCert.signature = new ArrayBuffer(badCert.signature.byteLength);
   const badCertEncoded = cbor.encode(badCert);
   await expect(
-    Cert.Certificate.create(
-      badCertEncoded,
-      fromHex(IC_ROOT_KEY),
-      Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
-    ),
+    Cert.Certificate.create({
+      certificate: badCertEncoded,
+      rootKey: fromHex(IC_ROOT_KEY),
+      canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
+    }),
   ).rejects.toThrow('Invalid certificate');
 });
