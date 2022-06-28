@@ -29,11 +29,12 @@ export async function pollForResponse(
 ): Promise<ArrayBuffer> {
   const path = [new TextEncoder().encode('request_status'), requestId];
   const state = await agent.readState(canisterId, { paths: [path] });
-  const cert = new Certificate(state, agent);
-  const verified = await cert.verify();
-  if (!verified) {
-    throw new Error('Fail to verify certificate');
-  }
+  if (agent.rootKey == null) throw new Error('Agent root key not initialized before polling');
+  const cert = await Certificate.create({
+    certificate: state.certificate,
+    rootKey: agent.rootKey,
+    canisterId: canisterId,
+  });
   const maybeBuf = cert.lookup([...path, new TextEncoder().encode('status')]);
   let status;
   if (typeof maybeBuf === 'undefined') {

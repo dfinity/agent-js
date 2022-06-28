@@ -5,6 +5,8 @@ import { sha224 } from './utils/sha224';
 const SELF_AUTHENTICATING_SUFFIX = 2;
 const ANONYMOUS_SUFFIX = 4;
 
+const MANAGEMENT_CANISTER_PRINCIPAL_HEX_STR = 'aaaaa-aa';
+
 const fromHexString = (hexString: string) =>
   new Uint8Array((hexString.match(/.{1,2}/g) ?? []).map(byte => parseInt(byte, 16)));
 
@@ -14,6 +16,14 @@ const toHexString = (bytes: Uint8Array) =>
 export class Principal {
   public static anonymous(): Principal {
     return new this(new Uint8Array([ANONYMOUS_SUFFIX]));
+  }
+
+  /**
+   * Utility method, returning the principal representing the management canister, decoded from the hex string `'aaaaa-aa'`
+   * @returns {Principal} principal of the management canister
+   */
+  public static managementCanister(): Principal {
+    return this.fromHex(MANAGEMENT_CANISTER_PRINCIPAL_HEX_STR);
   }
 
   public static selfAuthenticating(publicKey: Uint8Array): Principal {
@@ -95,5 +105,41 @@ export class Principal {
 
   public toString(): string {
     return this.toText();
+  }
+
+  /**
+   * Utility method taking a Principal to compare against. Used for determining canister ranges in certificate verification
+   * @param {Principal} other - a {@link Principal} to compare
+   * @returns {'lt' | 'eq' | 'gt'} `'lt' | 'eq' | 'gt'` a string, representing less than, equal to, or greater than
+   */
+  public compareTo(other: Principal): 'lt' | 'eq' | 'gt' {
+    for (let i = 0; i < Math.min(this._arr.length, other._arr.length); i++) {
+      if (this._arr[i] < other._arr[i]) return 'lt';
+      else if (this._arr[i] > other._arr[i]) return 'gt';
+    }
+    // Here, at least one principal is a prefix of the other principal (they could be the same)
+    if (this._arr.length < other._arr.length) return 'lt';
+    if (this._arr.length > other._arr.length) return 'gt';
+    return 'eq';
+  }
+
+  /**
+   * Utility method checking whether a provided Principal is less than or equal to the current one using the {@link Principal.compareTo} method
+   * @param other a {@link Principal} to compare
+   * @returns {boolean} boolean
+   */
+  public ltEq(other: Principal): boolean {
+    const cmp = this.compareTo(other);
+    return cmp == 'lt' || cmp == 'eq';
+  }
+
+  /**
+   * Utility method checking whether a provided Principal is greater than or equal to the current one using the {@link Principal.compareTo} method
+   * @param other a {@link Principal} to compare
+   * @returns {boolean} boolean
+   */
+  public gtEq(other: Principal): boolean {
+    const cmp = this.compareTo(other);
+    return cmp == 'gt' || cmp == 'eq';
   }
 }

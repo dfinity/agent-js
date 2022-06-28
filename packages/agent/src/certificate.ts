@@ -1,17 +1,16 @@
-import { Agent, getDefaultAgent, ReadStateResponse } from './agent';
 import * as cbor from './cbor';
 import { AgentError } from './errors';
 import { hash } from './request_id';
 import { blsVerify } from './utils/bls';
 import { concat, fromHex, toHex } from './utils/buffer';
+import { Principal } from '@dfinity/principal';
 
 /**
- * A certificate needs to be verified (using {@link Certificate.prototype.verify})
- * before it can be used.
+ * A certificate may fail verification with respect to the provided public key
  */
-export class UnverifiedCertificateError extends AgentError {
-  constructor() {
-    super(`Cannot lookup unverified certificate. Call 'verify()' first.`);
+export class CertificateVerificationError extends AgentError {
+  constructor(reason: string) {
+    super(`Invalid certificate: ${reason}`);
   }
 }
 
@@ -99,59 +98,111 @@ function isBufferEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
   return true;
 }
 
+export interface CreateCertificateOptions {
+  /**
+   * The bytes encoding the certificate to be verified
+   */
+  certificate: ArrayBuffer;
+  /**
+   * The root key against which to verify the certificate
+   * (normally, the root key of the IC main network)
+   */
+  rootKey: ArrayBuffer;
+  /**
+   * The effective canister ID of the request when verifying a response, or
+   * the signing canister ID when verifying a certified variable.
+   */
+  canisterId: Principal;
+}
+
 export class Certificate {
   private readonly cert: Cert;
-  private verified = false;
-  private _rootKey: ArrayBuffer | null = null;
 
-  constructor(response: ReadStateResponse, private _agent: Agent = getDefaultAgent()) {
-    this.cert = cbor.decode(new Uint8Array(response.certificate));
+  /**
+   * Create a new instance of a certificate, automatically verifying it. Throws a
+   * CertificateVerificationError if the certificate cannot be verified.
+   * @constructs {@link AuthClient}
+   * @param {CreateCertificateOptions} options
+   * @see {@link CreateCertificateOptions}
+   * @param {ArrayBuffer} options.certificate The bytes of the certificate
+   * @param {ArrayBuffer} options.rootKey The root key to verify against
+   * @param {Principal} options.canisterId The effective or signing canister ID
+   * @throws {CertificateVerificationError}
+   */
+  public static async create(options: CreateCertificateOptions): Promise<Certificate> {
+    const cert = new Certificate(options.certificate, options.rootKey, options.canisterId);
+    await cert.verify();
+    return cert;
+  }
+
+  private constructor(
+    certificate: ArrayBuffer,
+    private _rootKey: ArrayBuffer,
+    private _canisterId: Principal,
+  ) {
+    this.cert = cbor.decode(new Uint8Array(certificate));
   }
 
   public lookup(path: Array<ArrayBuffer | string>): ArrayBuffer | undefined {
-    this.checkState();
     return lookup_path(path, this.cert.tree);
   }
 
-  public async verify(): Promise<boolean> {
+  private async verify(): Promise<void> {
     const rootHash = await reconstruct(this.cert.tree);
-    const derKey = await this._checkDelegation(this.cert.delegation);
+    const derKey = await this._checkDelegationAndGetKey(this.cert.delegation);
     const sig = this.cert.signature;
     const key = extractDER(derKey);
     const msg = concat(domain_sep('ic-state-root'), rootHash);
-    const res = await blsVerify(new Uint8Array(key), new Uint8Array(sig), new Uint8Array(msg));
-    this.verified = res;
-    return res;
-  }
-
-  protected checkState(): void {
-    if (!this.verified) {
-      throw new UnverifiedCertificateError();
+    let sigVer = false;
+    try {
+      sigVer = await blsVerify(new Uint8Array(key), new Uint8Array(sig), new Uint8Array(msg));
+    } catch (err) {
+      sigVer = false;
+    }
+    if (!sigVer) {
+      throw new CertificateVerificationError('Signature verification failed');
     }
   }
 
-  private async _checkDelegation(d?: Delegation): Promise<ArrayBuffer> {
+  private async _checkDelegationAndGetKey(d?: Delegation): Promise<ArrayBuffer> {
     if (!d) {
-      if (!this._rootKey) {
-        if (this._agent.rootKey) {
-          this._rootKey = this._agent.rootKey;
-          return this._rootKey;
-        }
-
-        throw new Error(`Agent does not have a rootKey. Do you need to call 'fetchRootKey'?`);
-      }
       return this._rootKey;
     }
-    const cert: Certificate = new Certificate(d as any, this._agent);
-    if (!(await cert.verify())) {
-      throw new Error('fail to verify delegation certificate');
-    }
+    const cert: Certificate = await Certificate.create({
+      certificate: d.certificate,
+      rootKey: this._rootKey,
+      canisterId: this._canisterId,
+    });
 
-    const lookup = cert.lookup(['subnet', d.subnet_id, 'public_key']);
-    if (!lookup) {
+    if (this._canisterId.compareTo(Principal.managementCanister()) !== 'eq') {
+      const rangeLookup = cert.lookup(['subnet', d.subnet_id, 'canister_ranges']);
+      if (!rangeLookup) {
+        throw new CertificateVerificationError(
+          `Could not find canister ranges for subnet 0x${toHex(d.subnet_id)}`,
+        );
+      }
+      const ranges_arr: Array<[Uint8Array, Uint8Array]> = cbor.decode(rangeLookup);
+      const ranges: Array<[Principal, Principal]> = ranges_arr.map(v => [
+        Principal.fromUint8Array(v[0]),
+        Principal.fromUint8Array(v[1]),
+      ]);
+
+      const canisterInRange = ranges.some(
+        r => r[0].ltEq(this._canisterId) && r[1].gtEq(this._canisterId),
+      );
+      if (!canisterInRange) {
+        throw new CertificateVerificationError(
+          `Canister ${this._canisterId} not in range of delegations for subnet 0x${toHex(
+            d.subnet_id,
+          )}`,
+        );
+      }
+    }
+    const publicKeyLookup = cert.lookup(['subnet', d.subnet_id, 'public_key']);
+    if (!publicKeyLookup) {
       throw new Error(`Could not find subnet key for subnet 0x${toHex(d.subnet_id)}`);
     }
-    return lookup;
+    return publicKeyLookup;
   }
 }
 

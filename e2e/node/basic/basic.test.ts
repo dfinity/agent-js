@@ -10,13 +10,16 @@ test('read_state', async () => {
   const resolvedAgent = await agent;
   const now = Date.now() / 1000;
   const path = [new TextEncoder().encode('time')];
-  const response = await resolvedAgent.readState(Principal.fromHex('00000000000000000001'), {
+  const canisterId = Principal.fromHex('00000000000000000001');
+  const response = await resolvedAgent.readState(canisterId, {
     paths: [path],
   });
-  const cert = new Certificate(response, resolvedAgent);
-
-  expect(() => cert.lookup(path)).toThrow(/Cannot lookup unverified certificate/);
-  expect(await cert.verify()).toBe(true);
+  if (resolvedAgent.rootKey == null) throw new Error(`The agent doesn't have a root key yet`);
+  const cert = await Certificate.create({
+    certificate: response.certificate,
+    rootKey: resolvedAgent.rootKey,
+    canisterId: canisterId,
+  });
   expect(cert.lookup([new TextEncoder().encode('Time')])).toBe(undefined);
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const rawTime = cert.lookup(path)!;

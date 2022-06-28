@@ -24,4 +24,21 @@ describe('Principal', () => {
   it('errors out on parsing invalid characters', () => {
     expect(() => Principal.fromText('Hello world!')).toThrow();
   });
+
+  it('compares principals correctly', () => {
+    const anonymous = Principal.anonymous();
+    const principal1 = Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai');
+    const principal2 = Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai');
+    for (const p of [anonymous, principal1, principal2]) {
+      expect(p.compareTo(p)).toBe('eq');
+      expect(p.ltEq(p)).toBe(true);
+      expect(p.gtEq(p)).toBe(true);
+    }
+    expect(principal1.compareTo(principal2)).toBe('lt');
+    expect(principal1.compareTo(anonymous)).toBe('lt');
+    expect(principal2.compareTo(principal1)).toBe('gt');
+    expect(principal2.compareTo(anonymous)).toBe('lt');
+    expect(anonymous.compareTo(principal1)).toBe('gt');
+    expect(anonymous.compareTo(principal2)).toBe('gt');
+  });
 });
