@@ -135,7 +135,7 @@ describe('Canister Status utility', () => {
   it('should support valid metadata queries', async () => {
     const status = await getStatus([
       {
-        kind: 'medadata',
+        kind: 'metadata',
         path: 'candid:service',
         key: 'candid',
         decodeStrategy: 'hex',
@@ -143,7 +143,7 @@ describe('Canister Status utility', () => {
     ]);
     const statusEncoded = await getStatus([
       {
-        kind: 'medadata',
+        kind: 'metadata',
         path: encode('candid:service'),
         key: 'candid',
         decodeStrategy: 'hex',

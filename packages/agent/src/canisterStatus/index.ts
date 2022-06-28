@@ -25,7 +25,7 @@ export interface CustomPath {
  * Private metadata will require the ${@link Identity} used by the ${@link HttpAgent} will need to be requested using an identity that controlls the canister.
  */
 export interface MetaData {
-  kind: 'medadata';
+  kind: 'metadata';
   key: string;
   path: string | ArrayBuffer;
   decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'raw';
