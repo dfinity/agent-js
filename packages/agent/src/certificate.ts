@@ -109,7 +109,8 @@ export interface CreateCertificateOptions {
    */
   rootKey: ArrayBuffer;
   /**
-   * The effective canister ID of the request that generated the certificate.
+   * The effective canister ID of the request when verifying a response, or
+   * the signing canister ID when verifying a certified variable.
    */
   canisterId: Principal;
 }
@@ -125,7 +126,7 @@ export class Certificate {
    * @see {@link CreateCertificateOptions}
    * @param {ArrayBuffer} options.certificate The bytes of the certificate
    * @param {ArrayBuffer} options.rootKey The root key to verify against
-   * @param {Principal} options.canisterId The root key to verify against
+   * @param {Principal} options.canisterId The effective or signing canister ID
    * @throws {CertificateVerificationError}
    */
   public static async create(options: CreateCertificateOptions): Promise<Certificate> {
