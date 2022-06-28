@@ -1,7 +1,13 @@
 import { HttpAgent, Nonce } from '../index';
 import * as cbor from '../../cbor';
 import { Expiry, makeNonceTransform } from './transforms';
-import { CallRequest, Envelope, makeNonce, SubmitRequestType } from './types';
+import {
+  CallRequest,
+  Envelope,
+  HttpAgentRequestTransformFn,
+  makeNonce,
+  SubmitRequestType,
+} from './types';
 import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 
@@ -152,6 +158,59 @@ test('queries with the same content should have the same signature', async () =>
 
   expect(calls[2]).toEqual(calls[3]);
   expect(response3).toEqual(response4);
+});
+
+test('readState should not call transformers if request is passed', async () => {
+  const mockResponse = {
+    status: 'replied',
+    reply: { arg: new Uint8Array([]) },
+  };
+
+  const mockFetch: jest.Mock = jest.fn((resource, init) => {
+    const body = cbor.encode(mockResponse);
+    return Promise.resolve(
+      new Response(body, {
+        status: 200,
+      }),
+    );
+  });
+
+  const canisterIdent = '2chl6-4hpzw-vqaaa-aaaaa-c';
+  const nonce = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
+
+  const principal = await Principal.anonymous();
+
+  const httpAgent = new HttpAgent({
+    fetch: mockFetch,
+    host: 'http://localhost',
+    disableNonce: true,
+  });
+  httpAgent.addTransform(makeNonceTransform(() => nonce));
+  const transformMock: HttpAgentRequestTransformFn = jest
+    .fn()
+    .mockImplementation(d => Promise.resolve(d));
+  httpAgent.addTransform(transformMock);
+
+  const methodName = 'greet';
+  const arg = new Uint8Array([]);
+
+  const requestId = await requestIdOf({
+    request_type: SubmitRequestType.Call,
+    nonce,
+    canister_id: Principal.fromText(canisterIdent).toString(),
+    method_name: methodName,
+    arg,
+    sender: principal,
+  });
+
+  const paths = [
+    [new TextEncoder().encode('request_status'), requestId, new TextEncoder().encode('reply')],
+  ];
+
+  const request = await httpAgent.createReadStateRequest({ paths });
+  expect(transformMock).toBeCalledTimes(1);
+  await httpAgent.readState(canisterIdent, { paths }, undefined, request);
+  expect(transformMock).toBeCalledTimes(1);
 });
 
 test('redirect avoid', async () => {
