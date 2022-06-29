@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ECDSAPublicKey Tests can generate a public key 1`] = `
+Array [
+  "rawKey",
+  "derKey",
+  "jwk",
+  "algorithm",
+  "extractable",
+  "type",
+  "usages",
+]
+`;
