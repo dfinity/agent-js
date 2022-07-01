@@ -48,7 +48,16 @@ export class ECDSAPublicKey implements CryptoPublicKey {
     jwk;
 
     const { extractable = true, keyUsages = ['sign', 'verify'] } = cryptoKeyOptions ?? {};
-    const key = await crypto.subtle.importKey('jwk', jwk, 'ecdsa', extractable, keyUsages);
+    const key = await crypto.subtle.importKey(
+      'jwk',
+      jwk,
+      {
+        name: 'ECDSA',
+        namedCurve: 'P-384',
+      },
+      extractable,
+      keyUsages,
+    );
 
     const rawKey = await crypto.subtle.exportKey('raw', key);
 

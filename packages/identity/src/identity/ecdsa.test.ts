@@ -45,14 +45,7 @@ describe('ECDSAPublicKey Tests', () => {
     expect(Object.keys(key)).toMatchSnapshot();
   });
   test('create from an existing public key', async () => {
-    testVectors.forEach(async ([rawPublicKeyHex]) => {
-      // const publicKey = await ECDSAPublicKey.fromJWK({
-      //   type: 'EC',
-      // });
-      // publicKey;
-      // const newKey = ECDSAPublicKey.from(publicKey);
-      // expect(newKey).toMatchSnapshot();
-    });
+    const key = await ECDSAPublicKey.fromJWK(goldenSeed);
   });
 
   test('DER encoding of SECP256K1 keys', async () => {
