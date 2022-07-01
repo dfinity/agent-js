@@ -28,7 +28,7 @@ export interface MetaData {
   kind: 'metadata';
   key: string;
   path: string | ArrayBuffer;
-  decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'raw';
+  decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'utf-8' | 'raw';
 }
 
 /**

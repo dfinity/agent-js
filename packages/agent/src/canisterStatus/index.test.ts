@@ -118,7 +118,7 @@ describe('Canister Status utility', () => {
         kind: 'metadata',
         path: 'candid:service',
         key: 'candid',
-        decodeStrategy: 'hex',
+        decodeStrategy: 'utf-8',
       },
     ]);
     const statusHex = await getStatus([
