@@ -60,9 +60,17 @@ exports[`Canister Status utility should support valid custom paths 1`] = `165299
 
 exports[`Canister Status utility should support valid custom paths 2`] = `ArrayBuffer []`;
 
-exports[`Canister Status utility should support valid custom paths 3`] = `"80f485e1a4a6a7f816"`;
+exports[`Canister Status utility should support valid custom paths 3`] = `
+"type Example = text;
+service : {
+  greet: (Example) -> (text) query;
+}
+"
+`;
 
-exports[`Canister Status utility should support valid custom paths 4`] = `
+exports[`Canister Status utility should support valid custom paths 4`] = `"80f485e1a4a6a7f816"`;
+
+exports[`Canister Status utility should support valid custom paths 5`] = `
 Array [
   Uint8Array [
     4,
