@@ -113,6 +113,14 @@ describe('Canister Status utility', () => {
         decodeStrategy: 'raw',
       },
     ]);
+    const statusUTF8 = await getStatus([
+      {
+        kind: 'metadata',
+        path: 'candid:service',
+        key: 'candid',
+        decodeStrategy: 'hex',
+      },
+    ]);
     const statusHex = await getStatus([
       {
         key: 'time',
@@ -129,6 +137,7 @@ describe('Canister Status utility', () => {
     ]);
     expect(status.get('time')).toMatchSnapshot();
     expect(statusRaw.get('time')).toMatchSnapshot();
+    expect(statusUTF8.get('candid')).toMatchSnapshot();
     expect(statusHex.get('time')).toMatchSnapshot();
     expect(statusCBOR.get('Controller')).toMatchSnapshot();
   });
