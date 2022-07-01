@@ -15,8 +15,8 @@ export type Status = string | ArrayBuffer | Date | ArrayBuffer[] | Principal[] |
  */
 export interface CustomPath {
   key: string;
-  path: ArrayBuffer[];
-  decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'raw';
+  path: ArrayBuffer[] | string;
+  decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'utf-8' | 'raw';
 }
 
 /**
@@ -139,6 +139,9 @@ export const request = async (options: {
                     status.set(path.key, decodeHex(data));
                     break;
                   }
+                  case 'utf-8': {
+                    status.set(path.key, decodeUtf8(data));
+                  }
                 }
               }
             }
@@ -212,6 +215,10 @@ const decodeLeb128 = (buf: ArrayBuffer): bigint => {
 
 const decodeCbor = (buf: ArrayBuffer): ArrayBuffer[] => {
   return Cbor.decode(buf);
+};
+
+const decodeUtf8 = (buf: ArrayBuffer): string => {
+  return new TextDecoder().decode(buf);
 };
 
 // time is a LEB128-encoded Nat
