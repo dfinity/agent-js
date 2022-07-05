@@ -72,6 +72,11 @@ export interface AuthClientLoginOptions {
    */
   maxTimeToLive?: bigint;
   /**
+   * Origin for Identity Provider to use while generating the delegated identity. For II, the derivation origin must authorize this origin by setting a record at `<derivation-origin>/.well-known/ii-alternative-origins`.
+   * @see https://github.com/dfinity/internet-identity/blob/main/docs/internet-identity-spec.adoc
+   */
+  derivationOrigin?: string | URL;
+  /**
    * Auth Window feature config string
    * @example "toolbar=0,location=0,menubar=0,width=500,height=500,left=100,top=100"
    */
@@ -101,6 +106,7 @@ interface InternetIdentityAuthRequest {
   kind: 'authorize-client';
   sessionPublicKey: Uint8Array;
   maxTimeToLive?: bigint;
+  derivationOrigin?: string;
 }
 
 interface InternetIdentityAuthResponseSuccess {
@@ -350,6 +356,7 @@ export class AuthClient {
    * @param {AuthClientLoginOptions} options
    * @param options.identityProvider Identity provider
    * @param options.maxTimeToLive Expiration of the authentication in nanoseconds
+   * @param options.derivationOrigin Origin for Identity Provider to use while generating the delegated identity
    * @param options.windowOpenerFeatures Configures the opened authentication window
    * @param options.onSuccess Callback once login has completed
    * @param options.onError Callback in case authentication fails
@@ -382,6 +389,11 @@ export class AuthClient {
      * Auth Window feature config string
      * @example "toolbar=0,location=0,menubar=0,width=500,height=500,left=100,top=100"
      */
+    /**
+     * Origin for Identity Provider to use while generating the delegated identity. For II, the derivation origin must authorize this origin by setting a record at `<derivation-origin>/.well-known/ii-alternative-origins`.
+     * @see https://github.com/dfinity/internet-identity/blob/main/docs/internet-identity-spec.adoc
+     */
+    derivationOrigin?: string | URL;
     windowOpenerFeatures?: string;
     /**
      * Callback once login has completed
@@ -459,6 +471,7 @@ export class AuthClient {
             kind: 'authorize-client',
             sessionPublicKey: new Uint8Array(this._key?.getPublicKey().toDer() as ArrayBuffer),
             maxTimeToLive: options?.maxTimeToLive,
+            derivationOrigin: options?.derivationOrigin?.toString(),
           };
           this._idpWindow?.postMessage(request, identityProviderUrl.origin);
           break;
