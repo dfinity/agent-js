@@ -1,8 +1,14 @@
-import { DerEncodedPublicKey } from '@dfinity/agent';
+import { DerEncodedPublicKey, Signature, SignIdentity } from '@dfinity/agent';
+import Secp256k1 from 'secp256k1';
+import { fromHexString, toHexString } from '../buffer';
+import { randomBytes, verify } from 'tweetnacl';
 // import { randomBytes } from 'tweetnacl';
 import { SECP256K1_OID, unwrapDER, wrapDER } from './der';
 
 type CryptoKeyOptions = { extractable: boolean; keyUsages: KeyUsage[] };
+declare type PublicKeyHex = string;
+declare type SecretKeyHex = string;
+export declare type JsonableSecp256k1Identity = [PublicKeyHex, SecretKeyHex];
 
 export class ExtractrableKeyError extends Error {
   constructor(public readonly message: string) {
@@ -34,12 +40,11 @@ export class ECDSAPublicKey implements CryptoPublicKey {
   private readonly jwk: JsonWebKey | undefined;
   private readonly derKey: DerEncodedPublicKey | undefined;
 
-  // /**
-  //  *
-  //  * @param {ArrayBuffer} rawKey
-  //  * @param {CryptoKeyOptions} cryptoKeyOptions
-  //  * @returns
-  //  */
+  /**
+   *
+   * @param {JsonWebKey} jwk JSON WebKey
+   * @param {CryptoKeyOptions} cryptoKeyOptions
+   */
   public static async fromJWK(
     jwk: JsonWebKey,
     cryptoKeyOptions?: CryptoKeyOptions,
@@ -83,19 +88,41 @@ export class ECDSAPublicKey implements CryptoPublicKey {
     return new ECDSAPublicKey(key, rawKey, jwk);
   }
 
+  public static async fromRaw(
+    rawKey: ArrayBuffer,
+    cryptoKeyOptions?: CryptoKeyOptions,
+  ): Promise<ECDSAPublicKey> {
+    const { extractable = true, keyUsages = [] } = cryptoKeyOptions ?? {};
+    const key = await crypto.subtle.importKey(
+      'raw',
+      rawKey,
+      {
+        name: 'ECDSA',
+        namedCurve: 'P-256',
+      },
+      extractable,
+      keyUsages,
+    );
+
+    const jwk = await crypto.subtle.exportKey('jwk', key);
+
+    return new ECDSAPublicKey(key, rawKey, jwk);
+  }
+
   /**
    * Generates a new ECDSAPublicKey using the ECDSA P-256 curve
    * @param {CryptoKeyOptions} cryptoKeyOptions for extractable flag and KeyUsages
    * @param {boolean} CryptoKeyOptions.extractable
    * @returns
    */
-  public static async generate(): Promise<ECDSAPublicKey> {
+  public static async generate(options?: CryptoKeyOptions): Promise<ECDSAPublicKey> {
+    const { extractable = false, keyUsages = ['sign'] } = options ?? {};
     const params = {
       name: 'ECDSA',
       namedCurve: 'P-256',
     };
 
-    const keyPair = await crypto.subtle.generateKey(params, false, []);
+    const keyPair = await crypto.subtle.generateKey(params, extractable, keyUsages);
 
     const publicKey = keyPair.publicKey;
     const jwk = await crypto.subtle.exportKey('jwk', publicKey);
@@ -148,4 +175,87 @@ export class ECDSAPublicKey implements CryptoPublicKey {
     return this.jwk;
   }
 }
-export class ECDSAKeyIdentity {}
+
+export class ECDSAKeyIdentity extends SignIdentity {
+  /**
+   * Generates an identity. If a seed is provided, the keys are generated from the
+   * seed according to BIP 0032. Otherwise, the key pair is randomly generated.
+   * This method throws an error in case the seed is not 32 bytes long or invalid
+   * for use as a private key.
+   * @param {Uint8Array} seed the optional seed
+   * @returns {ECDSAKeyIdentity}
+   */
+  public static async generate(options?: CryptoKeyOptions): Promise<ECDSAKeyIdentity> {
+    const { extractable = false, keyUsages = ['sign', 'verify'] } = options ?? {};
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: 'ECDSA',
+        namedCurve: 'P-256',
+      },
+      extractable,
+      keyUsages,
+    );
+
+    const rawKey = await ECDSAKeyIdentity.keyPairToPublicKey(keyPair);
+
+    return new this(keyPair, rawKey);
+  }
+
+  /**
+   * generates an identity from a public and private key. Please ensure that you are generating these keys securely and protect the user's private key
+   * @param {ArrayBuffer} publicKey
+   * @param {ArrayBuffer} privateKey
+   * @returns {ECDSAKeyIdentity}
+   */
+  public static async fromKeyPair(keyPair: CryptoKeyPair): Promise<ECDSAKeyIdentity> {
+    const rawKey = await ECDSAKeyIdentity.keyPairToPublicKey(keyPair);
+    return new ECDSAKeyIdentity(keyPair, rawKey);
+  }
+
+  protected _publicKey: ECDSAPublicKey;
+  protected _keyPair: CryptoKeyPair;
+
+  protected constructor(keyPair: CryptoKeyPair, publicKey: ECDSAPublicKey) {
+    super();
+    this._keyPair = keyPair;
+    this._publicKey = publicKey;
+  }
+
+  /**
+   * Return a copy of the key pair.
+   * @returns {CryptoKeyPair}
+   */
+  public getKeyPair(): CryptoKeyPair {
+    return this._keyPair;
+  }
+
+  /**
+   * Return the public key.
+   * @returns {ECDSAPublicKey}
+   */
+  public getPublicKey(): ECDSAPublicKey {
+    return this._publicKey;
+  }
+
+  /**
+   * Signs a blob of data, with this identity's private key.
+   * @param {ArrayBuffer} challenge - challenge to sign with this identity's secretKey, producing a signature
+   * @returns {Promise<Signature>} signature
+   */
+  public async sign(challenge: ArrayBuffer): Promise<Signature> {
+    const params: EcdsaParams = {
+      name: 'ECDSA',
+      hash: { name: 'SHA-256' },
+    };
+    this._keyPair.privateKey; //?
+    const signature = await crypto.subtle.sign(params, this._keyPair.privateKey, challenge);
+
+    return signature as Signature;
+  }
+
+  private static async keyPairToPublicKey(keyPair: CryptoKeyPair): Promise<ECDSAPublicKey> {
+    return await ECDSAPublicKey.fromRaw(await crypto.subtle.exportKey('raw', keyPair.publicKey));
+  }
+}
+
+export default ECDSAKeyIdentity;

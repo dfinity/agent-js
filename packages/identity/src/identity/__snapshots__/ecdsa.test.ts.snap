@@ -93,7 +93,7 @@ Uint8Array [
 ]
 `;
 
-exports[`ECDSAPublicKey Tests DER encoding of SECP256K1 keys 1`] = `
+exports[`ECDSAPublicKey Tests DER encoding of ECDSA keys 1`] = `
 Uint8Array [
   48,
   86,
