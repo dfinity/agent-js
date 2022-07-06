@@ -13,6 +13,17 @@
       <h2>Version 0.12.1</h2>
       <ul>
         <li>Adds UTF-8 as an encoding option for CanisterStatus custom paths</li>
+        <li>
+          Adds a public method "createReadStateRequest" that creates the request for "readState".
+        </li>
+        <li>
+          Add an extra parameter to "readState" to pass a created request. If this parameter is
+          passed, the method does the request directly without creating a new one.
+        </li>
+        <li>
+          Use the "createReadStateRequest" and the extra parameter when polling for the response to
+          avoid signing requests during polling.
+        </li>
       </ul>
       <h2>Version 0.12.0</h2>
       <ul>
