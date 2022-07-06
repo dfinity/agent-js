@@ -1,7 +1,6 @@
-import { DerEncodedPublicKey, PublicKey, Signature, SignIdentity } from '@dfinity/agent';
-import { toHexString } from 'src/buffer';
+import { DerEncodedPublicKey } from '@dfinity/agent';
 // import { randomBytes } from 'tweetnacl';
-import { ED25519_OID, unwrapDER, wrapDER } from './der';
+import { SECP256K1_OID, unwrapDER, wrapDER } from './der';
 
 type CryptoKeyOptions = { extractable: boolean; keyUsages: KeyUsage[] };
 
@@ -19,10 +18,10 @@ interface CryptoPublicKey extends CryptoKey {
 export class ECDSAPublicKey implements CryptoPublicKey {
   private static derEncode(publicKey: ArrayBuffer): DerEncodedPublicKey {
     // TODO - replace placeholder DER logic
-    return wrapDER(publicKey, ED25519_OID).buffer as DerEncodedPublicKey;
+    return wrapDER(publicKey, SECP256K1_OID).buffer as DerEncodedPublicKey;
   }
   private static derDecode(key: DerEncodedPublicKey): ArrayBuffer {
-    const unwrapped = unwrapDER(key, ED25519_OID);
+    const unwrapped = unwrapDER(key, SECP256K1_OID);
     return unwrapped;
   }
 
@@ -45,15 +44,13 @@ export class ECDSAPublicKey implements CryptoPublicKey {
     jwk: JsonWebKey,
     cryptoKeyOptions?: CryptoKeyOptions,
   ): Promise<ECDSAPublicKey> {
-    jwk;
-
-    const { extractable = true, keyUsages = ['sign', 'verify'] } = cryptoKeyOptions ?? {};
+    const { extractable = true, keyUsages = [] } = cryptoKeyOptions ?? {};
     const key = await crypto.subtle.importKey(
       'jwk',
       jwk,
       {
         name: 'ECDSA',
-        namedCurve: 'P-384',
+        namedCurve: 'P-256',
       },
       extractable,
       keyUsages,
@@ -61,27 +58,33 @@ export class ECDSAPublicKey implements CryptoPublicKey {
 
     const rawKey = await crypto.subtle.exportKey('raw', key);
 
-    return new ECDSAPublicKey(key, rawKey);
+    return new ECDSAPublicKey(key, rawKey, jwk);
   }
 
-  // public async fromDer(
-  //   derKey: DerEncodedPublicKey,
-  //   cryptoKeyOptions?: CryptoKeyOptions,
-  // ): Promise<ECDSAPublicKey> {
-  //   const [extractable = false, keyUsage = ['sign', 'verify']] = cryptoKeyOptions ?? [];
-  //   const rawKey = ECDSAPublicKey.derDecode(derKey);
-  //   const key = await SubtleCrypto.prototype.importKey(
-  //     'raw',
-  //     rawKey,
-  //     'ecdsa',
-  //     extractable,
-  //     keyUsage,
-  //   );
-  //   return new ECDSAPublicKey(rawKey, key, [extractable, keyUsage]);
-  // }
+  public static async fromDer(
+    derKey: DerEncodedPublicKey,
+    cryptoKeyOptions?: CryptoKeyOptions,
+  ): Promise<ECDSAPublicKey> {
+    const { extractable = true, keyUsages = [] } = cryptoKeyOptions ?? {};
+    const rawKey = ECDSAPublicKey.derDecode(derKey);
+    const key = await crypto.subtle.importKey(
+      'raw',
+      rawKey,
+      {
+        name: 'ECDSA',
+        namedCurve: 'P-256',
+      },
+      extractable,
+      keyUsages,
+    );
+
+    const jwk = await crypto.subtle.exportKey('jwk', key);
+
+    return new ECDSAPublicKey(key, rawKey, jwk);
+  }
 
   /**
-   * Generates a new ECDSAPublicKey using the ECDSA P-384 curve
+   * Generates a new ECDSAPublicKey using the ECDSA P-256 curve
    * @param {CryptoKeyOptions} cryptoKeyOptions for extractable flag and KeyUsages
    * @param {boolean} CryptoKeyOptions.extractable
    * @returns
@@ -89,10 +92,10 @@ export class ECDSAPublicKey implements CryptoPublicKey {
   public static async generate(): Promise<ECDSAPublicKey> {
     const params = {
       name: 'ECDSA',
-      namedCurve: 'P-384',
+      namedCurve: 'P-256',
     };
 
-    const keyPair = await crypto.subtle.generateKey(params, false, ['sign', 'verify']);
+    const keyPair = await crypto.subtle.generateKey(params, false, []);
 
     const publicKey = keyPair.publicKey;
     const jwk = await crypto.subtle.exportKey('jwk', publicKey);
