@@ -10,6 +10,7 @@ import {
   DelegationIdentity,
   Ed25519KeyIdentity,
   Secp256k1KeyIdentity,
+  ECDSAKeyIdentity,
 } from '@dfinity/identity';
 import agent from '../utils/agent';
 import identityCanister from '../canisters/identity';
@@ -24,6 +25,54 @@ function createSecpIdentity(seed: number): SignIdentity {
   const seed1 = new Array(32).fill(0);
   seed1[0] = seed;
   return Secp256k1KeyIdentity.generate(new Uint8Array(seed1));
+}
+
+async function createEcdsaIdentity(): Promise<ECDSAKeyIdentity> {
+  const goldenSeed = {
+    key_ops: [],
+    ext: true,
+    kty: 'EC',
+    x: 'EaSQG1HdU7pMzMXaIjZmDGZCa2wit-JX95cuLjZXsZI',
+    y: '-z31VJQ1dNFRkg-eFdet9SPatYph0OPz5vbju0eeT6o',
+    crv: 'P-256',
+  };
+
+  const goldenPrivateKey = {
+    key_ops: [],
+    ext: true,
+    kty: 'EC',
+    x: 'wUmIVyFHanPKCknjOWlMFFr9OKSahY7p5yT1vn4D-kw',
+    y: 'KhYIS2VFq98PU08q1KGYidRfEJ2qV-EUrfaRQ4XbV_4',
+    crv: 'P-256',
+  };
+
+  const getTestKeyPair = async (): Promise<CryptoKeyPair> => {
+    const privateKey = await crypto.subtle.importKey(
+      'jwk',
+      goldenPrivateKey,
+      {
+        name: 'ECDSA',
+        namedCurve: 'P-256',
+      },
+      true,
+      [],
+    );
+    const publicKey = await crypto.subtle.importKey(
+      'jwk',
+      goldenSeed,
+      {
+        name: 'ECDSA',
+        namedCurve: 'P-256',
+      },
+      true,
+      [],
+    );
+    return {
+      privateKey,
+      publicKey,
+    };
+  };
+  return await ECDSAKeyIdentity.fromKeyPair(await getTestKeyPair());
 }
 
 async function createIdentityActor(
@@ -52,6 +101,24 @@ async function createSecp256k1IdentityActor(
 
   const identity = Secp256k1KeyIdentity.generate(seed1);
   const agent1 = new HttpAgent({ source: await agent, identity });
+  return Actor.createActor(idl, {
+    canisterId,
+    agent: agent1,
+  }) as any;
+}
+
+async function createEcdsaIdentityActor(
+  canisterId: Principal,
+  idl: IDL.InterfaceFactory,
+  identity?: SignIdentity,
+): Promise<any> {
+  let effectiveIdentity: SignIdentity;
+  if (identity) {
+    effectiveIdentity = identity;
+  } else {
+    effectiveIdentity = await Ed25519KeyIdentity.generate();
+  }
+  const agent1 = new HttpAgent({ source: await agent, identity: effectiveIdentity });
   return Actor.createActor(idl, {
     canisterId,
     agent: agent1,
@@ -99,6 +166,17 @@ test('identity: two different Secp256k1 keys should have a different principal',
   const identity1 = await createSecp256k1IdentityActor(canisterId, idl, 0);
   // Unseeded identity
   const identity2 = await createSecp256k1IdentityActor(canisterId, idl);
+
+  const principal1 = await identity1.whoami_query();
+  const principal2 = await identity2.whoami_query();
+  expect(principal1).not.toEqual(principal2);
+});
+
+jest.setTimeout(30000);
+test('identity: two different Ecdsa keys should have a different principal', async () => {
+  const { canisterId, idl } = await installIdentityCanister();
+  const identity1 = await createEcdsaIdentityActor(canisterId, idl);
+  const identity2 = await createEcdsaIdentityActor(canisterId, idl);
 
   const principal1 = await identity1.whoami_query();
   const principal2 = await identity2.whoami_query();

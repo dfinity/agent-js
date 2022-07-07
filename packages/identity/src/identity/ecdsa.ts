@@ -1,14 +1,7 @@
 import { DerEncodedPublicKey, Signature, SignIdentity } from '@dfinity/agent';
-import Secp256k1 from 'secp256k1';
-import { fromHexString, toHexString } from '../buffer';
-import { randomBytes, verify } from 'tweetnacl';
-// import { randomBytes } from 'tweetnacl';
 import { SECP256K1_OID, unwrapDER, wrapDER } from './der';
 
-type CryptoKeyOptions = { extractable: boolean; keyUsages: KeyUsage[] };
-declare type PublicKeyHex = string;
-declare type SecretKeyHex = string;
-export declare type JsonableSecp256k1Identity = [PublicKeyHex, SecretKeyHex];
+export type CryptoKeyOptions = { extractable: boolean; keyUsages: KeyUsage[] };
 
 export class ExtractrableKeyError extends Error {
   constructor(public readonly message: string) {
