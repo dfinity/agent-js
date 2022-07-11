@@ -242,14 +242,18 @@ export class ECDSAPublicKey implements PublicKey {
   }
 }
 
+/**
+ * An identity interface that wraps an ECDSA keypair using the P-256 named curve. Supports DER-encoding and decoding for agent calls
+ */
 export class ECDSAKeyIdentity extends SignIdentity {
   /**
-   * Generates an identity. If a seed is provided, the keys are generated from the
-   * seed according to BIP 0032. Otherwise, the key pair is randomly generated.
-   * This method throws an error in case the seed is not 32 bytes long or invalid
-   * for use as a private key.
-   * @param {Uint8Array} seed the optional seed
-   * @returns {ECDSAKeyIdentity}
+   * Generates a randomly generated identity for use in calls to the Internet Computer.
+   * @param {CryptoKeyOptions} options optional settings
+   * @param {CryptoKeyOptions['extractable']} options.extractable - whether the key should allow itself to be used. Set to false for maximum security.
+   * @param {CryptoKeyOptions['keyUsages']} options.keyUsages - a list of key usages that the key can be used for
+   * @param {CryptoKeyOptions['subtleCrypto']} options.subtleCrypto interface
+   * @constructs ECDSAPublicKey
+   * @returns a {@link ECDSAKeyIdentity}
    */
   public static async generate(options?: CryptoKeyOptions): Promise<ECDSAKeyIdentity> {
     const { extractable = false, keyUsages = ['sign', 'verify'], subtleCrypto } = options ?? {};
@@ -270,9 +274,9 @@ export class ECDSAKeyIdentity extends SignIdentity {
 
   /**
    * generates an identity from a public and private key. Please ensure that you are generating these keys securely and protect the user's private key
-   * @param {ArrayBuffer} publicKey
-   * @param {ArrayBuffer} privateKey
-   * @returns {ECDSAKeyIdentity}
+   * @param keyPair a {@link CryptoKeyPair}
+   * @param subtleCrypto a {@link SubtleCrypto} interface in case one is not available globally
+   * @returns an {@link ECDSAKeyIdentity}
    */
   public static async fromKeyPair(
     keyPair: CryptoKeyPair,
@@ -287,6 +291,7 @@ export class ECDSAKeyIdentity extends SignIdentity {
   protected _keyPair: CryptoKeyPair;
   protected _subtleCrypto: SubtleCrypto;
 
+  // `fromKeyPair` and `generate` should be used for instantiation, not this constructor.
   protected constructor(
     keyPair: CryptoKeyPair,
     publicKey: ECDSAPublicKey,
@@ -299,8 +304,8 @@ export class ECDSAKeyIdentity extends SignIdentity {
   }
 
   /**
-   * Return a copy of the key pair.
-   * @returns {CryptoKeyPair}
+   * Return the internally-used key pair.
+   * @returns a {@link CryptoKeyPair}
    */
   public getKeyPair(): CryptoKeyPair {
     return this._keyPair;
@@ -308,7 +313,7 @@ export class ECDSAKeyIdentity extends SignIdentity {
 
   /**
    * Return the public key.
-   * @returns {ECDSAPublicKey}
+   * @returns an {@link ECDSAPublicKey}
    */
   public getPublicKey(): ECDSAPublicKey {
     return this._publicKey;
