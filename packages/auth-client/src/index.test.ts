@@ -69,6 +69,14 @@ describe('Auth Client', () => {
   });
   it('should be able to invalidate an identity after going idle', async () => {
     // setup actor
+    delete (window as any).location;
+    (window as any).location = {
+      reload: jest.fn(),
+      fetch,
+      toString: jest.fn(() => 'http://localhost:8000'),
+    };
+    const newLocation = window.location;
+
     const identity = Ed25519KeyIdentity.generate();
     const mockFetch: jest.Mock = jest.fn();
     // http agent uses identity
