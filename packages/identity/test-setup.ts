@@ -7,7 +7,6 @@
 // Note that we can use webpack configuration to make some features available to
 // Node.js in a similar way.
 
-global.crypto = require('crypto');
 global.TextEncoder = require('text-encoding').TextEncoder;
 global.TextDecoder = require('text-encoding').TextDecoder;
 global.MessageChannel = require('worker_threads').MessageChannel;

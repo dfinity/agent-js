@@ -2,9 +2,9 @@ import { DerEncodedPublicKey, PublicKey, Signature, SignIdentity } from '@dfinit
 import { SECP256K1_OID, unwrapDER, wrapDER } from './der';
 
 export type CryptoKeyOptions = {
-  extractable: boolean;
-  keyUsages: KeyUsage[];
-  cryptoProvider?: SubtleCrypto;
+  extractable?: boolean;
+  keyUsages?: KeyUsage[];
+  subtleCrypto?: SubtleCrypto;
 };
 
 export class ExtractrableKeyError extends Error {
@@ -21,19 +21,16 @@ export class CryptoError extends Error {
   }
 }
 
-function _getEffectiveCrypto(cryptoProvider: CryptoKeyOptions['cryptoProvider']): SubtleCrypto {
-  let effectiveCrypto;
-  if (cryptoProvider) {
-    effectiveCrypto = cryptoProvider;
+function _getEffectiveCrypto(subtleCrypto: CryptoKeyOptions['subtleCrypto']): SubtleCrypto {
+  if (subtleCrypto) {
+    return subtleCrypto;
+  } else if (typeof crypto !== 'undefined' && crypto['subtle']) {
+    return crypto.subtle;
   } else {
-    effectiveCrypto = crypto.subtle;
-  }
-  if (!effectiveCrypto) {
     throw new CryptoError(
       'Global crypto was not available and none was provided. Please inlcude a SubtleCrypto implementation. See https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto',
     );
   }
-  return effectiveCrypto;
 }
 
 export class ECDSAPublicKey implements PublicKey {
@@ -64,8 +61,8 @@ export class ECDSAPublicKey implements PublicKey {
     jwk: JsonWebKey,
     cryptoKeyOptions?: CryptoKeyOptions,
   ): Promise<ECDSAPublicKey> {
-    const { extractable = true, keyUsages = [], cryptoProvider } = cryptoKeyOptions ?? {};
-    const effectiveCrypto = _getEffectiveCrypto(cryptoProvider);
+    const { extractable = true, keyUsages = [], subtleCrypto } = cryptoKeyOptions ?? {};
+    const effectiveCrypto = _getEffectiveCrypto(subtleCrypto);
 
     const key = await effectiveCrypto.importKey(
       'jwk',
@@ -87,8 +84,8 @@ export class ECDSAPublicKey implements PublicKey {
     derKey: DerEncodedPublicKey,
     cryptoKeyOptions?: CryptoKeyOptions,
   ): Promise<ECDSAPublicKey> {
-    const { extractable = true, keyUsages = [], cryptoProvider } = cryptoKeyOptions ?? {};
-    const effectiveCrypto = _getEffectiveCrypto(cryptoProvider);
+    const { extractable = true, keyUsages = [], subtleCrypto } = cryptoKeyOptions ?? {};
+    const effectiveCrypto = _getEffectiveCrypto(subtleCrypto);
     const rawKey = ECDSAPublicKey.derDecode(derKey);
     const key = await effectiveCrypto.importKey(
       'raw',
@@ -110,8 +107,8 @@ export class ECDSAPublicKey implements PublicKey {
     rawKey: ArrayBuffer,
     cryptoKeyOptions?: CryptoKeyOptions,
   ): Promise<ECDSAPublicKey> {
-    const { extractable = true, keyUsages = [], cryptoProvider } = cryptoKeyOptions ?? {};
-    const effectiveCrypto = _getEffectiveCrypto(cryptoProvider);
+    const { extractable = true, keyUsages = [], subtleCrypto } = cryptoKeyOptions ?? {};
+    const effectiveCrypto = _getEffectiveCrypto(subtleCrypto);
     const key = await effectiveCrypto.importKey(
       'raw',
       rawKey,
@@ -135,8 +132,9 @@ export class ECDSAPublicKey implements PublicKey {
    * @returns
    */
   public static async generate(options?: CryptoKeyOptions): Promise<ECDSAPublicKey> {
-    const { extractable = false, keyUsages = ['sign'], cryptoProvider } = options ?? {};
-    const effectiveCrypto = _getEffectiveCrypto(cryptoProvider);
+    const { extractable = false, keyUsages = ['sign'], subtleCrypto } = options ?? {};
+    subtleCrypto;
+    const effectiveCrypto = _getEffectiveCrypto(subtleCrypto);
     const params = {
       name: 'ECDSA',
       namedCurve: 'P-256',
@@ -206,8 +204,8 @@ export class ECDSAKeyIdentity extends SignIdentity {
    * @returns {ECDSAKeyIdentity}
    */
   public static async generate(options?: CryptoKeyOptions): Promise<ECDSAKeyIdentity> {
-    const { extractable = false, keyUsages = ['sign', 'verify'], cryptoProvider } = options ?? {};
-    const effectiveCrypto = _getEffectiveCrypto(cryptoProvider);
+    const { extractable = false, keyUsages = ['sign', 'verify'], subtleCrypto } = options ?? {};
+    const effectiveCrypto = _getEffectiveCrypto(subtleCrypto);
     const keyPair = await effectiveCrypto.generateKey(
       {
         name: 'ECDSA',
@@ -217,9 +215,9 @@ export class ECDSAKeyIdentity extends SignIdentity {
       keyUsages,
     );
 
-    const rawKey = await ECDSAKeyIdentity.keyPairToPublicKey(keyPair);
+    const rawKey = await ECDSAKeyIdentity.keyPairToPublicKey(keyPair, subtleCrypto);
 
-    return new this(keyPair, rawKey);
+    return new this(keyPair, rawKey, effectiveCrypto);
   }
 
   /**
@@ -228,18 +226,28 @@ export class ECDSAKeyIdentity extends SignIdentity {
    * @param {ArrayBuffer} privateKey
    * @returns {ECDSAKeyIdentity}
    */
-  public static async fromKeyPair(keyPair: CryptoKeyPair): Promise<ECDSAKeyIdentity> {
-    const rawKey = await ECDSAKeyIdentity.keyPairToPublicKey(keyPair);
-    return new ECDSAKeyIdentity(keyPair, rawKey);
+  public static async fromKeyPair(
+    keyPair: CryptoKeyPair,
+    subtleCrypto?: SubtleCrypto,
+  ): Promise<ECDSAKeyIdentity> {
+    const effectiveCrypto = _getEffectiveCrypto(subtleCrypto);
+    const rawKey = await ECDSAKeyIdentity.keyPairToPublicKey(keyPair, effectiveCrypto);
+    return new ECDSAKeyIdentity(keyPair, rawKey, effectiveCrypto);
   }
 
   protected _publicKey: ECDSAPublicKey;
   protected _keyPair: CryptoKeyPair;
+  protected _subtleCrypto: SubtleCrypto;
 
-  protected constructor(keyPair: CryptoKeyPair, publicKey: ECDSAPublicKey) {
+  protected constructor(
+    keyPair: CryptoKeyPair,
+    publicKey: ECDSAPublicKey,
+    subtleCrypto: SubtleCrypto,
+  ) {
     super();
     this._keyPair = keyPair;
     this._publicKey = publicKey;
+    this._subtleCrypto = subtleCrypto;
   }
 
   /**
@@ -263,27 +271,25 @@ export class ECDSAKeyIdentity extends SignIdentity {
    * @param {ArrayBuffer} challenge - challenge to sign with this identity's secretKey, producing a signature
    * @returns {Promise<Signature>} signature
    */
-  public async sign(
-    challenge: ArrayBuffer,
-    cryptoProvider?: CryptoKeyOptions['cryptoProvider'],
-  ): Promise<Signature> {
+  public async sign(challenge: ArrayBuffer): Promise<Signature> {
     const params: EcdsaParams = {
       name: 'ECDSA',
       hash: { name: 'SHA-256' },
     };
-    const effectiveCrypto = _getEffectiveCrypto(cryptoProvider);
     this._keyPair.privateKey;
-    const signature = await effectiveCrypto.sign(params, this._keyPair.privateKey, challenge);
+    const signature = await this._subtleCrypto.sign(params, this._keyPair.privateKey, challenge);
 
     return signature as Signature;
   }
 
   private static async keyPairToPublicKey(
     keyPair: CryptoKeyPair,
-    cryptoProvider?: CryptoKeyOptions['cryptoProvider'],
+    subtleCrypto?: CryptoKeyOptions['subtleCrypto'],
   ): Promise<ECDSAPublicKey> {
-    const effectiveCrypto = _getEffectiveCrypto(cryptoProvider);
-    return await ECDSAPublicKey.fromRaw(await effectiveCrypto.exportKey('raw', keyPair.publicKey));
+    const effectiveCrypto = _getEffectiveCrypto(subtleCrypto);
+    return await ECDSAPublicKey.fromRaw(await effectiveCrypto.exportKey('raw', keyPair.publicKey), {
+      subtleCrypto: effectiveCrypto,
+    });
   }
 }
 
