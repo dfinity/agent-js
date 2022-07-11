@@ -390,6 +390,20 @@ describe('Auth Client login', () => {
       'toolbar=0,location=0,menubar=0',
     );
   });
+  it('should login with a derivation origin', async () => {
+    setup();
+    const client = await AuthClient.create();
+    // Try without #authorize hash.
+    await client.login({
+      identityProvider: 'http://localhost',
+      derivationOrigin: 'http://localhost:1234',
+    });
+
+    idpMock.ready('http://localhost');
+
+    const call = (idpWindow.postMessage as jest.Mock).mock.calls[0][0];
+    expect(call['derivationOrigin']).toBe('http://localhost:1234');
+  });
 
   it('should ignore authorize-ready events with bad origin', async () => {
     setup();
