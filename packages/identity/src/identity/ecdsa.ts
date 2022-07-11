@@ -1,6 +1,9 @@
 import { DerEncodedPublicKey, PublicKey, Signature, SignIdentity } from '@dfinity/agent';
 import { SECP256K1_OID, unwrapDER, wrapDER } from './der';
 
+/**
+ * Options used in an {@link ECDSAPublicKey} or {@link ECDSAKeyIdentity}
+ */
 export type CryptoKeyOptions = {
   extractable?: boolean;
   keyUsages?: KeyUsage[];
@@ -21,6 +24,11 @@ export class CryptoError extends Error {
   }
 }
 
+/**
+ * Utility method to ensure that a subtleCrypto implementation is provided or is available in the global context
+ * @param subtleCrypto SubtleCrypto implementation
+ * @returns subleCrypto
+ */
 function _getEffectiveCrypto(subtleCrypto: CryptoKeyOptions['subtleCrypto']): SubtleCrypto {
   if (subtleCrypto) {
     return subtleCrypto;
@@ -33,6 +41,9 @@ function _getEffectiveCrypto(subtleCrypto: CryptoKeyOptions['subtleCrypto']): Su
   }
 }
 
+/**
+ * A public key interface that wraps an ECDSA key using the P-256 named curve. Supports DER-encoding and decoding for agent calls
+ */
 export class ECDSAPublicKey implements PublicKey {
   private static derEncode(publicKey: ArrayBuffer): DerEncodedPublicKey {
     // TODO - replace placeholder DER logic
@@ -53,9 +64,13 @@ export class ECDSAPublicKey implements PublicKey {
   private readonly derKey: DerEncodedPublicKey | undefined;
 
   /**
-   *
-   * @param {JsonWebKey} jwk JSON WebKey
-   * @param {CryptoKeyOptions} cryptoKeyOptions
+   * Creates a ECDSAPublicKey from a JsonWebKey
+   * @param jwk a JsonWebKey
+   * @param {CryptoKeyOptions} cryptoKeyOptions optional settings
+   * @param {CryptoKeyOptions['extractable']} cryptoKeyOptions.extractable - whether the key should allow itself to be used. Set to false for maximum security.
+   * @param {CryptoKeyOptions['keyUsages']} cryptoKeyOptions.keyUsages - a list of key usages that the key can be used for
+   * @param {CryptoKeyOptions['subtleCrypto']} cryptoKeyOptions.subtleCrypto interface
+   * @constructs ECDSAPublicKey
    */
   public static async fromJWK(
     jwk: JsonWebKey,
@@ -80,6 +95,15 @@ export class ECDSAPublicKey implements PublicKey {
     return new ECDSAPublicKey(key, rawKey, jwk);
   }
 
+  /**
+   * Constructs a ECDSAPublicKey from a DER-encoded raw key
+   * @param derKey a DerEncodedPublicKey
+   * @param {CryptoKeyOptions} cryptoKeyOptions optional settings
+   * @param {CryptoKeyOptions['extractable']} cryptoKeyOptions.extractable - whether the key should allow itself to be used. Set to false for maximum security.
+   * @param {CryptoKeyOptions['keyUsages']} cryptoKeyOptions.keyUsages - a list of key usages that the key can be used for
+   * @param {CryptoKeyOptions['subtleCrypto']} cryptoKeyOptions.subtleCrypto interface
+   * @constructs ECDSAPublicKey
+   */
   public static async fromDer(
     derKey: DerEncodedPublicKey,
     cryptoKeyOptions?: CryptoKeyOptions,
@@ -103,6 +127,15 @@ export class ECDSAPublicKey implements PublicKey {
     return new ECDSAPublicKey(key, rawKey, jwk);
   }
 
+  /**
+   * Constructs a ECDSAPublicKey from a raw key
+   * @param rawKey a raw encoded public key ArrayBuffer
+   * @param {CryptoKeyOptions} cryptoKeyOptions optional settings
+   * @param {CryptoKeyOptions['extractable']} cryptoKeyOptions.extractable - whether the key should allow itself to be used. Set to false for maximum security.
+   * @param {CryptoKeyOptions['keyUsages']} cryptoKeyOptions.keyUsages - a list of key usages that the key can be used for
+   * @param {CryptoKeyOptions['subtleCrypto']} cryptoKeyOptions.subtleCrypto interface
+   * @constructs ECDSAPublicKey
+   */
   public static async fromRaw(
     rawKey: ArrayBuffer,
     cryptoKeyOptions?: CryptoKeyOptions,
@@ -127,9 +160,11 @@ export class ECDSAPublicKey implements PublicKey {
 
   /**
    * Generates a new ECDSAPublicKey using the ECDSA P-256 curve
-   * @param {CryptoKeyOptions} cryptoKeyOptions for extractable flag and KeyUsages
-   * @param {boolean} CryptoKeyOptions.extractable
-   * @returns
+   * @param {CryptoKeyOptions} options optional settings
+   * @param {CryptoKeyOptions['extractable']} options.extractable - whether the key should allow itself to be used. Set to false for maximum security.
+   * @param {CryptoKeyOptions['keyUsages']} options.keyUsages - a list of key usages that the key can be used for
+   * @param {CryptoKeyOptions['subtleCrypto']} options.subtleCrypto interface
+   * @constructs ECDSAPublicKey
    */
   public static async generate(options?: CryptoKeyOptions): Promise<ECDSAPublicKey> {
     const { extractable = false, keyUsages = ['sign'], subtleCrypto } = options ?? {};
@@ -149,6 +184,7 @@ export class ECDSAPublicKey implements PublicKey {
     return new ECDSAPublicKey(publicKey, rawKey, jwk);
   }
 
+  // `fromJWK`, `fromRaw`, and `fromDer` should be used for instantiation, not this constructor.
   private constructor(key: CryptoKey, rawKey?: ArrayBuffer, jwk?: JsonWebKey) {
     this.rawKey = rawKey;
 
@@ -166,6 +202,10 @@ export class ECDSAPublicKey implements PublicKey {
     this.usages = key.usages;
   }
 
+  /**
+   * method to convert an extractable key to a der-encoded ArrayBuffer
+   * @returns a {@link DerEncodedPublicKey}
+   */
   public toDer(): DerEncodedPublicKey {
     if (!this.derKey) {
       throw new ExtractrableKeyError(
@@ -175,6 +215,10 @@ export class ECDSAPublicKey implements PublicKey {
     return this.derKey;
   }
 
+  /**
+   * method to convert an extractable key to a raw ArrayBuffer
+   * @returns an ArrayBuffer
+   */
   public toRaw(): ArrayBuffer {
     if (!this.rawKey) {
       throw new ExtractrableKeyError(
@@ -184,6 +228,10 @@ export class ECDSAPublicKey implements PublicKey {
     return this.rawKey;
   }
 
+  /**
+   * method to convert an extractable key to a JsonWebKey
+   * @returns a {@link JsonWebKey}
+   */
   public toJwk(): JsonWebKey {
     if (!this.jwk) {
       throw new ExtractrableKeyError(
