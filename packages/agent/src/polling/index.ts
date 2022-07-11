@@ -20,15 +20,19 @@ export type PollStrategyFactory = () => PollStrategy;
  * @param canisterId The effective canister ID.
  * @param requestId The Request ID to poll status for.
  * @param strategy A polling strategy.
+ * @param request Request for the readState call.
  */
 export async function pollForResponse(
   agent: Agent,
   canisterId: Principal,
   requestId: RequestId,
   strategy: PollStrategy,
+  // eslint-disable-next-line
+  request?: any,
 ): Promise<ArrayBuffer> {
   const path = [new TextEncoder().encode('request_status'), requestId];
-  const state = await agent.readState(canisterId, { paths: [path] });
+  const currentRequest = request ?? (await agent.createReadStateRequest?.({ paths: [path] }));
+  const state = await agent.readState(canisterId, { paths: [path] }, undefined, currentRequest);
   if (agent.rootKey == null) throw new Error('Agent root key not initialized before polling');
   const cert = await Certificate.create({
     certificate: state.certificate,
@@ -54,7 +58,7 @@ export async function pollForResponse(
     case RequestStatusResponseStatus.Processing:
       // Execute the polling strategy, then retry.
       await strategy(canisterId, requestId, status);
-      return pollForResponse(agent, canisterId, requestId, strategy);
+      return pollForResponse(agent, canisterId, requestId, strategy, currentRequest);
 
     case RequestStatusResponseStatus.Rejected: {
       const rejectCode = new Uint8Array(cert.lookup([...path, 'reject_code'])!)[0];
