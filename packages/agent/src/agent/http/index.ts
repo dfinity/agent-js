@@ -352,12 +352,11 @@ export class HttpAgent implements Agent {
     return cbor.decode(await response.arrayBuffer());
   }
 
-  public async readState(
-    canisterId: Principal | string,
+  public async createReadStateRequest(
     fields: ReadStateOptions,
     identity?: Identity | Promise<Identity>,
-  ): Promise<ReadStateResponse> {
-    const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Promise<any> {
     const id = await (identity !== undefined ? await identity : await this._identity);
     if (!id) {
       throw new IdentityInvalidError(
@@ -368,7 +367,7 @@ export class HttpAgent implements Agent {
 
     // TODO: remove this any. This can be a Signed or UnSigned request.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let transformedRequest: any = await this._transform({
+    const transformedRequest: any = await this._transform({
       request: {
         method: 'POST',
         headers: {
@@ -386,8 +385,19 @@ export class HttpAgent implements Agent {
     });
 
     // Apply transform for identity.
-    transformedRequest = await id?.transformRequest(transformedRequest);
+    return id?.transformRequest(transformedRequest);
+  }
 
+  public async readState(
+    canisterId: Principal | string,
+    fields: ReadStateOptions,
+    identity?: Identity | Promise<Identity>,
+    // eslint-disable-next-line
+    request?: any,
+  ): Promise<ReadStateResponse> {
+    const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
+
+    const transformedRequest = request ?? (await this.createReadStateRequest(fields, identity));
     const body = cbor.encode(transformedRequest.body);
 
     const response = await this._fetch(
