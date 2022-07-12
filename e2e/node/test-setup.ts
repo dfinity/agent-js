@@ -8,7 +8,7 @@
 
 // Node.js in a similar way.
 // import { TextEncoder, TextDecoder } from 'text-encoding'; // eslint-disable-line
-// import fetch from 'node-fetch';
+// import fetch from 'isomorphic-fetch';
 // global.crypto = crypto as unknown as Crypto;
 // console.log('subtle', crypto['subtle']); // eslint-disable-line
 // global.TextDecoder = TextDecoder; // eslint-disable-line

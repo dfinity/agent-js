@@ -10,5 +10,4 @@
 global.crypto = require('@trust/webcrypto');
 global.TextEncoder = require('text-encoding').TextEncoder;
 global.TextDecoder = require('text-encoding').TextDecoder;
-global.fetch = require('node-fetch');
-global.Response = require('node-fetch').Response;
+global.fetch = require('isomorphic-fetch');

@@ -53,7 +53,6 @@
     "eslint-plugin-jsdoc": "^39.3.3",
     "jest": "^27.3.1",
     "jest-diff": "^27.3.1",
-    "node-fetch": "^2.6.7",
     "prettier": "^2.0.5",
     "text-encoding": "^0.7.0",
     "ts-jest": "^27.0.7",
