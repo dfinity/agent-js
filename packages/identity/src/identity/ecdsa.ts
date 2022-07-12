@@ -46,7 +46,6 @@ function _getEffectiveCrypto(subtleCrypto: CryptoKeyOptions['subtleCrypto']): Su
  */
 export class ECDSAPublicKey implements PublicKey {
   private static derEncode(publicKey: ArrayBuffer): DerEncodedPublicKey {
-    // TODO - replace placeholder DER logic
     return wrapDER(publicKey, SECP256K1_OID).buffer as DerEncodedPublicKey;
   }
   private static derDecode(key: DerEncodedPublicKey): ArrayBuffer {
