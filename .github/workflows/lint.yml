@@ -1,5 +1,4 @@
-name: Unit tests
-
+name: Check Formatting
 on:
   pull_request:
     types:
@@ -12,32 +11,19 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
-        os: [ubuntu-20.04]
+        os: [ubuntu-18.04]
         ghc: ['8.8.4']
         spec:
-          - '0.16.1'
+          - release-0.16 # https://github.com/dfinity-lab/ic-ref/tree/release-0.16
         node:
-          - 12
           - 14
-          - 16
-
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js ${{ matrix.node }}
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node }}
-
       - run: npm install -g npm
-
-      - run: npm install
-
-      # build monorepo incl. each subpackage
-      - run: npm run build --workspaces --if-present
-
-      # test monorepo incl. each subpackage
-      - run: npm run test
-        env:
-          CI: true
+      - run: npm run lint --workspaces --if-present
