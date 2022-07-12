@@ -47,3 +47,13 @@ jobs:
         env:
           CI: true
           REPLICA_PORT: 8000
+
+  aggregate:
+    name: e2e:required
+    if: ${{ always() }}
+    needs: [ test ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: check e2e test result
+        if: ${{ needs.test.result != 'success' }}
+        run: exit 1

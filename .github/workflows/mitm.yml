@@ -63,3 +63,13 @@ jobs:
           REPLICA_PORT: 8888
           MITM: true
         run: npm run mitm --workspaces --if-present
+
+  aggregate:
+    name: mitm:required
+    if: ${{ always() }}
+    needs: [ test ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: check e2e test result
+        if: ${{ needs.test.result != 'success' }}
+        run: exit 1
