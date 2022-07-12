@@ -42,3 +42,13 @@ jobs:
       - run: npm run test
         env:
           CI: true
+
+  aggregate:
+    name: unit:required
+    if: ${{ always() }}
+    needs: [ test ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: check e2e test result
+        if: ${{ needs.test.result != 'success' }}
+        run: exit 1
