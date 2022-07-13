@@ -17,6 +17,7 @@
     "resolveJsonModule": true,
     "rootDir": "./src",
     "sourceMap": true,
+    "inlineSources": true,
     "strict": true,
     "target": "es2017",
     "tsBuildInfoFile": "./build_info.json"
