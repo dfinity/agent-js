@@ -13,7 +13,6 @@ const config: Config.InitialOptions = {
     '^.+\\.ts$': 'ts-jest',
   },
   collectCoverageFrom: ['**/*.{ts,tsx}'],
-  name: 'e2e/node',
   displayName: 'e2e-node',
   rootDir: '../..',
 };

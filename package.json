@@ -3,11 +3,6 @@
   "version": "0.12.1",
   "private": true,
   "description": "Use an Agent to interact with the Internet Computer from your JavaScript program.",
-  "dependencies": {
-    "jest": "^28.1.2",
-    "jest-cli": "^28.1.2",
-    "ts-jest": "^28.0.5"
-  },
   "workspaces": {
     "packages": [
       "packages/principal",
@@ -32,10 +27,13 @@
     "eslint": "^8.19.0",
     "eslint-plugin-jsdoc": "^39.3.3",
     "husky": "^8.0.1",
+    "jest": "^28.1.2",
+    "jest-cli": "^28.1.2",
     "jest-environment-node": "^28.1.2",
     "prettier": "^2.7.1",
     "pretty-quick": "^3.1.3",
     "ts-node": "^10.8.2",
+    "ts-jest": "^28.0.5",
     "typedoc": "^0.23.5",
     "typescript": "^4.7.4",
     "webcrypto-core": "^1.7.5",
