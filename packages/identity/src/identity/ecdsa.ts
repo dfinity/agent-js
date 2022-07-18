@@ -48,9 +48,9 @@ export class ECDSAPublicKey implements PublicKey {
   public type: CryptoKey['type'];
   public usages: CryptoKey['usages'];
 
-  private readonly rawKey: ArrayBuffer | undefined;
-  private readonly jwk: JsonWebKey | undefined;
-  private readonly derKey: DerEncodedPublicKey | undefined;
+  private readonly rawKey: ArrayBuffer;
+  private readonly jwk: JsonWebKey;
+  private readonly derKey: DerEncodedPublicKey;
 
   /**
    * Creates a ECDSAPublicKey from a JsonWebKey
@@ -89,7 +89,7 @@ export class ECDSAPublicKey implements PublicKey {
    * Constructs a ECDSAPublicKey from a DER-encoded raw key
    * @param derKey a DerEncodedPublicKey
    * @param {CryptoKeyOptions} cryptoKeyOptions optional settings
-   * @param {CryptoKeyOptions['extractable']} cryptoKeyOptions.extractable - whether the key should allow itself to be used. Set to false for maximum security.
+   * @param {CryptoKeyOptions['extractable']} cryptoKeyOptions.extractable - whether the key should allow itself to be used. Has no effect on public keys.
    * @param {CryptoKeyOptions['keyUsages']} cryptoKeyOptions.keyUsages - a list of key usages that the key can be used for
    * @param {CryptoKeyOptions['subtleCrypto']} cryptoKeyOptions.subtleCrypto interface
    * @constructs ECDSAPublicKey
@@ -121,7 +121,7 @@ export class ECDSAPublicKey implements PublicKey {
    * Constructs a ECDSAPublicKey from a raw key
    * @param rawKey a raw encoded public key ArrayBuffer
    * @param {CryptoKeyOptions} cryptoKeyOptions optional settings
-   * @param {CryptoKeyOptions['extractable']} cryptoKeyOptions.extractable - whether the key should allow itself to be used. Set to false for maximum security.
+   * @param {CryptoKeyOptions['extractable']} cryptoKeyOptions.extractable - whether the key should allow itself to be used. Has no effect on public keys.
    * @param {CryptoKeyOptions['keyUsages']} cryptoKeyOptions.keyUsages - a list of key usages that the key can be used for
    * @param {CryptoKeyOptions['subtleCrypto']} cryptoKeyOptions.subtleCrypto interface
    * @constructs ECDSAPublicKey
@@ -176,18 +176,10 @@ export class ECDSAPublicKey implements PublicKey {
   }
 
   // `fromJWK`, `fromRaw`, and `fromDer` should be used for instantiation, not this constructor.
-  private constructor(
-    key: CryptoKey,
-    rawKey?: ArrayBuffer,
-    jwk?: JsonWebKey,
-    derKey?: ArrayBuffer,
-  ) {
+  private constructor(key: CryptoKey, rawKey: ArrayBuffer, jwk: JsonWebKey, derKey: ArrayBuffer) {
     this.rawKey = rawKey;
-
     this.derKey = derKey as DerEncodedPublicKey;
-    if (jwk) {
-      this.jwk = jwk;
-    }
+    this.jwk = jwk;
 
     // Copy attributes from key
     this.algorithm = key.algorithm;
@@ -200,11 +192,6 @@ export class ECDSAPublicKey implements PublicKey {
    * @returns a {@link DerEncodedPublicKey}
    */
   public toDer(): DerEncodedPublicKey {
-    if (!this.derKey) {
-      throw new ExtractrableKeyError(
-        'Error: could not export key for DER-encoding. If you need to extract this key, set CryptoKeyOptions.extractable to true during creation.',
-      );
-    }
     return this.derKey;
   }
 
