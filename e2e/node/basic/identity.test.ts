@@ -27,54 +27,6 @@ function createSecpIdentity(seed: number): SignIdentity {
   return Secp256k1KeyIdentity.generate(new Uint8Array(seed1));
 }
 
-async function createEcdsaIdentity(): Promise<ECDSAKeyIdentity> {
-  const goldenSeed = {
-    key_ops: [],
-    ext: true,
-    kty: 'EC',
-    x: 'EaSQG1HdU7pMzMXaIjZmDGZCa2wit-JX95cuLjZXsZI',
-    y: '-z31VJQ1dNFRkg-eFdet9SPatYph0OPz5vbju0eeT6o',
-    crv: 'P-256',
-  };
-
-  const goldenPrivateKey = {
-    key_ops: [],
-    ext: true,
-    kty: 'EC',
-    x: 'wUmIVyFHanPKCknjOWlMFFr9OKSahY7p5yT1vn4D-kw',
-    y: 'KhYIS2VFq98PU08q1KGYidRfEJ2qV-EUrfaRQ4XbV_4',
-    crv: 'P-256',
-  };
-
-  const getTestKeyPair = async (): Promise<CryptoKeyPair> => {
-    const privateKey = await crypto.subtle.importKey(
-      'jwk',
-      goldenPrivateKey,
-      {
-        name: 'ECDSA',
-        namedCurve: 'P-256',
-      },
-      true,
-      [],
-    );
-    const publicKey = await crypto.subtle.importKey(
-      'jwk',
-      goldenSeed,
-      {
-        name: 'ECDSA',
-        namedCurve: 'P-256',
-      },
-      true,
-      [],
-    );
-    return {
-      privateKey,
-      publicKey,
-    };
-  };
-  return await ECDSAKeyIdentity.fromKeyPair(await getTestKeyPair());
-}
-
 async function createIdentityActor(
   seed: number,
   canisterId: Principal,
@@ -116,7 +68,7 @@ async function createEcdsaIdentityActor(
   if (identity) {
     effectiveIdentity = identity;
   } else {
-    effectiveIdentity = await Ed25519KeyIdentity.generate();
+    effectiveIdentity = await ECDSAKeyIdentity.generate();
   }
   const agent1 = new HttpAgent({ source: await agent, identity: effectiveIdentity });
   return Actor.createActor(idl, {

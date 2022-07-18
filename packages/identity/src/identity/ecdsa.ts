@@ -1,5 +1,4 @@
 import { DerEncodedPublicKey, PublicKey, Signature, SignIdentity } from '@dfinity/agent';
-import { SECP256K1_OID, unwrapDER, wrapDER } from './der';
 
 /**
  * Options used in an {@link ECDSAPublicKey} or {@link ECDSAKeyIdentity}
@@ -45,16 +44,7 @@ function _getEffectiveCrypto(subtleCrypto: CryptoKeyOptions['subtleCrypto']): Su
  * A public key interface that wraps an ECDSA key using the P-256 named curve. Supports DER-encoding and decoding for agent calls
  */
 export class ECDSAPublicKey implements PublicKey {
-  private static derEncode(publicKey: ArrayBuffer): DerEncodedPublicKey {
-    return wrapDER(publicKey, SECP256K1_OID).buffer as DerEncodedPublicKey;
-  }
-  private static derDecode(key: DerEncodedPublicKey): ArrayBuffer {
-    const unwrapped = unwrapDER(key, SECP256K1_OID);
-    return unwrapped;
-  }
-
   public algorithm: CryptoKey['algorithm'];
-  public extractable: CryptoKey['extractable'];
   public type: CryptoKey['type'];
   public usages: CryptoKey['usages'];
 
@@ -66,7 +56,7 @@ export class ECDSAPublicKey implements PublicKey {
    * Creates a ECDSAPublicKey from a JsonWebKey
    * @param jwk a JsonWebKey
    * @param {CryptoKeyOptions} cryptoKeyOptions optional settings
-   * @param {CryptoKeyOptions['extractable']} cryptoKeyOptions.extractable - whether the key should allow itself to be used. Set to false for maximum security.
+   * @param {CryptoKeyOptions['extractable']} cryptoKeyOptions.extractable - whether the key should allow itself to be used. Has no effect on public keys.
    * @param {CryptoKeyOptions['keyUsages']} cryptoKeyOptions.keyUsages - a list of key usages that the key can be used for
    * @param {CryptoKeyOptions['subtleCrypto']} cryptoKeyOptions.subtleCrypto interface
    * @constructs ECDSAPublicKey
@@ -90,8 +80,9 @@ export class ECDSAPublicKey implements PublicKey {
     );
 
     const rawKey = await effectiveCrypto.exportKey('raw', key);
+    const derKey = await effectiveCrypto.exportKey('spki', key);
 
-    return new ECDSAPublicKey(key, rawKey, jwk);
+    return new ECDSAPublicKey(key, rawKey, jwk, derKey);
   }
 
   /**
@@ -109,10 +100,9 @@ export class ECDSAPublicKey implements PublicKey {
   ): Promise<ECDSAPublicKey> {
     const { extractable = true, keyUsages = [], subtleCrypto } = cryptoKeyOptions ?? {};
     const effectiveCrypto = _getEffectiveCrypto(subtleCrypto);
-    const rawKey = ECDSAPublicKey.derDecode(derKey);
     const key = await effectiveCrypto.importKey(
-      'raw',
-      rawKey,
+      'spki',
+      derKey,
       {
         name: 'ECDSA',
         namedCurve: 'P-256',
@@ -122,8 +112,9 @@ export class ECDSAPublicKey implements PublicKey {
     );
 
     const jwk = await effectiveCrypto.exportKey('jwk', key);
+    const rawKey = await effectiveCrypto.exportKey('raw', key);
 
-    return new ECDSAPublicKey(key, rawKey, jwk);
+    return new ECDSAPublicKey(key, rawKey, jwk, derKey);
   }
 
   /**
@@ -153,8 +144,9 @@ export class ECDSAPublicKey implements PublicKey {
     );
 
     const jwk = await effectiveCrypto.exportKey('jwk', key);
+    const derKey = await effectiveCrypto.exportKey('spki', key);
 
-    return new ECDSAPublicKey(key, rawKey, jwk);
+    return new ECDSAPublicKey(key, rawKey, jwk, derKey);
   }
 
   /**
@@ -167,7 +159,6 @@ export class ECDSAPublicKey implements PublicKey {
    */
   public static async generate(options?: CryptoKeyOptions): Promise<ECDSAPublicKey> {
     const { extractable = false, keyUsages = ['sign'], subtleCrypto } = options ?? {};
-    subtleCrypto;
     const effectiveCrypto = _getEffectiveCrypto(subtleCrypto);
     const params = {
       name: 'ECDSA',
@@ -179,24 +170,27 @@ export class ECDSAPublicKey implements PublicKey {
     const publicKey = keyPair.publicKey;
     const jwk = await effectiveCrypto.exportKey('jwk', publicKey);
     const rawKey = await effectiveCrypto.exportKey('raw', publicKey);
+    const derKey = await effectiveCrypto.exportKey('spki', publicKey);
 
-    return new ECDSAPublicKey(publicKey, rawKey, jwk);
+    return new ECDSAPublicKey(publicKey, rawKey, jwk, derKey);
   }
 
   // `fromJWK`, `fromRaw`, and `fromDer` should be used for instantiation, not this constructor.
-  private constructor(key: CryptoKey, rawKey?: ArrayBuffer, jwk?: JsonWebKey) {
+  private constructor(
+    key: CryptoKey,
+    rawKey?: ArrayBuffer,
+    jwk?: JsonWebKey,
+    derKey?: ArrayBuffer,
+  ) {
     this.rawKey = rawKey;
 
-    if (rawKey) {
-      this.derKey = ECDSAPublicKey.derEncode(rawKey);
-    }
+    this.derKey = derKey as DerEncodedPublicKey;
     if (jwk) {
       this.jwk = jwk;
     }
 
     // Copy attributes from key
     this.algorithm = key.algorithm;
-    this.extractable = key.extractable;
     this.type = key.type;
     this.usages = key.usages;
   }
