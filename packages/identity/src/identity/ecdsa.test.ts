@@ -14,15 +14,6 @@ const goldenSeed = {
   crv: 'P-256',
 };
 
-const goldenPrivateKey = {
-  key_ops: [],
-  ext: true,
-  kty: 'EC',
-  x: 'wUmIVyFHanPKCknjOWlMFFr9OKSahY7p5yT1vn4D-kw',
-  y: 'KhYIS2VFq98PU08q1KGYidRfEJ2qV-EUrfaRQ4XbV_4',
-  crv: 'P-256',
-};
-
 // const subtle = (crypto.webcrypto as unknown as Crypto).subtle;
 
 describe('ECDSAPublicKey Tests', () => {
