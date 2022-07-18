@@ -200,11 +200,6 @@ export class ECDSAPublicKey implements PublicKey {
    * @returns an ArrayBuffer
    */
   public toRaw(): ArrayBuffer {
-    if (!this.rawKey) {
-      throw new ExtractrableKeyError(
-        'Error: could not export raw-encoded key. If you need to extract this key, set CryptoKeyOptions.extractable to true during creation.',
-      );
-    }
     return this.rawKey;
   }
 
@@ -213,11 +208,6 @@ export class ECDSAPublicKey implements PublicKey {
    * @returns a {@link JsonWebKey}
    */
   public toJwk(): JsonWebKey {
-    if (!this.jwk) {
-      throw new ExtractrableKeyError(
-        'Error: could not export jwk-encoded key. If you need to extract this key, set CryptoKeyOptions.extractable to true during creation.',
-      );
-    }
     return this.jwk;
   }
 }
