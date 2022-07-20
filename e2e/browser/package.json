@@ -4,9 +4,10 @@
   "version": "0.12.1",
   "scripts": {
     "ci": "npm run e2e",
+    "pree2e": "dfx deploy; dfx generate",
     "e2e": "concurrently -k \"npm start\" \"cypress run\"",
     "eslint:fix": "npm run lint -- --fix",
-    "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' basic canisters utils *.ts",
+    "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' *.js",
     "lint": "npm run eslint",
     "build": "",
     "lint:fix": "npm run lint -- --fix",
