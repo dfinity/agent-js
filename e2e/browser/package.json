@@ -4,8 +4,9 @@
   "version": "0.12.1",
   "scripts": {
     "ci": "npm run e2e",
-    "pree2e": "dfx deploy; dfx generate",
-    "e2e": "concurrently -k \"npm start\" \"cypress run\"",
+    "pree2e": "dfx deploy; dfx generate; pm2 --name parcel start npm -- start",
+    "e2e": "cypress run",
+    "poste2e": "pm2 delete 0",
     "eslint:fix": "npm run lint -- --fix",
     "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' cypress *.js",
     "lint": "npm run eslint",
@@ -21,7 +22,8 @@
     "concurrently": "^7.3.0",
     "cypress": "^10.3.1",
     "eslint-plugin-cypress": "^2.12.1",
-    "parcel": "^2.6.2"
+    "parcel": "^2.6.2",
+    "pm2": "^5.2.0"
   },
   "dependencies": {
     "@dfinity/agent": "^0.12.1",
