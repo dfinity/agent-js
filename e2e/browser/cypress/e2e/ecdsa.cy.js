@@ -13,7 +13,7 @@ const setup = async () => {
   return { principal1, whoami1, identity1 };
 };
 
-describe('empty spec', () => {
+describe('ECDSAKeyIdentity tests with SubtleCrypto', () => {
   it('generates a new identity', () => {
     cy.visit('http://localhost:1234');
     cy.window().then(async window => {

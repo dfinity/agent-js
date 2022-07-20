@@ -7,14 +7,14 @@
     "pree2e": "dfx deploy; dfx generate",
     "e2e": "concurrently -k \"npm start\" \"cypress run\"",
     "eslint:fix": "npm run lint -- --fix",
-    "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' *.js",
+    "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' cypress src *.js",
     "lint": "npm run eslint",
     "build": "",
     "lint:fix": "npm run lint -- --fix",
     "publish:release": "",
     "test:coverage": "",
     "test": "",
-    "start": "parcel src/index.html"
+    "start": "parcel --watch-for-stdin src/index.html"
   },
   "devDependencies": {
     "@types/cypress": "^1.1.3",
