@@ -50,7 +50,7 @@ export class ECDSAPublicKey implements PublicKey {
 
   private readonly rawKey: ArrayBuffer;
   private readonly jwk: JsonWebKey;
-  private readonly derKey: DerEncodedPublicKey;
+  private readonly derKey: ArrayBuffer;
 
   /**
    * Creates a ECDSAPublicKey from a JsonWebKey
@@ -95,7 +95,7 @@ export class ECDSAPublicKey implements PublicKey {
    * @constructs ECDSAPublicKey
    */
   public static async fromDer(
-    derKey: DerEncodedPublicKey,
+    derKey: ArrayBuffer,
     cryptoKeyOptions?: CryptoKeyOptions,
   ): Promise<ECDSAPublicKey> {
     const { extractable = true, keyUsages = [], subtleCrypto } = cryptoKeyOptions ?? {};
@@ -178,7 +178,7 @@ export class ECDSAPublicKey implements PublicKey {
   // `fromJWK`, `fromRaw`, and `fromDer` should be used for instantiation, not this constructor.
   private constructor(key: CryptoKey, rawKey: ArrayBuffer, jwk: JsonWebKey, derKey: ArrayBuffer) {
     this.rawKey = rawKey;
-    this.derKey = derKey as DerEncodedPublicKey;
+    this.derKey = derKey;
     this.jwk = jwk;
 
     // Copy attributes from key
@@ -189,10 +189,10 @@ export class ECDSAPublicKey implements PublicKey {
 
   /**
    * method to convert an extractable key to a der-encoded ArrayBuffer
-   * @returns a {@link DerEncodedPublicKey}
+   * @returns ArrayBuffer
    */
   public toDer(): DerEncodedPublicKey {
-    return this.derKey;
+    return this.derKey as DerEncodedPublicKey;
   }
 
   /**
@@ -249,7 +249,7 @@ export class ECDSAKeyIdentity extends SignIdentity {
    * @returns an {@link ECDSAKeyIdentity}
    */
   public static async fromKeyPair(
-    keyPair: CryptoKeyPair,
+    keyPair: CryptoKeyPair | { privateKey: CryptoKey; publicKey: CryptoKey },
     subtleCrypto?: SubtleCrypto,
   ): Promise<ECDSAKeyIdentity> {
     const effectiveCrypto = _getEffectiveCrypto(subtleCrypto);
@@ -310,9 +310,12 @@ export class ECDSAKeyIdentity extends SignIdentity {
     subtleCrypto?: CryptoKeyOptions['subtleCrypto'],
   ): Promise<ECDSAPublicKey> {
     const effectiveCrypto = _getEffectiveCrypto(subtleCrypto);
-    return await ECDSAPublicKey.fromRaw(await effectiveCrypto.exportKey('raw', keyPair.publicKey), {
-      subtleCrypto: effectiveCrypto,
-    });
+    return await ECDSAPublicKey.fromDer(
+      await effectiveCrypto.exportKey('spki', keyPair.publicKey),
+      {
+        subtleCrypto: effectiveCrypto,
+      },
+    );
   }
 }
 

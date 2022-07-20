@@ -13,6 +13,7 @@
       "packages/authentication",
       "packages/auth-client",
       "e2e/node",
+      "e2e/browser",
       "demos/ledgerhq",
       "demos/sample-javascript"
     ]
