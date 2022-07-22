@@ -30,18 +30,18 @@ const baseVersion = rootPackage.version;
 const newVersion = (() => {
   // eslint-disable-next-line
   let [major, minor, patch, ...rest] = baseVersion.split('.');
-  if (argv._.includes('patch')) {
+  if (argv['_'].includes('patch')) {
     patch = Number(patch) + 1;
-  } else if (argv._.includes('minor')) {
+  } else if (argv['_'].includes('minor')) {
     minor = Number(minor) + 1;
     patch = 0;
-  } else if (argv._.includes('major')) {
+  } else if (argv['_'].includes('major')) {
     major = Number(major) + 1;
     minor = 0;
     patch = 0;
   } else {
     // else use the first argument
-    return argv._[0].toString();
+    return argv['_'][0].toString();
   }
   return [major, minor, patch, ...rest].join('.');
 })();
