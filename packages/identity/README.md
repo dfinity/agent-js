@@ -28,7 +28,7 @@ or using individual exports:
 import { WebAuthnIdentity } from "@dfinity/identity";
 ```
 
-### ECDSAPublicKey and ECDSAKeyIdentity
+### ECDSAKeyIdentity
 
 Using an `ECDSAKeyIdentity`, you can now use the native Web Crypto API to manage your keys in `agent-js`. `ECDSAKeyIdentity` uses the crypto.subtle interface under the hood, and wraps the conventions for managing identities in the same way as other identities in this package.
 
