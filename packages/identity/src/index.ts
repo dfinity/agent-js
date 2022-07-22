@@ -1,4 +1,5 @@
 export { Ed25519KeyIdentity, Ed25519PublicKey } from './identity/ed25519';
+export * from './identity/ecdsa';
 export { Secp256k1KeyIdentity, Secp256k1PublicKey } from './identity/secp256k1';
 export {
   Delegation,

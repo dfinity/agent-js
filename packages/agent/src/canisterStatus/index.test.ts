@@ -3,7 +3,7 @@ import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
 import { fromHexString } from '@dfinity/candid';
 import { Identity } from '../auth';
-import fetch from 'node-fetch';
+import fetch from 'isomorphic-fetch';
 import { HttpAgent } from '../agent';
 import { fromHex, toHex } from '../utils/buffer';
 

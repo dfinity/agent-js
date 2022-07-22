@@ -1,8 +1,3 @@
-/**
- * Need this to setup the proper ArrayBuffer type (otherwise in Jest ArrayBuffer isn't
- * an instance of ArrayBuffer).
- * @jest-environment node
- */
 import { SignIdentity } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import { DelegationChain } from './delegation';

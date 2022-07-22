@@ -10,9 +10,19 @@
     <h1>Agent-JS Changelog</h1>
 
     <section>
+      <h2>Version 0.12.2</h2>
+      <ul>
+        <li>
+          Support for the SubtleCrypto interface in @dfinity/identity using the new ECDSAKeyIdentity
+        </li>
+      </ul>
       <h2>Version 0.12.1</h2>
       <ul>
         <li>Adds inline sourcemaps to packages</li>
+        <li>
+          Pulls lint out to a separate job now that Node 12 is failing with latest eslint
+          dependencies
+        </li>
         <li>Adds UTF-8 as an encoding option for CanisterStatus custom paths</li>
         <li>
           Adds a public method "createReadStateRequest" that creates the request for "readState".

@@ -16,7 +16,7 @@ export interface KeyPair {
 /**
  * A public key that is DER encoded. This is a branded ArrayBuffer.
  */
-export type DerEncodedPublicKey = ArrayBuffer & { __derEncodedPublicKey__: void };
+export type DerEncodedPublicKey = ArrayBuffer & { __derEncodedPublicKey__?: void };
 
 /**
  * A signature array buffer.

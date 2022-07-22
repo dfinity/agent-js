@@ -18,7 +18,7 @@ import { toHexString } from '../../../../identity/src/buffer';
 import { AgentError } from '../../errors';
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
-global.window = window;
+(global as any).window = window;
 
 function createIdentity(seed: number): Ed25519KeyIdentity {
   const seed1 = new Array(32).fill(0);
@@ -306,20 +306,20 @@ describe('getDefaultFetch', () => {
     expect(generateAgent).not.toThrowError();
   });
   it('should throw an error if fetch is not available on the window object', async () => {
-    delete window.fetch;
+    delete (window as any).fetch;
     const generateAgent = () => new HttpAgent({ host: 'localhost:8000' });
 
     expect(generateAgent).toThrowError('Fetch implementation was not available');
   });
   it('should throw error for defaultFetch with no window or global fetch', () => {
-    delete global.window;
-    delete global.fetch;
+    delete (global as any).window;
+    delete (global as any).fetch;
     const generateAgent = () => new HttpAgent({ host: 'localhost:8000' });
 
     expect(generateAgent).toThrowError('Fetch implementation was not available');
   });
   it('should fall back to global.fetch if window is not available', () => {
-    delete global.window;
+    delete (global as any).window;
     global.fetch = originalFetch;
     const generateAgent = () => new HttpAgent({ host: 'localhost:8000' });
 
@@ -440,7 +440,7 @@ describe('makeNonce', () => {
       jest.spyOn(Math, 'random').mockImplementation(() => 0.5);
       jest.spyOn(globalThis, 'DataView').mockImplementation(buffer => {
         const view: DataView = new DataViewConstructor(buffer);
-        view.setBigUint64 = usePolyfill ? undefined : view.setBigUint64;
+        (view.setBigUint64 as any) = usePolyfill ? undefined : view.setBigUint64;
         spyOnSetUint32 = jest.spyOn(view, 'setUint32');
         return view;
       });
