@@ -15,6 +15,7 @@ import {
   writeIntLE,
   writeUIntLE,
 } from './utils/leb128';
+import { ilog2 } from './utils/ilog2';
 
 // tslint:disable:max-line-length
 /**
@@ -647,7 +648,7 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
   }
 
   public encodeType() {
-    const offset = Math.log2(this._bits) - 3;
+    const offset = ilog2(this._bits) - 3;
     return slebEncode(-9 - offset);
   }
 
@@ -699,7 +700,7 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
   }
 
   public encodeType() {
-    const offset = Math.log2(this._bits) - 3;
+    const offset = ilog2(this._bits) - 3;
     return slebEncode(-5 - offset);
   }
 
