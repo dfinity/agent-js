@@ -4,5 +4,6 @@
  * @param n number or bigint
  */
 export function ilog2(n: bigint | number) {
-  return n > 0 ? BigInt(n).toString(2).length - 1 : NaN;
+  const nBig = BigInt(n);
+  return nBig > 0 ? nBig.toString(2).length - 1 : NaN;
 }
