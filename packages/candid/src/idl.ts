@@ -15,7 +15,7 @@ import {
   writeIntLE,
   writeUIntLE,
 } from './utils/leb128';
-import { ilog2 } from './utils/ilog2';
+import { iexp2 } from './utils/bigint-math';
 
 // tslint:disable:max-line-length
 /**
@@ -631,8 +631,8 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
   }
 
   public covariant(x: any): x is bigint {
-    const min = BigInt(2) ** BigInt(this._bits - 1) * BigInt(-1);
-    const max = BigInt(2) ** BigInt(this._bits - 1) - BigInt(1);
+    const min = iexp2(this._bits - 1) * BigInt(-1);
+    const max = iexp2(this._bits - 1) - BigInt(1);
     if (typeof x === 'bigint') {
       return x >= min && x <= max;
     } else if (Number.isInteger(x)) {
@@ -648,7 +648,7 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
   }
 
   public encodeType() {
-    const offset = ilog2(this._bits) - 3;
+    const offset = Math.log2(this._bits) - 3;
     return slebEncode(-9 - offset);
   }
 
@@ -684,7 +684,7 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
   }
 
   public covariant(x: any): x is bigint {
-    const max = BigInt(2) ** BigInt(this._bits);
+    const max = iexp2(this._bits);
     if (typeof x === 'bigint' && x >= BigInt(0)) {
       return x < max;
     } else if (Number.isInteger(x) && x >= 0) {
@@ -700,7 +700,7 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
   }
 
   public encodeType() {
-    const offset = ilog2(this._bits) - 3;
+    const offset = Math.log2(this._bits) - 3;
     return slebEncode(-5 - offset);
   }
 
