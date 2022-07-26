@@ -2,7 +2,8 @@
 
 import { lebDecode, PipeArrayBuffer } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
-import { HttpAgent, HttpAgentOptions, Cbor, Certificate, toHex } from '..';
+import { AgentError } from '../errors';
+import { HttpAgent, Cbor, Certificate, toHex } from '..';
 
 /**
  * Types of an entry on the canisterStatus map.
@@ -148,13 +149,19 @@ export const request = async (options: {
           }
         }
       } catch (error) {
-        error;
+        // Break on signature verification errors
+        if ((error as AgentError)?.message?.includes('Invalid certificate')) {
+          throw new AgentError((error as AgentError).message);
+        }
         if (typeof path !== 'string' && 'key' in path && 'path' in path) {
           status.set(path.key, null);
         } else {
           status.set(path, null);
         }
+        console.group();
         console.warn(`Expected to find result for path ${path}, but instead found nothing.`);
+        console.warn(error);
+        console.groupEnd();
       }
     })();
   });
