@@ -34,15 +34,12 @@ describe('counter', () => {
     expect(set1.size < values.length || set2.size < values2.length).toBe(true);
   });
   it('should increment', async () => {
-    const { actor: counter } = await counterCanister();
-    try {
-      expect(Number(await counter.read())).toEqual(0);
-      await counter.inc();
-      expect(Number(await counter.read())).toEqual(1);
-      await counter.inc();
-      expect(Number(await counter.read())).toEqual(2);
-    } catch (error) {
-      console.error(error);
-    }
+    const { actor: counter } = await noncelessCanister();
+
+    expect(Number(await counter.read())).toEqual(0);
+    await counter.inc();
+    expect(Number(await counter.read())).toEqual(1);
+    await counter.inc();
+    expect(Number(await counter.read())).toEqual(2);
   });
 });
