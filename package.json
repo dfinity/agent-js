@@ -12,6 +12,7 @@
       "packages/identity-ledgerhq",
       "packages/authentication",
       "packages/auth-client",
+      "packages/assets",
       "e2e/node",
       "e2e/browser",
       "demos/ledgerhq",
