@@ -5,7 +5,7 @@ import ids from '../../.dfx/local/canister_ids.json';
 
 const canisterId = ids.assetstorage.local;
 
-// Returns AssetManager instance with principal:
+// Returns AssetManager instance with the following principal:
 // 535yc-uxytb-gfk7h-tny7p-vjkoe-i4krp-3qmcl-uqfgr-cpgej-yqtjq-rqe
 const setup = async () => {
   const identity = Ed25519KeyIdentity.generate(
