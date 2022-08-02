@@ -14,11 +14,14 @@ import {
   Ed25519KeyIdentity,
 } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
+import { db, getValue, removeValue, setValue } from './db';
 import { IdleManager, IdleManagerOptions } from './idleManager';
-import { get, set, del } from 'idb-keyval';
+const set = async <T>(key: string, value: T) => await setValue<T>(db, value, key);
+const get = async <T>(key: string): Promise<T | undefined> => await getValue<T>(db, key);
+const remove = async (key: string) => await removeValue(db, key);
 
-const KEY_LOCALSTORAGE_KEY = 'identity';
-const KEY_LOCALSTORAGE_DELEGATION = 'delegation';
+const KEY_STORAGE_KEY = 'identity';
+const KEY_STORAGE_DELEGATION = 'delegation';
 const IDENTITY_PROVIDER_DEFAULT = 'https://identity.ic0.app';
 const IDENTITY_PROVIDER_ENDPOINT = '#authorize';
 
@@ -124,8 +127,9 @@ interface InternetIdentityAuthResponseSuccess {
 }
 
 async function _deleteStorage(storage: AuthClientStorage) {
-  await storage.remove(KEY_LOCALSTORAGE_KEY);
-  await storage.remove(KEY_LOCALSTORAGE_DELEGATION);
+  await storage.remove(KEY_STORAGE_KEY);
+  await storage.remove(KEY_STORAGE_DELEGATION);
+  await storage.remove(KEY_STORAGE_DELEGATION);
 }
 
 export class LocalStorage implements AuthClientStorage {
@@ -198,13 +202,11 @@ export class IdbStorage implements AuthClientStorage {
     });
   }
 
-  constructor(public readonly prefix = 'ic-') {
-    console.trace('idb-load');
-  }
+  constructor(public readonly prefix = 'ic-') {}
 
   public async get(key: string): Promise<string | null> {
     const encryptKey = await await this.encryptKey;
-    const encrypted = await get(this.prefix + key);
+    const encrypted = await get<ArrayBuffer>(this.prefix + key);
     if (encrypted) {
       const decoder = new TextDecoder();
 
@@ -237,7 +239,7 @@ export class IdbStorage implements AuthClientStorage {
   }
 
   public async remove(key: string): Promise<void> {
-    await del(this.prefix + key);
+    await remove(this.prefix + key);
   }
 }
 
@@ -313,22 +315,16 @@ export class AuthClient {
 
     let key: null | SignIdentity = null;
     if (options.identity) {
-      console.log('option identity');
-
       key = options.identity;
     } else {
-      const maybeIdentityStorage = await storage.get(KEY_LOCALSTORAGE_KEY);
-      console.log('stored identity', maybeIdentityStorage);
+      const maybeIdentityStorage = await storage.get(KEY_STORAGE_KEY);
       if (maybeIdentityStorage) {
         try {
           key = Ed25519KeyIdentity.fromJSON(maybeIdentityStorage);
         } catch (e) {
-          console.error(e);
           // Ignore this, this means that the localStorage value isn't a valid Ed25519KeyIdentity
           // serialization.
         }
-      } else {
-        alert('no identity found');
       }
     }
 
@@ -337,7 +333,7 @@ export class AuthClient {
 
     if (key) {
       try {
-        const chainStorage = await storage.get(KEY_LOCALSTORAGE_DELEGATION);
+        const chainStorage = await storage.get(KEY_STORAGE_DELEGATION);
 
         if (options.identity) {
           identity = options.identity;
@@ -490,7 +486,7 @@ export class AuthClient {
       // Create a new key (whether or not one was in storage).
       key = Ed25519KeyIdentity.generate();
       this._key = key;
-      await this._storage.set(KEY_LOCALSTORAGE_KEY, JSON.stringify(key));
+      await this._storage.set(KEY_STORAGE_KEY, JSON.stringify(key));
     }
 
     // Set default maxTimeToLive to 8 hours
@@ -566,16 +562,9 @@ export class AuthClient {
             // it a sync function. Having _handleSuccess as an async function
             // messes up the jest tests for some reason.
             if (this._chain) {
-              console.log('chain', this._chain);
-              console.log(this._storage);
-              await this._storage.set(
-                KEY_LOCALSTORAGE_DELEGATION,
-                JSON.stringify(this._chain.toJSON()),
-              );
-              console.log(await this._storage.get(KEY_LOCALSTORAGE_DELEGATION));
+              await this._storage.set(KEY_STORAGE_DELEGATION, JSON.stringify(this._chain.toJSON()));
             }
           } catch (err) {
-            console.error(err);
             this._handleFailure((err as Error).message, options?.onError);
           }
           break;
