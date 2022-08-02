@@ -15,6 +15,7 @@ import {
 } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
 import { IdleManager, IdleManagerOptions } from './idleManager';
+import { get, set, del } from 'idb-keyval';
 
 const KEY_LOCALSTORAGE_KEY = 'identity';
 const KEY_LOCALSTORAGE_DELEGATION = 'delegation';
@@ -166,6 +167,80 @@ export class LocalStorage implements AuthClientStorage {
   }
 }
 
+export class IdbStorage implements AuthClientStorage {
+  private get encryptKey() {
+    return new Promise<CryptoKey>(resolve => {
+      get<CryptoKey | undefined>('ic-auth-key').then(async storedKey => {
+        const key =
+          storedKey ??
+          (await crypto.subtle.generateKey(
+            {
+              name: 'AES-CBC',
+              length: 256,
+            },
+            false,
+            ['encrypt', 'decrypt'],
+          ));
+
+        await set('ic-auth-key', key);
+        resolve(key);
+      });
+    });
+  }
+  private get iv() {
+    return new Promise<Uint8Array>(resolve => {
+      get<Uint8Array | undefined>('ic-iv').then(async storedIv => {
+        const iv = storedIv ?? (await crypto.getRandomValues(new Uint8Array(16)));
+
+        await set('ic-iv', iv);
+        resolve(iv);
+      });
+    });
+  }
+
+  constructor(public readonly prefix = 'ic-') {
+    console.trace('idb-load');
+  }
+
+  public async get(key: string): Promise<string | null> {
+    const encryptKey = await await this.encryptKey;
+    const encrypted = await get(this.prefix + key);
+    if (encrypted) {
+      const decoder = new TextDecoder();
+
+      const decrypted = await crypto.subtle.decrypt(
+        { name: 'AES-CBC', iv: await this.iv },
+        encryptKey,
+        encrypted,
+      );
+      return decoder.decode(decrypted);
+    }
+    return null;
+  }
+
+  public async set(key: string, value: string): Promise<void> {
+    const encoder = new TextEncoder();
+    const encryptKey = await await this.encryptKey;
+
+    try {
+      await set(
+        this.prefix + key,
+        await crypto.subtle.encrypt(
+          { name: 'AES-CBC', iv: await this.iv },
+          encryptKey,
+          encoder.encode(value).buffer,
+        ),
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  public async remove(key: string): Promise<void> {
+    await del(this.prefix + key);
+  }
+}
+
 interface AuthReadyMessage {
   kind: 'authorize-ready';
 }
@@ -234,20 +309,26 @@ export class AuthClient {
       idleOptions?: IdleOptions;
     } = {},
   ): Promise<AuthClient> {
-    const storage = options.storage ?? new LocalStorage('ic-');
+    const storage = options.storage ?? new IdbStorage('ic-');
 
     let key: null | SignIdentity = null;
     if (options.identity) {
+      console.log('option identity');
+
       key = options.identity;
     } else {
       const maybeIdentityStorage = await storage.get(KEY_LOCALSTORAGE_KEY);
+      console.log('stored identity', maybeIdentityStorage);
       if (maybeIdentityStorage) {
         try {
           key = Ed25519KeyIdentity.fromJSON(maybeIdentityStorage);
         } catch (e) {
+          console.error(e);
           // Ignore this, this means that the localStorage value isn't a valid Ed25519KeyIdentity
           // serialization.
         }
+      } else {
+        alert('no identity found');
       }
     }
 
@@ -485,12 +566,16 @@ export class AuthClient {
             // it a sync function. Having _handleSuccess as an async function
             // messes up the jest tests for some reason.
             if (this._chain) {
+              console.log('chain', this._chain);
+              console.log(this._storage);
               await this._storage.set(
                 KEY_LOCALSTORAGE_DELEGATION,
                 JSON.stringify(this._chain.toJSON()),
               );
+              console.log(await this._storage.get(KEY_LOCALSTORAGE_DELEGATION));
             }
           } catch (err) {
+            console.error(err);
             this._handleFailure((err as Error).message, options?.onError);
           }
           break;
