@@ -17,6 +17,9 @@ export interface AuthClientStorage {
   remove(key: string): Promise<void>;
 }
 
+/**
+ * Legacy implementation of AuthClientStorage, for use where IndexedDb is not available
+ */
 export class LocalStorage implements AuthClientStorage {
   constructor(public readonly prefix = 'ic-', private readonly _localStorage?: Storage) {}
 
