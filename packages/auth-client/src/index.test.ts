@@ -1,9 +1,10 @@
+import 'fake-indexeddb/auto';
 import { Actor, HttpAgent } from '@dfinity/agent';
 import { AgentError } from '@dfinity/agent/lib/cjs/errors';
 import { IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
-import { AuthClient, AuthClientStorage, ERROR_USER_INTERRUPT } from './index';
+import { AuthClient, ERROR_USER_INTERRUPT, IdbStorage } from './index';
 
 /**
  * A class for mocking the IDP service.
@@ -318,6 +319,21 @@ describe('Auth Client', () => {
     // wait for default 30 minute idle timeout
     jest.advanceTimersByTime(30 * 60 * 1000);
     expect(idleFn).not.toHaveBeenCalled();
+  });
+});
+
+describe('IdbStorage', () => {
+  it('should handle get and set', async () => {
+    const storage = new IdbStorage();
+
+    await storage.set('testKey', 'testValue');
+    expect(await storage.get('testKey')).toBe('testValue');
+  });
+});
+
+describe('EncryptedIdbStorage', () => {
+  it.skip('should handle get and set', async () => {
+    // The CryptoKey does not currently interact correctly with the fake-indexeddb mock
   });
 });
 

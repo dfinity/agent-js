@@ -14,14 +14,18 @@ import {
   Ed25519KeyIdentity,
 } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
-import { db, getValue, removeValue, setValue } from './db';
 import { IdleManager, IdleManagerOptions } from './idleManager';
-const set = async <T>(key: string, value: T) => await setValue<T>(db, value, key);
-const get = async <T>(key: string): Promise<T | undefined> => await getValue<T>(db, key);
-const remove = async (key: string) => await removeValue(db, key);
+import {
+  AuthClientStorage,
+  IdbStorage,
+  KEY_ENCRYPTION,
+  KEY_STORAGE_DELEGATION,
+  KEY_STORAGE_KEY,
+  KEY_VECTOR,
+} from './storage';
 
-const KEY_STORAGE_KEY = 'identity';
-const KEY_STORAGE_DELEGATION = 'delegation';
+export { IdbStorage, LocalStorage, EncryptedIdbStorage } from './storage';
+
 const IDENTITY_PROVIDER_DEFAULT = 'https://identity.ic0.app';
 const IDENTITY_PROVIDER_ENDPOINT = '#authorize';
 
@@ -95,17 +99,6 @@ export interface AuthClientLoginOptions {
   onError?: ((error?: string) => void) | ((error?: string) => Promise<void>);
 }
 
-/**
- * Interface for persisting user authentication data
- */
-export interface AuthClientStorage {
-  get(key: string): Promise<string | null>;
-
-  set(key: string, value: string): Promise<void>;
-
-  remove(key: string): Promise<void>;
-}
-
 interface InternetIdentityAuthRequest {
   kind: 'authorize-client';
   sessionPublicKey: Uint8Array;
@@ -124,123 +117,6 @@ interface InternetIdentityAuthResponseSuccess {
     signature: Uint8Array;
   }[];
   userPublicKey: Uint8Array;
-}
-
-async function _deleteStorage(storage: AuthClientStorage) {
-  await storage.remove(KEY_STORAGE_KEY);
-  await storage.remove(KEY_STORAGE_DELEGATION);
-  await storage.remove(KEY_STORAGE_DELEGATION);
-}
-
-export class LocalStorage implements AuthClientStorage {
-  constructor(public readonly prefix = 'ic-', private readonly _localStorage?: Storage) {}
-
-  public get(key: string): Promise<string | null> {
-    return Promise.resolve(this._getLocalStorage().getItem(this.prefix + key));
-  }
-
-  public set(key: string, value: string): Promise<void> {
-    this._getLocalStorage().setItem(this.prefix + key, value);
-    return Promise.resolve();
-  }
-
-  public remove(key: string): Promise<void> {
-    this._getLocalStorage().removeItem(this.prefix + key);
-    return Promise.resolve();
-  }
-
-  private _getLocalStorage() {
-    if (this._localStorage) {
-      return this._localStorage;
-    }
-
-    const ls =
-      typeof window === 'undefined'
-        ? typeof global === 'undefined'
-          ? typeof self === 'undefined'
-            ? undefined
-            : self.localStorage
-          : global.localStorage
-        : window.localStorage;
-
-    if (!ls) {
-      throw new Error('Could not find local storage.');
-    }
-
-    return ls;
-  }
-}
-
-export class IdbStorage implements AuthClientStorage {
-  private get encryptKey() {
-    return new Promise<CryptoKey>(resolve => {
-      get<CryptoKey | undefined>('ic-auth-key').then(async storedKey => {
-        const key =
-          storedKey ??
-          (await crypto.subtle.generateKey(
-            {
-              name: 'AES-CBC',
-              length: 256,
-            },
-            false,
-            ['encrypt', 'decrypt'],
-          ));
-
-        await set('ic-auth-key', key);
-        resolve(key);
-      });
-    });
-  }
-  private get iv() {
-    return new Promise<Uint8Array>(resolve => {
-      get<Uint8Array | undefined>('ic-iv').then(async storedIv => {
-        const iv = storedIv ?? (await crypto.getRandomValues(new Uint8Array(16)));
-
-        await set('ic-iv', iv);
-        resolve(iv);
-      });
-    });
-  }
-
-  constructor(public readonly prefix = 'ic-') {}
-
-  public async get(key: string): Promise<string | null> {
-    const encryptKey = await await this.encryptKey;
-    const encrypted = await get<ArrayBuffer>(this.prefix + key);
-    if (encrypted) {
-      const decoder = new TextDecoder();
-
-      const decrypted = await crypto.subtle.decrypt(
-        { name: 'AES-CBC', iv: await this.iv },
-        encryptKey,
-        encrypted,
-      );
-      return decoder.decode(decrypted);
-    }
-    return null;
-  }
-
-  public async set(key: string, value: string): Promise<void> {
-    const encoder = new TextEncoder();
-    const encryptKey = await await this.encryptKey;
-
-    try {
-      await set(
-        this.prefix + key,
-        await crypto.subtle.encrypt(
-          { name: 'AES-CBC', iv: await this.iv },
-          encryptKey,
-          encoder.encode(value).buffer,
-        ),
-      );
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  public async remove(key: string): Promise<void> {
-    await remove(this.prefix + key);
-  }
 }
 
 interface AuthReadyMessage {
@@ -311,7 +187,7 @@ export class AuthClient {
       idleOptions?: IdleOptions;
     } = {},
   ): Promise<AuthClient> {
-    const storage = options.storage ?? new IdbStorage('ic-');
+    const storage = options.storage ?? new IdbStorage();
 
     let key: null | SignIdentity = null;
     if (options.identity) {
@@ -607,4 +483,11 @@ export class AuthClient {
       }
     }
   }
+}
+
+async function _deleteStorage(storage: AuthClientStorage) {
+  await storage.remove(KEY_STORAGE_KEY);
+  await storage.remove(KEY_STORAGE_DELEGATION);
+  await storage.remove(KEY_ENCRYPTION);
+  await storage.remove(KEY_VECTOR);
 }

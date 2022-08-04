@@ -1,14 +1,17 @@
 import { openDB, IDBPDatabase } from 'idb';
 
 export type Database = Promise<IDBPDatabase<unknown>>;
+export const AUTH_DB_NAME = 'auth-client-db';
+export const OBJECT_STORE_NAME = 'keyval-store';
 
 export const openDbStore = async () =>
-  await openDB('auth-client-db', 1, {
+  await openDB(AUTH_DB_NAME, 1, {
     upgrade: database => {
-      if (database.objectStoreNames.contains('ic-idp')) {
-        database.clear('ic-idp');
+      database.objectStoreNames;
+      if (database.objectStoreNames.contains(OBJECT_STORE_NAME)) {
+        database.clear(OBJECT_STORE_NAME);
       }
-      database.createObjectStore('ic-idp');
+      database.createObjectStore(OBJECT_STORE_NAME);
     },
   });
 
@@ -19,7 +22,7 @@ export const openDbStore = async () =>
  * @returns
  */
 export async function getValue<T>(db: Database, key: string): Promise<T | undefined> {
-  return (await db).get('ic-idp', key);
+  return (await db).get(OBJECT_STORE_NAME, key);
 }
 
 /**
@@ -29,7 +32,7 @@ export async function getValue<T>(db: Database, key: string): Promise<T | undefi
  * @param key string asdf
  */
 export async function setValue<T>(db: Database, value: T, key: string): Promise<void> {
-  (await db).put('ic-idp', value, key);
+  (await db).put(OBJECT_STORE_NAME, value, key);
 }
 
 /**
@@ -39,7 +42,7 @@ export async function setValue<T>(db: Database, value: T, key: string): Promise<
  * @param key string asdf
  */
 export async function removeValue(db: Database, key: string): Promise<void> {
-  (await db).delete('ic-idp', key);
+  (await db).delete(OBJECT_STORE_NAME, key);
 }
 
 export const db = openDbStore();

@@ -8,7 +8,6 @@
 // Node.js in a similar way.
 import { Crypto } from '@peculiar/webcrypto';
 global.crypto = new Crypto();
-import 'fake-indexeddb/auto';
 global.TextEncoder = require('text-encoding').TextEncoder;
 global.TextDecoder = require('text-encoding').TextDecoder;
 require('whatwg-fetch');
