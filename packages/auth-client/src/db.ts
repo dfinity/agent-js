@@ -4,9 +4,6 @@ type Database = IDBPDatabase<unknown>;
 const AUTH_DB_NAME = 'auth-client-db';
 const OBJECT_STORE_NAME = 'ic-keyval';
 
-// Increment if schema changes
-const AUTH_CLIENT_DB_VERSION = 1;
-
 const openDbStore = async (dbName = AUTH_DB_NAME, storeName = OBJECT_STORE_NAME, version: number) =>
   await openDB(dbName, version, {
     upgrade: database => {
@@ -64,11 +61,7 @@ export type DBCreateOptions = {
 };
 export class IdbKeyVal {
   public static async create(options?: DBCreateOptions) {
-    const {
-      dbName = AUTH_DB_NAME,
-      storeName = OBJECT_STORE_NAME,
-      version = AUTH_CLIENT_DB_VERSION,
-    } = options ?? {};
+    const { dbName = AUTH_DB_NAME, storeName = OBJECT_STORE_NAME, version = 1 } = options ?? {};
     const db = await openDbStore(dbName, storeName, version);
     return new IdbKeyVal(db, storeName);
   }

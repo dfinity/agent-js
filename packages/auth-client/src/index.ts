@@ -18,13 +18,13 @@ import { IdleManager, IdleManagerOptions } from './idleManager';
 import {
   AuthClientStorage,
   IdbStorage,
-  KEY_ENCRYPTION,
   KEY_STORAGE_DELEGATION,
   KEY_STORAGE_KEY,
   KEY_VECTOR,
 } from './storage';
 
-export { IdbStorage, LocalStorage, EncryptedIdbStorage } from './storage';
+export { IdbStorage, LocalStorage } from './storage';
+export { IdbKeyVal, DBCreateOptions } from './db';
 
 const IDENTITY_PROVIDER_DEFAULT = 'https://identity.ic0.app';
 const IDENTITY_PROVIDER_ENDPOINT = '#authorize';
@@ -42,7 +42,7 @@ export interface AuthClientCreateOptions {
    */
   identity?: SignIdentity;
   /**
-   * Optional storage with get, set, and remove. Uses LocalStorage by default
+   * Optional storage with get, set, and remove. Uses {@link IdbStorage} by default
    */
   storage?: AuthClientStorage;
   /**
@@ -488,6 +488,5 @@ export class AuthClient {
 async function _deleteStorage(storage: AuthClientStorage) {
   await storage.remove(KEY_STORAGE_KEY);
   await storage.remove(KEY_STORAGE_DELEGATION);
-  await storage.remove(KEY_ENCRYPTION);
   await storage.remove(KEY_VECTOR);
 }

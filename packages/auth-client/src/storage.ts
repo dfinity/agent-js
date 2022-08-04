@@ -1,9 +1,10 @@
-import { IdbKeyVal, DBCreateOptions } from './db';
+import { IdbKeyVal } from './db';
 
 export const KEY_STORAGE_KEY = 'identity';
 export const KEY_STORAGE_DELEGATION = 'delegation';
-export const KEY_ENCRYPTION = 'encrypt-key';
 export const KEY_VECTOR = 'iv';
+// Increment if any fields are modified
+export const DB_VERSION = 1;
 
 /**
  * Interface for persisting user authentication data
@@ -55,12 +56,19 @@ export class LocalStorage implements AuthClientStorage {
   }
 }
 
+/**
+ * IdbStorage is an interface for simple storage of string key-value pairs built on {@link IdbKeyVal}
+ *
+ * It replaces {@link LocalStorage}
+ * @see implements {@link AuthClientStorage}
+ */
 export class IdbStorage implements AuthClientStorage {
+  // Intializes a KeyVal on first request
   private initializedDb: IdbKeyVal | undefined;
   get _db(): Promise<IdbKeyVal> {
     return new Promise(resolve => {
       if (this.initializedDb) resolve(this.initializedDb);
-      IdbKeyVal.create().then(db => {
+      IdbKeyVal.create({ version: DB_VERSION }).then(db => {
         this.initializedDb = db;
         resolve(db);
       });
@@ -76,95 +84,6 @@ export class IdbStorage implements AuthClientStorage {
   public async set(key: string, value: string): Promise<void> {
     const db = await this._db;
     await db.set(key, value);
-  }
-
-  public async remove(key: string): Promise<void> {
-    const db = await this._db;
-    await db.remove(key);
-  }
-}
-export class EncryptedIdbStorage implements AuthClientStorage {
-  private initializedDb: IdbKeyVal | undefined;
-  get _db(): Promise<IdbKeyVal> {
-    return new Promise(resolve => {
-      if (this.initializedDb) resolve(this.initializedDb);
-      IdbKeyVal.create().then(db => {
-        this.initializedDb = db;
-        resolve(db);
-      });
-    });
-  }
-
-  private storedKey: CryptoKey | undefined;
-  private get encryptKey() {
-    return new Promise<CryptoKey>(resolve => {
-      this._db.then(async db => {
-        if (this.storedKey) resolve(this.storedKey);
-        const key =
-          (await db.get<CryptoKey | undefined>(KEY_ENCRYPTION)) ??
-          (await crypto.subtle.generateKey(
-            {
-              name: 'AES-CBC',
-              length: 256,
-            },
-            false,
-            ['encrypt', 'decrypt'],
-          ));
-
-        this.storedKey = key;
-
-        await db.set(KEY_ENCRYPTION, key);
-        resolve(key);
-      });
-    });
-  }
-  private get iv() {
-    return new Promise<Uint8Array>(resolve => {
-      this._db.then(db => {
-        db.get<Uint8Array | undefined>(KEY_VECTOR).then(async storedIv => {
-          const iv = storedIv ?? (await crypto.getRandomValues(new Uint8Array(16)));
-
-          await db.set(KEY_VECTOR, iv);
-          resolve(iv);
-        });
-      });
-    });
-  }
-
-  public async get(key: string): Promise<string | null> {
-    const db = await this._db;
-    const encryptKey = await await this.encryptKey;
-    const encrypted = await db.get<ArrayBuffer>(key);
-
-    if (encrypted) {
-      const decoder = new TextDecoder();
-      const decrypted = await crypto.subtle.decrypt(
-        { name: 'AES-CBC', iv: await this.iv },
-        encryptKey,
-        encrypted,
-      );
-      return decoder.decode(decrypted);
-    }
-    return null;
-  }
-
-  public async set(key: string, value: string): Promise<void> {
-    const db = await this._db;
-    const encoder = new TextEncoder();
-    const encryptKey = await await this.encryptKey;
-
-    try {
-      await db.set(
-        key,
-        await crypto.subtle.encrypt(
-          { name: 'AES-CBC', iv: await this.iv },
-          encryptKey,
-          encoder.encode(value).buffer,
-        ),
-      );
-    } catch (error) {
-      console.error(error);
-    }
   }
 
   public async remove(key: string): Promise<void> {
