@@ -1,18 +1,35 @@
-import { db, getValue, removeValue, setValue } from './db';
+import 'fake-indexeddb/auto';
+import { IdbKeyVal } from './db';
+
+let testCounter = 0;
+
+const testDb = async () => {
+  return await IdbKeyVal.create({
+    dbName: 'db-' + testCounter,
+    storeName: 'store-' + testCounter,
+  });
+};
+
+beforeEach(() => {
+  testCounter += 1;
+});
 
 describe('indexeddb wrapper', () => {
   it('should store a basic key value', async () => {
-    const shouldSet = async () => await setValue(db, 'testValue', 'testKey');
+    const db = await testDb();
+    const shouldSet = async () => await db.set('testKey', 'testValue');
     expect(shouldSet).not.toThrow();
 
-    expect(await getValue(db, 'testKey')).toBe('testValue');
+    expect(await db.get('testKey')).toBe('testValue');
   });
   it('should support removing a value', async () => {
-    await setValue(db, 'testValue', 'testKey');
-    expect(await getValue(db, 'testKey')).toBe('testValue');
+    const db = await testDb();
+    await db.set('testKey', 'testValue');
 
-    await removeValue(db, 'testKey');
+    expect(await db.get('testKey')).toBe('testValue');
 
-    expect(await getValue(db, 'testKey')).toBe(undefined);
+    await db.remove('testKey');
+
+    expect(await db.get('testKey')).toBe(null);
   });
 });

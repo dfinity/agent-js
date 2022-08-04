@@ -1,17 +1,20 @@
 import { openDB, IDBPDatabase } from 'idb';
 
-export type Database = Promise<IDBPDatabase<unknown>>;
-export const AUTH_DB_NAME = 'auth-client-db';
-export const OBJECT_STORE_NAME = 'keyval-store';
+type Database = IDBPDatabase<unknown>;
+const AUTH_DB_NAME = 'auth-client-db';
+const OBJECT_STORE_NAME = 'ic-keyval';
 
-export const openDbStore = async () =>
-  await openDB(AUTH_DB_NAME, 1, {
+// Increment if schema changes
+const AUTH_CLIENT_DB_VERSION = 1;
+
+const openDbStore = async (dbName = AUTH_DB_NAME, storeName = OBJECT_STORE_NAME, version: number) =>
+  await openDB(dbName, version, {
     upgrade: database => {
       database.objectStoreNames;
-      if (database.objectStoreNames.contains(OBJECT_STORE_NAME)) {
-        database.clear(OBJECT_STORE_NAME);
+      if (database.objectStoreNames.contains(storeName)) {
+        database.clear(storeName);
       }
-      database.createObjectStore(OBJECT_STORE_NAME);
+      database.createObjectStore(storeName);
     },
   });
 
@@ -21,8 +24,12 @@ export const openDbStore = async () =>
  * @param key string
  * @returns
  */
-export async function getValue<T>(db: Database, key: string): Promise<T | undefined> {
-  return (await db).get(OBJECT_STORE_NAME, key);
+async function getValue<T>(
+  db: Database,
+  storeName: string,
+  key: IDBValidKey,
+): Promise<T | undefined> {
+  return await db.get(storeName, key);
 }
 
 /**
@@ -31,8 +38,13 @@ export async function getValue<T>(db: Database, key: string): Promise<T | undefi
  * @param value any value to set
  * @param key string asdf
  */
-export async function setValue<T>(db: Database, value: T, key: string): Promise<void> {
-  (await db).put(OBJECT_STORE_NAME, value, key);
+async function setValue<T>(
+  db: Database,
+  storeName: string,
+  key: IDBValidKey,
+  value: T,
+): Promise<IDBValidKey> {
+  return await db.put(storeName, value, key);
 }
 
 /**
@@ -41,8 +53,35 @@ export async function setValue<T>(db: Database, value: T, key: string): Promise<
  * @param value any value to remove
  * @param key string asdf
  */
-export async function removeValue(db: Database, key: string): Promise<void> {
-  (await db).delete(OBJECT_STORE_NAME, key);
+async function removeValue(db: Database, storeName: string, key: IDBValidKey): Promise<void> {
+  return await db.delete(storeName, key);
 }
 
-export const db = openDbStore();
+export type DBCreateOptions = {
+  dbName?: string;
+  storeName?: string;
+  version?: number;
+};
+export class IdbKeyVal {
+  public static async create(options?: DBCreateOptions) {
+    const {
+      dbName = AUTH_DB_NAME,
+      storeName = OBJECT_STORE_NAME,
+      version = AUTH_CLIENT_DB_VERSION,
+    } = options ?? {};
+    const db = await openDbStore(dbName, storeName, version);
+    return new IdbKeyVal(db, storeName);
+  }
+
+  private constructor(private _db: Database, private _storeName: string) {}
+
+  public async set<T>(key: IDBValidKey, value: T) {
+    return await setValue<T>(this._db, this._storeName, key, value);
+  }
+  public async get<T>(key: IDBValidKey): Promise<T | null> {
+    return (await getValue<T>(this._db, this._storeName, key)) ?? null;
+  }
+  public async remove(key: IDBValidKey) {
+    return await removeValue(this._db, this._storeName, key);
+  }
+}

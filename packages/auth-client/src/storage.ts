@@ -1,7 +1,4 @@
-import { db, getValue, removeValue, setValue } from './db';
-const set = async <T>(key: string, value: T) => await setValue<T>(db, value, key);
-const get = async <T>(key: string): Promise<T | undefined> => await getValue<T>(db, key);
-const remove = async (key: string) => await removeValue(db, key);
+import { IdbKeyVal, DBCreateOptions } from './db';
 
 export const KEY_STORAGE_KEY = 'identity';
 export const KEY_STORAGE_DELEGATION = 'delegation';
@@ -59,26 +56,52 @@ export class LocalStorage implements AuthClientStorage {
 }
 
 export class IdbStorage implements AuthClientStorage {
+  private initializedDb: IdbKeyVal | undefined;
+  get _db(): Promise<IdbKeyVal> {
+    return new Promise(resolve => {
+      if (this.initializedDb) resolve(this.initializedDb);
+      IdbKeyVal.create().then(db => {
+        this.initializedDb = db;
+        resolve(db);
+      });
+    });
+  }
+
   public async get(key: string): Promise<string | null> {
-    return (await get(key)) ?? null;
+    const db = await this._db;
+    return await db.get<string>(key);
+    // return (await db.get<string>(key)) ?? null;
   }
 
   public async set(key: string, value: string): Promise<void> {
-    await set(key, value);
+    const db = await this._db;
+    await db.set(key, value);
   }
 
   public async remove(key: string): Promise<void> {
-    await remove(key);
+    const db = await this._db;
+    await db.remove(key);
   }
 }
 export class EncryptedIdbStorage implements AuthClientStorage {
-  storedKey: CryptoKey | undefined;
+  private initializedDb: IdbKeyVal | undefined;
+  get _db(): Promise<IdbKeyVal> {
+    return new Promise(resolve => {
+      if (this.initializedDb) resolve(this.initializedDb);
+      IdbKeyVal.create().then(db => {
+        this.initializedDb = db;
+        resolve(db);
+      });
+    });
+  }
+
+  private storedKey: CryptoKey | undefined;
   private get encryptKey() {
     return new Promise<CryptoKey>(resolve => {
-      if (this.storedKey) resolve(this.storedKey);
-      get<CryptoKey | undefined>(KEY_ENCRYPTION).then(async storedKey => {
+      this._db.then(async db => {
+        if (this.storedKey) resolve(this.storedKey);
         const key =
-          storedKey ??
+          (await db.get<CryptoKey | undefined>(KEY_ENCRYPTION)) ??
           (await crypto.subtle.generateKey(
             {
               name: 'AES-CBC',
@@ -87,27 +110,31 @@ export class EncryptedIdbStorage implements AuthClientStorage {
             false,
             ['encrypt', 'decrypt'],
           ));
-        this.storedKey = storedKey;
 
-        await set(KEY_ENCRYPTION, key);
+        this.storedKey = key;
+
+        await db.set(KEY_ENCRYPTION, key);
         resolve(key);
       });
     });
   }
   private get iv() {
     return new Promise<Uint8Array>(resolve => {
-      get<Uint8Array | undefined>(KEY_VECTOR).then(async storedIv => {
-        const iv = storedIv ?? (await crypto.getRandomValues(new Uint8Array(16)));
+      this._db.then(db => {
+        db.get<Uint8Array | undefined>(KEY_VECTOR).then(async storedIv => {
+          const iv = storedIv ?? (await crypto.getRandomValues(new Uint8Array(16)));
 
-        await set(KEY_VECTOR, iv);
-        resolve(iv);
+          await db.set(KEY_VECTOR, iv);
+          resolve(iv);
+        });
       });
     });
   }
 
   public async get(key: string): Promise<string | null> {
+    const db = await this._db;
     const encryptKey = await await this.encryptKey;
-    const encrypted = await get<ArrayBuffer>(key);
+    const encrypted = await db.get<ArrayBuffer>(key);
 
     if (encrypted) {
       const decoder = new TextDecoder();
@@ -122,11 +149,12 @@ export class EncryptedIdbStorage implements AuthClientStorage {
   }
 
   public async set(key: string, value: string): Promise<void> {
+    const db = await this._db;
     const encoder = new TextEncoder();
     const encryptKey = await await this.encryptKey;
 
     try {
-      await set(
+      await db.set(
         key,
         await crypto.subtle.encrypt(
           { name: 'AES-CBC', iv: await this.iv },
@@ -140,6 +168,7 @@ export class EncryptedIdbStorage implements AuthClientStorage {
   }
 
   public async remove(key: string): Promise<void> {
-    await remove(key);
+    const db = await this._db;
+    await db.remove(key);
   }
 }
