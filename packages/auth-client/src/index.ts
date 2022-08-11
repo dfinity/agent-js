@@ -21,6 +21,7 @@ import {
   KEY_STORAGE_DELEGATION,
   KEY_STORAGE_KEY,
   KEY_VECTOR,
+  LocalStorage,
 } from './storage';
 
 export { IdbStorage, LocalStorage } from './storage';
@@ -193,7 +194,26 @@ export class AuthClient {
     if (options.identity) {
       key = options.identity;
     } else {
-      const maybeIdentityStorage = await storage.get(KEY_STORAGE_KEY);
+      let maybeIdentityStorage = await storage.get(KEY_STORAGE_KEY);
+      if (!maybeIdentityStorage) {
+        // Attempt to migrate from localstorage
+        try {
+          const fallbackLocalStorage = new LocalStorage('ic');
+          const localChain = await fallbackLocalStorage.get(KEY_STORAGE_DELEGATION);
+          const localKey = await fallbackLocalStorage.get(KEY_STORAGE_KEY);
+          if (localChain && localKey) {
+            console.log('Discovered an identity stored in localstorage. Migrating to IndexedDB');
+            await storage.set(KEY_STORAGE_DELEGATION, localChain);
+            await storage.set(KEY_STORAGE_KEY, localKey);
+            maybeIdentityStorage = localChain;
+            // clean up
+            await fallbackLocalStorage.remove(KEY_STORAGE_DELEGATION);
+            await fallbackLocalStorage.remove(KEY_STORAGE_KEY);
+          }
+        } catch (error) {
+          console.error('error while attempting to recover localstorage: ' + error);
+        }
+      }
       if (maybeIdentityStorage) {
         try {
           key = Ed25519KeyIdentity.fromJSON(maybeIdentityStorage);
