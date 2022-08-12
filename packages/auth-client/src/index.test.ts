@@ -612,7 +612,7 @@ describe('Migration from localstorage', () => {
     expect(storage.set as jest.Mock).toBeCalledTimes(0);
   });
   it('should migrate storage from localstorage', async () => {
-    const localStorage = new LocalStorage('ic');
+    const localStorage = new LocalStorage();
     const storage: AuthClientStorage = {
       remove: jest.fn(),
       get: jest.fn(),

@@ -198,7 +198,7 @@ export class AuthClient {
       if (!maybeIdentityStorage) {
         // Attempt to migrate from localstorage
         try {
-          const fallbackLocalStorage = new LocalStorage('ic');
+          const fallbackLocalStorage = new LocalStorage();
           const localChain = await fallbackLocalStorage.get(KEY_STORAGE_DELEGATION);
           const localKey = await fallbackLocalStorage.get(KEY_STORAGE_KEY);
           if (localChain && localKey) {
