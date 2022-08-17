@@ -6,6 +6,8 @@ export const KEY_VECTOR = 'iv';
 // Increment if any fields are modified
 export const DB_VERSION = 1;
 
+export const isBrowser = typeof window !== 'undefined';
+
 /**
  * Interface for persisting user authentication data
  */
