@@ -1,5 +1,5 @@
 import { JsonObject } from '@dfinity/candid';
-import { LegacyPrincipal, Principal } from '@dfinity/principal';
+import { Principal } from '@dfinity/principal';
 import { AgentError } from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
@@ -470,7 +470,7 @@ export class HttpAgent implements Agent {
     const attributes = Object.entries(this);
     const legacy = Object.assign(attributes);
     legacy['rootKey'] = Buffer.from(this.rootKey);
-    legacy['Principal'] = LegacyPrincipal.from(await this.getPrincipal());
+    legacy['Principal'] = Principal.from(await this.getPrincipal());
 
     return legacy;
   }

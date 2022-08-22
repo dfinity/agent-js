@@ -12,9 +12,9 @@ describe('compatibility with old actor', () => {
       host: 'http:localhost:8000',
     });
     const actor = getNFTActor({
-      canisterId: 'aaa-aaa',
+      canisterId: 't2mog-myaaa-aaaal-aas7q-cai',
       agent,
-      standard: 'ext',
+      standard: 'EXT',
     });
     expect(actor).toBeTruthy();
   });
@@ -24,6 +24,13 @@ describe('principal compatibility', () => {
   it('should support from ', () => {
     LegacyPrincipal.anonymous();
     const test = Principal.from(LegacyPrincipal.anonymous());
-    expect(test).toMatchInlineSnapshot();
+    expect(test).toMatchInlineSnapshot(`
+      Principal {
+        "_arr": Uint8Array [
+          4,
+        ],
+        "_isPrincipal": true,
+      }
+    `);
   });
 });
