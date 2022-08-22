@@ -1,8 +1,8 @@
-import { Principal } from '@dfinity/principal';
+import { LegacyPrincipal, Principal } from '@dfinity/principal';
 import { RequestId } from '../request_id';
 import { JsonObject } from '@dfinity/candid';
 import { Identity } from '..';
-import type { Buffer as LegacyBuffer } from '../vendor/buffer';
+import type { Buffer as LegacyBuffer } from 'buffer/';
 
 /**
  * Codes used by the replica for rejecting a message.
@@ -114,7 +114,7 @@ export interface Agent {
    * the principal of the default identity in the agent, which is the principal used
    * when calls don't specify it.
    */
-  getPrincipal(): Promise<Principal>;
+  getPrincipal(): Promise<Principal | LegacyPrincipal>;
 
   /**
    * Create the request for the read state call.
@@ -137,14 +137,17 @@ export interface Agent {
    * @param request The request to send in case it has already been created.
    */
   readState(
-    effectiveCanisterId: Principal | string,
+    effectiveCanisterId: Principal | LegacyPrincipal | string,
     options: ReadStateOptions,
     identity?: Identity,
     // eslint-disable-next-line  @typescript-eslint/no-explicit-any
     request?: any,
   ): Promise<ReadStateResponse>;
 
-  call(canisterId: Principal | string, fields: CallOptions): Promise<SubmitResponse>;
+  call(
+    canisterId: Principal | LegacyPrincipal | string,
+    fields: CallOptions,
+  ): Promise<SubmitResponse>;
 
   /**
    * Query the status endpoint of the replica. This normally has a few fields that
@@ -165,7 +168,10 @@ export interface Agent {
    *     failed. If the query itself failed but no protocol errors happened, the response will
    *     be of type QueryResponseRejected.
    */
-  query(canisterId: Principal | string, options: QueryFields): Promise<QueryResponse>;
+  query(
+    canisterId: Principal | LegacyPrincipal | string,
+    options: QueryFields,
+  ): Promise<QueryResponse>;
 
   /**
    * By default, the agent is configured to talk to the main Internet Computer,
@@ -200,14 +206,14 @@ export interface Agent {
 
 // For use with older than v0.10.0 actors
 export type LegacyAgent = {
-  readonly rootKey: BinaryBlob | null;
-  getPrincipal(): Promise<Principal>;
+  readonly rootKey: BinaryBlob;
+  getPrincipal(): Promise<LegacyPrincipal>;
   readState(
-    effectiveCanisterId: Principal | string,
+    effectiveCanisterId: LegacyPrincipal | string,
     options: ReadStateOptions,
   ): Promise<ReadStateResponse>;
-  call(canisterId: Principal | string, fields: CallOptions): Promise<SubmitResponse>;
+  call(canisterId: LegacyPrincipal | string, fields: CallOptions): Promise<SubmitResponse>;
   status(): Promise<JsonObject>;
-  query(canisterId: Principal | string, options: QueryFields): Promise<QueryResponse>;
+  query(canisterId: LegacyPrincipal | string, options: QueryFields): Promise<QueryResponse>;
   fetchRootKey(): Promise<BinaryBlob>;
 };

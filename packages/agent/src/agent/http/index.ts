@@ -1,5 +1,5 @@
 import { JsonObject } from '@dfinity/candid';
-import { Principal } from '@dfinity/principal';
+import { LegacyPrincipal, Principal } from '@dfinity/principal';
 import { AgentError } from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
@@ -27,7 +27,6 @@ import {
   ReadRequestType,
   SubmitRequestType,
 } from './types';
-import type { Buffer as LegacyBuffer } from '../../vendor/buffer';
 
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
@@ -467,11 +466,12 @@ export class HttpAgent implements Agent {
 
     return p;
   }
-  public toLegacyAgent(): LegacyAgent {
+  public async toLegacyAgent(): Promise<LegacyAgent> {
     const attributes = Object.entries(this);
     const legacy = Object.assign(attributes);
-    legacy['rootKey'] = Buffer.from(this.rootKey) as unknown as LegacyBuffer;
-    legacy['rootKey']['prototype'] = Buffer;
+    legacy['rootKey'] = Buffer.from(this.rootKey);
+    legacy['Principal'] = LegacyPrincipal.from(await this.getPrincipal());
+
     return legacy;
   }
 }

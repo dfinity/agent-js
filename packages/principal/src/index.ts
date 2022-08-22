@@ -1,6 +1,7 @@
 import { decode, encode } from './utils/base32';
 import { getCrc32 } from './utils/getCrc';
 import { sha224 } from './utils/sha224';
+export { LegacyPrincipal } from './legacyPrincipal.js';
 
 const SELF_AUTHENTICATING_SUFFIX = 2;
 const ANONYMOUS_SUFFIX = 4;
