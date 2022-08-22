@@ -61,10 +61,12 @@
     "ts-node": "^10.8.2"
   },
   "devDependencies": {
+    "@psychedelic/dab-js": "./src/vendor/psychedelic-dab-js-1.4.6.tgz",
     "@trust/webcrypto": "^0.9.2",
     "@types/jest": "^28.1.4",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
+    "buffer": "^6.0.3",
     "eslint": "^8.19.0",
     "eslint-plugin-jsdoc": "^39.3.3",
     "isomorphic-fetch": "^3.0.0",

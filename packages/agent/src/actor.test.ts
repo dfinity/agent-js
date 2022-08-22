@@ -193,7 +193,7 @@ describe('makeActor', () => {
     const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
     const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
 
-    Actor.agentOf(actor).invalidateIdentity();
+    Actor.agentOf(actor)?.invalidateIdentity?.();
 
     try {
       await actor.greet('test');

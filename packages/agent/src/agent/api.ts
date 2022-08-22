@@ -2,6 +2,7 @@ import { Principal } from '@dfinity/principal';
 import { RequestId } from '../request_id';
 import { JsonObject } from '@dfinity/candid';
 import { Identity } from '..';
+import type { Buffer as LegacyBuffer } from '../vendor/buffer';
 
 /**
  * Codes used by the replica for rejecting a message.
@@ -99,11 +100,15 @@ export interface SubmitResponse {
   };
 }
 
+export declare type BinaryBlob = LegacyBuffer & {
+  __BLOB: never;
+};
+
 /**
  * An Agent able to make calls and queries to a Replica.
  */
 export interface Agent {
-  readonly rootKey: ArrayBuffer | null;
+  readonly rootKey: ArrayBuffer | BinaryBlob | null;
   /**
    * Returns the principal ID associated with this agent (by default). It only shows
    * the principal of the default identity in the agent, which is the principal used
@@ -192,3 +197,17 @@ export interface Agent {
    */
   replaceIdentity?(identity: Identity): void;
 }
+
+// For use with older than v0.10.0 actors
+export type LegacyAgent = {
+  readonly rootKey: BinaryBlob | null;
+  getPrincipal(): Promise<Principal>;
+  readState(
+    effectiveCanisterId: Principal | string,
+    options: ReadStateOptions,
+  ): Promise<ReadStateResponse>;
+  call(canisterId: Principal | string, fields: CallOptions): Promise<SubmitResponse>;
+  status(): Promise<JsonObject>;
+  query(canisterId: Principal | string, options: QueryFields): Promise<QueryResponse>;
+  fetchRootKey(): Promise<BinaryBlob>;
+};

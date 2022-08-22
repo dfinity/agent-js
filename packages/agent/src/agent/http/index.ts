@@ -7,6 +7,8 @@ import { requestIdOf } from '../../request_id';
 import { fromHex } from '../../utils/buffer';
 import {
   Agent,
+  BinaryBlob,
+  LegacyAgent,
   QueryFields,
   QueryResponse,
   ReadStateOptions,
@@ -25,6 +27,7 @@ import {
   ReadRequestType,
   SubmitRequestType,
 } from './types';
+import type { Buffer as LegacyBuffer } from '../../vendor/buffer';
 
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
@@ -144,8 +147,8 @@ function getDefaultFetch(): typeof fetch {
 // other computations so that this class can stay as simple as possible while
 // allowing extensions.
 export class HttpAgent implements Agent {
-  public rootKey = fromHex(IC_ROOT_KEY);
-  private readonly _pipeline: HttpAgentRequestTransformFn[] = [];
+  public rootKey: ArrayBuffer = fromHex(IC_ROOT_KEY);
+  readonly _pipeline: HttpAgentRequestTransformFn[] = [];
   private _identity: Promise<Identity> | null;
   private readonly _fetch: typeof fetch;
   private readonly _host: URL;
@@ -463,5 +466,12 @@ export class HttpAgent implements Agent {
     }
 
     return p;
+  }
+  public toLegacyAgent(): LegacyAgent {
+    const attributes = Object.entries(this);
+    const legacy = Object.assign(attributes);
+    legacy['rootKey'] = Buffer.from(this.rootKey) as unknown as LegacyBuffer;
+    legacy['rootKey']['prototype'] = Buffer;
+    return legacy;
   }
 }
