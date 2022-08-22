@@ -13,7 +13,7 @@ const fromHexString = (hexString: string) =>
 const toHexString = (bytes: Uint8Array) =>
   bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
 
-export class Principal {
+export class Principal implements PrincipalBase {
   public static anonymous(): Principal {
     return new this(new Uint8Array([ANONYMOUS_SUFFIX]));
   }
@@ -37,9 +37,9 @@ export class Principal {
     } else if (
       typeof other === 'object' &&
       other !== null &&
-      (other as Principal)._isPrincipal === true
+      (other as PrincipalBase)._isPrincipal === true
     ) {
-      return new Principal((other as Principal)._arr);
+      return new Principal((other as PrincipalBase).toUint8Array());
     }
 
     throw new Error(`Impossible to convert ${JSON.stringify(other)} to Principal.`);
@@ -112,14 +112,20 @@ export class Principal {
    * @param {Principal} other - a {@link Principal} to compare
    * @returns {'lt' | 'eq' | 'gt'} `'lt' | 'eq' | 'gt'` a string, representing less than, equal to, or greater than
    */
-  public compareTo(other: Principal): 'lt' | 'eq' | 'gt' {
-    for (let i = 0; i < Math.min(this._arr.length, other._arr.length); i++) {
-      if (this._arr[i] < other._arr[i]) return 'lt';
-      else if (this._arr[i] > other._arr[i]) return 'gt';
+  public compareTo(other: PrincipalBase): 'lt' | 'eq' | 'gt' {
+    return Principal.compare(this, other);
+  }
+
+  public static compare(p1: PrincipalBase, p2: PrincipalBase): 'lt' | 'eq' | 'gt' {
+    const p1Arr = p1.toUint8Array();
+    const p2Arr = p2.toUint8Array();
+    for (let i = 0; i < Math.min(p1Arr.length, p2Arr.length); i++) {
+      if (p1Arr[i] < p2Arr[i]) return 'lt';
+      else if (p1Arr[i] > p2Arr[i]) return 'gt';
     }
-    // Here, at least one principal is a prefix of the other principal (they could be the same)
-    if (this._arr.length < other._arr.length) return 'lt';
-    if (this._arr.length > other._arr.length) return 'gt';
+    // Here, at least one principal is a prefix of the p2 principal (they could be the same)
+    if (p1Arr.length < p2Arr.length) return 'lt';
+    if (p1Arr.length > p2Arr.length) return 'gt';
     return 'eq';
   }
 
@@ -138,8 +144,15 @@ export class Principal {
    * @param other a {@link Principal} to compare
    * @returns {boolean} boolean
    */
-  public gtEq(other: Principal): boolean {
+  public gtEq(other: PrincipalBase): boolean {
     const cmp = this.compareTo(other);
     return cmp == 'gt' || cmp == 'eq';
   }
+}
+
+export abstract class PrincipalBase {
+  abstract _isPrincipal: boolean;
+  abstract toString(): string;
+  abstract toText(): string;
+  abstract toUint8Array(): Uint8Array;
 }

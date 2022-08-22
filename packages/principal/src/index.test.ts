@@ -1,4 +1,5 @@
-import { Principal } from '.';
+import { Principal, PrincipalBase } from '.';
+import { Principal as PrincipalLegacy } from '@dfinity/principal-legacy';
 
 describe('Principal', () => {
   it('encodes properly', () => {
@@ -40,5 +41,37 @@ describe('Principal', () => {
     expect(principal2.compareTo(anonymous)).toBe('lt');
     expect(anonymous.compareTo(principal1)).toBe('gt');
     expect(anonymous.compareTo(principal2)).toBe('gt');
+  });
+});
+
+describe('backwards compatibility with 0.9.3', () => {
+  test('import from 0.9.3 principal', () => {
+    const testPrincipal = PrincipalLegacy.anonymous();
+    expect(Principal.from(testPrincipal)).toMatchInlineSnapshot(`
+      Principal {
+        "_arr": Uint8Array [
+          4,
+        ],
+        "_isPrincipal": true,
+      }
+    `);
+  });
+  test('alignment on resolution', () => {
+    expect(PrincipalLegacy.fromHex('efcdab000000000001').toText()).toBe(
+      '2chl6-4hpzw-vqaaa-aaaaa-c',
+    );
+    const anonymous = Principal.anonymous();
+    const anonymousLegacy = Principal.anonymous();
+    expect(anonymous.toText()).toMatch(anonymousLegacy.toText());
+
+    const principal1 = Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai');
+    const principal2 = PrincipalLegacy.fromText('ivg37-qiaaa-aaaab-aaaga-cai');
+
+    expect(principal1.compareTo(principal2)).toBe('lt');
+  });
+  test('assignment to PrincipalBase', () => {
+    const legacy = PrincipalLegacy.anonymous() as PrincipalBase;
+
+    expect(legacy._isPrincipal).toBe(true);
   });
 });
