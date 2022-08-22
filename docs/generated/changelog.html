@@ -10,6 +10,17 @@
     <h1>Agent-JS Changelog</h1>
 
     <section>
+      <h2>Version 1</h2>
+      <ul>
+        <li>Backwards compatibility with 0.9.3 for @dfinity/principal</li>
+        <ul>
+          <li>
+            If you have a TypeScript interface that uses a Principal, we recommend updating and
+            using the abstract class PrincipalBase as the signature. It will be compatible across
+            versions of agent-js.
+          </li>
+        </ul>
+      </ul>
       <h2>Version 0.14.0</h2>
       <ul>
         <li>
