@@ -53,6 +53,7 @@
     "@dfinity/principal": "^0.13.1"
   },
   "dependencies": {
+    "@dfinity/principal-legacy": "npm:@dfinity/principal@^0.13.1",
     "base64-arraybuffer": "^0.2.0",
     "bignumber.js": "^9.0.0",
     "borc": "^2.1.1",
@@ -61,7 +62,7 @@
     "ts-node": "^10.8.2"
   },
   "devDependencies": {
-    "@psychedelic/dab-js": "./src/vendor/psychedelic-dab-js-1.4.6.tgz",
+    "@psychedelic/dab-js": "file:../../../DAB-js",
     "@trust/webcrypto": "^0.9.2",
     "@types/jest": "^28.1.4",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
