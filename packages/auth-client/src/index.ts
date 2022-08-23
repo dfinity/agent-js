@@ -489,7 +489,7 @@ export class AuthClient {
   }
 
   public async logout(options: { returnTo?: string } = {}): Promise<void> {
-    _deleteStorage(this._storage);
+    await _deleteStorage(this._storage);
 
     // Reset this auth client to a non-authenticated state.
     this._identity = new AnonymousIdentity();
