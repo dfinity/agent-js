@@ -1,5 +1,5 @@
 import { openDB, IDBPDatabase } from 'idb';
-import { KEY_STORAGE_DELEGATION, KEY_STORAGE_KEY } from './storage';
+import { isBrowser, KEY_STORAGE_DELEGATION, KEY_STORAGE_KEY } from './storage';
 
 type Database = IDBPDatabase<unknown>;
 type IDBValidKey = string | number | Date | BufferSource | IDBValidKey[];
@@ -12,7 +12,7 @@ const _openDbStore = async (
   version: number,
 ) => {
   // Clear legacy stored delegations
-  if (localStorage && localStorage.getItem(KEY_STORAGE_DELEGATION)) {
+  if (isBrowser && localStorage?.getItem(KEY_STORAGE_DELEGATION)) {
     localStorage.removeItem(KEY_STORAGE_DELEGATION);
     localStorage.removeItem(KEY_STORAGE_KEY);
   }
