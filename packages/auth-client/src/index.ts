@@ -18,6 +18,7 @@ import { IdleManager, IdleManagerOptions } from './idleManager';
 import {
   AuthClientStorage,
   IdbStorage,
+  isBrowser,
   KEY_STORAGE_DELEGATION,
   KEY_STORAGE_KEY,
   KEY_VECTOR,
@@ -195,7 +196,7 @@ export class AuthClient {
       key = options.identity;
     } else {
       let maybeIdentityStorage = await storage.get(KEY_STORAGE_KEY);
-      if (!maybeIdentityStorage) {
+      if (!maybeIdentityStorage && isBrowser) {
         // Attempt to migrate from localstorage
         try {
           const fallbackLocalStorage = new LocalStorage();
@@ -488,7 +489,7 @@ export class AuthClient {
   }
 
   public async logout(options: { returnTo?: string } = {}): Promise<void> {
-    _deleteStorage(this._storage);
+    await _deleteStorage(this._storage);
 
     // Reset this auth client to a non-authenticated state.
     this._identity = new AnonymousIdentity();
