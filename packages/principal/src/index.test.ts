@@ -71,6 +71,7 @@ describe('backwards compatibility with 0.9.3', () => {
   });
   test('assignment to PrincipalBase', () => {
     const current = Principal.anonymous() as PrincipalBase;
+    expect(current._isPrincipal).toBe(true);
     const legacy = PrincipalLegacy.anonymous() as PrincipalBase;
     expect(legacy._isPrincipal).toBe(true);
   });
