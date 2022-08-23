@@ -150,6 +150,9 @@ export class Principal implements PrincipalBase {
   }
 }
 
+/**
+ * Base class for a Principal. Use this as the signature to ensure compatibility in your API's
+ */
 export abstract class PrincipalBase {
   abstract _isPrincipal: boolean;
   abstract toString(): string;
