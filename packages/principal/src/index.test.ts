@@ -70,8 +70,8 @@ describe('backwards compatibility with 0.9.3', () => {
     expect(principal1.compareTo(principal2)).toBe('lt');
   });
   test('assignment to PrincipalBase', () => {
+    const current = Principal.anonymous() as PrincipalBase;
     const legacy = PrincipalLegacy.anonymous() as PrincipalBase;
-
     expect(legacy._isPrincipal).toBe(true);
   });
 });
