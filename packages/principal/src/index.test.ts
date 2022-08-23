@@ -1,4 +1,4 @@
-import { Principal, PrincipalBase } from '.';
+import { Principal, PrincipalLike } from '.';
 import { Principal as PrincipalLegacy } from '@dfinity/principal-legacy';
 
 describe('Principal', () => {
@@ -69,10 +69,21 @@ describe('backwards compatibility with 0.9.3', () => {
 
     expect(principal1.compareTo(principal2)).toBe('lt');
   });
-  test('assignment to PrincipalBase', () => {
-    const current = Principal.anonymous() as PrincipalBase;
+  test('assignment to PrincipalLike', () => {
+    const current = Principal.anonymous() as PrincipalLike;
     expect(current._isPrincipal).toBe(true);
-    const legacy = PrincipalLegacy.anonymous() as PrincipalBase;
+    const legacy = PrincipalLegacy.anonymous() as PrincipalLike;
     expect(legacy._isPrincipal).toBe(true);
+  });
+  test('is principal', () => {
+    const legacy = PrincipalLegacy.anonymous();
+    expect(Principal.isPrincipal(legacy)).toBe(true);
+
+    const current = Principal.anonymous();
+    expect(Principal.isPrincipal(current)).toBe(true);
+  });
+  test('is principal string', () => {
+    expect(Principal.isPrincipalString('0chl6-4hpzw-vqaaa-aaaaa-c')).toBe(false);
+    expect(Principal.isPrincipalString('ryjl3-tyaaa-aaaaa-aaaba-cai')).toBe(true);
   });
 });
