@@ -13,7 +13,17 @@ const fromHexString = (hexString: string) =>
 const toHexString = (bytes: Uint8Array) =>
   bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
 
-export class Principal {
+/**
+ * Base class for a Principal. Use this as the signature to ensure compatibility in your API's
+ */
+export abstract class PrincipalLike {
+  abstract _isPrincipal: boolean;
+  abstract toString(): string;
+  abstract toText(): string;
+  abstract toUint8Array(): Uint8Array;
+}
+
+export class Principal implements PrincipalLike {
   public static anonymous(): Principal {
     return new this(new Uint8Array([ANONYMOUS_SUFFIX]));
   }
@@ -34,12 +44,8 @@ export class Principal {
   public static from(other: unknown): Principal {
     if (typeof other === 'string') {
       return Principal.fromText(other);
-    } else if (
-      typeof other === 'object' &&
-      other !== null &&
-      (other as Principal)._isPrincipal === true
-    ) {
-      return new Principal((other as Principal)._arr);
+    } else if (Principal.isPrincipal(other)) {
+      return new Principal((other as PrincipalLike).toUint8Array());
     }
 
     throw new Error(`Impossible to convert ${JSON.stringify(other)} to Principal.`);
@@ -67,6 +73,46 @@ export class Principal {
 
   public static fromUint8Array(arr: Uint8Array): Principal {
     return new this(arr);
+  }
+
+  /**
+   * Utility to check if a provided value is a Principal
+   * @param maybePrincipal unknown type
+   * @returns boolean
+   */
+  public static isPrincipal(maybePrincipal: unknown): maybePrincipal is Principal {
+    if (maybePrincipal instanceof Principal) return true;
+
+    if (typeof maybePrincipal === 'object' && maybePrincipal !== null) {
+      if (
+        'toText' in maybePrincipal &&
+        'toString' in maybePrincipal &&
+        'toUint8Array' in maybePrincipal &&
+        '_isPrincipal' in maybePrincipal
+      ) {
+        return (maybePrincipal as PrincipalLike)['_isPrincipal'];
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Utility to check if a provided value is a Principal-encoded string
+   * @param maybeValid unknown type
+   * @returns boolean
+   */
+  public static isPrincipalString(maybeValid: unknown): boolean {
+    if (typeof maybeValid === 'string') {
+      try {
+        Principal.fromText(maybeValid);
+        return true;
+      } catch (_) {
+        // errors are expected and deliberately suppressed
+        return false;
+      }
+    }
+    return false;
   }
 
   public readonly _isPrincipal = true;
@@ -112,14 +158,20 @@ export class Principal {
    * @param {Principal} other - a {@link Principal} to compare
    * @returns {'lt' | 'eq' | 'gt'} `'lt' | 'eq' | 'gt'` a string, representing less than, equal to, or greater than
    */
-  public compareTo(other: Principal): 'lt' | 'eq' | 'gt' {
-    for (let i = 0; i < Math.min(this._arr.length, other._arr.length); i++) {
-      if (this._arr[i] < other._arr[i]) return 'lt';
-      else if (this._arr[i] > other._arr[i]) return 'gt';
+  public compareTo(other: PrincipalLike): 'lt' | 'eq' | 'gt' {
+    return Principal.compare(this, other);
+  }
+
+  public static compare(p1: PrincipalLike, p2: PrincipalLike): 'lt' | 'eq' | 'gt' {
+    const p1Arr = p1.toUint8Array();
+    const p2Arr = p2.toUint8Array();
+    for (let i = 0; i < Math.min(p1Arr.length, p2Arr.length); i++) {
+      if (p1Arr[i] < p2Arr[i]) return 'lt';
+      else if (p1Arr[i] > p2Arr[i]) return 'gt';
     }
-    // Here, at least one principal is a prefix of the other principal (they could be the same)
-    if (this._arr.length < other._arr.length) return 'lt';
-    if (this._arr.length > other._arr.length) return 'gt';
+    // Here, at least one principal is a prefix of the p2 principal (they could be the same)
+    if (p1Arr.length < p2Arr.length) return 'lt';
+    if (p1Arr.length > p2Arr.length) return 'gt';
     return 'eq';
   }
 
@@ -138,7 +190,7 @@ export class Principal {
    * @param other a {@link Principal} to compare
    * @returns {boolean} boolean
    */
-  public gtEq(other: Principal): boolean {
+  public gtEq(other: PrincipalLike): boolean {
     const cmp = this.compareTo(other);
     return cmp == 'gt' || cmp == 'eq';
   }
