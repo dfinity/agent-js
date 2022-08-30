@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { HttpAgent, Nonce } from '../index';
 import * as cbor from '../../cbor';
 import { Expiry, makeNonceTransform } from './transforms';
@@ -463,4 +464,33 @@ describe('makeNonce', () => {
       expect(nonce).toBe(originalNonce);
     });
   });
+});
+
+describe('reconcile time', () => {
+  it.only('should change nothing if time is within 30 seconds of replica', async () => {
+    const mockFetch = jest.fn();
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2022-12-12'));
+
+    const agent = new HttpAgent({ host: 'http://localhost:8000', fetch: mockFetch });
+
+    await agent.syncTime();
+
+    agent
+      .call(Principal.managementCanister(), {
+        methodName: 'test',
+        arg: new Uint8Array().buffer,
+      })
+      // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
+      .catch(function (_) {});
+
+    const requestBody = cbor.decode(mockFetch.mock.calls[0][1].body);
+    expect((requestBody as unknown as any).content.ingress_expiry).toMatchInlineSnapshot(
+      `"1670803440000000000"`,
+    );
+
+    jest.useRealTimers();
+  });
+  it('should adjust the Expiry if the clock is more than 30 seconds ahead', () => {});
+  it('should adjust the Expiry if the clock is more than 30 seconds behind', () => {});
 });

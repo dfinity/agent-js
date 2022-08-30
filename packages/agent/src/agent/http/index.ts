@@ -25,6 +25,7 @@ import {
   ReadRequestType,
   SubmitRequestType,
 } from './types';
+import * as CanisterStatus from '../../canisterStatus';
 
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
@@ -148,6 +149,7 @@ export class HttpAgent implements Agent {
   private readonly _pipeline: HttpAgentRequestTransformFn[] = [];
   private _identity: Promise<Identity> | null;
   private readonly _fetch: typeof fetch;
+  private _timeDiffMsecs = 0;
   private readonly _host: URL;
   private readonly _credentials: string | undefined;
   private _rootKeyFetched = false;
@@ -236,13 +238,20 @@ export class HttpAgent implements Agent {
 
     const sender: Principal = id.getPrincipal() || Principal.anonymous();
 
+    let ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
+
+    // If the value is off by more than 30 seconds, reconcile system time with the network
+    if (Math.abs(this._timeDiffMsecs) > 1_000 * 30) {
+      ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS - this._timeDiffMsecs);
+    }
+
     const submit: CallRequest = {
       request_type: SubmitRequestType.Call,
       canister_id: canister,
       method_name: options.methodName,
       arg: options.arg,
       sender,
-      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+      ingress_expiry,
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -416,6 +425,21 @@ export class HttpAgent implements Agent {
       );
     }
     return cbor.decode(await response.arrayBuffer());
+  }
+
+  public async syncTime(): Promise<void> {
+    const callTime = Date.now();
+    const status = await CanisterStatus.request({
+      canisterId: Principal.managementCanister(),
+      agent: this,
+      paths: ['time'],
+    });
+
+    status;
+    const replicaTime = status.get('time');
+    if (replicaTime) {
+      this._timeDiffMsecs = (replicaTime as any) - callTime;
+    }
   }
 
   public async status(): Promise<JsonObject> {
