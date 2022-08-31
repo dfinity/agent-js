@@ -378,6 +378,22 @@ export class AuthClient {
      */
     onError?: ((error?: string) => void) | ((error?: string) => Promise<void>);
   }): Promise<void> {
+    // If `login` has been called previously, then close/remove any previous windows
+    // and event listeners.
+    this._idpWindow?.close();
+    this._removeEventListener();
+
+    // Open a new window without particular destination.
+    //
+    // Context:
+    // The window needs to be opened first as the browser (Safari) might prevent its opening if an async callback is run before it within the same function.
+    // i.e. browsers might warn user about new tabs/windows that are open - or detected as - without user interaction. They might require their approval to open a new window ("Popup blocked, do you want to open it?").
+    // In this particular case, reading the KEY_STORAGE_KEY from the storage is on Safari is detected as an async callback within same function.
+    //
+    // While opening a new popup is fundamentally correct, it is an issue in case of II because the parameter "#authorize" - that should be contained in the URL to start the sign in flow - gets lost if the browser request the approval with a prompt.
+    this._idpWindow =
+      window.open(undefined, 'idpWindow', options?.windowOpenerFeatures) ?? undefined;
+
     let key = this._key;
     if (!key) {
       // Create a new key (whether or not one was in storage).
@@ -396,11 +412,6 @@ export class AuthClient {
     // Set the correct hash if it isn't already set.
     identityProviderUrl.hash = IDENTITY_PROVIDER_ENDPOINT;
 
-    // If `login` has been called previously, then close/remove any previous windows
-    // and event listeners.
-    this._idpWindow?.close();
-    this._removeEventListener();
-
     // Add an event listener to handle responses.
     this._eventHandler = this._getEventHandler(identityProviderUrl, {
       maxTimeToLive: options?.maxTimeToLive ?? defaultTimeToLive,
@@ -408,10 +419,10 @@ export class AuthClient {
     });
     window.addEventListener('message', this._eventHandler);
 
-    // Open a new window with the IDP provider.
-    this._idpWindow =
-      window.open(identityProviderUrl.toString(), 'idpWindow', options?.windowOpenerFeatures) ??
-      undefined;
+    // Open to the IDP provider URL in the window that has been opened.
+    if (this._idpWindow) {
+      this._idpWindow.location = identityProviderUrl.toString();
+    }
 
     // Check if the _idpWindow is closed by user.
     const checkInterruption = (): void => {
