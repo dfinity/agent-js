@@ -378,31 +378,32 @@ describe('Auth Client login', () => {
     const client = await AuthClient.create();
     // Try without #authorize hash.
     await client.login({ identityProvider: 'http://localhost' });
-    expect(global.open).toBeCalledWith('http://localhost/#authorize', 'idpWindow', undefined);
+    expect(global.open).toBeCalledWith(undefined, 'idpWindow', undefined);
+    expect((client as unknown as { _idpWindow?: Window })._idpWindow?.location).toEqual(
+      'http://localhost/#authorize',
+    );
 
     // Try with #authorize hash.
-    global.open = jest.fn();
     await client.login({ identityProvider: 'http://localhost#authorize' });
-    expect(global.open).toBeCalledWith('http://localhost/#authorize', 'idpWindow', undefined);
+    expect(global.open).toBeCalledWith(undefined, 'idpWindow', undefined);
+    expect((client as unknown as { _idpWindow?: Window })._idpWindow?.location).toEqual(
+      'http://localhost/#authorize',
+    );
 
     // Default url
-    global.open = jest.fn();
     await client.login();
-    expect(global.open).toBeCalledWith(
+    expect(global.open).toBeCalledWith(undefined, 'idpWindow', undefined);
+    expect((client as unknown as { _idpWindow?: Window })._idpWindow?.location).toEqual(
       'https://identity.ic0.app/#authorize',
-      'idpWindow',
-      undefined,
     );
 
     // Default custom window.open feature
-    global.open = jest.fn();
     await client.login({
       windowOpenerFeatures: 'toolbar=0,location=0,menubar=0',
     });
-    expect(global.open).toBeCalledWith(
+    expect(global.open).toBeCalledWith(undefined, 'idpWindow', 'toolbar=0,location=0,menubar=0');
+    expect((client as unknown as { _idpWindow?: Window })._idpWindow?.location).toEqual(
       'https://identity.ic0.app/#authorize',
-      'idpWindow',
-      'toolbar=0,location=0,menubar=0',
     );
   });
   it('should login with a derivation origin', async () => {
