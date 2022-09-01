@@ -435,9 +435,9 @@ export class HttpAgent implements Agent {
       paths: ['time'],
     });
 
-    const replicaTime = status.get('time'); //?
+    const replicaTime = status.get('time');
     if (replicaTime) {
-      this._timeDiffMsecs = Number(replicaTime as any) - Number(callTime); //?
+      this._timeDiffMsecs = Number(replicaTime as any) - Number(callTime);
     }
   }
 

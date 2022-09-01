@@ -471,10 +471,11 @@ describe('makeNonce', () => {
 });
 
 describe('reconcile time', () => {
+  jest.useFakeTimers();
   it('should change nothing if time is within 30 seconds of replica', async () => {
+    const systemTime = new Date('August 19, 1975 23:15:30');
+    jest.setSystemTime(systemTime);
     const mockFetch = jest.fn();
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date('August 19, 1975 23:15:30'));
 
     const agent = new HttpAgent({ host: 'http://localhost:8000', fetch: mockFetch });
 
@@ -490,16 +491,14 @@ describe('reconcile time', () => {
 
     const requestBody = cbor.decode(mockFetch.mock.calls[0][1].body);
     expect((requestBody as unknown as any).content.ingress_expiry).toMatchInlineSnapshot(
-      `"177747570000000000"`,
+      `1240000000000`,
     );
-
-    jest.useRealTimers();
   });
   it('should adjust the Expiry if the clock is more than 30 seconds behind', async () => {
-    const mockFetch = jest.fn();
     jest.useFakeTimers();
     const systemTime = new Date('August 19, 1975 23:15:30');
     jest.setSystemTime(systemTime);
+    const mockFetch = jest.fn();
 
     const replicaTime = new Date(Number(systemTime) + 31_000);
     jest.mock('../../canisterStatus', () => {
@@ -537,14 +536,13 @@ describe('reconcile time', () => {
     expect(expiryInMs).toMatchInlineSnapshot(`177747601000`);
 
     expect(delay).toBe(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
-    jest.useRealTimers();
     jest.autoMockOff();
   });
-  it.only('should adjust the Expiry if the clock is more than 30 seconds ahead', async () => {
-    const mockFetch = jest.fn();
+  it('should adjust the Expiry if the clock is more than 30 seconds ahead', async () => {
     jest.useFakeTimers();
     const systemTime = new Date('August 19, 1975 23:15:30');
     jest.setSystemTime(systemTime);
+    const mockFetch = jest.fn();
 
     const replicaTime = new Date(Number(systemTime) - 31_000);
     jest.mock('../../canisterStatus', () => {
@@ -582,7 +580,6 @@ describe('reconcile time', () => {
     expect(expiryInMs).toMatchInlineSnapshot(`177747539000`);
 
     expect(delay).toBe(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
-    jest.useRealTimers();
-    jest.autoMockOff();
   });
+  jest.autoMockOff();
 });
