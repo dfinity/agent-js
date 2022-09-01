@@ -20,11 +20,18 @@
             versions of agent-js.
           </li>
         </ul>
+        <li>
+          Adds a `syncTime` method to HttpAgent, allowing the agent to set an expiry within the
+          acceptable bounds for a replica even if the device clock is out of sync
+        </li>
       </ul>
       <h3>Version 0.13.3</h3>
-        <ul>
-          <li>Auth Client moves key fallback generation to the create method instead of login and makes the _key non-nullable. This fixes a regression with async window.open behavior in Safari</li>
-        </ul>
+      <ul>
+        <li>
+          Auth Client moves key fallback generation to the create method instead of login and makes
+          the _key non-nullable. This fixes a regression with async window.open behavior in Safari
+        </li>
+      </ul>
       <h2>Version 0.13.2</h2>
       <ul>
         <li>auth-client avoids localstorage global and can be used in a web worker or nodejs</li>

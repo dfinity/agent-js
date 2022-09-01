@@ -543,6 +543,7 @@ describe('reconcile time', () => {
     const systemTime = new Date('August 19, 1975 23:15:30');
     jest.setSystemTime(systemTime);
     const mockFetch = jest.fn();
+    jest.useFakeTimers();
 
     const replicaTime = new Date(Number(systemTime) - 31_000);
     jest.mock('../../canisterStatus', () => {
