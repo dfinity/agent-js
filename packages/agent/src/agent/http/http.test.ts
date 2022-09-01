@@ -21,6 +21,10 @@ const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;
 
+const DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS = 5 * 60 * 1000;
+const REPLICA_PERMITTED_DRIFT_MILLISECONDS = 60 * 1000;
+const NANOSECONDS_PER_MILLISECONDS = 1_000_000;
+
 function createIdentity(seed: number): Ed25519KeyIdentity {
   const seed1 = new Array(32).fill(0);
   seed1[0] = seed;
@@ -31,7 +35,7 @@ const originalDateNowFn = global.Date.now;
 const originalWindow = global.window;
 const originalFetch = global.fetch;
 beforeEach(() => {
-  global.Date.now = jest.fn(() => new Date(1000000).getTime());
+  global.Date.now = jest.fn(() => new Date(NANOSECONDS_PER_MILLISECONDS).getTime());
   global.window = originalWindow;
   global.fetch = originalFetch;
 });
@@ -467,10 +471,10 @@ describe('makeNonce', () => {
 });
 
 describe('reconcile time', () => {
-  it.only('should change nothing if time is within 30 seconds of replica', async () => {
+  it('should change nothing if time is within 30 seconds of replica', async () => {
     const mockFetch = jest.fn();
     jest.useFakeTimers();
-    jest.setSystemTime(new Date('2022-12-12'));
+    jest.setSystemTime(new Date('August 19, 1975 23:15:30'));
 
     const agent = new HttpAgent({ host: 'http://localhost:8000', fetch: mockFetch });
 
@@ -486,11 +490,99 @@ describe('reconcile time', () => {
 
     const requestBody = cbor.decode(mockFetch.mock.calls[0][1].body);
     expect((requestBody as unknown as any).content.ingress_expiry).toMatchInlineSnapshot(
-      `"1670803440000000000"`,
+      `"177747570000000000"`,
     );
 
     jest.useRealTimers();
   });
-  it('should adjust the Expiry if the clock is more than 30 seconds ahead', () => {});
-  it('should adjust the Expiry if the clock is more than 30 seconds behind', () => {});
+  it('should adjust the Expiry if the clock is more than 30 seconds behind', async () => {
+    const mockFetch = jest.fn();
+    jest.useFakeTimers();
+    const systemTime = new Date('August 19, 1975 23:15:30');
+    jest.setSystemTime(systemTime);
+
+    const replicaTime = new Date(Number(systemTime) + 31_000);
+    jest.mock('../../canisterStatus', () => {
+      return {
+        request: () => {
+          return {
+            // 31 seconds ahead
+            get: () => replicaTime,
+          };
+        },
+      };
+    });
+    await import('../../canisterStatus');
+    const { HttpAgent } = await import('../index');
+
+    const agent = new HttpAgent({ host: 'http://localhost:8000', fetch: mockFetch });
+
+    await agent.syncTime();
+
+    await agent
+      .call(Principal.managementCanister(), {
+        methodName: 'test',
+        arg: new Uint8Array().buffer,
+      })
+      // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
+      .catch(function (_) {});
+
+    const requestBody: any = cbor.decode(mockFetch.mock.calls[0][1].body);
+
+    // Expiry should be: ingress expiry + replica time
+    const expiryInMs = requestBody.content.ingress_expiry / NANOSECONDS_PER_MILLISECONDS;
+
+    const delay = expiryInMs + REPLICA_PERMITTED_DRIFT_MILLISECONDS - Number(replicaTime);
+
+    expect(expiryInMs).toMatchInlineSnapshot(`177747601000`);
+
+    expect(delay).toBe(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
+    jest.useRealTimers();
+    jest.autoMockOff();
+  });
+  it.only('should adjust the Expiry if the clock is more than 30 seconds ahead', async () => {
+    const mockFetch = jest.fn();
+    jest.useFakeTimers();
+    const systemTime = new Date('August 19, 1975 23:15:30');
+    jest.setSystemTime(systemTime);
+
+    const replicaTime = new Date(Number(systemTime) - 31_000);
+    jest.mock('../../canisterStatus', () => {
+      return {
+        request: () => {
+          return {
+            // 31 seconds ahead
+            get: () => replicaTime,
+          };
+        },
+      };
+    });
+    await import('../../canisterStatus');
+    const { HttpAgent } = await import('../index');
+
+    const agent = new HttpAgent({ host: 'http://localhost:8000', fetch: mockFetch });
+
+    await agent.syncTime();
+
+    await agent
+      .call(Principal.managementCanister(), {
+        methodName: 'test',
+        arg: new Uint8Array().buffer,
+      })
+      // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
+      .catch(function (_) {});
+
+    const requestBody: any = cbor.decode(mockFetch.mock.calls[0][1].body);
+
+    // Expiry should be: ingress expiry + replica time
+    const expiryInMs = requestBody.content.ingress_expiry / NANOSECONDS_PER_MILLISECONDS;
+
+    const delay = expiryInMs + REPLICA_PERMITTED_DRIFT_MILLISECONDS - Number(replicaTime);
+
+    expect(expiryInMs).toMatchInlineSnapshot(`177747539000`);
+
+    expect(delay).toBe(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
+    jest.useRealTimers();
+    jest.autoMockOff();
+  });
 });

@@ -25,7 +25,6 @@ import {
   ReadRequestType,
   SubmitRequestType,
 } from './types';
-import * as CanisterStatus from '../../canisterStatus';
 
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
@@ -242,7 +241,7 @@ export class HttpAgent implements Agent {
 
     // If the value is off by more than 30 seconds, reconcile system time with the network
     if (Math.abs(this._timeDiffMsecs) > 1_000 * 30) {
-      ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS - this._timeDiffMsecs);
+      ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS + this._timeDiffMsecs);
     }
 
     const submit: CallRequest = {
@@ -428,6 +427,7 @@ export class HttpAgent implements Agent {
   }
 
   public async syncTime(): Promise<void> {
+    const CanisterStatus = await import('../../canisterStatus');
     const callTime = Date.now();
     const status = await CanisterStatus.request({
       canisterId: Principal.managementCanister(),
@@ -435,10 +435,9 @@ export class HttpAgent implements Agent {
       paths: ['time'],
     });
 
-    status;
-    const replicaTime = status.get('time');
+    const replicaTime = status.get('time'); //?
     if (replicaTime) {
-      this._timeDiffMsecs = (replicaTime as any) - callTime;
+      this._timeDiffMsecs = Number(replicaTime as any) - Number(callTime); //?
     }
   }
 
