@@ -27,6 +27,12 @@ const hexRe = new RegExp(/^([0-9A-F]{2})*$/i);
  * @param hex The hexadecimal string to use.
  */
 export function fromHex(hex: string): ArrayBuffer {
+  //FIXME: always padding hex string length to be even
+  // then run the reg test
+  if (hex.length % 2 !== 0) {
+    hex = '0' + hex;
+  }
+
   if (!hexRe.test(hex)) {
     throw new Error('Invalid hexadecimal string.');
   }
