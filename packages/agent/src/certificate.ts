@@ -1,9 +1,9 @@
 import * as cbor from './cbor';
 import { AgentError } from './errors';
 import { hash } from './request_id';
-import { blsVerify } from './utils/bls';
 import { concat, fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
+import { blsVerify } from './utils/bls';
 
 /**
  * A certificate may fail verification with respect to the provided public key
@@ -113,6 +113,10 @@ export interface CreateCertificateOptions {
    * the signing canister ID when verifying a certified variable.
    */
   canisterId: Principal;
+  /**
+   * BLS Verification strategy. Default strategy uses wasm for performance, but that may not be available in all contexts.
+   */
+  blsVerify?: (pk: Uint8Array, sig: Uint8Array, msg: Uint8Array) => Promise<boolean>;
 }
 
 export class Certificate {
@@ -130,7 +134,16 @@ export class Certificate {
    * @throws {CertificateVerificationError}
    */
   public static async create(options: CreateCertificateOptions): Promise<Certificate> {
-    const cert = new Certificate(options.certificate, options.rootKey, options.canisterId);
+    let blsVerify = options.blsVerify;
+    if (!blsVerify) {
+      blsVerify = await (await import('./utils/bls')).blsVerify;
+    }
+    const cert = new Certificate(
+      options.certificate,
+      options.rootKey,
+      options.canisterId,
+      blsVerify,
+    );
     await cert.verify();
     return cert;
   }
@@ -139,6 +152,7 @@ export class Certificate {
     certificate: ArrayBuffer,
     private _rootKey: ArrayBuffer,
     private _canisterId: Principal,
+    private _blsVerify: CreateCertificateOptions['blsVerify'],
   ) {
     this.cert = cbor.decode(new Uint8Array(certificate));
   }
