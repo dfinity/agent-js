@@ -433,15 +433,25 @@ export class HttpAgent implements Agent {
   public async syncTime(canisterId?: Principal): Promise<void> {
     const CanisterStatus = await import('../../canisterStatus');
     const callTime = Date.now();
-    const status = await CanisterStatus.request({
-      canisterId: canisterId ?? Principal.from('k7gat-daaaa-aaaae-qaahq-cai'),
-      agent: this,
-      paths: ['time'],
-    });
+    try {
+      if (!canisterId) {
+        console.log(
+          'Syncing time with the IC. No canisterId provided, so falling back to ryjl3-tyaaa-aaaaa-aaaba-cai',
+        );
+      }
+      const status = await CanisterStatus.request({
+        // Fall back with canisterId of the ICP Ledger
+        canisterId: canisterId ?? Principal.from('ryjl3-tyaaa-aaaaa-aaaba-cai'),
+        agent: this,
+        paths: ['time'],
+      });
 
-    const replicaTime = status.get('time'); //?
-    if (replicaTime) {
-      this._timeDiffMsecs = Number(replicaTime as any) - Number(callTime);
+      const replicaTime = status.get('time');
+      if (replicaTime) {
+        this._timeDiffMsecs = Number(replicaTime as any) - Number(callTime);
+      }
+    } catch (error) {
+      console.error('Caught exception while attempting to sync time:', error);
     }
   }
 
