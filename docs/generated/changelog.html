@@ -10,21 +10,6 @@
     <h1>Agent-JS Changelog</h1>
 
     <section>
-      <h2>Version 1.0.0</h2>
-      <ul>
-        <li>Backwards compatibility with 0.9.3 for @dfinity/principal</li>
-        <ul>
-          <li>
-            If you have a TypeScript interface that uses a Principal, we recommend updating and
-            using the abstract class PrincipalLike as the signature. It will be compatible across
-            versions of agent-js.
-          </li>
-        </ul>
-      </ul>
-      <h3>Version 0.13.3</h3>
-        <ul>
-          <li>Auth Client moves key fallback generation to the create method instead of login and makes the _key non-nullable. This fixes a regression with async window.open behavior in Safari</li>
-        </ul>
       <h2>Version 0.13.2</h2>
       <ul>
         <li>auth-client avoids localstorage global and can be used in a web worker or nodejs</li>
