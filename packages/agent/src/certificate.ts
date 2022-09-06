@@ -136,7 +136,8 @@ export class Certificate {
   public static async create(options: CreateCertificateOptions): Promise<Certificate> {
     let blsVerify = options.blsVerify;
     if (!blsVerify) {
-      blsVerify = await (await import('./utils/bls')).blsVerify;
+      const bls = await import('./utils/bls');
+      blsVerify = bls.blsVerify;
     }
     const cert = new Certificate(
       options.certificate,
