@@ -25,7 +25,6 @@ import {
   ReadRequestType,
   SubmitRequestType,
 } from './types';
-import { PrincipalLike } from '@dfinity/principal';
 
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
@@ -431,7 +430,7 @@ export class HttpAgent implements Agent {
    * Allows agent to sync its time with the network. Can be called during intialization or mid-lifecycle if the device's clock has drifted away from the network time. This is necessary to set the Expiry for a request
    * @param {PrincipalLike} canisterId - Pass a canister ID if you need to sync the time with a particular replica. Uses the management canister by default
    */
-  public async syncTime(canisterId?: PrincipalLike): Promise<void> {
+  public async syncTime(canisterId?: Principal): Promise<void> {
     const CanisterStatus = await import('../../canisterStatus');
     const callTime = Date.now();
     const status = await CanisterStatus.request({
