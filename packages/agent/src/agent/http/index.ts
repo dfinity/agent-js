@@ -435,12 +435,12 @@ export class HttpAgent implements Agent {
     const CanisterStatus = await import('../../canisterStatus');
     const callTime = Date.now();
     const status = await CanisterStatus.request({
-      canisterId: canisterId ?? Principal.managementCanister(),
+      canisterId: canisterId ?? Principal.from('k7gat-daaaa-aaaae-qaahq-cai'),
       agent: this,
       paths: ['time'],
     });
 
-    const replicaTime = status.get('time');
+    const replicaTime = status.get('time'); //?
     if (replicaTime) {
       this._timeDiffMsecs = Number(replicaTime as any) - Number(callTime);
     }
