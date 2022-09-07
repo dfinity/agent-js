@@ -1,6 +1,6 @@
 import { Principal } from '@dfinity/principal';
 import { Agent, RequestStatusResponseStatus } from '../agent';
-import { Certificate } from '../certificate';
+import { Certificate, CreateCertificateOptions } from '../certificate';
 import { RequestId } from '../request_id';
 import { toHex } from '../utils/buffer';
 
@@ -29,6 +29,7 @@ export async function pollForResponse(
   strategy: PollStrategy,
   // eslint-disable-next-line
   request?: any,
+  blsVerify?: CreateCertificateOptions['blsVerify'],
 ): Promise<ArrayBuffer> {
   const path = [new TextEncoder().encode('request_status'), requestId];
   const currentRequest = request ?? (await agent.createReadStateRequest?.({ paths: [path] }));
@@ -38,6 +39,7 @@ export async function pollForResponse(
     certificate: state.certificate,
     rootKey: agent.rootKey,
     canisterId: canisterId,
+    blsVerify,
   });
   const maybeBuf = cert.lookup([...path, new TextEncoder().encode('status')]);
   let status;

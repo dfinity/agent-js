@@ -4,6 +4,7 @@ import { lebDecode, PipeArrayBuffer } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { AgentError } from '../errors';
 import { HttpAgent, Cbor, Certificate, toHex } from '..';
+import type { CreateCertificateOptions } from '..';
 
 /**
  * Types of an entry on the canisterStatus map.
@@ -50,6 +51,7 @@ export type CanisterStatusOptions = {
   canisterId: Principal;
   agent: HttpAgent;
   paths?: Path[] | Set<Path>;
+  blsVerify?: CreateCertificateOptions['blsVerify'];
 };
 
 /**

@@ -3,6 +3,9 @@ import { Principal } from '@dfinity/principal';
 import counter from '../canisters/counter';
 
 jest.setTimeout(30_000);
+afterEach(async () => {
+  await Promise.resolve();
+});
 describe.only('canister status', () => {
   it('should fetch successfully', async () => {
     const counterObj = await (await counter)();
