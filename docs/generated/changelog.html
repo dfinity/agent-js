@@ -19,6 +19,13 @@
             using the abstract class PrincipalLike as the signature. It will be compatible across
             versions of agent-js.
           </li>
+          <li>
+            bug: auth-client resolves window.open issue in login function in safari due to async
+            storage call
+          </li>
+          <li>
+            bug: auth-client storage wrapper returns after resolve to avoid idb to be recreated
+          </li>
         </ul>
       </ul>
       <h2>Version 0.13.2</h2>
