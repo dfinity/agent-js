@@ -180,7 +180,9 @@ test('IDL encoding (arraybuffer)', () => {
   IDL.encode([IDL.Vec(IDL.Nat8)], [new Uint8Array()]);
   IDL.encode([IDL.Vec(IDL.Nat8)], [new Uint8Array(100).fill(42)]);
   IDL.encode([IDL.Vec(IDL.Nat16)], [new Uint16Array(200).fill(42)]);
-  expect(() => IDL.encode([IDL.Vec(IDL.Int8)], [new Uint16Array(10).fill(420)])).toThrow(/Invalid vec int8 argument/);
+  expect(() => IDL.encode([IDL.Vec(IDL.Int8)], [new Uint16Array(10).fill(420)])).toThrow(
+    /Invalid vec int8 argument/,
+  );
 });
 
 test('IDL encoding (array)', () => {
@@ -661,7 +663,7 @@ test('should correctly decode expected optional fields with lower hash than requ
   });
 });
 
-test('should decode matching optional fields if input type contains more fields than output type', () => {
+test('should decode matching optional fields if wire type contains additional fields', () => {
   const InputType = IDL.Record({
     latest_message: IDL.Opt(IDL.Text),
     name: IDL.Text,
