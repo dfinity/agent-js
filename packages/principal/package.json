@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/principal",
-  "version": "0.13.2",
+  "version": "1.0.0-beta.0",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to work with Internet Computer principals",
@@ -44,7 +44,6 @@
     "test:coverage": "jest --verbose --collectCoverage"
   },
   "devDependencies": {
-    "@dfinity/principal-legacy": "npm:@dfinity/principal@^0.9.3",
     "@types/jest": "^28.1.4",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
