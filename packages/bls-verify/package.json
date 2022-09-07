@@ -13,6 +13,7 @@
   "bugs": {
     "url": "https://github.com/dfinity/agent-js/issues"
   },
+  "type": "module",
   "keywords": [
     "internet computer",
     "ic",

@@ -1,5 +1,5 @@
-import { verify } from '@noble/bls12-381';
-import { toHex } from './utils';
+import { verify } from './bls';
+import * as cbor from '../../agent/src/cbor';
 
 type VerifyFunc = (pk: Uint8Array, sig: Uint8Array, msg: Uint8Array) => Promise<boolean>;
 
@@ -15,8 +15,16 @@ export const blsVerify: VerifyFunc = async (
   signature: Uint8Array | string,
   message: Uint8Array | string,
 ): Promise<boolean> => {
-  const pk = typeof publicKey === 'string' ? publicKey : toHex(publicKey);
-  const sig = typeof signature === 'string' ? signature : toHex(signature);
-  const msg = typeof message === 'string' ? message : toHex(message);
-  return await verify(sig, msg, pk);
+  let result = false;
+  try {
+    signature.byteLength; //?
+    result = await verify(signature, message, publicKey).catch(error => {
+      console.log(error);
+      return false; //?
+    }); //?
+  } catch (error) {
+    console.error(error); //?
+  }
+
+  return result;
 };
