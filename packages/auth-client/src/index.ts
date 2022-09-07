@@ -256,12 +256,18 @@ export class AuthClient {
       ? undefined
       : IdleManager.create(options.idleOptions);
 
+    if (!key) {
+      // Create a new key (whether or not one was in storage).
+      key = Ed25519KeyIdentity.generate();
+      await storage.set(KEY_STORAGE_KEY, JSON.stringify(key));
+    }
+
     return new this(identity, key, chain, storage, idleManager, options);
   }
 
   protected constructor(
     private _identity: Identity,
-    private _key: SignIdentity | null,
+    private _key: SignIdentity,
     private _chain: DelegationChain | null,
     private _storage: AuthClientStorage,
     public readonly idleManager: IdleManager | undefined,
@@ -378,14 +384,6 @@ export class AuthClient {
      */
     onError?: ((error?: string) => void) | ((error?: string) => Promise<void>);
   }): Promise<void> {
-    let key = this._key;
-    if (!key) {
-      // Create a new key (whether or not one was in storage).
-      key = Ed25519KeyIdentity.generate();
-      this._key = key;
-      await this._storage.set(KEY_STORAGE_KEY, JSON.stringify(key));
-    }
-
     // Set default maxTimeToLive to 8 hours
     const defaultTimeToLive = /* hours */ BigInt(8) * /* nanoseconds */ BigInt(3_600_000_000_000);
 
@@ -493,7 +491,6 @@ export class AuthClient {
 
     // Reset this auth client to a non-authenticated state.
     this._identity = new AnonymousIdentity();
-    this._key = null;
     this._chain = null;
 
     if (options.returnTo) {
