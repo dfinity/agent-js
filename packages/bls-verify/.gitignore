@@ -1,7 +1,7 @@
 build_info.json
 node_modules/
 dist/
-**/*.js
+
 **/*.js.map
 **/*.d.ts
 
