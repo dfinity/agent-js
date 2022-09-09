@@ -8,6 +8,7 @@
       "packages/principal",
       "packages/candid",
       "packages/agent",
+      "packages/bls-verify",
       "packages/identity",
       "packages/identity-ledgerhq",
       "packages/authentication",
