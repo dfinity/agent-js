@@ -3,9 +3,9 @@
   "compilerOptions": {
     "allowJs": true,
     "baseUrl": "./",
-    "composite": true,
-    "declaration": true,
-    "esModuleInterop": true,
+    "composite": false,
+    "declaration": false,
+    "esModuleInterop": false,
     "forceConsistentCasingInFileNames": true,
     "incremental": true,
     "module": "ES2020",
