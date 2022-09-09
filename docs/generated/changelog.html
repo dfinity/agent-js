@@ -12,6 +12,12 @@
     <section>
       <h2>Version 0.13.3</h2>
       <ul>
+        <li>
+          New package: @dfinity/bls-verify. This package provides a pure-js implementation of BLS
+          verification using the miracl-core package. This can be used to polyfill BLS verification
+          for agent-js, but it is notably very slow (~3s per verification). Optimization may be
+          possible with a significant refactoring
+        </li>
         <li>adds ability to polyfill bls verification in Certificate</li>
         <li>
           Auth Client moves key fallback generation to the create method instead of login and makes
@@ -27,6 +33,7 @@
           for a given canister id.
         </li>
       </ul>
+
       <h2>Version 0.13.2</h2>
       <ul>
         <li>auth-client avoids localstorage global and can be used in a web worker or nodejs</li>
