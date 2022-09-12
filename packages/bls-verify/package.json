@@ -1,18 +1,19 @@
 {
-  "name": "@dfinity/candid",
+  "name": "@dfinity/bls-verify",
   "version": "0.13.3",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
-  "description": "JavaScript and TypeScript library to work with candid interfaces",
-  "homepage": "https://smartcontracts.org",
+  "description": "bls verification strategy in JavaScript",
+  "homepage": "https://internetcomputer.org",
   "repository": {
     "type": "git",
     "url": "https://github.com/dfinity/agent-js.git",
-    "directory": "packages/candid"
+    "directory": "packages/bls-verify"
   },
   "bugs": {
     "url": "https://github.com/dfinity/agent-js/issues"
   },
+  "type": "module",
   "keywords": [
     "internet computer",
     "ic",
@@ -41,27 +42,9 @@
     "lint:fix": "npm run lint -- --fix",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/candid --excludeInternal",
     "prettier": "prettier --check \"src/**/*.ts\"",
-    "prettier:write": "npm run prettier -- --write",
-    "test": "jest",
-    "test:coverage": "jest --verbose --collectCoverage"
-  },
-  "devDependencies": {
-    "@types/jest": "^28.1.4",
-    "@typescript-eslint/eslint-plugin": "^5.30.5",
-    "@typescript-eslint/parser": "^5.30.5",
-    "eslint": "^8.19.0",
-    "eslint-plugin-jsdoc": "^39.3.3",
-    "jest": "^28.1.2",
-    "jest-diff": "^27.3.1",
-    "prettier": "^2.0.5",
-    "text-encoding": "^0.7.0",
-    "ts-jest": "^28.0.5",
-    "tslint": "^5.20.0",
-    "typedoc": "^0.22.11",
-    "typescript": "^4.7.4",
-    "whatwg-fetch": "^3.0.0"
+    "prettier:write": "npm run prettier -- --write"
   },
   "dependencies": {
-    "ts-node": "^10.8.2"
+    "amcl-js": "file:src/vendor/amcl-js"
   }
 }
