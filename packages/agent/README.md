@@ -2,9 +2,9 @@
 
 JavaScript and TypeScript library to interact with the [Internet Computer](https://dfinity.org/) for Node.js and Client applications
 
-Visit the [Dfinity Forum](https://forum.dfinity.org/) and [SDK Documentation](https://sdk.dfinity.org/docs/index.html) for more information and support building on the Internet Computer.
+Visit the [Dfinity Forum](https://forum.dfinity.org/) and [SDK Documentation](https://internetcomputer.org/docs/index.html) for more information and support building on the Internet Computer. For an introduction to the JavaScript / TypeScript agent, see [internetcomputer.org - JavaScript Intro](https://internetcomputer.org/docs/current/developer-docs/build/agents/javascript/javascript-intro).
 
-Additional API Documentation can be found [here](https://agent-js.icp.xyz/agent/index.html).
+Additional API Documentation can be found at [agent-js.icp.xyz](https://agent-js.icp.xyz/agent/index.html), and the changelog is available at [agent-js.icp.xyz/changelog.html](agent-js.icp.xyz/changelog.html) or alternately at [github releases](https://github.com/dfinity/agent-js/releases).
 
 ---
 
@@ -33,6 +33,24 @@ import { Actor, HttpAgent } from "@dfinity/agent";
 ```
 const actor = require("@dfinity/agent");
 ```
+
+Important Contents of this package:
+
+- [Actor](https://agent-js.icp.xyz/agent/classes/Actor.html)
+- [HttpAgent](https://agent-js.icp.xyz/agent/classes/HttpAgent.html)
+- [Certificate](https://agent-js.icp.xyz/agent/classes/Certificate.html)
+- [CanisterStatus](https://agent-js.icp.xyz/agent/modules/CanisterStatus.html)
+- Utils
+  - Buffer Utils
+    - [compare](https://agent-js.icp.xyz/agent/modules.html#compare)
+    - [concat](https://agent-js.icp.xyz/agent/modules.html#concat)
+    - [fromHex](https://agent-js.icp.xyz/agent/modules.html#fromHex)
+    - [hash](https://agent-js.icp.xyz/agent/modules.html#hash) - sha256 hash of an ArrayBuffer
+    - [toHex](https://agent-js.icp.xyz/agent/modules.html#toHex)
+  - IC Utils
+    - [createAssetCanisterActor](https://agent-js.icp.xyz/agent/modules.html#createAssetCanisterActor)
+    - [getDefaultAgent](https://agent-js.icp.xyz/agent/modules.html#getDefaultAgent)
+    - [getManagementCanister](https://agent-js.icp.xyz/agent/modules.html#getManagementCanister)
 
 ## Using an Agent
 
