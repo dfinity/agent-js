@@ -13,6 +13,13 @@
       <h2>Version 0.13.4</h2>
       <ul>
         <li>chore: auth-client expose storage constant keys</li>
+        <li>
+            bug: auth-client resolves window.open issue in login function in safari due to async
+            storage call
+        </li>
+        <li>
+            bug: auth-client storage wrapper returns after resolve to avoid idb to be recreated
+        </li>
       </ul>
       <h2>Version 0.13.3</h2>
       <ul>
