@@ -1,0 +1,50 @@
+{
+  "name": "@dfinity/bls-verify",
+  "version": "0.13.3",
+  "author": "DFINITY Stiftung <sdk@dfinity.org>",
+  "license": "Apache-2.0",
+  "description": "bls verification strategy in JavaScript",
+  "homepage": "https://internetcomputer.org",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dfinity/agent-js.git",
+    "directory": "packages/bls-verify"
+  },
+  "bugs": {
+    "url": "https://github.com/dfinity/agent-js/issues"
+  },
+  "type": "module",
+  "keywords": [
+    "internet computer",
+    "ic",
+    "dfinity",
+    "canister",
+    "webauthn",
+    "identity",
+    "principal",
+    "dfx",
+    "candid",
+    "motoko",
+    "javascript",
+    "typescript",
+    "blockchain",
+    "crypto",
+    "distributed",
+    "api"
+  ],
+  "main": "./lib/cjs/index.js",
+  "module": "./lib/esm/index.js",
+  "scripts": {
+    "build": "tsc -b && tsc -p tsconfig-cjs.json",
+    "bundle": "npm run build",
+    "ci": "npm run prettier && npm run lint && npm run test",
+    "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
+    "lint:fix": "npm run lint -- --fix",
+    "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/candid --excludeInternal",
+    "prettier": "prettier --check \"src/**/*.ts\"",
+    "prettier:write": "npm run prettier -- --write"
+  },
+  "dependencies": {
+    "amcl-js": "file:src/vendor/amcl-js"
+  }
+}
