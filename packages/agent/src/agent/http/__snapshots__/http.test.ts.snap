@@ -1,0 +1,8 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`retry failures should throw errors immediately if retryTimes is set to 0 1`] = `
+"Server returned an error:
+  Code: undefined (undefined)
+  Body: undefined
+  Retrying request."
+`;

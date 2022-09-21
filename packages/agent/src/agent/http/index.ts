@@ -179,10 +179,6 @@ export class HttpAgent implements Agent {
       this._fetch = options.source._fetch;
       this._host = options.source._host;
       this._credentials = options.source._credentials;
-      // Default is 3, only set if option is provided
-      if (options.retryTimes) {
-        this._retryTimes = options.retryTimes;
-      }
     } else {
       this._fetch = options.fetch || getDefaultFetch() || fetch.bind(global);
     }
@@ -202,7 +198,10 @@ export class HttpAgent implements Agent {
       }
       this._host = new URL(location + '');
     }
-
+    // Default is 3, only set if option is provided
+    if (options.retryTimes !== undefined) {
+      this._retryTimes = options.retryTimes;
+    }
     // Rewrite to avoid redirects
     if (this._host.hostname.endsWith(IC0_SUB_DOMAIN)) {
       this._host.hostname = IC0_DOMAIN;
@@ -294,7 +293,6 @@ export class HttpAgent implements Agent {
 
     // Run both in parallel. The fetch is quite expensive, so we have plenty of time to
     // calculate the requestId locally.
-
     return await this._makeRequests([
       this._fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this._host), {
         ...transformedRequest.request,
@@ -308,7 +306,7 @@ export class HttpAgent implements Agent {
     requestList: [Promise<Response>, RequestId],
     tries = 0,
   ): Promise<_RequestResponse> {
-    if (tries >= this._retryTimes) {
+    if (tries >= this._retryTimes && this._retryTimes !== 0) {
       throw new Error(
         `AgentError: Exceeded configured limit of ${this._retryTimes} retry attempts. Please check your network connection or try again in a few moments`,
       );
@@ -316,13 +314,17 @@ export class HttpAgent implements Agent {
     const [response, requestId] = await Promise.all(requestList);
 
     if (!response.ok) {
-      console.warn(
+      const errorMessage =
         `Server returned an error:\n` +
-          `  Code: ${response.status} (${response.statusText})\n` +
-          `  Body: ${await response.text()}\n` +
-          `  Retrying request.`,
-      );
-      return await this._makeRequests(requestList, tries + 1);
+        `  Code: ${response.status} (${response.statusText})\n` +
+        `  Body: ${await response.text?.()}\n` +
+        `  Retrying request.`;
+      if (this._retryTimes > tries) {
+        console.warn(errorMessage);
+        return await this._makeRequests(requestList, tries + 1);
+      } else {
+        throw new Error(errorMessage);
+      }
     }
 
     return {

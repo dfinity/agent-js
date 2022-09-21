@@ -470,6 +470,25 @@ describe('makeNonce', () => {
     });
   });
 });
+describe('retry failures', () => {
+  it('should throw errors immediately if retryTimes is set to 0', () => {
+    const mockFetch: jest.Mock = jest.fn().mockReturnValueOnce((resource, init) => {
+      return Promise.reject(
+        new Response('Error', {
+          status: 500,
+          statusText: 'Internal Server Error',
+        }),
+      );
+    });
+    const agent = new HttpAgent({ host: 'http://localhost:8000', fetch: mockFetch, retryTimes: 0 });
+    expect(
+      agent.call(Principal.managementCanister(), {
+        methodName: 'test',
+        arg: new Uint8Array().buffer,
+      }),
+    ).rejects.toThrowErrorMatchingSnapshot();
+  });
+});
 
 describe('reconcile time', () => {
   jest.useFakeTimers();
