@@ -107,7 +107,7 @@ describe('cbor encode/decode bigint', () => {
     }
   });
   test('encode decode 1_000_000_000_000n to 1_000_000_000_000_000_000n', () => {
-    for (let i = 1_000_000_000_000n; i < 1_000_000_000_000_000_000n; i += 1_000_000_000_000n) {
+    for (let i = BigInt(1_000_000_000_000); i < BigInt(1_000_000_000_000_000_000); i += BigInt(1_000_000_000_000)) {
       let buffer;
       const random_num = BigInt(Math.floor(Math.random() * Math.pow(10, i.toString().length - 1)));
       const actual = i + random_num;
