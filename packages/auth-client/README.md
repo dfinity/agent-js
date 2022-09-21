@@ -4,9 +4,9 @@
 
 Simple interface to get your web application authenticated with the Internet Identity Service
 
-Visit the [Dfinity Forum](https://forum.dfinity.org/) and [SDK Documentation](https://sdk.dfinity.org/docs/index.html) for more information and support building on the Internet Computer.
+Documentation for the auth-client is available at [Internetcomputer.org - Integrating with Internet Identity](https://internetcomputer.org/docs/current/developer-docs/integrations/internet-identity/integrate-identity).
 
-Additional API Documentation can be found [here](https://agent-js.icp.xyz/auth-client/index.html).
+Additional API Documentation can be found [here](https://agent-js.icp.xyz/auth-client/index.html), and the changelog is available at [agent-js.icp.xyz/changelog.html](agent-js.icp.xyz/changelog.html) or alternately at [github releases](https://github.com/dfinity/agent-js/releases).
 
 ---
 
@@ -55,6 +55,10 @@ const actor = Actor.createActor(idlFactory, {
   canisterId,
 });
 ```
+
+<h2 id="storage">Storage</h2>
+
+The AuthClient persists delegations for you automatically. When you `login`, it will use IndexedDb by default, or it will use a `storage` option that you can pass during `AuthClient.create`.
 
 <h2 id="0.10.5-idle-update">Idle Management</h2>
 
