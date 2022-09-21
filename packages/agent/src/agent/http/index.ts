@@ -3,7 +3,7 @@ import { Principal } from '@dfinity/principal';
 import { AgentError } from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
-import { requestIdOf } from '../../request_id';
+import { RequestId, requestIdOf } from '../../request_id';
 import { fromHex } from '../../utils/buffer';
 import {
   Agent,
@@ -97,6 +97,11 @@ export interface HttpAgentOptions {
    * @default false
    */
   disableNonce?: boolean;
+  /**
+   * Number of times to retry requests before throwing an error
+   * @default 3
+   */
+  retryTimes?: number;
 }
 
 function getDefaultFetch(): typeof fetch {
@@ -134,6 +139,15 @@ function getDefaultFetch(): typeof fetch {
   );
 }
 
+type _RequestResponse = {
+  requestId: RequestId;
+  response: {
+    ok: Response['ok'];
+    status: Response['status'];
+    statusText: Response['statusText'];
+  };
+};
+
 // A HTTP agent allows users to interact with a client of the internet computer
 // using the available methods. It exposes an API that closely follows the
 // public view of the internet computer, and is not intended to be exposed
@@ -152,6 +166,8 @@ export class HttpAgent implements Agent {
   private readonly _host: URL;
   private readonly _credentials: string | undefined;
   private _rootKeyFetched = false;
+  private _retryTimes = 3; // Retry requests 3 times before erroring by default
+  public readonly _isAgent = true;
 
   constructor(options: HttpAgentOptions = {}) {
     if (options.source) {
@@ -163,6 +179,10 @@ export class HttpAgent implements Agent {
       this._fetch = options.source._fetch;
       this._host = options.source._host;
       this._credentials = options.source._credentials;
+      // Default is 3, only set if option is provided
+      if (options.retryTimes) {
+        this._retryTimes = options.retryTimes;
+      }
     } else {
       this._fetch = options.fetch || getDefaultFetch() || fetch.bind(global);
     }
@@ -274,20 +294,35 @@ export class HttpAgent implements Agent {
 
     // Run both in parallel. The fetch is quite expensive, so we have plenty of time to
     // calculate the requestId locally.
-    const [response, requestId] = await Promise.all([
+
+    return await this._makeRequests([
       this._fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this._host), {
         ...transformedRequest.request,
         body,
       }),
       requestIdOf(submit),
     ]);
+  }
+
+  private async _makeRequests(
+    requestList: [Promise<Response>, RequestId],
+    tries = 0,
+  ): Promise<_RequestResponse> {
+    if (tries >= this._retryTimes) {
+      throw new Error(
+        `AgentError: Exceeded configured limit of ${this._retryTimes} retry attempts. Please check your network connection or try again in a few moments`,
+      );
+    }
+    const [response, requestId] = await Promise.all(requestList);
 
     if (!response.ok) {
-      throw new Error(
+      console.warn(
         `Server returned an error:\n` +
           `  Code: ${response.status} (${response.statusText})\n` +
-          `  Body: ${await response.text()}\n`,
+          `  Body: ${await response.text()}\n` +
+          `  Retrying request.`,
       );
+      return await this._makeRequests(requestList, tries + 1);
     }
 
     return {

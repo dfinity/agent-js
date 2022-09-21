@@ -539,7 +539,7 @@ describe('reconcile time', () => {
     expect(delay).toBe(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
     jest.autoMockOff();
   });
-  it.only('should adjust the Expiry if the clock is more than 30 seconds ahead', async () => {
+  it('should adjust the Expiry if the clock is more than 30 seconds ahead', async () => {
     jest.useFakeTimers();
     const systemTime = new Date('August 19, 1975 23:15:30');
     jest.setSystemTime(systemTime);
