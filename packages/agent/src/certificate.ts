@@ -1,9 +1,9 @@
 import * as cbor from './cbor';
 import { AgentError } from './errors';
 import { hash } from './request_id';
-import { blsVerify } from './utils/bls';
 import { concat, fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
+import * as bls from './utils/bls';
 
 /**
  * A certificate may fail verification with respect to the provided public key
@@ -98,6 +98,8 @@ function isBufferEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
   return true;
 }
 
+type VerifyFunc = (pk: Uint8Array, sig: Uint8Array, msg: Uint8Array) => Promise<boolean>;
+
 export interface CreateCertificateOptions {
   /**
    * The bytes encoding the certificate to be verified
@@ -113,6 +115,10 @@ export interface CreateCertificateOptions {
    * the signing canister ID when verifying a certified variable.
    */
   canisterId: Principal;
+  /**
+   * BLS Verification strategy. Default strategy uses wasm for performance, but that may not be available in all contexts.
+   */
+  blsVerify?: VerifyFunc;
 }
 
 export class Certificate {
@@ -130,7 +136,16 @@ export class Certificate {
    * @throws {CertificateVerificationError}
    */
   public static async create(options: CreateCertificateOptions): Promise<Certificate> {
-    const cert = new Certificate(options.certificate, options.rootKey, options.canisterId);
+    let blsVerify = options.blsVerify;
+    if (!blsVerify) {
+      blsVerify = bls.blsVerify;
+    }
+    const cert = new Certificate(
+      options.certificate,
+      options.rootKey,
+      options.canisterId,
+      blsVerify,
+    );
     await cert.verify();
     return cert;
   }
@@ -139,6 +154,7 @@ export class Certificate {
     certificate: ArrayBuffer,
     private _rootKey: ArrayBuffer,
     private _canisterId: Principal,
+    private _blsVerify: VerifyFunc,
   ) {
     this.cert = cbor.decode(new Uint8Array(certificate));
   }
@@ -155,7 +171,7 @@ export class Certificate {
     const msg = concat(domain_sep('ic-state-root'), rootHash);
     let sigVer = false;
     try {
-      sigVer = await blsVerify(new Uint8Array(key), new Uint8Array(sig), new Uint8Array(msg));
+      sigVer = await this._blsVerify(new Uint8Array(key), new Uint8Array(sig), new Uint8Array(msg));
     } catch (err) {
       sigVer = false;
     }

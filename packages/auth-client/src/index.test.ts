@@ -1,9 +1,16 @@
+import 'fake-indexeddb/auto';
 import { Actor, HttpAgent } from '@dfinity/agent';
 import { AgentError } from '@dfinity/agent/lib/cjs/errors';
 import { IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
-import { AuthClient, AuthClientStorage, ERROR_USER_INTERRUPT } from './index';
+import { AuthClient, ERROR_USER_INTERRUPT, IdbStorage } from './index';
+import {
+  AuthClientStorage,
+  KEY_STORAGE_DELEGATION,
+  KEY_STORAGE_KEY,
+  LocalStorage,
+} from './storage';
 
 /**
  * A class for mocking the IDP service.
@@ -75,7 +82,6 @@ describe('Auth Client', () => {
       fetch,
       toString: jest.fn(() => 'http://localhost:8000'),
     };
-    const newLocation = window.location;
 
     const identity = Ed25519KeyIdentity.generate();
     const mockFetch: jest.Mock = jest.fn();
@@ -318,6 +324,15 @@ describe('Auth Client', () => {
     // wait for default 30 minute idle timeout
     jest.advanceTimersByTime(30 * 60 * 1000);
     expect(idleFn).not.toHaveBeenCalled();
+  });
+});
+
+describe('IdbStorage', () => {
+  it('should handle get and set', async () => {
+    const storage = new IdbStorage();
+
+    await storage.set('testKey', 'testValue');
+    expect(await storage.get('testKey')).toBe('testValue');
   });
 });
 
@@ -566,5 +581,50 @@ describe('Auth Client login', () => {
 
     expect(cb).toBeCalled();
     expect(idpWindow.close).toBeCalled();
+  });
+});
+
+describe('Migration from localstorage', () => {
+  it('should proceed normally if no values are stored in localstorage', async () => {
+    const storage: AuthClientStorage = {
+      remove: jest.fn(),
+      get: jest.fn(),
+      set: jest.fn(),
+    };
+
+    await AuthClient.create({ storage });
+
+    // Key is stored during creation when none is provided
+    expect(storage.set as jest.Mock).toBeCalledTimes(1);
+  });
+  it('should not attempt to migrate if a delegation is already stored', async () => {
+    const storage: AuthClientStorage = {
+      remove: jest.fn(),
+      get: jest.fn(async x => {
+        if (x === KEY_STORAGE_DELEGATION) return 'test';
+        if (x === KEY_STORAGE_KEY) return 'key';
+        return null;
+      }),
+      set: jest.fn(),
+    };
+
+    await AuthClient.create({ storage });
+
+    expect(storage.set as jest.Mock).toBeCalledTimes(1);
+  });
+  it('should migrate storage from localstorage', async () => {
+    const localStorage = new LocalStorage();
+    const storage: AuthClientStorage = {
+      remove: jest.fn(),
+      get: jest.fn(),
+      set: jest.fn(),
+    };
+
+    await localStorage.set(KEY_STORAGE_DELEGATION, 'test');
+    await localStorage.set(KEY_STORAGE_KEY, 'key');
+
+    await AuthClient.create({ storage });
+
+    expect(storage.set as jest.Mock).toBeCalledTimes(3);
   });
 });

@@ -15,6 +15,7 @@ import {
   writeIntLE,
   writeUIntLE,
 } from './utils/leb128';
+import { iexp2 } from './utils/bigint-math';
 
 // tslint:disable:max-line-length
 /**
@@ -630,8 +631,8 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
   }
 
   public covariant(x: any): x is bigint {
-    const min = BigInt(2) ** BigInt(this._bits - 1) * BigInt(-1);
-    const max = BigInt(2) ** BigInt(this._bits - 1) - BigInt(1);
+    const min = iexp2(this._bits - 1) * BigInt(-1);
+    const max = iexp2(this._bits - 1) - BigInt(1);
     if (typeof x === 'bigint') {
       return x >= min && x <= max;
     } else if (Number.isInteger(x)) {
@@ -683,7 +684,7 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
   }
 
   public covariant(x: any): x is bigint {
-    const max = BigInt(2) ** BigInt(this._bits);
+    const max = iexp2(this._bits);
     if (typeof x === 'bigint' && x >= BigInt(0)) {
       return x < max;
     } else if (Number.isInteger(x) && x >= 0) {
@@ -990,25 +991,26 @@ export class RecordClass extends ConstructType<Record<string, any>> {
       }
 
       const [expectKey, expectType] = this._fields[expectedRecordIdx];
-      if (idlLabelToId(this._fields[expectedRecordIdx][0]) !== idlLabelToId(hash)) {
-        // the current field on the wire does not match the expected field
-
-        // skip expected optional fields that are not present on the wire
+      const expectedId = idlLabelToId(this._fields[expectedRecordIdx][0]);
+      const actualId = idlLabelToId(hash);
+      if (expectedId === actualId) {
+        // the current field on the wire matches the expected field
+        x[expectKey] = expectType.decodeValue(b, type);
+        expectedRecordIdx++;
+        actualRecordIdx++;
+      } else if (actualId > expectedId) {
+        // The expected field does not exist on the wire
         if (expectType instanceof OptClass || expectType instanceof ReservedClass) {
           x[expectKey] = [];
           expectedRecordIdx++;
-          continue;
+        } else {
+          throw new Error('Cannot find required field ' + expectKey);
         }
-
-        // skip unexpected interspersed fields present on the wire
+      } else {
+        // The field on the wire does not exist in the output type, so we can skip it
         type.decodeValue(b, type);
         actualRecordIdx++;
-        continue;
       }
-
-      x[expectKey] = expectType.decodeValue(b, type);
-      expectedRecordIdx++;
-      actualRecordIdx++;
     }
 
     // initialize left over expected optional fields
