@@ -10,11 +10,67 @@
     <h1>Agent-JS Changelog</h1>
 
     <section>
+      <h2>Version 0.13.4</h2>
+      <ul>
+        <li>chore: auth-client expose storage constant keys</li>
+        <li>
+            bug: auth-client resolves window.open issue in login function in safari due to async
+            storage call
+        </li>
+        <li>
+            bug: auth-client storage wrapper returns after resolve to avoid idb to be recreated
+        </li>
+      </ul>
+      <h2>Version 0.13.3</h2>
+      <ul>
+        <li>
+          New package: @dfinity/bls-verify. This package provides a pure-js implementation of BLS
+          verification using the miracl-core package. This can be used to polyfill BLS verification
+          for agent-js, but it is notably very slow (~3s per verification). Optimization may be
+          possible with a significant refactoring
+        </li>
+        <li>adds ability to polyfill bls verification in Certificate</li>
+        <li>
+          Auth Client moves key fallback generation to the create method instead of login and makes
+          the _key non-nullable. This fixes a regression with async window.open behavior in Safari
+        </li>
+        <li>
+          HttpAgent now offers a method to sync time with the replica, provided a specific canister.
+          This can be used to set proper Expiry times when a device has fallen out of sync with the
+          replica.
+        </li>
+        <li>
+          Fixes a candid bug where when decoding, optional fields could be skipped if the data on
+          the wire contains additional fields.
+        </li>
+      </ul>
+      <h2>Version 0.13.2</h2>
+      <ul>
+        <li>auth-client avoids localstorage global and can be used in a web worker or nodejs</li>
+        <li>bug: auth-client logout now awaits clearing storage</li>
+      </ul>
+      <h2>Version 0.13.1</h2>
+      <ul>
+        <li>fixes a bug with the localstorage migration strategy</li>
+      </ul>
+      <h2>Version 0.13.0</h2>
+      <ul>
+        <li>
+          AuthClient now uses IndexedDb by default. To use localStorage, import LocalStorage
+          provider and pass it during AuthClient.create().
+        </li>
+        <ul>
+          <li>Also offers a generic Indexed Db keyval store, IdbKeyVal</li>
+        </ul>
+        <li>AuthClient migrates gracefully from localstorage to IDB when upgrading</li>
+      </ul>
       <h2>Version 0.12.2</h2>
       <ul>
         <li>
           Support for the SubtleCrypto interface in @dfinity/identity using the new ECDSAKeyIdentity
         </li>
+        <li>CanisterStatus no longer suppresses rootKey errors</li>
+        <li>Readme's point to https://agent-js.icp.xyz</li>
       </ul>
       <h2>Version 0.12.1</h2>
       <ul>

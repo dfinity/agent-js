@@ -660,3 +660,20 @@ test('should correctly decode expected optional fields with lower hash than requ
     upgrade: [true],
   });
 });
+
+test('should decode matching optional fields if wire type contains additional fields', () => {
+  const InputType = IDL.Record({
+    a: IDL.Text,
+    b: IDL.Opt(IDL.Text),
+  });
+  const OutputType = IDL.Record({
+    b: IDL.Opt(IDL.Text),
+  });
+
+  const encoded = IDL.encode([InputType], [{ a: 'abc', b: ['123'] }]);
+  const decoded = IDL.decode([OutputType], encoded)[0];
+
+  expect(decoded).toEqual({
+    b: ['123'],
+  });
+});

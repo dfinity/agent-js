@@ -2,7 +2,7 @@ import { lebEncode } from '@dfinity/candid';
 import * as cbor from 'simple-cbor';
 import { Endpoint, HttpAgentRequest, HttpAgentRequestTransformFn, makeNonce, Nonce } from './types';
 
-const NANOSECONDS_PER_MILLISECONDS = BigInt(1000000);
+const NANOSECONDS_PER_MILLISECONDS = BigInt(1_000_000);
 
 const REPLICA_PERMITTED_DRIFT_MILLISECONDS = BigInt(60 * 1000);
 
