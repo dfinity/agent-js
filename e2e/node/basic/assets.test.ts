@@ -40,17 +40,20 @@ describe('assets', () => {
   const testRandomBytes = async (fileName: string, length: number) => {
     const assetManager = new AssetManager({ canisterId, agent: await agent });
     const readable = randomBytesReadable(fileName, length);
-    const key = await assetManager.store({ readable });
+    const key = await assetManager.store(readable);
     const asset = await assetManager.get(key);
     const sentData = await readable.slice(0, readable.length);
     const receivedData = await asset.toUint8Array();
     const isCertified = await asset.isCertified();
+    const isValidSha = await asset.verifySha256(receivedData);
     await assetManager.delete(key);
+
     expect(key).toEqual(`/${readable.fileName}`);
     expect(asset.contentType).toEqual(readable.contentType);
     expect(asset.length).toEqual(readable.length);
     expect(Array.from(receivedData).join()).toEqual(Array.from(sentData).join());
     expect(isCertified).toBe(true);
+    expect(isValidSha).toBe(true);
     await expect(assetManager.get(key)).rejects.toThrow(/asset not found/);
   };
 
@@ -75,12 +78,12 @@ describe('assets', () => {
 
     // Initial X asset
     const x = randomBytesReadable('X.bin', 1000);
-    await assetManager.store({ readable: x });
+    await assetManager.store(x);
 
     // Batch store A and B assets and delete X asset
     const readables = [randomBytesReadable('A.bin', 1000), randomBytesReadable('B.bin', 1000)];
     await batch.delete(`/${x.fileName}`);
-    await Promise.all(readables.map(readable => batch.store({ readable })));
+    await Promise.all(readables.map(readable => batch.store(readable)));
     await batch.commit();
     await expect(
       assetManager.list().then(assets => assets.map(asset => asset.key).sort()),

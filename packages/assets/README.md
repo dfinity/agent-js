@@ -71,13 +71,14 @@ const input = document.createElement('input');
 input.type = 'file';
 input.addEventListener('change', async () => {
     const file = e.target.files[0];
-    const key = await assetManager.insert(file);
+    const key = await assetManager.store(file);
 });
 input.click();
 ```
 
-Config can be optionally passed as second argument in the `store` method,
-`fileName` is required when the data passed in the first argument is not a `File` or file path.
+Config can be optionally passed as second argument in the `store` method.
+The `fileName` property is required when the data passed in the first argument 
+is not a `File`, file path or custom `Readable` implementation
 
 ```ts
 export interface StoreConfig {
