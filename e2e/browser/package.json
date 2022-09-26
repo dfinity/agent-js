@@ -30,7 +30,6 @@
   },
   "dependencies": {
     "@dfinity/agent": "^0.13.3",
-    "@dfinity/assets": "^0.13.3",
     "@dfinity/authentication": "^0.13.3",
     "@dfinity/identity": "^0.13.3",
     "@dfinity/principal": "^0.13.3",

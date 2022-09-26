@@ -4,7 +4,7 @@ import { Ed25519KeyIdentity } from '@dfinity/identity';
 export const identity = Ed25519KeyIdentity.generate();
 export const principal = identity.getPrincipal();
 
-export const port = 8000; //parseInt(process.env['REPLICA_PORT'] || '', 10);
+export const port = parseInt(process.env['REPLICA_PORT'] || '', 10);
 if (Number.isNaN(port)) {
   throw new Error('The environment variable REPLICA_PORT is not a number.');
 }

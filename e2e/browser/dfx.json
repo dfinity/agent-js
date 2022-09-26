@@ -3,12 +3,6 @@
     "whoami": {
       "type": "motoko",
       "main": "src/whoami/main.mo"
-    },
-    "assetstorage": {
-      "type": "custom",
-      "candid": "src/assetstorage.did",
-      "wasm": "src/assetstorage.wasm",
-      "build": ""
     }
   }
 }
