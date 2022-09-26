@@ -294,33 +294,35 @@ export class HttpAgent implements Agent {
     // Run both in parallel. The fetch is quite expensive, so we have plenty of time to
     // calculate the requestId locally.
     return await this._makeRequests([
-      this._fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this._host), {
-        ...transformedRequest.request,
-        body,
-      }),
+      () =>
+        this._fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this._host), {
+          ...transformedRequest.request,
+          body,
+        }),
       requestIdOf(submit),
     ]);
   }
 
   private async _makeRequests(
-    requestList: [Promise<Response>, RequestId],
+    requestList: [() => Promise<Response>, RequestId],
     tries = 0,
   ): Promise<_RequestResponse> {
-    if (tries >= this._retryTimes && this._retryTimes !== 0) {
+    if (tries > this._retryTimes && this._retryTimes !== 0) {
       throw new Error(
         `AgentError: Exceeded configured limit of ${this._retryTimes} retry attempts. Please check your network connection or try again in a few moments`,
       );
     }
-    const [response, requestId] = await Promise.all(requestList);
+    const [requestGenerator, requestIdPromise] = requestList;
 
+    const [response, requestId] = await Promise.all([requestGenerator(), requestIdPromise]);
+    const responseText = await response.clone().text();
     if (!response.ok) {
       const errorMessage =
         `Server returned an error:\n` +
         `  Code: ${response.status} (${response.statusText})\n` +
-        `  Body: ${await response.text?.()}\n` +
-        `  Retrying request.`;
+        `  Body: ${responseText}\n`;
       if (this._retryTimes > tries) {
-        console.warn(errorMessage);
+        console.warn(errorMessage + `  Retrying request.`);
         return await this._makeRequests(requestList, tries + 1);
       } else {
         throw new Error(errorMessage);

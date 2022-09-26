@@ -472,14 +472,14 @@ describe('makeNonce', () => {
 });
 describe('retry failures', () => {
   it('should throw errors immediately if retryTimes is set to 0', () => {
-    const mockFetch: jest.Mock = jest.fn().mockReturnValueOnce((resource, init) => {
-      return Promise.reject(
-        new Response('Error', {
-          status: 500,
-          statusText: 'Internal Server Error',
-        }),
-      );
-    });
+    const mockFetch: jest.Mock = jest.fn();
+
+    mockFetch.mockReturnValueOnce(
+      new Response('Error', {
+        status: 500,
+        statusText: 'Internal Server Error',
+      }),
+    );
     const agent = new HttpAgent({ host: 'http://localhost:8000', fetch: mockFetch, retryTimes: 0 });
     expect(
       agent.call(Principal.managementCanister(), {
@@ -487,6 +487,53 @@ describe('retry failures', () => {
         arg: new Uint8Array().buffer,
       }),
     ).rejects.toThrowErrorMatchingSnapshot();
+  });
+  it('should throw errors after 3 retries by default', async () => {
+    const mockFetch: jest.Mock = jest.fn(() => {
+      return new Response('Error', {
+        status: 500,
+        statusText: 'Internal Server Error',
+      });
+    });
+
+    const agent = new HttpAgent({ host: 'http://localhost:8000', fetch: mockFetch });
+    try {
+      expect(
+        agent.call(Principal.managementCanister(), {
+          methodName: 'test',
+          arg: new Uint8Array().buffer,
+        }),
+      ).rejects.toThrow();
+    } catch (error) {
+      // One try + three retries
+      expect(mockFetch.mock.calls.length).toBe(4);
+    }
+  });
+  it('should succeed after multiple failures within the configured limit', async () => {
+    let calls = 0;
+    const mockFetch: jest.Mock = jest.fn(() => {
+      if (calls === 3) {
+        return new Response('test', {
+          status: 200,
+          statusText: 'success!',
+        });
+      } else {
+        calls += 1;
+        return new Response('Error', {
+          status: 500,
+          statusText: 'Internal Server Error',
+        });
+      }
+    });
+
+    const agent = new HttpAgent({ host: 'http://localhost:8000', fetch: mockFetch });
+    const result = await agent.call(Principal.managementCanister(), {
+      methodName: 'test',
+      arg: new Uint8Array().buffer,
+    });
+    expect(result).toMatchSnapshot();
+    // One try + three retries
+    expect(mockFetch.mock.calls.length).toBe(4);
   });
 });
 
