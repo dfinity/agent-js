@@ -16,7 +16,7 @@ import { AssetsCanisterRecord, getAssetsCanister } from './canisters/assets';
 import { Hasher, sha256 as jsSha256 } from 'js-sha256';
 import { BatchOperationKind } from './canisters/assets_service';
 import * as base64Arraybuffer from 'base64-arraybuffer';
-import { Readable } from './readable/readable';
+import { isReadable, Readable } from './readable/readable';
 import { ReadableFile } from './readable/readableFile';
 import { ReadableBlob } from './readable/readableBlob';
 import { ReadablePath } from './readable/readablePath';
@@ -49,30 +49,21 @@ export interface StoreConfig {
   onProgress?: (progress: Progress) => void;
 }
 
-export interface StoreReadableArgs {
-  readable: Readable;
-  config?: StoreConfig;
-}
+export type StoreReadableArgs = [readable: Readable, config?: StoreConfig];
 
-export interface StoreFileArgs {
-  file: File;
-  config?: StoreConfig;
-}
+export type StoreFileArgs = [file: File, config?: StoreConfig];
 
-export interface StoreBlobArgs {
-  blob: Blob;
-  config: Omit<StoreConfig, 'fileName'> & Required<Pick<StoreConfig, 'fileName'>>;
-}
+export type StoreBlobArgs = [
+  blob: Blob,
+  config: Omit<StoreConfig, 'fileName'> & Required<Pick<StoreConfig, 'fileName'>>,
+];
 
-export interface StorePathArgs {
-  path: string;
-  config?: StoreConfig;
-}
+export type StorePathArgs = [path: string, config?: StoreConfig];
 
-export interface StoreBytesArgs {
-  bytes: Uint8Array | number[];
-  config: Omit<StoreConfig, 'fileName'> & Required<Pick<StoreConfig, 'fileName'>>;
-}
+export type StoreBytesArgs = [
+  bytes: Uint8Array | number[],
+  config: Omit<StoreConfig, 'fileName'> & Required<Pick<StoreConfig, 'fileName'>>,
+];
 
 /**
  * Arguments to store an asset in asset manager
@@ -137,21 +128,21 @@ export class AssetManager {
    * Create readable from store arguments
    * @param args Arguments with either a file, blob, path, bytes or custom Readable implementation
    */
-  static async toReadable(args: StoreArgs): Promise<Readable> {
-    if ('readable' in args) {
-      return args.readable;
+  static async toReadable(...args: StoreArgs): Promise<Readable> {
+    if (args[0] instanceof File) {
+      return new ReadableFile(args[0]);
     }
-    if ('file' in args) {
-      return new ReadableFile(args.file);
+    if (args[0] instanceof Blob && args[1]?.fileName) {
+      return new ReadableBlob(args[1].fileName, args[0]);
     }
-    if ('blob' in args) {
-      return new ReadableBlob(args.config.fileName, args.blob);
+    if (typeof args[0] === 'string') {
+      return await ReadablePath.create(args[0]);
     }
-    if ('path' in args) {
-      return await ReadablePath.create(args.path);
+    if ((Array.isArray(args[0]) || args[0]?.constructor === Uint8Array) && args[1]?.fileName) {
+      return new ReadableBytes(args[1].fileName, args[0]);
     }
-    if ('bytes' in args) {
-      return new ReadableBytes(args.config.fileName, args.bytes);
+    if (isReadable(args[0])) {
+      return args[0];
     }
 
     throw new Error('Invalid arguments, readable could not be created');
@@ -169,9 +160,10 @@ export class AssetManager {
    * Store data on assets canister
    * @param args Arguments with either a file, blob, path, bytes or custom Readable implementation
    */
-  public async store(args: StoreArgs): Promise<string> {
-    const readable = await AssetManager.toReadable(args);
-    const key = [args.config?.path ?? '', args.config?.fileName ?? readable.fileName].join('/');
+  public async store(...args: StoreArgs): Promise<string> {
+    const readable = await AssetManager.toReadable(...args);
+    const [, config] = args;
+    const key = [config?.path ?? '', config?.fileName ?? readable.fileName].join('/');
 
     if (readable.length <= this._maxSingleFileSize) {
       // Asset is small enough to be uploaded in one request
@@ -180,22 +172,22 @@ export class AssetManager {
         const bytes = await readable.slice(0, readable.length);
         await readable.close();
         const sha256 =
-          args.config?.sha256 ??
+          config?.sha256 ??
           new Uint8Array(jsSha256.create().update(new Uint8Array(bytes)).arrayBuffer());
         return this._actor.store({
           key,
           content: bytes,
           content_type: readable.contentType,
           sha256: [sha256],
-          content_encoding: args.config?.contentEncoding ?? 'identity',
+          content_encoding: config?.contentEncoding ?? 'identity',
         });
       });
       // Call progress callback for consistent behavior even though there is only a single chunk
-      args.config?.onProgress?.({ current: readable.length, total: readable.length });
+      config?.onProgress?.({ current: readable.length, total: readable.length });
     } else {
       // Create batch to upload asset in chunks
       const batch = this.batch();
-      await batch.store({ readable: readable, config: args.config });
+      await batch.store(readable, config);
       await batch.commit();
     }
 
@@ -269,10 +261,11 @@ class AssetManagerBatch {
    * Insert batch operation to store data on assets canister
    * @param args Arguments with either a file, blob, path, bytes or custom Readable implementation
    */
-  public async store(args: StoreArgs): Promise<string> {
-    const readable = await AssetManager.toReadable(args);
-    const key = [args.config?.path ?? '', args.config?.fileName ?? readable.fileName].join('/');
-    if (!args.config?.sha256) {
+  public async store(...args: StoreArgs): Promise<string> {
+    const readable = await AssetManager.toReadable(...args);
+    const [, config] = args;
+    const key = [config?.path ?? '', config?.fileName ?? readable.fileName].join('/');
+    if (!config?.sha256) {
       this._sha256[key] = jsSha256.create();
     }
     this._progress[key] = { current: 0, total: readable.length };
@@ -285,7 +278,7 @@ class AssetManagerBatch {
             index * this._maxChunkSize,
             Math.min((index + 1) * this._maxChunkSize, readable.length),
           );
-          if (!args.config?.sha256) {
+          if (!config?.sha256) {
             this._sha256[key].update(content);
           }
           const { chunk_id } = await this._pLimit(() =>
@@ -297,7 +290,7 @@ class AssetManagerBatch {
           this._progress[key].current += content.length;
 
           // Individual progress callback
-          args.config?.onProgress?.(this._progress[key]);
+          config?.onProgress?.(this._progress[key]);
 
           // Whole commit progress callback
           onProgress?.({
@@ -311,14 +304,14 @@ class AssetManagerBatch {
       await readable.close();
       return [
         {
-          CreateAsset: { key, content_type: args.config?.contentType ?? readable.contentType },
+          CreateAsset: { key, content_type: config?.contentType ?? readable.contentType },
         },
         {
           SetAssetContent: {
             key,
-            sha256: [args.config?.sha256 ?? new Uint8Array(this._sha256[key].arrayBuffer())],
+            sha256: [config?.sha256 ?? new Uint8Array(this._sha256[key].arrayBuffer())],
             chunk_ids: chunkIds,
-            content_encoding: args.config?.contentEncoding ?? 'identity',
+            content_encoding: config?.contentEncoding ?? 'identity',
           },
         },
       ];
@@ -432,13 +425,18 @@ class Asset {
 
   /**
    * Get All chunks of asset through `onChunk` callback, can be used for a custom storage implementation
-   * @param onChunk Called on each received chunk, set `concurrency` to `1` to receive chunks in sequential order
+   * @param onChunk Called on each received chunk
+   * @param sequential Chunks are received in sequential order when true or `concurrency` is `1` in config
    */
-  public async getChunks(onChunk: (index: number, chunk: Uint8Array) => void) {
+  public async getChunks(
+    onChunk: (index: number, chunk: Uint8Array) => void,
+    sequential?: boolean,
+  ) {
     onChunk(0, this._content);
+    const chunkLimit = sequential ? limit(1) : this._limit;
     await Promise.all(
       Array.from({ length: Math.ceil(this.length / this.chunkSize) - 1 }).map((_, index) =>
-        this._limit(async () => {
+        chunkLimit(async () => {
           const { content } = await this._actor.get_chunk({
             key: this._key,
             content_encoding: this.contentEncoding,
@@ -542,5 +540,22 @@ class Asset {
     const treeSha = lookup_path(['http_assets', this._key], hashTree);
 
     return !!treeSha && !!this.sha256 && compare(this.sha256.buffer, treeSha) === 0;
+  }
+
+  /**
+   * Check if the hash of the asset data is equal to the hash that has been certified
+   * @param bytes Optionally pass data to hash instead of waiting for asset data to be fetched and hashed
+   */
+  public async verifySha256(bytes?: Uint8Array | number[]): Promise<boolean> {
+    if (!this.sha256?.buffer) {
+      return false;
+    }
+    const sha256 = jsSha256.create();
+    if (bytes) {
+      sha256.update(Array.isArray(bytes) ? new Uint8Array(bytes) : bytes);
+    } else {
+      await this.getChunks((_, chunk) => sha256.update(chunk), true);
+    }
+    return compare(this.sha256.buffer, sha256.arrayBuffer()) === 0;
   }
 }
