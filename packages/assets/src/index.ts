@@ -128,7 +128,7 @@ export class AssetManager {
     ...actorConfig
   }: AssetManagerConfig) {
     this._actor = getAssetsCanister(actorConfig);
-    this._limit = limit(concurrency ?? 32);
+    this._limit = limit(concurrency ?? 16);
     this._maxSingleFileSize = maxSingleFileSize ?? 1900000;
     this._maxChunkSize = maxChunkSize ?? 1900000;
   }
