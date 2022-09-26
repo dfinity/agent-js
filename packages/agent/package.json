@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/agent",
-  "version": "0.12.2-beta.0",
+  "version": "0.13.3",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to interact with the Internet Computer",
@@ -49,8 +49,8 @@
     "tslint": "tslint --project tsconfig.json --config tslint.json"
   },
   "peerDependencies": {
-    "@dfinity/candid": "^0.12.2-beta.0",
-    "@dfinity/principal": "^0.12.2-beta.0"
+    "@dfinity/candid": "^0.13.3",
+    "@dfinity/principal": "^0.13.3"
   },
   "dependencies": {
     "base64-arraybuffer": "^0.2.0",
@@ -75,8 +75,5 @@
     "typedoc": "^0.22.11",
     "typescript": "^4.7.4",
     "whatwg-fetch": "^3.0.0"
-  },
-  "jest": {
-    "preset": "ts-jest"
   }
 }

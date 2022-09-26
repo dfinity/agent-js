@@ -80,7 +80,7 @@ export const idlFactory = ({ IDL }) => {
       [IDL.Record({ chunk_id: ChunkId })],
       [],
     ),
-    delete_content: IDL.Func([DeleteAssetArguments], [], []),
+    delete_asset: IDL.Func([DeleteAssetArguments], [], []),
     get: IDL.Func(
       [IDL.Record({ key: Key, accept_encodings: IDL.Vec(IDL.Text) })],
       [

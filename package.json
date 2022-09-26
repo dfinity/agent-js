@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/agent-monorepo",
-  "version": "0.12.2-beta.0",
+  "version": "0.13.3",
   "private": true,
   "description": "Use an Agent to interact with the Internet Computer from your JavaScript program.",
   "workspaces": {
@@ -8,6 +8,7 @@
       "packages/principal",
       "packages/candid",
       "packages/agent",
+      "packages/bls-verify",
       "packages/identity",
       "packages/identity-ledgerhq",
       "packages/authentication",

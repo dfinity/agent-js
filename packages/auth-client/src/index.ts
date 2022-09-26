@@ -15,9 +15,19 @@ import {
 } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
 import { IdleManager, IdleManagerOptions } from './idleManager';
+import {
+  AuthClientStorage,
+  IdbStorage,
+  isBrowser,
+  KEY_STORAGE_DELEGATION,
+  KEY_STORAGE_KEY,
+  KEY_VECTOR,
+  LocalStorage,
+} from './storage';
 
-const KEY_LOCALSTORAGE_KEY = 'identity';
-const KEY_LOCALSTORAGE_DELEGATION = 'delegation';
+export { IdbStorage, LocalStorage, KEY_STORAGE_DELEGATION, KEY_STORAGE_KEY } from './storage';
+export { IdbKeyVal, DBCreateOptions } from './db';
+
 const IDENTITY_PROVIDER_DEFAULT = 'https://identity.ic0.app';
 const IDENTITY_PROVIDER_ENDPOINT = '#authorize';
 
@@ -34,7 +44,7 @@ export interface AuthClientCreateOptions {
    */
   identity?: SignIdentity;
   /**
-   * Optional storage with get, set, and remove. Uses LocalStorage by default
+   * Optional storage with get, set, and remove. Uses {@link IdbStorage} by default
    */
   storage?: AuthClientStorage;
   /**
@@ -91,17 +101,6 @@ export interface AuthClientLoginOptions {
   onError?: ((error?: string) => void) | ((error?: string) => Promise<void>);
 }
 
-/**
- * Interface for persisting user authentication data
- */
-export interface AuthClientStorage {
-  get(key: string): Promise<string | null>;
-
-  set(key: string, value: string): Promise<void>;
-
-  remove(key: string): Promise<void>;
-}
-
 interface InternetIdentityAuthRequest {
   kind: 'authorize-client';
   sessionPublicKey: Uint8Array;
@@ -120,50 +119,6 @@ interface InternetIdentityAuthResponseSuccess {
     signature: Uint8Array;
   }[];
   userPublicKey: Uint8Array;
-}
-
-async function _deleteStorage(storage: AuthClientStorage) {
-  await storage.remove(KEY_LOCALSTORAGE_KEY);
-  await storage.remove(KEY_LOCALSTORAGE_DELEGATION);
-}
-
-export class LocalStorage implements AuthClientStorage {
-  constructor(public readonly prefix = 'ic-', private readonly _localStorage?: Storage) {}
-
-  public get(key: string): Promise<string | null> {
-    return Promise.resolve(this._getLocalStorage().getItem(this.prefix + key));
-  }
-
-  public set(key: string, value: string): Promise<void> {
-    this._getLocalStorage().setItem(this.prefix + key, value);
-    return Promise.resolve();
-  }
-
-  public remove(key: string): Promise<void> {
-    this._getLocalStorage().removeItem(this.prefix + key);
-    return Promise.resolve();
-  }
-
-  private _getLocalStorage() {
-    if (this._localStorage) {
-      return this._localStorage;
-    }
-
-    const ls =
-      typeof window === 'undefined'
-        ? typeof global === 'undefined'
-          ? typeof self === 'undefined'
-            ? undefined
-            : self.localStorage
-          : global.localStorage
-        : window.localStorage;
-
-    if (!ls) {
-      throw new Error('Could not find local storage.');
-    }
-
-    return ls;
-  }
 }
 
 interface AuthReadyMessage {
@@ -234,13 +189,32 @@ export class AuthClient {
       idleOptions?: IdleOptions;
     } = {},
   ): Promise<AuthClient> {
-    const storage = options.storage ?? new LocalStorage('ic-');
+    const storage = options.storage ?? new IdbStorage();
 
     let key: null | SignIdentity = null;
     if (options.identity) {
       key = options.identity;
     } else {
-      const maybeIdentityStorage = await storage.get(KEY_LOCALSTORAGE_KEY);
+      let maybeIdentityStorage = await storage.get(KEY_STORAGE_KEY);
+      if (!maybeIdentityStorage && isBrowser) {
+        // Attempt to migrate from localstorage
+        try {
+          const fallbackLocalStorage = new LocalStorage();
+          const localChain = await fallbackLocalStorage.get(KEY_STORAGE_DELEGATION);
+          const localKey = await fallbackLocalStorage.get(KEY_STORAGE_KEY);
+          if (localChain && localKey) {
+            console.log('Discovered an identity stored in localstorage. Migrating to IndexedDB');
+            await storage.set(KEY_STORAGE_DELEGATION, localChain);
+            await storage.set(KEY_STORAGE_KEY, localKey);
+            maybeIdentityStorage = localChain;
+            // clean up
+            await fallbackLocalStorage.remove(KEY_STORAGE_DELEGATION);
+            await fallbackLocalStorage.remove(KEY_STORAGE_KEY);
+          }
+        } catch (error) {
+          console.error('error while attempting to recover localstorage: ' + error);
+        }
+      }
       if (maybeIdentityStorage) {
         try {
           key = Ed25519KeyIdentity.fromJSON(maybeIdentityStorage);
@@ -256,7 +230,7 @@ export class AuthClient {
 
     if (key) {
       try {
-        const chainStorage = await storage.get(KEY_LOCALSTORAGE_DELEGATION);
+        const chainStorage = await storage.get(KEY_STORAGE_DELEGATION);
 
         if (options.identity) {
           identity = options.identity;
@@ -282,12 +256,18 @@ export class AuthClient {
       ? undefined
       : IdleManager.create(options.idleOptions);
 
+    if (!key) {
+      // Create a new key (whether or not one was in storage).
+      key = Ed25519KeyIdentity.generate();
+      await storage.set(KEY_STORAGE_KEY, JSON.stringify(key));
+    }
+
     return new this(identity, key, chain, storage, idleManager, options);
   }
 
   protected constructor(
     private _identity: Identity,
-    private _key: SignIdentity | null,
+    private _key: SignIdentity,
     private _chain: DelegationChain | null,
     private _storage: AuthClientStorage,
     public readonly idleManager: IdleManager | undefined,
@@ -404,14 +384,6 @@ export class AuthClient {
      */
     onError?: ((error?: string) => void) | ((error?: string) => Promise<void>);
   }): Promise<void> {
-    let key = this._key;
-    if (!key) {
-      // Create a new key (whether or not one was in storage).
-      key = Ed25519KeyIdentity.generate();
-      this._key = key;
-      await this._storage.set(KEY_LOCALSTORAGE_KEY, JSON.stringify(key));
-    }
-
     // Set default maxTimeToLive to 8 hours
     const defaultTimeToLive = /* hours */ BigInt(8) * /* nanoseconds */ BigInt(3_600_000_000_000);
 
@@ -485,10 +457,7 @@ export class AuthClient {
             // it a sync function. Having _handleSuccess as an async function
             // messes up the jest tests for some reason.
             if (this._chain) {
-              await this._storage.set(
-                KEY_LOCALSTORAGE_DELEGATION,
-                JSON.stringify(this._chain.toJSON()),
-              );
+              await this._storage.set(KEY_STORAGE_DELEGATION, JSON.stringify(this._chain.toJSON()));
             }
           } catch (err) {
             this._handleFailure((err as Error).message, options?.onError);
@@ -518,11 +487,10 @@ export class AuthClient {
   }
 
   public async logout(options: { returnTo?: string } = {}): Promise<void> {
-    _deleteStorage(this._storage);
+    await _deleteStorage(this._storage);
 
     // Reset this auth client to a non-authenticated state.
     this._identity = new AnonymousIdentity();
-    this._key = null;
     this._chain = null;
 
     if (options.returnTo) {
@@ -533,4 +501,10 @@ export class AuthClient {
       }
     }
   }
+}
+
+async function _deleteStorage(storage: AuthClientStorage) {
+  await storage.remove(KEY_STORAGE_KEY);
+  await storage.remove(KEY_STORAGE_DELEGATION);
+  await storage.remove(KEY_VECTOR);
 }

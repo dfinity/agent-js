@@ -148,6 +148,7 @@ export class HttpAgent implements Agent {
   private readonly _pipeline: HttpAgentRequestTransformFn[] = [];
   private _identity: Promise<Identity> | null;
   private readonly _fetch: typeof fetch;
+  private _timeDiffMsecs = 0;
   private readonly _host: URL;
   private readonly _credentials: string | undefined;
   private _rootKeyFetched = false;
@@ -236,13 +237,20 @@ export class HttpAgent implements Agent {
 
     const sender: Principal = id.getPrincipal() || Principal.anonymous();
 
+    let ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
+
+    // If the value is off by more than 30 seconds, reconcile system time with the network
+    if (Math.abs(this._timeDiffMsecs) > 1_000 * 30) {
+      ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS + this._timeDiffMsecs);
+    }
+
     const submit: CallRequest = {
       request_type: SubmitRequestType.Call,
       canister_id: canister,
       method_name: options.methodName,
       arg: options.arg,
       sender,
-      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+      ingress_expiry,
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -416,6 +424,35 @@ export class HttpAgent implements Agent {
       );
     }
     return cbor.decode(await response.arrayBuffer());
+  }
+
+  /**
+   * Allows agent to sync its time with the network. Can be called during intialization or mid-lifecycle if the device's clock has drifted away from the network time. This is necessary to set the Expiry for a request
+   * @param {PrincipalLike} canisterId - Pass a canister ID if you need to sync the time with a particular replica. Uses the management canister by default
+   */
+  public async syncTime(canisterId?: Principal): Promise<void> {
+    const CanisterStatus = await import('../../canisterStatus');
+    const callTime = Date.now();
+    try {
+      if (!canisterId) {
+        console.log(
+          'Syncing time with the IC. No canisterId provided, so falling back to ryjl3-tyaaa-aaaaa-aaaba-cai',
+        );
+      }
+      const status = await CanisterStatus.request({
+        // Fall back with canisterId of the ICP Ledger
+        canisterId: canisterId ?? Principal.from('ryjl3-tyaaa-aaaaa-aaaba-cai'),
+        agent: this,
+        paths: ['time'],
+      });
+
+      const replicaTime = status.get('time');
+      if (replicaTime) {
+        this._timeDiffMsecs = Number(replicaTime as any) - Number(callTime);
+      }
+    } catch (error) {
+      console.error('Caught exception while attempting to sync time:', error);
+    }
   }
 
   public async status(): Promise<JsonObject> {
