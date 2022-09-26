@@ -3,11 +3,11 @@ import mime from 'mime/lite';
 
 export class ReadableBytes implements Readable {
   public readonly fileName: string;
-  private readonly _bytes: Uint8Array | number[];
+  private readonly _bytes: Uint8Array;
 
-  constructor(fileName: string, bytes: Uint8Array | number[]) {
+  constructor(fileName: string, bytes: Uint8Array | ArrayBuffer | number[]) {
     this.fileName = fileName;
-    this._bytes = bytes;
+    this._bytes = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
   }
 
   public get contentType(): string {
@@ -15,7 +15,7 @@ export class ReadableBytes implements Readable {
   }
 
   public get length(): number {
-    return this._bytes.length;
+    return this._bytes.byteLength;
   }
 
   public async open(): Promise<void> {}
@@ -23,9 +23,6 @@ export class ReadableBytes implements Readable {
   public async close(): Promise<void> {}
 
   public async slice(start: number, end: number): Promise<Uint8Array> {
-    if (this._bytes instanceof Uint8Array) {
-      return this._bytes.slice(start, end);
-    }
-    return Uint8Array.from(this._bytes.slice(start, end));
+    return this._bytes.slice(start, end);
   }
 }

@@ -83,7 +83,7 @@ export type StoreBlobArgs = [
 export type StorePathArgs = [path: string, config?: StoreConfig];
 
 export type StoreBytesArgs = [
-  bytes: Uint8Array | number[],
+  bytes: Uint8Array | ArrayBuffer | number[],
   config: Omit<StoreConfig, 'fileName'> & Required<Pick<StoreConfig, 'fileName'>>,
 ];
 
@@ -154,16 +154,19 @@ export class AssetManager {
    * @param args Arguments with either a file, blob, path, bytes or custom Readable implementation
    */
   static async toReadable(...args: StoreArgs): Promise<Readable> {
-    if (args[0] instanceof File) {
+    if (typeof File === 'function' && args[0] instanceof File) {
       return new ReadableFile(args[0]);
     }
-    if (args[0] instanceof Blob && args[1]?.fileName) {
+    if (typeof Blob === 'function' && args[0] instanceof Blob && args[1]?.fileName) {
       return new ReadableBlob(args[1].fileName, args[0]);
     }
     if (typeof args[0] === 'string') {
       return await ReadablePath.create(args[0]);
     }
-    if ((Array.isArray(args[0]) || args[0]?.constructor === Uint8Array) && args[1]?.fileName) {
+    if (
+      (Array.isArray(args[0]) || args[0] instanceof Uint8Array || args[0] instanceof ArrayBuffer) &&
+      args[1]?.fileName
+    ) {
       return new ReadableBytes(args[1].fileName, args[0]);
     }
     if (isReadable(args[0])) {
