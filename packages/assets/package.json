@@ -54,8 +54,7 @@
   "dependencies": {
     "@dfinity/agent": "^0.12.2-beta.0",
     "base64-arraybuffer": "^1.0.2",
-    "mime": "^3.0.0",
-    "p-limit": "^4.0.0"
+    "mime": "^3.0.0"
   },
   "devDependencies": {
     "@peculiar/webcrypto": "^1.4.0",

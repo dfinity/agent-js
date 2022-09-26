@@ -12,27 +12,91 @@ import {
 } from '@dfinity/agent';
 import { lebDecode } from '@dfinity/candid';
 import { PipeArrayBuffer } from '@dfinity/candid/lib/cjs/utils/buffer';
-import pLimit, { LimitFunction } from 'p-limit';
 import { AssetsCanisterRecord, getAssetsCanister } from './canisters/assets';
-import {
-  ContentEncoding,
-  Data,
-  DataConfig,
-  DefaultReadableDataImpl,
-  isReadableData,
-  ReadableData,
-} from './readableData';
 import { Hasher, sha256 as jsSha256 } from 'js-sha256';
 import { BatchOperationKind } from './canisters/assets_service';
 import * as base64Arraybuffer from 'base64-arraybuffer';
+import { Readable } from './readable/readable';
+import { ReadableFile } from './readable/readableFile';
+import { ReadableBlob } from './readable/readableBlob';
+import { ReadablePath } from './readable/readablePath';
+import { ReadableBytes } from './readable/readableBytes';
+import { limit, LimitFn } from './utils/limit';
 import fs from 'fs';
+
+/**
+ * Supported content encodings by asset canister
+ */
+export type ContentEncoding = 'identity' | 'gzip' | 'compress' | 'deflate' | 'br';
+
+/**
+ * Upload progress in bytes
+ */
+export interface Progress {
+  current: number;
+  total: number;
+}
+
+/**
+ * Configuration that can be passed to override defaults and add progress callback
+ */
+export interface StoreConfig {
+  fileName?: string;
+  path?: string;
+  contentType?: string;
+  contentEncoding?: ContentEncoding;
+  sha256?: Uint8Array;
+  onProgress?: (progress: Progress) => void;
+}
+
+export interface StoreReadableArgs {
+  readable: Readable;
+  config?: StoreConfig;
+}
+
+export interface StoreFileArgs {
+  file: File;
+  config?: StoreConfig;
+}
+
+export interface StoreBlobArgs {
+  blob: Blob;
+  config: Omit<StoreConfig, 'fileName'> & Required<Pick<StoreConfig, 'fileName'>>;
+}
+
+export interface StorePathArgs {
+  path: string;
+  config?: StoreConfig;
+}
+
+export interface StoreBytesArgs {
+  bytes: Uint8Array | number[];
+  config: Omit<StoreConfig, 'fileName'> & Required<Pick<StoreConfig, 'fileName'>>;
+}
+
+/**
+ * Arguments to store an asset in asset manager
+ */
+export type StoreArgs =
+  | StoreReadableArgs
+  | StoreFileArgs
+  | StoreBlobArgs
+  | StorePathArgs
+  | StoreBytesArgs;
+
+/**
+ * Arguments to commit batch in asset manager
+ */
+export interface CommitBatchArgs {
+  onProgress?: (progress: Progress) => void;
+}
 
 /**
  * Configuration that can be passed to set the canister id of the
  * assets canister to be managed, inherits actor configuration and
  * has additional asset manager specific configuration options.
  */
-interface AssetManagerConfig extends ActorConfig {
+export interface AssetManagerConfig extends ActorConfig {
   /**
    * Max number of concurrent requests to the Internet Computer
    */
@@ -49,7 +113,7 @@ interface AssetManagerConfig extends ActorConfig {
 
 export class AssetManager {
   private readonly _actor: ActorSubclass<AssetsCanisterRecord>;
-  private readonly _pLimit: LimitFunction;
+  private readonly _limit: LimitFn;
   private readonly _maxSingleFileSize: number;
   private readonly _maxChunkSize: number;
 
@@ -64,9 +128,33 @@ export class AssetManager {
     ...actorConfig
   }: AssetManagerConfig) {
     this._actor = getAssetsCanister(actorConfig);
-    this._pLimit = pLimit(concurrency ?? 32);
+    this._limit = limit(concurrency ?? 32);
     this._maxSingleFileSize = maxSingleFileSize ?? 1900000;
     this._maxChunkSize = maxChunkSize ?? 1900000;
+  }
+
+  /**
+   * Create readable from store arguments
+   * @param args Arguments with either a file, blob, path, bytes or custom Readable implementation
+   */
+  static async toReadable(args: StoreArgs): Promise<Readable> {
+    if ('readable' in args) {
+      return args.readable;
+    }
+    if ('file' in args) {
+      return new ReadableFile(args.file);
+    }
+    if ('blob' in args) {
+      return new ReadableBlob(args.config.fileName, args.blob);
+    }
+    if ('path' in args) {
+      return await ReadablePath.create(args.path);
+    }
+    if ('bytes' in args) {
+      return new ReadableBytes(args.config.fileName, args.bytes);
+    }
+
+    throw new Error('Invalid arguments, readable could not be created');
   }
 
   /**
@@ -79,51 +167,35 @@ export class AssetManager {
 
   /**
    * Store data on assets canister
-   * @param readableData (custom) ReadableData instance
+   * @param args Arguments with either a file, blob, path, bytes or custom Readable implementation
    */
-  public async store(readableData: ReadableData): Promise<string>;
-  /**
-   * Store data on assets canister
-   * @param data Either a Blob, Uint8Array or number[]
-   * @param config Configuration and overrides, file name is required
-   */
-  public async store(
-    data: Exclude<Data, File | string>,
-    config: Omit<DataConfig, 'fileName'> & Required<Pick<DataConfig, 'fileName'>>,
-  ): Promise<string>;
-  /**
-   * Store data on assets canister
-   * @param data Either a File (web) or file path (Node)
-   * @param config Optional configuration and overrides
-   */
-  public async store(data: File | string, config?: DataConfig): Promise<string>;
-  public async store(data: Data | ReadableData, config?: DataConfig): Promise<string> {
-    const readableData = isReadableData(data)
-      ? data
-      : await DefaultReadableDataImpl.create(data as any, config);
-    const key = [readableData.path, readableData.fileName].join('/');
+  public async store(args: StoreArgs): Promise<string> {
+    const readable = await AssetManager.toReadable(args);
+    const key = [args.config?.path ?? '', args.config?.fileName ?? readable.fileName].join('/');
 
-    if (readableData.length <= this._maxSingleFileSize) {
+    if (readable.length <= this._maxSingleFileSize) {
       // Asset is small enough to be uploaded in one request
-      await this._pLimit(async () => {
-        await readableData.open();
-        const bytes = await readableData.slice(0, readableData.length);
-        await readableData.close();
+      await this._limit(async () => {
+        await readable.open();
+        const bytes = await readable.slice(0, readable.length);
+        await readable.close();
         const sha256 =
-          config?.sha256 ??
+          args.config?.sha256 ??
           new Uint8Array(jsSha256.create().update(new Uint8Array(bytes)).arrayBuffer());
         return this._actor.store({
           key,
           content: bytes,
-          content_type: readableData.contentType,
+          content_type: readable.contentType,
           sha256: [sha256],
-          content_encoding: readableData.contentEncoding,
+          content_encoding: args.config?.contentEncoding ?? 'identity',
         });
       });
+      // Call progress callback for consistent behavior even though there is only a single chunk
+      args.config?.onProgress?.({ current: readable.length, total: readable.length });
     } else {
       // Create batch to upload asset in chunks
       const batch = this.batch();
-      batch.store(readableData);
+      await batch.store({ readable: readable, config: args.config });
       await batch.commit();
     }
 
@@ -135,7 +207,7 @@ export class AssetManager {
    * @param key The path to the file on the assets canister e.g. /folder/to/my_file.txt
    */
   public async delete(key: string): Promise<void> {
-    await this._actor.delete_content({ key });
+    await this._actor.delete_asset({ key });
   }
 
   /**
@@ -158,7 +230,7 @@ export class AssetManager {
 
     return new Asset(
       this._actor,
-      this._pLimit,
+      this._limit,
       this._maxSingleFileSize,
       this._maxChunkSize,
       key,
@@ -176,14 +248,122 @@ export class AssetManager {
    * Create a batch assets operations instance, commit multiple operations in a single request
    */
   public batch(): AssetManagerBatch {
-    return new AssetManagerBatch(this._actor, this._pLimit, this._maxChunkSize);
+    return new AssetManagerBatch(this._actor, this._limit, this._maxChunkSize);
+  }
+}
+
+class AssetManagerBatch {
+  private _scheduledOperations: Array<
+    (batch_id: bigint, onProgress?: (progress: Progress) => void) => Promise<BatchOperationKind[]>
+  > = [];
+  private _sha256: { [key: string]: Hasher } = {};
+  private _progress: { [key: string]: Progress } = {};
+
+  constructor(
+    private readonly _actor: ActorSubclass<AssetsCanisterRecord>,
+    private readonly _pLimit: LimitFn,
+    private readonly _maxChunkSize: number,
+  ) {}
+
+  /**
+   * Insert batch operation to store data on assets canister
+   * @param args Arguments with either a file, blob, path, bytes or custom Readable implementation
+   */
+  public async store(args: StoreArgs): Promise<string> {
+    const readable = await AssetManager.toReadable(args);
+    const key = [args.config?.path ?? '', args.config?.fileName ?? readable.fileName].join('/');
+    if (!args.config?.sha256) {
+      this._sha256[key] = jsSha256.create();
+    }
+    this._progress[key] = { current: 0, total: readable.length };
+    this._scheduledOperations.push(async (batch_id, onProgress) => {
+      await readable.open();
+      const chunkCount = Math.ceil(readable.length / this._maxChunkSize);
+      const chunkIds: bigint[] = await Promise.all(
+        Array.from({ length: chunkCount }).map(async (_, index) => {
+          const content = await readable.slice(
+            index * this._maxChunkSize,
+            Math.min((index + 1) * this._maxChunkSize, readable.length),
+          );
+          if (!args.config?.sha256) {
+            this._sha256[key].update(content);
+          }
+          const { chunk_id } = await this._pLimit(() =>
+            this._actor.create_chunk({
+              content,
+              batch_id,
+            }),
+          );
+          this._progress[key].current += content.length;
+
+          // Individual progress callback
+          args.config?.onProgress?.(this._progress[key]);
+
+          // Whole commit progress callback
+          onProgress?.({
+            current: Object.values(this._progress).reduce((acc, val) => acc + val.current, 0),
+            total: Object.values(this._progress).reduce((acc, val) => acc + val.total, 0),
+          });
+
+          return chunk_id;
+        }),
+      );
+      await readable.close();
+      return [
+        {
+          CreateAsset: { key, content_type: args.config?.contentType ?? readable.contentType },
+        },
+        {
+          SetAssetContent: {
+            key,
+            sha256: [args.config?.sha256 ?? new Uint8Array(this._sha256[key].arrayBuffer())],
+            chunk_ids: chunkIds,
+            content_encoding: args.config?.contentEncoding ?? 'identity',
+          },
+        },
+      ];
+    });
+    return key;
+  }
+
+  /**
+   * Insert batch operation to delete file from assets canister
+   * @param key The path to the file on the assets canister e.g. /folder/to/my_file.txt
+   */
+  public delete(key: string): void {
+    this._scheduledOperations.push(async () => [{ DeleteAsset: { key } }]);
+  }
+
+  /**
+   * Commit all batch operations to assets canister
+   */
+  public async commit(args?: CommitBatchArgs): Promise<void> {
+    // Create batch
+    const { batch_id } = await this._pLimit(() => this._actor.create_batch({}));
+
+    // Execute scheduled operations
+    const operations = (
+      await Promise.all(
+        this._scheduledOperations.map(scheduled_operation =>
+          scheduled_operation(batch_id, args?.onProgress),
+        ),
+      )
+    ).flat();
+
+    // Commit batch
+    await this._pLimit(() => this._actor.commit_batch({ batch_id, operations }));
+
+    // Cleanup
+    this._scheduledOperations = [];
+    this._sha256 = {};
+    this._progress = {};
   }
 }
 
 class Asset {
   constructor(
     private readonly _actor: ActorSubclass<AssetsCanisterRecord>,
-    private readonly _pLimit: LimitFunction,
+    private readonly _limit: LimitFn,
     private readonly _maxSingleFileSize: number,
     private readonly _maxChunkSize: number,
     private readonly _key: string,
@@ -258,7 +438,7 @@ class Asset {
     onChunk(0, this._content);
     await Promise.all(
       Array.from({ length: Math.ceil(this.length / this.chunkSize) - 1 }).map((_, index) =>
-        this._pLimit(async () => {
+        this._limit(async () => {
           const { content } = await this._actor.get_chunk({
             key: this._key,
             content_encoding: this.contentEncoding,
@@ -274,7 +454,7 @@ class Asset {
   /**
    * Check if asset has been certified, which means that the content's hash is in the canister hash tree
    */
-  public async isCertified() {
+  public async isCertified(): Promise<boolean> {
     // Below implementation is based on Internet Computer service worker
     const agent = Actor.agentOf(this._actor) ?? getDefaultAgent();
     const canisterId = Actor.canisterIdOf(this._actor);
@@ -283,7 +463,7 @@ class Asset {
       throw Error('Agent is missing root key');
     }
 
-    const response = await this._pLimit(() =>
+    const response = await this._limit(() =>
       this._actor.http_request({
         method: 'get',
         url: this._key,
@@ -327,7 +507,7 @@ class Asset {
       certificate: new Uint8Array(certificate!),
       rootKey: agent.rootKey,
       canisterId,
-    }).catch(() => undefined);
+    }).catch(() => {});
 
     if (!cert) {
       // Certificate is not valid
@@ -362,107 +542,5 @@ class Asset {
     const treeSha = lookup_path(['http_assets', this._key], hashTree);
 
     return !!treeSha && !!this.sha256 && compare(this.sha256.buffer, treeSha) === 0;
-  }
-}
-
-class AssetManagerBatch {
-  private readonly _scheduledOperations: Array<
-    (batch_id: bigint) => Promise<BatchOperationKind[]>
-  > = [];
-  private readonly _sha256: { [key: string]: Hasher } = {};
-
-  constructor(
-    private readonly _actor: ActorSubclass<AssetsCanisterRecord>,
-    private readonly _pLimit: LimitFunction,
-    private readonly _maxChunkSize: number,
-  ) {}
-
-  /**
-   * Insert batch operation to store data on assets canister
-   * @param readableData ReadableData instance
-   */
-  public async store(readableData: ReadableData): Promise<string>;
-  /**
-   * Insert batch operation to store data on assets canister
-   * @param data Either a Blob, Uint8Array or number[]
-   * @param config Configuration and overrides, file name is required
-   */
-  public async store(
-    data: Exclude<Data, File | string>,
-    config: Omit<DataConfig, 'fileName'> & Required<Pick<DataConfig, 'fileName'>>,
-  ): Promise<string>;
-  /**
-   * Insert batch operation to store data on assets canister
-   * @param data Either a File (web) or file path (Node)
-   * @param config Optional configuration and overrides
-   */
-  public async store(data: File | string, config?: DataConfig): Promise<string>;
-  public async store(data: Data | ReadableData, config?: DataConfig): Promise<string> {
-    const readableData = isReadableData(data)
-      ? data
-      : await DefaultReadableDataImpl.create(data as any, config);
-    const key = [readableData.path, readableData.fileName].join('/');
-    if (!config?.sha256) {
-      this._sha256[key] = jsSha256.create();
-    }
-    this._scheduledOperations.push(async batch_id => {
-      await readableData.open();
-      const chunkIds: bigint[] = await Promise.all(
-        Array.from({ length: Math.ceil(readableData.length / this._maxChunkSize) }).map(
-          async (_, index) => {
-            const content = await readableData.slice(
-              index * this._maxChunkSize,
-              Math.min((index + 1) * this._maxChunkSize, readableData.length),
-            );
-            if (!config?.sha256) {
-              this._sha256[key].update(content);
-            }
-            const { chunk_id } = await this._pLimit(() =>
-              this._actor.create_chunk({
-                content,
-                batch_id,
-              }),
-            );
-            return chunk_id;
-          },
-        ),
-      );
-      await readableData.close;
-      return [
-        {
-          CreateAsset: { key, content_type: readableData.contentType },
-        },
-        {
-          SetAssetContent: {
-            key,
-            sha256: [config?.sha256 ?? new Uint8Array(this._sha256[key].arrayBuffer())],
-            chunk_ids: chunkIds,
-            content_encoding: readableData.contentEncoding,
-          },
-        },
-      ];
-    });
-    return key;
-  }
-
-  /**
-   * Insert batch operation to delete file from assets canister
-   * @param key The path to the file on the assets canister e.g. /folder/to/my_file.txt
-   */
-  public delete(key: string): void {
-    this._scheduledOperations.push(async () => [{ DeleteAsset: { key } }]);
-  }
-
-  /**
-   * Commit all batch operations to assets canister
-   */
-  public async commit(): Promise<void> {
-    const { batch_id } = await this._pLimit(() => this._actor.create_batch({}));
-    const operations = (
-      await Promise.all(
-        this._scheduledOperations.map(scheduled_operation => scheduled_operation(batch_id)),
-      )
-    ).flat();
-    await this._pLimit(() => this._actor.commit_batch({ batch_id, operations }));
   }
 }
