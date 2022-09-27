@@ -471,6 +471,15 @@ describe('makeNonce', () => {
   });
 });
 describe('retry failures', () => {
+  let consoleSpy;
+  beforeEach(() => {
+    consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    jest.spyOn(console, 'warn').mockImplementation();
+    if (typeof consoleSpy === 'function') {
+      consoleSpy.mockRestore();
+    }
+  });
+
   it('should throw errors immediately if retryTimes is set to 0', () => {
     const mockFetch: jest.Mock = jest.fn();
 

@@ -293,41 +293,15 @@ export class HttpAgent implements Agent {
 
     // Run both in parallel. The fetch is quite expensive, so we have plenty of time to
     // calculate the requestId locally.
-    return await this._makeRequests([
-      () =>
-        this._fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this._host), {
-          ...transformedRequest.request,
-          body,
-        }),
-      requestIdOf(submit),
-    ]);
-  }
 
-  private async _makeRequests(
-    requestList: [() => Promise<Response>, RequestId],
-    tries = 0,
-  ): Promise<_RequestResponse> {
-    if (tries > this._retryTimes && this._retryTimes !== 0) {
-      throw new Error(
-        `AgentError: Exceeded configured limit of ${this._retryTimes} retry attempts. Please check your network connection or try again in a few moments`,
-      );
-    }
-    const [requestGenerator, requestIdPromise] = requestList;
+    const request = this._requestAndRetry(() =>
+      this._fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this._host), {
+        ...transformedRequest.request,
+        body,
+      }),
+    );
 
-    const [response, requestId] = await Promise.all([requestGenerator(), requestIdPromise]);
-    const responseText = await response.clone().text();
-    if (!response.ok) {
-      const errorMessage =
-        `Server returned an error:\n` +
-        `  Code: ${response.status} (${response.statusText})\n` +
-        `  Body: ${responseText}\n`;
-      if (this._retryTimes > tries) {
-        console.warn(errorMessage + `  Retrying request.`);
-        return await this._makeRequests(requestList, tries + 1);
-      } else {
-        throw new Error(errorMessage);
-      }
-    }
+    const [response, requestId] = await Promise.all([request, requestIdOf(submit)]);
 
     return {
       requestId,
@@ -337,6 +311,30 @@ export class HttpAgent implements Agent {
         statusText: response.statusText,
       },
     };
+  }
+
+  private async _requestAndRetry(request: () => Promise<Response>, tries = 0): Promise<Response> {
+    if (tries > this._retryTimes && this._retryTimes !== 0) {
+      throw new Error(
+        `AgentError: Exceeded configured limit of ${this._retryTimes} retry attempts. Please check your network connection or try again in a few moments`,
+      );
+    }
+    const response = await request();
+    const responseText = await response.clone().text();
+    if (!response.ok) {
+      const errorMessage =
+        `Server returned an error:\n` +
+        `  Code: ${response.status} (${response.statusText})\n` +
+        `  Body: ${responseText}\n`;
+      if (this._retryTimes > tries) {
+        console.warn(errorMessage + `  Retrying request.`);
+        return await this._requestAndRetry(request, tries + 1);
+      } else {
+        throw new Error(errorMessage);
+      }
+    }
+
+    return response;
   }
 
   public async query(
@@ -381,21 +379,13 @@ export class HttpAgent implements Agent {
     transformedRequest = await id?.transformRequest(transformedRequest);
 
     const body = cbor.encode(transformedRequest.body);
-    const response = await this._fetch(
-      '' + new URL(`/api/v2/canister/${canister.toText()}/query`, this._host),
-      {
+    const response = await this._requestAndRetry(() =>
+      this._fetch('' + new URL(`/api/v2/canister/${canister.toText()}/query`, this._host), {
         ...transformedRequest.request,
         body,
-      },
+      }),
     );
 
-    if (!response.ok) {
-      throw new Error(
-        `Server returned an error:\n` +
-          `  Code: ${response.status} (${response.statusText})\n` +
-          `  Body: ${await response.text()}\n`,
-      );
-    }
     return cbor.decode(await response.arrayBuffer());
   }
 
@@ -501,15 +491,9 @@ export class HttpAgent implements Agent {
         }
       : {};
 
-    const response = await this._fetch('' + new URL(`/api/v2/status`, this._host), { headers });
-
-    if (!response.ok) {
-      throw new Error(
-        `Server returned an error:\n` +
-          `  Code: ${response.status} (${response.statusText})\n` +
-          `  Body: ${await response.text()}\n`,
-      );
-    }
+    const response = await this._requestAndRetry(() =>
+      this._fetch('' + new URL(`/api/v2/status`, this._host), { headers }),
+    );
 
     return cbor.decode(await response.arrayBuffer());
   }
