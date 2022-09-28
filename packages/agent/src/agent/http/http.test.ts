@@ -576,7 +576,7 @@ describe('reconcile time', () => {
   });
   it('should adjust the Expiry if the clock is more than 30 seconds behind', async () => {
     const systemTime = new Date('August 19, 1975 23:15:30');
-    jest.setSystemTime(systemTime);
+    jest.useFakeTimers({ legacyFakeTimers: true });
     const mockFetch = jest.fn();
 
     const replicaTime = new Date(Number(systemTime) + 31_000);
