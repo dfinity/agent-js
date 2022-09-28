@@ -45,6 +45,11 @@ afterEach(() => {
   global.Date.now = originalDateNowFn;
   global.window = originalWindow;
   global.fetch = originalFetch;
+  jest.spyOn(console, 'warn').mockImplementation(() => {
+    /** suppress warnings for pending timers */
+  });
+  jest.runOnlyPendingTimers();
+  jest.useRealTimers();
 });
 
 test('call', async () => {
@@ -547,7 +552,6 @@ describe('retry failures', () => {
 });
 
 describe('reconcile time', () => {
-  jest.useFakeTimers();
   it('should change nothing if time is within 30 seconds of replica', async () => {
     const systemTime = new Date('August 19, 1975 23:15:30');
     jest.setSystemTime(systemTime);
@@ -571,7 +575,6 @@ describe('reconcile time', () => {
     );
   });
   it('should adjust the Expiry if the clock is more than 30 seconds behind', async () => {
-    jest.useFakeTimers();
     const systemTime = new Date('August 19, 1975 23:15:30');
     jest.setSystemTime(systemTime);
     const mockFetch = jest.fn();
