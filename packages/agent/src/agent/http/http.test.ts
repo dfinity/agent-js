@@ -612,7 +612,7 @@ describe('reconcile time', () => {
 
     const delay = expiryInMs + REPLICA_PERMITTED_DRIFT_MILLISECONDS - Number(replicaTime);
 
-    expect(expiryInMs).toMatchInlineSnapshot(`177747601000`);
+    expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`"177747601000000000"`);
 
     expect(delay).toBe(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
     jest.autoMockOff();
