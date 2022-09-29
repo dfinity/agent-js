@@ -219,6 +219,11 @@ export class HttpAgent implements Agent {
     }
   }
 
+  public isLocal(): boolean {
+    const hostname = this._host.hostname;
+    return hostname === '127.0.0.1' || hostname.endsWith('localhost');
+  }
+
   public addTransform(fn: HttpAgentRequestTransformFn, priority = fn.priority || 0): void {
     // Keep the pipeline sorted at all time, by priority.
     const i = this._pipeline.findIndex(x => (x.priority || 0) < priority);
