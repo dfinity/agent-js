@@ -1,21 +1,19 @@
-export type LimitFn = <T>(fn: () => Promise<T>) => Promise<T>;
-
 /**
  * Minimal promise executor with concurrency limit implementation
  * @param concurrency Maximum number of promises executed concurrently
  */
-export const limit = (concurrency: number): LimitFn => {
+export const limit = (concurrency: number) => {
   const queue: Array<{
-    fn: () => Promise<any>;
-    resolve: (value: any) => void;
-    reject: (value: any) => void;
+    fn: () => Promise<unknown>;
+    resolve: (value: unknown | PromiseLike<unknown>) => void;
+    reject: (reason: unknown) => void;
   }> = [];
   let active = 0;
   const next = () => {
     if (active < concurrency && queue.length > 0) {
       active++;
-      const { fn, resolve, reject } = queue.shift()!;
-      fn()
+      const { fn, resolve, reject } = queue.shift() ?? {};
+      fn?.()
         .then(resolve)
         .catch(reject)
         .then(() => {
@@ -24,9 +22,11 @@ export const limit = (concurrency: number): LimitFn => {
         });
     }
   };
-  return fn =>
-    new Promise((resolve, reject) => {
+  return <T>(fn: () => Promise<T>) =>
+    new Promise<unknown>((resolve, reject) => {
       queue.push({ fn, resolve, reject });
       next();
-    });
+    }) as Promise<T>;
 };
+
+export type LimitFn = ReturnType<typeof limit>;

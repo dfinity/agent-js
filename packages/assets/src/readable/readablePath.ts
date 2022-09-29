@@ -38,7 +38,7 @@ export class ReadablePath implements Readable {
   }
 
   public async open(): Promise<void> {
-    return new Promise<void>(async (resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       if (this._fd !== undefined) {
         reject('File is already open');
         return;
@@ -55,7 +55,7 @@ export class ReadablePath implements Readable {
   }
 
   public async close(): Promise<void> {
-    return new Promise<void>(async (resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       if (this._fd === undefined) {
         reject('No open file handle found');
         return;
@@ -77,7 +77,7 @@ export class ReadablePath implements Readable {
         return;
       }
       const buffer = Buffer.alloc(end - start);
-      fs.read(this._fd, buffer, 0, end - start, start, (err: any) => {
+      fs.read(this._fd, buffer, 0, end - start, start, (err: unknown) => {
         if (err) {
           reject(err);
           return;

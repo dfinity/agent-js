@@ -8,7 +8,7 @@ export type BatchOperationKind =
   | { SetAssetContent: SetAssetContentArguments }
   | { Clear: ClearArguments };
 export type ChunkId = bigint;
-export type ClearArguments = {};
+export type ClearArguments = Record<string, never>;
 
 export interface CreateAssetArguments {
   key: Key;
@@ -78,7 +78,7 @@ export default interface _SERVICE {
     operations: Array<BatchOperationKind>;
   }) => Promise<undefined>;
   create_asset: (arg_0: CreateAssetArguments) => Promise<undefined>;
-  create_batch: (arg_0: {}) => Promise<{ batch_id: BatchId }>;
+  create_batch: (arg_0: Record<string, never>) => Promise<{ batch_id: BatchId }>;
   create_chunk: (arg_0: {
     content: Uint8Array;
     batch_id: BatchId;
@@ -101,7 +101,7 @@ export default interface _SERVICE {
   http_request_streaming_callback: (
     arg_0: StreamingCallbackToken,
   ) => Promise<[] | [StreamingCallbackHttpResponse]>;
-  list: (arg_0: {}) => Promise<
+  list: (arg_0: Record<string, never>) => Promise<
     Array<{
       key: Key;
       encodings: Array<{

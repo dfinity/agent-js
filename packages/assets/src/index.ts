@@ -137,12 +137,8 @@ export class AssetManager {
    * Create assets canister manager instance
    * @param config Additional configuration options, canister id is required
    */
-  constructor({
-    concurrency,
-    maxSingleFileSize,
-    maxChunkSize,
-    ...actorConfig
-  }: AssetManagerConfig) {
+  constructor(config: AssetManagerConfig) {
+    const { concurrency, maxSingleFileSize, maxChunkSize, ...actorConfig } = config;
     this._actor = getAssetsCanister(actorConfig);
     this._limit = limit(concurrency ?? 16);
     this._maxSingleFileSize = maxSingleFileSize ?? 1900000;
@@ -178,7 +174,7 @@ export class AssetManager {
 
   /**
    * Get list of all files in assets canister
-   * @return All files in asset canister
+   * @returns All files in asset canister
    */
   public async list(): ReturnType<AssetsCanisterRecord['list']> {
     return this._actor.list({});
@@ -193,8 +189,9 @@ export class AssetManager {
     const [, config] = args;
     const key = [config?.path ?? '', config?.fileName ?? readable.fileName].join('/');
 
+    // If asset is small enough upload in one request else upload in chunks (batch)
     if (readable.length <= this._maxSingleFileSize) {
-      // Asset is small enough to be uploaded in one request
+      config?.onProgress?.({ current: 0, total: readable.length });
       await this._limit(async () => {
         await readable.open();
         const bytes = await readable.slice(0, readable.length);
@@ -210,7 +207,6 @@ export class AssetManager {
           content_encoding: config?.contentEncoding ?? 'identity',
         });
       });
-      // Call progress callback for consistent behavior even though there is only a single chunk
       config?.onProgress?.({ current: readable.length, total: readable.length });
     } else {
       // Create batch to upload asset in chunks
@@ -281,7 +277,7 @@ class AssetManagerBatch {
 
   constructor(
     private readonly _actor: ActorSubclass<AssetsCanisterRecord>,
-    private readonly _pLimit: LimitFn,
+    private readonly _limit: LimitFn,
     private readonly _maxChunkSize: number,
   ) {}
 
@@ -297,6 +293,7 @@ class AssetManagerBatch {
       this._sha256[key] = jsSha256.create();
     }
     this._progress[key] = { current: 0, total: readable.length };
+    config?.onProgress?.(this._progress[key]);
     this._scheduledOperations.push(async (batch_id, onProgress) => {
       await readable.open();
       const chunkCount = Math.ceil(readable.length / this._maxChunkSize);
@@ -309,18 +306,14 @@ class AssetManagerBatch {
           if (!config?.sha256) {
             this._sha256[key].update(content);
           }
-          const { chunk_id } = await this._pLimit(() =>
+          const { chunk_id } = await this._limit(() =>
             this._actor.create_chunk({
               content,
               batch_id,
             }),
           );
           this._progress[key].current += content.length;
-
-          // Individual progress callback
           config?.onProgress?.(this._progress[key]);
-
-          // Whole commit progress callback
           onProgress?.({
             current: Object.values(this._progress).reduce((acc, val) => acc + val.current, 0),
             total: Object.values(this._progress).reduce((acc, val) => acc + val.total, 0),
@@ -357,10 +350,17 @@ class AssetManagerBatch {
 
   /**
    * Commit all batch operations to assets canister
+   * @param args Optional arguments with optional progress callback for commit progress
    */
   public async commit(args?: CommitBatchArgs): Promise<void> {
     // Create batch
-    const { batch_id } = await this._pLimit(() => this._actor.create_batch({}));
+    const { batch_id } = await this._limit(() => this._actor.create_batch({}));
+
+    // Progress callback
+    args?.onProgress?.({
+      current: Object.values(this._progress).reduce((acc, val) => acc + val.current, 0),
+      total: Object.values(this._progress).reduce((acc, val) => acc + val.total, 0),
+    });
 
     // Execute scheduled operations
     const operations = (
@@ -372,7 +372,7 @@ class AssetManagerBatch {
     ).flat();
 
     // Commit batch
-    await this._pLimit(() => this._actor.commit_batch({ batch_id, operations }));
+    await this._limit(() => this._actor.commit_batch({ batch_id, operations }));
 
     // Cleanup
     this._scheduledOperations = [];
@@ -426,10 +426,11 @@ class Asset {
 
   /**
    * Write asset content to file (Node.js)
+   * @param path File path to write to
    */
   public async write(path: string): Promise<void> {
-    const fd = await new Promise<number>(async (resolve, reject) =>
-      fs.open(path, 'w', (err: any, fd: number) => {
+    const fd = await new Promise<number>((resolve, reject) =>
+      fs.open(path, 'w', (err: unknown, fd: number) => {
         if (err) {
           reject(err);
           return;
@@ -440,7 +441,7 @@ class Asset {
     await this.getChunks(
       (index, chunk) =>
         new Promise<void>((resolve, reject) =>
-          fs.write(fd, chunk, 0, chunk.length, index * this.chunkSize, (err: any) => {
+          fs.write(fd, chunk, 0, chunk.length, index * this.chunkSize, (err: unknown) => {
             if (err) {
               reject(err);
               return;
@@ -500,40 +501,33 @@ class Asset {
 
     let certificate: ArrayBuffer | undefined;
     let tree: ArrayBuffer | undefined;
-    let encoding = '';
-    for (const [key, value] of response.headers) {
-      switch (key.trim().toLowerCase()) {
-        case 'ic-certificate':
-          {
-            const fields = value.split(/,/);
-            for (const f of fields) {
-              // @ts-ignore
-              const [, name, b64Value] = [...f.match(/^(.*)=:(.*):$/)].map(x => x.trim());
-              const value = base64Arraybuffer.decode(b64Value);
-              if (name === 'certificate') {
-                certificate = value;
-              } else if (name === 'tree') {
-                tree = value;
-              }
-            }
-          }
-          continue;
-        case 'content-encoding':
-          encoding = value.trim();
-          break;
+    const certificateHeader = response.headers.find(
+      ([key]) => key.trim().toLowerCase() === 'ic-certificate',
+    );
+    if (!certificateHeader) {
+      return false;
+    }
+    const fields = certificateHeader[1].split(/,/);
+    for (const f of fields) {
+      const [, name, b64Value] = [...(f.match(/^(.*)=:(.*):$/) ?? [])].map(x => x.trim());
+      const value = base64Arraybuffer.decode(b64Value);
+      if (name === 'certificate') {
+        certificate = value;
+      } else if (name === 'tree') {
+        tree = value;
       }
     }
 
-    if (!tree) {
-      // No tree in response header
+    if (!certificate || !tree) {
+      // No certificate or tree in response header
       return false;
     }
 
     const cert = await Certificate.create({
-      certificate: new Uint8Array(certificate!),
+      certificate: new Uint8Array(certificate),
       rootKey: agent.rootKey,
       canisterId,
-    }).catch(() => {});
+    }).catch(() => Promise.resolve());
 
     if (!cert) {
       // Certificate is not valid

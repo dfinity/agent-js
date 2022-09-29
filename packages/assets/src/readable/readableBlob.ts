@@ -18,9 +18,13 @@ export class ReadableBlob implements Readable {
     return this._blob.size;
   }
 
-  async open(): Promise<void> {}
+  async open(): Promise<void> {
+    return Promise.resolve();
+  }
 
-  async close(): Promise<void> {}
+  async close(): Promise<void> {
+    return Promise.resolve();
+  }
 
   async slice(start: number, end: number): Promise<Uint8Array> {
     return new Uint8Array(await this._blob.slice(start, end).arrayBuffer());

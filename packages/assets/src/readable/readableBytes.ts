@@ -18,9 +18,13 @@ export class ReadableBytes implements Readable {
     return this._bytes.byteLength;
   }
 
-  public async open(): Promise<void> {}
+  public async open(): Promise<void> {
+    return Promise.resolve();
+  }
 
-  public async close(): Promise<void> {}
+  public async close(): Promise<void> {
+    return Promise.resolve();
+  }
 
   public async slice(start: number, end: number): Promise<Uint8Array> {
     return this._bytes.slice(start, end);

@@ -1,4 +1,3 @@
-// @ts-ignore
 export const idlFactory = ({ IDL }) => {
   const ClearArguments = IDL.Record({});
   const BatchId = IDL.Nat;
