@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  */
-import counterCanister, { noncelessCanister } from '../canisters/counter';
+import counterCanister, { noncelessCanister, createActor } from '../canisters/counter';
 
 jest.setTimeout(40000);
 describe('counter', () => {
@@ -41,5 +41,32 @@ describe('counter', () => {
     expect(Number(await counter.read())).toEqual(1);
     await counter.inc();
     expect(Number(await counter.read())).toEqual(2);
+  });
+});
+describe('retrytimes', () => {
+  it('should retry after a failure', async () => {
+    jest.spyOn(console, 'warn').mockImplementation();
+    let count = 0;
+    const fetchMock = jest.fn(function (...args) {
+      if (count <= 1) {
+        count += 1;
+        return new Response('Test error - ignore', {
+          status: 500,
+          statusText: 'Internal Server Error',
+        });
+      }
+      // eslint-disable-next-line prefer-spread
+      return fetch.apply(
+        null,
+        args as [input: string | Request, init?: RequestInit | CMRequestInit | undefined],
+      );
+    });
+
+    const counter = await createActor({ fetch: fetchMock as typeof fetch, retryTimes: 3 });
+    try {
+      expect(await counter.greet('counter')).toEqual('Hello, counter!');
+    } catch (error) {
+      console.error(error);
+    }
   });
 });

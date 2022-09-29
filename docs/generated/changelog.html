@@ -10,14 +10,26 @@
     <h1>Agent-JS Changelog</h1>
 
     <section>
-      <h2>Version 0.13.4</h2>
+      <h2>Version 0.14.0</h2>
       <ul>
+        <li>
+          Adds retry logic to HttpAgent. By default, retries three times before throwing an error,
+          to offer a more cohesive workflow
+        </li>
         <li>
           Adds a top-level <code>fetchCandid()</code> function which retrieves the Candid interface
           for a given canister id.
         </li>
       </ul>
-
+      <h2>Version 0.13.4</h2>
+      <ul>
+        <li>chore: auth-client expose storage constant keys</li>
+        <li>
+          bug: auth-client resolves window.open issue in login function in safari due to async
+          storage call
+        </li>
+        <li>bug: auth-client storage wrapper returns after resolve to avoid idb to be recreated</li>
+      </ul>
       <h2>Version 0.13.3</h2>
       <ul>
         <li>
@@ -36,8 +48,11 @@
           This can be used to set proper Expiry times when a device has fallen out of sync with the
           replica.
         </li>
+        <li>
+          Fixes a candid bug where when decoding, optional fields could be skipped if the data on
+          the wire contains additional fields.
+        </li>
       </ul>
-
       <h2>Version 0.13.2</h2>
       <ul>
         <li>auth-client avoids localstorage global and can be used in a web worker or nodejs</li>
