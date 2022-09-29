@@ -9,7 +9,16 @@ import { IDL } from '@dfinity/candid';
  * @param canisterId A string corresponding to the canister ID
  * @returns Candid source code
  */
-export async function fetchCandid(agent: HttpAgent, canisterId: string): Promise<string> {
+export async function fetchCandid(canisterId: string, agent?: HttpAgent): Promise<string> {
+  if (!agent) {
+    // Create an anonymous `HttpAgent` (adapted from Candid UI)
+    agent = new HttpAgent();
+    const hostname = agent['_host'].hostname;
+    if (hostname === '127.0.0.1' || hostname.endsWith('localhost')) {
+      agent.fetchRootKey();
+    }
+  }
+
   // Attempt to use canister metadata
   const status = await CanisterStatus.request({
     agent,
