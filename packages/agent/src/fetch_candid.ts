@@ -13,8 +13,7 @@ export async function fetchCandid(canisterId: string, agent?: HttpAgent): Promis
   if (!agent) {
     // Create an anonymous `HttpAgent` (adapted from Candid UI)
     agent = new HttpAgent();
-    const hostname = agent['_host'].hostname;
-    if (hostname === '127.0.0.1' || hostname.endsWith('localhost')) {
+    if (agent.isLocal()) {
       agent.fetchRootKey();
     }
   }
