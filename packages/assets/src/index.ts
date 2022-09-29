@@ -450,6 +450,7 @@ class Asset {
           }),
         ),
     );
+    await new Promise<void>(resolve => fs.close(fd, () => resolve()));
   }
 
   /**

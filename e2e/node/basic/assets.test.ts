@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  */
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync, unlinkSync } from 'fs';
 import path from 'path';
 import agent from '../utils/agent';
 import { Actor } from '@dfinity/agent';
@@ -31,6 +31,14 @@ const randomBytesReadable = (fileName: string, length: number) => {
       );
     },
   };
+};
+
+/**
+ * File paths used in file read/write tests
+ */
+const testFile = {
+  source: path.join(__dirname, '../package.json'),
+  target: path.join(__dirname, '../package_copy.json'),
 };
 
 jest.setTimeout(60000);
@@ -66,6 +74,9 @@ describe('assets', () => {
   afterEach(async () => {
     const assetManager = new AssetManager({ canisterId, agent: await agent });
     await assetManager.clear();
+    if (existsSync(testFile.target)) {
+      unlinkSync(testFile.target);
+    }
   });
 
   it('store, get and delete 1MB asset (single chunk)', () => testRandomBytes('1MB.bin', 1000000));
@@ -88,5 +99,20 @@ describe('assets', () => {
     await expect(
       assetManager.list().then(assets => assets.map(asset => asset.key).sort()),
     ).resolves.toEqual(readables.map(({ fileName }) => `/${fileName}`).sort());
+  });
+
+  it('read file from disk, store as asset, get asset, write file to disk and compare files', async () => {
+    const assetManager = new AssetManager({
+      canisterId,
+      agent: await agent,
+      // Make sure files are read and written in chunks during this test
+      maxSingleFileSize: 200,
+      maxChunkSize: 200,
+    });
+    const key = await assetManager.store(testFile.source);
+    const asset = await assetManager.get(key);
+    await asset.write(testFile.target);
+
+    expect(readFileSync(testFile.target, 'utf8')).toEqual(readFileSync(testFile.source, 'utf8'));
   });
 });
