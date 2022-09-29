@@ -1,0 +1,19 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`retry failures should succeed after multiple failures within the configured limit 1`] = `
+Object {
+  "requestId": ArrayBuffer [],
+  "response": Object {
+    "ok": true,
+    "status": 200,
+    "statusText": "success!",
+  },
+}
+`;
+
+exports[`retry failures should throw errors immediately if retryTimes is set to 0 1`] = `
+"Server returned an error:
+  Code: 500 (Internal Server Error)
+  Body: Error
+"
+`;

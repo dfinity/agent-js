@@ -1,4 +1,4 @@
-import { Actor, HttpAgent } from '@dfinity/agent';
+import { Actor, HttpAgent, HttpAgentOptions } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { readFileSync } from 'fs';
@@ -81,3 +81,22 @@ export async function noncelessCanister(): Promise<{
     actor: Actor.createActor(idl, { canisterId, agent: await disableNonceAgent }) as any,
   };
 }
+
+export const createActor = async (options?: HttpAgentOptions) => {
+  const module = readFileSync(path.join(__dirname, 'counter.wasm'));
+  const agent = new HttpAgent({ host: `http://localhost:${process.env.REPLICA_PORT}`, ...options });
+  await agent.fetchRootKey();
+
+  const canisterId = await Actor.createCanister({ agent });
+  await Actor.install({ module }, { canisterId, agent: await agent });
+  const idl: IDL.InterfaceFactory = ({ IDL }) => {
+    return IDL.Service({
+      inc: IDL.Func([], [], []),
+      inc_read: IDL.Func([], [IDL.Nat], []),
+      read: IDL.Func([], [IDL.Nat], ['query']),
+      greet: IDL.Func([IDL.Text], [IDL.Text], []),
+      queryGreet: IDL.Func([IDL.Text], [IDL.Text], ['query']),
+    });
+  };
+  return Actor.createActor(idl, { canisterId, agent: await agent }) as any;
+};
