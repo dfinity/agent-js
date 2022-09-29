@@ -6,7 +6,7 @@ jest.setTimeout(30_000);
 afterEach(async () => {
   await Promise.resolve();
 });
-describe.only('canister status', () => {
+describe('canister status', () => {
   it('should fetch successfully', async () => {
     const counterObj = await (await counter)();
     const agent = new HttpAgent({ host: `http://localhost:${process.env.REPLICA_PORT}` });
