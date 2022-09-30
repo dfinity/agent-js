@@ -17,9 +17,11 @@
           to offer a more cohesive workflow
         </li>
         <li>Improves and truncates error messages in Candid</li>
-      </ul>
-      <h2>Version 0.13.4</h2>
-      <ul>
+        <li>fixes flaky tests for syncTime</li>
+        <li>
+          Adds a top-level <code>fetchCandid()</code> function which retrieves the Candid interface
+          for a given canister id.
+        </li>
         <li>chore: auth-client expose storage constant keys</li>
         <li>
           bug: auth-client resolves window.open issue in login function in safari due to async
