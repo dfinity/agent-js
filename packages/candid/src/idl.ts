@@ -45,6 +45,7 @@ const enum IDLTypeIds {
 }
 
 const magicNumber = 'DIDL';
+const toReadableString_max = 400; // will not display arguments after 400chars. Makes sure 2mb blobs don't get inside the error
 
 function zipWith<TX, TY, TR>(xs: TX[], ys: TY[], f: (a: TX, b: TY) => TR): TR[] {
   return xs.map((x, i) => f(x, ys[i]));
@@ -260,7 +261,7 @@ export class EmptyClass extends PrimitiveType<never> {
   }
 
   public covariant(x: any): x is never {
-    return false;
+    throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
   public encodeValue(): never {
@@ -301,7 +302,7 @@ export class UnknownClass extends Type {
   }
 
   public covariant(x: any): x is any {
-    return false;
+    throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
   public encodeValue(): never {
@@ -363,7 +364,8 @@ export class BoolClass extends PrimitiveType<boolean> {
   }
 
   public covariant(x: any): x is boolean {
-    return typeof x === 'boolean';
+    if (typeof x === 'boolean') return true;
+    throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
   public encodeValue(x: boolean): ArrayBuffer {
@@ -400,7 +402,8 @@ export class NullClass extends PrimitiveType<null> {
   }
 
   public covariant(x: any): x is null {
-    return x === null;
+    if (x === null) return true;
+    throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
   public encodeValue() {
@@ -462,7 +465,8 @@ export class TextClass extends PrimitiveType<string> {
   }
 
   public covariant(x: any): x is string {
-    return typeof x === 'string';
+    if (typeof x === 'string') return true;
+    throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
   public encodeValue(x: string) {
@@ -503,7 +507,8 @@ export class IntClass extends PrimitiveType<bigint> {
   public covariant(x: any): x is bigint {
     // We allow encoding of JavaScript plain numbers.
     // But we will always decode to bigint.
-    return typeof x === 'bigint' || Number.isInteger(x);
+    if (typeof x === 'bigint' || Number.isInteger(x)) return true;
+    throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
   public encodeValue(x: bigint | number) {
@@ -539,7 +544,8 @@ export class NatClass extends PrimitiveType<bigint> {
   public covariant(x: any): x is bigint {
     // We allow encoding of JavaScript plain numbers.
     // But we will always decode to bigint.
-    return (typeof x === 'bigint' && x >= BigInt(0)) || (Number.isInteger(x) && x >= 0);
+    if ((typeof x === 'bigint' && x >= BigInt(0)) || (Number.isInteger(x) && x >= 0)) return true;
+    throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
   public encodeValue(x: bigint | number) {
@@ -579,7 +585,8 @@ export class FloatClass extends PrimitiveType<number> {
   }
 
   public covariant(x: any): x is number {
-    return typeof x === 'number' || x instanceof Number;
+    if (typeof x === 'number' || x instanceof Number) return true;
+    throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
   public encodeValue(x: number) {
@@ -633,14 +640,18 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
   public covariant(x: any): x is bigint {
     const min = iexp2(this._bits - 1) * BigInt(-1);
     const max = iexp2(this._bits - 1) - BigInt(1);
+    let ok = false;
     if (typeof x === 'bigint') {
-      return x >= min && x <= max;
+      ok = x >= min && x <= max;
     } else if (Number.isInteger(x)) {
       const v = BigInt(x);
-      return v >= min && v <= max;
+      ok = v >= min && v <= max;
     } else {
-      return false;
+      ok = false;
     }
+
+    if (ok) return true;
+    throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
   public encodeValue(x: bigint | number) {
@@ -685,14 +696,17 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
 
   public covariant(x: any): x is bigint {
     const max = iexp2(this._bits);
+    let ok = false;
     if (typeof x === 'bigint' && x >= BigInt(0)) {
-      return x < max;
+      ok = x < max;
     } else if (Number.isInteger(x) && x >= 0) {
       const v = BigInt(x);
-      return v < max;
+      ok = v < max;
     } else {
-      return false;
+      ok = false;
     }
+    if (ok) return true;
+    throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
   public encodeValue(x: bigint | number) {
@@ -759,10 +773,21 @@ export class VecClass<T> extends ConstructType<T[]> {
         : this._type instanceof FixedIntClass
         ? this._type._bits
         : 0;
-    return (
+
+    if (
       (ArrayBuffer.isView(x) && bits == (x as any).BYTES_PER_ELEMENT * 8) ||
-      (Array.isArray(x) && x.every(v => this._type.covariant(v)))
-    );
+      (Array.isArray(x) &&
+        x.every((v, idx) => {
+          try {
+            return this._type.covariant(v);
+          } catch (e: any) {
+            throw new Error(`Invalid ${this.display()} argument: \n\nindex ${idx} -> ${e.message}`);
+          }
+        }))
+    )
+      return true;
+
+    throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
   public encodeValue(x: T[]) {
@@ -862,7 +887,15 @@ export class OptClass<T> extends ConstructType<[T] | []> {
   }
 
   public covariant(x: any): x is [T] | [] {
-    return Array.isArray(x) && (x.length === 0 || (x.length === 1 && this._type.covariant(x[0])));
+    try {
+      if (Array.isArray(x) && (x.length === 0 || (x.length === 1 && this._type.covariant(x[0]))))
+        return true;
+    } catch (e: any) {
+      throw new Error(
+        `Invalid ${this.display()} argument: ${toReadableString(x)} \n\n-> ${e.message}`,
+      );
+    }
+    throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
   public encodeValue(x: [T] | []) {
@@ -942,16 +975,23 @@ export class RecordClass extends ConstructType<Record<string, any>> {
   }
 
   public covariant(x: any): x is Record<string, any> {
-    return (
+    if (
       typeof x === 'object' &&
       this._fields.every(([k, t]) => {
         // eslint-disable-next-line
         if (!x.hasOwnProperty(k)) {
           throw new Error(`Record is missing key "${k}".`);
         }
-        return t.covariant(x[k]);
+        try {
+          return t.covariant(x[k]);
+        } catch (e: any) {
+          throw new Error(`Invalid ${this.display()} argument: \n\nfield ${k} -> ${e.message}`);
+        }
       })
-    );
+    )
+      return true;
+
+    throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
   public encodeValue(x: Record<string, any>) {
@@ -1062,11 +1102,21 @@ export class TupleClass<T extends any[]> extends RecordClass {
 
   public covariant(x: any): x is T {
     // `>=` because tuples can be covariant when encoded.
-    return (
+
+    if (
       Array.isArray(x) &&
       x.length >= this._fields.length &&
-      this._components.every((t, i) => t.covariant(x[i]))
-    );
+      this._components.every((t, i) => {
+        try {
+          return t.covariant(x[i]);
+        } catch (e: any) {
+          throw new Error(`Invalid ${this.display()} argument: \n\nindex ${i} -> ${e.message}`);
+        }
+      })
+    )
+      return true;
+
+    throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
   public encodeValue(x: any[]) {
@@ -1122,14 +1172,21 @@ export class VariantClass extends ConstructType<Record<string, any>> {
   }
 
   public covariant(x: any): x is Record<string, any> {
-    return (
+    if (
       typeof x === 'object' &&
       Object.entries(x).length === 1 &&
       this._fields.every(([k, v]) => {
-        // eslint-disable-next-line
-        return !x.hasOwnProperty(k) || v.covariant(x[k]);
+        try {
+          // eslint-disable-next-line
+          return !x.hasOwnProperty(k) || v.covariant(x[k]);
+        } catch (e: any) {
+          throw new Error(`Invalid ${this.display()} argument: \n\nvariant ${k} -> ${e.message}`);
+        }
       })
-    );
+    )
+      return true;
+
+    throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
   public encodeValue(x: Record<string, any>) {
@@ -1230,7 +1287,8 @@ export class RecClass<T = any> extends ConstructType<T> {
   }
 
   public covariant(x: any): x is T {
-    return this._type ? this._type.covariant(x) : false;
+    if (this._type ? this._type.covariant(x) : false) return true;
+    throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
   public encodeValue(x: T) {
@@ -1294,7 +1352,8 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
   }
 
   public covariant(x: any): x is PrincipalId {
-    return x && x._isPrincipal;
+    if (x && x._isPrincipal) return true;
+    throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
   public encodeValue(x: PrincipalId): ArrayBuffer {
@@ -1342,9 +1401,9 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
     return v.visitFunc(this, d);
   }
   public covariant(x: any): x is [PrincipalId, string] {
-    return (
-      Array.isArray(x) && x.length === 2 && x[0] && x[0]._isPrincipal && typeof x[1] === 'string'
-    );
+    if (Array.isArray(x) && x.length === 2 && x[0] && x[0]._isPrincipal && typeof x[1] === 'string')
+      return true;
+    throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
   public encodeValue([principal, methodName]: [PrincipalId, string]) {
@@ -1426,7 +1485,8 @@ export class ServiceClass extends ConstructType<PrincipalId> {
     return v.visitService(this, d);
   }
   public covariant(x: any): x is PrincipalId {
-    return x && x._isPrincipal;
+    if (x && x._isPrincipal) return true;
+    throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
   public encodeValue(x: PrincipalId) {
@@ -1467,9 +1527,13 @@ export class ServiceClass extends ConstructType<PrincipalId> {
  * @returns {string}
  */
 function toReadableString(x: unknown): string {
-  return JSON.stringify(x, (_key, value) =>
+  const str = JSON.stringify(x, (_key, value) =>
     typeof value === 'bigint' ? `BigInt(${value})` : value,
   );
+
+  return str && str.length > toReadableString_max
+    ? str.substring(0, toReadableString_max - 3) + '...'
+    : str;
 }
 
 /**
@@ -1492,8 +1556,11 @@ export function encode(argTypes: Array<Type<any>>, args: any[]): ArrayBuffer {
   const typs = concat(...argTypes.map(t => t.encodeType(typeTable)));
   const vals = concat(
     ...zipWith(argTypes, args, (t, x) => {
-      if (!t.covariant(x)) {
-        throw new Error(`Invalid ${t.display()} argument: ${toReadableString(x)}`);
+      try {
+        t.covariant(x);
+      } catch (e: any) {
+        const err = new Error(e.message + '\n\n');
+        throw err;
       }
 
       return t.encodeValue(x);
