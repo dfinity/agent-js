@@ -41,7 +41,7 @@ const testFile = {
   target: path.join(__dirname, '../package_copy.json'),
 };
 
-jest.setTimeout(60000);
+jest.setTimeout(80000);
 describe('assets', () => {
   let canisterId: Principal;
 
