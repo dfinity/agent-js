@@ -19,7 +19,9 @@ const randomBytesReadable = (fileName: string, length: number) => {
     fileName,
     contentType: 'application/octet-stream',
     length,
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     open: async () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     close: async () => {},
     slice: async (start: number, end: number) => {
       return Uint8Array.from(

@@ -3,7 +3,7 @@ import { Principal } from '@dfinity/principal';
 import { AgentError } from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
-import { requestIdOf } from '../../request_id';
+import { RequestId, requestIdOf } from '../../request_id';
 import { fromHex } from '../../utils/buffer';
 import {
   Agent,
@@ -97,6 +97,11 @@ export interface HttpAgentOptions {
    * @default false
    */
   disableNonce?: boolean;
+  /**
+   * Number of times to retry requests before throwing an error
+   * @default 3
+   */
+  retryTimes?: number;
 }
 
 function getDefaultFetch(): typeof fetch {
@@ -134,6 +139,15 @@ function getDefaultFetch(): typeof fetch {
   );
 }
 
+type _RequestResponse = {
+  requestId: RequestId;
+  response: {
+    ok: Response['ok'];
+    status: Response['status'];
+    statusText: Response['statusText'];
+  };
+};
+
 // A HTTP agent allows users to interact with a client of the internet computer
 // using the available methods. It exposes an API that closely follows the
 // public view of the internet computer, and is not intended to be exposed
@@ -152,6 +166,8 @@ export class HttpAgent implements Agent {
   private readonly _host: URL;
   private readonly _credentials: string | undefined;
   private _rootKeyFetched = false;
+  private _retryTimes = 3; // Retry requests 3 times before erroring by default
+  public readonly _isAgent = true;
 
   constructor(options: HttpAgentOptions = {}) {
     if (options.source) {
@@ -182,7 +198,10 @@ export class HttpAgent implements Agent {
       }
       this._host = new URL(location + '');
     }
-
+    // Default is 3, only set if option is provided
+    if (options.retryTimes !== undefined) {
+      this._retryTimes = options.retryTimes;
+    }
     // Rewrite to avoid redirects
     if (this._host.hostname.endsWith(IC0_SUB_DOMAIN)) {
       this._host.hostname = IC0_DOMAIN;
@@ -198,6 +217,11 @@ export class HttpAgent implements Agent {
     if (!options.disableNonce) {
       this.addTransform(makeNonceTransform(makeNonce));
     }
+  }
+
+  public isLocal(): boolean {
+    const hostname = this._host.hostname;
+    return hostname === '127.0.0.1' || hostname.endsWith('localhost');
   }
 
   public addTransform(fn: HttpAgentRequestTransformFn, priority = fn.priority || 0): void {
@@ -274,21 +298,15 @@ export class HttpAgent implements Agent {
 
     // Run both in parallel. The fetch is quite expensive, so we have plenty of time to
     // calculate the requestId locally.
-    const [response, requestId] = await Promise.all([
+
+    const request = this._requestAndRetry(() =>
       this._fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this._host), {
         ...transformedRequest.request,
         body,
       }),
-      requestIdOf(submit),
-    ]);
+    );
 
-    if (!response.ok) {
-      throw new Error(
-        `Server returned an error:\n` +
-          `  Code: ${response.status} (${response.statusText})\n` +
-          `  Body: ${await response.text()}\n`,
-      );
-    }
+    const [response, requestId] = await Promise.all([request, requestIdOf(submit)]);
 
     return {
       requestId,
@@ -298,6 +316,30 @@ export class HttpAgent implements Agent {
         statusText: response.statusText,
       },
     };
+  }
+
+  private async _requestAndRetry(request: () => Promise<Response>, tries = 0): Promise<Response> {
+    if (tries > this._retryTimes && this._retryTimes !== 0) {
+      throw new Error(
+        `AgentError: Exceeded configured limit of ${this._retryTimes} retry attempts. Please check your network connection or try again in a few moments`,
+      );
+    }
+    const response = await request();
+    const responseText = await response.clone().text();
+    if (!response.ok) {
+      const errorMessage =
+        `Server returned an error:\n` +
+        `  Code: ${response.status} (${response.statusText})\n` +
+        `  Body: ${responseText}\n`;
+      if (this._retryTimes > tries) {
+        console.warn(errorMessage + `  Retrying request.`);
+        return await this._requestAndRetry(request, tries + 1);
+      } else {
+        throw new Error(errorMessage);
+      }
+    }
+
+    return response;
   }
 
   public async query(
@@ -342,21 +384,13 @@ export class HttpAgent implements Agent {
     transformedRequest = await id?.transformRequest(transformedRequest);
 
     const body = cbor.encode(transformedRequest.body);
-    const response = await this._fetch(
-      '' + new URL(`/api/v2/canister/${canister.toText()}/query`, this._host),
-      {
+    const response = await this._requestAndRetry(() =>
+      this._fetch('' + new URL(`/api/v2/canister/${canister.toText()}/query`, this._host), {
         ...transformedRequest.request,
         body,
-      },
+      }),
     );
 
-    if (!response.ok) {
-      throw new Error(
-        `Server returned an error:\n` +
-          `  Code: ${response.status} (${response.statusText})\n` +
-          `  Body: ${await response.text()}\n`,
-      );
-    }
     return cbor.decode(await response.arrayBuffer());
   }
 
@@ -462,15 +496,9 @@ export class HttpAgent implements Agent {
         }
       : {};
 
-    const response = await this._fetch('' + new URL(`/api/v2/status`, this._host), { headers });
-
-    if (!response.ok) {
-      throw new Error(
-        `Server returned an error:\n` +
-          `  Code: ${response.status} (${response.statusText})\n` +
-          `  Body: ${await response.text()}\n`,
-      );
-    }
+    const response = await this._requestAndRetry(() =>
+      this._fetch('' + new URL(`/api/v2/status`, this._host), { headers }),
+    );
 
     return cbor.decode(await response.arrayBuffer());
   }

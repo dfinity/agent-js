@@ -10,20 +10,29 @@
     <h1>Agent-JS Changelog</h1>
 
     <section>
+      <h2>Version 0.14.0</h2>
+      <ul>
+        <li>
+          Adds retry logic to HttpAgent. By default, retries three times before throwing an error,
+          to offer a more cohesive workflow
+        </li>
+        <li>
+          Adds a top-level <code>fetchCandid()</code> function which retrieves the Candid interface
+          for a given canister id.
+        </li>
+      </ul>
       <h2>Version 0.13.4</h2>
       <ul>
         <li>chore: auth-client expose storage constant keys</li>
         <li>
-            bug: auth-client resolves window.open issue in login function in safari due to async
-            storage call
-        </li>
-        <li>
-            bug: auth-client storage wrapper returns after resolve to avoid idb to be recreated
+          bug: auth-client resolves window.open issue in login function in safari due to async
+          storage call
         </li>
         <li>
           New package: @dfinity/assets. This package provides an asset manager to manage assets
           on an assets canister.
         </li>
+        <li>bug: auth-client storage wrapper returns after resolve to avoid idb to be recreated</li>
       </ul>
       <h2>Version 0.13.3</h2>
       <ul>
