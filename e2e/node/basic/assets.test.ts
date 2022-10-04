@@ -48,7 +48,12 @@ describe('assets', () => {
   let canisterId: Principal;
 
   const testRandomBytes = async (fileName: string, length: number) => {
-    const assetManager = new AssetManager({ canisterId, agent: await agent });
+    const assetManager = new AssetManager({
+      canisterId,
+      agent: await agent,
+      maxSingleFileSize: 1900,
+      maxChunkSize: 1900,
+    });
     const readable = randomBytesReadable(fileName, length);
     const key = await assetManager.store(readable);
     const asset = await assetManager.get(key);
@@ -81,9 +86,9 @@ describe('assets', () => {
     }
   });
 
-  it('store, get and delete 1MB asset (single chunk)', () => testRandomBytes('1MB.bin', 1000000));
+  it('store, get and delete 1KB asset (single chunk)', () => testRandomBytes('1KB.bin', 1000));
 
-  it('store, get and delete 3MB asset (multiple chunk)', () => testRandomBytes('3MB.bin', 3000000));
+  it('store, get and delete 3KB asset (multiple chunk)', () => testRandomBytes('3KB.bin', 3000));
 
   it('batch process assets and verify asset list', async () => {
     const assetManager = new AssetManager({ canisterId, agent: await agent });
