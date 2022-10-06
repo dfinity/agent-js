@@ -1,27 +1,23 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "allowJs": true,
     "baseUrl": "./",
     "composite": true,
     "declaration": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "incremental": true,
-    "lib": ["dom", "es2017"],
     "module": "ES2020",
     "moduleResolution": "node",
-    "outDir": "lib/esm",
-    "paths": {
-      "@dfinity/agent": ["src"],
-      "@dfinity/assets": ["src"]
-    },
+    "outDir": "./lib/esm",
     "resolveJsonModule": true,
     "rootDir": "./src",
     "sourceMap": true,
     "inlineSources": true,
     "strict": true,
-    "target": "es2017",
-    "tsBuildInfoFile": "./build_info.json"
+    "target": "es2017"
   },
-  "include": ["types/*", "src/**/*.ts", "../candid/src/utils/bls.test.ts"]
+  "include": ["types/*", "src/**/*", "client-test"],
+  "references": [{ "path": "../agent" }]
 }

@@ -32,7 +32,7 @@ jobs:
 
       - run: npm install -g npm
 
-      - run: npm install
+      - run: npm ci
 
       # build monorepo incl. each subpackage
       - run: npm run build --workspaces --if-present
@@ -45,7 +45,7 @@ jobs:
   aggregate:
     name: unit:required
     if: ${{ always() }}
-    needs: [ test ]
+    needs: [test]
     runs-on: ubuntu-latest
     steps:
       - name: check e2e test result

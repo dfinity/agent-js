@@ -45,6 +45,11 @@ afterEach(() => {
   global.Date.now = originalDateNowFn;
   global.window = originalWindow;
   global.fetch = originalFetch;
+  jest.spyOn(console, 'warn').mockImplementation(() => {
+    /** suppress warnings for pending timers */
+  });
+  jest.runOnlyPendingTimers();
+  jest.useRealTimers();
 });
 
 test('call', async () => {
@@ -470,120 +475,185 @@ describe('makeNonce', () => {
     });
   });
 });
+describe('retry failures', () => {
+  let consoleSpy;
+  beforeEach(() => {
+    consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    jest.spyOn(console, 'warn').mockImplementation();
+    if (typeof consoleSpy === 'function') {
+      consoleSpy.mockRestore();
+    }
+  });
 
-describe('reconcile time', () => {
-  jest.useFakeTimers();
-  it('should change nothing if time is within 30 seconds of replica', async () => {
-    const systemTime = new Date('August 19, 1975 23:15:30');
-    jest.setSystemTime(systemTime);
-    const mockFetch = jest.fn();
+  it('should throw errors immediately if retryTimes is set to 0', () => {
+    const mockFetch: jest.Mock = jest.fn();
 
-    const agent = new HttpAgent({ host: 'http://localhost:8000', fetch: mockFetch });
-
-    await agent.syncTime();
-
-    agent
-      .call(Principal.managementCanister(), {
-        methodName: 'test',
-        arg: new Uint8Array().buffer,
-      })
-      // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
-      .catch(function (_) {});
-
-    const requestBody = cbor.decode(mockFetch.mock.calls[0][1].body);
-    expect((requestBody as unknown as any).content.ingress_expiry).toMatchInlineSnapshot(
-      `1240000000000`,
+    mockFetch.mockReturnValueOnce(
+      new Response('Error', {
+        status: 500,
+        statusText: 'Internal Server Error',
+      }),
     );
+    const agent = new HttpAgent({ host: 'http://localhost:8000', fetch: mockFetch, retryTimes: 0 });
+    expect(
+      agent.call(Principal.managementCanister(), {
+        methodName: 'test',
+        arg: new Uint8Array().buffer,
+      }),
+    ).rejects.toThrowErrorMatchingSnapshot();
   });
-  it('should adjust the Expiry if the clock is more than 30 seconds behind', async () => {
-    jest.useFakeTimers();
-    const systemTime = new Date('August 19, 1975 23:15:30');
-    jest.setSystemTime(systemTime);
-    const mockFetch = jest.fn();
-
-    const replicaTime = new Date(Number(systemTime) + 31_000);
-    jest.mock('../../canisterStatus', () => {
-      return {
-        request: () => {
-          return {
-            // 31 seconds ahead
-            get: () => replicaTime,
-          };
-        },
-      };
+  it('should throw errors after 3 retries by default', async () => {
+    const mockFetch: jest.Mock = jest.fn(() => {
+      return new Response('Error', {
+        status: 500,
+        statusText: 'Internal Server Error',
+      });
     });
-    await import('../../canisterStatus');
-    const { HttpAgent } = await import('../index');
 
     const agent = new HttpAgent({ host: 'http://localhost:8000', fetch: mockFetch });
-
-    await agent.syncTime();
-
-    await agent
-      .call(Principal.managementCanister(), {
-        methodName: 'test',
-        arg: new Uint8Array().buffer,
-      })
-      // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
-      .catch(function (_) {});
-
-    const requestBody: any = cbor.decode(mockFetch.mock.calls[0][1].body);
-
-    // Expiry should be: ingress expiry + replica time
-    const expiryInMs = requestBody.content.ingress_expiry / NANOSECONDS_PER_MILLISECONDS;
-
-    const delay = expiryInMs + REPLICA_PERMITTED_DRIFT_MILLISECONDS - Number(replicaTime);
-
-    expect(expiryInMs).toMatchInlineSnapshot(`177747601000`);
-
-    expect(delay).toBe(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
-    jest.autoMockOff();
+    try {
+      expect(
+        agent.call(Principal.managementCanister(), {
+          methodName: 'test',
+          arg: new Uint8Array().buffer,
+        }),
+      ).rejects.toThrow();
+    } catch (error) {
+      // One try + three retries
+      expect(mockFetch.mock.calls.length).toBe(4);
+    }
   });
-  it.only('should adjust the Expiry if the clock is more than 30 seconds ahead', async () => {
-    jest.useFakeTimers();
-    const systemTime = new Date('August 19, 1975 23:15:30');
-    jest.setSystemTime(systemTime);
-    const mockFetch = jest.fn();
-    jest.useFakeTimers();
+  it('should succeed after multiple failures within the configured limit', async () => {
+    let calls = 0;
+    const mockFetch: jest.Mock = jest.fn(() => {
+      if (calls === 3) {
+        return new Response('test', {
+          status: 200,
+          statusText: 'success!',
+        });
+      } else {
+        calls += 1;
+        return new Response('Error', {
+          status: 500,
+          statusText: 'Internal Server Error',
+        });
+      }
+    });
 
-    const replicaTime = new Date(Number(systemTime) - 31_000);
-    // jest.mock('../../canisterStatus', () => {
-    //   return {
-    //     request: () => {
-    //       return {
-    //         // 31 seconds ahead
-    //         get: () => replicaTime,
-    //       };
-    //     },
-    //   };
-    // });
-    await import('../../canisterStatus');
-    const { HttpAgent } = await import('../index');
-
-    const agent = new HttpAgent({ host: 'https://ic0.app', fetch: fetch });
-
-    await agent.syncTime();
-
-    await agent
-      .call(Principal.managementCanister(), {
-        methodName: 'test',
-        arg: new Uint8Array().buffer,
-      })
-      // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
-      .catch(function (_) {
-        console.error(_);
-      });
-
-    // const requestBody: any = cbor.decode(mockFetch.mock.calls[0][1].body);
-
-    // Expiry should be: ingress expiry + replica time
-    // const expiryInMs = requestBody.content.ingress_expiry / NANOSECONDS_PER_MILLISECONDS;
-
-    // const delay = expiryInMs + REPLICA_PERMITTED_DRIFT_MILLISECONDS - Number(replicaTime);
-
-    // expect(expiryInMs).toMatchInlineSnapshot(`177747539000`);
-
-    // expect(delay).toBe(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
+    const agent = new HttpAgent({ host: 'http://localhost:8000', fetch: mockFetch });
+    const result = await agent.call(Principal.managementCanister(), {
+      methodName: 'test',
+      arg: new Uint8Array().buffer,
+    });
+    expect(result).toMatchSnapshot();
+    // One try + three retries
+    expect(mockFetch.mock.calls.length).toBe(4);
   });
-  jest.autoMockOff();
+});
+jest.useFakeTimers({ legacyFakeTimers: true });
+test('should change nothing if time is within 30 seconds of replica', async () => {
+  const systemTime = new Date('August 19, 1975 23:15:30');
+  // jest.setSystemTime(systemTime);
+  const mockFetch = jest.fn();
+
+  const agent = new HttpAgent({ host: 'http://localhost:8000', fetch: mockFetch });
+
+  await agent.syncTime();
+
+  agent
+    .call(Principal.managementCanister(), {
+      methodName: 'test',
+      arg: new Uint8Array().buffer,
+    })
+    // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
+    .catch(function (_) {});
+
+  const requestBody = cbor.decode(mockFetch.mock.calls[0][1].body);
+  expect((requestBody as unknown as any).content.ingress_expiry).toMatchInlineSnapshot(
+    `1240000000000`,
+  );
+});
+test('should adjust the Expiry if the clock is more than 30 seconds behind', async () => {
+  const mockFetch = jest.fn();
+
+  const replicaTime = new Date(Date.now() + 31_000);
+  jest.mock('../../canisterStatus', () => {
+    return {
+      request: () => {
+        return {
+          // 31 seconds ahead
+          get: () => replicaTime,
+        };
+      },
+    };
+  });
+  await import('../../canisterStatus');
+  const { HttpAgent } = await import('../index');
+
+  const agent = new HttpAgent({ host: 'http://localhost:8000', fetch: mockFetch });
+
+  await agent.syncTime();
+
+  await agent
+    .call(Principal.managementCanister(), {
+      methodName: 'test',
+      arg: new Uint8Array().buffer,
+    })
+    // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
+    .catch(function (_) {});
+
+  const requestBody: any = cbor.decode(mockFetch.mock.calls[0][1].body);
+
+  // Expiry should be: ingress expiry + replica time
+  const expiryInMs = requestBody.content.ingress_expiry / NANOSECONDS_PER_MILLISECONDS;
+
+  const delay = expiryInMs + REPLICA_PERMITTED_DRIFT_MILLISECONDS - Number(replicaTime);
+
+  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1271000000000`);
+
+  expect(delay).toBe(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
+  jest.resetModules();
+});
+
+// TODO - fix broken test
+test('should adjust the Expiry if the clock is more than 30 seconds ahead', async () => {
+  const mockFetch = jest.fn();
+
+  const replicaTime = new Date(Date.now() - 31_000);
+  jest.mock('../../canisterStatus', () => {
+    return {
+      request: () => {
+        return {
+          // 31 seconds behind
+          get: () => replicaTime,
+        };
+      },
+    };
+  });
+  await import('../../canisterStatus');
+  const { HttpAgent } = await import('../index');
+
+  const agent = new HttpAgent({ host: 'http://localhost:8000', fetch: mockFetch });
+
+  await agent.syncTime();
+
+  await agent
+    .call(Principal.managementCanister(), {
+      methodName: 'test',
+      arg: new Uint8Array().buffer,
+    })
+    // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
+    .catch(function (_) {});
+
+  const requestBody: any = cbor.decode(mockFetch.mock.calls[0][1].body);
+
+  // Expiry should be: replica time - ingress expiry
+  const expiryInMs = requestBody.content.ingress_expiry / NANOSECONDS_PER_MILLISECONDS;
+
+  const delay = Number(replicaTime) - (expiryInMs + REPLICA_PERMITTED_DRIFT_MILLISECONDS);
+
+  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1209000000000`);
+
+  expect(delay).toBe(-1 * DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
+  jest.resetModules();
 });
