@@ -51,8 +51,6 @@ describe('assets', () => {
     const assetManager = new AssetManager({
       canisterId,
       agent: await agent,
-      maxSingleFileSize: 1900,
-      maxChunkSize: 1900,
     });
     const readable = randomBytesReadable(fileName, length);
     const key = await assetManager.store(readable);
