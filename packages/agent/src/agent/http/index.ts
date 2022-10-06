@@ -325,8 +325,8 @@ export class HttpAgent implements Agent {
       );
     }
     const response = await request();
-    const responseText = await response.clone().text();
     if (!response.ok) {
+      const responseText = await response.clone().text();
       const errorMessage =
         `Server returned an error:\n` +
         `  Code: ${response.status} (${response.statusText})\n` +
