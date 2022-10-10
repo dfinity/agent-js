@@ -34,6 +34,7 @@
   ],
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
+  "unpkg": "./lib/esm/index",
   "scripts": {
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
     "bundle": "npm run build",
