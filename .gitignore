@@ -117,6 +117,7 @@ dist
 
 # Generated Docs
 docs/generated/agent
+docs/generated/assets
 docs/generated/auth-client
 docs/generated/authentication
 docs/generated/identity
