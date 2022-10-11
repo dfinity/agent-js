@@ -3,6 +3,8 @@ import { DerEncodedPublicKey, KeyPair, Signature } from '@dfinity/agent';
 import Secp256k1 from 'secp256k1';
 import { sha256 } from 'js-sha256';
 import { randomBytes } from 'tweetnacl';
+import hdkey from 'hdkey';
+import { mnemonicToSeedSync } from 'bip39';
 import { PublicKey, SignIdentity } from '@dfinity/agent';
 import { fromHexString, toHexString } from '../buffer';
 import { SECP256K1_OID, unwrapDER, wrapDER } from './der';
@@ -130,6 +132,32 @@ export class Secp256k1KeyIdentity extends SignIdentity {
     const publicKey = Secp256k1.publicKeyCreate(new Uint8Array(secretKey), false);
     const identity = Secp256k1KeyIdentity.fromKeyPair(publicKey, new Uint8Array(secretKey));
     return identity;
+  }
+
+  /**
+   * Generates an identity from a seed phrase. Use carefully - seed phrases should only be used in secure contexts, and you should avoid having users copying and pasting seed phrases as much as possible.
+   * @param {string | string[]} seedPhrase - either an array of words or a string of words separated by spaces.
+   * @param password - optional password to be used by bip39
+   * @returns Secp256k1KeyIdentity
+   */
+  public static fromSeedPhrase(
+    seedPhrase: string | string[],
+    password?: string | undefined,
+  ): Secp256k1KeyIdentity {
+    // Convert to string for convenience
+    const phrase = Array.isArray(seedPhrase) ? seedPhrase.join(' ') : seedPhrase;
+    // Warn if provided phrase is not conventional
+    if (phrase.split(' ').length < 12 || phrase.split(' ').length > 24) {
+      console.warn(
+        'Warning - an unusually formatted seed phrase has been provided. Decoding may not work as expected',
+      );
+    }
+
+    const seed = mnemonicToSeedSync(phrase, password);
+    const root = hdkey.fromMasterSeed(seed);
+    const addrnode = root.derive("m/44'/223'/0'/0/0");
+
+    return Secp256k1KeyIdentity.fromSecretKey(addrnode.privateKey);
   }
 
   protected _publicKey: Secp256k1PublicKey;
