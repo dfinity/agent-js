@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 // Package adapted from https://www.npmjs.com/package/hdkey to run in the browser
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-this-alias */
@@ -17,19 +18,24 @@ const BITCOIN_VERSIONS = { private: 0x0488ade4, public: 0x0488b21e };
 /**
  *
  * @param versions any
- * @returns HdKey
  */
 function HDKey(versions?: any) {
-  return {
-    versions: versions || BITCOIN_VERSIONS,
-    depth: 0,
-    index: 0,
-    _privateKey: null,
-    _publicKey: null,
-    chainCode: null,
-    _fingerprint: 0,
-    parentFingerprint: 0,
-  };
+  // @ts-ignore
+  this.versions = versions || BITCOIN_VERSIONS;
+  // @ts-ignore
+  this.depth = 0;
+  // @ts-ignore
+  this.index = 0;
+  // @ts-ignore
+  this._privateKey = null;
+  // @ts-ignore
+  this._publicKey = null;
+  // @ts-ignore
+  this.chainCode = null;
+  // @ts-ignore
+  this._fingerprint = 0;
+  // @ts-ignore
+  this.parentFingerprint = 0;
 }
 
 Object.defineProperty(HDKey.prototype, 'fingerprint', {

@@ -155,6 +155,7 @@ export class Secp256k1KeyIdentity extends SignIdentity {
 
     const seed = mnemonicToSeedSync(phrase, password);
     const root = hdkey.fromMasterSeed(seed);
+    root;
     const addrnode = root.derive("m/44'/223'/0'/0/0");
 
     return Secp256k1KeyIdentity.fromSecretKey(addrnode.privateKey);
