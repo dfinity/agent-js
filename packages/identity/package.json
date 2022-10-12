@@ -51,6 +51,7 @@
     "@peculiar/webcrypto": "^1.4.0",
     "bip39": "^3.0.4",
     "borc": "^2.1.1",
+    "bs58check": "^2.1.2",
     "crypto-browserify": "^3.12.0",
     "hdkey": "^2.0.1",
     "js-sha256": "^0.9.0",
@@ -60,6 +61,7 @@
     "vitest": "^0.18.0"
   },
   "devDependencies": {
+    "@types/bs58check": "^2.1.0",
     "@types/hdkey": "^2.0.1",
     "@types/jest": "^28.1.4",
     "@types/secp256k1": "^4.0.3",

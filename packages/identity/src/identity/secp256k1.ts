@@ -3,7 +3,7 @@ import { DerEncodedPublicKey, KeyPair, Signature } from '@dfinity/agent';
 import Secp256k1 from 'secp256k1';
 import { sha256 } from 'js-sha256';
 import { randomBytes } from 'tweetnacl';
-import hdkey from 'hdkey';
+import hdkey from './hdkey';
 import { mnemonicToSeedSync } from 'bip39';
 import { PublicKey, SignIdentity } from '@dfinity/agent';
 import { fromHexString, toHexString } from '../buffer';
