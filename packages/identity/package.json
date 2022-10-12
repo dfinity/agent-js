@@ -45,20 +45,18 @@
   },
   "peerDependencies": {
     "@dfinity/agent": "^0.14.0",
-    "@dfinity/principal": "^0.14.0"
+    "@dfinity/principal": "^0.14.0",
+    "crypto-browserify": "^3.12.0"
   },
   "dependencies": {
     "@peculiar/webcrypto": "^1.4.0",
     "bip39": "^3.0.4",
     "borc": "^2.1.1",
     "bs58check": "^2.1.2",
-    "crypto-browserify": "^3.12.0",
-    "hdkey": "^2.0.1",
     "js-sha256": "^0.9.0",
     "secp256k1": "^4.0.2",
     "ts-node": "^10.8.2",
-    "tweetnacl": "^1.0.1",
-    "vitest": "^0.18.0"
+    "tweetnacl": "^1.0.1"
   },
   "devDependencies": {
     "@types/bs58check": "^2.1.0",

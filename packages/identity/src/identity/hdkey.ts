@@ -1,3 +1,5 @@
+// Package adapted from https://www.npmjs.com/package/hdkey to run in the browser
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-this-alias */
 import assert from 'assert';
 import { Buffer } from 'buffer';
@@ -254,10 +256,6 @@ HDKey.fromExtendedKey = function (base58key: string, versions?: any) {
 HDKey.fromJSON = function (obj: any) {
   return HDKey.fromExtendedKey(obj.xpriv);
 };
-
-function newFunction(this: unknown) {
-  return this;
-}
 
 function serialize(hdkey: any, version: any, key: any) {
   // => version(4) || depth(1) || fingerprint(4) || index(4) || chain(32) || key(33)
