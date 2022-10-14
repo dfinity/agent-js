@@ -13,6 +13,10 @@
       <h2>Version x.x.x</h2>
       <ul>
         <li>chore: adds js-sha256 dependency to principal</li>
+        <li>
+          bug: fixes idlemanager initializing - now either requires createOptions.identity or
+          authClient.login to be called before starting idle timeout
+        </li>
       </ul>
       <h2>Version 0.14.0</h2>
       <ul>
