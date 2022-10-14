@@ -252,9 +252,14 @@ export class AuthClient {
         key = null;
       }
     }
-    const idleManager = options.idleOptions?.disableIdle
-      ? undefined
-      : IdleManager.create(options.idleOptions);
+    let idleManager: IdleManager | undefined = undefined;
+    if (options.idleOptions?.disableIdle) {
+      idleManager = undefined;
+    }
+    // if there is a delegation chain or provided identity, setup idleManager
+    else if (chain || options.identity) {
+      idleManager = IdleManager.create(options.idleOptions);
+    }
 
     if (!key) {
       // Create a new key (whether or not one was in storage).
@@ -270,7 +275,7 @@ export class AuthClient {
     private _key: SignIdentity,
     private _chain: DelegationChain | null,
     private _storage: AuthClientStorage,
-    public readonly idleManager: IdleManager | undefined,
+    public idleManager: IdleManager | undefined,
     private _createOptions: AuthClientCreateOptions | undefined,
     // A handle on the IdP window.
     private _idpWindow?: Window,
@@ -317,6 +322,17 @@ export class AuthClient {
     this._identity = DelegationIdentity.fromDelegation(key, this._chain);
 
     this._idpWindow?.close();
+    if (!this.idleManager) {
+      const idleOptions = this._createOptions?.idleOptions;
+      this.idleManager = IdleManager.create(idleOptions);
+
+      if (!idleOptions?.onIdle && !idleOptions?.disableDefaultIdleCallback) {
+        this.idleManager?.registerCallback(() => {
+          this.logout();
+          location.reload();
+        });
+      }
+    }
     onSuccess?.();
     this._removeEventListener();
     delete this._idpWindow;
