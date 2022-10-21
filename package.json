@@ -14,6 +14,7 @@
       "packages/authentication",
       "packages/auth-client",
       "packages/assets",
+      "packages/ui",
       "e2e/node",
       "e2e/browser",
       "demos/ledgerhq",

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Auth Client Tester</title>
+  </head>
+  <body>
+    <ii-login-button></ii-login-button>
+    <script>
+      performance.mark('login-ready');
+
+      document.querySelector('ii-login-button').addEventListener('login', e => {
+        console.log(e);
+      });
+
+      document.querySelector('ii-login-button').addEventListener('ready', e => {
+        console.log('Time to load:', performance.measure('login-ready'));
+        performance.clearMeasures('login-ready');
+        console.log(e.target.authClient);
+        console.log(e.target.principal, e.target.principalString);
+      });
+    </script>
+    <script src="src/index.ts" type="module"></script>
+  </body>
+</html>
