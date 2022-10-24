@@ -72,6 +72,10 @@ export interface HttpAgentOptions {
   // A surrogate to the global fetch function. Useful for testing.
   fetch?: typeof fetch;
 
+  // Additional options to pass along to fetch. Will not override fields that
+  // the agent already needs to set
+  fetchOptions?: Record<string, unknown>;
+
   // The host to use for the client. By default, uses the same host as
   // the current page.
   host?: string;
@@ -162,6 +166,7 @@ export class HttpAgent implements Agent {
   private readonly _pipeline: HttpAgentRequestTransformFn[] = [];
   private _identity: Promise<Identity> | null;
   private readonly _fetch: typeof fetch;
+  private readonly _fetchOptions?: Record<string, unknown>;
   private _timeDiffMsecs = 0;
   private readonly _host: URL;
   private readonly _credentials: string | undefined;
@@ -177,6 +182,7 @@ export class HttpAgent implements Agent {
       this._pipeline = [...options.source._pipeline];
       this._identity = options.source._identity;
       this._fetch = options.source._fetch;
+      this._fetchOptions = options.source._fetchOptions;
       this._host = options.source._host;
       this._credentials = options.source._credentials;
     } else {
@@ -386,6 +392,7 @@ export class HttpAgent implements Agent {
     const body = cbor.encode(transformedRequest.body);
     const response = await this._requestAndRetry(() =>
       this._fetch('' + new URL(`/api/v2/canister/${canister.toText()}/query`, this._host), {
+        ...this._fetchOptions,
         ...transformedRequest.request,
         body,
       }),
@@ -445,6 +452,7 @@ export class HttpAgent implements Agent {
     const response = await this._fetch(
       '' + new URL(`/api/v2/canister/${canister}/read_state`, this._host),
       {
+        ...this._fetchOptions,
         ...transformedRequest.request,
         body,
       },
@@ -497,7 +505,7 @@ export class HttpAgent implements Agent {
       : {};
 
     const response = await this._requestAndRetry(() =>
-      this._fetch('' + new URL(`/api/v2/status`, this._host), { headers }),
+      this._fetch('' + new URL(`/api/v2/status`, this._host), { headers, ...this._fetchOptions }),
     );
 
     return cbor.decode(await response.arrayBuffer());
