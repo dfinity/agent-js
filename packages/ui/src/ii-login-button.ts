@@ -2,67 +2,36 @@ import { Identity } from '@dfinity/agent';
 import { AuthClient } from '@dfinity/auth-client';
 import { Principal } from '@dfinity/principal';
 import { AccountIdentifier } from '@dfinity/nns';
+import { LoginButton } from './login-button';
 
 class LoginEvent extends Event {}
 class ReadyEvent extends Event {}
 
-export class IILoginButton extends HTMLElement {
+export class IILoginButton extends LoginButton {
   private _authClient?: AuthClient;
   private _isAuthenticated = false;
   private _identity?: Identity;
   constructor() {
     super();
-    this.attachShadow({ mode: 'open' });
+    if (!this.shadowRoot) {
+      this.attachShadow({ mode: 'open' });
+    }
 
-    // self styles
-    this.setAttribute('style', this.getAttribute('style') ?? 'display: flex; max-width: 400px;');
-
-    // internal styles
-    const style = document.createElement('style');
-    style.setAttribute('scoped', 'true');
-    style.textContent = `
-  button {
-    box-sizing: border-box;
-    display: grid;
-    background: white;
-    grid-template-columns: 36px auto;
-    width: 100%;
-    max-width: 400px;
-    cursor: pointer;
-    border-radius: 0.375rem;
-    border: 1px solid rgb(209, 211, 213);
-    transition-duration: .15s;
-    transition-property: all;
-    transition-timing-function: cubic-bezier(.4,0,.2,1);
-    padding-bottom: 0.5rem;
-    padding-top: 0.5rem;
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-    align-items: center;
-    font-family: ui-sans-serif, system-ui;
-    font-size: 14px;
-    box-shadow: none;
-    border-image: none;
-  }
-  button:hover, button:focus {
-    background: rgb(244, 250, 255);
-    border: 1px solid rgb(89, 147, 252);
-  }
-  button:active, button:target {
-    background: rgb(245, 245, 245);
-  }
-  svg {
-    width: 36px;
-    height: fit-content;
-  }
-`;
-    this.shadowRoot?.append(style);
-
+    // display logic
     const wrapper = document.createElement('button');
     wrapper.id = 'ii-login-button';
 
+    const logoRight = this.hasAttribute('logo-right');
     const label = this.getAttribute('label') ?? 'Login With Internet Identity';
-    wrapper.innerHTML = `${iiLogo}<span id="ii-login-button-label">${label}</span>`;
+    if (logoRight) {
+      wrapper.innerHTML = `
+          <span slot="label">${label}</span>
+          <span slot="logo">${iiLogo}</span>`;
+    } else {
+      wrapper.innerHTML = `
+        <span slot="logo">${iiLogo}</span>
+        <span slot="label">${label}</span>`;
+    }
 
     this.shadowRoot?.append(wrapper);
 
@@ -113,10 +82,6 @@ export class IILoginButton extends HTMLElement {
     return ['onSuccess', 'label', 'disabled', 'innerstyle'];
   }
 
-  private get _button(): HTMLButtonElement {
-    return this.shadowRoot?.getElementById('ii-login-button') as HTMLButtonElement;
-  }
-
   get authClient(): AuthClient {
     if (!this._authClient) {
       throw new Error('authClient has failed to initialize');
@@ -146,7 +111,7 @@ export class IILoginButton extends HTMLElement {
     get authClient(): AuthClient;
     get isAuthenticated(): boolean;
     get identity(): Identity | undefined;
-    get principal(): Principal | undefined;
+    get principal(): Priancipal | undefined;
     get principalString(): string | undefined;
     get interface(): string;
     get accountId(): string | undefined;
