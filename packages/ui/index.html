@@ -17,6 +17,7 @@
 
       document.querySelector('ii-login-button').addEventListener('ready', e => {
         console.log('Time to load:', performance.measure('login-ready'));
+        e.target.configure({ loginOptions: { identityProvider: 'http://localhost:1234' } });
         performance.clearMeasures('login-ready');
         console.log(e.target.authClient);
         console.log(e.target.principal, e.target.principalString);
