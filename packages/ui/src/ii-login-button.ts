@@ -1,21 +1,39 @@
 import { Identity } from '@dfinity/agent';
-import { AuthClient } from '@dfinity/auth-client';
+import { AuthClient, AuthClientCreateOptions, AuthClientLoginOptions } from '@dfinity/auth-client';
 import { Principal } from '@dfinity/principal';
 import { AccountIdentifier } from '@dfinity/nns';
 import { LoginButton } from './login-button';
+import { AuthClientStorage } from '@dfinity/auth-client/lib/cjs/storage';
 
 class LoginEvent extends Event {}
 class ReadyEvent extends Event {}
 
+export type IILoginButtonProps = {
+  createOptions?: AuthClientCreateOptions;
+  loginOptions?: AuthClientLoginOptions;
+  storage?: AuthClientStorage;
+};
+
+interface State {
+  authClient?: AuthClient;
+  isAuthenticated: boolean;
+  identity?: Identity;
+  createOptions?: AuthClientCreateOptions;
+  loginOptions?: AuthClientLoginOptions;
+  storage?: AuthClientStorage;
+}
+
 export class IILoginButton extends LoginButton {
-  private _authClient?: AuthClient;
-  private _isAuthenticated = false;
-  private _identity?: Identity;
-  constructor() {
+  private _state: State;
+  constructor(props?: IILoginButtonProps) {
     super();
     if (!this.shadowRoot) {
       this.attachShadow({ mode: 'open' });
     }
+    this._state = {
+      ...props,
+      isAuthenticated: false,
+    };
 
     // display logic
     const wrapper = document.createElement('button');
@@ -37,16 +55,19 @@ export class IILoginButton extends LoginButton {
 
     AuthClient.create()
       .then(async client => {
-        this._authClient = client;
-        this._isAuthenticated = await client.isAuthenticated();
-        this._identity = await client.getIdentity();
+        this.setState({
+          ...this._state,
+          authClient: client,
+          isAuthenticated: await client.isAuthenticated(),
+          identity: await client.getIdentity(),
+        });
         // fire ready event
         const event = new ReadyEvent('ready');
         this.dispatchEvent(event);
       })
       .catch(error => {
         console.error(error);
-        this._authClient = undefined;
+        this.setState({ authClient: undefined });
       });
   }
 
@@ -55,20 +76,27 @@ export class IILoginButton extends LoginButton {
     this.shadowRoot?.querySelector('#ii-login-button')?.addEventListener('click', login);
   }
 
+  setState(newState: { [Property in keyof State]+?: State[Property] }) {
+    this._state = {
+      ...this._state,
+      ...newState,
+    };
+  }
+
   attributeChangedCallback(attrName: string, oldVal: unknown, newVal: unknown) {
+    const button = this.shadowRoot?.getElementById('ii-login-button') as HTMLButtonElement;
     switch (attrName) {
       case 'disabled': {
-        (this.shadowRoot?.getElementById('ii-login-button') as HTMLButtonElement).disabled =
-          newVal === 'true';
+        button.disabled = newVal === 'true';
         break;
       }
       case 'label': {
-        (this._button.querySelector('#ii-login-button-label') as HTMLSpanElement).innerText =
+        (button.querySelector('#ii-login-button-label') as HTMLSpanElement).innerText =
           newVal as string;
         break;
       }
       case 'innerstyle': {
-        this._button.setAttribute('style', newVal as string);
+        button.setAttribute('style', newVal as string);
         break;
       }
       default: {
@@ -83,22 +111,22 @@ export class IILoginButton extends LoginButton {
   }
 
   get authClient(): AuthClient {
-    if (!this._authClient) {
+    if (!this._state.authClient) {
       throw new Error('authClient has failed to initialize');
     }
-    return this._authClient;
+    return this._state.authClient;
   }
 
   get isAuthenticated(): boolean {
-    return this._isAuthenticated;
+    return this._state.isAuthenticated;
   }
 
   get identity(): Identity | undefined {
-    return this._identity;
+    return this._state.identity;
   }
 
   get principal(): Principal | undefined {
-    return this._identity?.getPrincipal();
+    return this._state.identity?.getPrincipal();
   }
 
   get principalString(): string | undefined {
@@ -134,17 +162,21 @@ export class IILoginButton extends LoginButton {
   }
 
   private async _handleSuccess() {
-    this._authClient = this.authClient;
-    this._isAuthenticated = await this.authClient.isAuthenticated();
-    this._identity = await this.authClient.getIdentity();
+    this.setState({
+      authClient: this.authClient,
+      isAuthenticated: await this.authClient.isAuthenticated(),
+      identity: await this.authClient.getIdentity(),
+    });
     const event = new LoginEvent('login', { bubbles: true, composed: true });
     this.dispatchEvent(event);
   }
 
   public logout() {
+    this.setState({
+      isAuthenticated: false,
+      identity: undefined,
+    });
     this.authClient.logout();
-    this._isAuthenticated = false;
-    this._identity = undefined;
   }
 }
 
