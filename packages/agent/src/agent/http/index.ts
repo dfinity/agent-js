@@ -187,7 +187,7 @@ export class HttpAgent implements Agent {
       this._identity = options.source._identity;
       this._fetch = options.source._fetch;
       this._fetchOptions = options.source._fetchOptions || options.fetchOptions;
-      this._callOptions = options.source._fetchOptions || options.callOptions;
+      this._callOptions = options.source._callOptions || options.callOptions;
       this._host = options.source._host;
       this._credentials = options.source._credentials;
     } else {
