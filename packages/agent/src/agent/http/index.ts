@@ -76,6 +76,9 @@ export interface HttpAgentOptions {
   // the agent already needs to set
   fetchOptions?: Record<string, unknown>;
 
+  // Additional options to pass along to fetch for the call API.
+  callOptions?: Record<string, unknown>;
+
   // The host to use for the client. By default, uses the same host as
   // the current page.
   host?: string;
@@ -167,6 +170,7 @@ export class HttpAgent implements Agent {
   private _identity: Promise<Identity> | null;
   private readonly _fetch: typeof fetch;
   private readonly _fetchOptions?: Record<string, unknown>;
+  private readonly _callOptions?: Record<string, unknown>;
   private _timeDiffMsecs = 0;
   private readonly _host: URL;
   private readonly _credentials: string | undefined;
@@ -182,7 +186,8 @@ export class HttpAgent implements Agent {
       this._pipeline = [...options.source._pipeline];
       this._identity = options.source._identity;
       this._fetch = options.source._fetch;
-      this._fetchOptions = options.source._fetchOptions;
+      this._fetchOptions = options.source._fetchOptions || options.fetchOptions;
+      this._callOptions = options.source._fetchOptions || options.callOptions;
       this._host = options.source._host;
       this._credentials = options.source._credentials;
     } else {
@@ -307,6 +312,7 @@ export class HttpAgent implements Agent {
 
     const request = this._requestAndRetry(() =>
       this._fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this._host), {
+        ...this._callOptions,
         ...transformedRequest.request,
         body,
       }),
