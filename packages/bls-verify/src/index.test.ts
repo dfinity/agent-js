@@ -64,20 +64,6 @@ test('delegation check fails for canisters outside of the subnet range', async (
   await certificateFails(afterRange);
 });
 
-// The only situation in which one can read state of the IC management canister
-// is when the user calls provisional_create_canister_with_cycles. In this case,
-// we shouldn't check the delegations.
-test('delegation check succeeds for the management canister', async () => {
-  await expect(
-    Cert.Certificate.create({
-      certificate: fromHex(SAMPLE_CERT),
-      rootKey: fromHex(IC_ROOT_KEY),
-      canisterId: Principal.managementCanister(),
-      blsVerify,
-    }),
-  ).resolves.not.toThrow();
-});
-
 type FakeCert = {
   tree: Cert.HashTree;
   signature: ArrayBuffer;
