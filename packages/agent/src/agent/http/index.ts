@@ -186,12 +186,12 @@ export class HttpAgent implements Agent {
       this._pipeline = [...options.source._pipeline];
       this._identity = options.source._identity;
       this._fetch = options.source._fetch;
-      this._fetchOptions = options.source._fetchOptions || options.fetchOptions;
-      this._callOptions = options.source._callOptions || options.callOptions;
       this._host = options.source._host;
       this._credentials = options.source._credentials;
     } else {
       this._fetch = options.fetch || getDefaultFetch() || fetch.bind(global);
+      this._fetchOptions = options.fetchOptions;
+      this._callOptions = options.callOptions;
     }
     if (options.host !== undefined) {
       if (!options.host.match(/^[a-z]+:/) && typeof window !== 'undefined') {
