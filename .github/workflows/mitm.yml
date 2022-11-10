@@ -51,7 +51,7 @@ jobs:
         id: mitmdump
         run: |
           set -ex
-          mitmdump -p 8888 --mode reverse:http://127.0.0.1:8000 \
+          mitmdump -p 8888 --mode reverse:http://127.0.0.1:4943 \
             --modify-headers '/~s/Transfer-Encoding/' \
             --modify-body '/~s/Hello/Hullo' \
             &
@@ -67,7 +67,7 @@ jobs:
   aggregate:
     name: mitm:required
     if: ${{ always() }}
-    needs: [ test ]
+    needs: [test]
     runs-on: ubuntu-latest
     steps:
       - name: check e2e test result

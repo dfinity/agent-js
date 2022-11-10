@@ -85,7 +85,7 @@ describe('Auth Client', () => {
     (window as any).location = {
       reload: jest.fn(),
       fetch,
-      toString: jest.fn(() => 'http://localhost:8000'),
+      toString: jest.fn(() => 'http://localhost:4943'),
     };
 
     const identity = Ed25519KeyIdentity.generate();
