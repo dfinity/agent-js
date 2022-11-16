@@ -22,6 +22,8 @@ const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;
 
+const HTTP_AGENT_HOST = 'http://localhost:4943';
+
 const DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS = 5 * 60 * 1000;
 const REPLICA_PERMITTED_DRIFT_MILLISECONDS = 60 * 1000;
 const NANOSECONDS_PER_MILLISECONDS = 1_000_000;
@@ -313,26 +315,26 @@ test('use anonymous principal if unspecified', async () => {
 
 describe('getDefaultFetch', () => {
   it("should use fetch from window if it's available", async () => {
-    const generateAgent = () => new HttpAgent({ host: 'localhost:4943' });
+    const generateAgent = () => new HttpAgent({ host: HTTP_AGENT_HOST });
     expect(generateAgent).not.toThrowError();
   });
   it('should throw an error if fetch is not available on the window object', async () => {
     delete (window as any).fetch;
-    const generateAgent = () => new HttpAgent({ host: 'localhost:4943' });
+    const generateAgent = () => new HttpAgent({ host: HTTP_AGENT_HOST });
 
     expect(generateAgent).toThrowError('Fetch implementation was not available');
   });
   it('should throw error for defaultFetch with no window or global fetch', () => {
     delete (global as any).window;
     delete (global as any).fetch;
-    const generateAgent = () => new HttpAgent({ host: 'localhost:4943' });
+    const generateAgent = () => new HttpAgent({ host: HTTP_AGENT_HOST });
 
     expect(generateAgent).toThrowError('Fetch implementation was not available');
   });
   it('should fall back to global.fetch if window is not available', () => {
     delete (global as any).window;
     global.fetch = originalFetch;
-    const generateAgent = () => new HttpAgent({ host: 'localhost:4943' });
+    const generateAgent = () => new HttpAgent({ host: HTTP_AGENT_HOST });
 
     expect(generateAgent).not.toThrowError();
   });
@@ -494,7 +496,7 @@ describe('retry failures', () => {
         statusText: 'Internal Server Error',
       }),
     );
-    const agent = new HttpAgent({ host: 'http://localhost:4943', fetch: mockFetch, retryTimes: 0 });
+    const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch, retryTimes: 0 });
     expect(
       agent.call(Principal.managementCanister(), {
         methodName: 'test',
@@ -510,7 +512,7 @@ describe('retry failures', () => {
       });
     });
 
-    const agent = new HttpAgent({ host: 'http://localhost:4943', fetch: mockFetch });
+    const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
     try {
       expect(
         agent.call(Principal.managementCanister(), {
@@ -540,7 +542,7 @@ describe('retry failures', () => {
       }
     });
 
-    const agent = new HttpAgent({ host: 'http://localhost:4943', fetch: mockFetch });
+    const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
     const result = await agent.call(Principal.managementCanister(), {
       methodName: 'test',
       arg: new Uint8Array().buffer,
@@ -556,7 +558,7 @@ test('should change nothing if time is within 30 seconds of replica', async () =
   // jest.setSystemTime(systemTime);
   const mockFetch = jest.fn();
 
-  const agent = new HttpAgent({ host: 'http://localhost:4943', fetch: mockFetch });
+  const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
 
   await agent.syncTime();
 
@@ -590,7 +592,7 @@ test('should adjust the Expiry if the clock is more than 30 seconds behind', asy
   await import('../../canisterStatus');
   const { HttpAgent } = await import('../index');
 
-  const agent = new HttpAgent({ host: 'http://localhost:4943', fetch: mockFetch });
+  const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
 
   await agent.syncTime();
 
@@ -633,7 +635,7 @@ test('should adjust the Expiry if the clock is more than 30 seconds ahead', asyn
   await import('../../canisterStatus');
   const { HttpAgent } = await import('../index');
 
-  const agent = new HttpAgent({ host: 'http://localhost:4943', fetch: mockFetch });
+  const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
 
   await agent.syncTime();
 
@@ -655,5 +657,32 @@ test('should adjust the Expiry if the clock is more than 30 seconds ahead', asyn
   expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1209000000000`);
 
   expect(delay).toBe(-1 * DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
+  jest.resetModules();
+});
+test('should fetch with given call options and fetch options', async () => {
+  const mockFetch: jest.Mock = jest.fn();
+
+  const agent = new HttpAgent({
+    fetch: mockFetch,
+    callOptions: {
+      reactNative: { textStreaming: true },
+    },
+    fetchOptions: {
+      reactNative: {
+        __nativeResponseType: 'base64',
+      },
+    },
+  });
+
+  const canisterString = 'ryjl3-tyaaa-aaaaa-aaaba-cai';
+
+  agent.call(canisterString, {
+    methodName: 'greet',
+    arg: new Uint8Array([]),
+  });
+
+  expect(mockFetch.mock.calls[0][1].fetchOptions.reactNative.__nativeResponseType.toBe('base64'));
+  expect(mockFetch.mock.calls[0][1].callOptions.reactNative.toBe({ textStreaming: true }));
+
   jest.resetModules();
 });
