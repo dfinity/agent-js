@@ -659,11 +659,21 @@ test('should adjust the Expiry if the clock is more than 30 seconds ahead', asyn
   expect(delay).toBe(-1 * DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
   jest.resetModules();
 });
-test('should fetch with given call options and fetch options', async () => {
-  const mockFetch: jest.Mock = jest.fn();
 
-  const agent = new HttpAgent({
+test('should fetch with given call options and fetch options', async () => {
+  const mockFetch: jest.Mock = jest.fn(() => {
+    const body = cbor.encode({});
+    return Promise.resolve(
+      new Response(body, {
+        status: 200,
+      }),
+    );
+  });
+
+  const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+  const httpAgent = new HttpAgent({
     fetch: mockFetch,
+    host: 'http://localhost',
     callOptions: {
       reactNative: { textStreaming: true },
     },
@@ -674,15 +684,18 @@ test('should fetch with given call options and fetch options', async () => {
     },
   });
 
-  const canisterString = 'ryjl3-tyaaa-aaaaa-aaaba-cai';
-
-  agent.call(canisterString, {
+  await httpAgent.call(canisterId, {
     methodName: 'greet',
     arg: new Uint8Array([]),
   });
 
-  expect(mockFetch.mock.calls[0][1].fetchOptions.reactNative.__nativeResponseType.toBe('base64'));
-  expect(mockFetch.mock.calls[0][1].callOptions.reactNative.toBe({ textStreaming: true }));
+  await httpAgent.query(canisterId, {
+    methodName: 'greet',
+    arg: new Uint8Array([]),
+  });
 
-  jest.resetModules();
+  const { calls } = mockFetch.mock;
+
+  expect(calls[0][1].reactNative).toStrictEqual({ textStreaming: true });
+  expect(calls[1][1].reactNative.__nativeResponseType).toBe('base64');
 });
