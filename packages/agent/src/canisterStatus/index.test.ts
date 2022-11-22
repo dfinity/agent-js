@@ -46,7 +46,7 @@ const getRealStatus = async () => {
     ),
   )) as unknown as Identity;
 
-  const agent = new HttpAgent({ host: 'http://127.0.0.1:8000', fetch, identity });
+  const agent = new HttpAgent({ host: 'http://127.0.0.1:4943', fetch, identity });
   await agent.fetchRootKey();
   const canisterBuffer = new DataView(testPrincipal.toUint8Array().buffer).buffer;
   canisterBuffer;
