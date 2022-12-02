@@ -37,7 +37,8 @@
   "unpkg": "./lib/esm/index",
   "scripts": {
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
-    "bundle": "npm run build",
+    "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=node",
+    "size-limit": "npm run bundle; size-limit",
     "ci": "npm run prettier && npm run lint && npm run test",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
@@ -47,5 +48,9 @@
   },
   "dependencies": {
     "amcl-js": "file:src/vendor/amcl-js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.15.16",
+    "size-limit": "^8.1.0"
   }
 }

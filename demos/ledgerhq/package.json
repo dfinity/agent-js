@@ -28,5 +28,9 @@
     "test:coverage": "",
     "test": ""
   },
-  "version": "0.14.1"
+  "version": "0.14.1",
+  "devDependencies": {
+    "esbuild": "^0.15.16",
+    "size-limit": "^8.1.0"
+  }
 }
