@@ -37,7 +37,7 @@
   "scripts": {
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
     "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js",
-    "size-limit": "npm run bundle; size-limit",
+    "size-limit": "size-limit",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/principal --excludeInternal",
@@ -64,5 +64,12 @@
   "dependencies": {
     "js-sha256": "^0.9.0",
     "ts-node": "^10.8.2"
-  }
+  },
+  "size-limit": [
+    {
+      "path": "./dist/index.js",
+      "limit": "100 kB",
+      "webpack": false
+    }
+  ]
 }

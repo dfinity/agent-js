@@ -37,7 +37,7 @@
   "scripts": {
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
     "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js",
-    "size-limit": "npm run bundle; size-limit --platform=node",
+    "size-limit": "size-limit",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/identity",
@@ -81,5 +81,12 @@
     "typedoc": "^0.22.11",
     "typescript": "^4.7.4",
     "whatwg-fetch": "^3.0.0"
-  }
+  },
+  "size-limit": [
+    {
+      "path": "./dist/index.js",
+      "limit": "2 mb",
+      "webpack": false
+    }
+  ]
 }

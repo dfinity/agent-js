@@ -41,7 +41,7 @@
   "scripts": {
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
     "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js",
-    "size-limit": "npm run bundle; size-limit",
+    "size-limit": "size-limit",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/assets",
@@ -76,5 +76,12 @@
   "browser": {
     "fs": "./lib/cjs/utils/browserShim.js",
     "path": "./lib/cjs/utils/browserShim.js"
-  }
+  },
+  "size-limit": [
+    {
+      "path": "./dist/index.js",
+      "limit": "100 kB",
+      "webpack": false
+    }
+  ]
 }
