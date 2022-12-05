@@ -8,9 +8,6 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - run: npm install -g npm
-      - run: npm install
-      - run: npm run build --workspaces --if-present
-      - run: npm run bundle --workspaces --if-present
       # - run: npm run size-limit --workspaces --if-present
 
       # commented out until the job can be configured
