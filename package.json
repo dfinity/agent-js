@@ -72,5 +72,27 @@
   "bugs": {
     "url": "https://github.com/dfinity-lab/agent-js/issues"
   },
-  "homepage": "https://github.com/dfinity-lab/agent-js#readme"
+  "homepage": "https://github.com/dfinity-lab/agent-js#readme",
+  "size-limit": [
+    {
+      "path": "./packages/agent/dist/index.js",
+      "limit": "100 kB",
+      "webpack": false
+    },
+    {
+      "path": "./packages/principal/dist/index.js",
+      "limit": "100 kB",
+      "webpack": false
+    },
+    {
+      "path": "./packages/auth-client/dist/index.js",
+      "limit": "100 kB",
+      "webpack": false
+    },
+    {
+      "path": "./packages/identity/dist/index.js",
+      "limit": "100 kB",
+      "webpack": false
+    }
+  ]
 }
