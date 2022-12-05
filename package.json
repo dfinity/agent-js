@@ -54,7 +54,7 @@
     "build": "npm run build --workspaces --if-present; npm run bundle --workspaces --if-present",
     "lint:fix": "",
     "make:docs": "npm run make:docs/reference --workspaces --if-present; ",
-    "size": "size-limit",
+    "size": "size-limit --json",
     "test:coverage": "",
     "test": "jest",
     "test-size": "esbuild",
@@ -76,18 +76,22 @@
   "homepage": "https://github.com/dfinity-lab/agent-js#readme",
   "size-limit": [
     {
+      "name": "@dfinity/agent",
       "path": "./packages/agent/dist/index.js",
       "limit": "100 kB"
     },
     {
+      "name": "@dfinity/principal",
       "path": "./packages/principal/dist/index.js",
       "limit": "100 kB"
     },
     {
+      "name": "@dfinity/auth-client",
       "path": "./packages/auth-client/dist/index.js",
       "limit": "100 kB"
     },
     {
+      "name": "@dfinity/identity",
       "path": "./packages/identity/dist/index.js",
       "limit": "100 kB"
     }
