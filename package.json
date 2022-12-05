@@ -91,6 +91,16 @@
       "limit": "320 kB"
     },
     {
+      "name": "@dfinity/assets",
+      "path": "./packages/assets/dist/index.js",
+      "limit": "100 kB"
+    },
+    {
+      "name": "@dfinity/authentication",
+      "path": "./packages/authentication/dist/index.js",
+      "limit": "320 kB"
+    },
+    {
       "name": "@dfinity/identity",
       "path": "./packages/identity/dist/index.js",
       "limit": "320 kB"
