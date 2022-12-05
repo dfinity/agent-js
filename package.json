@@ -83,17 +83,17 @@
     {
       "name": "@dfinity/principal",
       "path": "./packages/principal/dist/index.js",
-      "limit": "100 kB"
+      "limit": "10 kB"
     },
     {
       "name": "@dfinity/auth-client",
       "path": "./packages/auth-client/dist/index.js",
-      "limit": "100 kB"
+      "limit": "320 kB"
     },
     {
       "name": "@dfinity/identity",
       "path": "./packages/identity/dist/index.js",
-      "limit": "100 kB"
+      "limit": "320 kB"
     }
   ]
 }
