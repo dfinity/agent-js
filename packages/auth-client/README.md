@@ -139,5 +139,5 @@ In this code, we create an `authClient` with an idle timeout of 30 minutes. When
 
 After the user logs in, we can set the new identity in the actor without reloading the page.
 
-Note: depends on [@dfinity/agent](https://www.npmjs.com/package/@dfinity/agent), [@dfinity/authentication](https://www.npmjs.com/package/@dfinity/authentication), and
+Note: depends on [@dfinity/agent](https://www.npmjs.com/package/@dfinity/agent) and
 [@dfinity/identity](https://www.npmjs.com/package/@dfinity/identity).

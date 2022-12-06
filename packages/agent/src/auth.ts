@@ -132,7 +132,7 @@ export interface PublicKeyIdentityDescriptor {
 export type IdentityDescriptor = AnonymousIdentityDescriptor | PublicKeyIdentityDescriptor;
 
 /**
- * Create an IdentityDescriptor from a @dfinity/authentication Identity
+ * Create an IdentityDescriptor from a @dfinity/identity Identity
  * @param identity - identity describe in returned descriptor
  */
 export function createIdentityDescriptor(

@@ -7,7 +7,8 @@
   "deprecated": "This package has been deprecated. isDelegationValid has been migrated to @dfinity/identity",
   "main": "./lib/cjs/index.js",
   "scripts": {
-    "build": ""
+    "build": "",
+    "test": ""
   },
   "dependencies": {
     "@dfinity/identity": "^0.14.1"
