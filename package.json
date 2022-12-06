@@ -10,7 +10,6 @@
       "packages/agent",
       "packages/bls-verify",
       "packages/identity",
-      "packages/identity-ledgerhq",
       "packages/auth-client",
       "packages/assets",
       "e2e/node",
