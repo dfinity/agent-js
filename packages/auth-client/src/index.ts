@@ -6,10 +6,10 @@ import {
   Signature,
   SignIdentity,
 } from '@dfinity/agent';
-import { isDelegationValid } from '@dfinity/authentication';
 import {
   Delegation,
   DelegationChain,
+  isDelegationValid,
   DelegationIdentity,
   Ed25519KeyIdentity,
 } from '@dfinity/identity';
