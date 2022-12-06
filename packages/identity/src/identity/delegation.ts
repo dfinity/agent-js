@@ -316,3 +316,62 @@ export class DelegationIdentity extends SignIdentity {
     };
   }
 }
+
+/**
+ * List of things to check for a delegation chain validity.
+ */
+export interface DelegationValidChecks {
+  /**
+   * Check that the scope is amongst the scopes that this delegation has access to.
+   */
+  scope?: Principal | string | Array<Principal | string>;
+}
+
+/**
+ * Analyze a DelegationChain and validate that it's valid, ie. not expired and apply to the
+ * scope.
+ * @param chain The chain to validate.
+ * @param checks Various checks to validate on the chain.
+ */
+export function isDelegationValid(chain: DelegationChain, checks?: DelegationValidChecks): boolean {
+  // Verify that the no delegation is expired. If any are in the chain, returns false.
+  for (const { delegation } of chain.delegations) {
+    // prettier-ignore
+    if (+new Date(Number(delegation.expiration / BigInt(1000000))) <= +Date.now()) {
+      return false;
+    }
+  }
+
+  // Check the scopes.
+  const scopes: Principal[] = [];
+  const maybeScope = checks?.scope;
+  if (maybeScope) {
+    if (Array.isArray(maybeScope)) {
+      scopes.push(...maybeScope.map(s => (typeof s === 'string' ? Principal.fromText(s) : s)));
+    } else {
+      scopes.push(typeof maybeScope === 'string' ? Principal.fromText(maybeScope) : maybeScope);
+    }
+  }
+
+  for (const s of scopes) {
+    const scope = s.toText();
+    for (const { delegation } of chain.delegations) {
+      if (delegation.targets === undefined) {
+        continue;
+      }
+
+      let none = true;
+      for (const target of delegation.targets) {
+        if (target.toText() === scope) {
+          none = false;
+          break;
+        }
+      }
+      if (none) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}

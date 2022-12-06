@@ -27,6 +27,7 @@
   },
   "version": "0.14.1",
   "devDependencies": {
+    "buffer": "^6.0.3",
     "esbuild": "^0.15.16",
     "size-limit": "^8.1.0"
   }

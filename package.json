@@ -10,8 +10,6 @@
       "packages/agent",
       "packages/bls-verify",
       "packages/identity",
-      "packages/identity-ledgerhq",
-      "packages/authentication",
       "packages/auth-client",
       "packages/assets",
       "e2e/node",
@@ -94,11 +92,6 @@
       "name": "@dfinity/assets",
       "path": "./packages/assets/dist/index.js",
       "limit": "100 kB"
-    },
-    {
-      "name": "@dfinity/authentication",
-      "path": "./packages/authentication/dist/index.js",
-      "limit": "320 kB"
     },
     {
       "name": "@dfinity/identity",

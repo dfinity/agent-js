@@ -66,6 +66,17 @@ Until we have an internal process and centrally owned canister, docs can be rele
 
 Note - you may need to ask to be added as a controller for the wallet that owns the docs until this job is moved to CI
 
+### Deprecation
+
+We retain deprecated packages in the packages directory for historical purposes. To deprecate a package, follow these steps
+
+- Remove all contents except the package.json, license, and readme
+- Add a note to the README saying `**Warning** this package is deprecated`
+- Remove unnecessary content, dependencies, and metadata from the package.json
+- add a `"deprecation"` tag to the package.json with instructions you want users to follow in migrating
+- remove the package as a workspace from the root `package.json`
+- the next time that agent-js releases, manually publish a new version of newly deprecated packages by incrementing the patch version and running `npm publish`
+
 ### GitHub Actions
 
 GitHub Actions for this repo are configured in [./.github/workflows](./.github/workflows).
