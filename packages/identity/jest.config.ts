@@ -12,7 +12,6 @@ module.exports = {
     '^.+\\.ts$': 'ts-jest',
   },
   collectCoverageFrom: ['src/**/*.{ts,tsx}'],
-  name: packageName,
   displayName: packageName,
   rootDir: '../..',
 };
