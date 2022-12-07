@@ -16,7 +16,7 @@ export * as polling from './polling';
 /**
  * The CanisterStatus utility is used to request structured data directly from the IC public API. This data can be accessed using agent.readState, but CanisterStatus provides a helpful abstraction with some known paths.
  *
- * You can request a canisters Controllers, ModuleHash, Candid interface, Subnet, or Time, or provide a custom path {@link CanisterStatus.CustomPath} and pass arbitrary buffers for valid paths identified in https://smartcontracts.org/docs/current/references/ic-interface-spec/.
+ * You can request a canisters Controllers, ModuleHash, Candid interface, Subnet, or Time, or provide a custom path {@link CanisterStatus.CustomPath} and pass arbitrary buffers for valid paths identified in https://internetcomputer.org/docs/current/references/ic-interface-spec.
  *
  * The primary method for this namespace is {@link CanisterStatus.request}
  */
