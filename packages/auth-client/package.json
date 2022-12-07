@@ -4,7 +4,7 @@
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to provide a simple integration with an IC Internet Identity",
-  "homepage": "https://smartcontracts.org",
+  "homepage": "https://internetcomputer.org",
   "repository": {
     "type": "git",
     "url": "https://github.com/dfinity/agent-js.git",
