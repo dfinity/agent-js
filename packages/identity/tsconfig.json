@@ -18,6 +18,12 @@
     "strict": true,
     "target": "es2017"
   },
-  "include": ["types/*", "src/**/*", "client-test", "index.d.ts"],
+  "include": [
+    "types/*",
+    "src/**/*",
+    "client-test",
+    "index.d.ts",
+    "../secp256k1/src/secp256k1.test.ts"
+  ],
   "references": [{ "path": "../agent" }]
 }
