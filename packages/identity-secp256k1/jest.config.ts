@@ -1,5 +1,5 @@
 import baseConfig from '../../jest.config.base';
-const packageName = 'secp256k1';
+const packageName = 'identity-secp256k1';
 
 module.exports = {
   ...baseConfig,

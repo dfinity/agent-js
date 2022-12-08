@@ -12,7 +12,7 @@
       "packages/identity",
       "packages/auth-client",
       "packages/assets",
-      "packages/secp256k1",
+      "packages/identity-secp256k1",
       "e2e/node",
       "e2e/browser",
       "demos/ledgerhq",

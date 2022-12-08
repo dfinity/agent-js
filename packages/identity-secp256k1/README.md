@@ -1,4 +1,4 @@
-# @dfinity/secp256k1
+# @dfinity/identity-secp256k1
 
 The Secp256k1KeyIdentity package provides an implementation of the SignIdentity interface for the secp256k1 elliptic curve. It allows you to create and manage key pairs for signing and verification of messages.
 
