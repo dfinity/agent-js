@@ -1,26 +1,49 @@
 # @dfinity/secp256k1
 
-JavaScript and TypeScript library to support manage Secp256k1 Identities and import from seed phrases for applications on the [Internet Computer](https://dfinity.org/)
+The Secp256k1KeyIdentity package provides an implementation of the SignIdentity interface for the secp256k1 elliptic curve. It allows you to create and manage key pairs for signing and verification of messages.
 
-Visit the [Dfinity Forum](https://forum.dfinity.org/) and [SDK Documentation](https://sdk.dfinity.org/docs/index.html) for more information and support building on the Internet Computer.
+Example
+Here's an example of how to use the Secp256k1KeyIdentity class to generate a new key pair and sign and verify a message:
 
-Additional API Documentation can be found [here](https://agent-js.icp.xyz/secp256k1/index.html).
+```ts
+import { Secp256k1KeyIdentity } from '@dfinity/secp256k1';
 
----
+// Generate a new key pair
+const identity = Secp256k1KeyIdentity.generate();
 
-## Installation
+// Sign a message
+const message = 'Hello, world!';
+const signature = identity.sign(message);
 
+// Verify the signature
+const isValid = identity.verify(message, signature);
+
+console.log(`Signature is ${isValid ? 'valid' : 'invalid'}`);
 ```
-npm i --save @dfinity/secp256k1
+
+You can also use a seed to generate deterministic key pairs:
+
+```ts
+import { Secp256k1KeyIdentity } from '@dfinity/secp256k1';
+
+const seed = Buffer.from('my-secret-seed', 'utf8');
+const identity = Secp256k1KeyIdentity.generate(seed);
 ```
 
-### In the browser:
+The Secp256k1KeyIdentity class also provides methods for converting the key pair to and from JSON-serializable objects:
 
-or using individual exports:
+```ts
+import { Secp256k1KeyIdentity } from '@dfinity/agent';
 
+// Generate a new key pair
+const identity = Secp256k1KeyIdentity.generate();
+
+// Convert the key pair to a JSON-serializable object
+const json = identity.toJson();
+
+// Convert the JSON-serializable object back to a key pair
+const restoredIdentity = Secp256k1KeyIdentity.fromJson(json);
 ```
-import { Secp256k1PublicKey, Secp256k1KeyIdentity } from "@dfinity/authentication";
-```
 
-Note: depends on [@dfinity/agent](https://www.npmjs.com/package/@dfinity/agent) and
-[@dfinity/identity](https://www.npmjs.com/package/@dfinity/identity).
+References
+The Secp256k1KeyIdentity class extends the SignIdentity interface from the @dfinity/agent package. For more information about the SignIdentity interface and how to use it, see the [@dfinity/agent documentation](https://agent-js.icp.xyz/agent/classes/SignIdentity.html)
