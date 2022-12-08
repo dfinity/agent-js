@@ -9,7 +9,7 @@
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
     "eslint": "eslint --ext '.js,.jsx,.ts,.tsx'",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/secp256k1 --excludeInternal",
-    "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js",
+    "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=node",
     "test": "jest",
     "test:coverage": "jest --verbose --collectCoverage"
   },
