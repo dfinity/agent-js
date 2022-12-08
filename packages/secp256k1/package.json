@@ -16,7 +16,8 @@
   "dependencies": {
     "@dfinity/agent": "^0.14.1",
     "bip39": "^3.0.4",
-    "bs58check": "^2.1.2"
+    "bs58check": "^2.1.2",
+    "secp256k1": "^4.0.3"
   },
   "devDependencies": {
     "@types/bs58check": "^2.1.0",
