@@ -22,5 +22,5 @@
     "target": "es2017",
     "tsBuildInfoFile": "./build_info.json"
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "types/*"]
 }
