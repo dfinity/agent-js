@@ -1,17 +1,20 @@
 {
-  "name": "@dfinity/authentication",
+  "name": "@dfinity/secp256k1",
   "version": "0.14.1",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
-  "description": "JavaScript and TypeScript library to manage identity and authentication with the Internet Computer",
-  "deprecated": "This package has been deprecated. isDelegationValid has been migrated to @dfinity/identity",
+  "description": "JavaScript and TypeScript library to manage Secp256k1KeyIdentities for use with the Internet Computer",
   "main": "./lib/cjs/index.js",
   "scripts": {
-    "build": "",
-    "test": ""
+    "build": "tsc -b && tsc -p tsconfig-cjs.json",
+    "eslint": "eslint --ext '.js,.jsx,.ts,.tsx'",
+    "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/secp256k1 --excludeInternal",
+    "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js",
+    "test": "jest",
+    "test:coverage": "jest --verbose --collectCoverage"
   },
   "dependencies": {
-    "@dfinity/identity": "^0.14.1",
+    "@dfinity/agent": "^0.14.1",
     "bip39": "^3.0.4",
     "hdkey": "^2.0.1"
   }

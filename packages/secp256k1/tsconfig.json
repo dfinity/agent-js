@@ -1,30 +1,26 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "allowJs": false,
     "baseUrl": "./",
     "composite": true,
     "declaration": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "incremental": true,
+    "lib": ["dom", "es2017"],
     "module": "ES2020",
     "moduleResolution": "node",
-    "outDir": "./lib/esm",
+    "outDir": "lib/esm",
+    "paths": {
+      "@dfinity/secp256k1": ["src"]
+    },
     "resolveJsonModule": true,
     "rootDir": "./src",
     "sourceMap": true,
     "inlineSources": true,
     "strict": true,
-    "target": "es2017"
+    "target": "es2017",
+    "tsBuildInfoFile": "./build_info.json"
   },
-  "include": [
-    "types/*",
-    "src/**/*",
-    "client-test",
-    "index.d.ts",
-    "../secp256k1/src/secp256k1.test.ts",
-    "../secp256k1/hdkey.ts"
-  ],
-  "references": [{ "path": "../agent" }]
+  "include": ["src/**/*.ts"]
 }
