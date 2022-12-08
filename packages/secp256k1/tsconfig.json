@@ -7,7 +7,7 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "incremental": true,
-    "lib": ["dom", "es2017"],
+    "lib": ["es2020"],
     "module": "ES2020",
     "moduleResolution": "node",
     "outDir": "lib/esm",

@@ -16,9 +16,7 @@
   "dependencies": {
     "@dfinity/agent": "^0.14.1",
     "bip39": "^3.0.4",
-    "bs58check": "^2.1.2",
-    "crypto-browserify": "^3.12.0",
-    "hdkey": "^2.0.1"
+    "bs58check": "^2.1.2"
   },
   "devDependencies": {
     "@types/bs58check": "^2.1.0",
