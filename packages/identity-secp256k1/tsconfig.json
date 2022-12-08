@@ -12,7 +12,7 @@
     "moduleResolution": "node",
     "outDir": "lib/esm",
     "paths": {
-      "@dfinity/secp256k1": ["src"]
+      "@dfinity/identity-secp256k1": ["src"]
     },
     "resolveJsonModule": true,
     "rootDir": "./src",

@@ -6,7 +6,7 @@ Example
 Here's an example of how to use the Secp256k1KeyIdentity class to generate a new key pair and sign and verify a message:
 
 ```ts
-import { Secp256k1KeyIdentity } from '@dfinity/secp256k1';
+import { Secp256k1KeyIdentity } from '@dfinity/identity-secp256k1';
 
 // Generate a new key pair
 const identity = Secp256k1KeyIdentity.generate();
@@ -24,7 +24,7 @@ console.log(`Signature is ${isValid ? 'valid' : 'invalid'}`);
 You can also use a seed to generate deterministic key pairs:
 
 ```ts
-import { Secp256k1KeyIdentity } from '@dfinity/secp256k1';
+import { Secp256k1KeyIdentity } from '@dfinity/identity-secp256k1';
 
 const seed = Buffer.from('my-secret-seed', 'utf8');
 const identity = Secp256k1KeyIdentity.generate(seed);

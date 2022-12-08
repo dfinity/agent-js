@@ -11,7 +11,7 @@ import {
   Ed25519KeyIdentity,
   ECDSAKeyIdentity,
 } from '@dfinity/identity';
-import { Secp256k1KeyIdentity } from '@dfinity/secp256k1';
+import { Secp256k1KeyIdentity } from '@dfinity/identity-secp256k1';
 import agent from '../utils/agent';
 import identityCanister from '../canisters/identity';
 
