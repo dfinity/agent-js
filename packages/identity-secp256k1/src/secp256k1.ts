@@ -6,7 +6,7 @@ import { randomBytes } from 'tweetnacl';
 import hdkey from './hdkey';
 import { mnemonicToSeedSync } from 'bip39';
 import { PublicKey, SignIdentity } from '@dfinity/agent';
-import { fromHexString, toHexString } from '../buffer';
+import { fromHexString, toHexString } from './buffer';
 import { SECP256K1_OID, unwrapDER, wrapDER } from './der';
 
 declare type PublicKeyHex = string;

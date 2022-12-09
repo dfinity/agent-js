@@ -9,9 +9,9 @@ import {
   DelegationChain,
   DelegationIdentity,
   Ed25519KeyIdentity,
-  Secp256k1KeyIdentity,
   ECDSAKeyIdentity,
 } from '@dfinity/identity';
+import { Secp256k1KeyIdentity } from '@dfinity/identity-secp256k1';
 import agent from '../utils/agent';
 import identityCanister from '../canisters/identity';
 

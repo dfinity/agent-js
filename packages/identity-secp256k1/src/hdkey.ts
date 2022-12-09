@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-// Package adapted from https://www.npmjs.com/package/hdkey to run in the browser
+// Package adapted from https://www.npmjs.com/package/hdkey
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-this-alias */
 import assert from 'assert';
 import { Buffer } from 'buffer';
 import bs58check from 'bs58check';
 import secp256k1 from 'secp256k1';
-import { createHmac, createHash, randomBytes } from 'crypto-browserify';
+import { createHmac, createHash, randomBytes } from 'crypto';
 
 const MASTER_SECRET = Buffer.from('Bitcoin seed', 'utf8');
 const HARDENED_OFFSET = 0x80000000;
