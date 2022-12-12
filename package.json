@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/agent-monorepo",
-  "version": "0.14.1",
+  "version": "0.15.0",
   "private": true,
   "description": "Use an Agent to interact with the Internet Computer from your JavaScript program.",
   "workspaces": {
@@ -15,7 +15,6 @@
       "packages/identity-secp256k1",
       "e2e/node",
       "e2e/browser",
-      "demos/ledgerhq",
       "demos/sample-javascript"
     ]
   },
@@ -27,19 +26,25 @@
     "@types/node": "^18.0.3",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
+    "crypto": "^1.0.1",
     "eslint": "^8.19.0",
     "eslint-plugin-jsdoc": "^39.3.3",
+    "fs": "^0.0.1-security",
     "husky": "^8.0.1",
     "jest": "^28.1.2",
     "jest-cli": "^28.1.2",
     "jest-environment-node": "^28.1.2",
+    "os": "^0.1.2",
+    "path": "^0.12.7",
     "prettier": "^2.7.1",
     "pretty-quick": "^3.1.3",
     "size-limit": "^8.1.0",
+    "size-limit-node-esbuild": "^0.2.0",
     "ts-jest": "^28.0.5",
     "ts-node": "^10.8.2",
     "typedoc": "^0.23.5",
     "typescript": "^4.7.4",
+    "url": "^0.11.0",
     "webcrypto-core": "^1.7.5",
     "yargs": "^17.5.1"
   },
@@ -97,7 +102,12 @@
     {
       "name": "@dfinity/identity",
       "path": "./packages/identity/dist/index.js",
-      "limit": "320 kB"
+      "limit": "100 kB"
+    },
+    {
+      "name": "@dfinity/identity-secp256k1",
+      "path": "./packages/identity-secp256k1/dist/index.js",
+      "limit": "250 kB"
     }
   ]
 }

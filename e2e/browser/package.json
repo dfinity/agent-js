@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "@do-not-publish/ic-cypress-e2e-tests",
-  "version": "0.14.1",
+  "version": "0.15.0",
   "scripts": {
     "ci": "npm run e2e",
     "pree2e": "dfx deploy; dfx generate; pm2 --name parcel start npm -- start",
@@ -28,10 +28,10 @@
     "size-limit": "^8.1.0"
   },
   "dependencies": {
-    "@dfinity/agent": "^0.14.1",
+    "@dfinity/agent": "^0.15.0",
     "@dfinity/authentication": "^0.14.1",
-    "@dfinity/identity": "^0.14.1",
-    "@dfinity/principal": "^0.14.1",
+    "@dfinity/identity": "^0.15.0",
+    "@dfinity/principal": "^0.15.0",
     "@types/node": "^18.0.6",
     "idb-keyval": "^6.2.0"
   }

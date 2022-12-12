@@ -2,10 +2,10 @@
   "name": "ic-agent-sample-javascript-app",
   "private": true,
   "dependencies": {
-    "@dfinity/agent": "^0.14.1",
+    "@dfinity/agent": "^0.15.0",
     "@dfinity/authentication": "^0.14.1",
-    "@dfinity/identity": "^0.14.1",
-    "@dfinity/principal": "^0.14.1",
+    "@dfinity/identity": "^0.15.0",
+    "@dfinity/principal": "^0.15.0",
     "assert": "^2.0.0",
     "events": "^3.2.0",
     "html-webpack-plugin": "^5.1.0",
@@ -25,7 +25,7 @@
     "test:coverage": "",
     "test": ""
   },
-  "version": "0.14.1",
+  "version": "0.15.0",
   "devDependencies": {
     "buffer": "^6.0.3",
     "esbuild": "^0.15.16",
