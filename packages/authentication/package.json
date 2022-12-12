@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/authentication",
-  "version": "0.14.1",
+  "version": "0.14.2",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to manage identity and authentication with the Internet Computer",
@@ -11,6 +11,6 @@
     "test": ""
   },
   "dependencies": {
-    "@dfinity/identity": "^0.14.1"
+    "@dfinity/identity": "^0.15.1"
   }
 }
