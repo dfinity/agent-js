@@ -48,7 +48,9 @@ const magicNumber = 'DIDL';
 const toReadableString_max = 400; // will not display arguments after 400chars. Makes sure 2mb blobs don't get inside the error
 
 function zipWith<TX, TY, TR>(xs: TX[], ys: TY[], f: (a: TX, b: TY) => TR): TR[] {
-  return xs.map((x, i) => f(x, ys[i]));
+  return xs.map((x, i) => {
+    return f(x, ys[i]);
+  });
 }
 
 /**
@@ -978,9 +980,13 @@ export class RecordClass extends ConstructType<Record<string, any>> {
     if (
       typeof x === 'object' &&
       this._fields.every(([k, t]) => {
-        // eslint-disable-next-line
-        if (!x.hasOwnProperty(k)) {
-          throw new Error(`Record is missing key "${k}".`);
+        if (!(k in x)) {
+          // Allow missing optional fields.
+          if (t instanceof OptClass) {
+            x[k] = [];
+          } else {
+            throw new Error(`Record is missing key "${k}".`);
+          }
         }
         try {
           return t.covariant(x[k]);
