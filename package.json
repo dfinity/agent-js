@@ -85,6 +85,10 @@
       "limit": "100 kB"
     },
     {
+      "name": "@dfinity/candid",
+      "path": "./packages/candid/dist/index.js"
+    },
+    {
       "name": "@dfinity/principal",
       "path": "./packages/principal/dist/index.js",
       "limit": "10 kB"

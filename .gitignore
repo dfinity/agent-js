@@ -124,3 +124,5 @@ docs/generated/identity
 docs/generated/identity-ledgerhq
 docs/generated/principal
 docs/generated/candid
+docs/generated/bls-verify
+docs/generated/identity-secp256k1
