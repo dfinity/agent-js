@@ -179,7 +179,7 @@ export class AuthClient {
       identity?: SignIdentity;
       /**
        * {@link AuthClientStorage}
-       * @description Optional storage with get, set, and remove. Uses {@link LocalStorage} by default
+       * @description Optional storage with get, set, and remove. Uses {@link IdbStorage} by default
        */
       storage?: AuthClientStorage;
       /**
