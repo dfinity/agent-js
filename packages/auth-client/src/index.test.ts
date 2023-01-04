@@ -749,7 +749,7 @@ describe('Migration from Ed25519Key', () => {
 
     const key = await Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
     const chain = DelegationChain.create(key, key.getPublicKey(), expiration);
-    const fakeStore = {};
+    const fakeStore: Record<any, any> = {};
     fakeStore[KEY_STORAGE_DELEGATION] = JSON.stringify((await chain).toJSON());
     fakeStore[KEY_STORAGE_KEY] = JSON.stringify(testSecrets);
 
@@ -773,7 +773,7 @@ describe('Migration from Ed25519Key', () => {
     expect(fakeStore).toMatchInlineSnapshot(`Object {}`);
   });
   it('should generate and store a ECDSAKey if no key is stored', async () => {
-    const fakeStore = {};
+    const fakeStore: Record<any, any> = {};
     const storage: AuthClientStorage = {
       remove: jest.fn(),
       get: jest.fn(),
