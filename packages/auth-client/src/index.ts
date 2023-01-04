@@ -275,7 +275,7 @@ export class AuthClient {
     if (!key) {
       // Create a new key (whether or not one was in storage).
       key = await ECDSAKeyIdentity.generate();
-      await storage.set(KEY_STORAGE_KEY, JSON.stringify(key));
+      await storage.set(KEY_STORAGE_KEY, (key as ECDSAKeyIdentity).getKeyPair());
     }
 
     return new this(identity, key, chain, storage, idleManager, options);
