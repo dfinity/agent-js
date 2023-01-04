@@ -233,7 +233,7 @@ export class AuthClient {
 
     let identity = new AnonymousIdentity();
     let chain: null | DelegationChain = null;
-
+    key;
     if (key) {
       try {
         const chainStorage = await storage.get(KEY_STORAGE_DELEGATION);
