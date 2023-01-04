@@ -8,13 +8,15 @@ export const DB_VERSION = 1;
 
 export const isBrowser = typeof window !== 'undefined';
 
+export type StoredKey = string | CryptoKeyPair;
+
 /**
  * Interface for persisting user authentication data
  */
 export interface AuthClientStorage {
-  get(key: string): Promise<string | null>;
+  get(key: string): Promise<StoredKey | null>;
 
-  set(key: string, value: string): Promise<void>;
+  set(key: string, value: StoredKey): Promise<void>;
 
   remove(key: string): Promise<void>;
 }
