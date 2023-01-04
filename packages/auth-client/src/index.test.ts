@@ -77,7 +77,6 @@ describe('Auth Client', () => {
   it('should initialize an idleManager if an identity is passed', async () => {
     const test = await AuthClient.create({ identity: await Ed25519KeyIdentity.generate() });
     expect(test.idleManager).toBeDefined();
-    test.idleManager; //?
   });
   it('should be able to invalidate an identity after going idle', async () => {
     // setup actor
