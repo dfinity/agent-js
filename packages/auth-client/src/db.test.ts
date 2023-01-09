@@ -32,4 +32,65 @@ describe('indexeddb wrapper', () => {
 
     expect(await db.get('testKey')).toBe(null);
   });
+  it('should support storing a CryptoKeyPair', async () => {
+    const db = await testDb();
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: 'RSA-OAEP',
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: { name: 'SHA-256' },
+      },
+      true,
+      ['encrypt', 'decrypt'],
+    );
+    await db.set('testKey', keyPair);
+    const storedKey = (await db.get('testKey')) as CryptoKeyPair;
+
+    expect(storedKey).toMatchInlineSnapshot(
+      keyPair,
+      `
+      Object {
+        "privateKey": Object {
+          "algorithm": Object {
+            "hash": Object {
+              "name": "SHA-256",
+            },
+            "modulusLength": 2048,
+            "name": "RSA-OAEP",
+            "publicExponent": Object {
+              "0": 1,
+              "1": 0,
+              "2": 1,
+            },
+          },
+          "extractable": true,
+          "type": "private",
+          "usages": Array [
+            "decrypt",
+          ],
+        },
+        "publicKey": Object {
+          "algorithm": Object {
+            "hash": Object {
+              "name": "SHA-256",
+            },
+            "modulusLength": 2048,
+            "name": "RSA-OAEP",
+            "publicExponent": Object {
+              "0": 1,
+              "1": 0,
+              "2": 1,
+            },
+          },
+          "extractable": true,
+          "type": "public",
+          "usages": Array [
+            "encrypt",
+          ],
+        },
+      }
+    `,
+    );
+  });
 });

@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { Actor, HttpAgent } from '@dfinity/agent';
 import { AgentError } from '@dfinity/agent/lib/cjs/errors';
 import { IDL } from '@dfinity/candid';
-import { Ed25519KeyIdentity } from '@dfinity/identity';
+import { DelegationChain, Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
 import { AuthClient, ERROR_USER_INTERRUPT, IdbStorage } from './index';
 import {
@@ -77,7 +77,6 @@ describe('Auth Client', () => {
   it('should initialize an idleManager if an identity is passed', async () => {
     const test = await AuthClient.create({ identity: await Ed25519KeyIdentity.generate() });
     expect(test.idleManager).toBeDefined();
-    test.idleManager; //?
   });
   it('should be able to invalidate an identity after going idle', async () => {
     // setup actor
@@ -691,5 +690,105 @@ describe('Migration from localstorage', () => {
     await AuthClient.create({ storage });
 
     expect(storage.set as jest.Mock).toBeCalledTimes(3);
+  });
+});
+
+describe('Migration from Ed25519Key', () => {
+  const testSecrets = [
+    '302a300506032b6570032100d1fa89134802051c8b5d4e53c08b87381b87097bca4c4f348611eb8ce6c91809',
+    '4bbff6b476463558d7be318aa342d1a97778d70833038680187950e9e02486c0d1fa89134802051c8b5d4e53c08b87381b87097bca4c4f348611eb8ce6c91809',
+  ];
+  it('should continue using an existing Ed25519Key and delegation', async () => {
+    // set the jest timer to a fixed value
+    jest.setSystemTime(new Date('2020-01-01T00:00:00.000Z'));
+
+    // two days from now
+    const expiration = new Date('2020-01-03T00:00:00.000Z');
+
+    const key = await Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
+    const chain = DelegationChain.create(key, key.getPublicKey(), expiration);
+    const storage: AuthClientStorage = {
+      remove: jest.fn(),
+      get: jest.fn(async x => {
+        if (x === KEY_STORAGE_DELEGATION) return JSON.stringify((await chain).toJSON());
+        if (x === KEY_STORAGE_KEY) return JSON.stringify(testSecrets);
+        return null;
+      }),
+      set: jest.fn(),
+    };
+
+    const client = await AuthClient.create({ storage });
+
+    const identity = await client.getIdentity();
+    expect(identity).toMatchSnapshot();
+  });
+  it('should continue using an existing Ed25519Key with no delegation', async () => {
+    // set the jest timer to a fixed value
+    jest.setSystemTime(new Date('2020-01-01T00:00:00.000Z'));
+
+    const storage: AuthClientStorage = {
+      remove: jest.fn(),
+      get: jest.fn(async x => {
+        if (x === KEY_STORAGE_KEY) return JSON.stringify(testSecrets);
+        return null;
+      }),
+      set: jest.fn(),
+    };
+
+    const client = await AuthClient.create({ storage });
+
+    const identity = await client.getIdentity();
+    expect(identity.getPrincipal().isAnonymous()).toBe(true);
+  });
+  it('should continue using an existing Ed25519Key with an expired delegation', async () => {
+    // set the jest timer to a fixed value
+    jest.setSystemTime(new Date('2020-01-01T00:00:00.000Z'));
+
+    // two days ago
+    const expiration = new Date('2019-12-30T00:00:00.000Z');
+
+    const key = await Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
+    const chain = DelegationChain.create(key, key.getPublicKey(), expiration);
+    const fakeStore: Record<any, any> = {};
+    fakeStore[KEY_STORAGE_DELEGATION] = JSON.stringify((await chain).toJSON());
+    fakeStore[KEY_STORAGE_KEY] = JSON.stringify(testSecrets);
+
+    const storage: AuthClientStorage = {
+      remove: jest.fn(async x => {
+        delete fakeStore[x];
+      }),
+      get: jest.fn(async x => {
+        return fakeStore[x] ?? null;
+      }),
+      set: jest.fn(),
+    };
+
+    const client = await AuthClient.create({ storage });
+
+    const identity = await client.getIdentity();
+    expect(identity.getPrincipal().isAnonymous()).toBe(true);
+
+    // expect the delegation to be removed
+    expect(storage.remove as jest.Mock).toBeCalledTimes(3);
+    expect(fakeStore).toMatchInlineSnapshot(`Object {}`);
+  });
+  it('should generate and store a ECDSAKey if no key is stored', async () => {
+    const fakeStore: Record<any, any> = {};
+    const storage: AuthClientStorage = {
+      remove: jest.fn(),
+      get: jest.fn(),
+      set: jest.fn(async (x, y) => {
+        fakeStore[x] = y;
+      }),
+    };
+    const client = await AuthClient.create({ storage });
+
+    // It should have stored a cryptoKey
+    expect(Object.keys(fakeStore[KEY_STORAGE_KEY])).toMatchInlineSnapshot(`
+      Array [
+        "privateKey",
+        "publicKey",
+      ]
+    `);
   });
 });

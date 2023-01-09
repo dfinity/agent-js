@@ -12,6 +12,7 @@ import {
   isDelegationValid,
   DelegationIdentity,
   Ed25519KeyIdentity,
+  ECDSAKeyIdentity,
 } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
 import { IdleManager, IdleManagerOptions } from './idleManager';
@@ -42,7 +43,7 @@ export interface AuthClientCreateOptions {
   /**
    * An identity to use as the base
    */
-  identity?: SignIdentity;
+  identity?: SignIdentity | ECDSAKeyIdentity;
   /**
    * Optional storage with get, set, and remove. Uses {@link IdbStorage} by default
    */
@@ -191,7 +192,7 @@ export class AuthClient {
   ): Promise<AuthClient> {
     const storage = options.storage ?? new IdbStorage();
 
-    let key: null | SignIdentity = null;
+    let key: null | SignIdentity | ECDSAKeyIdentity = null;
     if (options.identity) {
       key = options.identity;
     } else {
@@ -217,9 +218,14 @@ export class AuthClient {
       }
       if (maybeIdentityStorage) {
         try {
-          key = Ed25519KeyIdentity.fromJSON(maybeIdentityStorage);
+          if (typeof maybeIdentityStorage === 'object') {
+            key = await ECDSAKeyIdentity.fromKeyPair(maybeIdentityStorage);
+          } else if (typeof maybeIdentityStorage === 'string') {
+            // This is a legacy identity, which is a serialized Ed25519KeyIdentity.
+            key = Ed25519KeyIdentity.fromJSON(maybeIdentityStorage);
+          }
         } catch (e) {
-          // Ignore this, this means that the localStorage value isn't a valid Ed25519KeyIdentity
+          // Ignore this, this means that the localStorage value isn't a valid Ed25519KeyIdentity or ECDSAKeyIdentity
           // serialization.
         }
       }
@@ -227,10 +233,14 @@ export class AuthClient {
 
     let identity = new AnonymousIdentity();
     let chain: null | DelegationChain = null;
-
     if (key) {
       try {
         const chainStorage = await storage.get(KEY_STORAGE_DELEGATION);
+        if (typeof chainStorage === 'object' && chainStorage !== null) {
+          throw new Error(
+            'Delegation chain is incorrectly stored. A delegation chain should be stored as a string.',
+          );
+        }
 
         if (options.identity) {
           identity = options.identity;
@@ -263,8 +273,8 @@ export class AuthClient {
 
     if (!key) {
       // Create a new key (whether or not one was in storage).
-      key = Ed25519KeyIdentity.generate();
-      await storage.set(KEY_STORAGE_KEY, JSON.stringify(key));
+      key = await ECDSAKeyIdentity.generate();
+      await storage.set(KEY_STORAGE_KEY, (key as ECDSAKeyIdentity).getKeyPair());
     }
 
     return new this(identity, key, chain, storage, idleManager, options);
