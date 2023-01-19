@@ -101,15 +101,12 @@ test('call', async () => {
   const { calls, results } = mockFetch.mock;
   expect(calls.length).toBe(1);
   expect(requestId).toEqual(expectedRequestId);
-
-  expect(calls[0][0]).toBe(`http://localhost/api/v2/canister/${canisterId.toText()}/call`);
-  expect(calls[0][1]).toEqual({
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/cbor',
-    },
-    body: cbor.encode(expectedRequest),
-  });
+  const call1 = calls[0][0];
+  const call2 = calls[0][1];
+  expect(call1).toBe(`http://localhost/api/v2/canister/${canisterId.toText()}/call`);
+  expect(call2.method).toEqual('POST');
+  expect(call2.body).toEqual(cbor.encode(expectedRequest));
+  expect(call2.headers.get('Content-Type')).toEqual('application/cbor');
 });
 
 test.todo('query');
@@ -304,13 +301,10 @@ test('use anonymous principal if unspecified', async () => {
   expect(requestId).toEqual(expectedRequestId);
 
   expect(calls[0][0]).toBe(`http://localhost/api/v2/canister/${canisterId.toText()}/call`);
-  expect(calls[0][1]).toEqual({
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/cbor',
-    },
-    body: cbor.encode(expectedRequest),
-  });
+  const call2 = calls[0][1];
+  expect(call2.method).toEqual('POST');
+  expect(call2.body).toEqual(cbor.encode(expectedRequest));
+  expect(call2.headers.get('Content-Type')).toEqual('application/cbor');
 });
 
 describe('getDefaultFetch', () => {
@@ -474,6 +468,29 @@ describe('makeNonce', () => {
       expect(spyOnSetUint32).toBeCalledTimes(4);
 
       expect(nonce).toBe(originalNonce);
+    });
+    it('should insert the nonce as a header in the request', async () => {
+      const mockFetch: jest.Mock = jest.fn((resource, init) => {
+        return Promise.resolve(
+          new Response(null, {
+            status: 200,
+          }),
+        );
+      });
+      const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
+      const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+      await agent.call(canisterId, {
+        methodName: 'test',
+        arg: new ArrayBuffer(16),
+      });
+
+      expect(mockFetch).toBeCalledTimes(1);
+      const request = mockFetch.mock.calls[0][1];
+      expect(request.headers.get?.('X-Request-Id')).toBeDefined();
+
+      const nonce = request.headers.get('X-Request-Id');
+      expect(nonce).toBeDefined();
+      expect(nonce).toHaveLength(32);
     });
   });
 });
