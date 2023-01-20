@@ -486,9 +486,9 @@ describe('makeNonce', () => {
 
       expect(mockFetch).toBeCalledTimes(1);
       const request = mockFetch.mock.calls[0][1];
-      expect(request.headers.get?.('X-Request-Id')).toBeDefined();
+      expect(request.headers.get?.('X-IC-Request-ID')).toBeDefined();
 
-      const nonce = request.headers.get('X-Request-Id');
+      const nonce = request.headers.get('X-IC-Request-ID');
       expect(nonce).toBeDefined();
       expect(nonce).toHaveLength(32);
     });

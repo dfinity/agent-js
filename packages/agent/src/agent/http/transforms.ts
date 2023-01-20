@@ -37,7 +37,7 @@ export function makeNonceTransform(nonceFn: () => Nonce = makeNonce): HttpAgentR
     const nonce = nonceFn();
     // Nonce needs to be inserted into the header for all requests, to enable logs to be correlated with requests.
     const headers = request.request.headers ? new Headers(request.request.headers) : new Headers();
-    headers.set('X-Request-ID', toHex(new Uint8Array(nonce)));
+    headers.set('X-IC-Request-ID', toHex(new Uint8Array(nonce)));
     request.request.headers = headers;
 
     // Nonce only needs to be inserted into the body for async calls, to prevent replay attacks.
