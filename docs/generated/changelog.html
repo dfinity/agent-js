@@ -13,6 +13,19 @@
       <h2>Version x.x.x</h2>
       <ul>
         <li>
+          Introduces @dfinity/core, a meta-package that will be released seperately from the
+          versions of the rest of the agent-js monorepo. It bundles the following packages as
+          dependencies:
+          <br />
+          <ul>
+            <li>@dfnity/agent</li>
+            <li>@dfnity/principal</li>
+            <li>@dfnity/candid</li>
+            <li>@dfnity/identity</li>
+            <li>@dfnity/utils</li>
+          </ul>
+        </li>
+        <li>
           Corrects some dev dependencies incorrectly listed as dependencies in auth-client
           package.json
         </li>
