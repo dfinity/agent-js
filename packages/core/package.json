@@ -50,11 +50,11 @@
     "tslint": "tslint --project tsconfig.json --config tslint.json"
   },
   "dependencies": {
-    "@dfinity/agent": "0.15.1",
-    "@dfinity/candid": "^0.15.1",
-    "@dfinity/identity": "^0.15.1",
-    "@dfinity/principal": "^0.15.1",
-    "@dfinity/utils": "^0.0.10"
+    "@dfinity/agent": "0.15.x",
+    "@dfinity/candid": "^0.15.x",
+    "@dfinity/identity": "^0.15.x",
+    "@dfinity/principal": "^0.15.x",
+    "@dfinity/utils": "^0.0.x"
   },
   "size-limit": [
     {
