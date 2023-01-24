@@ -1,9 +1,24 @@
 export * from '@dfinity/agent';
 export * from '@dfinity/identity';
 export * from '@dfinity/principal';
-export * from '@dfinity/candid';
-export * from '@dfinity/utils';
+export type { JsonArray, JsonObject, JsonValue } from '@dfinity/candid';
+export {
+  IDL,
+  idlLabelToId,
+  safeRead,
+  safeReadUint8,
+  slebDecode,
+  slebEncode,
+  lebDecode,
+  lebEncode,
+  writeIntLE,
+  writeUIntLE,
+  readIntLE,
+  readUIntLE,
+  concat,
+  toHexString,
+  fromHexString,
+  PipeArrayBuffer,
+} from '@dfinity/candid';
 
-// Resolving duplicate exports
-import { concat as concat_import } from '@dfinity/agent';
-export const concat = concat_import;
+export * from '@dfinity/utils';
