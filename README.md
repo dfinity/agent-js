@@ -33,6 +33,17 @@ If you are interested in contributing to this project, please read the [contribu
 
 ### Publishing
 
+### For @dfinity/core
+
+@dfinity/core is published independently of the rest of the packages in this repo. To publish a new version of @dfinity/core, follow these steps;
+
+- Update the version in `packages/core/package.json`
+- `npm install`
+- `npm run build --workspace @dfinity/core`
+- `npm publish --workspace @dfinity/core`
+
+### For the rest of the packages
+
 To publish to NPM, create a branch and run the following commands;
 
 - `git clean -dfx`. Removes all non-tracked files and directories.
@@ -57,7 +68,7 @@ Then, when you have merged the new versions and published to npm, open https://g
 
 ### Publishing Docs
 
-Until we have an internal process and centrally owned canister, docs can be released manually for `@dfinity/agent` and `@dfinity/authentication`.
+Until we have an internal process and centrally owned canister, docs can be released manually for all packages in this monorepo.
 
 - Start from a fresh clone (or `git clean -dfx .`)
 - `npm install`

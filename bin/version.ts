@@ -49,7 +49,10 @@ const newVersion = (() => {
 console.log('New version will be: ' + newVersion);
 
 // Read workspaces from root package.json
-const workspaces: string[] = rootPackage.workspaces?.packages;
+const workspaces: string[] = rootPackage.workspaces?.packages.filter(
+  // omit @dfinity/core, whose version is not pinned
+  workspace => !workspace.includes('core'),
+);
 
 // Identify packages in `/packages directory
 const packages = workspaces
