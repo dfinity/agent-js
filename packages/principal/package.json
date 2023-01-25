@@ -59,11 +59,12 @@
     "tslint": "^5.20.0",
     "typedoc": "^0.22.11",
     "typescript": "^4.2.3",
-    "whatwg-fetch": "^3.0.0"
+    "whatwg-fetch": "^3.0.0",
+    "ts-node": "^10.8.2"
   },
   "dependencies": {
-    "js-sha256": "^0.9.0",
-    "ts-node": "^10.8.2"
+    "@dfinity/types": "1.0.x",
+    "js-sha256": "^0.9.0"
   },
   "size-limit": [
     {

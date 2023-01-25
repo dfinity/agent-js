@@ -1,16 +1,16 @@
-export declare class Principal {
-  private _arr;
-  static anonymous(): Principal;
+export abstract class AbstractPrincipal {
+  protected _arr: Uint8Array;
+  static anonymous(): AbstractPrincipal;
   /**
    * Utility method, returning the principal representing the management canister, decoded from the hex string `'aaaaa-aa'`
-   * @returns {Principal} principal of the management canister
+   * @returns {AbstractPrincipal} principal of the management canister
    */
-  static managementCanister(): Principal;
-  static selfAuthenticating(publicKey: Uint8Array): Principal;
-  static from(other: unknown): Principal;
-  static fromHex(hex: string): Principal;
-  static fromText(text: string): Principal;
-  static fromUint8Array(arr: Uint8Array): Principal;
+  static managementCanister(): AbstractPrincipal;
+  static selfAuthenticating(publicKey: Uint8Array): AbstractPrincipal;
+  static from(other: unknown): AbstractPrincipal;
+  static fromHex(hex: string): AbstractPrincipal;
+  static fromText(text: string): AbstractPrincipal;
+  static fromUint8Array(arr: Uint8Array): AbstractPrincipal;
   readonly _isPrincipal = true;
   protected constructor(_arr: Uint8Array);
   isAnonymous(): boolean;
@@ -23,17 +23,17 @@ export declare class Principal {
    * @param {Principal} other - a {@link Principal} to compare
    * @returns {'lt' | 'eq' | 'gt'} `'lt' | 'eq' | 'gt'` a string, representing less than, equal to, or greater than
    */
-  compareTo(other: Principal): 'lt' | 'eq' | 'gt';
+  compareTo(other: AbstractPrincipal): 'lt' | 'eq' | 'gt';
   /**
    * Utility method checking whether a provided Principal is less than or equal to the current one using the {@link Principal.compareTo} method
    * @param other a {@link Principal} to compare
    * @returns {boolean} boolean
    */
-  ltEq(other: Principal): boolean;
+  ltEq(other: AbstractPrincipal): boolean;
   /**
    * Utility method checking whether a provided Principal is greater than or equal to the current one using the {@link Principal.compareTo} method
    * @param other a {@link Principal} to compare
    * @returns {boolean} boolean
    */
-  gtEq(other: Principal): boolean;
+  gtEq(other: AbstractPrincipal): boolean;
 }
