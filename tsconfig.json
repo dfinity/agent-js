@@ -9,7 +9,11 @@
   },
   "files": [],
   "references": [{ "path": "packages/agent" }, { "path": "packages/identity" }],
-  "include": ["packages/**/types/*"],
+  "include": [
+    "packages/**/types/*",
+    "packages/types/actor.d.ts",
+    "packages/types/src/types/principal.d.ts"
+  ],
   "resolveJsonModule": true,
   "exclude": ["**/src/**/*.test.ts"]
 }

@@ -1,3 +1,7 @@
 {
-  "name": "@dfinity/types"
+  "version": "1.0.0",
+  "name": "@dfinity/types",
+  "scripts": {
+    "build": "tsc -b && tsc -p tsconfig-cjs.json"
+  }
 }
