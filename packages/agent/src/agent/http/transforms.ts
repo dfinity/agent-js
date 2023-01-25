@@ -1,8 +1,37 @@
 import { lebEncode } from '@dfinity/candid';
 import * as cbor from 'simple-cbor';
-import { Endpoint, HttpAgentRequest, HttpAgentRequestTransformFn, makeNonce, Nonce } from './types';
 import { toHex } from '../../utils/buffer';
-import { AbstractExpiry } from '@dfinity/types';
+import {
+  AbstractExpiry,
+  Endpoint,
+  Nonce,
+  HttpAgentRequest,
+  HttpAgentRequestTransformFn,
+} from '@dfinity/types';
+
+/**
+ * Create a random Nonce, based on date and a random suffix.
+ */
+export function makeNonce(): Nonce {
+  // Encode 128 bits.
+  const buffer = new ArrayBuffer(16);
+  const view = new DataView(buffer);
+  const now = BigInt(+Date.now());
+  const randHi = Math.floor(Math.random() * 0xffffffff);
+  const randLo = Math.floor(Math.random() * 0xffffffff);
+  // Fix for IOS < 14.8 setBigUint64 absence
+  if (typeof view.setBigUint64 === 'function') {
+    view.setBigUint64(0, now);
+  } else {
+    const TWO_TO_THE_32 = BigInt(1) << BigInt(32);
+    view.setUint32(0, Number(now >> BigInt(32)));
+    view.setUint32(4, Number(now % TWO_TO_THE_32));
+  }
+  view.setUint32(8, randHi);
+  view.setUint32(12, randLo);
+
+  return buffer as Nonce;
+}
 
 const NANOSECONDS_PER_MILLISECONDS = BigInt(1_000_000);
 

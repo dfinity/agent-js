@@ -67,3 +67,8 @@ export type HttpAgentRequest =
   | HttpAgentQueryRequest
   | HttpAgentSubmitRequest
   | HttpAgentReadStateRequest;
+
+export interface HttpAgentRequestTransformFn {
+  (args: HttpAgentRequest): Promise<HttpAgentRequest | undefined | void>;
+  priority?: number;
+}

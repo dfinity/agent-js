@@ -1,8 +1,7 @@
-import { JsonObject } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { AgentError } from '../../errors';
 import * as cbor from '../../cbor';
-import { RequestId, requestIdOf } from '../../request_id';
+import { requestIdOf } from '../../request_id';
 import { fromHex } from '../../utils/buffer';
 import {
   Agent,
@@ -11,25 +10,25 @@ import {
   ReadStateOptions,
   ReadStateResponse,
   AnonymousIdentity,
+  JsonObject,
   Identity,
   SubmitResponse,
-  AbstractPrincipal,
-} from '@dfinity/types';
-import { Expiry, makeNonceTransform } from './transforms';
-import {
   CallRequest,
   Endpoint,
   HttpAgentRequest,
   HttpAgentRequestTransformFn,
   HttpAgentSubmitRequest,
-  makeNonce,
   QueryRequest,
   ReadRequestType,
   SubmitRequestType,
-} from './types';
+  AbstractPrincipal,
+} from '@dfinity/types';
+import { Expiry, makeNonce, makeNonceTransform } from './transforms';
+
+export { Nonce } from '@dfinity/types';
 
 export * from './transforms';
-export { Nonce, makeNonce } from './types';
+export { makeNonce } from './transforms';
 
 export enum RequestStatusResponseStatus {
   Received = 'received',
@@ -154,15 +153,6 @@ function getDefaultFetch(): typeof fetch {
     'Fetch implementation was not available. Please provide fetch to the HttpAgent constructor, or ensure it is available in the window or global context.',
   );
 }
-
-type _RequestResponse = {
-  requestId: RequestId;
-  response: {
-    ok: Response['ok'];
-    status: Response['status'];
-    statusText: Response['statusText'];
-  };
-};
 
 // A HTTP agent allows users to interact with a client of the internet computer
 // using the available methods. It exposes an API that closely follows the

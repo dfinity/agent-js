@@ -5,3 +5,5 @@ export * from './agent';
 export * from './identity';
 export * from './cbor';
 export * from './expiry';
+export * from './nonce';
+export * from './http';
