@@ -1,7 +1,7 @@
 import { CborValue } from './cbor';
 
 export abstract class AbstractExpiry {
-  private readonly _value: bigint;
+  constructor(deltaInMSec: number);
 
   public toCBOR(): CborValue;
 

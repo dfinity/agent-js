@@ -2,16 +2,17 @@ import { lebEncode } from '@dfinity/candid';
 import * as cbor from 'simple-cbor';
 import { Endpoint, HttpAgentRequest, HttpAgentRequestTransformFn, makeNonce, Nonce } from './types';
 import { toHex } from '../../utils/buffer';
+import { AbstractExpiry } from '@dfinity/types';
 
 const NANOSECONDS_PER_MILLISECONDS = BigInt(1_000_000);
 
 const REPLICA_PERMITTED_DRIFT_MILLISECONDS = BigInt(60 * 1000);
 
-export class Expiry {
+export class Expiry implements AbstractExpiry {
   private readonly _value: bigint;
 
   constructor(deltaInMSec: number) {
-    // Use bigint because it can overflow the maximum number allowed in a double float.
+    // Use bigint because it can overflow the maximum number allowed in a double float.;
     this._value =
       (BigInt(Date.now()) + BigInt(deltaInMSec) - REPLICA_PERMITTED_DRIFT_MILLISECONDS) *
       NANOSECONDS_PER_MILLISECONDS;
