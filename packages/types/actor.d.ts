@@ -1,6 +1,6 @@
 import { Agent, RequestId } from './agent';
 import * as IDL from './idl';
-import { Principal } from './principal';
+import { AbstractPrincipal } from './principal';
 
 interface ActorMetadata {
   service: IDL.ServiceClass;
@@ -18,7 +18,7 @@ export enum RequestStatusResponseStatus {
 }
 
 export type PollStrategy = (
-  canisterId: Principal,
+  canisterId: AbstractPrincipal,
   requestId: RequestId,
   status: RequestStatusResponseStatus,
 ) => Promise<void>;
@@ -43,12 +43,12 @@ export interface CallConfig {
   /**
    * The canister ID of this Actor.
    */
-  canisterId?: string | Principal;
+  canisterId?: string | AbstractPrincipal;
 
   /**
    * The effective canister ID. This should almost always be ignored.
    */
-  effectiveCanisterId?: Principal;
+  effectiveCanisterId?: AbstractPrincipal;
 }
 
 /**
@@ -58,7 +58,7 @@ export interface ActorConfig extends CallConfig {
   /**
    * The Canister ID of this Actor. This is required for an Actor.
    */
-  canisterId: string | Principal;
+  canisterId: string | AbstractPrincipal;
 
   /**
    * An override function for update calls' CallConfig. This will be called on every calls.
@@ -84,12 +84,12 @@ export type ActorConstructor = new (config: ActorConfig) => Actor;
 export abstract class Actor {
   public static agentOf(actor: Actor): Agent | undefined;
   public static interfaceOf(actor: Actor): IDL.ServiceClass;
-  public static canisterIdOf(actor: Actor): Principal;
+  public static canisterIdOf(actor: Actor): AbstractPrincipal;
   public static install(
     fields: { module: ArrayBuffer; mode?: CanisterInstallMode; arg?: ArrayBuffer },
     config: ActorConfig,
   ): Promise<void>;
-  public static createCanister(config?: CallConfig): Promise<Principal>;
+  public static createCanister(config?: CallConfig): Promise<AbstractPrincipal>;
   public static createAndInstallCanister(
     interfaceFactory: IDL.InterfaceFactory,
     fields: { module: ArrayBuffer; arg?: ArrayBuffer },

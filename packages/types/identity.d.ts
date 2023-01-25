@@ -1,5 +1,5 @@
-import { HttpAgentBaseRequest } from './agent';
-import { Principal } from './principal';
+import { HttpAgentBaseRequest } from './http';
+import { AbstractPrincipal } from './principal';
 
 /**
  * A Key Pair, containing a secret and public key.
@@ -36,7 +36,7 @@ export interface Identity {
    * Get the principal represented by this identity. Normally should be a
    * `Principal.selfAuthenticating()`.
    */
-  getPrincipal(): Principal;
+  getPrincipal(): AbstractPrincipal;
 
   /**
    * Transform a request into a signed version of the request. This is done last
@@ -50,7 +50,7 @@ export interface Identity {
  * An Identity that can sign blobs.
  */
 export abstract class SignIdentity implements Identity {
-  protected _principal: Principal | undefined;
+  protected _principal: AbstractPrincipal | undefined;
 
   /**
    * Returns the public key that would match this identity's signature.
@@ -66,7 +66,7 @@ export abstract class SignIdentity implements Identity {
    * Get the principal represented by this identity. Normally should be a
    * `Principal.selfAuthenticating()`.
    */
-  public getPrincipal(): Principal;
+  public getPrincipal(): AbstractPrincipal;
 
   /**
    * Transform a request into a signed version of the request. This is done last
@@ -78,7 +78,7 @@ export abstract class SignIdentity implements Identity {
 }
 
 export class AnonymousIdentity implements Identity {
-  public getPrincipal(): Principal;
+  public getPrincipal(): AbstractPrincipal;
 
   public transformRequest(request: HttpAgentBaseRequest): Promise<unknown>;
 }

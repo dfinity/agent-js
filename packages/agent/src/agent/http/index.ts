@@ -1,7 +1,6 @@
 import { JsonObject } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { AgentError } from '../../errors';
-import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
 import { RequestId, requestIdOf } from '../../request_id';
 import { fromHex } from '../../utils/buffer';
@@ -11,8 +10,11 @@ import {
   QueryResponse,
   ReadStateOptions,
   ReadStateResponse,
+  AnonymousIdentity,
+  Identity,
   SubmitResponse,
-} from '../api';
+  AbstractPrincipal,
+} from '@dfinity/types';
 import { Expiry, makeNonceTransform } from './transforms';
 import {
   CallRequest,
@@ -258,7 +260,8 @@ export class HttpAgent implements Agent {
         "This identity has expired due this application's security policy. Please refresh your authentication.",
       );
     }
-    return (await this._identity).getPrincipal();
+
+    return Principal.from((await this._identity).getPrincipal());
   }
 
   public async call(
@@ -266,7 +269,7 @@ export class HttpAgent implements Agent {
     options: {
       methodName: string;
       arg: ArrayBuffer;
-      effectiveCanisterId?: Principal | string;
+      effectiveCanisterId?: AbstractPrincipal | string;
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
@@ -281,7 +284,7 @@ export class HttpAgent implements Agent {
       ? Principal.from(options.effectiveCanisterId)
       : canister;
 
-    const sender: Principal = id.getPrincipal() || Principal.anonymous();
+    const sender: Principal = Principal.from(id.getPrincipal()) || Principal.anonymous();
 
     let ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
 
@@ -366,7 +369,7 @@ export class HttpAgent implements Agent {
   }
 
   public async query(
-    canisterId: Principal | string,
+    canisterId: AbstractPrincipal | string,
     fields: QueryFields,
     identity?: Identity | Promise<Identity>,
   ): Promise<QueryResponse> {
@@ -382,10 +385,10 @@ export class HttpAgent implements Agent {
 
     const request: QueryRequest = {
       request_type: ReadRequestType.Query,
-      canister_id: canister,
+      canister_id: Principal.from(canister),
       method_name: fields.methodName,
       arg: fields.arg,
-      sender,
+      sender: Principal.from(sender),
       ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
     };
 
@@ -445,7 +448,7 @@ export class HttpAgent implements Agent {
       body: {
         request_type: ReadRequestType.ReadState,
         paths: fields.paths,
-        sender,
+        sender: Principal.from(sender),
         ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
       },
     });

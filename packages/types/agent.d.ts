@@ -1,5 +1,5 @@
 import { Identity } from './identity';
-import { Principal } from './principal';
+import { AbstractPrincipal } from './principal';
 
 /**
  * Codes used by the replica for rejecting a message.
@@ -11,11 +11,6 @@ export enum ReplicaRejectCode {
   DestinationInvalid = 3,
   CanisterReject = 4,
   CanisterError = 5,
-}
-
-export interface HttpAgentBaseRequest {
-  readonly endpoint: Endpoint;
-  request: RequestInit;
 }
 
 export const enum Endpoint {
@@ -46,7 +41,7 @@ export interface CallOptions {
    * An effective canister ID, used for routing. This should only be mentioned if
    * it's different from the canister ID.
    */
-  effectiveCanisterId: Principal | string;
+  effectiveCanisterId: AbstractPrincipal | string;
 }
 
 export declare type JsonValue = boolean | string | number | JsonArray | JsonObject;
@@ -117,7 +112,7 @@ export interface Agent {
    * the principal of the default identity in the agent, which is the principal used
    * when calls don't specify it.
    */
-  getPrincipal(): Promise<Principal>;
+  getPrincipal(): Promise<AbstractPrincipal>;
 
   /**
    * Send a read state query to the replica. This includes a list of paths to return,
@@ -129,14 +124,14 @@ export interface Agent {
    * @param request The request to send in case it has already been created.
    */
   readState(
-    effectiveCanisterId: Principal | string,
+    effectiveCanisterId: AbstractPrincipal | string,
     options: any,
     identity?: Identity,
     // eslint-disable-next-line  @typescript-eslint/no-explicit-any
     request?: any,
   ): Promise<ReadStateResponse>;
 
-  call(canisterId: Principal | string, fields: CallOptions): Promise<SubmitResponse>;
+  call(canisterId: AbstractPrincipal | string, fields: CallOptions): Promise<SubmitResponse>;
 
   /**
    * Query the status endpoint of the replica. This normally has a few fields that
@@ -157,7 +152,7 @@ export interface Agent {
    *     failed. If the query itself failed but no protocol errors happened, the response will
    *     be of type QueryResponseRejected.
    */
-  query(canisterId: Principal | string, options: QueryFields): Promise<QueryResponse>;
+  query(canisterId: AbstractPrincipal | string, options: QueryFields): Promise<QueryResponse>;
 
   /**
    * By default, the agent is configured to talk to the main Internet Computer,
@@ -188,4 +183,14 @@ export interface Agent {
    * ```Actor.agentOf(defaultActor).replaceIdentity(await authClient.getIdentity());```
    */
   replaceIdentity?(identity: Identity): void;
+}
+
+/**
+ * Options when doing a {@link Agent.readState} call.
+ */
+export interface ReadStateOptions {
+  /**
+   * A list of paths to read the state of.
+   */
+  paths: ArrayBuffer[][];
 }

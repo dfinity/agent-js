@@ -1,4 +1,4 @@
-import { Principal as PrincipalId } from '@dfinity/principal';
+import { AbstractPrincipal } from './principal';
 import { JsonValue } from './agent';
 
 export interface Pipe {
@@ -339,14 +339,14 @@ export declare class RecClass<T = any> extends ConstructType<T> {
 /**
  * Represents an IDL principal reference
  */
-export declare class PrincipalClass extends PrimitiveType<PrincipalId> {
+export declare class PrincipalClass extends PrimitiveType<AbstractPrincipal> {
   accept<D, R>(v: Visitor<D, R>, d: D): R;
-  covariant(x: any): x is PrincipalId;
-  encodeValue(x: PrincipalId): ArrayBuffer;
+  covariant(x: any): x is AbstractPrincipal;
+  encodeValue(x: AbstractPrincipal): ArrayBuffer;
   encodeType(): ArrayBuffer;
-  decodeValue(b: Pipe, t: Type): PrincipalId;
+  decodeValue(b: Pipe, t: Type): AbstractPrincipal;
   get name(): string;
-  valueToString(x: PrincipalId): string;
+  valueToString(x: AbstractPrincipal): string;
 }
 /**
  * Represents an IDL function reference.
@@ -354,32 +354,32 @@ export declare class PrincipalClass extends PrimitiveType<PrincipalId> {
  * @param retTypes Return types.
  * @param annotations Function annotations.
  */
-export declare class FuncClass extends ConstructType<[PrincipalId, string]> {
+export declare class FuncClass extends ConstructType<[AbstractPrincipal, string]> {
   argTypes: Type[];
   retTypes: Type[];
   annotations: string[];
   static argsToString(types: Type[], v: any[]): string;
   constructor(argTypes: Type[], retTypes: Type[], annotations?: string[]);
   accept<D, R>(v: Visitor<D, R>, d: D): R;
-  covariant(x: any): x is [PrincipalId, string];
-  encodeValue([principal, methodName]: [PrincipalId, string]): ArrayBuffer;
+  covariant(x: any): x is [AbstractPrincipal, string];
+  encodeValue([principal, methodName]: [AbstractPrincipal, string]): ArrayBuffer;
   _buildTypeTableImpl(T: TypeTable): void;
-  decodeValue(b: Pipe): [PrincipalId, string];
+  decodeValue(b: Pipe): [AbstractPrincipal, string];
   get name(): string;
-  valueToString([principal, str]: [PrincipalId, string]): string;
+  valueToString([principal, str]: [AbstractPrincipal, string]): string;
   display(): string;
   private encodeAnnotation;
 }
-export declare class ServiceClass extends ConstructType<PrincipalId> {
+export declare class ServiceClass extends ConstructType<AbstractPrincipal> {
   readonly _fields: Array<[string, FuncClass]>;
   constructor(fields: Record<string, FuncClass>);
   accept<D, R>(v: Visitor<D, R>, d: D): R;
-  covariant(x: any): x is PrincipalId;
-  encodeValue(x: PrincipalId): ArrayBuffer;
+  covariant(x: any): x is AbstractPrincipal;
+  encodeValue(x: AbstractPrincipal): ArrayBuffer;
   _buildTypeTableImpl(T: TypeTable): void;
-  decodeValue(b: Pipe): PrincipalId;
+  decodeValue(b: Pipe): AbstractPrincipal;
   get name(): string;
-  valueToString(x: PrincipalId): string;
+  valueToString(x: AbstractPrincipal): string;
 }
 /**
  * Encode a array of values
