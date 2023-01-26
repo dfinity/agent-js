@@ -4,7 +4,7 @@ import * as cbor from '../../cbor';
 import { requestIdOf } from '../../request_id';
 import { fromHex } from '../../utils/buffer';
 import {
-  Agent,
+  AbstractAgent,
   QueryFields,
   QueryResponse,
   ReadStateOptions,
@@ -163,7 +163,7 @@ function getDefaultFetch(): typeof fetch {
 // it to the client. This is to decouple signature, nonce generation and
 // other computations so that this class can stay as simple as possible while
 // allowing extensions.
-export class HttpAgent implements Agent {
+export class HttpAgent implements AbstractAgent {
   public rootKey = fromHex(IC_ROOT_KEY);
   private readonly _pipeline: HttpAgentRequestTransformFn[] = [];
   private _identity: Promise<Identity> | null;

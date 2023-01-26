@@ -1,5 +1,8 @@
 {
   "version": "1.0.0",
   "name": "@dfinity/types",
-  "main": "index.d.js"
+  "main": "index.d.js",
+  "scripts": {
+    "build": ""
+  }
 }

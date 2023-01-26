@@ -3,7 +3,7 @@ import { RequestStatusResponseStatus } from '../agent';
 import { Certificate, CreateCertificateOptions } from '../certificate';
 import { RequestId } from '../request_id';
 import { toHex } from '../utils/buffer';
-import { AbstractPrincipal, Agent } from '@dfinity/types';
+import { AbstractPrincipal, AbstractAgent } from '@dfinity/types';
 
 export * as strategy from './strategy';
 export { defaultStrategy } from './strategy';
@@ -24,7 +24,7 @@ export type PollStrategyFactory = () => PollStrategy;
  * @param request Request for the readState call.
  */
 export async function pollForResponse(
-  agent: Agent & {
+  agent: AbstractAgent & {
     createReadStateRequest?: (arg: { paths: (RequestId | Uint8Array)[][] }) => Promise<Uint8Array>;
   },
   canisterId: Principal,

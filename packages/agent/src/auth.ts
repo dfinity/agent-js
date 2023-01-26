@@ -1,5 +1,5 @@
 import { Principal } from '@dfinity/principal';
-import { HttpAgentRequest } from './agent/http/types';
+import { HttpAgentRequest } from '@dfinity/types';
 import { requestIdOf } from './request_id';
 import { concat, toHex } from './utils/buffer';
 

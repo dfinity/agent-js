@@ -9,7 +9,7 @@ import {
   ActorMetadata,
   ActorConfig,
   AbstractActor,
-  Agent,
+  AbstractAgent,
   IDL,
   CanisterInstallMode,
   ActorConstructor,
@@ -99,7 +99,7 @@ export class Actor {
    * the default agent (global.ic.agent).
    * @param actor The actor to get the agent of.
    */
-  public static agentOf(actor: AbstractActor): Agent | undefined {
+  public static agentOf(actor: AbstractActor): AbstractAgent | undefined {
     return (actor[metadataSymbol] as ActorMetadata).config.agent;
   }
 
@@ -137,7 +137,7 @@ export class Actor {
       mode: { [mode]: null } as any,
       arg,
       wasm_module: wasmModule,
-      canister_id: canisterId,
+      canister_id: Principal.from(canisterId),
     });
   }
 
@@ -202,10 +202,8 @@ export class Actor {
   public static createActor<T = Record<string, ActorMethod>>(
     interfaceFactory: IDL.InterfaceFactory,
     configuration: ActorConfig,
-  ): AbstractActor & T {
-    return new (this.createActorClass(interfaceFactory))(
-      configuration,
-    ) as unknown as AbstractActor & T;
+  ) {
+    return new (this.createActorClass(interfaceFactory))(configuration) as unknown as Actor & T;
   }
 
   private [metadataSymbol]: ActorMetadata;

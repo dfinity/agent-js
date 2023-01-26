@@ -49,11 +49,10 @@
     "tslint:fix": "npm run lint -- --fix",
     "tslint": "tslint --project tsconfig.json --config tslint.json"
   },
-  "peerDependencies": {
-    "@dfinity/candid": "^0.15.4",
-    "@dfinity/principal": "^0.15.4"
-  },
+  "peerDependencies": {},
   "dependencies": {
+    "@dfinity/types": "^1.0.x",
+    "@dfinity/principal": "^0.15.2",
     "base64-arraybuffer": "^0.2.0",
     "bignumber.js": "^9.0.0",
     "borc": "^2.1.1",

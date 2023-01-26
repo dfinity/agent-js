@@ -105,7 +105,7 @@ export interface SubmitResponse {
 /**
  * An Agent able to make calls and queries to a Replica.
  */
-export interface Agent {
+export abstract class AbstractAgent {
   readonly rootKey: ArrayBuffer | null;
   /**
    * Returns the principal ID associated with this agent (by default). It only shows

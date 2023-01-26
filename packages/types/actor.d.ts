@@ -1,10 +1,10 @@
-import { Agent, RequestId } from './agent';
+import { AbstractAgent, RequestId } from './agent';
 import * as IDL from './idl';
 import { AbstractPrincipal } from './principal';
 
 interface ActorMetadata {
   service: IDL.ServiceClass;
-  agent?: Agent;
+  agent?: AbstractAgent;
   config: ActorConfig;
 }
 
@@ -32,7 +32,7 @@ export interface CallConfig {
    * An agent to use in this call, otherwise the actor or call will try to discover the
    * agent to use.
    */
-  agent?: Agent;
+  agent?: AbstractAgent;
 
   /**
    * A polling strategy factory that dictates how much and often we should poll the
@@ -94,7 +94,7 @@ export abstract class AbstractActor {
   // allow for symbol key
   [key: symbol]: ActorMetadata | unknown;
 
-  public static agentOf(actor: AbstractActor): Agent | undefined;
+  public static agentOf(actor: AbstractActor): AbstractAgent | undefined;
   public static interfaceOf(actor: AbstractActor): IDL.ServiceClass;
   public static canisterIdOf(actor: AbstractActor): AbstractPrincipal;
   public static install(

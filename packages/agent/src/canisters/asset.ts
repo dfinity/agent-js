@@ -1,4 +1,5 @@
-import { Actor, ActorConfig, ActorSubclass, CallConfig } from '../actor';
+import { Actor } from '../actor';
+import { ActorConfig } from '@dfinity/types';
 import assetCanister from './asset_idl';
 
 /* tslint:disable */

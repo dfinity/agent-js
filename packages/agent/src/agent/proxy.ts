@@ -1,6 +1,6 @@
 import { JsonObject } from '@dfinity/candid';
 import {
-  Agent,
+  AbstractAgent,
   JsonObject,
   CallOptions,
   QueryFields,
@@ -16,7 +16,7 @@ import { Principal } from '@dfinity/principal';
 
 // A Stub Agent that forwards calls to another Agent implementation.
 export class ProxyStubAgent {
-  constructor(private _frontend: (msg: ProxyMessage) => void, private _agent: Agent) {}
+  constructor(private _frontend: (msg: ProxyMessage) => void, private _agent: AbstractAgent) {}
 
   public onmessage(msg: ProxyMessage): void {
     switch (msg.type) {
@@ -73,7 +73,7 @@ export class ProxyStubAgent {
 }
 
 // An Agent that forwards calls to a backend. The calls are serialized
-export class ProxyAgent implements Agent {
+export class ProxyAgent implements AbstractAgent {
   private _nextId = 0;
   private _pendingCalls = new Map<number, [(resolve: any) => void, (reject: any) => void]>();
   public rootKey = null;

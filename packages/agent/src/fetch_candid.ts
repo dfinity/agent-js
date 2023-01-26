@@ -36,6 +36,6 @@ export async function fetchCandid(canisterId: string, agent?: HttpAgent): Promis
     IDL.Service({
       __get_candid_interface_tmp_hack: IDL.Func([], [IDL.Text], ['query']),
     });
-  const actor: ActorSubclass = Actor.createActor(tmpHackInterface, { agent, canisterId });
+  const actor = Actor.createActor(tmpHackInterface, { agent, canisterId });
   return (await actor.__get_candid_interface_tmp_hack()) as string;
 }
