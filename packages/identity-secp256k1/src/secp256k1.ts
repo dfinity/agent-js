@@ -1,11 +1,10 @@
 /* eslint-disable no-underscore-dangle */
-import { DerEncodedPublicKey, KeyPair, Signature } from '@dfinity/agent';
+import { DerEncodedPublicKey, KeyPair, Signature, PublicKey, SignIdentity } from '@dfinity/types';
 import Secp256k1 from 'secp256k1';
 import { sha256 } from 'js-sha256';
 import { randomBytes } from 'tweetnacl';
 import hdkey from './hdkey';
 import { mnemonicToSeedSync } from 'bip39';
-import { PublicKey, SignIdentity } from '@dfinity/agent';
 import { fromHexString, toHexString } from './buffer';
 import { SECP256K1_OID, unwrapDER, wrapDER } from './der';
 

@@ -1,4 +1,4 @@
-import { DerEncodedPublicKey, PublicKey } from '@dfinity/agent';
+import { DerEncodedPublicKey, PublicKey } from '@dfinity/types';
 import { toHexString } from '@dfinity/candid/lib/cjs/utils/buffer';
 import { randomBytes } from 'crypto';
 import { sha256 } from 'js-sha256';
