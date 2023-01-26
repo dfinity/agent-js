@@ -1,4 +1,4 @@
-import { Identity } from './identity';
+import { AbstractIdentity } from './identity';
 import { AbstractPrincipal } from './principal';
 
 /**
@@ -126,7 +126,7 @@ export abstract class AbstractAgent {
   readState(
     effectiveCanisterId: AbstractPrincipal | string,
     options: any,
-    identity?: Identity,
+    identity?: AbstractIdentity,
     // eslint-disable-next-line  @typescript-eslint/no-explicit-any
     request?: any,
   ): Promise<ReadStateResponse>;
@@ -182,7 +182,7 @@ export abstract class AbstractAgent {
    *
    * ```Actor.agentOf(defaultActor).replaceIdentity(await authClient.getIdentity());```
    */
-  replaceIdentity?(identity: Identity): void;
+  replaceIdentity?(identity: AbstractIdentity): void;
 }
 
 /**

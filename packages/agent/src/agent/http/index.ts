@@ -11,7 +11,7 @@ import {
   ReadStateResponse,
   AnonymousIdentity,
   JsonObject,
-  Identity,
+  AbstractIdentity,
   SubmitResponse,
   CallRequest,
   Endpoint,
@@ -93,7 +93,7 @@ export interface HttpAgentOptions {
 
   // The principal used to send messages. This cannot be empty at the request
   // time (will throw).
-  identity?: Identity | Promise<Identity>;
+  identity?: AbstractIdentity | Promise<AbstractIdentity>;
 
   credentials?: {
     name: string;
@@ -166,7 +166,7 @@ function getDefaultFetch(): typeof fetch {
 export class HttpAgent implements AbstractAgent {
   public rootKey = fromHex(IC_ROOT_KEY);
   private readonly _pipeline: HttpAgentRequestTransformFn[] = [];
-  private _identity: Promise<Identity> | null;
+  private _identity: Promise<AbstractIdentity> | null;
   private readonly _fetch: typeof fetch;
   private readonly _fetchOptions?: Record<string, unknown>;
   private readonly _callOptions?: Record<string, unknown>;
@@ -261,7 +261,7 @@ export class HttpAgent implements AbstractAgent {
       arg: ArrayBuffer;
       effectiveCanisterId?: AbstractPrincipal | string;
     },
-    identity?: Identity | Promise<Identity>,
+    identity?: AbstractIdentity | Promise<AbstractIdentity>,
   ): Promise<SubmitResponse> {
     const id = await (identity !== undefined ? await identity : await this._identity);
     if (!id) {
@@ -361,7 +361,7 @@ export class HttpAgent implements AbstractAgent {
   public async query(
     canisterId: AbstractPrincipal | string,
     fields: QueryFields,
-    identity?: Identity | Promise<Identity>,
+    identity?: AbstractIdentity | Promise<AbstractIdentity>,
   ): Promise<QueryResponse> {
     const id = await (identity !== undefined ? await identity : await this._identity);
     if (!id) {
@@ -413,7 +413,7 @@ export class HttpAgent implements AbstractAgent {
 
   public async createReadStateRequest(
     fields: ReadStateOptions,
-    identity?: Identity | Promise<Identity>,
+    identity?: AbstractIdentity | Promise<AbstractIdentity>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<any> {
     const id = await (identity !== undefined ? await identity : await this._identity);
@@ -450,7 +450,7 @@ export class HttpAgent implements AbstractAgent {
   public async readState(
     canisterId: Principal | string,
     fields: ReadStateOptions,
-    identity?: Identity | Promise<Identity>,
+    identity?: AbstractIdentity | Promise<AbstractIdentity>,
     // eslint-disable-next-line
     request?: any,
   ): Promise<ReadStateResponse> {
@@ -534,7 +534,7 @@ export class HttpAgent implements AbstractAgent {
     this._identity = null;
   }
 
-  public replaceIdentity(identity: Identity): void {
+  public replaceIdentity(identity: AbstractIdentity): void {
     this._identity = Promise.resolve(identity);
   }
 

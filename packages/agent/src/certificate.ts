@@ -104,7 +104,7 @@ export class Certificate implements AbstractCertificate {
     const cert = new Certificate(
       options.certificate,
       options.rootKey,
-      options.canisterId,
+      Principal.from(options.canisterId),
       blsVerify,
     );
     await cert.verify();

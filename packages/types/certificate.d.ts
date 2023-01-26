@@ -1,5 +1,5 @@
-import { VerifyFunc } from 'actor';
-import { AbstractPrincipal } from 'principal';
+import { VerifyFunc } from './actor';
+import { AbstractPrincipal } from './principal';
 
 /**
  * A signature array buffer.

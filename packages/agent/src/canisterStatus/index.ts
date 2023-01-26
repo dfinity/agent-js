@@ -4,7 +4,7 @@ import { lebDecode, PipeArrayBuffer } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { AgentError } from '../errors';
 import { HttpAgent } from '../agent/http';
-import { Certificate, CreateCertificateOptions } from '../certificate';
+import { Certificate } from '../certificate';
 import { toHex } from '../utils/buffer';
 import * as Cbor from '../cbor';
 

@@ -1,6 +1,7 @@
 import { Buffer } from 'buffer/';
 import {
   ActorMethod,
+  CreateCertificateOptions,
   QueryResponseRejected,
   QueryResponseStatus,
   ReplicaRejectCode,
@@ -19,7 +20,6 @@ import { pollForResponse, strategy } from './polling';
 import { Principal } from '@dfinity/principal';
 import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
-import { CreateCertificateOptions } from './certificate';
 import { HttpAgent, getManagementCanister } from '.';
 
 export class ActorCallError extends AgentError {

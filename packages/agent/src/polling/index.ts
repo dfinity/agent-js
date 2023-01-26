@@ -1,9 +1,9 @@
 import { Principal } from '@dfinity/principal';
 import { RequestStatusResponseStatus } from '../agent';
-import { Certificate, CreateCertificateOptions } from '../certificate';
+import { Certificate } from '../certificate';
 import { RequestId } from '../request_id';
 import { toHex } from '../utils/buffer';
-import { AbstractPrincipal, AbstractAgent } from '@dfinity/types';
+import { AbstractPrincipal, AbstractAgent, CreateCertificateOptions } from '@dfinity/types';
 
 export * as strategy from './strategy';
 export { defaultStrategy } from './strategy';

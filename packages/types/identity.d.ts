@@ -1,3 +1,4 @@
+import { Signature } from './certificate';
 import { HttpAgentBaseRequest } from './http';
 import { AbstractPrincipal } from './principal';
 
@@ -26,7 +27,8 @@ export interface PublicKey {
  * A General Identity object. This does not have to be a private key (for example,
  * the Anonymous identity), but it must be able to transform request.
  */
-export interface Identity {
+export abstract class AbstractIdentity {
+  protected _principal: AbstractPrincipal | undefined;
   /**
    * Get the principal represented by this identity. Normally should be a
    * `Principal.selfAuthenticating()`.
@@ -44,9 +46,7 @@ export interface Identity {
 /**
  * An Identity that can sign blobs.
  */
-export abstract class SignIdentity implements Identity {
-  protected _principal: AbstractPrincipal | undefined;
-
+export abstract class SignIdentity extends AbstractIdentity {
   /**
    * Returns the public key that would match this identity's signature.
    */
@@ -72,7 +72,7 @@ export abstract class SignIdentity implements Identity {
   public transformRequest(request: HttpAgentBaseRequest): Promise<unknown>;
 }
 
-export class AnonymousIdentity implements Identity {
+export class AnonymousIdentity extends AbstractIdentity {
   public getPrincipal(): AbstractPrincipal;
 
   public transformRequest(request: HttpAgentBaseRequest): Promise<unknown>;
