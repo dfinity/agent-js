@@ -49,7 +49,11 @@ export interface CallConfig {
    * The effective canister ID. This should almost always be ignored.
    */
   effectiveCanisterId?: AbstractPrincipal;
+
+  blsVerify?: VerifyFunc;
 }
+
+type VerifyFunc = (pk: Uint8Array, sig: Uint8Array, msg: Uint8Array) => Promise<boolean>;
 
 /**
  * Configuration that can be passed to customize the Actor behaviour.
@@ -79,12 +83,20 @@ export interface ActorConfig extends CallConfig {
   ): Partial<CallConfig> | void;
 }
 
-export type ActorConstructor = new (config: ActorConfig) => Actor;
+export type ActorConstructor = new (config: ActorConfig) => AbstractActor;
 
-export abstract class Actor {
-  public static agentOf(actor: Actor): Agent | undefined;
-  public static interfaceOf(actor: Actor): IDL.ServiceClass;
-  public static canisterIdOf(actor: Actor): AbstractPrincipal;
+export interface ActorMetadata {
+  config: ActorConfig;
+  service: IDL.ServiceClass;
+}
+
+export abstract class AbstractActor {
+  // allow for symbol key
+  [key: symbol]: ActorMetadata | unknown;
+
+  public static agentOf(actor: AbstractActor): Agent | undefined;
+  public static interfaceOf(actor: AbstractActor): IDL.ServiceClass;
+  public static canisterIdOf(actor: AbstractActor): AbstractPrincipal;
   public static install(
     fields: { module: ArrayBuffer; mode?: CanisterInstallMode; arg?: ArrayBuffer },
     config: ActorConfig,
@@ -94,12 +106,12 @@ export abstract class Actor {
     interfaceFactory: IDL.InterfaceFactory,
     fields: { module: ArrayBuffer; arg?: ArrayBuffer },
     config?: CallConfig,
-  ): Promise<Actor>;
+  ): Promise<AbstractActor>;
   public static createActorClass(interfaceFactory: IDL.InterfaceFactory): ActorConstructor;
   public static createActor<T = Record<string, ActorMethod>>(
     interfaceFactory: IDL.InterfaceFactory,
     configuration: ActorConfig,
-  ): Actor & T;
+  ): AbstractActor & T;
 
   protected constructor(metadata: ActorMetadata);
 }

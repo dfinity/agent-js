@@ -2,10 +2,14 @@ import { Principal } from '@dfinity/principal';
 import { RequestStatusResponseStatus } from '../agent';
 import { toHex } from '../utils/buffer';
 import { PollStrategy } from './index';
+<<<<<<< HEAD
 import { RequestId } from '../request_id';
+=======
+import { AbstractPrincipal } from '@dfinity/types';
+>>>>>>> 75ac0b5 (actor refactor with metadata)
 
 export type Predicate<T> = (
-  canisterId: Principal,
+  canisterId: AbstractPrincipal,
   requestId: RequestId,
   status: RequestStatusResponseStatus,
 ) => Promise<T>;
@@ -41,7 +45,7 @@ export function once(): Predicate<boolean> {
  */
 export function conditionalDelay(condition: Predicate<boolean>, timeInMsec: number): PollStrategy {
   return async (
-    canisterId: Principal,
+    canisterId: AbstractPrincipal,
     requestId: RequestId,
     status: RequestStatusResponseStatus,
   ) => {
@@ -58,7 +62,7 @@ export function conditionalDelay(condition: Predicate<boolean>, timeInMsec: numb
 export function maxAttempts(count: number): PollStrategy {
   let attempts = count;
   return async (
-    canisterId: Principal,
+    canisterId: AbstractPrincipal,
     requestId: RequestId,
     status: RequestStatusResponseStatus,
   ) => {
@@ -87,7 +91,7 @@ export function throttle(throttleInMsec: number): PollStrategy {
 export function timeout(timeInMsec: number): PollStrategy {
   const end = Date.now() + timeInMsec;
   return async (
-    canisterId: Principal,
+    canisterId: AbstractPrincipal,
     requestId: RequestId,
     status: RequestStatusResponseStatus,
   ) => {
@@ -126,7 +130,7 @@ export function backoff(startingThrottleInMsec: number, backoffFactor: number): 
  */
 export function chain(...strategies: PollStrategy[]): PollStrategy {
   return async (
-    canisterId: Principal,
+    canisterId: AbstractPrincipal,
     requestId: RequestId,
     status: RequestStatusResponseStatus,
   ) => {

@@ -1,13 +1,14 @@
 import { Principal } from '@dfinity/principal';
-import { Agent, RequestStatusResponseStatus } from '../agent';
+import { RequestStatusResponseStatus } from '../agent';
 import { Certificate, CreateCertificateOptions } from '../certificate';
 import { RequestId } from '../request_id';
 import { toHex } from '../utils/buffer';
+import { AbstractPrincipal, Agent } from '@dfinity/types';
 
 export * as strategy from './strategy';
 export { defaultStrategy } from './strategy';
 export type PollStrategy = (
-  canisterId: Principal,
+  canisterId: AbstractPrincipal,
   requestId: RequestId,
   status: RequestStatusResponseStatus,
 ) => Promise<void>;
@@ -23,7 +24,9 @@ export type PollStrategyFactory = () => PollStrategy;
  * @param request Request for the readState call.
  */
 export async function pollForResponse(
-  agent: Agent,
+  agent: Agent & {
+    createReadStateRequest?: (arg: { paths: (RequestId | Uint8Array)[][] }) => Promise<Uint8Array>;
+  },
   canisterId: Principal,
   requestId: RequestId,
   strategy: PollStrategy,
