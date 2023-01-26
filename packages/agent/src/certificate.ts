@@ -1,11 +1,13 @@
 import * as cbor from './cbor';
 import {
   AbstractCertificate,
+  AbstractPrincipal,
   Cert,
   CreateCertificateOptions,
   Delegation,
   HashTree,
   NodeId,
+  VerifyFunc,
 } from '@dfinity/types';
 import { AgentError } from './errors';
 import { hash } from './request_id';
@@ -80,8 +82,6 @@ function isBufferEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
   return true;
 }
 
-type VerifyFunc = (pk: Uint8Array, sig: Uint8Array, msg: Uint8Array) => Promise<boolean>;
-
 export class Certificate implements AbstractCertificate {
   private readonly cert: Cert;
 
@@ -114,7 +114,7 @@ export class Certificate implements AbstractCertificate {
   private constructor(
     certificate: ArrayBuffer,
     private _rootKey: ArrayBuffer,
-    private _canisterId: Principal,
+    private _canisterId: AbstractPrincipal,
     private _blsVerify: VerifyFunc,
   ) {
     this.cert = cbor.decode(new Uint8Array(certificate));

@@ -12,7 +12,14 @@ import * as Cbor from '../cbor';
  * Types of an entry on the canisterStatus map.
  * An entry of null indicates that the request failed, due to lack of permissions or the result being missing.
  */
-export type Status = string | ArrayBuffer | Date | ArrayBuffer[] | Principal[] | bigint | null;
+export type Status =
+  | string
+  | ArrayBuffer
+  | Date
+  | ArrayBuffer[]
+  | AbstractPrincipal[]
+  | bigint
+  | null;
 
 /**
  * Interface to define a custom path. Nested paths will be represented as individual buffers, and can be created from text using {@link TextEncoder}
@@ -50,8 +57,8 @@ export type Path =
 export type StatusMap = Map<Path | string, Status>;
 
 export type CanisterStatusOptions = {
-  canisterId: Principal;
-  agent: HttpAgent;
+  canisterId: AbstractPrincipal;
+  agent: AbstractAgent;
   paths?: Path[] | Set<Path>;
   blsVerify?: CreateCertificateOptions['blsVerify'];
 };
@@ -60,7 +67,7 @@ export type CanisterStatusOptions = {
  *
  * @param {CanisterStatusOptions} options {@link CanisterStatusOptions}
  * @param {CanisterStatusOptions['canisterId']} options.canisterId {@link Principal}
- * @param {CanisterStatusOptions['agent']} options.agent {@link HttpAgent} optional authenticated agent to use to make the canister request. Useful for accessing private metadata under icp:private
+ * @param {CanisterStatusOptions['agent']} options.agent {@link AbstractAgent} optional authenticated agent to use to make the canister request. Useful for accessing private metadata under icp:private
  * @param {CanisterStatusOptions['paths']} options.paths {@link Path[]}
  * @returns {Status} object populated with data from the requested paths
  * @example
@@ -72,8 +79,8 @@ export type CanisterStatusOptions = {
  * const controllers = status.get('controllers');
  */
 export const request = async (options: {
-  canisterId: Principal;
-  agent: HttpAgent;
+  canisterId: AbstractPrincipal;
+  agent: AbstractAgent;
   paths?: Path[] | Set<Path>;
 }): Promise<StatusMap> => {
   const { canisterId, agent, paths } = options;
@@ -82,7 +89,7 @@ export const request = async (options: {
 
   // Map path options to their correct formats
   const encodedPaths = uniquePaths.map(path => {
-    return encodePath(path, canisterId);
+    return encodePath(path, Principal.from(canisterId));
   });
   const status = new Map<string | Path, Status>();
 
@@ -94,11 +101,11 @@ export const request = async (options: {
         });
         const cert = await Certificate.create({
           certificate: response.certificate,
-          rootKey: agent.rootKey,
+          rootKey: agent.rootKey ?? fromHex(IC_ROOT_KEY),
           canisterId: canisterId,
         });
 
-        const data = cert.lookup(encodePath(uniquePaths[index], canisterId));
+        const data = cert.lookup(encodePath(uniquePaths[index], Principal.from(canisterId)));
         if (!data) {
           // Typically, the cert lookup will throw
           console.warn(`Expected to find result for path ${path}, but instead found nothing.`);

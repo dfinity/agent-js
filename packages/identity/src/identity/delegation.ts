@@ -1,10 +1,11 @@
+import { requestIdOf } from '@dfinity/agent';
 import {
-  DerEncodedPublicKey,
-  PublicKey,
-  requestIdOf,
   Signature,
   SignIdentity,
-} from '@dfinity/agent';
+  DerEncodedPublicKey,
+  PublicKey,
+  AbstractPrincipal,
+} from '@dfinity/types';
 import { HttpAgentRequest } from '@dfinity/types';
 import { Principal } from '@dfinity/principal';
 import * as cbor from 'simple-cbor';
@@ -31,7 +32,7 @@ export class Delegation {
   constructor(
     public readonly pubkey: ArrayBuffer,
     public readonly expiration: bigint,
-    public readonly targets?: Principal[],
+    public readonly targets?: AbstractPrincipal[],
   ) {}
 
   public toCBOR(): cbor.CborValue {
@@ -95,7 +96,7 @@ async function _createSingleDelegation(
   from: SignIdentity,
   to: PublicKey,
   expiration: Date,
-  targets?: Principal[],
+  targets?: AbstractPrincipal[],
 ): Promise<SignedDelegation> {
   const delegation: Delegation = new Delegation(
     to.toDer(),

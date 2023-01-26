@@ -1,4 +1,4 @@
-import { DerEncodedPublicKey, PublicKey, Signature, SignIdentity } from '@dfinity/agent';
+import { DerEncodedPublicKey, PublicKey, Signature, SignIdentity } from '@dfinity/types';
 import borc from 'borc';
 import * as tweetnacl from 'tweetnacl';
 import { fromHexString, toHexString } from '../buffer';
