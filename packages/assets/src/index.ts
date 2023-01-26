@@ -1,15 +1,13 @@
 import {
   Actor,
-  ActorConfig,
-  ActorSubclass,
   Cbor as cbor,
   Certificate,
   compare,
-  getDefaultAgent,
-  HashTree,
+  HttpAgent,
   lookup_path,
   reconstruct,
 } from '@dfinity/agent';
+import { AbstractActor, ActorConfig, HashTree } from '@dfinity/types';
 import { lebDecode } from '@dfinity/candid';
 import { PipeArrayBuffer } from '@dfinity/candid/lib/cjs/utils/buffer';
 import { AssetsCanisterRecord, getAssetsCanister } from './canisters/assets';
@@ -128,7 +126,7 @@ export interface AssetManagerConfig extends ActorConfig {
 }
 
 export class AssetManager {
-  private readonly _actor: ActorSubclass<AssetsCanisterRecord>;
+  private readonly _actor: AbstractActor & AssetsCanisterRecord;
   private readonly _limit: LimitFn;
   private readonly _maxSingleFileSize: number;
   private readonly _maxChunkSize: number;
@@ -276,7 +274,7 @@ class AssetManagerBatch {
   private _progress: { [key: string]: Progress } = {};
 
   constructor(
-    private readonly _actor: ActorSubclass<AssetsCanisterRecord>,
+    private readonly _actor: AbstractActor & AssetsCanisterRecord,
     private readonly _limit: LimitFn,
     private readonly _maxChunkSize: number,
   ) {}
@@ -383,7 +381,7 @@ class AssetManagerBatch {
 
 class Asset {
   constructor(
-    private readonly _actor: ActorSubclass<AssetsCanisterRecord>,
+    private readonly _actor: AbstractActor & AssetsCanisterRecord,
     private readonly _limit: LimitFn,
     private readonly _maxSingleFileSize: number,
     private readonly _maxChunkSize: number,
@@ -484,7 +482,7 @@ class Asset {
    */
   public async isCertified(): Promise<boolean> {
     // Below implementation is based on Internet Computer service worker
-    const agent = Actor.agentOf(this._actor) ?? getDefaultAgent();
+    const agent = Actor.agentOf(this._actor) ?? new HttpAgent();
     const canisterId = Actor.canisterIdOf(this._actor);
 
     if (!agent.rootKey) {

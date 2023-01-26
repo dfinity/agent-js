@@ -49,11 +49,10 @@
     "test": "jest",
     "test:coverage": "jest --verbose --collectCoverage"
   },
-  "peerDependencies": {
-    "@dfinity/agent": "^0.15.4",
-    "js-sha256": "0.9.0"
-  },
   "dependencies": {
+    "@dfinity/agent": "^0.15.4",
+    "@dfinity/types": "^1.0.x",
+    "js-sha256": "0.9.0",
     "base64-arraybuffer": "^1.0.2",
     "mime": "^3.0.0"
   },

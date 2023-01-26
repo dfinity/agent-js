@@ -1,4 +1,4 @@
-import type { Principal } from '@dfinity/principal';
+import type { AbstractPrincipal } from '@dfinity/types';
 
 export type BatchId = bigint;
 export type BatchOperationKind =
@@ -60,7 +60,7 @@ export interface StreamingCallbackToken {
 export type StreamingStrategy = {
   Callback: {
     token: StreamingCallbackToken;
-    callback: [Principal, string];
+    callback: [AbstractPrincipal, string];
   };
 };
 export type Time = bigint;
@@ -71,7 +71,7 @@ export interface UnsetAssetContentArguments {
 }
 
 export default interface _SERVICE {
-  authorize: (arg_0: Principal) => Promise<undefined>;
+  authorize: (arg_0: AbstractPrincipal) => Promise<undefined>;
   clear: (arg_0: ClearArguments) => Promise<undefined>;
   commit_batch: (arg_0: {
     batch_id: BatchId;
