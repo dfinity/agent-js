@@ -15,11 +15,6 @@ export interface KeyPair {
 export type DerEncodedPublicKey = ArrayBuffer & { __derEncodedPublicKey__?: void };
 
 /**
- * A signature array buffer.
- */
-export type Signature = ArrayBuffer & { __signature__: void };
-
-/**
  * A Public Key implementation.
  */
 export interface PublicKey {

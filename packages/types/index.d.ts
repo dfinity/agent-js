@@ -8,3 +8,4 @@ export * from './expiry';
 export * from './nonce';
 export * from './http';
 export * from './proxy';
+export * from './certificate';

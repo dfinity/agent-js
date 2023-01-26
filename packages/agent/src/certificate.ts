@@ -1,4 +1,12 @@
 import * as cbor from './cbor';
+import {
+  AbstractCertificate,
+  Cert,
+  CreateCertificateOptions,
+  Delegation,
+  HashTree,
+  NodeId,
+} from '@dfinity/types';
 import { AgentError } from './errors';
 import { hash } from './request_id';
 import { concat, fromHex, toHex } from './utils/buffer';
@@ -13,27 +21,6 @@ export class CertificateVerificationError extends AgentError {
     super(`Invalid certificate: ${reason}`);
   }
 }
-
-interface Cert {
-  tree: HashTree;
-  signature: ArrayBuffer;
-  delegation?: Delegation;
-}
-
-const enum NodeId {
-  Empty = 0,
-  Fork = 1,
-  Labeled = 2,
-  Leaf = 3,
-  Pruned = 4,
-}
-
-export type HashTree =
-  | [NodeId.Empty]
-  | [NodeId.Fork, HashTree, HashTree]
-  | [NodeId.Labeled, ArrayBuffer, HashTree]
-  | [NodeId.Leaf, ArrayBuffer]
-  | [NodeId.Pruned, ArrayBuffer];
 
 /**
  * Make a human readable string out of a hash tree.
@@ -79,11 +66,6 @@ export function hashTreeToString(tree: HashTree): string {
   }
 }
 
-interface Delegation extends Record<string, any> {
-  subnet_id: ArrayBuffer;
-  certificate: ArrayBuffer;
-}
-
 function isBufferEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
   if (a.byteLength !== b.byteLength) {
     return false;
@@ -100,28 +82,7 @@ function isBufferEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
 
 type VerifyFunc = (pk: Uint8Array, sig: Uint8Array, msg: Uint8Array) => Promise<boolean>;
 
-export interface CreateCertificateOptions {
-  /**
-   * The bytes encoding the certificate to be verified
-   */
-  certificate: ArrayBuffer;
-  /**
-   * The root key against which to verify the certificate
-   * (normally, the root key of the IC main network)
-   */
-  rootKey: ArrayBuffer;
-  /**
-   * The effective canister ID of the request when verifying a response, or
-   * the signing canister ID when verifying a certified variable.
-   */
-  canisterId: Principal;
-  /**
-   * BLS Verification strategy. Default strategy uses wasm for performance, but that may not be available in all contexts.
-   */
-  blsVerify?: VerifyFunc;
-}
-
-export class Certificate {
+export class Certificate implements AbstractCertificate {
   private readonly cert: Cert;
 
   /**
@@ -163,7 +124,7 @@ export class Certificate {
     return lookup_path(path, this.cert.tree);
   }
 
-  private async verify(): Promise<void> {
+  public async verify(): Promise<void> {
     const rootHash = await reconstruct(this.cert.tree);
     const derKey = await this._checkDelegationAndGetKey(this.cert.delegation);
     const sig = this.cert.signature;

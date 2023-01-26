@@ -1,11 +1,11 @@
 import {
   DerEncodedPublicKey,
-  HttpAgentRequest,
   PublicKey,
   requestIdOf,
   Signature,
   SignIdentity,
 } from '@dfinity/agent';
+import { HttpAgentRequest } from '@dfinity/types';
 import { Principal } from '@dfinity/principal';
 import * as cbor from 'simple-cbor';
 import { fromHexString, toHexString } from '../buffer';
