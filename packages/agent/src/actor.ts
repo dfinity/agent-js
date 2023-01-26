@@ -89,6 +89,9 @@ function decodeReturnValue(types: IDL.Type[], msg: ArrayBuffer) {
 const DEFAULT_ACTOR_CONFIG = {
   pollingStrategyFactory: strategy.defaultStrategy,
 };
+
+type ActorWithMethods = AbstractActor | Actor | (Actor & Record<string, ActorMethod<unknown[]>>);
+
 /**
  * An actor base class. An actor is an object containing only functions that will
  * return a promise. These functions are derived from the IDL definition.
@@ -99,20 +102,29 @@ export class Actor {
    * the default agent (global.ic.agent).
    * @param actor The actor to get the agent of.
    */
-  public static agentOf(actor: AbstractActor): AbstractAgent | undefined {
-    return (actor[metadataSymbol] as ActorMetadata).config.agent;
+  public static agentOf(actor: ActorWithMethods): AbstractAgent | undefined {
+    if (!(metadataSymbol in actor)) {
+      return undefined;
+    }
+    return ((actor as Actor)[metadataSymbol] as ActorMetadata).config.agent;
   }
 
   /**
    * Get the interface of an actor, in the form of an instance of a Service.
    * @param actor The actor to get the interface of.
    */
-  public static interfaceOf(actor: AbstractActor): IDL.ServiceClass {
-    return (actor[metadataSymbol] as ActorMetadata).service;
+  public static interfaceOf(actor: ActorWithMethods): IDL.ServiceClass | undefined {
+    if (!(metadataSymbol in actor)) {
+      return undefined;
+    }
+    return ((actor as Actor)[metadataSymbol] as ActorMetadata).service;
   }
 
-  public static canisterIdOf(actor: Actor): Principal {
-    return Principal.from(actor[metadataSymbol].config.canisterId);
+  public static canisterIdOf(actor: ActorWithMethods): Principal | undefined {
+    if (!(metadataSymbol in actor)) {
+      return undefined;
+    }
+    return Principal.from((actor as Actor)[metadataSymbol].config.canisterId);
   }
 
   public static async install(

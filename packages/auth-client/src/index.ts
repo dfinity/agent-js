@@ -2,10 +2,11 @@
 import {
   AnonymousIdentity,
   DerEncodedPublicKey,
-  Identity,
+  AbstractIdentity,
   Signature,
   SignIdentity,
-} from '@dfinity/agent';
+  AbstractPrincipal,
+} from '@dfinity/types';
 import {
   Delegation,
   DelegationChain,
@@ -14,7 +15,6 @@ import {
   Ed25519KeyIdentity,
   ECDSAKeyIdentity,
 } from '@dfinity/identity';
-import { Principal } from '@dfinity/principal';
 import { IdleManager, IdleManagerOptions } from './idleManager';
 import {
   AuthClientStorage,
@@ -127,7 +127,7 @@ interface InternetIdentityAuthResponseSuccess {
     delegation: {
       pubkey: Uint8Array;
       expiration: bigint;
-      targets?: Principal[];
+      targets?: AbstractPrincipal[];
     };
     signature: Uint8Array;
   }[];
@@ -144,7 +144,7 @@ interface AuthResponseSuccess {
     delegation: {
       pubkey: Uint8Array;
       expiration: bigint;
-      targets?: Principal[];
+      targets?: AbstractPrincipal[];
     };
     signature: Uint8Array;
   }[];
@@ -318,7 +318,7 @@ export class AuthClient {
   }
 
   protected constructor(
-    private _identity: Identity,
+    private _identity: AbstractIdentity,
     private _key: SignIdentity,
     private _chain: DelegationChain | null,
     private _storage: AuthClientStorage,
@@ -385,7 +385,7 @@ export class AuthClient {
     delete this._idpWindow;
   }
 
-  public getIdentity(): Identity {
+  public getIdentity(): AbstractIdentity {
     return this._identity;
   }
 

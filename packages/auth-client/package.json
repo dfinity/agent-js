@@ -46,12 +46,10 @@
     "test": "jest",
     "test:coverage": "jest --verbose --collectCoverage"
   },
-  "peerDependencies": {
+  "dependencies": {
     "@dfinity/agent": "^0.15.4",
     "@dfinity/identity": "^0.15.4",
-    "@dfinity/principal": "^0.15.4"
-  },
-  "dependencies": {
+    "@dfinity/types": "^1.0.x",
     "idb": "^7.0.2"
   },
   "devDependencies": {
