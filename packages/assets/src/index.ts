@@ -485,6 +485,10 @@ class Asset {
     const agent = Actor.agentOf(this._actor) ?? new HttpAgent();
     const canisterId = Actor.canisterIdOf(this._actor);
 
+    if (!canisterId) {
+      throw Error('Actor is missing canister id');
+    }
+
     if (!agent.rootKey) {
       throw Error('Agent is missing root key');
     }

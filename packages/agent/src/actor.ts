@@ -96,7 +96,8 @@ type ActorWithMethods = AbstractActor | Actor | (Actor & Record<string, ActorMet
  * An actor base class. An actor is an object containing only functions that will
  * return a promise. These functions are derived from the IDL definition.
  */
-export class Actor {
+export class Actor implements AbstractActor {
+  [key: symbol]: ActorMetadata | unknown;
   /**
    * Get the Agent class this Actor would call, or undefined if the Actor would use
    * the default agent (global.ic.agent).
