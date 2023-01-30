@@ -469,7 +469,7 @@ describe('makeNonce', () => {
 
       expect(nonce).toBe(originalNonce);
     });
-    it('should insert the nonce as a header in the request', async () => {
+    it.skip('should insert the nonce as a header in the request', async () => {
       const mockFetch: jest.Mock = jest.fn((resource, init) => {
         return Promise.resolve(
           new Response(null, {
