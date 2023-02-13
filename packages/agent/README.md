@@ -24,14 +24,20 @@ import * as agent from "@dfinity/agent";
 
 or using individual exports:
 
-```
-import { Actor, HttpAgent } from "@dfinity/agent";
+```js
+import { Actor, HttpAgent } from '@dfinity/agent';
 ```
 
 ### In Node.js
 
+```js
+const DfinityAgent = require('@dfinity/agent');
 ```
-const actor = require("@dfinity/agent");
+
+or using individual exports:
+
+```js
+const { Actor, HttpAgent } = require('@dfinity/agent');
 ```
 
 ## Using an Agent
@@ -62,4 +68,41 @@ For example, if you want to replace the identity of an actor's agent with a newl
 
 ```
 defaultAgent.replaceIdentity(await authClient.getIdentity());
+```
+
+### Tips for using fetch
+
+The agent uses the browser `fetch` API to make calls to the Internet Computer. If you are not using the agent in the browser, you can pass a custom `fetch` implementation to the agent's constructor. This is useful if you want to use a custom fetch implementation, such as one that adds authentication headers to the request. We recommend using the [isomorphic-fetch](https://www.npmjs.com/package/isomorphic-fetch) package to provide a consistent fetch API across Node.js and the browser. You will also need to provide a `host` option to the agent's constructor, as the agent will not be able to determine the host from the global context.
+
+For example,
+
+```js
+import fetch from 'isomorphic-fetch';
+import { HttpAgent } from '@dfinity/agent';
+
+const host = process.env.DFX_NETWORK === 'local' ? 'http://localhost:4943' : 'https://ic0.app';
+
+const agent = new HttpAgent({ fetch, host: 'https://ic0.app' });
+```
+
+You can also pass `fetchOptions` to the agent's constructor, which will be passed to the `fetch` implementation. This is useful if you want to pass additional options to the `fetch` implementation, such as a custom header.
+
+For example,
+
+```js
+import fetch from 'isomorphic-fetch';
+import { HttpAgent } from '@dfinity/agent';
+
+const host = process.env.DFX_NETWORK === 'local' ? 'http://localhost:4943' : 'https://ic0.app';
+
+/**
+ * @type {RequestInit}
+ */
+const fetchOptions = {
+  headers: {
+    'X-Custom-Header': 'value',
+  },
+};
+
+const agent = new HttpAgent({ fetch, host, fetchOptions });
 ```
