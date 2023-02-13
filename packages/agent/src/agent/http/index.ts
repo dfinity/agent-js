@@ -74,6 +74,7 @@ export interface HttpAgentOptions {
 
   // Additional options to pass along to fetch. Will not override fields that
   // the agent already needs to set
+  // Should follow the RequestInit interface, but we intentially support non-standard fields
   fetchOptions?: Record<string, unknown>;
 
   // Additional options to pass along to fetch for the call API.
