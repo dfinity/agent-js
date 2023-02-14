@@ -803,11 +803,6 @@ describe('Migration from Ed25519Key', () => {
     const client = await AuthClient.create({ storage, keyType: 'Ed25519' });
 
     // It should have stored a cryptoKey
-    expect(Object.keys(fakeStore[KEY_STORAGE_KEY])).toMatchInlineSnapshot(`
-      Array [
-        "privateKey",
-        "publicKey",
-      ]
-    `);
+    expect(fakeStore[KEY_STORAGE_KEY]).toMatchSnapshot();
   });
 });
