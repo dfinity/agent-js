@@ -220,10 +220,13 @@ export class AuthClient {
           const fallbackLocalStorage = new LocalStorage();
           const localChain = await fallbackLocalStorage.get(KEY_STORAGE_DELEGATION);
           const localKey = await fallbackLocalStorage.get(KEY_STORAGE_KEY);
-          if (localChain && localKey) {
+          // not relevant for Ed25519
+          if (localChain && localKey && keyType === 'ECDSA') {
             console.log('Discovered an identity stored in localstorage. Migrating to IndexedDB');
             await storage.set(KEY_STORAGE_DELEGATION, localChain);
+            localKey; //?
             await storage.set(KEY_STORAGE_KEY, localKey);
+
             maybeIdentityStorage = localChain;
             // clean up
             await fallbackLocalStorage.remove(KEY_STORAGE_DELEGATION);
@@ -296,6 +299,7 @@ export class AuthClient {
       // Create a new key (whether or not one was in storage).
       if (keyType === 'Ed25519') {
         key = await Ed25519KeyIdentity.generate();
+        await storage.set(KEY_STORAGE_KEY, JSON.stringify((key as Ed25519KeyIdentity).toJSON()));
       } else {
         if (options.storage && keyType === 'ECDSA') {
           console.warn(
@@ -303,8 +307,8 @@ export class AuthClient {
           );
         }
         key = await ECDSAKeyIdentity.generate();
+        await storage.set(KEY_STORAGE_KEY, (key as ECDSAKeyIdentity).getKeyPair());
       }
-      await storage.set(KEY_STORAGE_KEY, (key as ECDSAKeyIdentity).getKeyPair());
     }
 
     return new this(identity, key, chain, storage, idleManager, options);

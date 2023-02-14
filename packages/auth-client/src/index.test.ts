@@ -800,9 +800,24 @@ describe('Migration from Ed25519Key', () => {
         fakeStore[x] = y;
       }),
     };
-    const client = await AuthClient.create({ storage, keyType: 'Ed25519' });
+
+    // mock ED25519 generate method
+    const generate = jest.spyOn(Ed25519KeyIdentity, 'generate');
+    generate.mockImplementation(async () => {
+      const key = await Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
+      return key;
+    });
+
+    const client1 = await AuthClient.create({ storage, keyType: 'Ed25519' });
+
+    const identity1 = await client1.getIdentity();
+
+    const client2 = await AuthClient.create({ storage, keyType: 'Ed25519' });
+
+    const identity2 = await client2.getIdentity();
 
     // It should have stored a cryptoKey
     expect(fakeStore[KEY_STORAGE_KEY]).toMatchSnapshot();
+    expect(identity1.getPrincipal().toString()).toEqual(identity2.getPrincipal().toString());
   });
 });
