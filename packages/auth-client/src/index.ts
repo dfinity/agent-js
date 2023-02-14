@@ -49,6 +49,14 @@ export interface AuthClientCreateOptions {
    */
   storage?: AuthClientStorage;
   /**
+   * type to use for the base key
+   * @default 'ECDSA'
+   * If you are using a custom storage provider that does not support CryptoKey storage,
+   * you should use 'Ed25519' as the key type, as it can serialize to a string
+   */
+  keyType?: 'ECDSA' | 'Ed25519';
+
+  /**
    * Options to handle idle timeouts
    * @default after 30 minutes, invalidates the identity
    */
@@ -161,6 +169,7 @@ export class AuthClient {
    * @see {@link SignIdentity}
    * @param options.storage Storage mechanism for delegration credentials
    * @see {@link AuthClientStorage}
+   * @param options.keyType Type of key to use for the base key
    * @param {IdleOptions} options.idleOptions Configures an {@link IdleManager}
    * @see {@link IdleOptions}
    * Default behavior is to clear stored identity and reload the page when a user goes idle, unless you set the disableDefaultIdleCallback flag or pass in a custom idle callback.
@@ -184,6 +193,13 @@ export class AuthClient {
        */
       storage?: AuthClientStorage;
       /**
+       * type to use for the base key
+       * @default 'ECDSA'
+       * If you are using a custom storage provider that does not support CryptoKey storage,
+       * you should use 'Ed25519' as the key type, as it can serialize to a string
+       */
+      keyType?: 'ECDSA' | 'Ed25519';
+      /**
        * Options to handle idle timeouts
        * @default after 10 minutes, invalidates the identity
        */
@@ -191,6 +207,7 @@ export class AuthClient {
     } = {},
   ): Promise<AuthClient> {
     const storage = options.storage ?? new IdbStorage();
+    const keyType = options.keyType ?? 'ECDSA';
 
     let key: null | SignIdentity | ECDSAKeyIdentity = null;
     if (options.identity) {
@@ -219,7 +236,11 @@ export class AuthClient {
       if (maybeIdentityStorage) {
         try {
           if (typeof maybeIdentityStorage === 'object') {
-            key = await ECDSAKeyIdentity.fromKeyPair(maybeIdentityStorage);
+            if (keyType === 'Ed25519' && typeof maybeIdentityStorage === 'string') {
+              key = await Ed25519KeyIdentity.fromJSON(maybeIdentityStorage);
+            } else {
+              key = await ECDSAKeyIdentity.fromKeyPair(maybeIdentityStorage);
+            }
           } else if (typeof maybeIdentityStorage === 'string') {
             // This is a legacy identity, which is a serialized Ed25519KeyIdentity.
             key = Ed25519KeyIdentity.fromJSON(maybeIdentityStorage);
@@ -273,7 +294,16 @@ export class AuthClient {
 
     if (!key) {
       // Create a new key (whether or not one was in storage).
-      key = await ECDSAKeyIdentity.generate();
+      if (keyType === 'Ed25519') {
+        key = await Ed25519KeyIdentity.generate();
+      } else {
+        if (options.storage && keyType === 'ECDSA') {
+          console.warn(
+            "You are using a custom storage provider that may not support CryptoKey storage. If you are using a custom storage provider that does not support CryptoKey storage, you should use 'Ed25519' as the key type, as it can serialize to a string",
+          );
+        }
+        key = await ECDSAKeyIdentity.generate();
+      }
       await storage.set(KEY_STORAGE_KEY, (key as ECDSAKeyIdentity).getKeyPair());
     }
 

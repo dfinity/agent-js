@@ -791,4 +791,23 @@ describe('Migration from Ed25519Key', () => {
       ]
     `);
   });
+  it('should generate and store a ECDSAKey if no key is stored and keyType is set to Ed25519', async () => {
+    const fakeStore: Record<any, any> = {};
+    const storage: AuthClientStorage = {
+      remove: jest.fn(),
+      get: jest.fn(),
+      set: jest.fn(async (x, y) => {
+        fakeStore[x] = y;
+      }),
+    };
+    const client = await AuthClient.create({ storage, keyType: 'Ed25519' });
+
+    // It should have stored a cryptoKey
+    expect(Object.keys(fakeStore[KEY_STORAGE_KEY])).toMatchInlineSnapshot(`
+      Array [
+        "privateKey",
+        "publicKey",
+      ]
+    `);
+  });
 });
