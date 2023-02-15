@@ -56,6 +56,55 @@ const actor = Actor.createActor(idlFactory, {
 });
 ```
 
+## Storage and Key management
+
+If you prefer not to use ECDSA keys or the default IndexedDb storage interface, you can provide your own. Some reasons to use a custom storage implementation might be
+
+- You prefer to use LocalStorage
+- You don't want to persist keys across page loads for heightened security
+- You have an alternate strategy for identity management
+
+There is an exported LocalStorage interface, but any structure that implements the `AuthClientStorage` interface will work.
+
+```ts
+export type StoredKey = string | CryptoKeyPair;
+export interface AuthClientStorage {
+  get(key: string): Promise<StoredKey | null>;
+
+  set(key: string, value: StoredKey): Promise<void>;
+
+  remove(key: string): Promise<void>;
+}
+```
+
+So you could easily implement your own
+
+```ts
+const noStorageImpl = {
+  get(key: string) {
+    return Promise.resolve(null);
+  },
+  set(key: string, value: StoredKey) {
+    return Promise.resolve();
+  },
+  remove(key: string) {
+    return Promise.resolve();
+  },
+};
+const authClient = await AuthClient.create({
+  storage: noStorageImpl,
+});
+```
+
+If you are using a custom storage implementation like `LocalStorage` that only supports strings, you should use the `keyType` option to use an `Ed25519` key instead of the default `ECDSA` key.
+
+```ts
+const authClient = await AuthClient.create({
+  storage: new LocalStorage(),
+  keyType: 'Ed25519',
+});
+```
+
 <h2 id="0.10.5-idle-update">Idle Management</h2>
 
 The AuthClient provides two forms of security for session management. The first is built into the Internet Identity delegation - the `maxTimeToLive` option in nanoseconds determines how long the `DelegationIdentity` you get back will be valid for. The second is the Idle Manager, which moniters keyboard, mouse and touchscreen identity. The Idle Manager will automatically log you out if you don't interact with the browser for a period of time.

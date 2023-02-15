@@ -791,4 +791,36 @@ describe('Migration from Ed25519Key', () => {
       ]
     `);
   });
+  it('should generate and store a ECDSAKey if no key is stored and keyType is set to Ed25519', async () => {
+    const fakeStore: Record<any, any> = {};
+    const storage = {
+      remove: jest.fn(),
+      get: jest.fn(key => fakeStore[key]),
+      set: jest.fn(async (x, y) => {
+        fakeStore[x] = y;
+      }),
+    };
+
+    // mock ED25519 generate method
+    const generate = jest.spyOn(Ed25519KeyIdentity, 'generate');
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    generate.mockImplementationOnce(async (): Promise<Ed25519KeyIdentity> => {
+      const key = await Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
+      return key;
+    });
+
+    const client1 = await AuthClient.create({ storage, keyType: 'Ed25519' });
+
+    const identity1 = await client1.getIdentity();
+
+    const client2 = await AuthClient.create({ storage, keyType: 'Ed25519' });
+
+    const identity2 = await client2.getIdentity();
+
+    // It should have stored a cryptoKey
+    expect(fakeStore[KEY_STORAGE_KEY]).toMatchSnapshot();
+    expect(identity1.getPrincipal().toString()).toEqual(identity2.getPrincipal().toString());
+  });
 });
