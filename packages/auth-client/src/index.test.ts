@@ -803,7 +803,7 @@ describe('Migration from Ed25519Key', () => {
 
     // mock ED25519 generate method
     const generate = jest.spyOn(Ed25519KeyIdentity, 'generate');
-    generate.mockImplementationOnce(async () => {
+    generate.mockImplementationOnce(async (): Promise<Ed25519KeyIdentity> => {
       const key = await Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
       return key;
     });
