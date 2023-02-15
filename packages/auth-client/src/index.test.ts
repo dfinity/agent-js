@@ -793,9 +793,9 @@ describe('Migration from Ed25519Key', () => {
   });
   it('should generate and store a ECDSAKey if no key is stored and keyType is set to Ed25519', async () => {
     const fakeStore: Record<any, any> = {};
-    const storage: AuthClientStorage = {
+    const storage = {
       remove: jest.fn(),
-      get: jest.fn(),
+      get: jest.fn(key => fakeStore[key]),
       set: jest.fn(async (x, y) => {
         fakeStore[x] = y;
       }),
@@ -803,7 +803,7 @@ describe('Migration from Ed25519Key', () => {
 
     // mock ED25519 generate method
     const generate = jest.spyOn(Ed25519KeyIdentity, 'generate');
-    generate.mockImplementation(async () => {
+    generate.mockImplementationOnce(async () => {
       const key = await Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
       return key;
     });
