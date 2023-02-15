@@ -33,7 +33,7 @@ const IDENTITY_PROVIDER_DEFAULT = 'https://identity.ic0.app';
 const IDENTITY_PROVIDER_ENDPOINT = '#authorize';
 
 const ECDSA_KEY_LABEL = 'ECDSA';
-const ED25519_KEY_LABEL = 'ED25519';
+const ED25519_KEY_LABEL = 'Ed25519';
 type BaseKeyType = typeof ECDSA_KEY_LABEL | typeof ED25519_KEY_LABEL;
 
 const INTERRUPT_CHECK_INTERVAL = 500;
