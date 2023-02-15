@@ -32,6 +32,10 @@ export { IdbKeyVal, DBCreateOptions } from './db';
 const IDENTITY_PROVIDER_DEFAULT = 'https://identity.ic0.app';
 const IDENTITY_PROVIDER_ENDPOINT = '#authorize';
 
+const ECDSA_KEY_LABEL = 'ECDSA';
+const ED25519_KEY_LABEL = 'ED25519';
+type BaseKeyType = typeof ECDSA_KEY_LABEL | typeof ED25519_KEY_LABEL;
+
 const INTERRUPT_CHECK_INTERVAL = 500;
 
 export const ERROR_USER_INTERRUPT = 'UserInterrupt';
@@ -54,7 +58,7 @@ export interface AuthClientCreateOptions {
    * If you are using a custom storage provider that does not support CryptoKey storage,
    * you should use 'Ed25519' as the key type, as it can serialize to a string
    */
-  keyType?: 'ECDSA' | 'Ed25519';
+  keyType?: BaseKeyType;
 
   /**
    * Options to handle idle timeouts
@@ -198,7 +202,7 @@ export class AuthClient {
        * If you are using a custom storage provider that does not support CryptoKey storage,
        * you should use 'Ed25519' as the key type, as it can serialize to a string
        */
-      keyType?: 'ECDSA' | 'Ed25519';
+      keyType?: BaseKeyType;
       /**
        * Options to handle idle timeouts
        * @default after 10 minutes, invalidates the identity
@@ -207,7 +211,7 @@ export class AuthClient {
     } = {},
   ): Promise<AuthClient> {
     const storage = options.storage ?? new IdbStorage();
-    const keyType = options.keyType ?? 'ECDSA';
+    const keyType = options.keyType ?? ECDSA_KEY_LABEL;
 
     let key: null | SignIdentity | ECDSAKeyIdentity = null;
     if (options.identity) {
@@ -221,10 +225,9 @@ export class AuthClient {
           const localChain = await fallbackLocalStorage.get(KEY_STORAGE_DELEGATION);
           const localKey = await fallbackLocalStorage.get(KEY_STORAGE_KEY);
           // not relevant for Ed25519
-          if (localChain && localKey && keyType === 'ECDSA') {
+          if (localChain && localKey && keyType === ECDSA_KEY_LABEL) {
             console.log('Discovered an identity stored in localstorage. Migrating to IndexedDB');
             await storage.set(KEY_STORAGE_DELEGATION, localChain);
-            localKey; //?
             await storage.set(KEY_STORAGE_KEY, localKey);
 
             maybeIdentityStorage = localChain;
@@ -239,7 +242,7 @@ export class AuthClient {
       if (maybeIdentityStorage) {
         try {
           if (typeof maybeIdentityStorage === 'object') {
-            if (keyType === 'Ed25519' && typeof maybeIdentityStorage === 'string') {
+            if (keyType === ED25519_KEY_LABEL && typeof maybeIdentityStorage === 'string') {
               key = await Ed25519KeyIdentity.fromJSON(maybeIdentityStorage);
             } else {
               key = await ECDSAKeyIdentity.fromKeyPair(maybeIdentityStorage);
@@ -297,13 +300,13 @@ export class AuthClient {
 
     if (!key) {
       // Create a new key (whether or not one was in storage).
-      if (keyType === 'Ed25519') {
+      if (keyType === ED25519_KEY_LABEL) {
         key = await Ed25519KeyIdentity.generate();
         await storage.set(KEY_STORAGE_KEY, JSON.stringify((key as Ed25519KeyIdentity).toJSON()));
       } else {
-        if (options.storage && keyType === 'ECDSA') {
+        if (options.storage && keyType === ECDSA_KEY_LABEL) {
           console.warn(
-            "You are using a custom storage provider that may not support CryptoKey storage. If you are using a custom storage provider that does not support CryptoKey storage, you should use 'Ed25519' as the key type, as it can serialize to a string",
+            `You are using a custom storage provider that may not support CryptoKey storage. If you are using a custom storage provider that does not support CryptoKey storage, you should use '${ED25519_KEY_LABEL}' as the key type, as it can serialize to a string`,
           );
         }
         key = await ECDSAKeyIdentity.generate();
