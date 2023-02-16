@@ -239,6 +239,16 @@ test('redirect avoid', async () => {
   checkUrl('https://ic0.app/foo/', 'ic0.app');
   checkUrl('https://foo.ic0.app/foo/', 'ic0.app');
 
+  // icp-api.io
+  checkUrl('https://icp-api.io', 'icp-api.io');
+  checkUrl('https://ICP-API.io', 'icp-api.io');
+  checkUrl('https://foo.icp-api.io', 'icp-api.io');
+  checkUrl('https://foo.ICP-API.io', 'icp-api.io');
+  checkUrl('https://foo.Icp-api.io', 'icp-api.io');
+  checkUrl('https://foo.bar.icp-api.io', 'icp-api.io');
+  checkUrl('https://icp-api.io/foo/', 'icp-api.io');
+  checkUrl('https://foo.icp-api.io/foo/', 'icp-api.io');
+
   checkUrl('https://ic1.app', 'ic1.app');
   checkUrl('https://foo.ic1.app', 'foo.ic1.app');
   checkUrl('https://ic0.app.ic1.app', 'ic0.app.ic1.app');
