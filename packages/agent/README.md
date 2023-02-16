@@ -80,9 +80,9 @@ For example,
 import fetch from 'isomorphic-fetch';
 import { HttpAgent } from '@dfinity/agent';
 
-const host = process.env.DFX_NETWORK === 'local' ? 'http://localhost:4943' : 'https://ic0.app';
+const host = process.env.DFX_NETWORK === 'local' ? 'http://localhost:4943' : 'https://icp-api.io';
 
-const agent = new HttpAgent({ fetch, host: 'https://ic0.app' });
+const agent = new HttpAgent({ fetch, host });
 ```
 
 You can also pass `fetchOptions` to the agent's constructor, which will be passed to the `fetch` implementation. This is useful if you want to pass additional options to the `fetch` implementation, such as a custom header.
