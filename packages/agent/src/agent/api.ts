@@ -1,7 +1,7 @@
 import { Principal } from '@dfinity/principal';
 import { RequestId } from '../request_id';
 import { JsonObject } from '@dfinity/candid';
-import { Identity } from '..';
+import { Identity } from '../auth';
 
 /**
  * Codes used by the replica for rejecting a message.
