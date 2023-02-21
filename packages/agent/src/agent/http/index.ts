@@ -52,6 +52,9 @@ const IC_ROOT_KEY =
 const IC0_DOMAIN = 'ic0.app';
 const IC0_SUB_DOMAIN = '.ic0.app';
 
+const ICP0_DOMAIN = 'icp0.io';
+const ICP0_SUB_DOMAIN = '.icp0.io';
+
 const ICP_API_DOMAIN = 'icp-api.io';
 const ICP_API_SUB_DOMAIN = '.icp-api.io';
 
@@ -220,6 +223,8 @@ export class HttpAgent implements Agent {
     // Rewrite to avoid redirects
     if (this._host.hostname.endsWith(IC0_SUB_DOMAIN)) {
       this._host.hostname = IC0_DOMAIN;
+    } else if (this._host.hostname.endsWith(ICP0_SUB_DOMAIN)) {
+      this._host.hostname = ICP0_DOMAIN;
     } else if (this._host.hostname.endsWith(ICP_API_SUB_DOMAIN)) {
       this._host.hostname = ICP_API_DOMAIN;
     }
