@@ -7,7 +7,6 @@ import {
   ReplicaRejectCode,
   SubmitResponse,
 } from './agent';
-import { getManagementCanister } from './canisters/management';
 import { AgentError } from './errors';
 import { IDL } from '@dfinity/candid';
 import { pollForResponse, PollStrategyFactory, strategy } from './polling';
@@ -15,6 +14,8 @@ import { Principal } from '@dfinity/principal';
 import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
 import { CreateCertificateOptions } from './certificate';
+import managementCanisterIdl from './canisters/management_idl';
+import _SERVICE from './canisters/management_service';
 
 export class ActorCallError extends AgentError {
   constructor(
@@ -386,4 +387,30 @@ function _createActorMethod(
     (...args: unknown[]) =>
       caller(options, ...args);
   return handler as ActorMethod;
+}
+
+export type ManagementCanisterRecord = _SERVICE;
+
+/**
+ * Create a management canister actor
+ * @param config
+ */
+export function getManagementCanister(config: CallConfig): ActorSubclass<ManagementCanisterRecord> {
+  function transform(_methodName: string, args: unknown[], _callConfig: CallConfig) {
+    const first = args[0] as any;
+    let effectiveCanisterId = Principal.fromHex('');
+    if (first && typeof first === 'object' && first.canister_id) {
+      effectiveCanisterId = Principal.from(first.canister_id as unknown);
+    }
+    return { effectiveCanisterId };
+  }
+
+  return Actor.createActor<ManagementCanisterRecord>(managementCanisterIdl, {
+    ...config,
+    canisterId: Principal.fromHex(''),
+    ...{
+      callTransform: transform,
+      queryTransform: transform,
+    },
+  });
 }
