@@ -304,10 +304,10 @@ export class HttpAgent implements Agent {
       request: {
         body: null,
         method: 'POST',
-        headers: new Headers({
+        headers: {
           'Content-Type': 'application/cbor',
           ...(this._credentials ? { Authorization: 'Basic ' + btoa(this._credentials) } : {}),
-        }),
+        },
       },
       endpoint: Endpoint.Call,
       body: submit,
@@ -394,10 +394,10 @@ export class HttpAgent implements Agent {
     let transformedRequest: any = await this._transform({
       request: {
         method: 'POST',
-        headers: new Headers({
+        headers: {
           'Content-Type': 'application/cbor',
           ...(this._credentials ? { Authorization: 'Basic ' + btoa(this._credentials) } : {}),
-        }),
+        },
       },
       endpoint: Endpoint.Query,
       body: request,
@@ -436,10 +436,10 @@ export class HttpAgent implements Agent {
     const transformedRequest: any = await this._transform({
       request: {
         method: 'POST',
-        headers: new Headers({
+        headers: {
           'Content-Type': 'application/cbor',
           ...(this._credentials ? { Authorization: 'Basic ' + btoa(this._credentials) } : {}),
-        }),
+        },
       },
       endpoint: Endpoint.ReadState,
       body: {
