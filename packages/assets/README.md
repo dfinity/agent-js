@@ -69,7 +69,7 @@ Select file and upload to asset canister in browser
 ```js
 const input = document.createElement('input');
 input.type = 'file';
-input.addEventListener('change', async () => {
+input.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     const key = await assetManager.store(file);
 });
