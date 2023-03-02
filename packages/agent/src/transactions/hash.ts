@@ -1,9 +1,9 @@
-import { createHash } from 'crypto';
+import { sha256 as jsSha256 } from 'js-sha256';
 
 /**
  * Create a sha256 hash of a CBOR encoded transaction
- * @param cborTransaction The encoded transaction to hash
+ * @param data UInt8Array representation of a transaction.
  */
-export function sha256(cborTransaction: Uint8Array): string {
-  return createHash('sha256').update(cborTransaction).digest('hex');
+export function sha256(data: Uint8Array): string {
+  return jsSha256.create().update(new Uint8Array(data)).hex();
 }
