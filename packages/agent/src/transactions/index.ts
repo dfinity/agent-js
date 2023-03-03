@@ -1,4 +1,4 @@
-import { toHex } from 'src/utils/buffer';
+import { toHex } from '../utils/buffer';
 import { encode } from './encoder';
 import { sha256 } from './hash';
 import { mapBurnTransaction, mapMintTransaction, mapTransferTransaction } from './mapping';
@@ -8,11 +8,11 @@ import { Transaction } from './model/transaction';
 import { TransferOperation } from './model/transferOperation';
 
 /**
- *
+ * Generate a sha256 of a transacation
  * @param transaction
  * @returns
  */
-export function getTransactionHash(transaction: Transaction): string | never {
+export function generateTransactionHash(transaction: Transaction): string | never {
   if (!transaction.operation) {
     throw new Error('No operation in transaction.');
   }
@@ -20,7 +20,7 @@ export function getTransactionHash(transaction: Transaction): string | never {
   const timestamp = transaction.created_at_time.timestamp_nanos;
   const memo = transaction.memo;
 
-  if (Object.keys(transaction).includes('Burn')) {
+  if (Object.keys(transaction.operation).includes('Burn')) {
     const operation: BurnOperation = (transaction.operation as any)['Burn'] as BurnOperation;
     const from = toHex(operation.from);
     const amount = operation.amount.e8s;
@@ -32,7 +32,7 @@ export function getTransactionHash(transaction: Transaction): string | never {
     return transactionHash;
   }
 
-  if (Object.keys(transaction).includes('Mint')) {
+  if (Object.keys(transaction.operation).includes('Mint')) {
     const operation: MintOperation = (transaction.operation as any)['Mint'] as MintOperation;
     const to = toHex(operation.to);
     const amount = operation.amount.e8s;
@@ -44,7 +44,7 @@ export function getTransactionHash(transaction: Transaction): string | never {
     return transactionHash;
   }
 
-  if (Object.keys(transaction).includes('Transfer')) {
+  if (Object.keys(transaction.operation).includes('Transfer')) {
     const operation: TransferOperation = (transaction.operation as any)[
       'Transfer'
     ] as TransferOperation;
