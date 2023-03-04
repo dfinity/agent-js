@@ -1,16 +1,19 @@
 import { toHex } from '../utils/buffer';
-import { encode } from './encoder';
-import { sha256 } from './hash';
-import { mapBurnTransaction, mapMintTransaction, mapTransferTransaction } from './mapping';
 import { BurnOperation } from './model/burnOperation';
 import { MintOperation } from './model/mintOperation';
 import { Transaction } from './model/transaction';
 import { TransferOperation } from './model/transferOperation';
+import { encode } from './utils/encoder';
+import { sha256 } from './utils/hash';
+import { mapBurnTransaction, mapMintTransaction, mapTransferTransaction } from './utils/mapping';
 
 /**
- * Generate a sha256 of a transacation
- * @param transaction
- * @returns
+ * Generates the transaction hash of a transaction byb mapping it to CBOR
+ * and hashing the byte array.
+ * Supported transaction opereations: Burn, Mint, Transfer
+ * @param transaction object to hash.
+ * @throws if the operation id not defined or the operation is not recognised.
+ * @returns a hexadeciaml string hash of the transaction.
  */
 export function generateTransactionHash(transaction: Transaction): string | never {
   if (!transaction.operation) {

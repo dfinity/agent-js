@@ -7,6 +7,8 @@ export interface Transaction {
   memo: bigint;
   operation:
     | []
-    | [{ Burn: BurnOperation } | { Mint: MintOperation } | { Transfer: TransferOperation }];
+    | { Burn: BurnOperation }
+    | { Mint: MintOperation }
+    | { Transfer: TransferOperation };
   created_at_time: TimeStamp;
 }
