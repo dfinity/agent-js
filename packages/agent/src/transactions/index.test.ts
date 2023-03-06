@@ -1,6 +1,6 @@
 import { fromHex } from '../utils/buffer';
 import { generateTransactionHash } from './index';
-import { Transaction } from './model/transaction';
+import { Operation, Transaction } from './model/transaction';
 
 describe('generateTransactionHash', () => {
   it('should hash a `Burn` transaction to an expected transaction hash ', () => {
@@ -15,7 +15,7 @@ describe('generateTransactionHash', () => {
             e8s: BigInt('100000000'),
           },
         },
-      },
+      } as unknown as [Operation],
       created_at_time: { timestamp_nanos: BigInt('1677883406592845991') },
     };
 
@@ -37,7 +37,7 @@ describe('generateTransactionHash', () => {
             e8s: BigInt('319927886'),
           },
         },
-      },
+      } as unknown as [Operation],
       created_at_time: { timestamp_nanos: BigInt('1677889162355149987') },
     };
     const txhash = generateTransactionHash(transaction);
@@ -66,7 +66,7 @@ describe('generateTransactionHash', () => {
             e8s: BigInt('10000'),
           },
         },
-      },
+      } as unknown as [Operation],
       created_at_time: { timestamp_nanos: BigInt('1677889498538237513') },
     };
     const txhash = generateTransactionHash(transaction);
