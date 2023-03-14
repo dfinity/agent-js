@@ -1,4 +1,4 @@
-import { requestIdOf } from '@dfinity/agent';
+import { requestIdOf, HttpAgentRequest } from '@dfinity/agent';
 import {
   SignIdentity,
   DerEncodedPublicKey,
@@ -6,7 +6,6 @@ import {
   AbstractPrincipal,
   Signature,
 } from '@dfinity/types';
-import { HttpAgentRequest } from '@dfinity/types';
 import { Principal } from '@dfinity/principal';
 import * as cbor from 'simple-cbor';
 import { fromHexString, toHexString } from '../buffer';

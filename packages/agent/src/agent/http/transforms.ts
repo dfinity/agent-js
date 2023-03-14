@@ -1,12 +1,7 @@
 import { lebEncode } from '@dfinity/candid';
 import * as cbor from 'simple-cbor';
-import {
-  AbstractExpiry,
-  Endpoint,
-  Nonce,
-  HttpAgentRequest,
-  HttpAgentRequestTransformFn,
-} from '@dfinity/types';
+import { AbstractExpiry, Nonce } from '@dfinity/types';
+import { Endpoint, HttpAgentRequest, HttpAgentRequestTransformFn } from './types';
 
 /**
  * Create a random Nonce, based on date and a random suffix.

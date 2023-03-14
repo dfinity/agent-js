@@ -1,48 +1,6 @@
+import { CallConfig } from './actor';
 import { AbstractIdentity } from './identity';
 import { AbstractPrincipal } from './principal';
-
-/**
- * Codes used by the replica for rejecting a message.
- * See {@link https://sdk.dfinity.org/docs/interface-spec/#reject-codes | the interface spec}.
- */
-export enum ReplicaRejectCode {
-  SysFatal = 1,
-  SysTransient = 2,
-  DestinationInvalid = 3,
-  CanisterReject = 4,
-  CanisterError = 5,
-}
-
-export const enum Endpoint {
-  Query = 'read',
-  ReadState = 'read_state',
-  Call = 'call',
-}
-
-export interface ReadStateResponse {
-  certificate: ArrayBuffer;
-}
-
-/**
- * Options when doing a {@link Agent.call} call.
- */
-export interface CallOptions {
-  /**
-   * The method name to call.
-   */
-  methodName: string;
-
-  /**
-   * A binary encoded argument. This is already encoded and will be sent as is.
-   */
-  arg: ArrayBuffer;
-
-  /**
-   * An effective canister ID, used for routing. This should only be mentioned if
-   * it's different from the canister ID.
-   */
-  effectiveCanisterId: AbstractPrincipal | string;
-}
 
 export declare type JsonValue = boolean | string | number | JsonArray | JsonObject;
 
@@ -51,59 +9,8 @@ export interface JsonArray extends Array<JsonValue> {}
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface JsonObject extends Record<string, JsonValue> {}
 
-export type RequestId = ArrayBuffer & { __requestId__: void };
-
 /**
- * Options when doing a {@link Agent.query} call.
- */
-export interface QueryFields {
-  /**
-   * The method name to call.
-   */
-  methodName: string;
-
-  /**
-   * A binary encoded argument. This is already encoded and will be sent as is.
-   */
-  arg: ArrayBuffer;
-}
-
-/**
- *
- */
-export type QueryResponse = QueryResponseReplied | QueryResponseRejected;
-
-export const enum QueryResponseStatus {
-  Replied = 'replied',
-  Rejected = 'rejected',
-}
-
-export interface QueryResponseBase {
-  status: QueryResponseStatus;
-}
-
-export interface QueryResponseReplied extends QueryResponseBase {
-  status: QueryResponseStatus.Replied;
-  reply: { arg: ArrayBuffer };
-}
-
-export interface QueryResponseRejected extends QueryResponseBase {
-  status: QueryResponseStatus.Rejected;
-  reject_code: ReplicaRejectCode;
-  reject_message: string;
-}
-
-export interface SubmitResponse {
-  requestId: RequestId;
-  response: {
-    ok: boolean;
-    status: number;
-    statusText: string;
-  };
-}
-
-/**
- * An Agent able to make calls and queries to a Replica.
+ * An Agent able to make calls and queries to a Replica. This is the base class for an agent. Details of HTTP Calls and responses are left as any, and are implemented in the HTTP Agent.
  */
 export abstract class AbstractAgent {
   readonly rootKey: ArrayBuffer | null;
@@ -129,9 +36,9 @@ export abstract class AbstractAgent {
     identity?: AbstractIdentity,
     // eslint-disable-next-line  @typescript-eslint/no-explicit-any
     request?: any,
-  ): Promise<ReadStateResponse>;
+  ): Promise<any>;
 
-  call(canisterId: AbstractPrincipal | string, fields: CallOptions): Promise<SubmitResponse>;
+  call(canisterId: AbstractPrincipal | string, fields: any): Promise<any>;
 
   /**
    * Query the status endpoint of the replica. This normally has a few fields that
@@ -152,7 +59,7 @@ export abstract class AbstractAgent {
    *     failed. If the query itself failed but no protocol errors happened, the response will
    *     be of type QueryResponseRejected.
    */
-  query(canisterId: AbstractPrincipal | string, options: QueryFields): Promise<QueryResponse>;
+  query(canisterId: AbstractPrincipal | string, options: any): Promise<any>;
 
   /**
    * By default, the agent is configured to talk to the main Internet Computer,

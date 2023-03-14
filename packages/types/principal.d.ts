@@ -11,7 +11,6 @@ export abstract class AbstractPrincipal {
   static fromText(text: string): AbstractPrincipal;
   static fromUint8Array(arr: Uint8Array): AbstractPrincipal;
   readonly _isPrincipal = true;
-  protected constructor(_arr: Uint8Array);
   isAnonymous(): boolean;
   toUint8Array(): Uint8Array;
   toHex(): string;

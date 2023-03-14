@@ -5,14 +5,13 @@ import { requestIdOf } from '../../request_id';
 import { fromHex } from '../../utils/buffer';
 import {
   AbstractAgent,
-  QueryFields,
-  QueryResponse,
-  ReadStateOptions,
-  ReadStateResponse,
   AnonymousIdentity,
   JsonObject,
   AbstractIdentity,
-  SubmitResponse,
+  AbstractPrincipal,
+} from '@dfinity/types';
+import { Expiry, makeNonce, makeNonceTransform } from './transforms';
+import {
   CallRequest,
   Endpoint,
   HttpAgentRequest,
@@ -21,13 +20,19 @@ import {
   QueryRequest,
   ReadRequestType,
   SubmitRequestType,
-  AbstractPrincipal,
-} from '@dfinity/types';
-import { Expiry, makeNonce, makeNonceTransform } from './transforms';
+} from './types';
+import {
+  QueryFields,
+  QueryResponse,
+  ReadStateOptions,
+  ReadStateResponse,
+  SubmitResponse,
+} from '../api';
 
 export { Nonce } from '@dfinity/types';
 
 export * from './transforms';
+export * from './types';
 export { makeNonce } from './transforms';
 
 export enum RequestStatusResponseStatus {

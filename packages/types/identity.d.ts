@@ -1,5 +1,4 @@
 import { Signature } from './certificate';
-import { HttpAgentBaseRequest } from './http';
 import { AbstractPrincipal } from './principal';
 
 /**
@@ -26,6 +25,7 @@ export interface PublicKey {
 /**
  * A General Identity object. This does not have to be a private key (for example,
  * the Anonymous identity), but it must be able to transform request.
+ * The request is left as any, and should be implemented by the agent
  */
 export abstract class AbstractIdentity {
   protected _principal: AbstractPrincipal | undefined;
@@ -40,11 +40,11 @@ export abstract class AbstractIdentity {
    * after the transforms on the body of a request. The returned object can be
    * anything, but must be serializable to CBOR.
    */
-  transformRequest(request: HttpAgentBaseRequest): Promise<unknown>;
+  transformRequest(request: any): Promise<unknown>;
 }
 
 /**
- * An Identity that can sign blobs.
+ * An Identity that can sign blobs. The request is left as any, and should be implemented by the agent
  */
 export abstract class SignIdentity extends AbstractIdentity {
   /**
@@ -69,13 +69,13 @@ export abstract class SignIdentity extends AbstractIdentity {
    * anything, but must be serializable to CBOR.
    * @param request - internet computer request to transform
    */
-  public transformRequest(request: HttpAgentBaseRequest): Promise<unknown>;
+  public transformRequest(request: any): Promise<unknown>;
 }
 
 export class AnonymousIdentity extends AbstractIdentity {
   public getPrincipal(): AbstractPrincipal;
 
-  public transformRequest(request: HttpAgentBaseRequest): Promise<unknown>;
+  public transformRequest(request: any): Promise<unknown>;
 }
 
 /*

@@ -1,4 +1,4 @@
-import { AbstractAgent, RequestId } from './agent';
+import { AbstractAgent } from './agent';
 import * as IDL from './idl';
 import { AbstractPrincipal } from './principal';
 
@@ -16,6 +16,8 @@ export enum RequestStatusResponseStatus {
   Unknown = 'unknown',
   Done = 'done',
 }
+
+export type RequestId = ArrayBuffer & { __requestId__: void };
 
 export type PollStrategy = (
   canisterId: AbstractPrincipal,

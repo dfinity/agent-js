@@ -14,7 +14,7 @@ const fromHexString = (hexString: string) =>
 const toHexString = (bytes: Uint8Array) =>
   bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
 
-export class Principal extends AbstractPrincipal {
+export class Principal implements AbstractPrincipal {
   public static anonymous(): Principal {
     return new this(new Uint8Array([ANONYMOUS_SUFFIX]));
   }
@@ -73,7 +73,7 @@ export class Principal extends AbstractPrincipal {
   public readonly _isPrincipal = true;
 
   protected constructor(protected _arr: Uint8Array) {
-    super(_arr);
+    this._arr = _arr;
   }
 
   public isAnonymous(): boolean {

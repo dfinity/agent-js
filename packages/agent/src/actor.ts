@@ -2,10 +2,6 @@ import { Buffer } from 'buffer/';
 import {
   ActorMethod,
   CreateCertificateOptions,
-  QueryResponseRejected,
-  QueryResponseStatus,
-  ReplicaRejectCode,
-  SubmitResponse,
   CallConfig,
   ActorMetadata,
   ActorConfig,
@@ -24,6 +20,12 @@ import { HttpAgent } from './agent/http';
 import { Principal } from '@dfinity/principal';
 import { getManagementCanister } from './canisters/management';
 import _SERVICE from './canisters/management_service';
+import {
+  QueryResponseRejected,
+  QueryResponseStatus,
+  ReplicaRejectCode,
+  SubmitResponse,
+} from './agent/api';
 
 export class ActorCallError extends AgentError {
   constructor(
