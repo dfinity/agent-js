@@ -14,17 +14,20 @@ import {
   IDL,
   CanisterInstallMode,
   ActorConstructor,
+  AbstractPrincipal,
 } from '@dfinity/types';
 import { AgentError } from './errors';
 import { pollForResponse, strategy } from './polling';
-import { Principal } from '@dfinity/principal';
 import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
-import { HttpAgent, getManagementCanister } from '.';
+import { HttpAgent } from './agent/http';
+import { Principal } from '@dfinity/principal';
+import { getManagementCanister } from './canisters/management';
+import _SERVICE from './canisters/management_service';
 
 export class ActorCallError extends AgentError {
   constructor(
-    public readonly canisterId: Principal,
+    public readonly canisterId: AbstractPrincipal,
     public readonly methodName: string,
     public readonly type: 'query' | 'update',
     public readonly props: Record<string, string>,
@@ -42,7 +45,7 @@ export class ActorCallError extends AgentError {
 
 export class QueryCallRejectedError extends ActorCallError {
   constructor(
-    canisterId: Principal,
+    canisterId: AbstractPrincipal,
     methodName: string,
     public readonly result: QueryResponseRejected,
   ) {
@@ -56,7 +59,7 @@ export class QueryCallRejectedError extends ActorCallError {
 
 export class UpdateCallRejectedError extends ActorCallError {
   constructor(
-    canisterId: Principal,
+    canisterId: AbstractPrincipal,
     methodName: string,
     public readonly requestId: RequestId,
     public readonly response: SubmitResponse['response'],
@@ -310,27 +313,3 @@ function _createActorMethod(
 }
 
 export type ManagementCanisterRecord = _SERVICE;
-
-/**
- * Create a management canister actor
- * @param config
- */
-export function getManagementCanister(config: CallConfig): ActorSubclass<ManagementCanisterRecord> {
-  function transform(_methodName: string, args: unknown[], _callConfig: CallConfig) {
-    const first = args[0] as any;
-    let effectiveCanisterId = Principal.fromHex('');
-    if (first && typeof first === 'object' && first.canister_id) {
-      effectiveCanisterId = Principal.from(first.canister_id as unknown);
-    }
-    return { effectiveCanisterId };
-  }
-
-  return Actor.createActor<ManagementCanisterRecord>(managementCanisterIdl, {
-    ...config,
-    canisterId: Principal.fromHex(''),
-    ...{
-      callTransform: transform,
-      queryTransform: transform,
-    },
-  });
-}

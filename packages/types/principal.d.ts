@@ -1,5 +1,4 @@
 export abstract class AbstractPrincipal {
-  protected _arr: Uint8Array;
   static anonymous(): AbstractPrincipal;
   /**
    * Utility method, returning the principal representing the management canister, decoded from the hex string `'aaaaa-aa'`
