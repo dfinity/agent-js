@@ -33,20 +33,20 @@ export abstract class AbstractIdentity {
    * Get the principal represented by this identity. Normally should be a
    * `Principal.selfAuthenticating()`.
    */
-  getPrincipal(): AbstractPrincipal;
+  abstract getPrincipal(): AbstractPrincipal;
 
   /**
    * Transform a request into a signed version of the request. This is done last
    * after the transforms on the body of a request. The returned object can be
    * anything, but must be serializable to CBOR.
    */
-  transformRequest(request: any): Promise<unknown>;
+  abstract transformRequest(request: any): Promise<unknown>;
 }
 
 /**
  * An Identity that can sign blobs. The request is left as any, and should be implemented by the agent
  */
-export abstract class SignIdentity extends AbstractIdentity {
+export abstract class AbstractSignIdentity extends AbstractIdentity {
   /**
    * Returns the public key that would match this identity's signature.
    */
@@ -61,7 +61,7 @@ export abstract class SignIdentity extends AbstractIdentity {
    * Get the principal represented by this identity. Normally should be a
    * `Principal.selfAuthenticating()`.
    */
-  public getPrincipal(): AbstractPrincipal;
+  public abstract getPrincipal(): AbstractPrincipal;
 
   /**
    * Transform a request into a signed version of the request. This is done last
@@ -69,13 +69,7 @@ export abstract class SignIdentity extends AbstractIdentity {
    * anything, but must be serializable to CBOR.
    * @param request - internet computer request to transform
    */
-  public transformRequest(request: any): Promise<unknown>;
-}
-
-export class AnonymousIdentity extends AbstractIdentity {
-  public getPrincipal(): AbstractPrincipal;
-
-  public transformRequest(request: any): Promise<unknown>;
+  public abstract transformRequest(request: any): Promise<unknown>;
 }
 
 /*

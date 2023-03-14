@@ -3,13 +3,7 @@ import { AgentError } from '../../errors';
 import * as cbor from '../../cbor';
 import { requestIdOf } from '../../request_id';
 import { fromHex } from '../../utils/buffer';
-import {
-  AbstractAgent,
-  AnonymousIdentity,
-  JsonObject,
-  AbstractIdentity,
-  AbstractPrincipal,
-} from '@dfinity/types';
+import { AbstractAgent, JsonObject, AbstractIdentity, AbstractPrincipal } from '@dfinity/types';
 import { Expiry, makeNonce, makeNonceTransform } from './transforms';
 import {
   CallRequest,
@@ -28,8 +22,7 @@ import {
   ReadStateResponse,
   SubmitResponse,
 } from '../api';
-
-export { Nonce } from '@dfinity/types';
+import { AnonymousIdentity } from '../../auth';
 
 export * from './transforms';
 export * from './types';

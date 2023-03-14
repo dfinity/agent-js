@@ -10,15 +10,17 @@
     "incremental": true,
     "module": "ES2020",
     "moduleResolution": "node",
-    "outDir": "./lib/esm",
+    "outDir": "./lib",
+    "paths": {
+      "@dfinity/types": ["src"]
+    },
     "resolveJsonModule": true,
     "rootDir": "./src",
     "sourceMap": true,
     "inlineSources": true,
     "strict": true,
-    "target": "es2017"
+    "target": "ES2022"
   },
-  "files": ["*.d.ts"],
-  "exclude": ["tsconfig.json"],
+  "include": ["src/*.ts"],
   "references": []
 }

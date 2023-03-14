@@ -1,5 +1,6 @@
 /* eslint-disable no-underscore-dangle */
-import { DerEncodedPublicKey, KeyPair, Signature, PublicKey, SignIdentity } from '@dfinity/types';
+import { DerEncodedPublicKey, KeyPair, Signature, PublicKey } from '@dfinity/types';
+import { SignIdentity } from '@dfinity/agent';
 import Secp256k1 from 'secp256k1';
 import { sha256 } from 'js-sha256';
 import { randomBytes } from 'tweetnacl';

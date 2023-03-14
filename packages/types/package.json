@@ -1,8 +1,8 @@
 {
   "version": "1.0.0",
   "name": "@dfinity/types",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
-    "build": ""
+    "build": "tsc"
   }
 }

@@ -1,12 +1,11 @@
 /** @module AuthClient */
-import {
-  AnonymousIdentity,
+import type {
   DerEncodedPublicKey,
   AbstractIdentity,
   Signature,
-  SignIdentity,
   AbstractPrincipal,
 } from '@dfinity/types';
+import { AnonymousIdentity, SignIdentity } from '@dfinity/agent';
 import {
   Delegation,
   DelegationChain,

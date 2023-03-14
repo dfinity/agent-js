@@ -1,10 +1,10 @@
-import { requestIdOf, HttpAgentRequest } from '@dfinity/agent';
+import { requestIdOf, HttpAgentRequest, SignIdentity } from '@dfinity/agent';
 import {
-  SignIdentity,
   DerEncodedPublicKey,
   PublicKey,
   AbstractPrincipal,
   Signature,
+  AbstractSignIdentity,
 } from '@dfinity/types';
 import { Principal } from '@dfinity/principal';
 import * as cbor from 'simple-cbor';
@@ -169,7 +169,7 @@ export class DelegationChain {
    * @param options.targets - targets that scope the delegation (e.g. Canister Principals)
    */
   public static async create(
-    from: SignIdentity,
+    from: AbstractSignIdentity,
     to: PublicKey,
     expiration: Date = new Date(Date.now() + 15 * 60 * 1000),
     options: {
@@ -274,14 +274,14 @@ export class DelegationIdentity extends SignIdentity {
    * @param delegation A delegation object created using `createDelegation`.
    */
   public static fromDelegation(
-    key: Pick<SignIdentity, 'sign'>,
+    key: Pick<AbstractSignIdentity, 'sign'>,
     delegation: DelegationChain,
   ): DelegationIdentity {
     return new this(key, delegation);
   }
 
   protected constructor(
-    private _inner: Pick<SignIdentity, 'sign'>,
+    private _inner: Pick<AbstractSignIdentity, 'sign'>,
     private _delegation: DelegationChain,
   ) {
     super();

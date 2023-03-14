@@ -7,11 +7,11 @@ import {
   ActorConfig,
   AbstractActor,
   AbstractAgent,
-  IDL,
   CanisterInstallMode,
   ActorConstructor,
   AbstractPrincipal,
 } from '@dfinity/types';
+import { IDL } from '@dfinity/candid';
 import { AgentError } from './errors';
 import { pollForResponse, strategy } from './polling';
 import { RequestId } from './request_id';

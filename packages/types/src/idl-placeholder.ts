@@ -381,20 +381,7 @@ export declare class ServiceClass extends ConstructType<AbstractPrincipal> {
   get name(): string;
   valueToString(x: AbstractPrincipal): string;
 }
-/**
- * Encode a array of values
- * @param argTypes
- * @param args
- * @returns {Buffer} serialised value
- */
-export declare function encode(argTypes: Array<Type<any>>, args: any[]): ArrayBuffer;
-/**
- * Decode a binary value
- * @param retTypes - Types expected in the buffer.
- * @param bytes - hex-encoded string, or buffer.
- * @returns Value deserialised to JS type
- */
-export declare function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[];
+
 /**
  * An Interface Factory, normally provided by a Candid code generation.
  */

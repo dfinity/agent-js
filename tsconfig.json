@@ -11,7 +11,7 @@
   "references": [{ "path": "packages/agent" }, { "path": "packages/identity" }],
   "include": [
     "packages/**/types/*",
-    "packages/types/actor.d.ts",
+    "packages/types/actor.ts",
     "packages/types/src/types/principal.d.ts"
   ],
   "resolveJsonModule": true,

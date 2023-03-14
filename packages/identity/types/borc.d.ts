@@ -12,6 +12,6 @@ declare module 'borc' {
   class Tagged {
     tag: number;
     value: any;
-    constructor(tag: Number, value: any);
+    constructor(tag: number, value: any);
   }
 }

@@ -1,9 +1,9 @@
-import { SignIdentity } from '@dfinity/types';
+import { AbstractSignIdentity } from '@dfinity/types';
 import { Principal } from '@dfinity/principal';
 import { DelegationChain } from './delegation';
 import { Ed25519KeyIdentity } from './ed25519';
 
-function createIdentity(seed: number): SignIdentity {
+function createIdentity(seed: number): AbstractSignIdentity {
   const s = new Uint8Array([seed, ...new Array(31).fill(0)]);
   return Ed25519KeyIdentity.generate(s);
 }

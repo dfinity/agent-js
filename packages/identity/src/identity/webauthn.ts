@@ -1,8 +1,10 @@
-import { Signature, DerEncodedPublicKey, PublicKey, SignIdentity } from '@dfinity/types';
+import type { Signature, DerEncodedPublicKey, PublicKey } from '@dfinity/types';
+import { SignIdentity } from '@dfinity/agent';
 import borc from 'borc';
 import * as tweetnacl from 'tweetnacl';
 import { fromHexString, toHexString } from '../buffer';
 import { DER_COSE_OID, wrapDER } from './der';
+import { Principal } from '@dfinity/principal';
 
 function _coseToDerEncodedBlob(cose: ArrayBuffer): DerEncodedPublicKey {
   return wrapDER(cose, DER_COSE_OID).buffer as DerEncodedPublicKey;
@@ -111,6 +113,7 @@ enum PubKeyCoseAlgo {
  * more information about WebAuthentication.
  */
 export class WebAuthnIdentity extends SignIdentity {
+  _principal: Principal | undefined;
   /**
    * Create an identity from a JSON serialization.
    * @param json - json to parse
@@ -158,6 +161,13 @@ export class WebAuthnIdentity extends SignIdentity {
 
   public getPublicKey(): PublicKey {
     return this._publicKey;
+  }
+
+  public getPrincipal(): Principal {
+    if (!this._principal) {
+      this._principal = Principal.selfAuthenticating(new Uint8Array(this.getPublicKey().toDer()));
+    }
+    return this._principal;
   }
 
   public async sign(blob: ArrayBuffer): Promise<Signature> {

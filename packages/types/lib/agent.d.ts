@@ -1,26 +1,19 @@
-import { CallConfig } from './actor';
 import { AbstractIdentity } from './identity';
 import { AbstractPrincipal } from './principal';
-
 export declare type JsonValue = boolean | string | number | JsonArray | JsonObject;
-
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface JsonArray extends Array<JsonValue> {}
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface JsonObject extends Record<string, JsonValue> {}
-
 /**
  * An Agent able to make calls and queries to a Replica. This is the base class for an agent. Details of HTTP Calls and responses are left as any, and are implemented in the HTTP Agent.
  */
-export abstract class AbstractAgent {
-  readonly rootKey: ArrayBuffer | null;
+export declare abstract class AbstractAgent {
+  readonly rootKey: ArrayBuffer | null | undefined;
   /**
    * Returns the principal ID associated with this agent (by default). It only shows
    * the principal of the default identity in the agent, which is the principal used
    * when calls don't specify it.
    */
-  getPrincipal(): Promise<AbstractPrincipal>;
-
+  abstract getPrincipal(): Promise<AbstractPrincipal>;
   /**
    * Send a read state query to the replica. This includes a list of paths to return,
    * and will return a Certificate. This will only reject on communication errors,
@@ -30,16 +23,13 @@ export abstract class AbstractAgent {
    * @param identity Identity for the call. If not specified, uses the instance identity.
    * @param request The request to send in case it has already been created.
    */
-  readState(
+  abstract readState(
     effectiveCanisterId: AbstractPrincipal | string,
     options: any,
     identity?: AbstractIdentity,
-    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
     request?: any,
   ): Promise<any>;
-
-  call(canisterId: AbstractPrincipal | string, fields: any): Promise<any>;
-
+  abstract call(canisterId: AbstractPrincipal | string, fields: any): Promise<any>;
   /**
    * Query the status endpoint of the replica. This normally has a few fields that
    * corresponds to the version of the replica, its root public key, and any other
@@ -47,8 +37,7 @@ export abstract class AbstractAgent {
    * @returns A JsonObject that is essentially a record of fields from the status
    *     endpoint.
    */
-  status(): Promise<JsonObject>;
-
+  abstract status(): Promise<JsonObject>;
   /**
    * Send a query call to a canister. See
    * {@link https://sdk.dfinity.org/docs/interface-spec/#http-query | the interface spec}.
@@ -59,8 +48,7 @@ export abstract class AbstractAgent {
    *     failed. If the query itself failed but no protocol errors happened, the response will
    *     be of type QueryResponseRejected.
    */
-  query(canisterId: AbstractPrincipal | string, options: any): Promise<any>;
-
+  abstract query(canisterId: AbstractPrincipal | string, options: any): Promise<any>;
   /**
    * By default, the agent is configured to talk to the main Internet Computer,
    * and verifies responses using a hard-coded public key.
@@ -73,7 +61,7 @@ export abstract class AbstractAgent {
    * otherwise you are prone to man-in-the-middle attacks! Do not call this
    * function by default.
    */
-  fetchRootKey(): Promise<ArrayBuffer>;
+  abstract fetchRootKey(): Promise<ArrayBuffer>;
   /**
    * If an application needs to invalidate an identity under certain conditions, an `Agent` may expose an `invalidateIdentity` method.
    * Invoking this method will set the inner identity used by the `Agent` to `null`.
@@ -91,7 +79,6 @@ export abstract class AbstractAgent {
    */
   replaceIdentity?(identity: AbstractIdentity): void;
 }
-
 /**
  * Options when doing a {@link Agent.readState} call.
  */

@@ -1,18 +1,15 @@
 import { VerifyFunc } from './actor';
 import { AbstractPrincipal } from './principal';
-
 /**
  * A signature array buffer.
  */
-export type Signature = ArrayBuffer & {
+export declare type Signature = ArrayBuffer & {
   __signature__: void;
 };
-
-interface AbstractDelegation extends Record<string, any> {
+export interface AbstractDelegation extends Record<string, any> {
   subnet_id: ArrayBuffer;
   certificate: ArrayBuffer;
 }
-
 export interface CreateCertificateOptions {
   /**
    * The bytes encoding the certificate to be verified
@@ -33,9 +30,8 @@ export interface CreateCertificateOptions {
    */
   blsVerify?: VerifyFunc;
 }
-
-export abstract class AbstractCertificate {
-  static create(options: CreateCertificateOptions): Promise<AbstractCertificate>;
+export declare abstract class AbstractCertificate {
+  abstract create(options: CreateCertificateOptions): Promise<AbstractCertificate>;
   abstract lookup(path: Array<ArrayBuffer | string>): ArrayBuffer | undefined;
   abstract verify(): Promise<void>;
 }

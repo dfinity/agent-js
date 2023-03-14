@@ -53,6 +53,7 @@
   "dependencies": {
     "@dfinity/types": "^1.0.x",
     "@dfinity/principal": "^0.15.4",
+    "@dfinity/candid": "^0.15.4",
     "base64-arraybuffer": "^0.2.0",
     "bignumber.js": "^9.0.0",
     "borc": "^2.1.1",

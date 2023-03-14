@@ -1,8 +1,8 @@
 import { AbstractAgent } from './agent';
-import * as IDL from './idl';
+import * as IDL from './idl-placeholder';
 import { AbstractPrincipal } from './principal';
 
-interface ActorMetadata {
+export interface ActorMetadata {
   service: IDL.ServiceClass;
   agent?: AbstractAgent;
   config: ActorConfig;
@@ -55,7 +55,7 @@ export interface CallConfig {
   blsVerify?: VerifyFunc;
 }
 
-type VerifyFunc = (pk: Uint8Array, sig: Uint8Array, msg: Uint8Array) => Promise<boolean>;
+export type VerifyFunc = (pk: Uint8Array, sig: Uint8Array, msg: Uint8Array) => Promise<boolean>;
 
 /**
  * Configuration that can be passed to customize the Actor behaviour.
@@ -95,27 +95,6 @@ export interface ActorMetadata {
 export abstract class AbstractActor {
   // allow for symbol key
   [key: symbol]: ActorMetadata | unknown;
-
-  public static agentOf(actor: AbstractActor): AbstractAgent | undefined;
-  public static interfaceOf(actor: AbstractActor): IDL.ServiceClass;
-  public static canisterIdOf(actor: AbstractActor): AbstractPrincipal;
-  public static install(
-    fields: { module: ArrayBuffer; mode?: CanisterInstallMode; arg?: ArrayBuffer },
-    config: ActorConfig,
-  ): Promise<void>;
-  public static createCanister(config?: CallConfig): Promise<AbstractPrincipal>;
-  public static createAndInstallCanister(
-    interfaceFactory: IDL.InterfaceFactory,
-    fields: { module: ArrayBuffer; arg?: ArrayBuffer },
-    config?: CallConfig,
-  ): Promise<AbstractActor>;
-  public static createActorClass(interfaceFactory: IDL.InterfaceFactory): ActorConstructor;
-  public static createActor<T = Record<string, ActorMethod>>(
-    interfaceFactory: IDL.InterfaceFactory,
-    configuration: ActorConfig,
-  ): AbstractActor & T;
-
-  protected constructor(metadata: ActorMetadata);
 }
 
 export enum CanisterInstallMode {

@@ -1,4 +1,5 @@
-import { DerEncodedPublicKey, SignIdentity, Signature } from '@dfinity/types';
+import type { DerEncodedPublicKey, Signature } from '@dfinity/types';
+import { SignIdentity } from '@dfinity/agent';
 
 /**
  * Options used in a {@link ECDSAKeyIdentity}

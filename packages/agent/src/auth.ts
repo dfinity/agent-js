@@ -1,4 +1,10 @@
-import { AbstractIdentity, IdentityDescriptor, PublicKey, Signature } from '@dfinity/types';
+import {
+  AbstractIdentity,
+  AbstractSignIdentity,
+  IdentityDescriptor,
+  PublicKey,
+  Signature,
+} from '@dfinity/types';
 import { concat, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
 import { requestIdOf } from './request_id';
@@ -23,7 +29,7 @@ export function createIdentityDescriptor(
 /**
  * An Identity that can sign blobs.
  */
-export abstract class SignIdentity extends AbstractIdentity {
+export abstract class SignIdentity extends AbstractSignIdentity {
   protected _principal: Principal | undefined;
 
   /**
