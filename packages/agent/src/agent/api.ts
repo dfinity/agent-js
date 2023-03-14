@@ -1,7 +1,7 @@
 import { Principal } from '@dfinity/principal';
 import { RequestId } from '../request_id';
 import { JsonObject } from '@dfinity/candid';
-import { Identity } from '../auth';
+import { AbstractIdentity, AbstractPrincipal } from '@dfinity/types';
 
 /**
  * Codes used by the replica for rejecting a message.
@@ -118,7 +118,7 @@ export interface Agent {
    */
   createReadStateRequest?(
     options: ReadStateOptions,
-    identity?: Identity,
+    identity?: AbstractIdentity,
     // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   ): Promise<any>;
 
@@ -132,14 +132,14 @@ export interface Agent {
    * @param request The request to send in case it has already been created.
    */
   readState(
-    effectiveCanisterId: Principal | string,
+    effectiveCanisterId: AbstractPrincipal | string,
     options: ReadStateOptions,
-    identity?: Identity,
+    identity?: AbstractIdentity,
     // eslint-disable-next-line  @typescript-eslint/no-explicit-any
     request?: any,
   ): Promise<ReadStateResponse>;
 
-  call(canisterId: Principal | string, fields: CallOptions): Promise<SubmitResponse>;
+  call(canisterId: AbstractPrincipal | string, fields: CallOptions): Promise<SubmitResponse>;
 
   /**
    * Query the status endpoint of the replica. This normally has a few fields that
@@ -160,7 +160,7 @@ export interface Agent {
    *     failed. If the query itself failed but no protocol errors happened, the response will
    *     be of type QueryResponseRejected.
    */
-  query(canisterId: Principal | string, options: QueryFields): Promise<QueryResponse>;
+  query(canisterId: AbstractPrincipal | string, options: QueryFields): Promise<QueryResponse>;
 
   /**
    * By default, the agent is configured to talk to the main Internet Computer,
@@ -190,5 +190,5 @@ export interface Agent {
    *
    * ```Actor.agentOf(defaultActor).replaceIdentity(await authClient.getIdentity());```
    */
-  replaceIdentity?(identity: Identity): void;
+  replaceIdentity?(identity: AbstractIdentity): void;
 }

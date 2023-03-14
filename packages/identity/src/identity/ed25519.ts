@@ -1,4 +1,4 @@
-import { DerEncodedPublicKey, KeyPair, PublicKey, Signature, SignIdentity } from '@dfinity/types';
+import { DerEncodedPublicKey, KeyPair, PublicKey, SignIdentity, Signature } from '@dfinity/types';
 import * as tweetnacl from 'tweetnacl';
 import { fromHexString, toHexString } from '../buffer';
 import { ED25519_OID, unwrapDER, wrapDER } from './der';

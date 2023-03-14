@@ -4,32 +4,11 @@ import { AbstractPrincipal } from './principal';
 /**
  * A signature array buffer.
  */
-export declare type Signature = ArrayBuffer & {
+export type Signature = ArrayBuffer & {
   __signature__: void;
 };
 
-export interface Cert {
-  tree: HashTree;
-  signature: ArrayBuffer;
-  delegation?: Delegation;
-}
-
-export const enum NodeId {
-  Empty = 0,
-  Fork = 1,
-  Labeled = 2,
-  Leaf = 3,
-  Pruned = 4,
-}
-
-export type HashTree =
-  | [NodeId.Empty]
-  | [NodeId.Fork, HashTree, HashTree]
-  | [NodeId.Labeled, ArrayBuffer, HashTree]
-  | [NodeId.Leaf, ArrayBuffer]
-  | [NodeId.Pruned, ArrayBuffer];
-
-interface Delegation extends Record<string, any> {
+interface AbstractDelegation extends Record<string, any> {
   subnet_id: ArrayBuffer;
   certificate: ArrayBuffer;
 }

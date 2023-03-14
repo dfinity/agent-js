@@ -1,12 +1,8 @@
-import { Principal } from '@dfinity/principal';
 import { RequestStatusResponseStatus } from '../agent';
 import { toHex } from '../utils/buffer';
 import { PollStrategy } from './index';
-<<<<<<< HEAD
 import { RequestId } from '../request_id';
-=======
 import { AbstractPrincipal } from '@dfinity/types';
->>>>>>> 75ac0b5 (actor refactor with metadata)
 
 export type Predicate<T> = (
   canisterId: AbstractPrincipal,

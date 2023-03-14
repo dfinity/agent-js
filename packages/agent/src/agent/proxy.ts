@@ -1,4 +1,3 @@
-import { JsonObject } from '@dfinity/candid';
 import {
   AbstractAgent,
   JsonObject,

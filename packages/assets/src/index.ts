@@ -3,11 +3,12 @@ import {
   Cbor as cbor,
   Certificate,
   compare,
+  HashTree,
   HttpAgent,
   lookup_path,
   reconstruct,
 } from '@dfinity/agent';
-import { AbstractActor, ActorConfig, HashTree } from '@dfinity/types';
+import { AbstractActor, ActorConfig } from '@dfinity/types';
 import { lebDecode } from '@dfinity/candid';
 import { PipeArrayBuffer } from '@dfinity/candid/lib/cjs/utils/buffer';
 import { AssetsCanisterRecord, getAssetsCanister } from './canisters/assets';

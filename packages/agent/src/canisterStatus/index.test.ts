@@ -2,10 +2,10 @@ import { request, Path, encodePath } from './index';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
 import { fromHexString } from '@dfinity/candid';
-import { Identity } from '../auth';
 import fetch from 'isomorphic-fetch';
 import { HttpAgent } from '../agent';
 import { fromHex, toHex } from '../utils/buffer';
+import { AbstractIdentity } from '@dfinity/types';
 
 const testPrincipal = Principal.fromText('rrkah-fqaaa-aaaaa-aaaaq-cai');
 
@@ -44,7 +44,7 @@ const getRealStatus = async () => {
     new Uint8Array(
       fromHexString('foo23342sd-234-234a-asdf-asdf-asdf-4frsefrsdf-weafasdfe-easdfee'),
     ),
-  )) as unknown as Identity;
+  )) as unknown as AbstractIdentity;
 
   const agent = new HttpAgent({ host: 'http://127.0.0.1:4943', fetch, identity });
   await agent.fetchRootKey();

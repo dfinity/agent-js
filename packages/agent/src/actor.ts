@@ -311,5 +311,3 @@ function _createActorMethod(
       caller(options, ...args);
   return handler as ActorMethod;
 }
-
-export type ManagementCanisterRecord = _SERVICE;

@@ -3,10 +3,11 @@
 import { lebDecode, PipeArrayBuffer } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { AgentError } from '../errors';
-import { HttpAgent } from '../agent/http';
+import { HttpAgent, IC_ROOT_KEY } from '../agent/http';
 import { Certificate } from '../certificate';
-import { toHex } from '../utils/buffer';
+import { fromHex, toHex } from '../utils/buffer';
 import * as Cbor from '../cbor';
+import { AbstractAgent, AbstractPrincipal, CreateCertificateOptions } from '@dfinity/types';
 
 /**
  * Types of an entry on the canisterStatus map.

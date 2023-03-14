@@ -1,10 +1,10 @@
 import { requestIdOf } from '@dfinity/agent';
 import {
-  Signature,
   SignIdentity,
   DerEncodedPublicKey,
   PublicKey,
   AbstractPrincipal,
+  Signature,
 } from '@dfinity/types';
 import { HttpAgentRequest } from '@dfinity/types';
 import { Principal } from '@dfinity/principal';

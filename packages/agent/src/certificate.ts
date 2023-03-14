@@ -1,19 +1,10 @@
+import { AbstractPrincipal, CreateCertificateOptions } from '@dfinity/types';
 import * as cbor from './cbor';
-import {
-  AbstractCertificate,
-  AbstractPrincipal,
-  Cert,
-  CreateCertificateOptions,
-  Delegation,
-  HashTree,
-  NodeId,
-  VerifyFunc,
-} from '@dfinity/types';
 import { AgentError } from './errors';
 import { hash } from './request_id';
+import { blsVerify } from './utils/bls';
 import { concat, fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
-import * as bls from './utils/bls';
 
 /**
  * A certificate may fail verification with respect to the provided public key
@@ -23,6 +14,27 @@ export class CertificateVerificationError extends AgentError {
     super(`Invalid certificate: ${reason}`);
   }
 }
+
+interface Cert {
+  tree: HashTree;
+  signature: ArrayBuffer;
+  delegation?: Delegation;
+}
+
+const enum NodeId {
+  Empty = 0,
+  Fork = 1,
+  Labeled = 2,
+  Leaf = 3,
+  Pruned = 4,
+}
+
+export type HashTree =
+  | [NodeId.Empty]
+  | [NodeId.Fork, HashTree, HashTree]
+  | [NodeId.Labeled, ArrayBuffer, HashTree]
+  | [NodeId.Leaf, ArrayBuffer]
+  | [NodeId.Pruned, ArrayBuffer];
 
 /**
  * Make a human readable string out of a hash tree.
@@ -68,6 +80,11 @@ export function hashTreeToString(tree: HashTree): string {
   }
 }
 
+interface Delegation extends Record<string, any> {
+  subnet_id: ArrayBuffer;
+  certificate: ArrayBuffer;
+}
+
 function isBufferEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
   if (a.byteLength !== b.byteLength) {
     return false;
@@ -82,7 +99,7 @@ function isBufferEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
   return true;
 }
 
-export class Certificate implements AbstractCertificate {
+export class Certificate {
   private readonly cert: Cert;
 
   /**
@@ -93,20 +110,11 @@ export class Certificate implements AbstractCertificate {
    * @see {@link CreateCertificateOptions}
    * @param {ArrayBuffer} options.certificate The bytes of the certificate
    * @param {ArrayBuffer} options.rootKey The root key to verify against
-   * @param {Principal} options.canisterId The effective or signing canister ID
+   * @param {AbstractPrincipal} options.canisterId The effective or signing canister ID
    * @throws {CertificateVerificationError}
    */
   public static async create(options: CreateCertificateOptions): Promise<Certificate> {
-    let blsVerify = options.blsVerify;
-    if (!blsVerify) {
-      blsVerify = bls.blsVerify;
-    }
-    const cert = new Certificate(
-      options.certificate,
-      options.rootKey,
-      Principal.from(options.canisterId),
-      blsVerify,
-    );
+    const cert = new Certificate(options.certificate, options.rootKey, options.canisterId);
     await cert.verify();
     return cert;
   }
@@ -115,7 +123,6 @@ export class Certificate implements AbstractCertificate {
     certificate: ArrayBuffer,
     private _rootKey: ArrayBuffer,
     private _canisterId: AbstractPrincipal,
-    private _blsVerify: VerifyFunc,
   ) {
     this.cert = cbor.decode(new Uint8Array(certificate));
   }
@@ -124,7 +131,7 @@ export class Certificate implements AbstractCertificate {
     return lookup_path(path, this.cert.tree);
   }
 
-  public async verify(): Promise<void> {
+  private async verify(): Promise<void> {
     const rootHash = await reconstruct(this.cert.tree);
     const derKey = await this._checkDelegationAndGetKey(this.cert.delegation);
     const sig = this.cert.signature;
@@ -132,7 +139,7 @@ export class Certificate implements AbstractCertificate {
     const msg = concat(domain_sep('ic-state-root'), rootHash);
     let sigVer = false;
     try {
-      sigVer = await this._blsVerify(new Uint8Array(key), new Uint8Array(sig), new Uint8Array(msg));
+      sigVer = await blsVerify(new Uint8Array(key), new Uint8Array(sig), new Uint8Array(msg));
     } catch (err) {
       sigVer = false;
     }
@@ -151,27 +158,29 @@ export class Certificate implements AbstractCertificate {
       canisterId: this._canisterId,
     });
 
-    const rangeLookup = cert.lookup(['subnet', d.subnet_id, 'canister_ranges']);
-    if (!rangeLookup) {
-      throw new CertificateVerificationError(
-        `Could not find canister ranges for subnet 0x${toHex(d.subnet_id)}`,
-      );
-    }
-    const ranges_arr: Array<[Uint8Array, Uint8Array]> = cbor.decode(rangeLookup);
-    const ranges: Array<[Principal, Principal]> = ranges_arr.map(v => [
-      Principal.fromUint8Array(v[0]),
-      Principal.fromUint8Array(v[1]),
-    ]);
+    if (this._canisterId.compareTo(Principal.managementCanister()) !== 'eq') {
+      const rangeLookup = cert.lookup(['subnet', d.subnet_id, 'canister_ranges']);
+      if (!rangeLookup) {
+        throw new CertificateVerificationError(
+          `Could not find canister ranges for subnet 0x${toHex(d.subnet_id)}`,
+        );
+      }
+      const ranges_arr: Array<[Uint8Array, Uint8Array]> = cbor.decode(rangeLookup);
+      const ranges: Array<[AbstractPrincipal, AbstractPrincipal]> = ranges_arr.map(v => [
+        Principal.fromUint8Array(v[0]),
+        Principal.fromUint8Array(v[1]),
+      ]);
 
-    const canisterInRange = ranges.some(
-      r => r[0].ltEq(this._canisterId) && r[1].gtEq(this._canisterId),
-    );
-    if (!canisterInRange) {
-      throw new CertificateVerificationError(
-        `Canister ${this._canisterId} not in range of delegations for subnet 0x${toHex(
-          d.subnet_id,
-        )}`,
+      const canisterInRange = ranges.some(
+        r => r[0].ltEq(this._canisterId) && r[1].gtEq(this._canisterId),
       );
+      if (!canisterInRange) {
+        throw new CertificateVerificationError(
+          `Canister ${this._canisterId} not in range of delegations for subnet 0x${toHex(
+            d.subnet_id,
+          )}`,
+        );
+      }
     }
     const publicKeyLookup = cert.lookup(['subnet', d.subnet_id, 'public_key']);
     if (!publicKeyLookup) {

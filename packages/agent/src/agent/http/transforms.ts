@@ -1,6 +1,5 @@
 import { lebEncode } from '@dfinity/candid';
 import * as cbor from 'simple-cbor';
-import { toHex } from '../../utils/buffer';
 import {
   AbstractExpiry,
   Endpoint,
@@ -64,7 +63,6 @@ export class Expiry implements AbstractExpiry {
  */
 export function makeNonceTransform(nonceFn: () => Nonce = makeNonce): HttpAgentRequestTransformFn {
   return async (request: HttpAgentRequest) => {
-    const nonce = nonceFn();
     // Nonce needs to be inserted into the header for all requests, to enable logs to be correlated with requests.
     const headers = request.request.headers ? new Headers(request.request.headers) : new Headers();
     // TODO: uncomment this when the http proxy supports it.

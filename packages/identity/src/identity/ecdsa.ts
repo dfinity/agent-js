@@ -1,4 +1,4 @@
-import { DerEncodedPublicKey, Signature, SignIdentity } from '@dfinity/types';
+import { DerEncodedPublicKey, SignIdentity, Signature } from '@dfinity/types';
 
 /**
  * Options used in a {@link ECDSAKeyIdentity}
@@ -137,6 +137,10 @@ export class ECDSAKeyIdentity extends SignIdentity {
     };
     this._keyPair.privateKey;
     const signature = await this._subtleCrypto.sign(params, this._keyPair.privateKey, challenge);
+    Object.defineProperty(signature, '__signature__', {
+      value: void 0,
+      enumerable: false,
+    });
 
     return signature as Signature;
   }
