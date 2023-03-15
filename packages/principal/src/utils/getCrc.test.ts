@@ -1,4 +1,5 @@
 import { getCrc32 } from './getCrc';
+import { describe, it, expect } from 'vitest';
 
 describe('crc', () => {
   it('works', () => {

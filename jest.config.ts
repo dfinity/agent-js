@@ -1,5 +1,5 @@
 // jest.config.js
-import baseConfig from './jest.config.base';
+import baseConfig from './jest.config.base.js';
 export default {
   ...baseConfig,
   projects: ['<rootDir>/packages/*/jest.config.ts'],
