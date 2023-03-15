@@ -1,3 +1,4 @@
+import { test, expect } from 'vitest';
 import { fromHexString, PipeArrayBuffer as Pipe, toHexString } from './buffer';
 import {
   lebDecode,

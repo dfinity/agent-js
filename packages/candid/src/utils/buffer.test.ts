@@ -1,4 +1,5 @@
 import { PipeArrayBuffer } from './buffer';
+import { test, expect, describe } from 'vitest';
 
 describe('PipeArrayBuffer', () => {
   test('can read', () => {

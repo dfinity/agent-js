@@ -1,4 +1,5 @@
 import { idlLabelToId } from './hash';
+import { test, expect } from 'vitest';
 
 test('IDL label', () => {
   function testLabel(str: string, expected: number) {

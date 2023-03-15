@@ -1,4 +1,5 @@
 import { ilog2, iexp2 } from './bigint-math';
+import { test, expect } from 'vitest';
 
 test('ilog2', () => {
   for (let n = 1; n < 100; n++) {
