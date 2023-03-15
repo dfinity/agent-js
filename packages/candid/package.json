@@ -31,11 +31,18 @@
     "distributed",
     "api"
   ],
-  "main": "./lib/cjs/index.js",
-  "module": "./lib/esm/index.js",
-  "unpkg": "./lib/esm/index",
+  "type": "module",
+  "main": "lib/esm/index.js",
+  "exports": {
+    ".": {
+      "types": "./lib/esm/index.d.ts",
+      "import": "./lib/esm/index.js",
+      "require": "./lib/cjs/index.cjs"
+    }
+  },
   "scripts": {
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
+    "postbuild": "find lib/cjs -name \"*.js\" -exec sh -c 'mv \"$0\" \"${0%.js}.cjs\"' {} \\;",
     "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js",
     "size-limit": "size-limit",
     "ci": "npm run prettier && npm run lint && npm run test",

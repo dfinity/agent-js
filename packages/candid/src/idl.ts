@@ -1,8 +1,8 @@
 // tslint:disable:max-classes-per-file
 import { Principal as PrincipalId } from '@dfinity/principal';
-import { JsonValue } from './types';
-import { concat, PipeArrayBuffer as Pipe } from './utils/buffer';
-import { idlLabelToId } from './utils/hash';
+import { JsonValue } from './types.js';
+import { concat, PipeArrayBuffer as Pipe } from './utils/buffer.js';
+import { idlLabelToId } from './utils/hash.js';
 import {
   lebDecode,
   lebEncode,
@@ -14,8 +14,8 @@ import {
   slebEncode,
   writeIntLE,
   writeUIntLE,
-} from './utils/leb128';
-import { iexp2 } from './utils/bigint-math';
+} from './utils/leb128.js';
+import { iexp2 } from './utils/bigint-math.js';
 
 // tslint:disable:max-line-length
 /**

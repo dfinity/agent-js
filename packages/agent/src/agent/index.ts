@@ -1,2 +1,2 @@
-export * from './http';
-export * from './proxy';
+export * from './http/index.js';
+export * from './proxy.js';

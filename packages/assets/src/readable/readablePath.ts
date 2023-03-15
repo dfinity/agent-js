@@ -1,5 +1,5 @@
-import { Readable } from './readable';
-import mime from 'mime/lite';
+import { Readable } from './readable.js';
+import mime from 'mime/lite.js';
 import fs from 'fs';
 import path from 'path';
 

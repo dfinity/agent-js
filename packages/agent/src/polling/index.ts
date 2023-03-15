@@ -1,12 +1,11 @@
 import { Principal } from '@dfinity/principal';
-import { RequestStatusResponseStatus } from '../agent';
-import { Certificate } from '../certificate';
-import { RequestId } from '../request_id';
-import { toHex } from '../utils/buffer';
+import { RequestStatusResponseStatus } from '../agent/index.js';
+import { Certificate } from '../certificate.js';
+import { RequestId } from '../request_id.js';
+import { toHex } from '../utils/buffer.js';
 import { AbstractPrincipal, AbstractAgent, CreateCertificateOptions } from '@dfinity/types';
 
-export * as strategy from './strategy';
-export { defaultStrategy } from './strategy';
+export { defaultStrategy } from './strategy.js';
 export type PollStrategy = (
   canisterId: AbstractPrincipal,
   requestId: RequestId,

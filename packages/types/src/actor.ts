@@ -1,6 +1,6 @@
-import { AbstractAgent } from './agent';
-import * as IDL from './idl-placeholder';
-import { AbstractPrincipal } from './principal';
+import { AbstractAgent } from './agent.js';
+import * as IDL from './idl-placeholder.js';
+import { AbstractPrincipal } from './principal.js';
 
 export interface ActorMetadata {
   service: IDL.ServiceClass;

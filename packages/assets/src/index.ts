@@ -10,17 +10,17 @@ import {
 } from '@dfinity/agent';
 import { AbstractActor, ActorConfig } from '@dfinity/types';
 import { lebDecode } from '@dfinity/candid';
-import { PipeArrayBuffer } from '@dfinity/candid/lib/cjs/utils/buffer';
-import { AssetsCanisterRecord, getAssetsCanister } from './canisters/assets';
+import { PipeArrayBuffer } from '@dfinity/candid';
+import { AssetsCanisterRecord, getAssetsCanister } from './canisters/assets.js';
 import { Hasher, sha256 as jsSha256 } from 'js-sha256';
-import { BatchOperationKind } from './canisters/assets_service';
+import { BatchOperationKind } from './canisters/assets_service.js';
 import * as base64Arraybuffer from 'base64-arraybuffer';
-import { isReadable, Readable } from './readable/readable';
-import { ReadableFile } from './readable/readableFile';
-import { ReadableBlob } from './readable/readableBlob';
-import { ReadablePath } from './readable/readablePath';
-import { ReadableBytes } from './readable/readableBytes';
-import { limit, LimitFn } from './utils/limit';
+import { isReadable, Readable } from './readable/readable.js';
+import { ReadableFile } from './readable/readableFile.js';
+import { ReadableBlob } from './readable/readableBlob.js';
+import { ReadablePath } from './readable/readablePath.js';
+import { ReadableBytes } from './readable/readableBytes.js';
+import { limit, LimitFn } from './utils/limit.js';
 import fs from 'fs';
 
 /**

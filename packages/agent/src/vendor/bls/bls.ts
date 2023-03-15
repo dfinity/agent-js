@@ -2,7 +2,7 @@ import * as base64Arraybuffer from 'base64-arraybuffer';
 
 // This WASM is generated from the miracl BLS Rust code (see
 // https://github.com/dfinity/miracl_core_bls12381/)
-import { wasmBytesBase64 } from './wasm';
+import { wasmBytesBase64 } from './wasm.js';
 
 /* tslint:disable */
 /* eslint-disable */

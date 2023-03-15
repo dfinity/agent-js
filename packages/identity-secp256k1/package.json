@@ -4,9 +4,18 @@
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to manage Secp256k1KeyIdentities for use with the Internet Computer",
-  "main": "./lib/cjs/index.js",
+  "type": "module",
+  "main": "lib/esm/index.js",
+  "exports": {
+    ".": {
+      "types": "./lib/esm/index.d.ts",
+      "import": "./lib/esm/index.js",
+      "require": "./lib/cjs/index.cjs"
+    }
+  },
   "scripts": {
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
+    "postbuild": "find lib/cjs -name \"*.js\" -exec sh -c 'mv \"$0\" \"${0%.js}.cjs\"' {} \\;",
     "eslint": "eslint --ext '.js,.jsx,.ts,.tsx'",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/identity-secp256k1 --excludeInternal",
     "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=node",

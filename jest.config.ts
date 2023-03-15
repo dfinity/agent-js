@@ -1,7 +1,6 @@
 // jest.config.js
 import baseConfig from './jest.config.base';
-
-module.exports = {
+export default {
   ...baseConfig,
   projects: ['<rootDir>/packages/*/jest.config.ts'],
   moduleNameMapper: {

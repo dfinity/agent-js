@@ -3,6 +3,7 @@ node_modules/
 dist/
 **/*.js
 **/*.js.map
+lib/
 
 
 # generated docs

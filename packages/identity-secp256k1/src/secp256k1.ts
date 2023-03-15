@@ -4,10 +4,10 @@ import { SignIdentity } from '@dfinity/agent';
 import Secp256k1 from 'secp256k1';
 import { sha256 } from 'js-sha256';
 import { randomBytes } from 'tweetnacl';
-import hdkey from './hdkey';
+import hdkey from './hdkey.js';
 import { mnemonicToSeedSync } from 'bip39';
-import { fromHexString, toHexString } from './buffer';
-import { SECP256K1_OID, unwrapDER, wrapDER } from './der';
+import { fromHexString, toHexString } from './buffer.js';
+import { SECP256K1_OID, unwrapDER, wrapDER } from './der.js';
 
 declare type PublicKeyHex = string;
 declare type SecretKeyHex = string;

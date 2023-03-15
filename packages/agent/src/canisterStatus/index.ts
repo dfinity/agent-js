@@ -2,11 +2,11 @@
 
 import { lebDecode, PipeArrayBuffer } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
-import { AgentError } from '../errors';
-import { HttpAgent, IC_ROOT_KEY } from '../agent/http';
-import { Certificate } from '../certificate';
-import { fromHex, toHex } from '../utils/buffer';
-import * as Cbor from '../cbor';
+import { AgentError } from '../errors.js';
+import { HttpAgent, IC_ROOT_KEY } from '../agent/http/index.js';
+import { Certificate } from '../certificate.js';
+import { fromHex, toHex } from '../utils/buffer.js';
+import * as Cbor from '../cbor.js';
 import { AbstractAgent, AbstractPrincipal, CreateCertificateOptions } from '@dfinity/types';
 
 /**

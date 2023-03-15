@@ -1,8 +1,8 @@
-import { Actor } from '../actor';
+import { Actor } from '../actor.js';
 import { AbstractActor, CallConfig } from '@dfinity/types';
 import { Principal } from '@dfinity/principal';
-import managementCanisterIdl from './management_idl';
-import _SERVICE from './management_service';
+import managementCanisterIdl from './management_idl.js';
+import _SERVICE from './management_service.js';
 
 export type ManagementCanisterRecord = _SERVICE;
 

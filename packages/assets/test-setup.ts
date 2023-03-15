@@ -8,17 +8,20 @@
 // Node.js in a similar way.
 
 import mime from 'mime-types';
-
-global.crypto = require('@peculiar/webcrypto');
-global.TextEncoder = require('text-encoding').TextEncoder;
-global.TextDecoder = require('text-encoding').TextDecoder;
-global.MessageChannel = require('worker_threads').MessageChannel;
-global.Blob = require('@web-std/file').Blob;
-// @ts-ignore File polyfill with additional mime type polyfill
-global.File = class FilePolyfill extends require('@web-std/file').File {
-  constructor(init: BlobPart[], name?: string, options?: FilePropertyBag | undefined) {
+import { Crypto } from '@peculiar/webcrypto';
+import { TextEncoder, TextDecoder } from 'util';
+import { MessageChannel } from 'worker_threads';
+import { Blob } from '@web-std/file';
+class FilePolyfill extends (await import('@web-std/file')).File {
+  constructor(init, name, options) {
     super(init, name, options);
-    this._type = mime.lookup(name) || 'application/octet-stream';
+    (this as any)._type = mime.lookup(name) || 'application/octet-stream';
   }
-};
-require('whatwg-fetch');
+}
+(global as any).crypto = new Crypto();
+global.TextEncoder = TextEncoder;
+(global as any).TextDecoder = TextDecoder;
+(global as any).MessageChannel = MessageChannel;
+global.Blob = Blob;
+global.File = FilePolyfill;
+await import('node-fetch');

@@ -1,10 +1,10 @@
 import { Principal } from '@dfinity/principal';
-import { AgentError } from '../../errors';
-import * as cbor from '../../cbor';
-import { requestIdOf } from '../../request_id';
-import { fromHex } from '../../utils/buffer';
+import { AgentError } from '../../errors.js';
+import * as cbor from '../../cbor.js';
+import { requestIdOf } from '../../request_id.js';
+import { fromHex } from '../../utils/buffer.js';
 import { AbstractAgent, JsonObject, AbstractIdentity, AbstractPrincipal } from '@dfinity/types';
-import { Expiry, makeNonce, makeNonceTransform } from './transforms';
+import { Expiry, makeNonce, makeNonceTransform } from './transforms.js';
 import {
   CallRequest,
   Endpoint,
@@ -14,19 +14,19 @@ import {
   QueryRequest,
   ReadRequestType,
   SubmitRequestType,
-} from './types';
+} from './types.js';
 import {
   QueryFields,
   QueryResponse,
   ReadStateOptions,
   ReadStateResponse,
   SubmitResponse,
-} from '../api';
-import { AnonymousIdentity } from '../../auth';
+} from '../api.js';
+import { AnonymousIdentity } from '../../auth.js';
 
-export * from './transforms';
-export * from './types';
-export { makeNonce } from './transforms';
+export * from './transforms.js';
+export * from './types.js';
+export { makeNonce } from './transforms.js';
 
 export enum RequestStatusResponseStatus {
   Received = 'received',
@@ -481,7 +481,7 @@ export class HttpAgent implements AbstractAgent {
    * @param {PrincipalLike} canisterId - Pass a canister ID if you need to sync the time with a particular replica. Uses the management canister by default
    */
   public async syncTime(canisterId?: Principal): Promise<void> {
-    const CanisterStatus = await import('../../canisterStatus');
+    const CanisterStatus = await import('../../canisterStatus/index.js');
     const callTime = Date.now();
     try {
       if (!canisterId) {

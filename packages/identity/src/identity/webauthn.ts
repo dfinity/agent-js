@@ -2,8 +2,8 @@ import type { Signature, DerEncodedPublicKey, PublicKey } from '@dfinity/types';
 import { SignIdentity } from '@dfinity/agent';
 import borc from 'borc';
 import * as tweetnacl from 'tweetnacl';
-import { fromHexString, toHexString } from '../buffer';
-import { DER_COSE_OID, wrapDER } from './der';
+import { fromHexString, toHexString } from '../buffer.js';
+import { DER_COSE_OID, wrapDER } from './der.js';
 import { Principal } from '@dfinity/principal';
 
 function _coseToDerEncodedBlob(cose: ArrayBuffer): DerEncodedPublicKey {

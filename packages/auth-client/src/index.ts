@@ -14,7 +14,7 @@ import {
   Ed25519KeyIdentity,
   ECDSAKeyIdentity,
 } from '@dfinity/identity';
-import { IdleManager, IdleManagerOptions } from './idleManager';
+import { IdleManager, IdleManagerOptions } from './idleManager.js';
 import {
   AuthClientStorage,
   IdbStorage,
@@ -23,10 +23,10 @@ import {
   KEY_STORAGE_KEY,
   KEY_VECTOR,
   LocalStorage,
-} from './storage';
+} from './storage.js';
 
-export { IdbStorage, LocalStorage, KEY_STORAGE_DELEGATION, KEY_STORAGE_KEY } from './storage';
-export { IdbKeyVal, DBCreateOptions } from './db';
+export { IdbStorage, LocalStorage, KEY_STORAGE_DELEGATION, KEY_STORAGE_KEY } from './storage.js';
+export { IdbKeyVal, DBCreateOptions } from './db.js';
 
 const IDENTITY_PROVIDER_DEFAULT = 'https://identity.ic0.app';
 const IDENTITY_PROVIDER_ENDPOINT = '#authorize';
@@ -80,7 +80,7 @@ export interface IdleOptions extends IdleManagerOptions {
   disableDefaultIdleCallback?: boolean;
 }
 
-export * from './idleManager';
+export * from './idleManager.js';
 
 export interface AuthClientLoginOptions {
   /**

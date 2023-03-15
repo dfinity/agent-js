@@ -1,7 +1,7 @@
 import baseConfig from '../../jest.config.base';
 const packageName = 'auth-client';
 
-module.exports = {
+export default {
   testEnvironment: 'jsdom',
   ...baseConfig,
   bail: false,

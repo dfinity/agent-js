@@ -12,20 +12,21 @@ import {
   AbstractPrincipal,
 } from '@dfinity/types';
 import { IDL } from '@dfinity/candid';
-import { AgentError } from './errors';
-import { pollForResponse, strategy } from './polling';
-import { RequestId } from './request_id';
-import { toHex } from './utils/buffer';
-import { HttpAgent } from './agent/http';
+import { AgentError } from './errors.js';
+import { pollForResponse } from './polling/index.js';
+import * as strategy from './polling/strategy.js';
+import { RequestId } from './request_id.js';
+import { toHex } from './utils/buffer.js';
+import { HttpAgent } from './agent/http/index.js';
 import { Principal } from '@dfinity/principal';
-import { getManagementCanister } from './canisters/management';
-import _SERVICE from './canisters/management_service';
+import { getManagementCanister } from './canisters/management.js';
+import _SERVICE from './canisters/management_service.js';
 import {
   QueryResponseRejected,
   QueryResponseStatus,
   ReplicaRejectCode,
   SubmitResponse,
-} from './agent/api';
+} from './agent/api.js';
 
 export class ActorCallError extends AgentError {
   constructor(

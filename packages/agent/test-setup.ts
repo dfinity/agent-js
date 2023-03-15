@@ -6,8 +6,8 @@
 //
 // Note that we can use webpack configuration to make some features available to
 // Node.js in a similar way.
-
-global.crypto = require('@trust/webcrypto');
-global.TextEncoder = require('text-encoding').TextEncoder;
-global.TextDecoder = require('text-encoding').TextDecoder;
-global.fetch = require('isomorphic-fetch');
+import crypto from '@trust/webcrypto';
+import fetch from 'isomorphic-fetch';
+import { TextEncoder, TextDecoder } from 'text-encoding';
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;

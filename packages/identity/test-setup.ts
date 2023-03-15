@@ -8,8 +8,10 @@
 // Node.js in a similar way.
 
 import { Crypto } from '@peculiar/webcrypto';
-global.crypto = new Crypto();
-global.TextEncoder = require('text-encoding').TextEncoder;
-global.TextDecoder = require('text-encoding').TextDecoder;
-global.MessageChannel = require('worker_threads').MessageChannel;
-require('whatwg-fetch');
+import { TextEncoder, TextDecoder } from 'text-encoding';
+import { MessageChannel } from 'worker_threads';
+import 'whatwg-fetch';
+(global as any).crypto = new Crypto();
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
+(global as any).MessageChannel = MessageChannel;

@@ -1,7 +1,7 @@
 import { Actor } from '@dfinity/agent';
 import { ActorConfig } from '@dfinity/types';
-import { idlFactory } from './assets_idl';
-import _SERVICE from './assets_service';
+import { idlFactory } from './assets_idl.js';
+import _SERVICE from './assets_service.js';
 
 export type AssetsCanisterRecord = _SERVICE;
 

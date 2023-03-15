@@ -1,5 +1,5 @@
-import { AbstractIdentity } from './identity';
-import { AbstractPrincipal } from './principal';
+import { AbstractIdentity } from './identity.js';
+import { AbstractPrincipal } from './principal.js';
 
 export declare type JsonValue = boolean | string | number | JsonArray | JsonObject;
 

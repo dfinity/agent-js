@@ -1,5 +1,5 @@
-import { Signature } from './certificate';
-import { AbstractPrincipal } from './principal';
+import { Signature } from './certificate.js';
+import { AbstractPrincipal } from './principal.js';
 
 /**
  * A Key Pair, containing a secret and public key.

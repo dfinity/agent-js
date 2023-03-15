@@ -5,9 +5,9 @@ import {
   ReadStateOptions,
   ReadStateResponse,
   SubmitResponse,
-} from '../agent/api';
+} from '../agent/api.js';
 import { JsonObject } from '@dfinity/candid';
-import { Agent } from './api';
+import { Agent } from './api.js';
 import { Principal } from '@dfinity/principal';
 
 export enum ProxyMessageKind {

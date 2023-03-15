@@ -1,7 +1,7 @@
 import baseConfig from '../../jest.config.base';
 const packageName = 'identity';
 
-module.exports = {
+export default {
   ...baseConfig,
   roots: [`<rootDir>/packages/${packageName}`],
   bail: false,

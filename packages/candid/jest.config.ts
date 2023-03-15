@@ -1,7 +1,7 @@
 import baseConfig from '../../jest.config.base';
 const packageName = 'candid';
 
-module.exports = {
+export default {
   ...baseConfig,
   roots: [`<rootDir>/packages/${packageName}`],
   bail: false,

@@ -1,5 +1,5 @@
 import { AbstractPrincipal } from '@dfinity/types';
-import { Expiry } from './transforms';
+import { Expiry } from './transforms.js';
 
 /**
  * @internal

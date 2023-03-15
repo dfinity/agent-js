@@ -1,5 +1,5 @@
 import { openDB, IDBPDatabase } from 'idb';
-import { isBrowser, KEY_STORAGE_DELEGATION, KEY_STORAGE_KEY } from './storage';
+import { isBrowser, KEY_STORAGE_DELEGATION, KEY_STORAGE_KEY } from './storage.js';
 
 type Database = IDBPDatabase<unknown>;
 type IDBValidKey = string | number | Date | BufferSource | IDBValidKey[];

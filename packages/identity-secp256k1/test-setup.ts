@@ -7,5 +7,8 @@
 // Note that we can use webpack configuration to make some features available to
 // Node.js in a similar way.
 
-global.crypto = require('@trust/webcrypto');
-global.fetch = require('isomorphic-fetch');
+import { Crypto } from '@peculiar/webcrypto';
+import fetch from 'isomorphic-fetch';
+
+(global as any).crypto = new Crypto();
+global.fetch = fetch;

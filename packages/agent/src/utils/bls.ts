@@ -1,4 +1,4 @@
-import init, { bls_init, bls_verify } from '../vendor/bls/bls';
+import init, { bls_init, bls_verify } from '../vendor/bls/bls.js';
 
 export let verify: (pk: Uint8Array, sig: Uint8Array, msg: Uint8Array) => boolean;
 

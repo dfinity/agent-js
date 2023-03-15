@@ -1,4 +1,4 @@
-import { AbstractActor, ActorMetadata } from './actor';
-import { AbstractPrincipal } from './principal';
+import { AbstractActor, ActorMetadata } from './actor.js';
+import { AbstractPrincipal } from './principal.js';
 
 export type ServiceClass = any;

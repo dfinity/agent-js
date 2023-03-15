@@ -9,7 +9,7 @@
     "forceConsistentCasingInFileNames": true,
     "incremental": true,
     "module": "ES2020",
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "outDir": "./lib/esm",
     "resolveJsonModule": true,
     "rootDir": "./src",

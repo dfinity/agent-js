@@ -1,5 +1,5 @@
-import { VerifyFunc } from './actor';
-import { AbstractPrincipal } from './principal';
+import { VerifyFunc } from './actor.js';
+import { AbstractPrincipal } from './principal.js';
 
 /**
  * A signature array buffer.

@@ -1,9 +1,9 @@
 import { AbstractPrincipal, CreateCertificateOptions } from '@dfinity/types';
-import * as cbor from './cbor';
-import { AgentError } from './errors';
-import { hash } from './request_id';
-import { blsVerify } from './utils/bls';
-import { concat, fromHex, toHex } from './utils/buffer';
+import * as cbor from './cbor.js';
+import { AgentError } from './errors.js';
+import { hash } from './request_id.js';
+import { blsVerify } from './utils/bls.js';
+import { concat, fromHex, toHex } from './utils/buffer.js';
 import { Principal } from '@dfinity/principal';
 
 /**

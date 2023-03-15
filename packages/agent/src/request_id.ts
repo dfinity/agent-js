@@ -2,7 +2,7 @@ import { lebEncode } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import borc from 'borc';
 import { sha256 as jsSha256 } from 'js-sha256';
-import { compare, concat } from './utils/buffer';
+import { compare, concat } from './utils/buffer.js';
 
 export type RequestId = ArrayBuffer & { __requestId__: void };
 

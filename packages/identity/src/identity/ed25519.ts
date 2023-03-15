@@ -1,8 +1,8 @@
 import type { DerEncodedPublicKey, KeyPair, PublicKey, Signature } from '@dfinity/types';
 import { SignIdentity } from '@dfinity/agent';
 import * as tweetnacl from 'tweetnacl';
-import { fromHexString, toHexString } from '../buffer';
-import { ED25519_OID, unwrapDER, wrapDER } from './der';
+import { fromHexString, toHexString } from '../buffer.js';
+import { ED25519_OID, unwrapDER, wrapDER } from './der.js';
 
 export class Ed25519PublicKey implements PublicKey {
   public static from(key: PublicKey): Ed25519PublicKey {

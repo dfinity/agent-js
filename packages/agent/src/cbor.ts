@@ -6,7 +6,7 @@ import borc from 'borc';
 import * as cbor from 'simple-cbor';
 import { CborEncoder, SelfDescribeCborSerializer } from 'simple-cbor';
 import { Principal } from '@dfinity/principal';
-import { concat, fromHex } from './utils/buffer';
+import { concat, fromHex } from './utils/buffer.js';
 
 // We are using hansl/simple-cbor for CBOR serialization, to avoid issues with
 // encoding the uint64 values that the HTTP handler of the client expects for

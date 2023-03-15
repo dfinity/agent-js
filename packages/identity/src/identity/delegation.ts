@@ -8,7 +8,7 @@ import {
 } from '@dfinity/types';
 import { Principal } from '@dfinity/principal';
 import * as cbor from 'simple-cbor';
-import { fromHexString, toHexString } from '../buffer';
+import { fromHexString, toHexString } from '../buffer.js';
 
 const domainSeparator = new TextEncoder().encode('\x1Aic-request-auth-delegation');
 const requestDomainSeparator = new TextEncoder().encode('\x0Aic-request');

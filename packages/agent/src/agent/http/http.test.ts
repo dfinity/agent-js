@@ -11,12 +11,11 @@ import {
 } from './types';
 import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
-import { AnonymousIdentity } from '../../auth';
+import { AnonymousIdentity, SignIdentity } from '../../auth';
 import { JSDOM } from 'jsdom';
 import { Ed25519KeyIdentity } from '../../../../identity/src/identity/ed25519';
 import { toHexString } from '../../../../identity/src/buffer';
 import { AgentError } from '../../errors';
-import { SignIdentity } from '@dfinity/types';
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;

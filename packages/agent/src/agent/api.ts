@@ -1,5 +1,5 @@
 import { Principal } from '@dfinity/principal';
-import { RequestId } from '../request_id';
+import { RequestId } from '../request_id.js';
 import { JsonObject } from '@dfinity/candid';
 import { AbstractIdentity, AbstractPrincipal } from '@dfinity/types';
 

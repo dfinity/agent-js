@@ -9,8 +9,8 @@
     "forceConsistentCasingInFileNames": true,
     "incremental": true,
     "module": "ES2020",
-    "moduleResolution": "node",
-    "outDir": "./lib",
+    "moduleResolution": "nodenext",
+    "outDir": "./lib/esm",
     "paths": {
       "@dfinity/types": ["src"]
     },

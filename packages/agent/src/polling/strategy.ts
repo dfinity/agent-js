@@ -1,7 +1,7 @@
-import { RequestStatusResponseStatus } from '../agent';
-import { toHex } from '../utils/buffer';
-import { PollStrategy } from './index';
-import { RequestId } from '../request_id';
+import { RequestStatusResponseStatus } from '../agent/index.js';
+import { toHex } from '../utils/buffer.js';
+import { PollStrategy } from './index.js';
+import { RequestId } from '../request_id.js';
 import { AbstractPrincipal } from '@dfinity/types';
 
 export type Predicate<T> = (

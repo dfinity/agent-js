@@ -6,9 +6,12 @@
 //
 // Note that we can use webpack configuration to make some features available to
 // Node.js in a similar way.
+import { Crypto } from '@peculiar/webcrypto';
+import { TextEncoder, TextDecoder } from 'text-encoding';
+import { MessageChannel } from 'worker_threads';
+import 'whatwg-fetch';
+(global as any).crypto = new Crypto();
 
-global.crypto = require('@trust/webcrypto');
-global.TextEncoder = require('text-encoding').TextEncoder;
-global.TextDecoder = require('text-encoding').TextDecoder;
-global.MessageChannel = require('worker_threads').MessageChannel;
-require('whatwg-fetch');
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
+(global as any).MessageChannel = MessageChannel;

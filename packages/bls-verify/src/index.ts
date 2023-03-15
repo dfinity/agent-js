@@ -1,5 +1,5 @@
 import { CTX } from 'amcl-js';
-import { toHex } from './utils';
+import { toHex } from './utils.js';
 
 export const blsVerify = async (
   primaryKey: Uint8Array | string,

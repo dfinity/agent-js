@@ -1,6 +1,6 @@
-import { Actor } from '../actor';
-import { ActorConfig } from '@dfinity/types';
-import assetCanister from './asset_idl';
+import { Actor } from '../actor.js';
+import type { ActorConfig } from '@dfinity/types';
+import assetCanister from './asset_idl.js';
 
 /* tslint:disable */
 export interface AssetCanisterRecord {

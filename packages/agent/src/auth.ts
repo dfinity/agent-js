@@ -5,10 +5,10 @@ import {
   PublicKey,
   Signature,
 } from '@dfinity/types';
-import { concat, toHex } from './utils/buffer';
+import { concat, toHex } from './utils/buffer.js';
 import { Principal } from '@dfinity/principal';
-import { requestIdOf } from './request_id';
-import { HttpAgentRequest } from './agent/http/types';
+import { requestIdOf } from './request_id.js';
+import { HttpAgentRequest } from './agent/http/types.js';
 
 const domainSeparator = new TextEncoder().encode('\x0Aic-request');
 
