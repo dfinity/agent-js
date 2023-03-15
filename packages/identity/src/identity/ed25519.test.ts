@@ -1,3 +1,4 @@
+import { describe, test, expect } from 'vitest';
 import { DerEncodedPublicKey } from '@dfinity/types';
 import { fromHexString } from '../buffer';
 import { Ed25519KeyIdentity, Ed25519PublicKey } from './ed25519';

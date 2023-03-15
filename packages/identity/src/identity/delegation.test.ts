@@ -1,3 +1,4 @@
+import { test, expect } from 'vitest';
 import { AbstractSignIdentity } from '@dfinity/types';
 import { Principal } from '@dfinity/principal';
 import { DelegationChain } from './delegation';
