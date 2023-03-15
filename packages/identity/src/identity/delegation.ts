@@ -177,7 +177,8 @@ export class DelegationChain {
       targets?: Principal[];
     } = {},
   ): Promise<DelegationChain> {
-    const delegation = await _createSingleDelegation(from, to, expiration, options.targets);
+    const fromIdentity = from as SignIdentity;
+    const delegation = await _createSingleDelegation(fromIdentity, to, expiration, options.targets);
     return new DelegationChain(
       [...(options.previous?.delegations || []), delegation],
       options.previous?.publicKey || from.getPublicKey().toDer(),
@@ -277,7 +278,8 @@ export class DelegationIdentity extends SignIdentity {
     key: Pick<AbstractSignIdentity, 'sign'>,
     delegation: DelegationChain,
   ): DelegationIdentity {
-    return new this(key, delegation);
+    const identity = key as SignIdentity;
+    return new this(identity, delegation);
   }
 
   protected constructor(
