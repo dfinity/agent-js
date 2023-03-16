@@ -169,7 +169,7 @@ export class DelegationChain {
    * @param options.targets - targets that scope the delegation (e.g. Canister Principals)
    */
   public static async create(
-    from: AbstractSignIdentity,
+    from: SignIdentity,
     to: PublicKey,
     expiration: Date = new Date(Date.now() + 15 * 60 * 1000),
     options: {
@@ -177,7 +177,7 @@ export class DelegationChain {
       targets?: Principal[];
     } = {},
   ): Promise<DelegationChain> {
-    const fromIdentity = from as SignIdentity;
+    const fromIdentity = from;
     const delegation = await _createSingleDelegation(fromIdentity, to, expiration, options.targets);
     return new DelegationChain(
       [...(options.previous?.delegations || []), delegation],

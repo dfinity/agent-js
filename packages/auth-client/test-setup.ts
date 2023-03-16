@@ -9,7 +9,10 @@
 import { Crypto } from '@peculiar/webcrypto';
 import 'fake-indexeddb/auto';
 import { TextEncoder, TextDecoder } from 'text-encoding';
-import('whatwg-fetch');
-(global as any).crypto = new Crypto();
-global.TextEncoder = TextEncoder;
-global.TextDecoder = TextDecoder;
+import { beforeEach } from 'vitest';
+
+beforeEach(() => {
+  (global as any).crypto = new Crypto();
+  global.TextEncoder = TextEncoder;
+  global.TextDecoder = TextDecoder;
+});

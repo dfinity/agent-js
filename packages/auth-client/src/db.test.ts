@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { IdbKeyVal } from './db';
 
 let testCounter = 0;
@@ -47,50 +48,47 @@ describe('indexeddb wrapper', () => {
     await db.set('testKey', keyPair);
     const storedKey = (await db.get('testKey')) as CryptoKeyPair;
 
-    expect(storedKey).toMatchInlineSnapshot(
-      keyPair,
-      `
-      Object {
-        "privateKey": Object {
-          "algorithm": Object {
-            "hash": Object {
+    expect(storedKey).toMatchInlineSnapshot(`
+      {
+        "privateKey": {
+          "algorithm": {
+            "hash": {
               "name": "SHA-256",
             },
             "modulusLength": 2048,
             "name": "RSA-OAEP",
-            "publicExponent": Object {
-              "0": 1,
-              "1": 0,
-              "2": 1,
-            },
+            "publicExponent": Uint8Array [
+              1,
+              0,
+              1,
+            ],
           },
           "extractable": true,
           "type": "private",
-          "usages": Array [
+          "usages": [
             "decrypt",
           ],
         },
-        "publicKey": Object {
-          "algorithm": Object {
-            "hash": Object {
+        "publicKey": {
+          "algorithm": {
+            "hash": {
               "name": "SHA-256",
             },
             "modulusLength": 2048,
             "name": "RSA-OAEP",
-            "publicExponent": Object {
-              "0": 1,
-              "1": 0,
-              "2": 1,
-            },
+            "publicExponent": Uint8Array [
+              1,
+              0,
+              1,
+            ],
           },
           "extractable": true,
           "type": "public",
-          "usages": Array [
+          "usages": [
             "encrypt",
           ],
         },
       }
-    `,
-    );
+    `);
   });
 });

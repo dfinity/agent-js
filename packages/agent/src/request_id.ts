@@ -30,7 +30,11 @@ export function hashValue(value: unknown): ArrayBuffer {
     return hashString(value);
   } else if (typeof value === 'number') {
     return hash(lebEncode(value));
-  } else if (value instanceof ArrayBuffer || ArrayBuffer.isView(value)) {
+  } else if (
+    value instanceof ArrayBuffer ||
+    ArrayBuffer.isView(value) ||
+    (value as any).constructor.toString().includes('ArrayBuffer')
+  ) {
     return hash(value as ArrayBuffer);
   } else if (Array.isArray(value)) {
     const vals = value.map(hashValue);

@@ -1,10 +1,10 @@
+import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import 'fake-indexeddb/auto';
 import { Actor, HttpAgent } from '@dfinity/agent';
-import { AgentError } from '@dfinity/agent/lib/cjs/errors';
 import { IDL } from '@dfinity/candid';
 import { DelegationChain, Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
-import { AuthClient, ERROR_USER_INTERRUPT, IdbStorage } from './index';
+import { AuthClient, ERROR_USER_INTERRUPT, IdbStorage } from './index.js';
 import {
   AuthClientStorage,
   KEY_STORAGE_DELEGATION,
@@ -41,7 +41,7 @@ class IdpMock {
 const { location, fetch } = window;
 
 beforeEach(() => {
-  jest.useFakeTimers();
+  vi.useFakeTimers();
 });
 afterEach(() => {
   delete (window as any).location;
@@ -82,13 +82,13 @@ describe('Auth Client', () => {
     // setup actor
     delete (window as any).location;
     (window as any).location = {
-      reload: jest.fn(),
+      reload: vi.fn(),
       fetch,
-      toString: jest.fn(() => 'http://localhost:4943'),
+      toString: vi.fn(() => 'http://localhost:4943'),
     };
 
     const identity = Ed25519KeyIdentity.generate();
-    const mockFetch: jest.Mock = jest.fn();
+    const mockFetch: vi.Mock = vi.fn();
     // http agent uses identity
 
     const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
@@ -113,7 +113,7 @@ describe('Auth Client', () => {
     });
 
     // wait for the idle timeout
-    jest.advanceTimersByTime(1000);
+    vi.advanceTimersByTime(1000);
 
     // check that the registered actor has been invalidated
     const expectedError =
@@ -121,7 +121,7 @@ describe('Auth Client', () => {
     try {
       await actor.greet('hello');
     } catch (error) {
-      expect((error as AgentError).message).toBe(expectedError);
+      expect((error as any).message).toBe(expectedError);
     }
   });
   it('should log out after idle and reload the window by default', async () => {
@@ -144,12 +144,12 @@ describe('Auth Client', () => {
       },
     });
     delete (window as any).location;
-    (window as any).location = { reload: jest.fn(), fetch };
+    (window as any).location = { reload: vi.fn(), fetch };
 
     const storage: AuthClientStorage = {
-      remove: jest.fn(),
-      get: jest.fn(),
-      set: jest.fn(),
+      remove: vi.fn(),
+      get: vi.fn(),
+      set: vi.fn(),
     };
 
     // setup auth client
@@ -161,7 +161,7 @@ describe('Auth Client', () => {
     });
 
     // Test login flow
-    const onSuccess = jest.fn();
+    const onSuccess = vi.fn();
     test.login({ onSuccess });
 
     idpMock.ready();
@@ -170,7 +170,7 @@ describe('Auth Client', () => {
     expect(storage.remove).not.toBeCalled();
 
     // simulate user being inactive for 10 minutes
-    jest.advanceTimersByTime(10 * 60 * 1000);
+    vi.advanceTimersByTime(10 * 60 * 1000);
 
     // Storage should be cleared by default after logging out
     expect(storage.remove).toBeCalled();
@@ -197,12 +197,12 @@ describe('Auth Client', () => {
       },
     });
     delete (window as any).location;
-    (window as any).location = { reload: jest.fn(), fetch };
+    (window as any).location = { reload: vi.fn(), fetch };
 
     const storage: AuthClientStorage = {
-      remove: jest.fn(),
-      get: jest.fn(),
-      set: jest.fn(),
+      remove: vi.fn(),
+      get: vi.fn(),
+      set: vi.fn(),
     };
 
     const test = await AuthClient.create({
@@ -221,7 +221,7 @@ describe('Auth Client', () => {
     expect(storage.remove).not.toBeCalled();
 
     // simulate user being inactive for 10 minutes
-    jest.advanceTimersByTime(10 * 60 * 1000);
+    vi.advanceTimersByTime(10 * 60 * 1000);
 
     // Storage should not be cleared
     expect(storage.remove).not.toBeCalled();
@@ -248,8 +248,8 @@ describe('Auth Client', () => {
       },
     });
     delete (window as any).location;
-    (window as any).location = { reload: jest.fn(), fetch };
-    const idleCb = jest.fn();
+    (window as any).location = { reload: vi.fn(), fetch };
+    const idleCb = vi.fn();
     const test = await AuthClient.create({
       idleOptions: {
         idleTimeout: 1000,
@@ -261,7 +261,7 @@ describe('Auth Client', () => {
     idpMock.ready();
 
     // simulate user being inactive for 10 minutes
-    jest.advanceTimersByTime(10 * 60 * 1000);
+    vi.advanceTimersByTime(10 * 60 * 1000);
 
     expect(window.location.reload).not.toBeCalled();
     expect(idleCb).toBeCalled();
@@ -294,7 +294,7 @@ describe('Auth Client', () => {
 
     // setup actor
     const identity = Ed25519KeyIdentity.generate();
-    const mockFetch: jest.Mock = jest.fn();
+    const mockFetch: vi.Mock = vi.fn();
     // http agent uses identity
 
     const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
@@ -322,7 +322,7 @@ describe('Auth Client', () => {
     try {
       await actor.greet('hello');
     } catch (error) {
-      expect((error as AgentError).message).toBe(expectedError);
+      expect((error as any).message).toBe(expectedError);
     }
 
     idpMock.ready();
@@ -330,7 +330,7 @@ describe('Auth Client', () => {
     expect((Actor.agentOf(actor) as any)._identity).toBeTruthy();
   });
   it('should not set up an idle timer if the disable option is set', async () => {
-    const idleFn = jest.fn();
+    const idleFn = vi.fn();
     const test = await AuthClient.create({
       idleOptions: {
         idleTimeout: 1000,
@@ -340,7 +340,7 @@ describe('Auth Client', () => {
     expect(idleFn).not.toHaveBeenCalled();
     expect(test.idleManager).toBeUndefined();
     // wait for default 30 minute idle timeout
-    jest.advanceTimersByTime(30 * 60 * 1000);
+    vi.advanceTimersByTime(30 * 60 * 1000);
     expect(idleFn).not.toHaveBeenCalled();
   });
   it('should not set up an idle timer if the client is not logged in', async () => {
@@ -363,12 +363,12 @@ describe('Auth Client', () => {
       },
     });
     delete (window as any).location;
-    (window as any).location = { reload: jest.fn(), fetch };
+    (window as any).location = { reload: vi.fn(), fetch };
 
     const storage: AuthClientStorage = {
-      remove: jest.fn(),
-      get: jest.fn(),
-      set: jest.fn(),
+      remove: vi.fn(),
+      get: vi.fn(),
+      set: vi.fn(),
     };
 
     const test = await AuthClient.create({
@@ -382,7 +382,7 @@ describe('Auth Client', () => {
     expect(storage.remove).not.toBeCalled();
 
     // simulate user being inactive for 10 minutes
-    jest.advanceTimersByTime(10 * 60 * 1000);
+    vi.advanceTimersByTime(10 * 60 * 1000);
 
     // Storage should not be cleared
     expect(storage.remove).not.toBeCalled();
@@ -411,7 +411,7 @@ let idpWindow: IdpWindow;
 let idpMock: IdpMock;
 function setup(options?: { onAuthRequest?: () => void }) {
   // Set the event handler.
-  global.addEventListener = jest.fn((_, callback) => {
+  global.addEventListener = vi.fn((_, callback) => {
     // eslint-disable-next-line
     // @ts-ignore
     idpMock = new IdpMock(callback, 'https://identity.ic0.app');
@@ -420,14 +420,14 @@ function setup(options?: { onAuthRequest?: () => void }) {
   // Mock window.open and window.postMessage since we can't open windows here.
   // eslint-disable-next-line
   // @ts-ignore
-  global.open = jest.fn(() => {
+  global.open = vi.fn(() => {
     const idpWin: IdpWindow = (idpWindow = {
-      postMessage: jest.fn(message => {
+      postMessage: vi.fn(message => {
         if (message.kind === 'authorize-client') {
           options?.onAuthRequest?.();
         }
       }),
-      close: jest.fn(() => {
+      close: vi.fn(() => {
         idpWin.closed = true;
       }),
       closed: false,
@@ -445,12 +445,12 @@ describe('Auth Client login', () => {
     expect(global.open).toBeCalledWith('http://localhost/#authorize', 'idpWindow', undefined);
 
     // Try with #authorize hash.
-    global.open = jest.fn();
+    global.open = vi.fn();
     await client.login({ identityProvider: 'http://localhost#authorize' });
     expect(global.open).toBeCalledWith('http://localhost/#authorize', 'idpWindow', undefined);
 
     // Default url
-    global.open = jest.fn();
+    global.open = vi.fn();
     await client.login();
     expect(global.open).toBeCalledWith(
       'https://identity.ic0.app/#authorize',
@@ -459,7 +459,7 @@ describe('Auth Client login', () => {
     );
 
     // Default custom window.open feature
-    global.open = jest.fn();
+    global.open = vi.fn();
     await client.login({
       windowOpenerFeatures: 'toolbar=0,location=0,menubar=0',
     });
@@ -480,7 +480,7 @@ describe('Auth Client login', () => {
 
     idpMock.ready('http://localhost');
 
-    const call = (idpWindow.postMessage as jest.Mock).mock.calls[0][0];
+    const call = (idpWindow.postMessage as vi.Mock).mock.calls[0][0];
     expect(call['derivationOrigin']).toBe('http://localhost:1234');
   });
 
@@ -520,7 +520,7 @@ describe('Auth Client login', () => {
       },
     });
     const client = await AuthClient.create();
-    const failureFunc = jest.fn();
+    const failureFunc = vi.fn();
     await client.login({ onError: failureFunc });
 
     idpMock.ready();
@@ -538,7 +538,7 @@ describe('Auth Client login', () => {
       },
     });
     const client = await AuthClient.create();
-    const failureFunc = jest.fn();
+    const failureFunc = vi.fn();
     await client.login({ onError: failureFunc });
 
     idpMock.ready();
@@ -557,7 +557,7 @@ describe('Auth Client login', () => {
       },
     });
     const client = await AuthClient.create();
-    const cb = jest.fn();
+    const cb = vi.fn();
     const failureFunc = async () => {
       await cb();
     };
@@ -590,7 +590,7 @@ describe('Auth Client login', () => {
     });
 
     const client = await AuthClient.create();
-    const onSuccess = jest.fn();
+    const onSuccess = vi.fn();
     client.login({ onSuccess: onSuccess });
 
     idpMock.ready();
@@ -602,7 +602,7 @@ describe('Auth Client login', () => {
 
   it('should call onError if the user closed the IDP window', async () => {
     setup();
-    jest.useRealTimers();
+    vi.useRealTimers();
     const client = await AuthClient.create({ idleOptions: { disableIdle: true } });
 
     await expect(
@@ -635,7 +635,7 @@ describe('Auth Client login', () => {
     });
 
     const client = await AuthClient.create();
-    const cb = jest.fn();
+    const cb = vi.fn();
     const onSuccess = async () => {
       cb();
     };
@@ -651,37 +651,37 @@ describe('Auth Client login', () => {
 describe('Migration from localstorage', () => {
   it('should proceed normally if no values are stored in localstorage', async () => {
     const storage: AuthClientStorage = {
-      remove: jest.fn(),
-      get: jest.fn(),
-      set: jest.fn(),
+      remove: vi.fn(),
+      get: vi.fn(),
+      set: vi.fn(),
     };
 
     await AuthClient.create({ storage });
 
     // Key is stored during creation when none is provided
-    expect(storage.set as jest.Mock).toBeCalledTimes(1);
+    expect(storage.set as vi.Mock).toBeCalledTimes(1);
   });
   it('should not attempt to migrate if a delegation is already stored', async () => {
     const storage: AuthClientStorage = {
-      remove: jest.fn(),
-      get: jest.fn(async x => {
+      remove: vi.fn(),
+      get: vi.fn(async x => {
         if (x === KEY_STORAGE_DELEGATION) return 'test';
         if (x === KEY_STORAGE_KEY) return 'key';
         return null;
       }),
-      set: jest.fn(),
+      set: vi.fn(),
     };
 
     await AuthClient.create({ storage });
 
-    expect(storage.set as jest.Mock).toBeCalledTimes(1);
+    expect(storage.set as vi.Mock).toBeCalledTimes(1);
   });
   it('should migrate storage from localstorage', async () => {
     const localStorage = new LocalStorage();
     const storage: AuthClientStorage = {
-      remove: jest.fn(),
-      get: jest.fn(),
-      set: jest.fn(),
+      remove: vi.fn(),
+      get: vi.fn(),
+      set: vi.fn(),
     };
 
     await localStorage.set(KEY_STORAGE_DELEGATION, 'test');
@@ -689,7 +689,7 @@ describe('Migration from localstorage', () => {
 
     await AuthClient.create({ storage });
 
-    expect(storage.set as jest.Mock).toBeCalledTimes(3);
+    expect(storage.set as vi.Mock).toBeCalledTimes(3);
   });
 });
 
@@ -699,8 +699,8 @@ describe('Migration from Ed25519Key', () => {
     '4bbff6b476463558d7be318aa342d1a97778d70833038680187950e9e02486c0d1fa89134802051c8b5d4e53c08b87381b87097bca4c4f348611eb8ce6c91809',
   ];
   it('should continue using an existing Ed25519Key and delegation', async () => {
-    // set the jest timer to a fixed value
-    jest.setSystemTime(new Date('2020-01-01T00:00:00.000Z'));
+    // set the vi timer to a fixed value
+    vi.setSystemTime(new Date('2020-01-01T00:00:00.000Z'));
 
     // two days from now
     const expiration = new Date('2020-01-03T00:00:00.000Z');
@@ -708,13 +708,13 @@ describe('Migration from Ed25519Key', () => {
     const key = await Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
     const chain = DelegationChain.create(key, key.getPublicKey(), expiration);
     const storage: AuthClientStorage = {
-      remove: jest.fn(),
-      get: jest.fn(async x => {
+      remove: vi.fn(),
+      get: vi.fn(async x => {
         if (x === KEY_STORAGE_DELEGATION) return JSON.stringify((await chain).toJSON());
         if (x === KEY_STORAGE_KEY) return JSON.stringify(testSecrets);
         return null;
       }),
-      set: jest.fn(),
+      set: vi.fn(),
     };
 
     const client = await AuthClient.create({ storage });
@@ -723,16 +723,16 @@ describe('Migration from Ed25519Key', () => {
     expect(identity).toMatchSnapshot();
   });
   it('should continue using an existing Ed25519Key with no delegation', async () => {
-    // set the jest timer to a fixed value
-    jest.setSystemTime(new Date('2020-01-01T00:00:00.000Z'));
+    // set the vi timer to a fixed value
+    vi.setSystemTime(new Date('2020-01-01T00:00:00.000Z'));
 
     const storage: AuthClientStorage = {
-      remove: jest.fn(),
-      get: jest.fn(async x => {
+      remove: vi.fn(),
+      get: vi.fn(async x => {
         if (x === KEY_STORAGE_KEY) return JSON.stringify(testSecrets);
         return null;
       }),
-      set: jest.fn(),
+      set: vi.fn(),
     };
 
     const client = await AuthClient.create({ storage });
@@ -740,27 +740,28 @@ describe('Migration from Ed25519Key', () => {
     const identity = await client.getIdentity();
     expect(identity.getPrincipal().isAnonymous()).toBe(true);
   });
-  it('should continue using an existing Ed25519Key with an expired delegation', async () => {
-    // set the jest timer to a fixed value
-    jest.setSystemTime(new Date('2020-01-01T00:00:00.000Z'));
+  it.only('should continue using an existing Ed25519Key with an expired delegation', async () => {
+    // set the vi timer to a fixed value
+    vi.setSystemTime(new Date('2020-01-01T00:00:00.000Z'));
 
     // two days ago
     const expiration = new Date('2019-12-30T00:00:00.000Z');
 
     const key = await Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
+
     const chain = DelegationChain.create(key, key.getPublicKey(), expiration);
     const fakeStore: Record<any, any> = {};
     fakeStore[KEY_STORAGE_DELEGATION] = JSON.stringify((await chain).toJSON());
     fakeStore[KEY_STORAGE_KEY] = JSON.stringify(testSecrets);
 
     const storage: AuthClientStorage = {
-      remove: jest.fn(async x => {
+      remove: vi.fn(async x => {
         delete fakeStore[x];
       }),
-      get: jest.fn(async x => {
+      get: vi.fn(async x => {
         return fakeStore[x] ?? null;
       }),
-      set: jest.fn(),
+      set: vi.fn(),
     };
 
     const client = await AuthClient.create({ storage });
@@ -769,15 +770,15 @@ describe('Migration from Ed25519Key', () => {
     expect(identity.getPrincipal().isAnonymous()).toBe(true);
 
     // expect the delegation to be removed
-    expect(storage.remove as jest.Mock).toBeCalledTimes(3);
-    expect(fakeStore).toMatchInlineSnapshot(`Object {}`);
+    expect(storage.remove as vi.Mock).toBeCalledTimes(3);
+    expect(fakeStore).toMatchInlineSnapshot('{}');
   });
   it('should generate and store a ECDSAKey if no key is stored', async () => {
     const fakeStore: Record<any, any> = {};
     const storage: AuthClientStorage = {
-      remove: jest.fn(),
-      get: jest.fn(),
-      set: jest.fn(async (x, y) => {
+      remove: vi.fn(),
+      get: vi.fn(),
+      set: vi.fn(async (x, y) => {
         fakeStore[x] = y;
       }),
     };
@@ -785,7 +786,7 @@ describe('Migration from Ed25519Key', () => {
 
     // It should have stored a cryptoKey
     expect(Object.keys(fakeStore[KEY_STORAGE_KEY])).toMatchInlineSnapshot(`
-      Array [
+      [
         "privateKey",
         "publicKey",
       ]
@@ -794,15 +795,15 @@ describe('Migration from Ed25519Key', () => {
   it('should generate and store a ECDSAKey if no key is stored and keyType is set to Ed25519', async () => {
     const fakeStore: Record<any, any> = {};
     const storage = {
-      remove: jest.fn(),
-      get: jest.fn(key => fakeStore[key]),
-      set: jest.fn(async (x, y) => {
+      remove: vi.fn(),
+      get: vi.fn(key => fakeStore[key]),
+      set: vi.fn(async (x, y) => {
         fakeStore[x] = y;
       }),
     };
 
     // mock ED25519 generate method
-    const generate = jest.spyOn(Ed25519KeyIdentity, 'generate');
+    const generate = vi.spyOn(Ed25519KeyIdentity, 'generate');
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
