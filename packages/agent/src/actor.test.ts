@@ -1,3 +1,4 @@
+import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { Actor } from './actor';
@@ -9,7 +10,7 @@ import { requestIdOf } from './request_id';
 
 const originalDateNowFn = global.Date.now;
 beforeEach(() => {
-  global.Date.now = jest.fn(() => new Date(1000000).getTime());
+  global.Date.now = vi.fn(() => new Date(1000000).getTime());
 });
 afterEach(() => {
   global.Date.now = originalDateNowFn;
@@ -26,7 +27,7 @@ describe('makeActor', () => {
 
     const expectedReplyArg = IDL.encode([IDL.Text], ['Hello, World!']);
 
-    const mockFetch: jest.Mock = jest
+    const mockFetch: vi.Mock = vi
       .fn()
       .mockImplementationOnce((/*resource, init*/) => {
         return Promise.resolve(
@@ -183,7 +184,7 @@ describe('makeActor', () => {
     });
   });
   it('should allow its agent to be invalidated', async () => {
-    const mockFetch = jest.fn();
+    const mockFetch = vi.fn();
     const actorInterface = () => {
       return IDL.Service({
         greet: IDL.Func([IDL.Text], [IDL.Text]),

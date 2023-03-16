@@ -1,5 +1,6 @@
 // tslint:disable-next-line: max-line-length
 // https://github.com/dfinity-lab/dfinity/blob/5fef1450c9ab16ccf18381379149e504b11c8218/docs/spec/public/index.adoc#request-ids
+import { test, expect, describe, it } from 'vitest';
 import { Principal } from '@dfinity/principal';
 import { hash, hashValue, requestIdOf } from './request_id';
 import { fromHex, toHex } from './utils/buffer';

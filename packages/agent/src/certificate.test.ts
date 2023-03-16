@@ -3,6 +3,7 @@
  * an instance of ArrayBuffer).
  * @jest-environment node
  */
+import { test, expect } from 'vitest';
 import * as cbor from './cbor';
 import * as Cert from './certificate';
 import { fromHex, toHex } from './utils/buffer';

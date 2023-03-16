@@ -1,3 +1,4 @@
+import { test, expect } from 'vitest';
 import { blsVerify } from './bls';
 import { fromHex } from './buffer';
 

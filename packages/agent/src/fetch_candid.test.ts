@@ -1,9 +1,10 @@
+import { test, expect, vi } from 'vitest';
 import { fetchCandid, HttpAgent } from '.';
 import { IDL } from '@dfinity/candid';
 import * as cbor from './cbor';
 
 test('simulate fetching a Candid interface', async () => {
-  const mockFetch = jest.fn().mockImplementation((/*resource, init*/) => {
+  const mockFetch = vi.fn().mockImplementation((/*resource, init*/) => {
     return Promise.resolve(
       new Response(
         cbor.encode({

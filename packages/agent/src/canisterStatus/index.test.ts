@@ -1,3 +1,4 @@
+import { describe, it, expect, vi } from 'vitest';
 import { request, Path, encodePath } from './index';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
@@ -10,9 +11,9 @@ import { AbstractIdentity } from '@dfinity/types';
 const testPrincipal = Principal.fromText('rrkah-fqaaa-aaaaa-aaaaq-cai');
 
 // bypass bls verification so that an old certificate is accepted
-jest.mock('../utils/bls', () => {
+vi.mock('../utils/bls', () => {
   return {
-    blsVerify: jest.fn(() => Promise.resolve(true)),
+    blsVerify: vi.fn(() => Promise.resolve(true)),
   };
 });
 
@@ -69,7 +70,7 @@ const getRealStatus = async () => {
 // Mocked status using precomputed certificate
 const getStatus = async (paths: Path[]) => {
   const agent = new HttpAgent({ host: 'https://ic0.app' });
-  agent.readState = jest.fn(() =>
+  agent.readState = vi.fn(() =>
     Promise.resolve({ certificate: fromHex(testCases[0].certificate) }),
   );
 
@@ -168,7 +169,7 @@ describe('Canister Status utility', () => {
   });
   it('should support multiple requests with a failure', async () => {
     // Deliberately requesting a bad value
-    const consoleSpy = jest.spyOn(console, 'warn');
+    const consoleSpy = vi.spyOn(console, 'warn');
     const status = await getStatus([
       'time',
       // subnet and this arbitrary path should fail

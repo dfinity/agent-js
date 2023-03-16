@@ -9,5 +9,11 @@
 import crypto from '@trust/webcrypto';
 import fetch from 'isomorphic-fetch';
 import { TextEncoder, TextDecoder } from 'text-encoding';
-global.TextEncoder = TextEncoder;
-global.TextDecoder = TextDecoder;
+import { beforeEach } from 'vitest';
+
+beforeEach(() => {
+  global.TextEncoder = TextEncoder;
+  global.TextDecoder = TextDecoder;
+  global.crypto = crypto;
+  global.fetch = fetch;
+});
