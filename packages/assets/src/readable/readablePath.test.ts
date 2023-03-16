@@ -1,3 +1,4 @@
+import { describe, test, expect } from 'vitest';
 import { basename, resolve } from 'path';
 import { ReadablePath } from './readablePath';
 import { readFileSync, statSync } from 'fs';

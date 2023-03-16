@@ -12,16 +12,21 @@ import { Crypto } from '@peculiar/webcrypto';
 import { TextEncoder, TextDecoder } from 'util';
 import { MessageChannel } from 'worker_threads';
 import { Blob } from '@web-std/file';
+import { beforeEach } from 'vitest';
+import fetch from 'isomorphic-fetch';
 class FilePolyfill extends (await import('@web-std/file')).File {
   constructor(init, name, options) {
     super(init, name, options);
     (this as any)._type = mime.lookup(name) || 'application/octet-stream';
   }
 }
-(global as any).crypto = new Crypto();
-global.TextEncoder = TextEncoder;
-(global as any).TextDecoder = TextDecoder;
-(global as any).MessageChannel = MessageChannel;
-global.Blob = Blob;
-global.File = FilePolyfill;
-await import('node-fetch');
+
+beforeEach(async () => {
+  (global as any).crypto = new Crypto();
+  global.TextEncoder = TextEncoder;
+  (global as any).TextDecoder = TextDecoder;
+  (global as any).MessageChannel = MessageChannel;
+  (global as any).fetch = fetch;
+  global.Blob = Blob;
+  global.File = FilePolyfill;
+});
