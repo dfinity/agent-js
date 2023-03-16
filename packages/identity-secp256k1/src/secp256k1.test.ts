@@ -1,9 +1,11 @@
+import { describe, test, expect } from 'vitest';
 import { DerEncodedPublicKey, PublicKey } from '@dfinity/types';
-import { toHexString } from '@dfinity/candid/lib/cjs/utils/buffer';
+
 import { randomBytes } from 'crypto';
 import { sha256 } from 'js-sha256';
 import Secp256k1 from 'secp256k1';
 import { Secp256k1KeyIdentity, Secp256k1PublicKey } from './secp256k1';
+import { toHexString } from './buffer';
 
 function fromHexString(hexString: string): ArrayBuffer {
   return new Uint8Array((hexString.match(/.{1,2}/g) ?? []).map(byte => parseInt(byte, 16))).buffer;

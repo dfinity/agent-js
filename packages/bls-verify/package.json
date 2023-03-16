@@ -41,7 +41,7 @@
     }
   },
   "scripts": {
-    "test": "vitest",
+    "test": "vitest run",
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
     "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=node",
     "size-limit": "size-limit",

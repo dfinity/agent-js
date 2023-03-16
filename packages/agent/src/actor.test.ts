@@ -1,4 +1,4 @@
-import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
+import { beforeEach, afterEach, describe, it, expect, vi, Mock } from 'vitest';
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { Actor } from './actor';
@@ -27,7 +27,7 @@ describe('makeActor', () => {
 
     const expectedReplyArg = IDL.encode([IDL.Text], ['Hello, World!']);
 
-    const mockFetch: vi.Mock = vi
+    const mockFetch: Mock = vi
       .fn()
       .mockImplementationOnce((/*resource, init*/) => {
         return Promise.resolve(

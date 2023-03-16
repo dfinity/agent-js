@@ -48,7 +48,7 @@
     "lint:fix": "npm run lint -- --fix",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/principal --excludeInternal",
     "release": "npm publish",
-    "test": "vitest"
+    "test": "vitest run"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.30.5",

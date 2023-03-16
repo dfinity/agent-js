@@ -49,7 +49,7 @@
     "lint:fix": "npm run lint -- --fix",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/auth-client --excludeInternal",
     "release": "npm publish",
-    "test": "vitest",
+    "test": "vitest run",
     "test:coverage": "vitest run --verbose --collectCoverage"
   },
   "dependencies": {

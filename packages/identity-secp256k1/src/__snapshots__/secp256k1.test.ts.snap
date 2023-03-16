@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Secp256k1PublicKey Tests create from an existing public key 1`] = `
+exports[`Secp256k1PublicKey Tests > create from an existing public key 1`] = `
 Secp256k1PublicKey {
   "derKey": ArrayBuffer [],
   "rawKey": Uint8Array [
@@ -73,7 +73,7 @@ Secp256k1PublicKey {
 }
 `;
 
-exports[`Secp256k1PublicKey Tests create from an existing public key 2`] = `
+exports[`Secp256k1PublicKey Tests > create from an existing public key 2`] = `
 Secp256k1PublicKey {
   "derKey": ArrayBuffer [],
   "rawKey": Uint8Array [
@@ -146,7 +146,7 @@ Secp256k1PublicKey {
 }
 `;
 
-exports[`Secp256k1PublicKey Tests create from an existing public key 3`] = `
+exports[`Secp256k1PublicKey Tests > create from an existing public key 3`] = `
 Secp256k1PublicKey {
   "derKey": ArrayBuffer [],
   "rawKey": Uint8Array [

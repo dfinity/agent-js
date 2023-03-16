@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
     "target": "es2017",
-    "module": "commonjs",
+    "module": "NodeNext",
     // Required for buffer-pipe
     "esModuleInterop": true,
+    "moduleResolution": "NodeNext",
     "lib": ["dom", "es2015", "es2017"],
     "rootDir": "."
   },

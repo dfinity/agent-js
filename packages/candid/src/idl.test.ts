@@ -1,6 +1,3 @@
-/**
- * @jest-environment node
- */
 // tslint:disable
 import { test, expect } from 'vitest';
 import * as IDL from './idl';

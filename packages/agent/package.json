@@ -50,7 +50,7 @@
     "lint": "npm run eslint",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/agent --excludeInternal",
     "release": "npm publish",
-    "test": "vitest",
+    "test": "vitest run",
     "test:coverage": "vitest run --verbose --collectCoverage",
     "tslint:fix": "npm run lint -- --fix",
     "tslint": "tslint --project tsconfig.json --config tslint.json"

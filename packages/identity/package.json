@@ -48,7 +48,7 @@
     "lint:fix": "npm run lint -- --fix",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/identity",
     "release": "npm publish",
-    "test": "vitest",
+    "test": "vitest run",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {

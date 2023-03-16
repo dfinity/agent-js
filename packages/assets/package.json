@@ -52,7 +52,7 @@
     "lint:fix": "npm run lint -- --fix",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/assets",
     "release": "npm publish",
-    "test": "vitest",
+    "test": "vitest run",
     "test:coverage": "vitest run --verbose --collectCoverage"
   },
   "dependencies": {

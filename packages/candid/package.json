@@ -50,7 +50,7 @@
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/candid --excludeInternal",
     "prettier": "prettier --check \"src/**/*.ts\"",
     "prettier:write": "npm run prettier -- --write",
-    "test": "vitest",
+    "test": "vitest run",
     "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
