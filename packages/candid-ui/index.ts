@@ -1,2 +1,2 @@
-export * from './candid-ui';
-export * from './candid-core';
+export * from './candid-ui.js';
+export * from './candid-core.js';

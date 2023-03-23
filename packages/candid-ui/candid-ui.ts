@@ -1,6 +1,6 @@
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
-import * as UI from './candid-core';
+import * as UI from './candid-core.js';
 
 // tslint:disable:max-classes-per-file
 type InputBox = UI.InputBox;
