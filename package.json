@@ -13,6 +13,7 @@
       "packages/auth-client",
       "packages/assets",
       "packages/identity-secp256k1",
+      "packages/candid-ui",
       "e2e/node",
       "e2e/browser",
       "demos/sample-javascript"

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-this-alias */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import * as IDL from './idl';
+import { IDL } from '@dfinity/candid';
 
 // tslint:disable:max-classes-per-file
 
