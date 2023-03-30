@@ -33,58 +33,7 @@ export class CandidForm extends HTMLElement {
     const shadow = this.attachShadow({ mode: 'open' });
     const style = document.createElement('style');
     style.textContent = `
-        :host {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-        .container {
-            display: flex;
-            flex-flow: row wrap;
-            height: 100%;
-        }
-        .container ul {
-            list-style: none;
-            all: unset;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        .container li {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        #methods-list {
-          display: none;
-        }
-        #methods, #output-list {
-          min-height: 200px;
-          padding: 1rem;
-        }
-        #methods {
-          flex: 3;
-          min-width: 600px;
-          @media (min-width: 800px) {
-            max-width: 70vw;
-          }
-        }
-        #output-list {
-          
-          flex: 1;
-        }
-        pre, code, .signature {
-          white-space: pre-line;
-          font-family: Source Code Pro,monospace;
-          font-size: 14px;
-          line-height: 1.5;
-          color: #333;
-        }
-        .split-panel {
-          --min: 150px;
-          --max: calc(100% - 150px);
-        }
+        
 
     }`;
 
@@ -93,11 +42,11 @@ export class CandidForm extends HTMLElement {
     stylesheet.href = '/candid.css';
     shadow.appendChild(stylesheet);
 
-    const stylesheet2 = document.createElement('link');
-    stylesheet2.rel = 'stylesheet';
-    stylesheet2.href =
-      '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-reboot@4.5.4/reboot.css">';
-    shadow.appendChild(stylesheet2);
+    // const stylesheet2 = document.createElement('link');
+    // stylesheet2.rel = 'stylesheet';
+    // stylesheet2.href =
+    //   '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-reboot@4.5.4/reboot.css">';
+    // shadow.appendChild(stylesheet2);
 
     const container = document.createElement('div');
     container.className = 'container';
@@ -116,9 +65,6 @@ export class CandidForm extends HTMLElement {
     const ouputList = document.createElement('ul');
     ouputList.id = 'output-list';
     ouputList.slot = 'end';
-    const ouputListTitle = document.createElement('h3');
-    ouputListTitle.textContent = 'Output Log';
-    ouputList.appendChild(ouputListTitle);
     container.appendChild(ouputList);
 
     container.appendChild(style);
@@ -142,6 +88,8 @@ export class CandidForm extends HTMLElement {
 
     if (this.hasAttribute('host')) {
       this._host = this.getAttribute('host')!;
+    } else {
+      this._host = this._isLocal ? undefined : 'https://icp-api.io';
     }
 
     await this.render();
@@ -162,59 +110,123 @@ export class CandidForm extends HTMLElement {
   }
 
   render = async () => {
+    const shadowRoot = this.shadowRoot!;
     console.log('render');
     if (!this._canisterId) {
-      return;
+      return this.renderCanisterIdInput();
+    } else {
+      shadowRoot!.removeChild(shadowRoot!.querySelector('.form')!);
     }
     this._agent = new HttpAgent({
       identity: this._identity,
-      host: 'https://icp-api.io',
+      host: this._host,
       //   host: this._host ?? this._isLocal ? 'http://localhost:8000' : 'https://icp-api.io',
     });
     let candid = await this._db?.get(this._canisterId.toText());
 
     //   fetch the candid file
-    if (!candid) {
-      const status = await CanisterStatus.request({
-        canisterId: this._canisterId,
+    try {
+      if (!candid) {
+        const status = await CanisterStatus.request({
+          canisterId: this._canisterId,
+          agent: this._agent,
+          paths: ['candid'],
+        });
+        candid = status.get('candid') as string | undefined;
+      }
+      console.log('candid', candid);
+      if (!candid) {
+        candid = await this.getDidJsFromTmpHack(this._canisterId);
+      }
+      if (!candid) {
+        console.error('Candid file not found');
+        return;
+      }
+
+      //   save candid file to db
+      if (this._db) {
+        this._db.set(this._canisterId.toText(), candid);
+      }
+
+      // profile time this call takes
+      console.time('didToJs');
+      const js = await this.didToJs(candid as string);
+      console.timeEnd('didToJs');
+
+      if (!js) {
+        throw new Error('Cannot fetch candid file');
+      }
+      const dataUri = 'data:text/javascript;charset=utf-8,' + encodeURIComponent(js);
+      const candidScript: any = await eval('import("' + dataUri + '")');
+      const actor = Actor.createActor(candidScript.idlFactory, {
         agent: this._agent,
-        paths: ['candid'],
+        canisterId: this._canisterId,
       });
-      candid = status.get('candid') as string | undefined;
-    }
-    if (!candid) {
-      candid = await this.getDidJsFromTmpHack(this._canisterId);
-    }
-    if (!candid) {
-      console.error('Candid file not found');
-      return;
-    }
+      const sortedMethods = Actor.interfaceOf(actor)._fields.sort(([a], [b]) => (a > b ? 1 : -1));
 
-    //   save candid file to db
-    if (this._db) {
-      this._db.set(this._canisterId.toText(), candid);
-    }
+      for (const [name, func] of sortedMethods) {
+        renderMethod(actor, name, func, shadowRoot, async () => undefined);
+      }
 
-    // profile time this call takes
-    console.time('didToJs');
-    const js = await this.didToJs(candid as string);
-    console.timeEnd('didToJs');
-
-    if (!js) {
-      throw new Error('Cannot fetch candid file');
+      const ouputListTitle = document.createElement('h3');
+      ouputListTitle.textContent = 'Output Log';
+      const outputList = shadowRoot.getElementById('output-list');
+      outputList?.appendChild(ouputListTitle);
+    } catch (e) {
+      console.error(e);
+      return this.renderCanisterIdInput(e as string);
     }
-    const dataUri = 'data:text/javascript;charset=utf-8,' + encodeURIComponent(js);
-    const candidScript: any = await eval('import("' + dataUri + '")');
-    const actor = Actor.createActor(candidScript.idlFactory, {
-      agent: this._agent,
-      canisterId: this._canisterId,
-    });
-    const sortedMethods = Actor.interfaceOf(actor)._fields.sort(([a], [b]) => (a > b ? 1 : -1));
+  };
+
+  renderCanisterIdInput = (error?: string) => {
+    if (this.shadowRoot?.querySelector('.form') !== null) return;
 
     const shadowRoot = this.shadowRoot!;
-    for (const [name, func] of sortedMethods) {
-      renderMethod(actor, name, func, shadowRoot, async () => undefined);
+
+    const form = document.createElement('form');
+    form.className = 'form';
+    form.style.width = '650px';
+    shadowRoot.prepend(form);
+
+    const title = document.createElement('h3');
+    title.textContent = 'Enter canister ID';
+    form.appendChild(title);
+
+    const canisterIdInput = document.createElement('sl-input');
+    canisterIdInput.clearable = true;
+    canisterIdInput.label = 'Canister ID';
+
+    canisterIdInput.addEventListener('sl-input', () => {
+      try {
+        const canisterId = Principal.fromText(canisterIdInput.value);
+        canisterIdInput.setCustomValidity('');
+      } catch (error) {
+        canisterIdInput.setCustomValidity('Please enter a valid canister ID.');
+      }
+    });
+
+    form.appendChild(canisterIdInput);
+
+    if (error) {
+      const errorDiv = document.createElement('div');
+      errorDiv.textContent = error;
+      errorDiv.style.color = 'red';
+      form.appendChild(errorDiv);
     }
+
+    const button = document.createElement('sl-button');
+    button.textContent = 'Submit';
+    button.type = 'submit';
+    button.variant = 'primary';
+    form.appendChild(button);
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const canisterId = canisterIdInput.value;
+      this._canisterId = Principal.fromText(canisterId);
+      this.render();
+      return false;
+    });
   };
 
   getDidJsFromTmpHack = async (canisterId: Principal) => {

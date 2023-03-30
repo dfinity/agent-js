@@ -1,16 +1,16 @@
 .container {
   font-family: 'Circular Std', 'Roboto', sans-serif;
   font-weight: 300;
-  font-size: 10px;
+  font-size: 0.85rem;
   --font-circular: 'Circular Std', 'Roboto', sans-serif;
   --font-mono: 'Vremena Grotesk', 'Roboto Mono', monospace;
   --header-height: 3.8rem;
   --pad-sm: 0.8rem;
   --pad-md: 1.5rem;
   --pad-lg: 2.4rem;
-  --font-sm: 1.2rem;
-  --font-md: 1.4rem;
-  --font-lg: 2.4rem;
+  --font-sm: 0.85rem;
+  --font-md: 1rem;
+  --font-lg: 1.8rem;
   --light-bg: #f6f6f7;
   --white: #f9f9f9;
   --lightest: #ebf0fa;
@@ -72,7 +72,7 @@
   display: flex;
   flex-direction: column;
   list-style: none;
-  padding: var(--pad-md);
+  padding: var(--pad-sm);
   margin-top: var(--pad-lg);
   border: 1px solid var(--dark);
 }
@@ -98,13 +98,14 @@ select {
 input:not([type='checkbox']),
 select {
   width: 100%;
-  height: 4.8rem;
-  padding: 1.5rem;
+  height: calc(1.5 * var(--font-md));
+  padding: var(--font-sm);
   border: 1px solid var(--dark);
 }
 input[type='number']::-webkit-inner-spin-button {
   width: 3rem;
-  height: 3rem;
+  height: calc(1.5 * var(--font-md));
+  padding: var(--font-sm);
 }
 label {
   font-family: 'Circular Std', 'Roboto', sans-serif;
@@ -141,7 +142,7 @@ input[type='checkbox'] ~ .popup-form {
   width: 100%;
   margin-top: var(--pad-lg);
   padding-top: 1.5rem;
-  font-size: 1.4rem;
+  font-size: 0.85rem;
   border-top: 1px solid var(--light);
 }
 .error {
@@ -180,8 +181,8 @@ input[type='checkbox'] ~ .popup-form {
   letter-spacing: 0.05rem;
   background-color: var(--darkest);
   color: var(--lightest);
-  font-size: 1.4rem;
-  padding: 1.5rem;
+  font-size: 1rem;
+  padding: 0.85rem;
   border: none;
   text-transform: uppercase;
   flex: 1;
@@ -327,8 +328,8 @@ textarea:focus {
   background-color: var(--darkest);
 }
 
-@media only screen and (min-width: 800px) {
-  :root {
+@media only screen and (min-width: 880px) {
+  .container {
     --header-height: 5.6rem;
     --console-width: clamp(28rem, 30vw, 40rem);
   }
@@ -365,8 +366,8 @@ textarea:focus {
   input:not([type='checkbox']),
   select {
     width: 23.2rem;
-    height: 4rem;
-    padding: 1rem var(--pad-md);
+    height: calc(1.5 * var(--font-md));
+    padding: var(--font-sm);
   }
 
   #console {
@@ -430,4 +431,71 @@ textarea:focus {
   #methods-list {
     height: calc(100vh - (var(--header-height) * 2));
   }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form sl-button {
+  display: block;
+  width: fit-content;
+}
+
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.container {
+  display: flex;
+  flex-flow: row wrap;
+  height: 100%;
+}
+.container ul {
+  list-style: none;
+  all: unset;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.container li {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+#methods-list {
+  display: none;
+}
+#methods,
+#output-list {
+  min-height: 200px;
+  padding: 1rem;
+}
+#methods {
+  flex: 3;
+  min-width: 600px;
+  @media (min-width: 800px) {
+    max-width: 70vw;
+  }
+}
+#output-list {
+  flex: 1;
+  min-width: 400px;
+}
+pre,
+code,
+.signature {
+  white-space: pre-line;
+  font-family: Source Code Pro, monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+}
+.split-panel {
+  --min: 150px;
+  --max: calc(100% - 150px);
 }
