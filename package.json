@@ -26,6 +26,7 @@
     "@types/node": "^18.0.3",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
+    "buffer": "^5.7.1",
     "eslint": "^8.19.0",
     "eslint-plugin-jsdoc": "^39.3.3",
     "fs": "^0.0.1-security",
