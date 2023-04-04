@@ -53,43 +53,9 @@ export class CandidForm extends HTMLElement {
     stylesheet.href = '/candid.css';
     shadow.appendChild(stylesheet);
 
-    const header = document.createElement('header');
-    header.className = 'header';
-    shadow.appendChild(header);
-
     const main = document.createElement('main');
-    main.className = 'main';
+    main.id = 'main';
     shadow.appendChild(main);
-
-    const title = document.createElement('h1');
-    title.className = 'title';
-    title.innerText = this._title ?? 'Candid UI';
-    main.appendChild(title);
-
-    const description = document.createElement('p');
-    description.className = 'description';
-    description.innerText =
-      this._description ?? 'Browse and test your API with our visual web interface.';
-    main.appendChild(description);
-
-    const container = document.createElement('div');
-    container.className = 'container';
-    main.appendChild(container);
-
-    const methodsList = document.createElement('ul');
-    methodsList.id = 'methods-list';
-    container.appendChild(methodsList);
-
-    const methods = document.createElement('div');
-    methods.className = 'methods';
-    methods.id = 'methods';
-    methods.slot = 'start';
-    container.appendChild(methods);
-
-    const ouputList = document.createElement('ul');
-    ouputList.id = 'output-list';
-    ouputList.slot = 'end';
-    container.appendChild(ouputList);
 
     //  create a database
     IdbKeyVal.create().then(db => {
@@ -115,17 +81,7 @@ export class CandidForm extends HTMLElement {
     }
 
     await this.render();
-    this.loadComponents();
   }
-
-  loadComponents = async () => {
-    import('@shoelace-style/shoelace/dist/components/button/button.js');
-    import('@shoelace-style/shoelace/dist/components/icon/icon.js');
-    import('@shoelace-style/shoelace/dist/components/split-panel/split-panel.js');
-    import('@shoelace-style/shoelace/dist/components/input/input.js');
-    import('@shoelace-style/shoelace/dist/components/details/details.js');
-    import('@shoelace-style/shoelace/dist/components/checkbox/checkbox.js');
-  };
 
   set canisterId(canisterId: Principal) {
     this._canisterId = canisterId;
@@ -134,15 +90,13 @@ export class CandidForm extends HTMLElement {
 
   render = async () => {
     const shadowRoot = this.shadowRoot!;
-    console.log('render');
+    const main = shadowRoot.querySelector('main') as HTMLDivElement;
+    main.innerHTML = '';
+
     if (!this._canisterId) {
       return this.renderCanisterIdInput();
-    } else {
-      const form = shadowRoot.querySelector('.form');
-      if (form) {
-        shadowRoot?.removeChild(form);
-      }
     }
+    this.renderStatic();
     this._agent = new HttpAgent({
       identity: this._identity,
       host: this._host,
@@ -202,6 +156,86 @@ export class CandidForm extends HTMLElement {
       console.error(e);
       return this.renderCanisterIdInput(e as string);
     }
+  };
+
+  renderStatic = () => {
+    const shadowRoot = this.shadowRoot!;
+    const main = shadowRoot.getElementById('main');
+    if (main) {
+      main.innerHTML = `
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-reboot@4.5.4/reboot.css" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph.css">
+    <style>.ic_progress { display: block; margin: 50vh auto; width: 25vw; }</style>
+      <div id="progress">
+      <progress class="ic_progress" id="ic-progress">Loading Candid UI...</progress>
+    </div>
+    <app id="app" style="display: none">
+      <div id="header">Canister ID:&nbsp;<span id="canisterId"></span></div>
+      <div id="container">
+        <div id="main-content">
+          <div id="title-card">
+            <h1 id="title">Candid UI</h1>
+            Browse and test your API with our visual web interface.
+          </div>
+          <ul id="methods"></ul>
+        </div>
+        <div id="console">
+          <div id="console-bar">
+            <button id="output-button">
+              <svg
+                viewBox="64 64 896 896"
+                focusable="false"
+                data-icon="clock-circle"
+                width="1em"
+                height="1em"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372 372 166.6 372 372-166.6 372-372 372z"
+                ></path>
+                <path
+                  d="M686.7 638.6L544.1 535.5V288c0-4.4-3.6-8-8-8H488c-4.4 0-8 3.6-8 8v275.4c0 2.6 1.2 5 3.3 6.5l165.4 120.6c3.6 2.6 8.6 1.8 11.2-1.7l28.6-39c2.6-3.7 1.8-8.7-1.8-11.2z"
+                ></path>
+              </svg>
+            </button>
+            <button id="methods-button">
+              <svg
+                viewBox="64 64 896 896"
+                focusable="false"
+                data-icon="unordered-list"
+                width="1em"
+                height="1em"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  d="M912 192H328c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h584c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 284H328c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h584c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 284H328c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h584c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM104 228a56 56 0 10112 0 56 56 0 10-112 0zm0 284a56 56 0 10112 0 56 56 0 10-112 0zm0 284a56 56 0 10112 0 56 56 0 10-112 0z"
+                ></path>
+              </svg>
+            </button>
+          </div>
+          <div id="output-pane">
+            <div class="console-header">Output Log</div>
+            <div id="output-list"></div>
+          </div>
+          <div id="methods-pane" style="display: none">
+            <div class="console-header">Methods</div>
+            <ul id="methods-list"></ul>
+          </div>
+        </div>
+      </div>
+    </app>
+    <script type="text/javascript" src="https://d3js.org/d3.v7.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph-tooltip.min.js"></script>`;
+    }
+    this.initializeConsoleControls();
   };
 
   renderCanisterIdInput = (error?: string) => {
@@ -281,6 +315,73 @@ export class CandidForm extends HTMLElement {
     }
     return js[0];
   };
+
+  initializeConsoleControls() {
+    const consoleEl = this.shadowRoot?.getElementById('console') as HTMLDivElement;
+    const outputButton = this.shadowRoot?.getElementById('output-button') as HTMLButtonElement;
+    const methodsButton = this.shadowRoot?.getElementById('methods-button') as HTMLButtonElement;
+
+    const outputPane = this.shadowRoot?.getElementById('output-pane') as HTMLDivElement;
+    const methodsPane = this.shadowRoot?.getElementById('methods-pane') as HTMLDivElement;
+
+    const buttons: HTMLButtonElement[] = [outputButton, methodsButton];
+    const panes: HTMLDivElement[] = [outputPane, methodsPane];
+
+    const app = this.shadowRoot?.getElementById('app');
+    const progress = this.shadowRoot?.getElementById('progress');
+
+    // Set canister ID in the header
+    const canisterIdSpan = this.shadowRoot?.getElementById('canisterId') as HTMLSpanElement;
+
+    if (this._canisterId) {
+      canisterIdSpan.textContent = this._canisterId.toText();
+    }
+
+    function openConsole() {
+      if (!consoleEl.classList.contains('open')) {
+        consoleEl.classList.add('open');
+      }
+    }
+    function toggleConsole() {
+      if (consoleEl.classList.contains('open')) {
+        consoleEl.classList.remove('open');
+        buttons.forEach(button => {
+          button.classList.remove('active-tab');
+          button.blur();
+        });
+        panes.forEach(pane => {
+          pane.style.display = 'none';
+        });
+      } else {
+        consoleEl.classList.add('open');
+      }
+    }
+    outputButton.addEventListener('click', () => {
+      if (outputButton.classList.contains('active-tab')) {
+        toggleConsole();
+      } else {
+        openConsole();
+        outputPane.style.display = 'block';
+        outputButton.classList.add('active-tab');
+        methodsPane.style.display = 'none';
+        methodsButton.classList.remove('active-tab');
+      }
+    });
+    methodsButton.addEventListener('click', () => {
+      if (methodsButton.classList.contains('active-tab')) {
+        toggleConsole();
+      } else {
+        openConsole();
+        methodsPane.style.display = 'block';
+        methodsButton.classList.add('active-tab');
+        outputPane.style.display = 'none';
+        outputButton.classList.remove('active-tab');
+      }
+    });
+    progress!.remove();
+    app!.style.display = 'block';
+    outputButton.click();
+  }
 }
 
 /**

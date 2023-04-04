@@ -20,6 +20,11 @@ export function renderMethod(
   const item = document.createElement('li');
   item.id = name;
 
+  const sig = document.createElement('div');
+  sig.className = 'signature';
+  sig.innerHTML = `<b>${name}</b>: ${idlFunc.display()}`;
+  item.appendChild(sig);
+
   const methodListItem = document.createElement('li');
   const methodLink = document.createElement('a');
   methodLink.innerText = name;
@@ -82,23 +87,7 @@ export function renderMethod(
   item.appendChild(resultDiv);
 
   const list = root.getElementById('methods')!;
-
-  // details wrapper and summary
-  const wrapper = document.createElement('details');
-  wrapper.setAttribute('class', 'custom-icons');
-
-  const summary = document.createElement('summary');
-  summary.slot = 'summary';
-  summary.innerHTML = `<b>${name}</b>:`;
-  wrapper.appendChild(summary);
-
-  const sig = document.createElement('div');
-  sig.innerHTML = `<pre>${idlFunc.display()}</pre>`;
-  sig.className = 'signature';
-  wrapper.appendChild(sig);
-
-  wrapper.appendChild(item);
-  list.append(wrapper);
+  list.append(item);
 
   async function call(args: any[]) {
     left.className = 'left';
