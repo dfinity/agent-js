@@ -12,6 +12,7 @@
     }
   },
   "scripts": {
+    "start": "vite",
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
     "test": "vitest"
   },
@@ -21,7 +22,8 @@
   "devDependencies": {
     "parcel": "^2.8.3",
     "typescript": "^5.0.2",
-    "vite": "^4.2.1"
+    "vite": "^4.2.1",
+    "vite-plugin-lightningcss": "^0.0.5"
   },
   "dependencies": {
     "@dfinity/agent": "^0.15.4",

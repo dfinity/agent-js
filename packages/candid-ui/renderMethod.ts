@@ -84,7 +84,7 @@ export function renderMethod(
   const list = root.getElementById('methods')!;
 
   // details wrapper and summary
-  const wrapper = document.createElement('sl-details');
+  const wrapper = document.createElement('details');
   wrapper.setAttribute('class', 'custom-icons');
 
   const summary = document.createElement('summary');

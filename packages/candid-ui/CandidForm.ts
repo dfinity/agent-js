@@ -17,6 +17,14 @@ import '@shoelace-style/shoelace/dist/themes/dark.css';
 
 (window as any).global = window;
 
+export type CandidFormOptions = {
+  canisterId?: Principal;
+  host?: string;
+  identity?: Identity;
+  title?: string;
+  description?: string;
+};
+
 export class CandidForm extends HTMLElement {
   private _service?: IDL.ServiceClass;
   private _identity?: Identity = new AnonymousIdentity();
@@ -25,32 +33,48 @@ export class CandidForm extends HTMLElement {
   private _canisterId?: Principal;
   private _isLocal: boolean;
   private _host?: string;
+  private _title?: string = 'Candid UI';
+  private _description?: string = 'Browse and test your API with our visual web interface.';
 
-  constructor() {
+  constructor(options?: CandidFormOptions) {
     super();
     this._isLocal = location.href.includes('localhost') || location.href.includes('127.0.0.1');
+    this._canisterId = options?.canisterId;
+    this._host = options?.host;
+    this._identity = options?.identity;
+    this._title = options?.title;
+    this._description = options?.description;
+
     // shadow DOM
     const shadow = this.attachShadow({ mode: 'open' });
-    const style = document.createElement('style');
-    style.textContent = `
-        
-
-    }`;
 
     const stylesheet = document.createElement('link');
     stylesheet.rel = 'stylesheet';
     stylesheet.href = '/candid.css';
     shadow.appendChild(stylesheet);
 
-    // const stylesheet2 = document.createElement('link');
-    // stylesheet2.rel = 'stylesheet';
-    // stylesheet2.href =
-    //   '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-reboot@4.5.4/reboot.css">';
-    // shadow.appendChild(stylesheet2);
+    const header = document.createElement('header');
+    header.className = 'header';
+    shadow.appendChild(header);
+
+    const main = document.createElement('main');
+    main.className = 'main';
+    shadow.appendChild(main);
+
+    const title = document.createElement('h1');
+    title.className = 'title';
+    title.innerText = this._title ?? 'Candid UI';
+    main.appendChild(title);
+
+    const description = document.createElement('p');
+    description.className = 'description';
+    description.innerText =
+      this._description ?? 'Browse and test your API with our visual web interface.';
+    main.appendChild(description);
 
     const container = document.createElement('div');
     container.className = 'container';
-    shadow.appendChild(container);
+    main.appendChild(container);
 
     const methodsList = document.createElement('ul');
     methodsList.id = 'methods-list';
@@ -66,8 +90,6 @@ export class CandidForm extends HTMLElement {
     ouputList.id = 'output-list';
     ouputList.slot = 'end';
     container.appendChild(ouputList);
-
-    container.appendChild(style);
 
     //  create a database
     IdbKeyVal.create().then(db => {
@@ -102,6 +124,7 @@ export class CandidForm extends HTMLElement {
     import('@shoelace-style/shoelace/dist/components/split-panel/split-panel.js');
     import('@shoelace-style/shoelace/dist/components/input/input.js');
     import('@shoelace-style/shoelace/dist/components/details/details.js');
+    import('@shoelace-style/shoelace/dist/components/checkbox/checkbox.js');
   };
 
   set canisterId(canisterId: Principal) {
@@ -115,7 +138,10 @@ export class CandidForm extends HTMLElement {
     if (!this._canisterId) {
       return this.renderCanisterIdInput();
     } else {
-      shadowRoot!.removeChild(shadowRoot!.querySelector('.form')!);
+      const form = shadowRoot.querySelector('.form');
+      if (form) {
+        shadowRoot?.removeChild(form);
+      }
     }
     this._agent = new HttpAgent({
       identity: this._identity,
@@ -192,11 +218,9 @@ export class CandidForm extends HTMLElement {
     title.textContent = 'Enter canister ID';
     form.appendChild(title);
 
-    const canisterIdInput = document.createElement('sl-input');
-    canisterIdInput.clearable = true;
-    canisterIdInput.label = 'Canister ID';
+    const canisterIdInput = document.createElement('input');
 
-    canisterIdInput.addEventListener('sl-input', () => {
+    canisterIdInput.addEventListener('change', () => {
       try {
         const canisterId = Principal.fromText(canisterIdInput.value);
         canisterIdInput.setCustomValidity('');
@@ -214,10 +238,9 @@ export class CandidForm extends HTMLElement {
       form.appendChild(errorDiv);
     }
 
-    const button = document.createElement('sl-button');
+    const button = document.createElement('button');
     button.textContent = 'Submit';
     button.type = 'submit';
-    button.variant = 'primary';
     form.appendChild(button);
 
     form.addEventListener('submit', e => {

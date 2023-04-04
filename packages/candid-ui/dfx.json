@@ -1,0 +1,8 @@
+{
+  "canisters": {
+    "candid_sink": {
+      "type": "motoko",
+      "main": "src/candid-sink.mo"
+    }
+  }
+}
