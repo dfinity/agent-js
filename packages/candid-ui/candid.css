@@ -6,9 +6,9 @@ main {
   --font-circular: 'Circular Std', 'Roboto', sans-serif;
   --font-mono: 'Vremena Grotesk', 'Roboto Mono', monospace;
   --header-height: 3.8rem;
-  --pad-sm: 0.8rem;
-  --pad-md: 1.5rem;
-  --pad-lg: 2.4rem;
+  --pad-sm: 10px;
+  --pad-md: 15px;
+  --pad-lg: 20px;
   --font-sm: clamp(10px, 1.4cqw, 0.85rem);
   --font-md: clamp(14px, 1.4cqw, 1.4rem);
   --font-lg: clamp(18px, 1.4cqw, 2.4rem);
@@ -100,9 +100,15 @@ select {
 input:not([type='checkbox']),
 select {
   width: 100%;
-  height: 4.8rem;
   padding: 1.5rem;
+  margin-bottom: 1.5rem;
   border: 1px solid var(--dark);
+}
+select {
+  height: 4.8rem;
+}
+input:not([type='checkbox']) {
+  height: 2.4rem;
 }
 input[type='number']::-webkit-inner-spin-button {
   width: 3rem;
@@ -181,8 +187,8 @@ input[type='checkbox'] ~ .popup-form {
   letter-spacing: 0.05rem;
   background-color: var(--darkest);
   color: var(--lightest);
-  font-size: 1.4rem;
-  padding: 1.5rem;
+  font-size: var(--font-md);
+  padding: var(--pad-md);
   border: none;
   text-transform: uppercase;
   flex: 1;
@@ -290,6 +296,7 @@ textarea:focus {
 
 #output-pane,
 #methods-pane {
+  max-width: 100%;
   font-family: var(--font-mono);
   height: 0;
   padding: 0 0 3rem;
@@ -342,7 +349,7 @@ textarea:focus {
   }
 
   #container {
-    --console-width: clamp(28rem, 30cqw, 34rem);
+    --console-width: clamp(300px, 30cqw, 34rem);
     flex-direction: row;
     overflow: auto;
   }
@@ -366,9 +373,15 @@ textarea:focus {
   .ui-result span:not(:first-child):not(.status) {
     margin-left: var(--pad-md);
   }
+
+  /* span with an input */
+  span::has(input) {
+    margin-left: 0;
+  }
   input:not([type='checkbox']),
   select {
     width: 23.2rem;
+    max-width: 100%;
     height: 4rem;
     padding: 1rem var(--pad-md);
   }
