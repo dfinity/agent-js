@@ -53,7 +53,7 @@ export type DBCreateOptions = {
  * Simple Key Value store
  * Defaults to `'candid-ui'` with an object store of `'ic-keyval'`
  */
-export class IdbKeyVal {
+export class IdbNetworkIds {
   /**
    *
    * @param {DBCreateOptions} options {@link DbCreateOptions}
@@ -64,10 +64,10 @@ export class IdbKeyVal {
    * @param {DBCreateOptions['version']} options.version version of the database. Increment to safely upgrade
    * @constructs an {@link IdbKeyVal}
    */
-  public static async create(options?: DBCreateOptions): Promise<IdbKeyVal> {
+  public static async create(options?: DBCreateOptions): Promise<IdbNetworkIds> {
     const { dbName = AUTH_DB_NAME, storeName = OBJECT_STORE_NAME, version = 1 } = options ?? {};
     const db = await _openDbStore(dbName, storeName, version);
-    return new IdbKeyVal(db, storeName);
+    return new IdbNetworkIds(db, storeName);
   }
 
   // Do not use - instead prefer create

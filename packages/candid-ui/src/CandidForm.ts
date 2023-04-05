@@ -10,14 +10,16 @@ import {
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { renderMethod } from './renderMethod';
-import { IdbKeyVal } from './db';
+import { IdbNetworkIds } from './db';
 import { styles } from './styles';
+import { html } from './utils';
+import type { CanisterIdInput } from './CanisterIdInput';
 
 (window as any).global = window;
 
 export class CandidForm extends HTMLElement {
   private _identity?: Identity = new AnonymousIdentity();
-  private _db?: IdbKeyVal;
+  private _db?: IdbNetworkIds;
   private _agent?: HttpAgent;
   private _canisterId?: Principal;
   private _isLocal = false;
@@ -40,13 +42,17 @@ export class CandidForm extends HTMLElement {
     shadow.appendChild(main);
 
     //  create a database
-    IdbKeyVal.create().then(db => {
+    IdbNetworkIds.create().then(db => {
       this._db = db;
     });
   }
 
   //   when the custom element is added to the DOM, the connectedCallback() method is called
   async connectedCallback() {
+    await this.init();
+  }
+
+  private async init() {
     // check if canister id is provided
     if (this.hasAttribute('canisterId')) {
       const canisterId = this.getAttribute('canisterId')?.trim();
@@ -68,7 +74,8 @@ export class CandidForm extends HTMLElement {
     if (this._isLocal) {
       await this._agent.fetchRootKey();
     }
-
+    const { defineCanisterIdInput } = await import('./CanisterIdInput');
+    defineCanisterIdInput();
     await this.render();
   }
 
@@ -123,13 +130,8 @@ export class CandidForm extends HTMLElement {
   };
 
   render = async () => {
-    const shadowRoot = this.shadowRoot!;
-    const main = shadowRoot.querySelector('main') as HTMLDivElement;
-    main.innerHTML = '';
-
-    if (!this._canisterId) {
-      return this.renderCanisterIdInput();
-    }
+    console.count('render');
+    this.renderStatic();
     const agent = new HttpAgent({
       identity: this._identity,
       host: this._host ?? (await this.determineHost()),
@@ -138,8 +140,11 @@ export class CandidForm extends HTMLElement {
     if (this._isLocal) {
       await this._agent.fetchRootKey();
     }
-    this.renderStatic();
-    let candid = await this._db?.get(this._canisterId.toText());
+
+    if (!this._canisterId) return;
+    let candid = await this._db?.get(
+      JSON.stringify({ id: this._canisterId.toText(), network: this._host }),
+    );
 
     //   fetch the candid file
     try {
@@ -161,7 +166,10 @@ export class CandidForm extends HTMLElement {
 
       //   save candid file to db
       if (this._db) {
-        this._db.set(this._canisterId.toText(), candid);
+        this._db.set(
+          JSON.stringify({ id: this._canisterId.toText(), network: this._host }),
+          candid,
+        );
       }
 
       // profile time this call takes
@@ -180,17 +188,14 @@ export class CandidForm extends HTMLElement {
       });
       const sortedMethods = Actor.interfaceOf(actor)._fields.sort(([a], [b]) => (a > b ? 1 : -1));
 
+      const shadowRoot = this.shadowRoot!;
+
       for (const [name, func] of sortedMethods) {
         renderMethod(actor, name, func, shadowRoot, async () => undefined);
       }
-
-      const ouputListTitle = document.createElement('h3');
-      ouputListTitle.textContent = 'Output Log';
-      const outputList = shadowRoot.getElementById('output-list');
-      outputList?.appendChild(ouputListTitle);
     } catch (e) {
       console.error(e);
-      return this.renderCanisterIdInput(e as string);
+      // return this.renderCanisterIdInput(e as string);
     }
   };
 
@@ -225,7 +230,7 @@ export class CandidForm extends HTMLElement {
         <section id="app" style="display: none">
           <header id="header">
             <div></div>
-            <div>Canister ID:&nbsp;<span id="canisterId"></span></div>
+            <canister-input></canister-input>
             <button type="reset" id="reset-button">reset</button>
           </header>
           <div id="container">
@@ -296,54 +301,54 @@ export class CandidForm extends HTMLElement {
     this.initializeConsoleControls();
   };
 
-  renderCanisterIdInput = (error?: string) => {
-    const shadowRoot = this.shadowRoot;
-    if (!shadowRoot) return;
-    if (this.shadowRoot?.querySelector('.form') !== null) return;
+  // renderCanisterIdInput = (error?: string) => {
+  //   const shadowRoot = this.shadowRoot;
+  //   if (!shadowRoot) return;
+  //   if (this.shadowRoot?.querySelector('.form') !== null) return;
 
-    const form = document.createElement('form');
-    form.className = 'form';
-    form.style.width = '650px';
-    shadowRoot.prepend(form);
+  //   const form = document.createElement('form');
+  //   form.className = 'form';
+  //   form.style.width = '650px';
+  //   shadowRoot.prepend(form);
 
-    const title = document.createElement('h3');
-    title.textContent = 'Enter canister ID';
-    form.appendChild(title);
+  //   const title = document.createElement('h3');
+  //   title.textContent = 'Enter canister ID';
+  //   form.appendChild(title);
 
-    const canisterIdInput = document.createElement('input');
+  //   const canisterIdInput = document.createElement('input');
 
-    canisterIdInput.addEventListener('change', () => {
-      try {
-        // will throw an error if input is invalid
-        Principal.fromText(canisterIdInput.value);
-        canisterIdInput.setCustomValidity('');
-      } catch (error) {
-        canisterIdInput.setCustomValidity('Please enter a valid canister ID.');
-      }
-    });
+  //   canisterIdInput.addEventListener('change', () => {
+  //     try {
+  //       // will throw an error if input is invalid
+  //       Principal.fromText(canisterIdInput.value);
+  //       canisterIdInput.setCustomValidity('');
+  //     } catch (error) {
+  //       canisterIdInput.setCustomValidity('Please enter a valid canister ID.');
+  //     }
+  //   });
 
-    form.appendChild(canisterIdInput);
+  //   form.appendChild(canisterIdInput);
 
-    if (error) {
-      const errorDiv = document.createElement('div');
-      errorDiv.textContent = error;
-      errorDiv.style.color = 'red';
-      form.appendChild(errorDiv);
-    }
+  //   if (error) {
+  //     const errorDiv = document.createElement('div');
+  //     errorDiv.textContent = error;
+  //     errorDiv.style.color = 'red';
+  //     form.appendChild(errorDiv);
+  //   }
 
-    const button = document.createElement('button');
-    button.textContent = 'Submit';
-    button.type = 'submit';
-    form.appendChild(button);
+  //   const button = document.createElement('button');
+  //   button.textContent = 'Submit';
+  //   button.type = 'submit';
+  //   form.appendChild(button);
 
-    form.addEventListener('submit', e => {
-      e.preventDefault();
-      const canisterId = canisterIdInput.value;
-      this._canisterId = Principal.fromText(canisterId);
-      this.render();
-      return false;
-    });
-  };
+  //   form.addEventListener('submit', e => {
+  //     e.preventDefault();
+  //     const canisterId = canisterIdInput.value;
+  //     this._canisterId = Principal.fromText(canisterId);
+  //     this.render();
+  //     return false;
+  //   });
+  // };
 
   getDidJsFromTmpHack = async (canisterId: Principal) => {
     const common_interface: IDL.InterfaceFactory = ({ IDL }) =>
@@ -398,11 +403,18 @@ export class CandidForm extends HTMLElement {
     const progress = this.shadowRoot?.getElementById('progress');
 
     // Set canister ID in the header
-    const canisterIdSpan = this.shadowRoot?.getElementById('canisterId') as HTMLSpanElement;
+    const canisterIdInput = this.shadowRoot?.querySelector('canister-input') as CanisterIdInput;
 
     if (this._canisterId) {
-      canisterIdSpan.textContent = this._canisterId.toText();
+      canisterIdInput.setAttribute('canisterid', this._canisterId.toText());
     }
+    const handleChange = (id?: Principal) => {
+      console.count('outer handleChange');
+      if (id) {
+        this.canisterId = id;
+      }
+    };
+    canisterIdInput.onChange = handleChange.bind(this);
 
     function openConsole() {
       if (!consoleEl.classList.contains('open')) {
@@ -446,12 +458,25 @@ export class CandidForm extends HTMLElement {
       }
     });
     resetButton.addEventListener('click', () => {
-      this._db?.clear();
+      this.reset();
     });
     progress!.remove();
     app!.style.display = 'block';
     outputButton.click();
   }
+
+  reset = () => {
+    this._db?.clear();
+    this._canisterId = undefined;
+    this.setAttribute('canisterid', '');
+    this._host = undefined;
+    this._agent = undefined;
+    const container = this.shadowRoot?.querySelector('#container');
+    if (container) {
+      container.innerHTML = '';
+    }
+    this.init();
+  };
 }
 
 /**
@@ -463,24 +488,4 @@ export function defineCandidFormElement() {
   } else {
     console.warn('candid-form already defined');
   }
-}
-
-function html(strings: TemplateStringsArray, ...values: unknown[]) {
-  let result = '';
-  for (let i = 0; i < strings.length; i++) {
-    result += strings[i];
-    if (i < values.length) {
-      result += escapeHtml(values[i]);
-    }
-  }
-  return result;
-}
-
-function escapeHtml(unsafe: unknown) {
-  return String(unsafe)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
 }
