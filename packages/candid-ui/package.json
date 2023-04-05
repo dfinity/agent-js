@@ -1,18 +1,11 @@
 {
-  "name": "@difnity/candid-ui",
+  "name": "@dfinity/candid-ui",
   "version": "1.0.0",
-  "description": "",
+  "description": "This package provides a simple UI for the Candid Interface Declaration Language. It is a simple web application that can be used to explore Candid interfaces, and to generate calls to canisters using them.",
   "type": "module",
-  "main": "lib/esm/index.js",
-  "exports": {
-    ".": {
-      "types": "./lib/esm/index.d.ts",
-      "import": "./lib/esm/index.js",
-      "require": "./lib/cjs/index.js"
-    }
-  },
+  "main": "dist/index.js",
   "scripts": {
-    "start": "vite",
+    "start": "vite ./src",
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
     "test": "vitest"
   },
@@ -20,18 +13,18 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "parcel": "^2.8.3",
+    "css-loader": "^6.7.3",
+    "sass-loader": "^13.2.2",
+    "style-loader": "^3.3.2",
+    "ts-loader": "^9.4.2",
     "typescript": "^5.0.2",
     "vite": "^4.2.1",
-    "vite-plugin-lightningcss": "^0.0.5"
+    "webpack": "^5.77.0"
   },
   "dependencies": {
     "@dfinity/agent": "^0.15.4",
     "@dfinity/candid": "^0.15.4",
     "@dfinity/principal": "^0.15.4",
-    "@shoelace-style/shoelace": "^2.3.0",
-    "ic0": "^0.2.7",
-    "idb": "^7.1.1",
-    "import": "^0.0.6"
+    "idb": "^7.1.1"
   }
 }

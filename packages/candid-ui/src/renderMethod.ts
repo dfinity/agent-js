@@ -1,7 +1,7 @@
 import { Actor, ActorSubclass } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
-import { InputBox } from './candid-core.js';
-import { renderInput, renderValue } from './candid-ui.js';
+import { InputBox } from './candid-core';
+import { renderInput, renderValue } from './candid-ui';
 
 /**
  *

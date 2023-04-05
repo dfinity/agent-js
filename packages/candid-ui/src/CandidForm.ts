@@ -1,4 +1,4 @@
-// create a custom web component
+/* eslint-disable no-empty */
 import {
   Actor,
   ActorSubclass,
@@ -9,24 +9,13 @@ import {
 } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
-import { renderMethod } from './renderMethod.js';
-import { IdbKeyVal } from './db.js';
-
-import '@shoelace-style/shoelace/dist/themes/light.css';
-import '@shoelace-style/shoelace/dist/themes/dark.css';
+import { renderMethod } from './renderMethod';
+import { IdbKeyVal } from './db';
+import { styles } from './styles';
 
 (window as any).global = window;
 
-export type CandidFormOptions = {
-  canisterId?: Principal;
-  host?: string;
-  identity?: Identity;
-  title?: string;
-  description?: string;
-};
-
 export class CandidForm extends HTMLElement {
-  private _service?: IDL.ServiceClass;
   private _identity?: Identity = new AnonymousIdentity();
   private _db?: IdbKeyVal;
   private _agent?: HttpAgent;
@@ -36,22 +25,21 @@ export class CandidForm extends HTMLElement {
   private _title?: string = 'Candid UI';
   private _description?: string = 'Browse and test your API with our visual web interface.';
 
-  constructor(options?: CandidFormOptions) {
+  constructor() {
     super();
-    this._isLocal = location.href.includes('localhost') || location.href.includes('127.0.0.1');
-    this._canisterId = options?.canisterId;
-    this._host = options?.host;
-    this._identity = options?.identity;
-    this._title = options?.title;
-    this._description = options?.description;
+    if (location.href.includes('localhost') || location.href.includes('127.0.0.1')) {
+      this._isLocal = this.determineLocal(this._host);
+    } else {
+      // otherwise infer from location
+      this._isLocal = location.href.includes('localhost') || location.href.includes('127.0.0.1');
+    }
 
     // shadow DOM
     const shadow = this.attachShadow({ mode: 'open' });
 
-    const stylesheet = document.createElement('link');
-    stylesheet.rel = 'stylesheet';
-    stylesheet.href = '/candid.css';
-    shadow.appendChild(stylesheet);
+    const styleTag = document.createElement('style');
+    styleTag.innerHTML = styles;
+    shadow.appendChild(styleTag);
 
     const main = document.createElement('main');
     main.id = 'main';
@@ -65,7 +53,6 @@ export class CandidForm extends HTMLElement {
 
   //   when the custom element is added to the DOM, the connectedCallback() method is called
   async connectedCallback() {
-    console.log('connectedCallback');
     // check if canister id is provided
     if (this.hasAttribute('canisterId')) {
       const canisterId = this.getAttribute('canisterId')?.trim();
@@ -73,11 +60,19 @@ export class CandidForm extends HTMLElement {
         this._canisterId = Principal.fromText(canisterId);
       }
     }
-
     if (this.hasAttribute('host')) {
-      this._host = this.getAttribute('host')!;
-    } else {
-      this._host = this._isLocal ? undefined : 'https://icp-api.io';
+      this._host = this.getAttribute('host') ?? undefined;
+    }
+    const host = await this.determineHost();
+    this._agent = new HttpAgent({
+      host: host,
+      identity: this._identity,
+    });
+    this._host = host;
+    this._isLocal = this.determineLocal(this._host);
+
+    if (this._isLocal) {
+      await this._agent.fetchRootKey();
     }
 
     await this.render();
@@ -88,6 +83,51 @@ export class CandidForm extends HTMLElement {
     this.render();
   }
 
+  determineLocal(host?: string) {
+    if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
+      // set isLocal to false if host is not localhost
+      return true;
+    } else if (host && location) {
+      // otherwise infer from location
+      return location.href.includes('localhost') || location.href.includes('127.0.0.1');
+    }
+
+    return false;
+  }
+
+  determineHost = async (): Promise<string> => {
+    if (this._host) return this._host;
+    let host = '';
+
+    if (location.href.includes('localhost') || location.href.includes('127.0.0.1')) {
+      try {
+        const proxyResponse = await (await fetch('/api/v2')).text();
+        if (proxyResponse.startsWith('Unexpected GET')) {
+          host = location.origin;
+        }
+      } catch (_) {}
+      try {
+        const defaultLocalResponse = await (await fetch('http://127.0.0.1:4943/api/v2')).text();
+        if (defaultLocalResponse.startsWith('Unexpected GET')) {
+          host = `http://127.0.0.1:4943`;
+        }
+      } catch (_) {}
+      try {
+        const systemLocalResponse = await (await fetch('http://127.0.0.1:8080/api/v2')).text();
+
+        if (systemLocalResponse.startsWith('Unexpected GET')) {
+          host = `http://127.0.0.1:8080`;
+        }
+      } catch (_) {}
+    }
+    if (host) {
+      console.log('inferred local host: ', host);
+    } else {
+      console.log('defaulting to https://icp-api.io host');
+    }
+    return host || `https://icp-api.io`;
+  };
+
   render = async () => {
     const shadowRoot = this.shadowRoot!;
     const main = shadowRoot.querySelector('main') as HTMLDivElement;
@@ -96,12 +136,15 @@ export class CandidForm extends HTMLElement {
     if (!this._canisterId) {
       return this.renderCanisterIdInput();
     }
-    this.renderStatic();
-    this._agent = new HttpAgent({
+    const agent = new HttpAgent({
       identity: this._identity,
-      host: this._host,
-      //   host: this._host ?? this._isLocal ? 'http://localhost:8000' : 'https://icp-api.io',
+      host: this._host ?? (await this.determineHost()),
     });
+    this._agent = agent;
+    if (this._isLocal) {
+      await this._agent.fetchRootKey();
+    }
+    this.renderStatic();
     let candid = await this._db?.get(this._canisterId.toText());
 
     //   fetch the candid file
@@ -109,12 +152,11 @@ export class CandidForm extends HTMLElement {
       if (!candid) {
         const status = await CanisterStatus.request({
           canisterId: this._canisterId,
-          agent: this._agent,
+          agent,
           paths: ['candid'],
         });
         candid = status.get('candid') as string | undefined;
       }
-      console.log('candid', candid);
       if (!candid) {
         candid = await this.getDidJsFromTmpHack(this._canisterId);
       }
@@ -162,86 +204,108 @@ export class CandidForm extends HTMLElement {
     const shadowRoot = this.shadowRoot!;
     const main = shadowRoot.getElementById('main');
     if (main) {
-      main.innerHTML = `
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-reboot@4.5.4/reboot.css" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;500&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph.css">
-    <style>.ic_progress { display: block; margin: 50vh auto; width: 25vw; }</style>
-      <div id="progress">
-      <progress class="ic_progress" id="ic-progress">Loading Candid UI...</progress>
-    </div>
-    <app id="app" style="display: none">
-      <div id="header">Canister ID:&nbsp;<span id="canisterId"></span></div>
-      <div id="container">
-        <div id="main-content">
-          <div id="title-card">
-            <h1 id="title">Candid UI</h1>
-            Browse and test your API with our visual web interface.
-          </div>
-          <ul id="methods"></ul>
+      main.innerHTML = html`<link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-reboot@4.5.4/reboot.css"
+        />
+        <link rel="preconnect" href="https://fonts.gstatic.com" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;500&display=swap"
+          rel="stylesheet"
+        />
+        <link
+          rel="stylesheet"
+          type="text/css"
+          href="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph.css"
+        />
+        <style>
+          .ic_progress {
+            display: block;
+            margin: 50vh auto;
+            width: 25vw;
+          }
+        </style>
+        <div id="progress">
+          <progress class="ic_progress" id="ic-progress">Loading Candid UI...</progress>
         </div>
-        <div id="console">
-          <div id="console-bar">
-            <button id="output-button">
-              <svg
-                viewBox="64 64 896 896"
-                focusable="false"
-                data-icon="clock-circle"
-                width="1em"
-                height="1em"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372 372 166.6 372 372-166.6 372-372 372z"
-                ></path>
-                <path
-                  d="M686.7 638.6L544.1 535.5V288c0-4.4-3.6-8-8-8H488c-4.4 0-8 3.6-8 8v275.4c0 2.6 1.2 5 3.3 6.5l165.4 120.6c3.6 2.6 8.6 1.8 11.2-1.7l28.6-39c2.6-3.7 1.8-8.7-1.8-11.2z"
-                ></path>
-              </svg>
-            </button>
-            <button id="methods-button">
-              <svg
-                viewBox="64 64 896 896"
-                focusable="false"
-                data-icon="unordered-list"
-                width="1em"
-                height="1em"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  d="M912 192H328c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h584c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 284H328c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h584c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 284H328c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h584c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM104 228a56 56 0 10112 0 56 56 0 10-112 0zm0 284a56 56 0 10112 0 56 56 0 10-112 0zm0 284a56 56 0 10112 0 56 56 0 10-112 0z"
-                ></path>
-              </svg>
-            </button>
+        <section id="app" style="display: none">
+          <header id="header">
+            <div></div>
+            <div>Canister ID:&nbsp;<span id="canisterId"></span></div>
+            <button type="reset" id="reset-button">reset</button>
+          </header>
+          <div id="container">
+            <div id="main-content">
+              <div id="title-card">
+                <h1 id="title">${this._title}</h1>
+                ${this._description}
+              </div>
+              <ul id="methods"></ul>
+            </div>
+            <div id="console">
+              <div id="console-bar">
+                <button id="output-button">
+                  <svg
+                    viewBox="64 64 896 896"
+                    focusable="false"
+                    data-icon="clock-circle"
+                    width="1em"
+                    height="1em"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372 372 166.6 372 372-166.6 372-372 372z"
+                    ></path>
+                    <path
+                      d="M686.7 638.6L544.1 535.5V288c0-4.4-3.6-8-8-8H488c-4.4 0-8 3.6-8 8v275.4c0 2.6 1.2 5 3.3 6.5l165.4 120.6c3.6 2.6 8.6 1.8 11.2-1.7l28.6-39c2.6-3.7 1.8-8.7-1.8-11.2z"
+                    ></path>
+                  </svg>
+                </button>
+                <button id="methods-button">
+                  <svg
+                    viewBox="64 64 896 896"
+                    focusable="false"
+                    data-icon="unordered-list"
+                    width="1em"
+                    height="1em"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M912 192H328c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h584c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 284H328c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h584c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 284H328c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h584c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM104 228a56 56 0 10112 0 56 56 0 10-112 0zm0 284a56 56 0 10112 0 56 56 0 10-112 0zm0 284a56 56 0 10112 0 56 56 0 10-112 0z"
+                    ></path>
+                  </svg>
+                </button>
+              </div>
+              <div id="output-pane">
+                <div class="console-header">Output Log</div>
+                <div id="output-list"></div>
+              </div>
+              <div id="methods-pane" style="display: none">
+                <div class="console-header">Methods</div>
+                <ul id="methods-list"></ul>
+              </div>
+            </div>
           </div>
-          <div id="output-pane">
-            <div class="console-header">Output Log</div>
-            <div id="output-list"></div>
-          </div>
-          <div id="methods-pane" style="display: none">
-            <div class="console-header">Methods</div>
-            <ul id="methods-list"></ul>
-          </div>
-        </div>
-      </div>
-    </app>
-    <script type="text/javascript" src="https://d3js.org/d3.v7.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph.min.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph-tooltip.min.js"></script>`;
+        </section>
+        <script type="text/javascript" src="https://d3js.org/d3.v7.js"></script>
+        <script
+          type="text/javascript"
+          src="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph.min.js"
+        ></script>
+        <script
+          type="text/javascript"
+          src="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph-tooltip.min.js"
+        ></script>`;
     }
     this.initializeConsoleControls();
   };
 
   renderCanisterIdInput = (error?: string) => {
+    const shadowRoot = this.shadowRoot;
+    if (!shadowRoot) return;
     if (this.shadowRoot?.querySelector('.form') !== null) return;
-
-    const shadowRoot = this.shadowRoot!;
 
     const form = document.createElement('form');
     form.className = 'form';
@@ -256,7 +320,8 @@ export class CandidForm extends HTMLElement {
 
     canisterIdInput.addEventListener('change', () => {
       try {
-        const canisterId = Principal.fromText(canisterIdInput.value);
+        // will throw an error if input is invalid
+        Principal.fromText(canisterIdInput.value);
         canisterIdInput.setCustomValidity('');
       } catch (error) {
         canisterIdInput.setCustomValidity('Please enter a valid canister ID.');
@@ -296,6 +361,7 @@ export class CandidForm extends HTMLElement {
       canisterId,
     });
     const candid_source = (await actor.__get_candid_interface_tmp_hack()) as string;
+    console.log(candid_source);
     return candid_source;
   };
 
@@ -305,9 +371,15 @@ export class CandidForm extends HTMLElement {
       IDL.Service({
         did_to_js: IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], ['query']),
       });
+
+    const candidCanister = this._isLocal
+      ? `ryjl3-tyaaa-aaaaa-aaaba-cai`
+      : `a4gq6-oaaaa-aaaab-qaa4q-cai`;
+
+    console.log('candidCanister: ', candidCanister);
     const didjs: ActorSubclass = Actor.createActor(didjs_interface, {
       agent: this._agent,
-      canisterId: 'a4gq6-oaaaa-aaaab-qaa4q-cai',
+      canisterId: candidCanister,
     });
     const js: any = await didjs.did_to_js(candid_source);
     if (Array.isArray(js) && js.length === 0) {
@@ -320,6 +392,7 @@ export class CandidForm extends HTMLElement {
     const consoleEl = this.shadowRoot?.getElementById('console') as HTMLDivElement;
     const outputButton = this.shadowRoot?.getElementById('output-button') as HTMLButtonElement;
     const methodsButton = this.shadowRoot?.getElementById('methods-button') as HTMLButtonElement;
+    const resetButton = this.shadowRoot?.getElementById('reset-button') as HTMLButtonElement;
 
     const outputPane = this.shadowRoot?.getElementById('output-pane') as HTMLDivElement;
     const methodsPane = this.shadowRoot?.getElementById('methods-pane') as HTMLDivElement;
@@ -378,6 +451,9 @@ export class CandidForm extends HTMLElement {
         outputButton.classList.remove('active-tab');
       }
     });
+    resetButton.addEventListener('click', () => {
+      this._db?.clear();
+    });
     progress!.remove();
     app!.style.display = 'block';
     outputButton.click();
@@ -393,4 +469,24 @@ export function defineCandidFormElement() {
   } else {
     console.warn('candid-form already defined');
   }
+}
+
+function html(strings: TemplateStringsArray, ...values: unknown[]) {
+  let result = '';
+  for (let i = 0; i < strings.length; i++) {
+    result += strings[i];
+    if (i < values.length) {
+      result += escapeHtml(values[i]);
+    }
+  }
+  return result;
+}
+
+function escapeHtml(unsafe: unknown) {
+  return String(unsafe)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }

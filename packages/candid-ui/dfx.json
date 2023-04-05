@@ -1,8 +1,8 @@
 {
   "canisters": {
-    "candid_sink": {
+    "kitchen_sink": {
       "type": "motoko",
-      "main": "src/candid-sink.mo"
+      "main": "src/kitchen-sink/main.mo"
     }
   }
 }

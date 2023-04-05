@@ -82,6 +82,7 @@ export class IdbKeyVal {
   public async set<T>(key: IDBValidKey, value: T) {
     return await _setValue<T>(this._db, this._storeName, key, value);
   }
+
   /**
    * Basic getter
    * Pass in a type T for type safety if you know the type the value will have if it is found
@@ -101,5 +102,13 @@ export class IdbKeyVal {
    */
   public async remove(key: IDBValidKey) {
     return await _removeValue(this._db, this._storeName, key);
+  }
+
+  /**
+   * Remove all values
+   * @returns void
+   */
+  public async clear() {
+    return await this._db.clear(this._storeName);
   }
 }
