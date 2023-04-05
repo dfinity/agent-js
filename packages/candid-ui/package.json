@@ -6,7 +6,8 @@
   "main": "dist/index.js",
   "scripts": {
     "start": "vite ./src",
-    "build": "tsc -b && tsc -p tsconfig-cjs.json",
+    "build": "webpack",
+    "postbuild": "tsc -p tsconfig.json --emitDeclarationOnly --declaration --declarationDir ./dist --skipLibCheck",
     "test": "vitest"
   },
   "keywords": [],

@@ -20,19 +20,13 @@ export class CandidForm extends HTMLElement {
   private _db?: IdbKeyVal;
   private _agent?: HttpAgent;
   private _canisterId?: Principal;
-  private _isLocal: boolean;
+  private _isLocal = false;
   private _host?: string;
   private _title?: string = 'Candid UI';
   private _description?: string = 'Browse and test your API with our visual web interface.';
 
   constructor() {
     super();
-    if (location.href.includes('localhost') || location.href.includes('127.0.0.1')) {
-      this._isLocal = this.determineLocal(this._host);
-    } else {
-      // otherwise infer from location
-      this._isLocal = location.href.includes('localhost') || location.href.includes('127.0.0.1');
-    }
 
     // shadow DOM
     const shadow = this.attachShadow({ mode: 'open' });
@@ -86,7 +80,7 @@ export class CandidForm extends HTMLElement {
   determineLocal(host?: string) {
     if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
       // set isLocal to false if host is not localhost
-      return true;
+      return false;
     } else if (host && location) {
       // otherwise infer from location
       return location.href.includes('localhost') || location.href.includes('127.0.0.1');
