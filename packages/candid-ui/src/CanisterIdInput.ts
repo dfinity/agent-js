@@ -87,7 +87,6 @@ export class CanisterIdInput extends HTMLElement {
   set onChange(cb: (id: Principal | undefined) => void) {
     console.count('onChange');
     this._onChange = cb;
-    this.render();
   }
 
   handleSubmit = (event: Event) => {

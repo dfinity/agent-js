@@ -72,7 +72,7 @@ export const styles = css`
   }
 
   #title-card {
-    padding: 3.2rem 1.8rem 0;
+    padding: 3.2rem 0;
     font-size: var(--font-md);
   }
 

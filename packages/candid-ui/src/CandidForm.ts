@@ -14,7 +14,6 @@ import { log, renderMethod } from './renderMethod';
 import { IdbNetworkIds } from './db';
 import { styles } from './styles';
 import { html } from './utils';
-import { ECDSAKeyIdentity } from '@dfinity/identity';
 import type { CanisterIdInput } from './CanisterIdInput';
 
 if (!('global' in window)) {
@@ -22,10 +21,6 @@ if (!('global' in window)) {
 }
 
 class AnonymousAgent extends HttpAgent {}
-
-ECDSAKeyIdentity.generate().then(identity => {
-  window.testIdentity = identity;
-});
 
 export class CandidForm extends HTMLElement {
   #identity?: Identity = new AnonymousIdentity();
@@ -36,6 +31,8 @@ export class CandidForm extends HTMLElement {
   #host?: string;
   #title = 'Candid UI';
   #description = 'Browse and test your API with our visual web interface.';
+  // restricted set of methods to display
+  #methods: string[] = [];
 
   constructor() {
     super();
@@ -65,13 +62,13 @@ export class CandidForm extends HTMLElement {
    * Public Interface
    */
   attributeChangedCallback() {
-    console.log('attribute changed');
+    console.trace('attribute changed');
     this.#init();
   }
 
   // Values that can be set via attribute
   static get observedAttributes() {
-    return ['canisterid', 'host', 'title', 'description'];
+    return ['canisterid', 'host', 'title', 'description', 'methods'];
   }
   /**
    * setter for host
@@ -121,6 +118,20 @@ export class CandidForm extends HTMLElement {
 
   get description() {
     return this.#description;
+  }
+
+  set methods(methods: string[]) {
+    if (Array.isArray(methods)) {
+      this.#methods = methods;
+      this.setAttribute('methods', methods.join(','));
+      this.#render();
+    } else {
+      throw new Error('methods must be an array of strings');
+    }
+  }
+
+  get methods() {
+    return this.#methods;
   }
 
   /**
@@ -225,8 +236,25 @@ export class CandidForm extends HTMLElement {
         this.#canisterId = Principal.fromText(canisterId);
       }
     }
+    if (this.hasAttribute('methods')) {
+      const methods = this.getAttribute('methods')
+        ?.trim()
+        .split(',')
+        .map(method => method.trim());
+      if (methods) {
+        this.#methods = methods;
+      }
+    }
     if (this.hasAttribute('host')) {
       this.#host = this.getAttribute('host') ?? undefined;
+    }
+    const titleAttribute = this.getAttribute('title');
+    if (this.hasAttribute('title') && typeof titleAttribute === 'string') {
+      this.#title = titleAttribute;
+    }
+    const descriptionAttribute = this.getAttribute('description');
+    if (this.hasAttribute('description') && typeof descriptionAttribute === 'string') {
+      this.#description = descriptionAttribute;
     }
     const host = await this.#determineHost();
     if (this.#identity) {
@@ -373,8 +401,28 @@ export class CandidForm extends HTMLElement {
 
       const shadowRoot = this.shadowRoot!;
 
-      for (const [name, func] of sortedMethods) {
-        renderMethod(actor, name, func, shadowRoot, async () => undefined);
+      shadowRoot.querySelector('#methods')!.innerHTML = '';
+
+      //  if methods are specified, only render those
+      if (this.#methods?.length) {
+        const methods = sortedMethods.filter(([name]) => this.#methods.includes(name));
+        // sort methods by this.#methods
+        methods.sort(([a], [b]) => {
+          const aIndex = this.#methods.indexOf(a);
+          const bIndex = this.#methods.indexOf(b);
+          return aIndex > bIndex ? 1 : -1;
+        });
+
+        for (const [name, func] of methods) {
+          renderMethod(actor, name, func, shadowRoot, async () => undefined);
+        }
+        return;
+      } else {
+        this.#methods = sortedMethods.map(([name]) => name);
+
+        for (const [name, func] of sortedMethods) {
+          renderMethod(actor, name, func, shadowRoot, async () => undefined);
+        }
       }
     } catch (e: unknown) {
       console.error(e);
