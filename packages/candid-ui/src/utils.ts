@@ -1,3 +1,8 @@
+/* eslint-disable prefer-rest-params */
+/* eslint-disable @typescript-eslint/ban-types */
+
+import 'reflect-metadata';
+const requiredMetadataKey = Symbol('required');
 /**
  *
  * @param strings - template strings

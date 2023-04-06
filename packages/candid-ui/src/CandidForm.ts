@@ -2,6 +2,7 @@
 import {
   Actor,
   ActorSubclass,
+  Agent,
   AnonymousIdentity,
   CanisterStatus,
   HttpAgent,
@@ -9,25 +10,32 @@ import {
 } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
-import { renderMethod } from './renderMethod';
+import { log, renderMethod } from './renderMethod';
 import { IdbNetworkIds } from './db';
 import { styles } from './styles';
 import { html } from './utils';
+import { ECDSAKeyIdentity } from '@dfinity/identity';
 import type { CanisterIdInput } from './CanisterIdInput';
 
 if (!('global' in window)) {
   (window as any).global = window;
 }
 
+class AnonymousAgent extends HttpAgent {}
+
+ECDSAKeyIdentity.generate().then(identity => {
+  window.testIdentity = identity;
+});
+
 export class CandidForm extends HTMLElement {
-  private _identity?: Identity = new AnonymousIdentity();
-  private _db?: IdbNetworkIds;
-  private _agent?: HttpAgent;
-  private _canisterId?: Principal;
-  private _isLocal = false;
-  private _host?: string;
-  private _title?: string = 'Candid UI';
-  private _description?: string = 'Browse and test your API with our visual web interface.';
+  #identity?: Identity = new AnonymousIdentity();
+  #db?: IdbNetworkIds;
+  #agent: HttpAgent;
+  #canisterId?: Principal;
+  #isLocal = false;
+  #host?: string;
+  #title = 'Candid UI';
+  #description = 'Browse and test your API with our visual web interface.';
 
   constructor() {
     super();
@@ -45,48 +53,208 @@ export class CandidForm extends HTMLElement {
 
     //  create a database
     IdbNetworkIds.create().then(db => {
-      this._db = db;
+      this.#db = db;
     });
+
+    // default to anonymous
+    this.#agent = new AnonymousAgent({ host: this.#host });
   }
+
+  //#region Properties
+  /**
+   * Public Interface
+   */
+  attributeChangedCallback() {
+    console.log('attribute changed');
+    this.#init();
+  }
+
+  // Values that can be set via attribute
+  static get observedAttributes() {
+    return ['canisterid', 'host', 'title', 'description'];
+  }
+  /**
+   * setter for host
+   */
+  set host(host: string | undefined) {
+    if (typeof host === 'string') {
+      this.#host = host;
+      this.setAttribute('host', host);
+      this.#init();
+    } else {
+      if (typeof host === 'undefined') {
+        this.removeAttribute('host');
+        this.#init();
+      } else {
+        throw new Error('host must be a string or undefined');
+      }
+    }
+  }
+
+  get host() {
+    return this.#host;
+  }
+
+  set title(title: string) {
+    if (typeof title === 'string') {
+      this.#title = title;
+      this.setAttribute('title', title);
+      this.#render();
+    } else {
+      throw new Error('title must be a string');
+    }
+  }
+
+  get title() {
+    return this.#title;
+  }
+
+  set description(description: string) {
+    if (typeof description === 'string') {
+      this.#description = description;
+      this.setAttribute('description', description);
+      this.#render();
+    } else {
+      throw new Error('description must be a string');
+    }
+  }
+
+  get description() {
+    return this.#description;
+  }
+
+  /**
+   * functional setter method for canister id for Candid UI to display
+   * @param canisterId - canister id
+   */
+  public setCanisterId(canisterId?: Principal | string): void {
+    if (canisterId) {
+      this.#canisterId = Principal.from(canisterId);
+      this.setAttribute('canisterid', canisterId.toString());
+    } else {
+      this.#canisterId = undefined;
+      this.removeAttribute('canisterid');
+    }
+    this.#render();
+  }
+
+  /**
+   * The canister id for Candid UI to display
+   */
+  set canisterId(canisterId: Principal | string | undefined) {
+    this.setCanisterId(canisterId);
+  }
+
+  get canisterId() {
+    return this.#canisterId?.toString() ?? '';
+  }
+
+  /**
+   * Setter method for an agent
+   * @param agent - an instance of HttpAgent or Agent
+   */
+  public async setAgent(agent: Agent | HttpAgent) {
+    this.#agent = agent as HttpAgent;
+    if (this.#isLocal) {
+      await this.#agent.fetchRootKey();
+    }
+  }
+
+  set agent(agent: Agent | HttpAgent) {
+    this.setAgent(agent);
+  }
+
+  get agent() {
+    if (this.#agent) {
+      return this.#agent;
+    }
+    if (this.#identity) {
+      return new HttpAgent({ identity: this.#identity });
+    }
+    return new AnonymousAgent();
+  }
+
+  public async setIdentity(identity: Identity | undefined) {
+    this.#identity = identity;
+    this.setAgent(await this.#determineAgent(true));
+    this.#init();
+  }
+
+  set identity(identity: Identity | undefined) {
+    this.setIdentity(identity);
+  }
+
+  get identity() {
+    return this.#identity;
+  }
+
+  //#endregion
+
+  /**
+   * Reset Candid UI
+   */
+  public reset = () => {
+    this.#db?.clear();
+    this.canisterId = undefined;
+    this.setAttribute('canisterid', '');
+    this.host = undefined;
+    this.#determineHost().then(host => {
+      this.agent = new AnonymousAgent({ host: host });
+    });
+    const container = this.shadowRoot?.querySelector('#container');
+    if (container) {
+      container.innerHTML = '';
+    }
+    this.#init();
+  };
+
+  /**
+   * Private Methods
+   */
 
   //   when the custom element is added to the DOM, the connectedCallback() method is called
   async connectedCallback() {
-    await this.init();
+    await this.#init();
   }
 
-  private async init() {
+  async #init() {
     // check if canister id is provided
     if (this.hasAttribute('canisterId')) {
       const canisterId = this.getAttribute('canisterId')?.trim();
       if (canisterId) {
-        this._canisterId = Principal.fromText(canisterId);
+        this.#canisterId = Principal.fromText(canisterId);
       }
     }
     if (this.hasAttribute('host')) {
-      this._host = this.getAttribute('host') ?? undefined;
+      this.#host = this.getAttribute('host') ?? undefined;
     }
-    const host = await this.determineHost();
-    this._agent = new HttpAgent({
-      host: host,
-      identity: this._identity,
-    });
-    this._host = host;
-    this._isLocal = this.determineLocal(this._host);
+    const host = await this.#determineHost();
+    if (this.#identity) {
+      await this.setAgent(
+        new HttpAgent({
+          host: host,
+          identity: this.#identity,
+        }),
+      );
+    } else {
+      await this.setAgent(
+        new AnonymousAgent({
+          host: host,
+        }),
+      );
+    }
+    this.#host = host;
+    this.#isLocal = this.#determineLocal(this.#host);
 
-    if (this._isLocal) {
-      await this._agent.fetchRootKey();
+    if (this.#isLocal) {
+      await this.#agent.fetchRootKey();
     }
     const { defineCanisterIdInput } = await import('./CanisterIdInput');
     defineCanisterIdInput();
-    await this.render();
+    await this.#render();
   }
 
-  set canisterId(canisterId: Principal) {
-    this._canisterId = canisterId;
-    this.render();
-  }
-
-  determineLocal(host?: string) {
+  #determineLocal(host?: string) {
     if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
       // set isLocal to false if host is not localhost
       return false;
@@ -98,8 +266,8 @@ export class CandidForm extends HTMLElement {
     return false;
   }
 
-  determineHost = async (): Promise<string> => {
-    if (this._host) return this._host;
+  #determineHost = async (): Promise<string> => {
+    if (this.#host) return this.#host;
     let host = '';
 
     if (location.href.includes('localhost') || location.href.includes('127.0.0.1')) {
@@ -131,35 +299,48 @@ export class CandidForm extends HTMLElement {
     return host || `https://icp-api.io`;
   };
 
-  render = async () => {
-    console.count('render');
-    this.renderStatic();
-    const agent = new HttpAgent({
-      identity: this._identity,
-      host: this._host ?? (await this.determineHost()),
-    });
-    this._agent = agent;
-    if (this._isLocal) {
-      await this._agent.fetchRootKey();
+  #determineAgent = async (shouldReset = false): Promise<HttpAgent> => {
+    if (this.#agent && !shouldReset) return this.#agent;
+    let agent;
+    if (this.#identity) {
+      agent = new HttpAgent({
+        identity: this.#identity,
+        host: this.#host ?? (await this.#determineHost()),
+      });
+    } else {
+      agent = new AnonymousAgent({
+        host: this.#host ?? (await this.#determineHost()),
+      });
     }
 
-    if (!this._canisterId) return;
-    let candid = await this._db?.get(
-      JSON.stringify({ id: this._canisterId.toText(), network: this._host }),
+    if (this.#isLocal) {
+      await agent.fetchRootKey();
+    }
+    return agent;
+  };
+
+  #render = async () => {
+    console.count('render');
+    this.#renderStatic();
+    const agent = await this.#determineAgent();
+
+    if (!this.#canisterId) return;
+    let candid = await this.#db?.get(
+      JSON.stringify({ id: this.#canisterId.toText(), network: this.#host }),
     );
 
     //   fetch the candid file
     try {
       if (!candid) {
         const status = await CanisterStatus.request({
-          canisterId: this._canisterId,
+          canisterId: this.#canisterId,
           agent,
           paths: ['candid'],
         });
         candid = status.get('candid') as string | undefined;
       }
       if (!candid) {
-        candid = await this.getDidJsFromTmpHack(this._canisterId);
+        candid = await this.#getDidJsFromTmpHack(this.#canisterId);
       }
       if (!candid) {
         console.error('Candid file not found');
@@ -167,16 +348,16 @@ export class CandidForm extends HTMLElement {
       }
 
       //   save candid file to db
-      if (this._db) {
-        this._db.set(
-          JSON.stringify({ id: this._canisterId.toText(), network: this._host }),
+      if (this.#db) {
+        this.#db.set(
+          JSON.stringify({ id: this.#canisterId.toText(), network: this.#host }),
           candid,
         );
       }
 
       // profile time this call takes
       console.time('didToJs');
-      const js = await this.didToJs(candid as string);
+      const js = await this.#didToJs(candid as string);
       console.timeEnd('didToJs');
 
       if (!js) {
@@ -185,8 +366,8 @@ export class CandidForm extends HTMLElement {
       const dataUri = 'data:text/javascript;charset=utf-8,' + encodeURIComponent(js);
       const candidScript: any = await eval('import("' + dataUri + '")');
       const actor = Actor.createActor(candidScript.idlFactory, {
-        agent: this._agent,
-        canisterId: this._canisterId,
+        agent: this.#agent,
+        canisterId: this.#canisterId,
       });
       const sortedMethods = Actor.interfaceOf(actor)._fields.sort(([a], [b]) => (a > b ? 1 : -1));
 
@@ -195,13 +376,14 @@ export class CandidForm extends HTMLElement {
       for (const [name, func] of sortedMethods) {
         renderMethod(actor, name, func, shadowRoot, async () => undefined);
       }
-    } catch (e) {
+    } catch (e: unknown) {
       console.error(e);
+      log((e as Error).message, this.shadowRoot!);
       // return this.renderCanisterIdInput(e as string);
     }
   };
 
-  renderStatic = () => {
+  #renderStatic = () => {
     const shadowRoot = this.shadowRoot!;
     const main = shadowRoot.getElementById('main');
     if (main) {
@@ -238,8 +420,8 @@ export class CandidForm extends HTMLElement {
           <div id="container">
             <div id="main-content">
               <div id="title-card">
-                <h1 id="title">${this._title}</h1>
-                ${this._description}
+                <h1 id="title">${this.#title}</h1>
+                ${this.#description}
               </div>
               <ul id="methods"></ul>
             </div>
@@ -291,65 +473,16 @@ export class CandidForm extends HTMLElement {
           </div>
         </section>`;
     }
-    this.initializeConsoleControls();
+    this.#initializeConsoleControls();
   };
 
-  // renderCanisterIdInput = (error?: string) => {
-  //   const shadowRoot = this.shadowRoot;
-  //   if (!shadowRoot) return;
-  //   if (this.shadowRoot?.querySelector('.form') !== null) return;
-
-  //   const form = document.createElement('form');
-  //   form.className = 'form';
-  //   form.style.width = '650px';
-  //   shadowRoot.prepend(form);
-
-  //   const title = document.createElement('h3');
-  //   title.textContent = 'Enter canister ID';
-  //   form.appendChild(title);
-
-  //   const canisterIdInput = document.createElement('input');
-
-  //   canisterIdInput.addEventListener('change', () => {
-  //     try {
-  //       // will throw an error if input is invalid
-  //       Principal.fromText(canisterIdInput.value);
-  //       canisterIdInput.setCustomValidity('');
-  //     } catch (error) {
-  //       canisterIdInput.setCustomValidity('Please enter a valid canister ID.');
-  //     }
-  //   });
-
-  //   form.appendChild(canisterIdInput);
-
-  //   if (error) {
-  //     const errorDiv = document.createElement('div');
-  //     errorDiv.textContent = error;
-  //     errorDiv.style.color = 'red';
-  //     form.appendChild(errorDiv);
-  //   }
-
-  //   const button = document.createElement('button');
-  //   button.textContent = 'Submit';
-  //   button.type = 'submit';
-  //   form.appendChild(button);
-
-  //   form.addEventListener('submit', e => {
-  //     e.preventDefault();
-  //     const canisterId = canisterIdInput.value;
-  //     this._canisterId = Principal.fromText(canisterId);
-  //     this.render();
-  //     return false;
-  //   });
-  // };
-
-  getDidJsFromTmpHack = async (canisterId: Principal) => {
+  #getDidJsFromTmpHack = async (canisterId: Principal) => {
     const common_interface: IDL.InterfaceFactory = ({ IDL }) =>
       IDL.Service({
         __get_candid_interface_tmp_hack: IDL.Func([], [IDL.Text], ['query']),
       });
     const actor: ActorSubclass = Actor.createActor(common_interface, {
-      agent: this._agent,
+      agent: this.#agent,
       canisterId,
     });
     const candid_source = (await actor.__get_candid_interface_tmp_hack()) as string;
@@ -357,20 +490,20 @@ export class CandidForm extends HTMLElement {
     return candid_source;
   };
 
-  didToJs = async (candid_source: string) => {
+  #didToJs = async (candid_source: string) => {
     // call didjs canister
     const didjs_interface: IDL.InterfaceFactory = ({ IDL }) =>
       IDL.Service({
         did_to_js: IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], ['query']),
       });
 
-    const candidCanister = this._isLocal
+    const candidCanister = this.#isLocal
       ? `ryjl3-tyaaa-aaaaa-aaaba-cai`
       : `a4gq6-oaaaa-aaaab-qaa4q-cai`;
 
     console.log('candidCanister: ', candidCanister);
     const didjs: ActorSubclass = Actor.createActor(didjs_interface, {
-      agent: this._agent,
+      agent: this.#agent,
       canisterId: candidCanister,
     });
     const js: any = await didjs.did_to_js(candid_source);
@@ -380,7 +513,7 @@ export class CandidForm extends HTMLElement {
     return js[0];
   };
 
-  initializeConsoleControls() {
+  #initializeConsoleControls() {
     const consoleEl = this.shadowRoot?.getElementById('console') as HTMLDivElement;
     const outputButton = this.shadowRoot?.getElementById('output-button') as HTMLButtonElement;
     const methodsButton = this.shadowRoot?.getElementById('methods-button') as HTMLButtonElement;
@@ -398,13 +531,13 @@ export class CandidForm extends HTMLElement {
     // Set canister ID in the header
     const canisterIdInput = this.shadowRoot?.querySelector('canister-input') as CanisterIdInput;
 
-    if (this._canisterId) {
-      canisterIdInput.setAttribute('canisterid', this._canisterId.toText());
+    if (this.#canisterId) {
+      canisterIdInput.setAttribute('canisterid', this.#canisterId.toText());
     }
     const handleChange = (id?: Principal) => {
       console.count('outer handleChange');
       if (id) {
-        this.canisterId = id;
+        this.setCanisterId(id);
       }
     };
     canisterIdInput.onChange = handleChange.bind(this);
@@ -457,19 +590,6 @@ export class CandidForm extends HTMLElement {
     app!.style.display = 'block';
     outputButton.click();
   }
-
-  reset = () => {
-    this._db?.clear();
-    this._canisterId = undefined;
-    this.setAttribute('canisterid', '');
-    this._host = undefined;
-    this._agent = undefined;
-    const container = this.shadowRoot?.querySelector('#container');
-    if (container) {
-      container.innerHTML = '';
-    }
-    this.init();
-  };
 }
 
 /**

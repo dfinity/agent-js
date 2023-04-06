@@ -239,7 +239,7 @@ function encodeStr(str: string) {
   });
 }
 
-function log(content: Element | string, root: ShadowRoot) {
+export function log(content: Element | string, root: ShadowRoot) {
   const outputEl = root.getElementById('output-list')!;
   const line = document.createElement('div');
   line.className = 'output-line';
