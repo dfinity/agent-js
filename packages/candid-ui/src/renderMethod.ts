@@ -42,9 +42,15 @@ export function renderMethod(
   methodListItem.appendChild(methodLink);
   root.getElementById('methods-list')!.appendChild(methodListItem);
 
+  const methodForm = document.createElement('form');
+  methodForm.id = `form-${name}`;
+
+  methodListItem.appendChild(methodForm);
+
   const inputContainer = document.createElement('div');
   inputContainer.className = 'input-container';
-  item.appendChild(inputContainer);
+  item.appendChild(methodForm);
+  methodForm.appendChild(inputContainer);
 
   const inputs: InputBox[] = [];
   idlFunc.argTypes.forEach((arg, i) => {
@@ -57,6 +63,7 @@ export function renderMethod(
   buttonContainer.className = 'button-container';
 
   const buttonQuery = document.createElement('button');
+  buttonQuery.type = 'submit';
   buttonQuery.className = 'btn';
   if (idlFunc.annotations.includes('query')) {
     buttonQuery.innerText = 'Query';
@@ -66,10 +73,11 @@ export function renderMethod(
   buttonContainer.appendChild(buttonQuery);
 
   const buttonRandom = document.createElement('button');
+  buttonRandom.type = 'button';
   buttonRandom.className = 'btn random';
   buttonRandom.innerText = 'Random';
   buttonContainer.appendChild(buttonRandom);
-  item.appendChild(buttonContainer);
+  methodForm.appendChild(buttonContainer);
 
   const resultDiv = document.createElement('div');
   resultDiv.className = 'result';
@@ -215,14 +223,15 @@ export function renderMethod(
     }
     callAndRender(args);
   });
-
-  buttonQuery.addEventListener('click', () => {
+  methodForm.addEventListener('submit', e => {
+    e.preventDefault();
     const args = inputs.map(arg => arg.parse());
     const isReject = inputs.some(arg => arg.isRejected());
     if (isReject) {
       return;
     }
     callAndRender(args);
+    return false;
   });
 }
 
