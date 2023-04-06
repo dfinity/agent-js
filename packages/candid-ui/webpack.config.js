@@ -3,9 +3,9 @@ const __dirname = import.meta.url.substring(7, import.meta.url.lastIndexOf('/'))
 
 export default {
   experiments: { outputModule: true },
-  entry: './src/index.ts',
+  entry: './src/auto.ts',
   output: {
-    filename: 'index.js',
+    filename: 'auto.js',
     path: path.resolve(__dirname, 'dist'),
     libraryTarget: 'module',
   },
