@@ -2,6 +2,16 @@ import { Actor, ActorSubclass } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { InputBox } from './candid-core';
 import { renderInput, renderValue } from './candid-ui';
+import { Principal } from '@dfinity/principal';
+
+const names: Record<number, string> = {};
+
+declare global {
+  interface Window {
+    d3: any;
+    flamegraph: any;
+  }
+}
 
 /**
  *
@@ -143,7 +153,7 @@ export function renderMethod(
       const showArgs = encodeStr(IDL.FuncClass.argsToString(idlFunc.argTypes, args));
       log(decodeSpace(`› ${name}${showArgs}`), root);
       if (profiler && !idlFunc.annotations.includes('query')) {
-        await renderFlameGraph(profiler);
+        await renderFlameGraph(profiler, root);
       }
       if (!idlFunc.annotations.includes('query')) {
         postToPlayground(Actor.canisterIdOf(canister));
@@ -175,7 +185,7 @@ export function renderMethod(
       if (profiler && !idlFunc.annotations.includes('query')) {
         const showArgs = encodeStr(IDL.FuncClass.argsToString(idlFunc.argTypes, args));
         log(`[Error] ${name}${showArgs}`, root);
-        renderFlameGraph(profiler);
+        renderFlameGraph(profiler, root);
       }
       if (!idlFunc.annotations.includes('query')) {
         postToPlayground(Actor.canisterIdOf(canister));
@@ -242,10 +252,78 @@ function log(content: Element | string, root: ShadowRoot) {
   outputEl.appendChild(line);
   line.scrollIntoView();
 }
-function renderFlameGraph(profiler: any) {
-  throw new Error('Function not implemented.');
+
+function decodeProfiling(input: Array<[number, bigint]>) {
+  //console.log(input);
+  if (!input) {
+    return [];
+  }
+  const stack: Array<[number, bigint, any[]]> = [[0, BigInt(0), []]];
+  let prev_id = undefined;
+  let i = 1;
+  for (const [id, cycles] of input) {
+    if (id >= 0) {
+      stack.push([id, cycles, []]);
+    } else {
+      const pair = stack.pop();
+      if (!pair) {
+        console.log(i);
+        throw new Error('cannot pop empty stack');
+      }
+      if (pair[0] !== -id) {
+        throw new Error(`Exiting func ${-pair[0]}, but expect to exit func ${id}`);
+      }
+      const name = names[pair[0]] || `func_${pair[0]}`;
+      const value = Number(cycles - pair[1]);
+      let result = pair[2];
+      const node = { name, value };
+      if (typeof prev_id === 'number' && prev_id < 0) {
+        result = [{ ...node, children: result }];
+      } else {
+        result.push(node);
+      }
+      stack[stack.length - 1][2].push(...result);
+    }
+    prev_id = id;
+    i++;
+  }
+  if (stack.length !== 1) {
+    console.log(stack);
+    throw new Error('End of input, but stack is not empty');
+  }
+  if (stack[0][2].length === 1) {
+    return stack[0][2][0];
+  } else {
+    const total_cycles = Number(input[input.length - 1][1] - input[0][1]);
+    return { children: stack[0][2], name: 'Total', value: total_cycles };
+  }
 }
 
-function postToPlayground(arg0: any) {
-  throw new Error('Function not implemented.');
+async function renderFlameGraph(profiler: any, root: ShadowRoot) {
+  // Load only when needed
+  const d3 = await import('d3');
+  const { flamegraph } = await import('d3-flame-graph');
+  const tooltip = await import('d3-flame-graph/dist/d3-flamegraph-tooltip');
+
+  const profiling = decodeProfiling(await profiler());
+  //console.log(profiling);
+  if (typeof profiling !== 'undefined') {
+    const div = document.createElement('div');
+    div.id = 'chart';
+    log(div, root);
+    const chart = flamegraph().selfValue(false).sort(false).width(400);
+    const tip = tooltip
+      .defaultFlamegraphTooltip()
+      .text((d: any) => `${d.data.name}: ${d.data.value} instrs`);
+    chart.tooltip(tip);
+    d3.select('#chart').datum(profiling).call(chart);
+    div.id = 'old-chart';
+  }
+}
+
+function postToPlayground(id: Principal) {
+  const message = {
+    caller: id.toText(),
+  };
+  (window.parent || window.opener)?.postMessage(`CandidUI${JSON.stringify(message)}`, '*');
 }

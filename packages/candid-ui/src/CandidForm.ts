@@ -15,7 +15,9 @@ import { styles } from './styles';
 import { html } from './utils';
 import type { CanisterIdInput } from './CanisterIdInput';
 
-(window as any).global = window;
+if (!('global' in window)) {
+  (window as any).global = window;
+}
 
 export class CandidForm extends HTMLElement {
   private _identity?: Identity = new AnonymousIdentity();
@@ -287,16 +289,7 @@ export class CandidForm extends HTMLElement {
               </div>
             </div>
           </div>
-        </section>
-        <script type="text/javascript" src="https://d3js.org/d3.v7.js"></script>
-        <script
-          type="text/javascript"
-          src="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph.min.js"
-        ></script>
-        <script
-          type="text/javascript"
-          src="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph-tooltip.min.js"
-        ></script>`;
+        </section>`;
     }
     this.initializeConsoleControls();
   };

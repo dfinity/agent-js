@@ -142,8 +142,14 @@ export const styles = css`
     padding-left: var(--pad-md);
     width: 100%;
   }
+
+  .popup-form input {
+    margin-right: 1rem;
+  }
+
   input[type='checkbox'] ~ .popup-form {
     padding-left: var(--pad-md);
+    margin-right: 0.75rem;
   }
   .input-container > span > .popup-form,
   .ui-result > span > .popup-form {
@@ -166,7 +172,6 @@ export const styles = css`
     width: 100%;
     margin-top: var(--pad-lg);
     padding-top: 1.5rem;
-    font-size: 1.4rem;
     border-top: 1px solid var(--light);
   }
   .error {
@@ -223,7 +228,8 @@ export const styles = css`
   input:focus,
   select:focus,
   textarea:focus {
-    outline: none;
+    outline: 2px transparent solid;
+    box-shadow: 0 0 0 2px #f9f9d1, 0 0 0 4px #396196, 0 0 4px 8px #f9f9d1;
   }
   .random {
     background-color: var(--lighter);
@@ -269,6 +275,7 @@ export const styles = css`
     transition: height 0.2s ease-in-out;
   }
   #console.open {
+    height: cqmax;
     height: 40cqh;
   }
 
@@ -355,7 +362,7 @@ export const styles = css`
     background-color: var(--darkest);
   }
 
-  @container (width > 800px) {
+  @container (inline-size >= 880px) {
     .container {
       --header-height: 5.6rem;
     }
