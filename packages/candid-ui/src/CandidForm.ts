@@ -33,6 +33,7 @@ export class CandidForm extends HTMLElement {
   #description = 'Browse and test your API with our visual web interface.';
   // restricted set of methods to display
   #methods: string[] = [];
+  #isInitialized = false;
 
   constructor() {
     super();
@@ -224,8 +225,32 @@ export class CandidForm extends HTMLElement {
    */
 
   //   when the custom element is added to the DOM, the connectedCallback() method is called
+  #processStyles = async (slot: HTMLSlotElement) => {
+    slot.assignedNodes().forEach(node => {
+      // copy the styles to the shadow DOM
+      if (node instanceof HTMLStyleElement) {
+        const styleTag = document.createElement('style');
+        styleTag.innerHTML = node.innerHTML;
+        this.shadowRoot?.appendChild(styleTag);
+      }
+      // remove the styles from the light DOM
+      if (node instanceof HTMLStyleElement) {
+        node.remove();
+      }
+    });
+  };
+
   async connectedCallback() {
     await this.#init();
+    const slot = this.shadowRoot?.querySelector('slot[name="styles"]') as HTMLSlotElement;
+
+    if (slot) {
+      this.#processStyles(slot);
+    }
+
+    slot?.addEventListener('slotchange', e => {
+      this.#processStyles(e.target as HTMLSlotElement);
+    });
   }
 
   async #init() {
@@ -280,6 +305,11 @@ export class CandidForm extends HTMLElement {
     const { defineCanisterIdInput } = await import('./CanisterIdInput');
     defineCanisterIdInput();
     await this.#render();
+
+    if (!this.#isInitialized) {
+      this.#isInitialized = true;
+      this.dispatchEvent(new CustomEvent('ready'));
+    }
   }
 
   #determineLocal(host?: string) {
@@ -435,7 +465,8 @@ export class CandidForm extends HTMLElement {
     const shadowRoot = this.shadowRoot!;
     const main = shadowRoot.getElementById('main');
     if (main) {
-      main.innerHTML = html`<link
+      const template = document.createElement('template');
+      template.innerHTML = html`<link
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap-reboot@4.5.4/reboot.css"
         />
@@ -456,6 +487,7 @@ export class CandidForm extends HTMLElement {
             width: 25vw;
           }
         </style>
+        <slot name="styles"></slot>
         <div id="progress">
           <progress class="ic_progress" id="ic-progress">Loading Candid UI...</progress>
         </div>
@@ -520,6 +552,7 @@ export class CandidForm extends HTMLElement {
             </div>
           </div>
         </section>`;
+      main?.appendChild(template.content.cloneNode(true));
     }
     this.#initializeConsoleControls();
   };
