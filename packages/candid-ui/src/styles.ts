@@ -76,7 +76,8 @@ export const styles = css`
     font-size: var(--font-md);
   }
 
-  #title {
+  #title,
+  *[slot='title'] {
     font-size: 3.4rem;
     letter-spacing: 0.1rem;
   }

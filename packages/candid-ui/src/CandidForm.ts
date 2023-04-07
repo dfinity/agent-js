@@ -500,8 +500,12 @@ export class CandidForm extends HTMLElement {
           <div id="container">
             <div id="main-content">
               <div id="title-card">
-                <h1 id="title">${this.#title}</h1>
-                ${this.#description}
+                <slot name="title">
+                  <h1 id="title">${this.#title}</h1>
+                </slot>
+                <slot name="description">
+                  <p id="description">${this.#description}</p>
+                </slot>
               </div>
               <ul id="methods"></ul>
             </div>
