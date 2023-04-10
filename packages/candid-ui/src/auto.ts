@@ -1,2 +1,2 @@
-import { defineCandidFormElement } from './CandidForm';
+import { defineCandidFormElement } from './CandidUI';
 defineCandidFormElement();

@@ -22,7 +22,7 @@ if (!('global' in window)) {
 
 class AnonymousAgent extends HttpAgent {}
 
-export class CandidForm extends HTMLElement {
+export class CandidUI extends HTMLElement {
   #identity?: Identity = new AnonymousIdentity();
   #db?: IdbNetworkIds;
   #agent: HttpAgent;
@@ -680,10 +680,10 @@ export class CandidForm extends HTMLElement {
 /**
  * Define the custom element
  */
-export function defineCandidFormElement() {
-  if (!window.customElements.get('candid-form')) {
-    customElements.define('candid-form', CandidForm);
+export function defineElement() {
+  if (!window.customElements.get('candid-ui')) {
+    customElements.define('candid-ui', CandidUI);
   } else {
-    console.warn('candid-form already defined');
+    console.warn('candid-ui already defined');
   }
 }
