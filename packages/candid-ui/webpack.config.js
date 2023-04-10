@@ -3,11 +3,18 @@ const __dirname = import.meta.url.substring(7, import.meta.url.lastIndexOf('/'))
 
 export default {
   experiments: { outputModule: true },
+  mode: 'production',
   entry: './src/auto.ts',
   output: {
     filename: 'auto.js',
     path: path.resolve(__dirname, 'dist'),
-    libraryTarget: 'module',
+    library: {
+      type: 'window',
+    },
+    clean: true,
+    environment: {
+      module: true,
+    },
   },
   module: {
     rules: [
@@ -27,5 +34,8 @@ export default {
   },
   optimization: {
     minimize: true,
+    moduleIds: 'deterministic',
+    chunkIds: 'deterministic',
+    usedExports: true,
   },
 };

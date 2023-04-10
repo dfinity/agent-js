@@ -309,26 +309,24 @@ function decodeProfiling(input: Array<[number, bigint]>) {
 }
 async function renderFlameGraph(profiler: any, root: ShadowRoot) {
   // Load only when needed
-  const d3 = await import('d3');
-  const { flamegraph } = await import('d3-flame-graph');
-
-  // @ts-ignore
-  const tooltip = await import('d3-flame-graph/dist/d3-flamegraph-tooltip.js');
-
-  const profiling = decodeProfiling(await profiler());
-  //console.log(profiling);
-  if (typeof profiling !== 'undefined') {
-    const div = document.createElement('div');
-    div.id = 'chart';
-    log(div, root);
-    const chart = flamegraph().selfValue(false).sort(false).width(400);
-    const tip = tooltip
-      .defaultFlamegraphTooltip()
-      .text((d: any) => `${d.data.name}: ${d.data.value} instrs`);
-    chart.tooltip(tip);
-    d3.select('#chart').datum(profiling).call(chart);
-    div.id = 'old-chart';
-  }
+  // const d3 = await import('d3');
+  // const { flamegraph } = await import('d3-flame-graph');
+  // // @ts-ignore
+  // const tooltip = await import('d3-flame-graph/dist/d3-flamegraph-tooltip.js');
+  // const profiling = decodeProfiling(await profiler());
+  // //console.log(profiling);
+  // if (typeof profiling !== 'undefined') {
+  //   const div = document.createElement('div');
+  //   div.id = 'chart';
+  //   log(div, root);
+  //   const chart = flamegraph().selfValue(false).sort(false).width(400);
+  //   const tip = tooltip
+  //     .defaultFlamegraphTooltip()
+  //     .text((d: any) => `${d.data.name}: ${d.data.value} instrs`);
+  //   chart.tooltip(tip);
+  //   d3.select('#chart').datum(profiling).call(chart);
+  //   div.id = 'old-chart';
+  // }
 }
 
 function postToPlayground(id: Principal) {

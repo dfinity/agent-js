@@ -14,7 +14,7 @@ import { log, renderMethod } from './renderMethod';
 import { IdbNetworkIds } from './db';
 import { styles } from './styles';
 import { html } from './utils';
-import type { CanisterIdInput, ChangeEvent } from './CanisterIdInput';
+import type { CanisterIdInput } from './CanisterIdInput';
 
 if (!('global' in window)) {
   (window as any).global = window;
@@ -630,7 +630,7 @@ export class CandidUI extends HTMLElement {
         this.setCanisterId(id);
       }
     };
-    canisterIdInput.addEventListener('submit', (e: ChangeEvent) => {
+    canisterIdInput.addEventListener('change', (e: any) => {
       this.setCanisterId(e.detail.canisterId);
     });
 

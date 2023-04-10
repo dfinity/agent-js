@@ -1,2 +1,3 @@
-import { defineCandidFormElement } from './CandidUI';
-defineCandidFormElement();
+import('./CandidUI').then(({ defineElement }) => {
+  defineElement();
+});

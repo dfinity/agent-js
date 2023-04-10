@@ -110,7 +110,7 @@ export class CanisterIdInput extends HTMLElement {
     try {
       const canisterId = Principal.fromText(input.value);
       this.#error = undefined;
-      const event = new CustomEvent('submit', {
+      const event = new CustomEvent('change', {
         detail: {
           canisterId,
         },
