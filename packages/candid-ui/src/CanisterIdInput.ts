@@ -1,10 +1,11 @@
 import { Principal } from '@dfinity/principal';
 import { css, html } from './utils';
 
+export type ChangeEvent = CustomEvent<Principal>;
+
 export class CanisterIdInput extends HTMLElement {
-  _canisterId?: Principal;
-  _onChange?: (canisterId: Principal | undefined) => void;
-  _error?: string;
+  #canisterId?: Principal;
+  #error?: string;
   constructor() {
     super();
     const shadow = this.attachShadow({ mode: 'open' });
@@ -63,33 +64,42 @@ export class CanisterIdInput extends HTMLElement {
     form.id = 'form';
     shadow.appendChild(form);
 
-    const handleSubmit = this.handleSubmit.bind(this);
+    const handleSubmit = this.#handleSubmit.bind(this);
     form.onsubmit = handleSubmit;
   }
 
-  async connectedCallback() {
-    this.init();
+  get canisterId() {
+    return this.#canisterId?.toString();
   }
 
-  async init() {
+  set canisterId(canisterId: string | Principal | undefined) {
+    if (canisterId) {
+      this.#canisterId = Principal.from(canisterId);
+    } else {
+      this.#canisterId = undefined;
+    }
+
+    this.#init();
+  }
+
+  async connectedCallback() {
+    this.#init();
+  }
+
+  async #init() {
     const value = this.getAttribute('canisterId');
     if (value) {
       try {
-        this._canisterId = Principal.fromText(value);
+        this.#canisterId = Principal.fromText(value);
       } catch (error) {
         console.error(error);
       }
     }
 
-    this.render();
+    this.#render();
   }
 
-  set onChange(cb: (id: Principal | undefined) => void) {
-    console.count('onChange');
-    this._onChange = cb;
-  }
-
-  handleSubmit = (event: Event) => {
+  #handleSubmit = (event: Event) => {
     console.count('handleSubmit');
     event.preventDefault();
     const shadowRoot = this.shadowRoot;
@@ -99,27 +109,30 @@ export class CanisterIdInput extends HTMLElement {
     const input = form.querySelector('input') as HTMLInputElement;
     try {
       const canisterId = Principal.fromText(input.value);
-      this._error = undefined;
-      if (this._onChange) {
-        this._onChange(canisterId);
-      }
+      this.#error = undefined;
+      const event = new CustomEvent('submit', {
+        detail: {
+          canisterId,
+        },
+      });
+      this.dispatchEvent(event);
     } catch (error) {
       console.error();
-      this._error = (error as Error).message;
+      this.#error = (error as Error).message;
     }
 
     return false;
   };
 
-  async render() {
+  async #render() {
     const shadowRoot = this.shadowRoot;
     if (!shadowRoot) return;
     const form = shadowRoot.querySelector('form') as HTMLFormElement;
     form.innerHTML = html` <label for="canister">Canister Id:</label
       ><input id="canister" name="canister" /><button type="submit" class="btn">Set</button>`;
     const input = form.querySelector('input') as HTMLInputElement;
-    if (this._canisterId) {
-      input.value = this._canisterId.toText();
+    if (this.#canisterId) {
+      input.value = this.#canisterId.toText();
     } else {
       setTimeout(() => {
         input.focus();
@@ -139,7 +152,7 @@ export class CanisterIdInput extends HTMLElement {
 
   attributeChangedCallback() {
     console.log('attribute changed');
-    this.init();
+    this.#init();
   }
 
   static get observedAttributes() {

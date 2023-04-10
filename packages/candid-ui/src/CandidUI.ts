@@ -14,7 +14,7 @@ import { log, renderMethod } from './renderMethod';
 import { IdbNetworkIds } from './db';
 import { styles } from './styles';
 import { html } from './utils';
-import type { CanisterIdInput } from './CanisterIdInput';
+import type { CanisterIdInput, ChangeEvent } from './CanisterIdInput';
 
 if (!('global' in window)) {
   (window as any).global = window;
@@ -208,12 +208,16 @@ export class CandidUI extends HTMLElement {
   public reset = () => {
     this.#db?.clear();
     this.canisterId = undefined;
-    this.setAttribute('canisterid', '');
+    this.removeAttribute('canisterid');
     this.host = undefined;
     this.#determineHost().then(host => {
       this.agent = new AnonymousAgent({ host: host });
     });
     const container = this.shadowRoot?.querySelector('#container');
+    const input = this.shadowRoot?.querySelector('canister-input') as CanisterIdInput | undefined;
+    if (input) {
+      input.canisterId = undefined;
+    }
     if (container) {
       container.innerHTML = '';
     }
@@ -270,9 +274,6 @@ export class CandidUI extends HTMLElement {
         this.#methods = methods;
       }
     }
-    if (this.hasAttribute('host')) {
-      this.#host = this.getAttribute('host') ?? undefined;
-    }
     const titleAttribute = this.getAttribute('title');
     if (this.hasAttribute('title') && typeof titleAttribute === 'string') {
       this.#title = titleAttribute;
@@ -280,6 +281,9 @@ export class CandidUI extends HTMLElement {
     const descriptionAttribute = this.getAttribute('description');
     if (this.hasAttribute('description') && typeof descriptionAttribute === 'string') {
       this.#description = descriptionAttribute;
+    }
+    if (this.hasAttribute('host')) {
+      this.#host = this.getAttribute('host') ?? undefined;
     }
     const host = await this.#determineHost();
     if (this.#identity) {
@@ -302,11 +306,12 @@ export class CandidUI extends HTMLElement {
     if (this.#isLocal) {
       await this.#agent.fetchRootKey();
     }
-    const { defineCanisterIdInput } = await import('./CanisterIdInput');
-    defineCanisterIdInput();
+
     await this.#render();
 
     if (!this.#isInitialized) {
+      const { defineCanisterIdInput } = await import('./CanisterIdInput');
+      defineCanisterIdInput();
       this.#isInitialized = true;
       this.dispatchEvent(new CustomEvent('ready'));
     }
@@ -457,13 +462,13 @@ export class CandidUI extends HTMLElement {
     } catch (e: unknown) {
       console.error(e);
       log((e as Error).message, this.shadowRoot!);
-      // return this.renderCanisterIdInput(e as string);
     }
   };
 
   #renderStatic = () => {
     const shadowRoot = this.shadowRoot!;
-    const main = shadowRoot.getElementById('main');
+    const main = shadowRoot.getElementById('main')!;
+    main.innerHTML = '';
     if (main) {
       const template = document.createElement('template');
       template.innerHTML = html`<link
@@ -625,7 +630,9 @@ export class CandidUI extends HTMLElement {
         this.setCanisterId(id);
       }
     };
-    canisterIdInput.onChange = handleChange.bind(this);
+    canisterIdInput.addEventListener('submit', (e: ChangeEvent) => {
+      this.setCanisterId(e.detail.canisterId);
+    });
 
     function openConsole() {
       if (!consoleEl.classList.contains('open')) {
