@@ -27,6 +27,19 @@
         defineElement();
         console.timeEnd('candid-ui import');
       });
+
+      document.querySelector('candid-ui').addEventListener('ready', () => {
+        console.log('candid-ui ready');
+      });
+      document.querySelector('candid-ui').addEventListener('error', e => {
+        console.log('candid-ui error', e);
+      });
+      document.querySelector('candid-ui').addEventListener('response', e => {
+        console.log('candid-ui message', e);
+      });
+      document.querySelector('candid-ui').addEventListener('request', e => {
+        console.log('candid-ui request', e);
+      });
     </script>
   </body>
 </html>

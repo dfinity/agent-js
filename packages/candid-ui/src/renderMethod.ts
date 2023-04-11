@@ -115,7 +115,29 @@ export function renderMethod(
     resultDiv.style.display = 'flex';
 
     const tStart = Date.now();
+
+    const requestEvent = new CustomEvent('request', {
+      detail: {
+        method: name,
+        args: JSON.parse(JSON.stringify(args)),
+      },
+      bubbles: true,
+      composed: true,
+    });
+    root.dispatchEvent(requestEvent);
+
     const result = await canister[name](...args);
+
+    const repsponseEvent = new CustomEvent('response', {
+      detail: {
+        method: name,
+        response: JSON.parse(JSON.stringify(result)),
+      },
+      bubbles: true,
+      composed: true,
+    });
+    root.dispatchEvent(repsponseEvent);
+
     const duration = (Date.now() - tStart) / 1000;
     right.innerText = `(${duration}s)`;
     return result;

@@ -278,6 +278,13 @@ export class CandidUI extends HTMLElement {
   };
 
   #error = (message: unknown) => {
+    const errorEvent = new CustomEvent('error', {
+      detail: message,
+      bubbles: true,
+      composed: true,
+    });
+    this.dispatchEvent(errorEvent);
+
     if (this.#logLevel === 'debug') {
       console.error(message);
     }

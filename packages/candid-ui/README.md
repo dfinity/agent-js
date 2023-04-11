@@ -294,7 +294,7 @@ Dispatched when an error occurs. The event will have a `detail` property with th
 
 ---
 
-`submit`
+`request`
 
 Dispatched when the form is submitted. The event will have a `detail` property with the arguments for the method.
 
