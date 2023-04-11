@@ -151,7 +151,6 @@ export class CanisterIdInput extends HTMLElement {
   }
 
   attributeChangedCallback() {
-    console.log('attribute changed');
     this.#init();
   }
 
@@ -166,7 +165,5 @@ export class CanisterIdInput extends HTMLElement {
 export function defineCanisterIdInput() {
   if (!window.customElements.get('canister-input')) {
     customElements.define('canister-input', CanisterIdInput);
-  } else {
-    console.warn('candid-form already defined');
   }
 }

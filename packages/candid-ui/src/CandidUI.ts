@@ -22,6 +22,8 @@ if (!('global' in window)) {
 
 class AnonymousAgent extends HttpAgent {}
 
+type LogLevel = 'none' | 'debug';
+
 export class CandidUI extends HTMLElement {
   #identity?: Identity = new AnonymousIdentity();
   #db?: IdbNetworkIds;
@@ -34,6 +36,7 @@ export class CandidUI extends HTMLElement {
   // restricted set of methods to display
   #methods: string[] = [];
   #isInitialized = false;
+  #logLevel: LogLevel = 'none';
 
   constructor() {
     super();
@@ -63,7 +66,7 @@ export class CandidUI extends HTMLElement {
    * Public Interface
    */
   attributeChangedCallback() {
-    console.trace('attribute changed');
+    this.#log('attribute changed');
     this.#init();
   }
 
@@ -133,6 +136,14 @@ export class CandidUI extends HTMLElement {
 
   get methods() {
     return this.#methods;
+  }
+
+  set logLevel(logLevel) {
+    this.#logLevel = logLevel;
+  }
+
+  get logLevel() {
+    return this.#logLevel;
   }
 
   /**
@@ -242,6 +253,18 @@ export class CandidUI extends HTMLElement {
         node.remove();
       }
     });
+  };
+
+  #log = (message: unknown) => {
+    if (this.#logLevel === 'debug') {
+      this.#log(message);
+    }
+  };
+
+  #error = (message: string) => {
+    if (this.#logLevel === 'debug') {
+      this.#error(message);
+    }
   };
 
   async connectedCallback() {
@@ -355,9 +378,9 @@ export class CandidUI extends HTMLElement {
       } catch (_) {}
     }
     if (host) {
-      console.log('inferred local host: ', host);
+      this.#log(`inferred local host: ${host}`);
     } else {
-      console.log('defaulting to https://icp-api.io host');
+      this.#log('defaulting to https://icp-api.io host');
     }
     return host || `https://icp-api.io`;
   };
@@ -383,7 +406,7 @@ export class CandidUI extends HTMLElement {
   };
 
   #render = async () => {
-    console.count('render');
+    this.#log('render');
     this.#renderStatic();
     const agent = await this.#determineAgent();
 
@@ -406,7 +429,7 @@ export class CandidUI extends HTMLElement {
         candid = await this.#getDidJsFromTmpHack(this.#canisterId);
       }
       if (!candid) {
-        console.error('Candid file not found');
+        this.#error('Candid file not found');
         return;
       }
 
@@ -418,10 +441,7 @@ export class CandidUI extends HTMLElement {
         );
       }
 
-      // profile time this call takes
-      console.time('didToJs');
       const js = await this.#didToJs(candid as string);
-      console.timeEnd('didToJs');
 
       if (!js) {
         throw new Error('Cannot fetch candid file');
@@ -460,7 +480,7 @@ export class CandidUI extends HTMLElement {
         }
       }
     } catch (e: unknown) {
-      console.error(e);
+      this.#error(e);
       log((e as Error).message, this.shadowRoot!);
     }
   };
@@ -576,7 +596,7 @@ export class CandidUI extends HTMLElement {
       canisterId,
     });
     const candid_source = (await actor.__get_candid_interface_tmp_hack()) as string;
-    console.log(candid_source);
+    this.#log(candid_source);
     return candid_source;
   };
 
@@ -591,7 +611,7 @@ export class CandidUI extends HTMLElement {
       ? `ryjl3-tyaaa-aaaaa-aaaba-cai`
       : `a4gq6-oaaaa-aaaab-qaa4q-cai`;
 
-    console.log('candidCanister: ', candidCanister);
+    this.#log(`candidCanister: ${candidCanister}`);
     const didjs: ActorSubclass = Actor.createActor(didjs_interface, {
       agent: this.#agent,
       canisterId: candidCanister,
@@ -625,7 +645,7 @@ export class CandidUI extends HTMLElement {
       canisterIdInput.setAttribute('canisterid', this.#canisterId.toText());
     }
     const handleChange = (id?: Principal) => {
-      console.count('outer handleChange');
+      this.#log('outer handleChange');
       if (id) {
         this.setCanisterId(id);
       }
