@@ -8,7 +8,14 @@
   </head>
   <body>
     <section style="height: 80vh; width: 600px; resize: both; overflow: auto">
-      <candid-ui canisterId="fkjyf-lyaaa-aaaab-qah7q-cai"> </candid-ui>
+      <candid-ui canisterId="fkjyf-lyaaa-aaaab-qah7q-cai" logLevel="debug">
+        <h1 slot="title">My title</h1>
+        <style slot="styles">
+          button:first-child {
+            background-color: pink;
+          }
+        </style>
+      </candid-ui>
 
       <!--<candid-ui host="https://icp-api.io" canisterId="fkjyf-lyaaa-aaaab-qah7q-cai"></candid-ui>-->
     </section>

@@ -37,6 +37,7 @@ export class CandidUI extends HTMLElement {
   #methods: string[] = [];
   #isInitialized = false;
   #logLevel: LogLevel = 'none';
+  #isRendering = false;
 
   constructor() {
     super();
@@ -78,6 +79,7 @@ export class CandidUI extends HTMLElement {
    * setter for host
    */
   set host(host: string | undefined) {
+    this.#log('set host');
     if (typeof host === 'string') {
       this.#host = host;
       this.setAttribute('host', host);
@@ -97,6 +99,7 @@ export class CandidUI extends HTMLElement {
   }
 
   set title(title: string) {
+    this.#log('set title');
     if (typeof title === 'string') {
       this.#title = title;
       this.setAttribute('title', title);
@@ -111,6 +114,7 @@ export class CandidUI extends HTMLElement {
   }
 
   set description(description: string) {
+    this.#log('set description');
     if (typeof description === 'string') {
       this.#description = description;
       this.setAttribute('description', description);
@@ -125,6 +129,7 @@ export class CandidUI extends HTMLElement {
   }
 
   set methods(methods: string[]) {
+    this.#log('set methods');
     if (Array.isArray(methods)) {
       this.#methods = methods;
       this.setAttribute('methods', methods.join(','));
@@ -139,6 +144,7 @@ export class CandidUI extends HTMLElement {
   }
 
   set logLevel(logLevel) {
+    this.#log('set logLevel');
     this.#logLevel = logLevel;
   }
 
@@ -151,6 +157,7 @@ export class CandidUI extends HTMLElement {
    * @param canisterId - canister id
    */
   public setCanisterId(canisterId?: Principal | string): void {
+    this.#log('set canister id');
     if (canisterId) {
       this.#canisterId = Principal.from(canisterId);
       this.setAttribute('canisterid', canisterId.toString());
@@ -165,6 +172,7 @@ export class CandidUI extends HTMLElement {
    * The canister id for Candid UI to display
    */
   set canisterId(canisterId: Principal | string | undefined) {
+    this.#log('set canister id');
     this.setCanisterId(canisterId);
   }
 
@@ -177,6 +185,7 @@ export class CandidUI extends HTMLElement {
    * @param agent - an instance of HttpAgent or Agent
    */
   public async setAgent(agent: Agent | HttpAgent) {
+    this.#log('set agent');
     this.#agent = agent as HttpAgent;
     if (this.#isLocal) {
       await this.#agent.fetchRootKey();
@@ -184,6 +193,7 @@ export class CandidUI extends HTMLElement {
   }
 
   set agent(agent: Agent | HttpAgent) {
+    this.#log('set agent');
     this.setAgent(agent);
   }
 
@@ -198,12 +208,14 @@ export class CandidUI extends HTMLElement {
   }
 
   public async setIdentity(identity: Identity | undefined) {
+    this.#log('set identity');
     this.#identity = identity;
     this.setAgent(await this.#determineAgent(true));
     this.#init();
   }
 
   set identity(identity: Identity | undefined) {
+    this.#log('set identity');
     this.setIdentity(identity);
   }
 
@@ -217,6 +229,7 @@ export class CandidUI extends HTMLElement {
    * Reset Candid UI
    */
   public reset = () => {
+    this.#log('reset');
     this.#db?.clear();
     this.canisterId = undefined;
     this.removeAttribute('canisterid');
@@ -241,6 +254,7 @@ export class CandidUI extends HTMLElement {
 
   //   when the custom element is added to the DOM, the connectedCallback() method is called
   #processStyles = async (slot: HTMLSlotElement) => {
+    this.#log('process styles');
     slot.assignedNodes().forEach(node => {
       // copy the styles to the shadow DOM
       if (node instanceof HTMLStyleElement) {
@@ -257,13 +271,15 @@ export class CandidUI extends HTMLElement {
 
   #log = (message: unknown) => {
     if (this.#logLevel === 'debug') {
-      this.#log(message);
+      console.groupCollapsed(message);
+      console.trace();
+      console.groupEnd();
     }
   };
 
-  #error = (message: string) => {
+  #error = (message: unknown) => {
     if (this.#logLevel === 'debug') {
-      this.#error(message);
+      console.error(message);
     }
   };
 
@@ -281,6 +297,23 @@ export class CandidUI extends HTMLElement {
   }
 
   async #init() {
+    if (this.#isRendering) {
+      setTimeout(() => {
+        this.#init();
+      }, 100);
+      return;
+    }
+    this.#isRendering = true;
+
+    if (this.hasAttribute('loglevel')) {
+      if (this.getAttribute('loglevel')?.trim() === 'debug') {
+        this.#logLevel = 'debug';
+      }
+    }
+    if (this.#logLevel === 'debug') {
+      console.count('init');
+    }
+    this.#log('init');
     // check if canister id is provided
     if (this.hasAttribute('canisterId')) {
       const canisterId = this.getAttribute('canisterId')?.trim();
@@ -341,6 +374,7 @@ export class CandidUI extends HTMLElement {
   }
 
   #determineLocal(host?: string) {
+    this.#log('determine local');
     if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
       // set isLocal to false if host is not localhost
       return false;
@@ -353,10 +387,12 @@ export class CandidUI extends HTMLElement {
   }
 
   #determineHost = async (): Promise<string> => {
+    this.#log('determine host');
     if (this.#host) return this.#host;
     let host = '';
 
     if (location.href.includes('localhost') || location.href.includes('127.0.0.1')) {
+      console.groupCollapsed('Trying well known local hosts');
       try {
         const proxyResponse = await (await fetch('/api/v2')).text();
         if (proxyResponse.startsWith('Unexpected GET')) {
@@ -365,6 +401,7 @@ export class CandidUI extends HTMLElement {
       } catch (_) {}
       try {
         const defaultLocalResponse = await (await fetch('http://127.0.0.1:4943/api/v2')).text();
+        console.log(defaultLocalResponse);
         if (defaultLocalResponse.startsWith('Unexpected GET')) {
           host = `http://127.0.0.1:4943`;
         }
@@ -376,16 +413,20 @@ export class CandidUI extends HTMLElement {
           host = `http://127.0.0.1:8080`;
         }
       } catch (_) {}
-    }
-    if (host) {
-      this.#log(`inferred local host: ${host}`);
-    } else {
-      this.#log('defaulting to https://icp-api.io host');
+      console.groupEnd();
+      if (this.#logLevel === 'debug') {
+        if (host) {
+          this.#log(`inferred local host: ${host}`);
+        } else {
+          this.#log('defaulting to https://icp-api.io host');
+        }
+      }
     }
     return host || `https://icp-api.io`;
   };
 
   #determineAgent = async (shouldReset = false): Promise<HttpAgent> => {
+    this.#log('determine agent');
     if (this.#agent && !shouldReset) return this.#agent;
     let agent;
     if (this.#identity) {
@@ -486,6 +527,7 @@ export class CandidUI extends HTMLElement {
   };
 
   #renderStatic = () => {
+    this.#log('render static');
     const shadowRoot = this.shadowRoot!;
     const main = shadowRoot.getElementById('main')!;
     main.innerHTML = '';
@@ -587,6 +629,7 @@ export class CandidUI extends HTMLElement {
   };
 
   #getDidJsFromTmpHack = async (canisterId: Principal) => {
+    this.#log('getting candid interface from canister');
     const common_interface: IDL.InterfaceFactory = ({ IDL }) =>
       IDL.Service({
         __get_candid_interface_tmp_hack: IDL.Func([], [IDL.Text], ['query']),
@@ -601,6 +644,7 @@ export class CandidUI extends HTMLElement {
   };
 
   #didToJs = async (candid_source: string) => {
+    this.#log('converting candid to js');
     // call didjs canister
     const didjs_interface: IDL.InterfaceFactory = ({ IDL }) =>
       IDL.Service({
@@ -624,6 +668,7 @@ export class CandidUI extends HTMLElement {
   };
 
   #initializeConsoleControls() {
+    this.#log('initializing console controls');
     const consoleEl = this.shadowRoot?.getElementById('console') as HTMLDivElement;
     const outputButton = this.shadowRoot?.getElementById('output-button') as HTMLButtonElement;
     const methodsButton = this.shadowRoot?.getElementById('methods-button') as HTMLButtonElement;
@@ -651,15 +696,17 @@ export class CandidUI extends HTMLElement {
       }
     };
     canisterIdInput.addEventListener('change', (e: any) => {
-      this.setCanisterId(e.detail.canisterId);
+      handleChange(e.detail.canisterId);
     });
 
-    function openConsole() {
+    const openConsole = () => {
+      this.#log('opening console');
       if (!consoleEl.classList.contains('open')) {
         consoleEl.classList.add('open');
       }
-    }
-    function toggleConsole() {
+    };
+    const toggleConsole = () => {
+      this.#log('toggling console');
       if (consoleEl.classList.contains('open')) {
         consoleEl.classList.remove('open');
         buttons.forEach(button => {
@@ -672,7 +719,7 @@ export class CandidUI extends HTMLElement {
       } else {
         consoleEl.classList.add('open');
       }
-    }
+    };
     outputButton.addEventListener('click', () => {
       if (outputButton.classList.contains('active-tab')) {
         toggleConsole();
