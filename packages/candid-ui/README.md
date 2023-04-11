@@ -230,6 +230,24 @@ candidUi.methods = ['greet', 'whoami'];
 
 ---
 
+### `logLevel`
+
+The log level to use when logging messages. If no `logLevel` is provided, it will use the default log level.
+
+**Default**: `"none"`
+
+**Type:** `"none" | "debug"`
+
+**Example:**
+
+```js
+candidUi.logLevel = 'debug';
+```
+
+```html
+<candid-ui loglevel="debug"></candid-ui>
+```
+
 ## Methods
 
 Additionally, the component has the following methods:
