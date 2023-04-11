@@ -14,21 +14,19 @@ To use the component, you can either install it from npm:
 npm install @dfinity/candid-ui
 ```
 
-or use it directly from unpkg:
+However, the package is optimized to be used in a script tag, so we recommend using the auto setup script from unpkg:
+
+```html
+<script type="module" src="https://unpkg.com/@dfinity/candid-ui/dist/auto.js"></script>
+<candid-ui canisterId="rrkah-fqaaa-aaaaa-aaaaq-cai"></candid-ui>
+```
+
+or like this:
 
 ```html
 <script type="module">
-  import 'https://unpkg.com/@dfinity/candid-ui';
+  import('https://unpkg.com/@dfinity/candid-ui/dist/auto.js');
 </script>
-```
-
-When importing it in the browser, you can choose whether to manually initialize the component or to import the `auto.js` file, which will automatically initialize the component on all `candid-ui` elements.
-
-### Example
-
-```html
-<script type="module" src="https://unpkg.com/@dfinity/candid-ui/auto.js"></script>
-<candid-ui canisterId="rrkah-fqaaa-aaaaa-aaaaq-cai"></candid-ui>
 ```
 
 Otherwise, you can manually initialize the component:
@@ -41,6 +39,15 @@ Otherwise, you can manually initialize the component:
 </script>
 <candid-ui canisterId="rrkah-fqaaa-aaaaa-aaaaq-cai"></candid-ui>
 ```
+
+or in a script:
+
+```js
+import { defineElement } from '@dfinity/candid-ui';
+defineElement();
+```
+
+---
 
 You can add an event listener to the component to be notified when the component has been initialized:
 

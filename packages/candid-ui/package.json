@@ -4,11 +4,20 @@
   "description": "This package provides a simple UI for the Candid Interface Declaration Language. It is a simple web application that can be used to explore Candid interfaces, and to generate calls to canisters using them.",
   "type": "module",
   "main": "dist/index.js",
+  "unpkg": "./dist/auto.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./auto": "./dist/auto.js",
+    "./auto.js": "./dist/auto.js",
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "start": "vite ./src",
-    "build": "tsc; webpack",
+    "build": "webpack",
     "analyze-build": "webpack --profile --json; webpack-bundle-analyzer",
-    "postbuild": "tsc -p tsconfig.json --emitDeclarationOnly --declaration --declarationDir ./dist --skipLibCheck",
     "test": "vitest"
   },
   "keywords": [],
