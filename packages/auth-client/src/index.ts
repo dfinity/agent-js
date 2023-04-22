@@ -343,7 +343,10 @@ export class AuthClient {
     }
   }
 
-  private _handleSuccess(message: InternetIdentityAuthResponseSuccess, onSuccess?: () => void) {
+  private async _handleSuccess(
+    message: InternetIdentityAuthResponseSuccess,
+    onSuccess?: () => void,
+  ) {
     const delegations = message.delegations.map(signedDelegation => {
       return {
         delegation: new Delegation(
@@ -380,9 +383,16 @@ export class AuthClient {
         });
       }
     }
-    onSuccess?.();
     this._removeEventListener();
     delete this._idpWindow;
+
+    if (this._chain) {
+      await this._storage.set(KEY_STORAGE_DELEGATION, JSON.stringify(this._chain.toJSON()));
+    }
+
+    // onSuccess should be the last thing to do to avoid consumers
+    // interfering by navigating or refreshing the page
+    onSuccess?.();
   }
 
   public getIdentity(): Identity {
@@ -514,14 +524,7 @@ export class AuthClient {
         case 'authorize-client-success':
           // Create the delegation chain and store it.
           try {
-            this._handleSuccess(message, options?.onSuccess);
-
-            // Setting the storage is moved out of _handleSuccess to make
-            // it a sync function. Having _handleSuccess as an async function
-            // messes up the jest tests for some reason.
-            if (this._chain) {
-              await this._storage.set(KEY_STORAGE_DELEGATION, JSON.stringify(this._chain.toJSON()));
-            }
+            await this._handleSuccess(message, options?.onSuccess);
           } catch (err) {
             this._handleFailure((err as Error).message, options?.onError);
           }
