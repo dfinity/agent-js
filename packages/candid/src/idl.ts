@@ -914,10 +914,25 @@ export class OptClass<T> extends ConstructType<[T] | []> {
     typeTable.add(this, concat(opCode, buffer));
   }
 
+  public checkType(t: Type): Type {
+    try {
+      return super.checkType(t);
+    } catch (e) {
+      // try to coerce t to opt t
+      if (!(t instanceof OptClass) && !(this._type instanceof OptClass)) {
+        if (this._type.checkType(t)) {
+          return t;
+        }
+      }
+      // rethrow if opt coercion is not applicable
+      throw e;
+    }
+  }
+
   public decodeValue(b: Pipe, t: Type): [T] | [] {
     const opt = this.checkType(t);
     if (!(opt instanceof OptClass)) {
-      throw new Error('Not an option type');
+      return [this._type.decodeValue(b, opt)];
     }
     switch (safeReadUint8(b)) {
       case 0:

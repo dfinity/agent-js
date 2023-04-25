@@ -180,7 +180,9 @@ test('IDL encoding (arraybuffer)', () => {
   IDL.encode([IDL.Vec(IDL.Nat8)], [new Uint8Array()]);
   IDL.encode([IDL.Vec(IDL.Nat8)], [new Uint8Array(100).fill(42)]);
   IDL.encode([IDL.Vec(IDL.Nat16)], [new Uint16Array(200).fill(42)]);
-  expect(() => IDL.encode([IDL.Vec(IDL.Int8)], [new Uint16Array(10).fill(420)])).toThrow(/Invalid vec int8 argument/);
+  expect(() => IDL.encode([IDL.Vec(IDL.Int8)], [new Uint16Array(10).fill(420)])).toThrow(
+    /Invalid vec int8 argument/,
+  );
 });
 
 test('IDL encoding (array)', () => {
@@ -676,4 +678,17 @@ test('should decode matching optional fields if wire type contains additional fi
   expect(decoded).toEqual({
     b: ['123'],
   });
+});
+
+test('should coerce value to opt value', () => {
+  const encoded = IDL.encode([IDL.Text], ['hello']);
+  const value = IDL.decode([IDL.Opt(IDL.Text)], encoded)[0] as [string];
+  expect(value).toEqual(['hello']);
+});
+
+test('should not coerce nested opt opt', () => {
+  const encoded = IDL.encode([IDL.Text], ['hello']);
+  expect(() => IDL.decode([IDL.Opt(IDL.Opt(IDL.Text))], encoded)).toThrow(
+    'type mismatch: type on the wire text, expect type opt opt text',
+  );
 });
