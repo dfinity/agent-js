@@ -466,6 +466,7 @@ export class HttpAgent implements Agent {
     const transformedRequest = request ?? (await this.createReadStateRequest(fields, identity));
     const body = cbor.encode(transformedRequest.body);
 
+    // TODO - https://dfinity.atlassian.net/browse/SDK-1092
     const response = await this._requestAndRetry(() =>
       this._fetch('' + new URL(`/api/v2/canister/${canister}/read_state`, this._host), {
         ...this._fetchOptions,
