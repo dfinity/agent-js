@@ -1,5 +1,23 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`retry failures should retry readState requests 1`] = `
+HttpAgent {
+  "_callOptions": undefined,
+  "_fetch": [MockFunction],
+  "_fetchOptions": undefined,
+  "_host": "http://localhost:4943/",
+  "_identity": Promise {},
+  "_isAgent": true,
+  "_pipeline": Array [
+    [Function],
+  ],
+  "_retryTimes": 3,
+  "_rootKeyFetched": false,
+  "_timeDiffMsecs": 0,
+  "rootKey": ArrayBuffer [],
+}
+`;
+
 exports[`retry failures should succeed after multiple failures within the configured limit 1`] = `
 Object {
   "requestId": ArrayBuffer [],

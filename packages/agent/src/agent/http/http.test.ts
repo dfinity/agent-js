@@ -1,4 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+let calls = 0;
+jest.mock('../../certificate.ts', function () {
+  return {
+    Certificate: {
+      create: jest.fn(() => {
+        return {
+          lookup: jest.fn(() => {
+            if (calls === 0) {
+              calls++;
+              return cbor.encode({
+                status: 'replied',
+              });
+            } else {
+              cbor.encode({
+                status: 'replied',
+              });
+            }
+          }),
+        };
+      }),
+    },
+  };
+});
+
 import { HttpAgent, Nonce } from '../index';
 import * as cbor from '../../cbor';
 import { Expiry, makeNonceTransform } from './transforms';
@@ -13,11 +37,12 @@ import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 
 import { JSDOM } from 'jsdom';
-import { AnonymousIdentity, SignIdentity } from '../..';
+import { Actor, AnonymousIdentity, SignIdentity } from '../..';
 import { Ed25519KeyIdentity } from '../../../../identity/src/identity/ed25519';
 import { toHexString } from '../../../../identity/src/buffer';
 import { AgentError } from '../../errors';
 import fetch from 'isomorphic-fetch';
+import { IDL } from '@dfinity/candid';
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;
@@ -587,6 +612,77 @@ describe('retry failures', () => {
     expect(result).toMatchSnapshot();
     // One try + three retries
     expect(mockFetch.mock.calls.length).toBe(4);
+  });
+  it('should retry readState requests', async () => {
+    // The initial call will succeed, but the first readState will error
+    // and the second will succeed.
+    let calls = 0;
+    const mockFetch: jest.Mock = jest.fn(() => {
+      if (calls === 0) {
+        calls += 1;
+        return new Response('test', {
+          status: 200,
+          statusText: 'success!',
+        });
+      } else if (calls === 1) {
+        calls += 1;
+        const body = cbor.encode({ status: 'error' });
+        return Promise.resolve(
+          new Response(body, {
+            status: 500,
+            statusText: 'Internal Server Error',
+          }),
+        );
+      } else {
+        const body = cbor.encode({ status: 'received' });
+        return Promise.resolve(
+          new Response(body, {
+            status: 200,
+          }),
+        );
+      }
+    });
+
+    const actorInterface = () => {
+      return IDL.Service({
+        greet: IDL.Func([IDL.Text], [IDL.Text]),
+      });
+    };
+
+    const { HttpAgent } = await import('./index');
+    const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://localhost' });
+    const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+    const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
+
+    const result = await actor.greet('test');
+    try {
+    } catch (error) {
+      // ignore
+    }
+    // One try + two retries
+    expect(mockFetch.mock.calls.length).toBe(3);
+
+    // The second call should be a readState
+    const request = mockFetch.mock.calls[2][1];
+    expect(request.method).toBe('POST');
+
+    mockFetch.mock.calls; //??
+
+    const url = new URL(mockFetch.mock.calls[2][0]);
+    expect(url.pathname).toBe('/api/v2/canister/2chl6-4hpzw-vqaaa-aaaaa-c/read_state');
+
+    const body = cbor.decode(request.body);
+    expect(Object.keys((body as Record<string, Record<string, unknown>>).content))
+      .toMatchInlineSnapshot(`
+      Array [
+        "ingress_expiry",
+        "paths",
+        "request_type",
+        "sender",
+      ]
+    `);
+
+    // status
   });
 });
 jest.useFakeTimers({ legacyFakeTimers: true });
