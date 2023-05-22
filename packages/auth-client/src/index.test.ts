@@ -1,9 +1,16 @@
+import 'fake-indexeddb/auto';
 import { Actor, HttpAgent } from '@dfinity/agent';
 import { AgentError } from '@dfinity/agent/lib/cjs/errors';
 import { IDL } from '@dfinity/candid';
-import { Ed25519KeyIdentity } from '@dfinity/identity';
+import { DelegationChain, Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
-import { AuthClient, ERROR_USER_INTERRUPT } from './index';
+import { AuthClient, ERROR_USER_INTERRUPT, IdbStorage } from './index';
+import {
+  AuthClientStorage,
+  KEY_STORAGE_DELEGATION,
+  KEY_STORAGE_KEY,
+  LocalStorage,
+} from './storage';
 
 /**
  * A class for mocking the IDP service.
@@ -31,6 +38,16 @@ class IdpMock {
   }
 }
 
+const { location, fetch } = window;
+
+beforeEach(() => {
+  jest.useFakeTimers();
+});
+afterEach(() => {
+  delete (window as any).location;
+  (window as any).location = location;
+});
+
 describe('Auth Client', () => {
   it('should initialize with an AnonymousIdentity', async () => {
     const test = await AuthClient.create();
@@ -53,13 +70,23 @@ describe('Auth Client', () => {
     expect(await test.isAuthenticated()).toBe(false);
     expect(test.getIdentity().getPrincipal().isAnonymous()).toBe(true);
   });
-  it('should initialize an idleManager', async () => {
+  it('should not initialize an idleManager if the user is not logged in', async () => {
     const test = await AuthClient.create();
+    expect(test.idleManager).not.toBeDefined();
+  });
+  it('should initialize an idleManager if an identity is passed', async () => {
+    const test = await AuthClient.create({ identity: await Ed25519KeyIdentity.generate() });
     expect(test.idleManager).toBeDefined();
   });
   it('should be able to invalidate an identity after going idle', async () => {
-    jest.useFakeTimers();
     // setup actor
+    delete (window as any).location;
+    (window as any).location = {
+      reload: jest.fn(),
+      fetch,
+      toString: jest.fn(() => 'http://localhost:4943'),
+    };
+
     const identity = Ed25519KeyIdentity.generate();
     const mockFetch: jest.Mock = jest.fn();
     // http agent uses identity
@@ -97,6 +124,149 @@ describe('Auth Client', () => {
       expect((error as AgentError).message).toBe(expectedError);
     }
   });
+  it('should log out after idle and reload the window by default', async () => {
+    setup({
+      onAuthRequest: () => {
+        // Send a valid request.
+        idpMock.send({
+          kind: 'authorize-client-success',
+          delegations: [
+            {
+              delegation: {
+                pubkey: Uint8Array.from([]),
+                expiration: BigInt(0),
+              },
+              signature: Uint8Array.from([]),
+            },
+          ],
+          userPublicKey: Uint8Array.from([]),
+        });
+      },
+    });
+    delete (window as any).location;
+    (window as any).location = { reload: jest.fn(), fetch };
+
+    const storage: AuthClientStorage = {
+      remove: jest.fn(),
+      get: jest.fn(),
+      set: jest.fn(),
+    };
+
+    // setup auth client
+    const test = await AuthClient.create({
+      storage,
+      idleOptions: {
+        idleTimeout: 1000,
+      },
+    });
+
+    // Test login flow
+    const onSuccess = jest.fn();
+    test.login({ onSuccess });
+
+    idpMock.ready();
+
+    expect(storage.set).toBeCalled();
+    expect(storage.remove).not.toBeCalled();
+
+    // simulate user being inactive for 10 minutes
+    jest.advanceTimersByTime(10 * 60 * 1000);
+
+    // Storage should be cleared by default after logging out
+    expect(storage.remove).toBeCalled();
+
+    expect(window.location.reload).toBeCalled();
+  });
+  it('should not reload the page if the default callback is disabled', async () => {
+    setup({
+      onAuthRequest: () => {
+        // Send a valid request.
+        idpMock.send({
+          kind: 'authorize-client-success',
+          delegations: [
+            {
+              delegation: {
+                pubkey: Uint8Array.from([]),
+                expiration: BigInt(0),
+              },
+              signature: Uint8Array.from([]),
+            },
+          ],
+          userPublicKey: Uint8Array.from([]),
+        });
+      },
+    });
+    delete (window as any).location;
+    (window as any).location = { reload: jest.fn(), fetch };
+
+    const storage: AuthClientStorage = {
+      remove: jest.fn(),
+      get: jest.fn(),
+      set: jest.fn(),
+    };
+
+    const test = await AuthClient.create({
+      storage,
+      idleOptions: {
+        idleTimeout: 1000,
+        disableDefaultIdleCallback: true,
+      },
+    });
+
+    // Test login flow
+    await test.login();
+    idpMock.ready();
+
+    expect(storage.set).toBeCalled();
+    expect(storage.remove).not.toBeCalled();
+
+    // simulate user being inactive for 10 minutes
+    jest.advanceTimersByTime(10 * 60 * 1000);
+
+    // Storage should not be cleared
+    expect(storage.remove).not.toBeCalled();
+    // Page should not be reloaded
+    expect(window.location.reload).not.toBeCalled();
+  });
+  it('should not reload the page if a callback is provided', async () => {
+    setup({
+      onAuthRequest: () => {
+        // Send a valid request.
+        idpMock.send({
+          kind: 'authorize-client-success',
+          delegations: [
+            {
+              delegation: {
+                pubkey: Uint8Array.from([]),
+                expiration: BigInt(0),
+              },
+              signature: Uint8Array.from([]),
+            },
+          ],
+          userPublicKey: Uint8Array.from([]),
+        });
+      },
+    });
+    delete (window as any).location;
+    (window as any).location = { reload: jest.fn(), fetch };
+    const idleCb = jest.fn();
+    const test = await AuthClient.create({
+      idleOptions: {
+        idleTimeout: 1000,
+        onIdle: idleCb,
+      },
+    });
+
+    test.login();
+    idpMock.ready();
+
+    // simulate user being inactive for 10 minutes
+    jest.advanceTimersByTime(10 * 60 * 1000);
+
+    expect(window.location.reload).not.toBeCalled();
+    expect(idleCb).toBeCalled();
+  });
+
   /**
    * This test reflects a feature that may be added at a future date,
    * allowing the authClient to register actors for automatic invalidation
@@ -173,6 +343,61 @@ describe('Auth Client', () => {
     jest.advanceTimersByTime(30 * 60 * 1000);
     expect(idleFn).not.toHaveBeenCalled();
   });
+  it('should not set up an idle timer if the client is not logged in', async () => {
+    setup({
+      onAuthRequest: () => {
+        // Send a valid request.
+        idpMock.send({
+          kind: 'authorize-client-success',
+          delegations: [
+            {
+              delegation: {
+                pubkey: Uint8Array.from([]),
+                expiration: BigInt(0),
+              },
+              signature: Uint8Array.from([]),
+            },
+          ],
+          userPublicKey: Uint8Array.from([]),
+        });
+      },
+    });
+    delete (window as any).location;
+    (window as any).location = { reload: jest.fn(), fetch };
+
+    const storage: AuthClientStorage = {
+      remove: jest.fn(),
+      get: jest.fn(),
+      set: jest.fn(),
+    };
+
+    const test = await AuthClient.create({
+      storage,
+      idleOptions: {
+        idleTimeout: 1000,
+      },
+    });
+
+    expect(storage.set).toBeCalled();
+    expect(storage.remove).not.toBeCalled();
+
+    // simulate user being inactive for 10 minutes
+    jest.advanceTimersByTime(10 * 60 * 1000);
+
+    // Storage should not be cleared
+    expect(storage.remove).not.toBeCalled();
+    // Page should not be reloaded
+    expect(window.location.reload).not.toBeCalled();
+  });
+});
+
+describe('IdbStorage', () => {
+  it('should handle get and set', async () => {
+    const storage = new IdbStorage();
+
+    await storage.set('testKey', 'testValue');
+    expect(await storage.get('testKey')).toBe('testValue');
+  });
 });
 
 // A minimal interface of our interactions with the Window object of the IDP.
@@ -244,6 +469,20 @@ describe('Auth Client login', () => {
       'toolbar=0,location=0,menubar=0',
     );
   });
+  it('should login with a derivation origin', async () => {
+    setup();
+    const client = await AuthClient.create();
+    // Try without #authorize hash.
+    await client.login({
+      identityProvider: 'http://localhost',
+      derivationOrigin: 'http://localhost:1234',
+    });
+
+    idpMock.ready('http://localhost');
+
+    const call = (idpWindow.postMessage as jest.Mock).mock.calls[0][0];
+    expect(call['derivationOrigin']).toBe('http://localhost:1234');
+  });
 
   it('should ignore authorize-ready events with bad origin', async () => {
     setup();
@@ -290,7 +529,7 @@ describe('Auth Client login', () => {
     expect(idpWindow.close).toBeCalled();
   });
 
-  it('should call onError if recieved an invalid success message', async () => {
+  it('should call onError if recieved an invalid success message', done => {
     setup({
       onAuthRequest: () => {
         idpMock.send({
@@ -298,39 +537,23 @@ describe('Auth Client login', () => {
         });
       },
     });
-    const client = await AuthClient.create();
-    const failureFunc = jest.fn();
-    await client.login({ onError: failureFunc });
 
-    idpMock.ready();
+    AuthClient.create()
+      .then(client => {
+        const onError = () => {
+          expect(idpWindow.close).toBeCalled();
 
-    expect(failureFunc).toBeCalled();
-    expect(idpWindow.close).toBeCalled();
-    client.logout();
+          client.logout().then(done);
+        };
+
+        return client.login({ onError: onError });
+      })
+      .then(() => {
+        idpMock.ready();
+      });
   });
 
-  it('should call onError in an async pattern', async () => {
-    setup({
-      onAuthRequest: () => {
-        idpMock.send({
-          kind: 'authorize-client-success',
-        });
-      },
-    });
-    const client = await AuthClient.create();
-    const cb = jest.fn();
-    const failureFunc = async () => {
-      await cb();
-    };
-    await client.login({ onError: failureFunc });
-
-    idpMock.ready();
-
-    expect(cb).toBeCalled();
-    expect(idpWindow.close).toBeCalled();
-  });
-
-  it('should call onSuccess if recieved a valid success message', async () => {
+  it('should call onSuccess if recieved a valid success message', done => {
     setup({
       onAuthRequest: () => {
         // Send a valid request.
@@ -350,15 +573,19 @@ describe('Auth Client login', () => {
       },
     });
 
-    const client = await AuthClient.create();
-    const onSuccess = jest.fn();
-    await client.login({ onSuccess: onSuccess });
+    AuthClient.create()
+      .then(client => {
+        const onSuccess = () => {
+          expect(idpWindow.close).toBeCalled();
 
-    idpMock.ready();
+          client.logout().then(done);
+        };
 
-    expect(onSuccess).toBeCalled();
-    expect(idpWindow.close).toBeCalled();
-    await client.logout();
+        return client.login({ onSuccess: onSuccess });
+      })
+      .then(() => {
+        idpMock.ready();
+      });
   });
 
   it('should call onError if the user closed the IDP window', async () => {
@@ -375,36 +602,181 @@ describe('Auth Client login', () => {
       ),
     ).rejects.toMatch(ERROR_USER_INTERRUPT);
   });
-  it('should call an async onSuccess if recieved a valid success message', async () => {
-    setup({
-      onAuthRequest: () => {
-        // Send a valid request.
-        idpMock.send({
-          kind: 'authorize-client-success',
-          delegations: [
-            {
-              delegation: {
-                pubkey: Uint8Array.from([]),
-                expiration: BigInt(0),
-              },
-              signature: Uint8Array.from([]),
-            },
-          ],
-          userPublicKey: Uint8Array.from([]),
-        });
-      },
+});
+
+describe('Migration from localstorage', () => {
+  it('should proceed normally if no values are stored in localstorage', async () => {
+    const storage: AuthClientStorage = {
+      remove: jest.fn(),
+      get: jest.fn(),
+      set: jest.fn(),
+    };
+
+    await AuthClient.create({ storage });
+
+    // Key is stored during creation when none is provided
+    expect(storage.set as jest.Mock).toBeCalledTimes(1);
+  });
+  it('should not attempt to migrate if a delegation is already stored', async () => {
+    const storage: AuthClientStorage = {
+      remove: jest.fn(),
+      get: jest.fn(async x => {
+        if (x === KEY_STORAGE_DELEGATION) return 'test';
+        if (x === KEY_STORAGE_KEY) return 'key';
+        return null;
+      }),
+      set: jest.fn(),
+    };
+
+    await AuthClient.create({ storage });
+
+    expect(storage.set as jest.Mock).toBeCalledTimes(1);
+  });
+  it('should migrate storage from localstorage', async () => {
+    const localStorage = new LocalStorage();
+    const storage: AuthClientStorage = {
+      remove: jest.fn(),
+      get: jest.fn(),
+      set: jest.fn(),
+    };
+
+    await localStorage.set(KEY_STORAGE_DELEGATION, 'test');
+    await localStorage.set(KEY_STORAGE_KEY, 'key');
+
+    await AuthClient.create({ storage });
+
+    expect(storage.set as jest.Mock).toBeCalledTimes(3);
+  });
+});
+
+describe('Migration from Ed25519Key', () => {
+  const testSecrets = [
+    '302a300506032b6570032100d1fa89134802051c8b5d4e53c08b87381b87097bca4c4f348611eb8ce6c91809',
+    '4bbff6b476463558d7be318aa342d1a97778d70833038680187950e9e02486c0d1fa89134802051c8b5d4e53c08b87381b87097bca4c4f348611eb8ce6c91809',
+  ];
+  it('should continue using an existing Ed25519Key and delegation', async () => {
+    // set the jest timer to a fixed value
+    jest.setSystemTime(new Date('2020-01-01T00:00:00.000Z'));
+
+    // two days from now
+    const expiration = new Date('2020-01-03T00:00:00.000Z');
+
+    const key = await Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
+    const chain = DelegationChain.create(key, key.getPublicKey(), expiration);
+    const storage: AuthClientStorage = {
+      remove: jest.fn(),
+      get: jest.fn(async x => {
+        if (x === KEY_STORAGE_DELEGATION) return JSON.stringify((await chain).toJSON());
+        if (x === KEY_STORAGE_KEY) return JSON.stringify(testSecrets);
+        return null;
+      }),
+      set: jest.fn(),
+    };
+
+    const client = await AuthClient.create({ storage });
+
+    const identity = await client.getIdentity();
+    expect(identity).toMatchSnapshot();
+  });
+  it('should continue using an existing Ed25519Key with no delegation', async () => {
+    // set the jest timer to a fixed value
+    jest.setSystemTime(new Date('2020-01-01T00:00:00.000Z'));
+
+    const storage: AuthClientStorage = {
+      remove: jest.fn(),
+      get: jest.fn(async x => {
+        if (x === KEY_STORAGE_KEY) return JSON.stringify(testSecrets);
+        return null;
+      }),
+      set: jest.fn(),
+    };
+
+    const client = await AuthClient.create({ storage });
+
+    const identity = await client.getIdentity();
+    expect(identity.getPrincipal().isAnonymous()).toBe(true);
+  });
+  it('should continue using an existing Ed25519Key with an expired delegation', async () => {
+    // set the jest timer to a fixed value
+    jest.setSystemTime(new Date('2020-01-01T00:00:00.000Z'));
+
+    // two days ago
+    const expiration = new Date('2019-12-30T00:00:00.000Z');
+
+    const key = await Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
+    const chain = DelegationChain.create(key, key.getPublicKey(), expiration);
+    const fakeStore: Record<any, any> = {};
+    fakeStore[KEY_STORAGE_DELEGATION] = JSON.stringify((await chain).toJSON());
+    fakeStore[KEY_STORAGE_KEY] = JSON.stringify(testSecrets);
+
+    const storage: AuthClientStorage = {
+      remove: jest.fn(async x => {
+        delete fakeStore[x];
+      }),
+      get: jest.fn(async x => {
+        return fakeStore[x] ?? null;
+      }),
+      set: jest.fn(),
+    };
+
+    const client = await AuthClient.create({ storage });
+
+    const identity = await client.getIdentity();
+    expect(identity.getPrincipal().isAnonymous()).toBe(true);
+
+    // expect the delegation to be removed
+    expect(storage.remove as jest.Mock).toBeCalledTimes(3);
+    expect(fakeStore).toMatchInlineSnapshot(`Object {}`);
+  });
+  it('should generate and store a ECDSAKey if no key is stored', async () => {
+    const fakeStore: Record<any, any> = {};
+    const storage: AuthClientStorage = {
+      remove: jest.fn(),
+      get: jest.fn(),
+      set: jest.fn(async (x, y) => {
+        fakeStore[x] = y;
+      }),
+    };
+    const client = await AuthClient.create({ storage });
+
+    // It should have stored a cryptoKey
+    expect(Object.keys(fakeStore[KEY_STORAGE_KEY])).toMatchInlineSnapshot(`
+      Array [
+        "privateKey",
+        "publicKey",
+      ]
+    `);
+  });
+  it('should generate and store a ECDSAKey if no key is stored and keyType is set to Ed25519', async () => {
+    const fakeStore: Record<any, any> = {};
+    const storage = {
+      remove: jest.fn(),
+      get: jest.fn(key => fakeStore[key]),
+      set: jest.fn(async (x, y) => {
+        fakeStore[x] = y;
+      }),
+    };
+
+    // mock ED25519 generate method
+    const generate = jest.spyOn(Ed25519KeyIdentity, 'generate');
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    generate.mockImplementationOnce(async (): Promise<Ed25519KeyIdentity> => {
+      const key = await Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
+      return key;
     });
 
-    const client = await AuthClient.create();
-    const cb = jest.fn();
-    const onSuccess = async () => {
-      cb();
-    };
-    await client.login({ onSuccess: onSuccess });
+    const client1 = await AuthClient.create({ storage, keyType: 'Ed25519' });
 
-    idpMock.ready();
+    const identity1 = await client1.getIdentity();
 
-    expect(cb).toBeCalled();
-    expect(idpWindow.close).toBeCalled();
+    const client2 = await AuthClient.create({ storage, keyType: 'Ed25519' });
+
+    const identity2 = await client2.getIdentity();
+
+    // It should have stored a cryptoKey
+    expect(fakeStore[KEY_STORAGE_KEY]).toMatchSnapshot();
+    expect(identity1.getPrincipal().toString()).toEqual(identity2.getPrincipal().toString());
   });
 });

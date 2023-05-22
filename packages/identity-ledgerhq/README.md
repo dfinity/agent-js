@@ -1,5 +1,8 @@
 # @dfinity/identity-ledgerhq
 
+**warning**
+This package has been deprecated. Please use the `@zondax/ledger-icp` package instead.
+
 TypeScript library to support a Hardware Ledger Wallet identity for applications on the [Internet Computer](https://dfinity.org/).
 
 Visit the [Dfinity Forum](https://forum.dfinity.org/) and [SDK Documentation](https://sdk.dfinity.org/docs/index.html) for more information and support building on the Internet Computer.

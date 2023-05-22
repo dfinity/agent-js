@@ -10,6 +10,242 @@
     <h1>Agent-JS Changelog</h1>
 
     <section>
+      <h2>Version x.x.x</h2>
+      <ul>
+        <li>
+          fix: finish all tasks before calling onSuccess auth callback in @dfinity/auth-client
+        </li>
+      </ul>
+      <h2>Version 0.15.6</h2>
+      <ul>
+        <li>feat: retry failed `read_state` requests</li>
+      </ul>
+      <h2>Version 0.15.5</h2>
+      <ul>
+        <li>
+          add support for WebAuthn level 3
+          <a href="https://w3c.github.io/webauthn/#dom-publickeycredential-authenticatorattachment"
+            >authenticatorAttachment</a
+          >
+        </li>
+      </ul>
+      <h2>Version 0.15.4</h2>
+      <ul>
+        <li>removes more circular dependencies in agent, actor, proxy, and pollingstrategy</li>
+        <li>chore: updates distro for lint and prettier checks</li>
+        <li>removes more circular dependencies in agent, actor, proxy, and pollingstrategy</li>
+        <li>
+          feat: adds keyType option for AuthClient, allowing users to specify whether to use an
+          ed25519 or ECDSAKey. This is important for custom storage providers that can't store
+          CryptoKey objects
+        </li>
+        <li>chore: removes a circular dependency on index for canisterStatus</li>
+        <li>chore: documents usage of fetch and fetchOptions for HttpAgent</li>
+      </ul>
+      <h2>Version 0.15.3</h2>
+      <ul>
+        <li>reverts the X-IC-Request-ID header until we coordinate cors support with icx-proxy</li>
+      </ul>
+      <h2>Version 0.15.2</h2>
+      <ul>
+        <li>
+          Corrects some dev dependencies incorrectly listed as dependencies in auth-client
+          package.json
+        </li>
+        <li>
+          introduces X-IC-Request-ID header to more easily identify retried requests. Also uses a
+          standard Headers constructor to manage headers
+        </li>
+        <ul>
+          Changes default stored key for auth-client to use ECDSAKey
+          <li>Also updates the storage interface types to support CryptoKeyPair</li>
+        </ul>
+        <li>updates link to identity-secp256k1 in docs site</li>
+      </ul>
+      <h2>Version 0.15.1</h2>
+      <ul>
+        <li>fixes a package configuration issue with @dfinity/identity-secp256k1</li>
+      </ul>
+      <h2>Version 0.15.0</h2>
+      <ul>
+        <li>
+          <em>Breaking change:</em> Moves Secp256k1KeyIdentity to its own package.
+          <pre>@dfinity/identity-secp256k1</pre>
+        </li>
+        <li>
+          <em>Breaking change:</em> Deprecates
+          <pre>@dfinity/authentication</pre>
+          . If you relied on the
+          <pre>isDelegationValid</pre>
+          check, it has been moved to
+          <pre>@dfinity/identity</pre>
+        </li>
+        <li>
+          Deprecates
+          <pre>@dfinity/identity-ledgerhq</pre>
+          . Use
+          <pre>@zondax/ledger-icp</pre>
+          instead.
+        </li>
+        <li>chore: links assets docs in index</li>
+        <li>chore: sets up new size-limit job for packages, in preparation for CI</li>
+      </ul>
+      <h2>Version 0.14.1</h2>
+      <ul>
+        <li>
+          feat: secp256k1 now supports a `fromSeedPhrase` method that will reproduce the same
+          identity across agent-js, dfx, and quill
+        </li>
+        <li>chore: configures unpkg to use esmodules</li>
+        <li>chore: removes unused lint shell script</li>
+        <li>chore: adds js-sha256 dependency to principal</li>
+        <li>
+          bug: fixes idlemanager initializing - now either requires createOptions.identity or
+          authClient.login to be called before starting idle timeout
+        </li>
+      </ul>
+      <h2>Version 0.14.0</h2>
+      <ul>
+        <li>
+          Adds retry logic to HttpAgent. By default, retries three times before throwing an error,
+          to offer a more cohesive workflow
+        </li>
+        <li>Improves and truncates error messages in Candid</li>
+        <li>fixes flaky tests for syncTime</li>
+        <li>
+          Adds a top-level <code>fetchCandid()</code> function which retrieves the Candid interface
+          for a given canister id.
+        </li>
+        <li>chore: auth-client expose storage constant keys</li>
+        <li>
+          bug: auth-client resolves window.open issue in login function in safari due to async
+          storage call
+        </li>
+        <li>
+          New package: @dfinity/assets. This package provides an asset manager to manage assets on
+          an assets canister.
+        </li>
+        <li>bug: auth-client storage wrapper returns after resolve to avoid idb to be recreated</li>
+      </ul>
+      <h2>Version 0.13.3</h2>
+      <ul>
+        <li>
+          New package: @dfinity/bls-verify. This package provides a pure-js implementation of BLS
+          verification using the miracl-core package. This can be used to polyfill BLS verification
+          for agent-js, but it is notably very slow (~3s per verification). Optimization may be
+          possible with a significant refactoring
+        </li>
+        <li>adds ability to polyfill bls verification in Certificate</li>
+        <li>
+          Auth Client moves key fallback generation to the create method instead of login and makes
+          the _key non-nullable. This fixes a regression with async window.open behavior in Safari
+        </li>
+        <li>
+          HttpAgent now offers a method to sync time with the replica, provided a specific canister.
+          This can be used to set proper Expiry times when a device has fallen out of sync with the
+          replica.
+        </li>
+        <li>
+          Fixes a candid bug where when decoding, optional fields could be skipped if the data on
+          the wire contains additional fields.
+        </li>
+      </ul>
+      <h2>Version 0.13.2</h2>
+      <ul>
+        <li>auth-client avoids localstorage global and can be used in a web worker or nodejs</li>
+        <li>bug: auth-client logout now awaits clearing storage</li>
+      </ul>
+      <h2>Version 0.13.1</h2>
+      <ul>
+        <li>fixes a bug with the localstorage migration strategy</li>
+      </ul>
+      <h2>Version 0.13.0</h2>
+      <ul>
+        <li>
+          AuthClient now uses IndexedDb by default. To use localStorage, import LocalStorage
+          provider and pass it during AuthClient.create().
+        </li>
+        <ul>
+          <li>Also offers a generic Indexed Db keyval store, IdbKeyVal</li>
+        </ul>
+        <li>AuthClient migrates gracefully from localstorage to IDB when upgrading</li>
+      </ul>
+      <h2>Version 0.12.2</h2>
+      <ul>
+        <li>
+          Support for the SubtleCrypto interface in @dfinity/identity using the new ECDSAKeyIdentity
+        </li>
+        <li>CanisterStatus no longer suppresses rootKey errors</li>
+        <li>Readme's point to https://agent-js.icp.xyz</li>
+      </ul>
+      <h2>Version 0.12.1</h2>
+      <ul>
+        <li>Adds inline sourcemaps to packages</li>
+        <li>
+          Pulls lint out to a separate job now that Node 12 is failing with latest eslint
+          dependencies
+        </li>
+        <li>Adds UTF-8 as an encoding option for CanisterStatus custom paths</li>
+        <li>
+          Adds a public method "createReadStateRequest" that creates the request for "readState".
+        </li>
+        <li>
+          Add an extra parameter to "readState" to pass a created request. If this parameter is
+          passed, the method does the request directly without creating a new one.
+        </li>
+        <li>
+          Use the "createReadStateRequest" and the extra parameter when polling for the response to
+          avoid signing requests during polling.
+        </li>
+        <li>
+          Adds derivationOrigin to auth-client login to support the ability to login using the
+          identity derived from a different origin. See
+          <a
+            href="https://github.com/dfinity/internet-identity/pull/724/files#diff-44c106928503ccfb1b3f09f02513578552f66b68dea01c5ec4bd2de858bbba1a"
+            >proposed changes</a
+          >
+        </li>
+      </ul>
+      <h2>Version 0.12.0</h2>
+      <ul>
+        <li>
+          Changed the certificate verification interface and fixed its logic. The public constructor
+          is now static and asynchronous. There is no separate verification method, the check is
+          done automatically in the constructor and newly also checks that the delegation is
+          authoritative for the given canister ID, as required by the Internet Computer interface
+          specification.
+        </li>
+      </ul>
+      <h2>Version 0.11.2</h2>
+      <ul>
+        <li>
+          Adds a default callback to the IdleManager that will refresh the page after clearing the
+          storage
+        </li>
+        <li>
+          Adds a new utility method,
+          <pre>canisterStatus</pre>
+          , to @agent/js. Canister status now allows you to query paths from the canister
+          certificate with a simple interface, using the API from the<a
+            href="https://internetcomputer.org/docs/current/references/ic-interface-spec#state-tree-canister-information"
+            >interface specification</a
+          ><br />
+          Comes with nicely configured options for
+          <pre>time</pre>
+          ,
+          <pre>controllers</pre>
+          ,
+          <pre>subnet</pre>
+          ,
+          <pre>module_hash</pre>
+          , and
+          <pre>candid</pre>
+          . Additionally, has a utility for reading custom MetaData set using
+          <a href="https://github.com/dfinity/ic-wasm">ic-wasm</a>, as well as generic custom paths
+          in the format of ArrayBuffers.
+        </li>
+        <li>updates to package.json files for metadata in npm</li>
+      </ul>
       <h2>Version 0.11.1</h2>
       <ul>
         <li>Fix for a corner case that could lead to incorrect decoding of record types.</li>

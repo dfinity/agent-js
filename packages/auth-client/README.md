@@ -6,7 +6,7 @@ Simple interface to get your web application authenticated with the Internet Ide
 
 Visit the [Dfinity Forum](https://forum.dfinity.org/) and [SDK Documentation](https://sdk.dfinity.org/docs/index.html) for more information and support building on the Internet Computer.
 
-Additional API Documentation can be found [here](https://agent-js.icp.host/auth-client/index.html).
+Additional API Documentation can be found [here](https://agent-js.icp.xyz/auth-client/index.html).
 
 ---
 
@@ -56,21 +56,110 @@ const actor = Actor.createActor(idlFactory, {
 });
 ```
 
-<h2 id="0.10.5-idle-update">Idle Update</h2>
+## Storage and Key management
 
-As of 0.10.5, the authClient has two notable new features:
+If you prefer not to use ECDSA keys or the default IndexedDb storage interface, you can provide your own. Some reasons to use a custom storage implementation might be
 
-1. the maxTimeToLive is now a set to 8 hours by default, down from 24.
-2. you can now set a timeout for when your identity will be considered idle
+- You prefer to use LocalStorage
+- You don't want to persist keys across page loads for heightened security
+- You have an alternate strategy for identity management
 
-These defaults are more conservative, out of the interest of protecting users as more sites are starting to manage ICP and NFT's. You can override these defaults, and opt out of the Idle Manager if you so choose. For more details, see the [forum discussion](https://forum.dfinity.org/t/authclient-update-idle-timeouts).
+There is an exported LocalStorage interface, but any structure that implements the `AuthClientStorage` interface will work.
 
-Additionally, we now support utility methods in Agents to invalidate an identity. It is suggested that you use this method to invalidate an identity once the user goes idle by calling `Actor.getAgent(actor).invalidateIdentity()`. See the below code for an example:
+```ts
+export type StoredKey = string | CryptoKeyPair;
+export interface AuthClientStorage {
+  get(key: string): Promise<StoredKey | null>;
+
+  set(key: string, value: StoredKey): Promise<void>;
+
+  remove(key: string): Promise<void>;
+}
+```
+
+So you could easily implement your own
+
+```ts
+const noStorageImpl = {
+  get(key: string) {
+    return Promise.resolve(null);
+  },
+  set(key: string, value: StoredKey) {
+    return Promise.resolve();
+  },
+  remove(key: string) {
+    return Promise.resolve();
+  },
+};
+const authClient = await AuthClient.create({
+  storage: noStorageImpl,
+});
+```
+
+If you are using a custom storage implementation like `LocalStorage` that only supports strings, you should use the `keyType` option to use an `Ed25519` key instead of the default `ECDSA` key.
+
+```ts
+const authClient = await AuthClient.create({
+  storage: new LocalStorage(),
+  keyType: 'Ed25519',
+});
+```
+
+<h2 id="0.10.5-idle-update">Idle Management</h2>
+
+The AuthClient provides two forms of security for session management. The first is built into the Internet Identity delegation - the `maxTimeToLive` option in nanoseconds determines how long the `DelegationIdentity` you get back will be valid for. The second is the Idle Manager, which moniters keyboard, mouse and touchscreen identity. The Idle Manager will automatically log you out if you don't interact with the browser for a period of time.
+
+If you pass no options to the IdleManager, it will log you out after 10 minutes of inactivity by removing the `DelegationIdentity` from localStorage and then calling `window.location.reload()`.
+
+If you pass an `onIdle` option, it will call that function when the user is idle, replacing the default window.location.reload() behavior. You can also register callbacks after the idleManager is created with the `idleManager.registerCallback()` method, which will also replace the default callback.
+
+The full set of options for the IdleManager is:
+
+```js
+  /**
+   * Callback after the user has gone idle
+   */
+  onIdle?: IdleCB;
+  /**
+   * timeout in ms
+   * @default 30 minutes [600_000]
+   */
+  idleTimeout?: number;
+  /**
+   * capture scroll events
+   * @default false
+   */
+  captureScroll?: boolean;
+  /**
+   * scroll debounce time in ms
+   * @default 100
+   */
+  scrollDebounce?: number;
+```
+
+Additionally, the AuthClient accepts a couple additional flags to `idleOptions` to control the IdleManager:
+
+```js
+  /**
+   * Disables idle functionality for {@link IdleManager}
+   * @default false
+   */
+  disableIdle?: boolean;
+
+  /**
+   * Disables default idle behavior - call logout & reload window
+   * @default false
+   */
+  disableDefaultIdleCallback?: boolean;
+```
+
+### IdleManager Example Usage
 
 ```js
 const authClient = await AuthClient.create({
   idleOptions: {
     idleTimeout: 1000 * 60 * 30, // set to 30 minutes
+    disableDefaultIdleCallback: true // disable the default reload behavior
   }
 });
 // ...authClient.login()
@@ -99,5 +188,5 @@ In this code, we create an `authClient` with an idle timeout of 30 minutes. When
 
 After the user logs in, we can set the new identity in the actor without reloading the page.
 
-Note: depends on [@dfinity/agent](https://www.npmjs.com/package/@dfinity/agent), [@dfinity/authentication](https://www.npmjs.com/package/@dfinity/authentication), and
+Note: depends on [@dfinity/agent](https://www.npmjs.com/package/@dfinity/agent) and
 [@dfinity/identity](https://www.npmjs.com/package/@dfinity/identity).

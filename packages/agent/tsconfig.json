@@ -12,11 +12,13 @@
     "moduleResolution": "node",
     "outDir": "lib/esm",
     "paths": {
-      "@dfinity/agent": ["src"]
+      "@dfinity/agent": ["src"],
+      "@dfinity/assets": ["src"]
     },
     "resolveJsonModule": true,
     "rootDir": "./src",
     "sourceMap": true,
+    "inlineSources": true,
     "strict": true,
     "target": "es2017",
     "tsBuildInfoFile": "./build_info.json"

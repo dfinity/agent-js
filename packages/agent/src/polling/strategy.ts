@@ -1,7 +1,8 @@
 import { Principal } from '@dfinity/principal';
-import { RequestId, RequestStatusResponseStatus } from '..';
+import { RequestStatusResponseStatus } from '../agent';
 import { toHex } from '../utils/buffer';
 import { PollStrategy } from './index';
+import { RequestId } from '../request_id';
 
 export type Predicate<T> = (
   canisterId: Principal,

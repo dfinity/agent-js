@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "./",
+    "composite": true,
+    "declaration": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "incremental": true,
+    "lib": ["es2020"],
+    "module": "ES2020",
+    "moduleResolution": "node",
+    "outDir": "lib/esm",
+    "paths": {
+      "@dfinity/identity-secp256k1": ["src"]
+    },
+    "resolveJsonModule": true,
+    "rootDir": "./src",
+    "sourceMap": true,
+    "inlineSources": true,
+    "strict": true,
+    "target": "es2017",
+    "tsBuildInfoFile": "./build_info.json"
+  },
+  "include": ["src/**/*.ts", "types/*"]
+}

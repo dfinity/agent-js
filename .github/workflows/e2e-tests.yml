@@ -31,7 +31,6 @@ jobs:
       - run: npm install -g npm
 
       - run: npm install
-      - run: npm run lint --workspaces --if-present
 
       # build monorepo incl. each subpackage
       - run: npm run build --workspaces --if-present
@@ -46,4 +45,14 @@ jobs:
       - run: npm run e2e --workspaces --if-present
         env:
           CI: true
-          REPLICA_PORT: 8000
+          REPLICA_PORT: 4943
+
+  aggregate:
+    name: e2e:required
+    if: ${{ always() }}
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: check e2e test result
+        if: ${{ needs.test.result != 'success' }}
+        run: exit 1

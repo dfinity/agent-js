@@ -16,7 +16,7 @@ export interface KeyPair {
 /**
  * A public key that is DER encoded. This is a branded ArrayBuffer.
  */
-export type DerEncodedPublicKey = ArrayBuffer & { __derEncodedPublicKey__: void };
+export type DerEncodedPublicKey = ArrayBuffer & { __derEncodedPublicKey__?: void };
 
 /**
  * A signature array buffer.
@@ -132,7 +132,7 @@ export interface PublicKeyIdentityDescriptor {
 export type IdentityDescriptor = AnonymousIdentityDescriptor | PublicKeyIdentityDescriptor;
 
 /**
- * Create an IdentityDescriptor from a @dfinity/authentication Identity
+ * Create an IdentityDescriptor from a @dfinity/identity Identity
  * @param identity - identity describe in returned descriptor
  */
 export function createIdentityDescriptor(

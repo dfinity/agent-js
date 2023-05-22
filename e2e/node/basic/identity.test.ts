@@ -9,8 +9,9 @@ import {
   DelegationChain,
   DelegationIdentity,
   Ed25519KeyIdentity,
-  Secp256k1KeyIdentity,
+  ECDSAKeyIdentity,
 } from '@dfinity/identity';
+import { Secp256k1KeyIdentity } from '@dfinity/identity-secp256k1';
 import agent from '../utils/agent';
 import identityCanister from '../canisters/identity';
 
@@ -58,6 +59,24 @@ async function createSecp256k1IdentityActor(
   }) as any;
 }
 
+async function createEcdsaIdentityActor(
+  canisterId: Principal,
+  idl: IDL.InterfaceFactory,
+  identity?: SignIdentity,
+): Promise<any> {
+  let effectiveIdentity: SignIdentity;
+  if (identity) {
+    effectiveIdentity = identity;
+  } else {
+    effectiveIdentity = await ECDSAKeyIdentity.generate();
+  }
+  const agent1 = new HttpAgent({ source: await agent, identity: effectiveIdentity });
+  return Actor.createActor(idl, {
+    canisterId,
+    agent: agent1,
+  }) as any;
+}
+
 async function installIdentityCanister(): Promise<{
   canisterId: Principal;
   idl: IDL.InterfaceFactory;
@@ -99,6 +118,17 @@ test('identity: two different Secp256k1 keys should have a different principal',
   const identity1 = await createSecp256k1IdentityActor(canisterId, idl, 0);
   // Unseeded identity
   const identity2 = await createSecp256k1IdentityActor(canisterId, idl);
+
+  const principal1 = await identity1.whoami_query();
+  const principal2 = await identity2.whoami_query();
+  expect(principal1).not.toEqual(principal2);
+});
+
+jest.setTimeout(30000);
+test('identity: two different Ecdsa keys should have a different principal', async () => {
+  const { canisterId, idl } = await installIdentityCanister();
+  const identity1 = await createEcdsaIdentityActor(canisterId, idl);
+  const identity2 = await createEcdsaIdentityActor(canisterId, idl);
 
   const principal1 = await identity1.whoami_query();
   const principal2 = await identity2.whoami_query();

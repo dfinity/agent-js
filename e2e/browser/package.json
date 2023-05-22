@@ -1,0 +1,38 @@
+{
+  "private": true,
+  "name": "@do-not-publish/ic-cypress-e2e-tests",
+  "version": "0.15.6",
+  "scripts": {
+    "ci": "npm run e2e",
+    "pree2e": "dfx deploy; dfx generate; pm2 --name parcel start npm -- start",
+    "e2e": "cypress run",
+    "poste2e": "pm2 delete 0",
+    "eslint:fix": "npm run lint -- --fix",
+    "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' cypress *.js",
+    "lint": "npm run eslint",
+    "build": "",
+    "lint:fix": "npm run lint -- --fix",
+    "publish:release": "",
+    "test:coverage": "",
+    "test": "",
+    "start": "parcel --watch-for-stdin src/index.html"
+  },
+  "devDependencies": {
+    "@types/cypress": "^1.1.3",
+    "concurrently": "^7.3.0",
+    "cypress": "^10.3.1",
+    "esbuild": "^0.15.16",
+    "eslint-plugin-cypress": "^2.12.1",
+    "parcel": "^2.6.2",
+    "pm2": "^5.2.0",
+    "size-limit": "^8.1.0"
+  },
+  "dependencies": {
+    "@dfinity/agent": "^0.15.6",
+    "@dfinity/authentication": "^0.14.1",
+    "@dfinity/identity": "^0.15.6",
+    "@dfinity/principal": "^0.15.6",
+    "@types/node": "^18.0.6",
+    "idb-keyval": "^6.2.0"
+  }
+}

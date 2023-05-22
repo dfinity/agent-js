@@ -1,0 +1,1132 @@
+{
+  "inputs": {
+    "../../node_modules/base64-js/index.js": {
+      "bytes": 3932,
+      "imports": []
+    },
+    "../../node_modules/ieee754/index.js": {
+      "bytes": 2154,
+      "imports": []
+    },
+    "../../node_modules/buffer/index.js": {
+      "bytes": 58353,
+      "imports": [
+        {
+          "path": "../../node_modules/base64-js/index.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/ieee754/index.js",
+          "kind": "require-call"
+        }
+      ]
+    },
+    "../agent/lib/esm/agent/api.js": {
+      "bytes": 706,
+      "imports": []
+    },
+    "../principal/lib/esm/utils/base32.js": {
+      "bytes": 2542,
+      "imports": []
+    },
+    "../principal/lib/esm/utils/getCrc.js": {
+      "bytes": 3848,
+      "imports": []
+    },
+    "../../node_modules/js-sha256/src/sha256.js": {
+      "bytes": 18387,
+      "imports": []
+    },
+    "../principal/lib/esm/utils/sha224.js": {
+      "bytes": 308,
+      "imports": [
+        {
+          "path": "../../node_modules/js-sha256/src/sha256.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "../principal/lib/esm/index.js": {
+      "bytes": 4762,
+      "imports": [
+        {
+          "path": "../principal/lib/esm/utils/base32.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../principal/lib/esm/utils/getCrc.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../principal/lib/esm/utils/sha224.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "../agent/lib/esm/errors.js": {
+      "bytes": 428,
+      "imports": []
+    },
+    "../candid/lib/esm/utils/buffer.js": {
+      "bytes": 3363,
+      "imports": []
+    },
+    "../candid/lib/esm/utils/hash.js": {
+      "bytes": 763,
+      "imports": []
+    },
+    "../candid/lib/esm/utils/leb128.js": {
+      "bytes": 6200,
+      "imports": [
+        {
+          "path": "../candid/lib/esm/utils/buffer.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "../candid/lib/esm/utils/bigint-math.js": {
+      "bytes": 720,
+      "imports": []
+    },
+    "../candid/lib/esm/idl.js": {
+      "bytes": 52568,
+      "imports": [
+        {
+          "path": "../principal/lib/esm/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../candid/lib/esm/utils/buffer.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../candid/lib/esm/utils/hash.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../candid/lib/esm/utils/leb128.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../candid/lib/esm/utils/bigint-math.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "../candid/lib/esm/candid-core.js": {
+      "bytes": 6929,
+      "imports": []
+    },
+    "../candid/lib/esm/candid-ui.js": {
+      "bytes": 7856,
+      "imports": [
+        {
+          "path": "../candid/lib/esm/idl.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../principal/lib/esm/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../candid/lib/esm/candid-core.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "../candid/lib/esm/types.js": {
+      "bytes": 44,
+      "imports": []
+    },
+    "../candid/lib/esm/index.js": {
+      "bytes": 242,
+      "imports": [
+        {
+          "path": "../candid/lib/esm/candid-ui.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../candid/lib/esm/candid-core.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../candid/lib/esm/idl.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../candid/lib/esm/utils/hash.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../candid/lib/esm/utils/leb128.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../candid/lib/esm/utils/buffer.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../candid/lib/esm/types.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "../../node_modules/borc/node_modules/buffer/index.js": {
+      "bytes": 50097,
+      "imports": [
+        {
+          "path": "../../node_modules/base64-js/index.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/ieee754/index.js",
+          "kind": "require-call"
+        }
+      ]
+    },
+    "../../node_modules/bignumber.js/bignumber.js": {
+      "bytes": 89684,
+      "imports": []
+    },
+    "../../node_modules/borc/src/decoder.asm.js": {
+      "bytes": 25595,
+      "imports": []
+    },
+    "../../node_modules/borc/src/constants.js": {
+      "bytes": 1104,
+      "imports": [
+        {
+          "path": "../../node_modules/bignumber.js/bignumber.js",
+          "kind": "require-call"
+        }
+      ]
+    },
+    "../../node_modules/borc/src/utils.js": {
+      "bytes": 4039,
+      "imports": [
+        {
+          "path": "../../node_modules/borc/node_modules/buffer/index.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/bignumber.js/bignumber.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/borc/src/constants.js",
+          "kind": "require-call"
+        }
+      ]
+    },
+    "../../node_modules/borc/src/simple.js": {
+      "bytes": 2491,
+      "imports": [
+        {
+          "path": "../../node_modules/borc/src/constants.js",
+          "kind": "require-call"
+        }
+      ]
+    },
+    "../../node_modules/borc/src/tagged.js": {
+      "bytes": 2187,
+      "imports": []
+    },
+    "../../node_modules/iso-url/src/url-browser.js": {
+      "bytes": 3473,
+      "imports": []
+    },
+    "../../node_modules/iso-url/src/relative.js": {
+      "bytes": 711,
+      "imports": [
+        {
+          "path": "../../node_modules/iso-url/src/url-browser.js",
+          "kind": "require-call"
+        }
+      ]
+    },
+    "../../node_modules/iso-url/index.js": {
+      "bytes": 285,
+      "imports": [
+        {
+          "path": "../../node_modules/iso-url/src/url-browser.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/iso-url/src/relative.js",
+          "kind": "require-call"
+        }
+      ]
+    },
+    "../../node_modules/borc/src/decoder.js": {
+      "bytes": 13954,
+      "imports": [
+        {
+          "path": "../../node_modules/borc/node_modules/buffer/index.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/ieee754/index.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/bignumber.js/bignumber.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/borc/src/decoder.asm.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/borc/src/utils.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/borc/src/constants.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/borc/src/simple.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/borc/src/tagged.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/iso-url/index.js",
+          "kind": "require-call"
+        }
+      ]
+    },
+    "../../node_modules/borc/src/diagnose.js": {
+      "bytes": 3211,
+      "imports": [
+        {
+          "path": "../../node_modules/borc/node_modules/buffer/index.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/borc/src/decoder.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/borc/src/utils.js",
+          "kind": "require-call"
+        }
+      ]
+    },
+    "../../node_modules/borc/src/encoder.js": {
+      "bytes": 12034,
+      "imports": [
+        {
+          "path": "../../node_modules/borc/node_modules/buffer/index.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/iso-url/index.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/bignumber.js/bignumber.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/borc/src/utils.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/borc/src/constants.js",
+          "kind": "require-call"
+        }
+      ]
+    },
+    "../../node_modules/borc/src/index.js": {
+      "bytes": 647,
+      "imports": [
+        {
+          "path": "../../node_modules/borc/src/diagnose.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/borc/src/decoder.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/borc/src/encoder.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/borc/src/simple.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/borc/src/tagged.js",
+          "kind": "require-call"
+        }
+      ]
+    },
+    "../agent/lib/esm/utils/buffer.js": {
+      "bytes": 1612,
+      "imports": []
+    },
+    "../agent/lib/esm/request_id.js": {
+      "bytes": 3086,
+      "imports": [
+        {
+          "path": "../candid/lib/esm/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../../node_modules/borc/src/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../../node_modules/js-sha256/src/sha256.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/utils/buffer.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "../agent/lib/esm/auth.js": {
+      "bytes": 2508,
+      "imports": [
+        {
+          "path": "../principal/lib/esm/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/request_id.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/utils/buffer.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "../../node_modules/simple-cbor/src/value.js": {
+      "bytes": 12307,
+      "imports": []
+    },
+    "../../node_modules/simple-cbor/src/serializer.js": {
+      "bytes": 5050,
+      "imports": [
+        {
+          "path": "../../node_modules/simple-cbor/src/value.js",
+          "kind": "require-call"
+        }
+      ]
+    },
+    "../../node_modules/simple-cbor/src/index.js": {
+      "bytes": 595,
+      "imports": [
+        {
+          "path": "../../node_modules/simple-cbor/src/serializer.js",
+          "kind": "require-call"
+        },
+        {
+          "path": "../../node_modules/simple-cbor/src/value.js",
+          "kind": "require-call"
+        }
+      ]
+    },
+    "../agent/lib/esm/cbor.js": {
+      "bytes": 3491,
+      "imports": [
+        {
+          "path": "../../node_modules/borc/src/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../../node_modules/simple-cbor/src/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../../node_modules/simple-cbor/src/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/utils/buffer.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "../agent/lib/esm/agent/http/types.js": {
+      "bytes": 1056,
+      "imports": []
+    },
+    "../agent/lib/esm/agent/http/transforms.js": {
+      "bytes": 1769,
+      "imports": [
+        {
+          "path": "../candid/lib/esm/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../../node_modules/simple-cbor/src/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/agent/http/types.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "../agent/lib/esm/canisterStatus/index.js": {
+      "bytes": 7724,
+      "imports": [
+        {
+          "path": "../candid/lib/esm/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../principal/lib/esm/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/errors.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/index.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "../agent/lib/esm/agent/http/index.js": {
+      "bytes": 16725,
+      "imports": [
+        {
+          "path": "../principal/lib/esm/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/errors.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/auth.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/cbor.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/request_id.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/utils/buffer.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/agent/http/transforms.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/agent/http/types.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/agent/http/transforms.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/agent/http/types.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/canisterStatus/index.js",
+          "kind": "dynamic-import"
+        }
+      ]
+    },
+    "../agent/lib/esm/agent/proxy.js": {
+      "bytes": 5451,
+      "imports": [
+        {
+          "path": "../principal/lib/esm/index.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "../agent/lib/esm/agent/index.js": {
+      "bytes": 485,
+      "imports": [
+        {
+          "path": "../agent/lib/esm/agent/api.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/agent/http/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/agent/proxy.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "../agent/lib/esm/canisters/management_idl.js": {
+      "bytes": 2827,
+      "imports": []
+    },
+    "../agent/lib/esm/canisters/management.js": {
+      "bytes": 855,
+      "imports": [
+        {
+          "path": "../agent/lib/esm/actor.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../principal/lib/esm/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/canisters/management_idl.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "../../node_modules/base64-arraybuffer/lib/base64-arraybuffer.js": {
+      "bytes": 1896,
+      "imports": []
+    },
+    "../agent/lib/esm/vendor/bls/wasm.js": {
+      "bytes": 71131,
+      "imports": []
+    },
+    "../agent/lib/esm/vendor/bls/bls.js": {
+      "bytes": 2280,
+      "imports": [
+        {
+          "path": "../../node_modules/base64-arraybuffer/lib/base64-arraybuffer.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/vendor/bls/wasm.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "../agent/lib/esm/utils/bls.js": {
+      "bytes": 673,
+      "imports": [
+        {
+          "path": "../agent/lib/esm/vendor/bls/bls.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "../agent/lib/esm/certificate.js": {
+      "bytes": 7960,
+      "imports": [
+        {
+          "path": "../agent/lib/esm/cbor.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/errors.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/request_id.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/utils/buffer.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../principal/lib/esm/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/utils/bls.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "../agent/lib/esm/polling/strategy.js": {
+      "bytes": 3312,
+      "imports": [
+        {
+          "path": "../agent/lib/esm/utils/buffer.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "../agent/lib/esm/polling/index.js": {
+      "bytes": 3115,
+      "imports": [
+        {
+          "path": "../agent/lib/esm/agent/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/certificate.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/utils/buffer.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/polling/strategy.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/polling/strategy.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "../agent/lib/esm/actor.js": {
+      "bytes": 9025,
+      "imports": [
+        {
+          "path": "../../node_modules/buffer/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/agent/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/canisters/management.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/errors.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../candid/lib/esm/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/polling/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../principal/lib/esm/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/utils/buffer.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "../agent/lib/esm/canisters/asset_idl.js": {
+      "bytes": 346,
+      "imports": []
+    },
+    "../agent/lib/esm/canisters/asset.js": {
+      "bytes": 298,
+      "imports": [
+        {
+          "path": "../agent/lib/esm/actor.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/canisters/asset_idl.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "../agent/lib/esm/fetch_candid.js": {
+      "bytes": 1283,
+      "imports": [
+        {
+          "path": "../agent/lib/esm/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../principal/lib/esm/index.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "../agent/lib/esm/index.js": {
+      "bytes": 1122,
+      "imports": [
+        {
+          "path": "../agent/lib/esm/actor.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/agent/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/auth.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/certificate.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/agent/http/transforms.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/agent/http/types.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/canisters/asset.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/canisters/management.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/fetch_candid.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/request_id.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/utils/bls.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/utils/buffer.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/polling/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/canisterStatus/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../agent/lib/esm/cbor.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "src/identity/ecdsa.ts": {
+      "bytes": 4836,
+      "imports": [
+        {
+          "path": "../agent/lib/esm/index.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "src/buffer.ts": {
+      "bytes": 545,
+      "imports": []
+    },
+    "src/identity/delegation.ts": {
+      "bytes": 12028,
+      "imports": [
+        {
+          "path": "../agent/lib/esm/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../principal/lib/esm/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../../node_modules/simple-cbor/src/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "src/buffer.ts",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "(disabled):crypto": {
+      "bytes": 0,
+      "imports": []
+    },
+    "../../node_modules/tweetnacl/nacl-fast.js": {
+      "bytes": 61966,
+      "imports": [
+        {
+          "path": "(disabled):crypto",
+          "kind": "require-call"
+        }
+      ]
+    },
+    "src/identity/der.ts": {
+      "bytes": 5120,
+      "imports": []
+    },
+    "src/identity/webauthn.ts": {
+      "bytes": 7030,
+      "imports": [
+        {
+          "path": "../agent/lib/esm/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../../node_modules/borc/src/index.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "../../node_modules/tweetnacl/nacl-fast.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "src/buffer.ts",
+          "kind": "import-statement"
+        },
+        {
+          "path": "src/identity/der.ts",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "src/index.ts": {
+      "bytes": 371,
+      "imports": [
+        {
+          "path": "src/identity/ecdsa.ts",
+          "kind": "import-statement"
+        },
+        {
+          "path": "src/identity/delegation.ts",
+          "kind": "import-statement"
+        },
+        {
+          "path": "src/identity/webauthn.ts",
+          "kind": "import-statement"
+        },
+        {
+          "path": "src/identity/der.ts",
+          "kind": "import-statement"
+        }
+      ]
+    }
+  },
+  "outputs": {
+    "dist/index.js": {
+      "imports": [],
+      "exports": [],
+      "entryPoint": "src/index.ts",
+      "inputs": {
+        "../../node_modules/base64-js/index.js": {
+          "bytesInOutput": 3910
+        },
+        "../../node_modules/ieee754/index.js": {
+          "bytesInOutput": 2659
+        },
+        "../../node_modules/buffer/index.js": {
+          "bytesInOutput": 61512
+        },
+        "../agent/lib/esm/agent/api.js": {
+          "bytesInOutput": 652
+        },
+        "../principal/lib/esm/utils/base32.js": {
+          "bytesInOutput": 1645
+        },
+        "../principal/lib/esm/utils/getCrc.js": {
+          "bytesInOutput": 5480
+        },
+        "../../node_modules/js-sha256/src/sha256.js": {
+          "bytesInOutput": 20756
+        },
+        "../principal/lib/esm/utils/sha224.js": {
+          "bytesInOutput": 334
+        },
+        "../principal/lib/esm/index.js": {
+          "bytesInOutput": 3861
+        },
+        "../agent/lib/esm/errors.js": {
+          "bytesInOutput": 97
+        },
+        "../candid/lib/esm/utils/buffer.js": {
+          "bytesInOutput": 1947
+        },
+        "../candid/lib/esm/utils/hash.js": {
+          "bytesInOutput": 100
+        },
+        "../candid/lib/esm/utils/leb128.js": {
+          "bytesInOutput": 4165
+        },
+        "../candid/lib/esm/utils/bigint-math.js": {
+          "bytesInOutput": 279
+        },
+        "../candid/lib/esm/idl.js": {
+          "bytesInOutput": 15982
+        },
+        "../candid/lib/esm/candid-core.js": {
+          "bytesInOutput": 108
+        },
+        "../candid/lib/esm/candid-ui.js": {
+          "bytesInOutput": 166
+        },
+        "../candid/lib/esm/types.js": {
+          "bytesInOutput": 96
+        },
+        "../candid/lib/esm/index.js": {
+          "bytesInOutput": 224
+        },
+        "../../node_modules/borc/node_modules/buffer/index.js": {
+          "bytesInOutput": 52530
+        },
+        "../../node_modules/bignumber.js/bignumber.js": {
+          "bytesInOutput": 54301
+        },
+        "../../node_modules/borc/src/decoder.asm.js": {
+          "bytesInOutput": 25500
+        },
+        "../../node_modules/borc/src/constants.js": {
+          "bytesInOutput": 1608
+        },
+        "../../node_modules/borc/src/utils.js": {
+          "bytesInOutput": 3216
+        },
+        "../../node_modules/borc/src/simple.js": {
+          "bytesInOutput": 1866
+        },
+        "../../node_modules/borc/src/tagged.js": {
+          "bytesInOutput": 1308
+        },
+        "../../node_modules/iso-url/src/url-browser.js": {
+          "bytesInOutput": 3866
+        },
+        "../../node_modules/iso-url/src/relative.js": {
+          "bytesInOutput": 855
+        },
+        "../../node_modules/iso-url/index.js": {
+          "bytesInOutput": 458
+        },
+        "../../node_modules/borc/src/decoder.js": {
+          "bytesInOutput": 15539
+        },
+        "../../node_modules/borc/src/diagnose.js": {
+          "bytesInOutput": 3999
+        },
+        "../../node_modules/borc/src/encoder.js": {
+          "bytesInOutput": 13387
+        },
+        "../../node_modules/borc/src/index.js": {
+          "bytesInOutput": 768
+        },
+        "../agent/lib/esm/utils/buffer.js": {
+          "bytesInOutput": 1231
+        },
+        "../agent/lib/esm/request_id.js": {
+          "bytesInOutput": 2066
+        },
+        "../agent/lib/esm/auth.js": {
+          "bytesInOutput": 1453
+        },
+        "../../node_modules/simple-cbor/src/value.js": {
+          "bytesInOutput": 9863
+        },
+        "../../node_modules/simple-cbor/src/serializer.js": {
+          "bytesInOutput": 5104
+        },
+        "../../node_modules/simple-cbor/src/index.js": {
+          "bytesInOutput": 833
+        },
+        "../agent/lib/esm/cbor.js": {
+          "bytesInOutput": 2379
+        },
+        "../agent/lib/esm/agent/http/types.js": {
+          "bytesInOutput": 272
+        },
+        "../agent/lib/esm/agent/http/transforms.js": {
+          "bytesInOutput": 389
+        },
+        "../agent/lib/esm/agent/http/index.js": {
+          "bytesInOutput": 950
+        },
+        "../agent/lib/esm/agent/proxy.js": {
+          "bytesInOutput": 770
+        },
+        "../agent/lib/esm/agent/index.js": {
+          "bytesInOutput": 158
+        },
+        "../agent/lib/esm/canisters/management_idl.js": {
+          "bytesInOutput": 123
+        },
+        "../agent/lib/esm/canisters/management.js": {
+          "bytesInOutput": 182
+        },
+        "../../node_modules/base64-arraybuffer/lib/base64-arraybuffer.js": {
+          "bytesInOutput": 2075
+        },
+        "../agent/lib/esm/vendor/bls/wasm.js": {
+          "bytesInOutput": 71219
+        },
+        "../agent/lib/esm/vendor/bls/bls.js": {
+          "bytesInOutput": 283
+        },
+        "../agent/lib/esm/utils/bls.js": {
+          "bytesInOutput": 116
+        },
+        "../agent/lib/esm/certificate.js": {
+          "bytesInOutput": 355
+        },
+        "../agent/lib/esm/polling/strategy.js": {
+          "bytesInOutput": 2292
+        },
+        "../agent/lib/esm/polling/index.js": {
+          "bytesInOutput": 219
+        },
+        "../agent/lib/esm/actor.js": {
+          "bytesInOutput": 800
+        },
+        "../agent/lib/esm/canisters/asset_idl.js": {
+          "bytesInOutput": 113
+        },
+        "../agent/lib/esm/canisters/asset.js": {
+          "bytesInOutput": 149
+        },
+        "../agent/lib/esm/fetch_candid.js": {
+          "bytesInOutput": 146
+        },
+        "../agent/lib/esm/canisterStatus/index.js": {
+          "bytesInOutput": 196
+        },
+        "../agent/lib/esm/index.js": {
+          "bytesInOutput": 413
+        },
+        "(disabled):crypto": {
+          "bytesInOutput": 76
+        },
+        "../../node_modules/tweetnacl/nacl-fast.js": {
+          "bytesInOutput": 78089
+        },
+        "src/identity/ecdsa.ts": {
+          "bytesInOutput": 2266
+        },
+        "src/index.ts": {
+          "bytesInOutput": 0
+        },
+        "src/identity/delegation.ts": {
+          "bytesInOutput": 5980
+        },
+        "src/buffer.ts": {
+          "bytesInOutput": 317
+        },
+        "src/identity/webauthn.ts": {
+          "bytesInOutput": 4358
+        },
+        "src/identity/der.ts": {
+          "bytesInOutput": 3747
+        }
+      },
+      "bytes": 508396
+    }
+  }
+}

@@ -1,7 +1,7 @@
 import { Principal } from '@dfinity/principal';
 import { RequestId } from '../request_id';
 import { JsonObject } from '@dfinity/candid';
-import { Identity } from '..';
+import { Identity } from '../auth';
 
 /**
  * Codes used by the replica for rejecting a message.
@@ -112,15 +112,31 @@ export interface Agent {
   getPrincipal(): Promise<Principal>;
 
   /**
+   * Create the request for the read state call.
+   * `readState` uses this internally.
+   * Useful to avoid signing the same request multiple times.
+   */
+  createReadStateRequest?(
+    options: ReadStateOptions,
+    identity?: Identity,
+    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+  ): Promise<any>;
+
+  /**
    * Send a read state query to the replica. This includes a list of paths to return,
    * and will return a Certificate. This will only reject on communication errors,
    * but the certificate might contain less information than requested.
    * @param effectiveCanisterId A Canister ID related to this call.
    * @param options The options for this call.
+   * @param identity Identity for the call. If not specified, uses the instance identity.
+   * @param request The request to send in case it has already been created.
    */
   readState(
     effectiveCanisterId: Principal | string,
     options: ReadStateOptions,
+    identity?: Identity,
+    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+    request?: any,
   ): Promise<ReadStateResponse>;
 
   call(canisterId: Principal | string, fields: CallOptions): Promise<SubmitResponse>;

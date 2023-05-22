@@ -8,6 +8,15 @@ function _coseToDerEncodedBlob(cose: ArrayBuffer): DerEncodedPublicKey {
   return wrapDER(cose, DER_COSE_OID).buffer as DerEncodedPublicKey;
 }
 
+type PublicKeyCredentialWithAttachment = PublicKeyCredential & {
+  // Extends `PublicKeyCredential` with an optional field introduced in the WebAuthn level 3 spec:
+  // https://w3c.github.io/webauthn/#dom-publickeycredential-authenticatorattachment
+  // Already supported by Chrome, Safari and Edge
+  // Note: `null` is included here as a possible value because Edge set this value to null in the
+  // past.
+  authenticatorAttachment: AuthenticatorAttachment | undefined | null;
+};
+
 /**
  * From the documentation;
  * The authData is a byte array described in the spec. Parsing it will involve slicing bytes from
@@ -30,6 +39,7 @@ function _authDataToCose(authData: ArrayBuffer): ArrayBuffer {
 
 export class CosePublicKey implements PublicKey {
   protected _encodedKey: DerEncodedPublicKey;
+
   public constructor(protected _cose: ArrayBuffer) {
     this._encodedKey = _coseToDerEncodedBlob(_cose);
   }
@@ -69,7 +79,7 @@ function _createChallengeBuffer(challenge: string | Uint8Array = '<ic0.app>'): U
  */
 async function _createCredential(
   credentialCreationOptions?: CredentialCreationOptions,
-): Promise<PublicKeyCredential | null> {
+): Promise<PublicKeyCredentialWithAttachment | null> {
   const creds = (await navigator.credentials.create(
     credentialCreationOptions ?? {
       publicKey: {
@@ -89,7 +99,7 @@ async function _createCredential(
         },
       },
     },
-  )) as PublicKeyCredential;
+  )) as PublicKeyCredentialWithAttachment;
 
   // Validate that it's the correct type at runtime, since WebAuthn does not HAVE to
   // reply with a PublicKeyCredential.
@@ -122,7 +132,7 @@ export class WebAuthnIdentity extends SignIdentity {
       throw new Error('Invalid JSON string.');
     }
 
-    return new this(fromHexString(rawId), fromHexString(publicKey));
+    return new this(fromHexString(rawId), fromHexString(publicKey), undefined);
   }
 
   /**
@@ -146,18 +156,38 @@ export class WebAuthnIdentity extends SignIdentity {
     // Parse the attestationObject as CBOR.
     const attObject = borc.decodeFirst(new Uint8Array(response.attestationObject));
 
-    return new this(creds.rawId, _authDataToCose(attObject.authData));
+    return new this(
+      creds.rawId,
+      _authDataToCose(attObject.authData),
+      creds.authenticatorAttachment ?? undefined,
+    );
   }
 
   protected _publicKey: CosePublicKey;
 
-  protected constructor(public readonly rawId: ArrayBuffer, cose: ArrayBuffer) {
+  public constructor(
+    public readonly rawId: ArrayBuffer,
+    cose: ArrayBuffer,
+    protected authenticatorAttachment: AuthenticatorAttachment | undefined,
+  ) {
     super();
     this._publicKey = new CosePublicKey(cose);
   }
 
   public getPublicKey(): PublicKey {
     return this._publicKey;
+  }
+
+  /**
+   * WebAuthn level 3 spec introduces a new attribute on successful WebAuthn interactions,
+   * see https://w3c.github.io/webauthn/#dom-publickeycredential-authenticatorattachment.
+   * This attribute is already implemented for Chrome, Safari and Edge.
+   *
+   * Given the attribute is only available after a successful interaction, the information is
+   * provided opportunistically and might also be `undefined`.
+   */
+  public getAuthenticatorAttachment(): AuthenticatorAttachment | undefined {
+    return this.authenticatorAttachment;
   }
 
   public async sign(blob: ArrayBuffer): Promise<Signature> {
@@ -172,7 +202,11 @@ export class WebAuthnIdentity extends SignIdentity {
         challenge: blob,
         userVerification: 'preferred',
       },
-    })) as PublicKeyCredential;
+    })) as PublicKeyCredentialWithAttachment;
+
+    if (result.authenticatorAttachment !== null) {
+      this.authenticatorAttachment = result.authenticatorAttachment;
+    }
 
     const response = result.response as AuthenticatorAssertionResponse;
     if (

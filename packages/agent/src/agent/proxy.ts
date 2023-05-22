@@ -1,13 +1,13 @@
+import { JsonObject } from '@dfinity/candid';
 import {
+  Agent,
   CallOptions,
   QueryFields,
   QueryResponse,
   ReadStateOptions,
   ReadStateResponse,
   SubmitResponse,
-} from '..';
-import { JsonObject } from '@dfinity/candid';
-import { Agent } from './api';
+} from './api';
 import { Principal } from '@dfinity/principal';
 
 export enum ProxyMessageKind {

@@ -1,0 +1,26 @@
+{
+  "name": "@dfinity/identity-secp256k1",
+  "version": "0.15.6",
+  "author": "DFINITY Stiftung <sdk@dfinity.org>",
+  "license": "Apache-2.0",
+  "description": "JavaScript and TypeScript library to manage Secp256k1KeyIdentities for use with the Internet Computer",
+  "main": "./lib/cjs/index.js",
+  "scripts": {
+    "build": "tsc -b && tsc -p tsconfig-cjs.json",
+    "eslint": "eslint --ext '.js,.jsx,.ts,.tsx'",
+    "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/identity-secp256k1 --excludeInternal",
+    "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=node",
+    "test": "jest",
+    "test:coverage": "jest --verbose --collectCoverage"
+  },
+  "dependencies": {
+    "@dfinity/agent": "^0.15.6",
+    "bip39": "^3.0.4",
+    "bs58check": "^2.1.2",
+    "secp256k1": "^4.0.3"
+  },
+  "devDependencies": {
+    "@types/bs58check": "^2.1.0",
+    "@types/secp256k1": "^4.0.3"
+  }
+}

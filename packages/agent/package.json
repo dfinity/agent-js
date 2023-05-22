@@ -1,10 +1,18 @@
 {
   "name": "@dfinity/agent",
-  "version": "0.11.1",
+  "version": "0.15.6",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to interact with the Internet Computer",
-  "homepage": "https://sdk.dfinity.org/docs/index.html",
+  "homepage": "https://internetcomputer.org",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dfinity/agent-js.git",
+    "directory": "packages/agent"
+  },
+  "bugs": {
+    "url": "https://github.com/dfinity/agent-js/issues"
+  },
   "keywords": [
     "internet computer",
     "internet-computer",
@@ -26,10 +34,11 @@
   ],
   "main": "./lib/cjs/index",
   "module": "./lib/esm/index",
+  "unpkg": "./lib/esm/index",
   "scripts": {
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
     "build:watch": "tsc -b --watch",
-    "bundle": "npm run build",
+    "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js",
     "eslint:fix": "npm run lint -- --fix",
     "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' src/index.ts src/auth.ts src/request_id.ts src/request_id.test.ts",
     "lint": "npm run eslint",
@@ -41,33 +50,40 @@
     "tslint": "tslint --project tsconfig.json --config tslint.json"
   },
   "peerDependencies": {
-    "@dfinity/candid": "^0.11.1",
-    "@dfinity/principal": "^0.11.1"
+    "@dfinity/candid": "^0.15.6",
+    "@dfinity/principal": "^0.15.6"
   },
   "dependencies": {
     "base64-arraybuffer": "^0.2.0",
     "bignumber.js": "^9.0.0",
     "borc": "^2.1.1",
     "js-sha256": "0.9.0",
-    "simple-cbor": "^0.4.1"
+    "simple-cbor": "^0.4.1",
+    "ts-node": "^10.8.2"
   },
   "devDependencies": {
     "@trust/webcrypto": "^0.9.2",
-    "@types/jest": "^26.0.22",
-    "@typescript-eslint/eslint-plugin": "^4.14.2",
-    "@typescript-eslint/parser": "^4.14.2",
-    "eslint": "^7.19.0",
-    "eslint-plugin-jsdoc": "^31.6.0",
-    "jest": "^27.3.1",
-    "node-fetch": "^2.6.7",
+    "@types/jest": "^28.1.4",
+    "@typescript-eslint/eslint-plugin": "^5.30.5",
+    "@typescript-eslint/parser": "^5.30.5",
+    "esbuild": "^0.15.16",
+    "eslint": "^8.19.0",
+    "eslint-plugin-jsdoc": "^39.3.3",
+    "isomorphic-fetch": "^3.0.0",
+    "jest": "^28.1.2",
+    "size-limit": "^8.1.0",
     "text-encoding": "^0.7.0",
-    "ts-jest": "^27.0.7",
+    "ts-jest": "^28.0.5",
     "tslint": "^5.20.0",
     "typedoc": "^0.22.11",
-    "typescript": "^3.6.3",
+    "typescript": "^4.7.4",
     "whatwg-fetch": "^3.0.0"
   },
-  "jest": {
-    "preset": "ts-jest"
-  }
+  "size-limit": [
+    {
+      "path": "./dist/index.js",
+      "limit": "100 kB",
+      "webpack": false
+    }
+  ]
 }

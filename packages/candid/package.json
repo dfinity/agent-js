@@ -1,10 +1,18 @@
 {
   "name": "@dfinity/candid",
-  "version": "0.11.1",
+  "version": "0.15.6",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to work with candid interfaces",
-  "homepage": "https://sdk.dfinity.org/docs/index.html",
+  "homepage": "https://internetcomputer.org",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dfinity/agent-js.git",
+    "directory": "packages/candid"
+  },
+  "bugs": {
+    "url": "https://github.com/dfinity/agent-js/issues"
+  },
   "keywords": [
     "internet computer",
     "ic",
@@ -25,9 +33,11 @@
   ],
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
+  "unpkg": "./lib/esm/index",
   "scripts": {
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
-    "bundle": "npm run build",
+    "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js",
+    "size-limit": "size-limit",
     "ci": "npm run prettier && npm run lint && npm run test",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
@@ -38,20 +48,31 @@
     "test:coverage": "jest --verbose --collectCoverage"
   },
   "devDependencies": {
-    "@types/jest": "^27.0.2",
-    "@typescript-eslint/eslint-plugin": "^4.14.2",
-    "@typescript-eslint/parser": "^4.14.2",
-    "eslint": "^7.19.0",
-    "eslint-plugin-jsdoc": "^31.6.0",
-    "jest": "^27.3.1",
+    "@types/jest": "^28.1.4",
+    "@typescript-eslint/eslint-plugin": "^5.30.5",
+    "@typescript-eslint/parser": "^5.30.5",
+    "esbuild": "^0.15.16",
+    "eslint": "^8.19.0",
+    "eslint-plugin-jsdoc": "^39.3.3",
+    "jest": "^28.1.2",
     "jest-diff": "^27.3.1",
-    "node-fetch": "^2.6.7",
     "prettier": "^2.0.5",
+    "size-limit": "^8.1.0",
     "text-encoding": "^0.7.0",
-    "ts-jest": "^27.0.7",
+    "ts-jest": "^28.0.5",
     "tslint": "^5.20.0",
     "typedoc": "^0.22.11",
-    "typescript": "^4.2.3",
+    "typescript": "^4.7.4",
     "whatwg-fetch": "^3.0.0"
-  }
+  },
+  "dependencies": {
+    "ts-node": "^10.8.2"
+  },
+  "size-limit": [
+    {
+      "path": "./dist/index.js",
+      "limit": "100 kB",
+      "webpack": false
+    }
+  ]
 }

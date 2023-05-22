@@ -7,13 +7,15 @@ import {
   ReplicaRejectCode,
   SubmitResponse,
 } from './agent';
-import { getManagementCanister } from './canisters/management';
 import { AgentError } from './errors';
 import { IDL } from '@dfinity/candid';
 import { pollForResponse, PollStrategyFactory, strategy } from './polling';
 import { Principal } from '@dfinity/principal';
 import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
+import { CreateCertificateOptions } from './certificate';
+import managementCanisterIdl from './canisters/management_idl';
+import _SERVICE from './canisters/management_service';
 
 export class ActorCallError extends AgentError {
   constructor(
@@ -115,6 +117,11 @@ export interface ActorConfig extends CallConfig {
     args: unknown[],
     callConfig: CallConfig,
   ): Partial<CallConfig> | void;
+
+  /**
+   * Polyfill for BLS Certificate verification in case wasm is not supported
+   */
+  blsVerify?: CreateCertificateOptions['blsVerify'];
 }
 
 // TODO: move this to proper typing when Candid support TypeScript.
@@ -254,7 +261,7 @@ export class Actor {
         });
 
         for (const [methodName, func] of service._fields) {
-          this[methodName] = _createActorMethod(this, methodName, func);
+          this[methodName] = _createActorMethod(this, methodName, func, config.blsVerify);
         }
       }
     }
@@ -299,7 +306,12 @@ const DEFAULT_ACTOR_CONFIG = {
 
 export type ActorConstructor = new (config: ActorConfig) => ActorSubclass;
 
-function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClass): ActorMethod {
+function _createActorMethod(
+  actor: Actor,
+  methodName: string,
+  func: IDL.FuncClass,
+  blsVerify?: CreateCertificateOptions['blsVerify'],
+): ActorMethod {
   let caller: (options: CallConfig, ...args: unknown[]) => Promise<unknown>;
   if (func.annotations.includes('query')) {
     caller = async (options, ...args) => {
@@ -357,7 +369,7 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
       }
 
       const pollStrategy = pollingStrategyFactory();
-      const responseBytes = await pollForResponse(agent, ecid, requestId, pollStrategy);
+      const responseBytes = await pollForResponse(agent, ecid, requestId, pollStrategy, blsVerify);
 
       if (responseBytes !== undefined) {
         return decodeReturnValue(func.retTypes, responseBytes);
@@ -375,4 +387,30 @@ function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClas
     (...args: unknown[]) =>
       caller(options, ...args);
   return handler as ActorMethod;
+}
+
+export type ManagementCanisterRecord = _SERVICE;
+
+/**
+ * Create a management canister actor
+ * @param config
+ */
+export function getManagementCanister(config: CallConfig): ActorSubclass<ManagementCanisterRecord> {
+  function transform(_methodName: string, args: unknown[], _callConfig: CallConfig) {
+    const first = args[0] as any;
+    let effectiveCanisterId = Principal.fromHex('');
+    if (first && typeof first === 'object' && first.canister_id) {
+      effectiveCanisterId = Principal.from(first.canister_id as unknown);
+    }
+    return { effectiveCanisterId };
+  }
+
+  return Actor.createActor<ManagementCanisterRecord>(managementCanisterIdl, {
+    ...config,
+    canisterId: Principal.fromHex(''),
+    ...{
+      callTransform: transform,
+      queryTransform: transform,
+    },
+  });
 }

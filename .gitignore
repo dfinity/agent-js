@@ -117,9 +117,13 @@ dist
 
 # Generated Docs
 docs/generated/agent
+docs/generated/assets
 docs/generated/auth-client
 docs/generated/authentication
 docs/generated/identity
+docs/generated/identity-secp256k1
 docs/generated/identity-ledgerhq
 docs/generated/principal
 docs/generated/candid
+docs/generated/bls-verify
+docs/generated/identity-secp256k1

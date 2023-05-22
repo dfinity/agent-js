@@ -3,7 +3,7 @@ import { Principal } from '@dfinity/principal';
 import { AgentError } from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
-import { requestIdOf } from '../../request_id';
+import { RequestId, requestIdOf } from '../../request_id';
 import { fromHex } from '../../utils/buffer';
 import {
   Agent,
@@ -52,6 +52,12 @@ const IC_ROOT_KEY =
 const IC0_DOMAIN = 'ic0.app';
 const IC0_SUB_DOMAIN = '.ic0.app';
 
+const ICP0_DOMAIN = 'icp0.io';
+const ICP0_SUB_DOMAIN = '.icp0.io';
+
+const ICP_API_DOMAIN = 'icp-api.io';
+const ICP_API_SUB_DOMAIN = '.icp-api.io';
+
 class HttpDefaultFetchError extends AgentError {
   constructor(public readonly message: string) {
     super(message);
@@ -71,6 +77,14 @@ export interface HttpAgentOptions {
 
   // A surrogate to the global fetch function. Useful for testing.
   fetch?: typeof fetch;
+
+  // Additional options to pass along to fetch. Will not override fields that
+  // the agent already needs to set
+  // Should follow the RequestInit interface, but we intentially support non-standard fields
+  fetchOptions?: Record<string, unknown>;
+
+  // Additional options to pass along to fetch for the call API.
+  callOptions?: Record<string, unknown>;
 
   // The host to use for the client. By default, uses the same host as
   // the current page.
@@ -97,6 +111,11 @@ export interface HttpAgentOptions {
    * @default false
    */
   disableNonce?: boolean;
+  /**
+   * Number of times to retry requests before throwing an error
+   * @default 3
+   */
+  retryTimes?: number;
 }
 
 function getDefaultFetch(): typeof fetch {
@@ -134,6 +153,15 @@ function getDefaultFetch(): typeof fetch {
   );
 }
 
+type _RequestResponse = {
+  requestId: RequestId;
+  response: {
+    ok: Response['ok'];
+    status: Response['status'];
+    statusText: Response['statusText'];
+  };
+};
+
 // A HTTP agent allows users to interact with a client of the internet computer
 // using the available methods. It exposes an API that closely follows the
 // public view of the internet computer, and is not intended to be exposed
@@ -148,9 +176,14 @@ export class HttpAgent implements Agent {
   private readonly _pipeline: HttpAgentRequestTransformFn[] = [];
   private _identity: Promise<Identity> | null;
   private readonly _fetch: typeof fetch;
+  private readonly _fetchOptions?: Record<string, unknown>;
+  private readonly _callOptions?: Record<string, unknown>;
+  private _timeDiffMsecs = 0;
   private readonly _host: URL;
   private readonly _credentials: string | undefined;
   private _rootKeyFetched = false;
+  private _retryTimes = 3; // Retry requests 3 times before erroring by default
+  public readonly _isAgent = true;
 
   constructor(options: HttpAgentOptions = {}) {
     if (options.source) {
@@ -164,6 +197,8 @@ export class HttpAgent implements Agent {
       this._credentials = options.source._credentials;
     } else {
       this._fetch = options.fetch || getDefaultFetch() || fetch.bind(global);
+      this._fetchOptions = options.fetchOptions;
+      this._callOptions = options.callOptions;
     }
     if (options.host !== undefined) {
       if (!options.host.match(/^[a-z]+:/) && typeof window !== 'undefined') {
@@ -181,10 +216,17 @@ export class HttpAgent implements Agent {
       }
       this._host = new URL(location + '');
     }
-
+    // Default is 3, only set if option is provided
+    if (options.retryTimes !== undefined) {
+      this._retryTimes = options.retryTimes;
+    }
     // Rewrite to avoid redirects
     if (this._host.hostname.endsWith(IC0_SUB_DOMAIN)) {
       this._host.hostname = IC0_DOMAIN;
+    } else if (this._host.hostname.endsWith(ICP0_SUB_DOMAIN)) {
+      this._host.hostname = ICP0_DOMAIN;
+    } else if (this._host.hostname.endsWith(ICP_API_SUB_DOMAIN)) {
+      this._host.hostname = ICP_API_DOMAIN;
     }
 
     if (options.credentials) {
@@ -197,6 +239,11 @@ export class HttpAgent implements Agent {
     if (!options.disableNonce) {
       this.addTransform(makeNonceTransform(makeNonce));
     }
+  }
+
+  public isLocal(): boolean {
+    const hostname = this._host.hostname;
+    return hostname === '127.0.0.1' || hostname.endsWith('localhost');
   }
 
   public addTransform(fn: HttpAgentRequestTransformFn, priority = fn.priority || 0): void {
@@ -236,13 +283,20 @@ export class HttpAgent implements Agent {
 
     const sender: Principal = id.getPrincipal() || Principal.anonymous();
 
+    let ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
+
+    // If the value is off by more than 30 seconds, reconcile system time with the network
+    if (Math.abs(this._timeDiffMsecs) > 1_000 * 30) {
+      ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS + this._timeDiffMsecs);
+    }
+
     const submit: CallRequest = {
       request_type: SubmitRequestType.Call,
       canister_id: canister,
       method_name: options.methodName,
       arg: options.arg,
       sender,
-      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+      ingress_expiry,
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -250,10 +304,10 @@ export class HttpAgent implements Agent {
       request: {
         body: null,
         method: 'POST',
-        headers: {
+        headers: new Headers({
           'Content-Type': 'application/cbor',
           ...(this._credentials ? { Authorization: 'Basic ' + btoa(this._credentials) } : {}),
-        },
+        }),
       },
       endpoint: Endpoint.Call,
       body: submit,
@@ -266,21 +320,16 @@ export class HttpAgent implements Agent {
 
     // Run both in parallel. The fetch is quite expensive, so we have plenty of time to
     // calculate the requestId locally.
-    const [response, requestId] = await Promise.all([
+
+    const request = this._requestAndRetry(() =>
       this._fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this._host), {
+        ...this._callOptions,
         ...transformedRequest.request,
         body,
       }),
-      requestIdOf(submit),
-    ]);
+    );
 
-    if (!response.ok) {
-      throw new Error(
-        `Server returned an error:\n` +
-          `  Code: ${response.status} (${response.statusText})\n` +
-          `  Body: ${await response.text()}\n`,
-      );
-    }
+    const [response, requestId] = await Promise.all([request, requestIdOf(submit)]);
 
     return {
       requestId,
@@ -290,6 +339,30 @@ export class HttpAgent implements Agent {
         statusText: response.statusText,
       },
     };
+  }
+
+  private async _requestAndRetry(request: () => Promise<Response>, tries = 0): Promise<Response> {
+    if (tries > this._retryTimes && this._retryTimes !== 0) {
+      throw new Error(
+        `AgentError: Exceeded configured limit of ${this._retryTimes} retry attempts. Please check your network connection or try again in a few moments`,
+      );
+    }
+    const response = await request();
+    if (!response.ok) {
+      const responseText = await response.clone().text();
+      const errorMessage =
+        `Server returned an error:\n` +
+        `  Code: ${response.status} (${response.statusText})\n` +
+        `  Body: ${responseText}\n`;
+      if (this._retryTimes > tries) {
+        console.warn(errorMessage + `  Retrying request.`);
+        return await this._requestAndRetry(request, tries + 1);
+      } else {
+        throw new Error(errorMessage);
+      }
+    }
+
+    return response;
   }
 
   public async query(
@@ -321,10 +394,10 @@ export class HttpAgent implements Agent {
     let transformedRequest: any = await this._transform({
       request: {
         method: 'POST',
-        headers: {
+        headers: new Headers({
           'Content-Type': 'application/cbor',
           ...(this._credentials ? { Authorization: 'Basic ' + btoa(this._credentials) } : {}),
-        },
+        }),
       },
       endpoint: Endpoint.Query,
       body: request,
@@ -334,30 +407,22 @@ export class HttpAgent implements Agent {
     transformedRequest = await id?.transformRequest(transformedRequest);
 
     const body = cbor.encode(transformedRequest.body);
-    const response = await this._fetch(
-      '' + new URL(`/api/v2/canister/${canister.toText()}/query`, this._host),
-      {
+    const response = await this._requestAndRetry(() =>
+      this._fetch('' + new URL(`/api/v2/canister/${canister.toText()}/query`, this._host), {
+        ...this._fetchOptions,
         ...transformedRequest.request,
         body,
-      },
+      }),
     );
 
-    if (!response.ok) {
-      throw new Error(
-        `Server returned an error:\n` +
-          `  Code: ${response.status} (${response.statusText})\n` +
-          `  Body: ${await response.text()}\n`,
-      );
-    }
     return cbor.decode(await response.arrayBuffer());
   }
 
-  public async readState(
-    canisterId: Principal | string,
+  public async createReadStateRequest(
     fields: ReadStateOptions,
     identity?: Identity | Promise<Identity>,
-  ): Promise<ReadStateResponse> {
-    const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Promise<any> {
     const id = await (identity !== undefined ? await identity : await this._identity);
     if (!id) {
       throw new IdentityInvalidError(
@@ -368,13 +433,13 @@ export class HttpAgent implements Agent {
 
     // TODO: remove this any. This can be a Signed or UnSigned request.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let transformedRequest: any = await this._transform({
+    const transformedRequest: any = await this._transform({
       request: {
         method: 'POST',
-        headers: {
+        headers: new Headers({
           'Content-Type': 'application/cbor',
           ...(this._credentials ? { Authorization: 'Basic ' + btoa(this._credentials) } : {}),
-        },
+        }),
       },
       endpoint: Endpoint.ReadState,
       body: {
@@ -386,16 +451,28 @@ export class HttpAgent implements Agent {
     });
 
     // Apply transform for identity.
-    transformedRequest = await id?.transformRequest(transformedRequest);
+    return id?.transformRequest(transformedRequest);
+  }
 
+  public async readState(
+    canisterId: Principal | string,
+    fields: ReadStateOptions,
+    identity?: Identity | Promise<Identity>,
+    // eslint-disable-next-line
+    request?: any,
+  ): Promise<ReadStateResponse> {
+    const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
+
+    const transformedRequest = request ?? (await this.createReadStateRequest(fields, identity));
     const body = cbor.encode(transformedRequest.body);
 
-    const response = await this._fetch(
-      '' + new URL(`/api/v2/canister/${canister}/read_state`, this._host),
-      {
+    // TODO - https://dfinity.atlassian.net/browse/SDK-1092
+    const response = await this._requestAndRetry(() =>
+      this._fetch('' + new URL(`/api/v2/canister/${canister}/read_state`, this._host), {
+        ...this._fetchOptions,
         ...transformedRequest.request,
         body,
-      },
+      }),
     );
 
     if (!response.ok) {
@@ -408,6 +485,35 @@ export class HttpAgent implements Agent {
     return cbor.decode(await response.arrayBuffer());
   }
 
+  /**
+   * Allows agent to sync its time with the network. Can be called during intialization or mid-lifecycle if the device's clock has drifted away from the network time. This is necessary to set the Expiry for a request
+   * @param {PrincipalLike} canisterId - Pass a canister ID if you need to sync the time with a particular replica. Uses the management canister by default
+   */
+  public async syncTime(canisterId?: Principal): Promise<void> {
+    const CanisterStatus = await import('../../canisterStatus');
+    const callTime = Date.now();
+    try {
+      if (!canisterId) {
+        console.log(
+          'Syncing time with the IC. No canisterId provided, so falling back to ryjl3-tyaaa-aaaaa-aaaba-cai',
+        );
+      }
+      const status = await CanisterStatus.request({
+        // Fall back with canisterId of the ICP Ledger
+        canisterId: canisterId ?? Principal.from('ryjl3-tyaaa-aaaaa-aaaba-cai'),
+        agent: this,
+        paths: ['time'],
+      });
+
+      const replicaTime = status.get('time');
+      if (replicaTime) {
+        this._timeDiffMsecs = Number(replicaTime as any) - Number(callTime);
+      }
+    } catch (error) {
+      console.error('Caught exception while attempting to sync time:', error);
+    }
+  }
+
   public async status(): Promise<JsonObject> {
     const headers: Record<string, string> = this._credentials
       ? {
@@ -415,15 +521,9 @@ export class HttpAgent implements Agent {
         }
       : {};
 
-    const response = await this._fetch('' + new URL(`/api/v2/status`, this._host), { headers });
-
-    if (!response.ok) {
-      throw new Error(
-        `Server returned an error:\n` +
-          `  Code: ${response.status} (${response.statusText})\n` +
-          `  Body: ${await response.text()}\n`,
-      );
-    }
+    const response = await this._requestAndRetry(() =>
+      this._fetch('' + new URL(`/api/v2/status`, this._host), { headers, ...this._fetchOptions }),
+    );
 
     return cbor.decode(await response.arrayBuffer());
   }

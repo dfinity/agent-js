@@ -1,8 +1,9 @@
 import { lebEncode } from '@dfinity/candid';
 import * as cbor from 'simple-cbor';
 import { Endpoint, HttpAgentRequest, HttpAgentRequestTransformFn, makeNonce, Nonce } from './types';
+import { toHex } from '../../utils/buffer';
 
-const NANOSECONDS_PER_MILLISECONDS = BigInt(1000000);
+const NANOSECONDS_PER_MILLISECONDS = BigInt(1_000_000);
 
 const REPLICA_PERMITTED_DRIFT_MILLISECONDS = BigInt(60 * 1000);
 
@@ -33,8 +34,14 @@ export class Expiry {
  */
 export function makeNonceTransform(nonceFn: () => Nonce = makeNonce): HttpAgentRequestTransformFn {
   return async (request: HttpAgentRequest) => {
-    // Nonce are only useful for async calls, to prevent replay attacks. Other types of
-    // calls don't need Nonce so we just skip creating one.
+    const nonce = nonceFn();
+    // Nonce needs to be inserted into the header for all requests, to enable logs to be correlated with requests.
+    const headers = request.request.headers ? new Headers(request.request.headers) : new Headers();
+    // TODO: uncomment this when the http proxy supports it.
+    // headers.set('X-IC-Request-ID', toHex(new Uint8Array(nonce)));
+    request.request.headers = headers;
+
+    // Nonce only needs to be inserted into the body for async calls, to prevent replay attacks.
     if (request.endpoint === Endpoint.Call) {
       request.body.nonce = nonceFn();
     }

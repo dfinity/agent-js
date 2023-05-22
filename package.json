@@ -1,44 +1,51 @@
 {
   "name": "@dfinity/agent-monorepo",
-  "version": "0.11.1",
+  "version": "0.15.6",
   "private": true,
   "description": "Use an Agent to interact with the Internet Computer from your JavaScript program.",
-  "dependencies": {
-    "jest": "^27.3.1",
-    "jest-cli": "^27.3.1",
-    "ts-jest": "^27.0.7"
-  },
   "workspaces": {
     "packages": [
       "packages/principal",
       "packages/candid",
       "packages/agent",
+      "packages/bls-verify",
       "packages/identity",
-      "packages/identity-ledgerhq",
-      "packages/authentication",
       "packages/auth-client",
+      "packages/assets",
+      "packages/identity-secp256k1",
       "e2e/node",
-      "demos/ledgerhq",
+      "e2e/browser",
       "demos/sample-javascript"
     ]
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.13.12",
-    "@babel/preset-typescript": "^7.13.0",
-    "@types/jest": "^27.4.1",
-    "@types/node": "^14.14.37",
-    "@typescript-eslint/eslint-plugin": "^4.14.2",
-    "@typescript-eslint/parser": "^4.14.2",
-    "eslint": "^7.19.0",
-    "eslint-plugin-jsdoc": "^31.6.0",
-    "husky": "^6.0.0",
-    "jest-environment-node": "^27.0.6",
-    "prettier": "^2.3.0",
-    "pretty-quick": "^3.1.0",
-    "ts-node": "^9.1.1",
-    "typedoc": "^0.22.11",
-    "typescript": "^4.5.5",
-    "yargs": "^15.4.1"
+    "@jest/types": "28.1.3",
+    "@size-limit/preset-small-lib": "^8.1.0",
+    "@types/jest": "^28.1.4",
+    "@types/node": "^18.0.3",
+    "@typescript-eslint/eslint-plugin": "^5.30.5",
+    "@typescript-eslint/parser": "^5.30.5",
+    "eslint": "^8.19.0",
+    "eslint-plugin-jsdoc": "^39.3.3",
+    "fs": "^0.0.1-security",
+    "husky": "^8.0.1",
+    "jest": "^28.1.2",
+    "jest-cli": "^28.1.2",
+    "jest-environment-jsdom": "28.1.3",
+    "jest-environment-node": "^28.1.2",
+    "os": "^0.1.2",
+    "path": "^0.12.7",
+    "prettier": "^2.7.1",
+    "pretty-quick": "^3.1.3",
+    "size-limit": "^8.1.0",
+    "size-limit-node-esbuild": "^0.2.0",
+    "ts-jest": "^28.0.5",
+    "ts-node": "^10.8.2",
+    "typedoc": "^0.23.5",
+    "typescript": "^4.7.4",
+    "url": "^0.11.0",
+    "webcrypto-core": "^1.7.5",
+    "yargs": "^17.5.1"
   },
   "engines": {
     "node": "^12 || ^14 || ^16",
@@ -47,11 +54,13 @@
   "scripts": {
     "lint:e2e": "eslint --cache --cache-location node_modules/.cache/eslint 'e2e/*/**/*.ts*'",
     "publish:release": "npm run publish --workspaces",
-    "build": "",
+    "build": "npm run build --workspaces --if-present; npm run bundle --workspaces --if-present",
     "lint:fix": "",
     "make:docs": "npm run make:docs/reference --workspaces --if-present; ",
+    "size": "size-limit --json",
     "test:coverage": "",
     "test": "jest",
+    "test-size": "esbuild",
     "prepare": "husky install",
     "prettier:check": "npx -p prettier -p pretty-quick pretty-quick --check",
     "prettier:format": "npx -p prettier -p pretty-quick pretty-quick",
@@ -67,5 +76,41 @@
   "bugs": {
     "url": "https://github.com/dfinity-lab/agent-js/issues"
   },
-  "homepage": "https://github.com/dfinity-lab/agent-js#readme"
+  "homepage": "https://github.com/dfinity-lab/agent-js#readme",
+  "size-limit": [
+    {
+      "name": "@dfinity/agent",
+      "path": "./packages/agent/dist/index.js",
+      "limit": "100 kB"
+    },
+    {
+      "name": "@dfinity/candid",
+      "path": "./packages/candid/dist/index.js"
+    },
+    {
+      "name": "@dfinity/principal",
+      "path": "./packages/principal/dist/index.js",
+      "limit": "10 kB"
+    },
+    {
+      "name": "@dfinity/auth-client",
+      "path": "./packages/auth-client/dist/index.js",
+      "limit": "320 kB"
+    },
+    {
+      "name": "@dfinity/assets",
+      "path": "./packages/assets/dist/index.js",
+      "limit": "100 kB"
+    },
+    {
+      "name": "@dfinity/identity",
+      "path": "./packages/identity/dist/index.js",
+      "limit": "100 kB"
+    },
+    {
+      "name": "@dfinity/identity-secp256k1",
+      "path": "./packages/identity-secp256k1/dist/index.js",
+      "limit": "250 kB"
+    }
+  ]
 }
