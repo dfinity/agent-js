@@ -12,6 +12,18 @@
     <section>
       <h2>Version x.x.x</h2>
       <ul>
+        <ul>
+          breaking change: switching from tweetnacl to @noble/ed25519 for Ed25519KeyIdentity
+          <li>
+            <pre>Ed25519KeyIdentity</pre>
+            now uses
+            <pre>@noble/ed25519</pre>
+            instead of tweetnacl
+          </li>
+          <li>Identity Library has switched to `type="module"</li>
+          <li>also now uses vitest</li>
+        </ul>
+
         <li>
           fix: finish all tasks before calling onSuccess auth callback in @dfinity/auth-client
         </li>

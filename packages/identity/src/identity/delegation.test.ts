@@ -1,3 +1,4 @@
+import { describe, test, expect } from 'vitest';
 import { SignIdentity } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import { DelegationChain } from './delegation';

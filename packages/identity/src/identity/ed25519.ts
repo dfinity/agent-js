@@ -1,7 +1,10 @@
 import { DerEncodedPublicKey, KeyPair, PublicKey, Signature, SignIdentity } from '@dfinity/agent';
-import * as tweetnacl from 'tweetnacl';
 import { fromHexString, toHexString } from '../buffer';
 import { ED25519_OID, unwrapDER, wrapDER } from './der';
+import { sha512 } from '@noble/hashes/sha512';
+import * as ed from '@noble/ed25519';
+const { utils, getPublicKey, sign, etc } = ed;
+etc.sha512Sync = (...m) => sha512(ed.etc.concatBytes(...m));
 
 export class Ed25519PublicKey implements PublicKey {
   public static from(key: PublicKey): Ed25519PublicKey {
@@ -56,8 +59,20 @@ export class Ed25519KeyIdentity extends SignIdentity {
     }
 
     const { publicKey, secretKey } =
-      seed === undefined ? tweetnacl.sign.keyPair() : tweetnacl.sign.keyPair.fromSeed(seed);
+      seed === undefined ? this.#randomKeyPair() : this.#keyPairFromSeed(seed);
     return new this(Ed25519PublicKey.fromRaw(publicKey), secretKey);
+  }
+
+  static #randomKeyPair() {
+    const privateKey = utils.randomPrivateKey();
+    return this.#keyPairFromSeed(privateKey);
+  }
+
+  static #keyPairFromSeed(privateKey: ArrayBuffer) {
+    return {
+      secretKey: privateKey,
+      publicKey: new DataView(getPublicKey(toHexString(privateKey)).buffer).buffer,
+    };
   }
 
   public static fromParsedJson(obj: JsonnableEd25519KeyIdentity): Ed25519KeyIdentity {
@@ -85,8 +100,11 @@ export class Ed25519KeyIdentity extends SignIdentity {
   }
 
   public static fromSecretKey(secretKey: ArrayBuffer): Ed25519KeyIdentity {
-    const keyPair = tweetnacl.sign.keyPair.fromSecretKey(new Uint8Array(secretKey));
-    return Ed25519KeyIdentity.fromKeyPair(keyPair.publicKey, keyPair.secretKey);
+    if (secretKey.byteLength !== 32) {
+      throw new Error('bad secret key size');
+    }
+    const publicKey = getPublicKey(toHexString(secretKey));
+    return Ed25519KeyIdentity.fromKeyPair(publicKey.buffer, secretKey);
   }
 
   protected _publicKey: Ed25519PublicKey;
@@ -126,8 +144,7 @@ export class Ed25519KeyIdentity extends SignIdentity {
    * @param challenge - challenge to sign with this identity's secretKey, producing a signature
    */
   public async sign(challenge: ArrayBuffer): Promise<Signature> {
-    const blob = new Uint8Array(challenge);
-    const signature = tweetnacl.sign.detached(blob, new Uint8Array(this._privateKey)).buffer;
+    const signature = sign(toHexString(challenge), toHexString(this._privateKey)).buffer;
     return signature as Signature;
   }
 }

@@ -1,3 +1,4 @@
+import { describe, test, expect } from 'vitest';
 import { bufEquals, encodeLenBytes, encodeLen, decodeLenBytes, decodeLen } from './der';
 
 describe('bufEquals tests', () => {

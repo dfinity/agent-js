@@ -1,3 +1,4 @@
+import { describe, test, expect } from 'vitest';
 import { sha256 } from 'js-sha256';
 import { ECDSAKeyIdentity } from './ecdsa';
 import { Crypto } from '@peculiar/webcrypto';
