@@ -106,7 +106,7 @@ test('call', async () => {
   expect(call1).toBe(`http://localhost/api/v2/canister/${canisterId.toText()}/call`);
   expect(call2.method).toEqual('POST');
   expect(call2.body).toEqual(cbor.encode(expectedRequest));
-  expect(call2.headers.get('Content-Type')).toEqual('application/cbor');
+  expect(call2.headers['Content-Type']).toEqual('application/cbor');
 });
 
 test.todo('query');
@@ -324,7 +324,7 @@ test('use anonymous principal if unspecified', async () => {
   const call2 = calls[0][1];
   expect(call2.method).toEqual('POST');
   expect(call2.body).toEqual(cbor.encode(expectedRequest));
-  expect(call2.headers.get('Content-Type')).toEqual('application/cbor');
+  expect(call2.headers['Content-Type']).toEqual('application/cbor');
 });
 
 describe('getDefaultFetch', () => {
