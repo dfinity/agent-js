@@ -61,8 +61,8 @@ Until we have an internal process and centrally owned canister, docs can be rele
 
 - Start from a fresh clone (or `git clean -dfx .`)
 - `npm install`
-- `npm run make:docs/reference`
-- `dfx deploy`
+- `npm run make:docs`
+- `dfx deploy --network ic`
 
 Note - you may need to ask to be added as a controller for the wallet that owns the docs until this job is moved to CI
 
