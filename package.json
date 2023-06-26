@@ -48,8 +48,8 @@
     "yargs": "^17.5.1"
   },
   "engines": {
-    "node": "^12 || ^14 || ^16",
-    "npm": "^7.17 || ^8"
+    "node": "^12 || ^14 || ^16 || >=17",
+    "npm": "^7.17 || ^>=8"
   },
   "scripts": {
     "lint:e2e": "eslint --cache --cache-location node_modules/.cache/eslint 'e2e/*/**/*.ts*'",
