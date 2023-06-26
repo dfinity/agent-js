@@ -232,7 +232,7 @@ export class WebAuthnIdentity extends SignIdentity {
   /**
    * Allow for JSON serialization of all information needed to reuse this identity.
    */
-  public toJSON(): JsonnableWebAuthnIdentitiy {
+  public toJSON(): JsonnableWebAuthnIdentity {
     return {
       publicKey: toHexString(this._publicKey.getCose()),
       rawId: toHexString(this.rawId),
@@ -243,7 +243,7 @@ export class WebAuthnIdentity extends SignIdentity {
 /**
  * ReturnType<WebAuthnIdentity.toJSON>
  */
-export interface JsonnableWebAuthnIdentitiy {
+export interface JsonnableWebAuthnIdentity {
   // The hexadecimal representation of the DER encoded public key.
   publicKey: string;
   // The string representation of the local WebAuthn Credential.id (base64url encoded).
