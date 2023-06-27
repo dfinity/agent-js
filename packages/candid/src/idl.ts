@@ -1960,6 +1960,6 @@ export function Func(args: Type[], ret: Type[], annotations: string[] = []): Fun
  * @param t Record of string and FuncClass
  * @returns ServiceClass
  */
-export function Service(t: Record<string, Type>): ServiceClass {
+export function Service(t: Record<string, FuncClass>): ServiceClass {
   return new ServiceClass(t);
 }
