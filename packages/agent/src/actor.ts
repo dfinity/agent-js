@@ -261,6 +261,12 @@ export class Actor {
         });
 
         for (const [methodName, func] of service._fields) {
+          if (func instanceof RecClass) {
+            func = func.getType();
+          }
+          if (!(func instanceof FunClass)) {
+            throw new Error('Illegal service definition: services can only contain functions');
+          }
           this[methodName] = _createActorMethod(this, methodName, func, config.blsVerify);
         }
       }
