@@ -1476,8 +1476,8 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
 }
 
 export class ServiceClass extends ConstructType<PrincipalId> {
-  public readonly _fields: Array<[string, Type]>;
-  constructor(fields: Record<string, Type>) {
+  public readonly _fields: Array<[string, FuncClass]>;
+  constructor(fields: Record<string, FuncClass>) {
     super();
     this._fields = Object.entries(fields).sort((a, b) => idlLabelToId(a[0]) - idlLabelToId(b[0]));
   }
@@ -1774,12 +1774,19 @@ export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
         );
       }
       case IDLTypeIds.Service: {
-        const rec: Record<string, Type> = {};
+        const rec: Record<string, FuncClass> = {};
         const methods = entry[1] as [[string, number]];
         for (const [name, typeRef] of methods) {
-          // Note that we cannot assert typeRef is FuncClass here,
-          // as function type may come later in the type table.
-          rec[name] = getType(typeRef);
+          let type: Type | undefined = getType(typeRef);
+
+          if (type instanceof RecClass) {
+            // unpack reference type
+            type = type.getType();
+          }
+          if (!(type instanceof FuncClass)) {
+            throw new Error('Illegal service definition: services can only contain functions');
+          }
+          rec[name] = type;
         }
         return Service(rec);
       }
@@ -1789,8 +1796,17 @@ export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
   }
 
   rawTable.forEach((entry, i) => {
-    const t = buildType(entry);
-    table[i].fill(t);
+    // Process function type first, so that we can construct the correct service type
+    if (entry[0] === IDLTypeIds.Func) {
+      const t = buildType(entry);
+      table[i].fill(t);
+    }
+  });
+  rawTable.forEach((entry, i) => {
+    if (entry[0] !== IDLTypeIds.Func) {
+      const t = buildType(entry);
+      table[i].fill(t);
+    }
   });
 
   const types = rawTypes.map(t => getType(t));

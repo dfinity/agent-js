@@ -260,13 +260,7 @@ export class Actor {
           service,
         });
 
-        for (let [methodName, func] of service._fields) {
-          if (func instanceof IDL.RecClass) {
-            func = func.getType();
-          }
-          if (!(func instanceof IDL.FuncClass)) {
-            throw new Error('Illegal service definition: services can only contain functions');
-          }
+        for (const [methodName, func] of service._fields) {
           this[methodName] = _createActorMethod(this, methodName, func, config.blsVerify);
         }
       }
