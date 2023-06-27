@@ -260,7 +260,7 @@ export class Actor {
           service,
         });
 
-        for (const [methodName, func] of service._fields) {
+        for (let [methodName, func] of service._fields) {
           if (func instanceof IDL.RecClass) {
             func = func.getType();
           }
