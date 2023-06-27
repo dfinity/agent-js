@@ -1476,8 +1476,8 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
 }
 
 export class ServiceClass extends ConstructType<PrincipalId> {
-  public readonly _fields: Array<[string, FuncClass]>;
-  constructor(fields: Record<string, FuncClass>) {
+  public readonly _fields: Array<[string, Type]>;
+  constructor(fields: Record<string, Type>) {
     super();
     this._fields = Object.entries(fields).sort((a, b) => idlLabelToId(a[0]) - idlLabelToId(b[0]));
   }
@@ -1774,19 +1774,12 @@ export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
         );
       }
       case IDLTypeIds.Service: {
-        const rec: Record<string, FuncClass> = {};
+        const rec: Record<string, Type> = {};
         const methods = entry[1] as [[string, number]];
         for (const [name, typeRef] of methods) {
-          let type: Type | undefined = getType(typeRef);
-
-          if (type instanceof RecClass) {
-            // unpack reference type
-            type = type.getType();
-          }
-          if (!(type instanceof FuncClass)) {
-            throw new Error('Illegal service definition: services can only contain functions');
-          }
-          rec[name] = type;
+          // Note that we cannot assert typeRef is FuncClass here,
+          // as function type may come later in the type table.
+          rec[name] = getType(typeRef);
         }
         return Service(rec);
       }
@@ -1951,6 +1944,6 @@ export function Func(args: Type[], ret: Type[], annotations: string[] = []): Fun
  * @param t Record of string and FuncClass
  * @returns ServiceClass
  */
-export function Service(t: Record<string, FuncClass>): ServiceClass {
+export function Service(t: Record<string, Type>): ServiceClass {
   return new ServiceClass(t);
 }
