@@ -53,7 +53,6 @@
     "esbuild": "^0.15.16",
     "eslint": "^8.19.0",
     "eslint-plugin-jsdoc": "^39.3.3",
-    "jest-diff": "^27.3.1",
     "prettier": "^2.0.5",
     "size-limit": "^8.1.0",
     "text-encoding": "^0.7.0",
