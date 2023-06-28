@@ -73,8 +73,8 @@
     "jest-environment-node": "^29.5.0",
     "size-limit": "^8.2.6",
     "ts-jest": "^29.1.0",
-    "typedoc": "^0.22.11",
-    "typescript": "^4.7.4"
+    "typedoc": "^0.24.8",
+    "typescript": "^5.1.5"
   },
   "browser": {
     "fs": "./lib/cjs/utils/browserShim.js",
