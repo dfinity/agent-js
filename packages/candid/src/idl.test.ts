@@ -180,7 +180,9 @@ test('IDL encoding (arraybuffer)', () => {
   IDL.encode([IDL.Vec(IDL.Nat8)], [new Uint8Array()]);
   IDL.encode([IDL.Vec(IDL.Nat8)], [new Uint8Array(100).fill(42)]);
   IDL.encode([IDL.Vec(IDL.Nat16)], [new Uint16Array(200).fill(42)]);
-  expect(() => IDL.encode([IDL.Vec(IDL.Int8)], [new Uint16Array(10).fill(420)])).toThrow(/Invalid vec int8 argument/);
+  expect(() => IDL.encode([IDL.Vec(IDL.Int8)], [new Uint16Array(10).fill(420)])).toThrow(
+    /Invalid vec int8 argument/,
+  );
 });
 
 test('IDL encoding (array)', () => {
@@ -347,6 +349,12 @@ test('IDL encoding (service)', () => {
     IDL.Service({ foo: IDL.Func([IDL.Text], [IDL.Nat], []) }),
     Principal.fromText('w7x7r-cok77-xa'),
     '4449444c026a0171017d00690103666f6f0001010103caffee',
+    'service',
+  );
+  testDecode(
+    IDL.Service({ foo: IDL.Func([IDL.Text], [IDL.Nat], []) }),
+    Principal.fromText('w7x7r-cok77-xa'),
+    '4449444c02690103666f6f016a0171017d0001010103caffee',
     'service',
   );
   test_(
