@@ -68,9 +68,8 @@
     "isomorphic-fetch": "^3.0.0",
     "jest": "^29.5.0",
     "jest-cli": "^29.5.0",
-    "jest-environment-jsdom": "^29.5.0",
     "jest-environment-node": "^29.5.0",
-    "size-limit": "^8.1.0",
+    "size-limit": "^8.2.6",
     "text-encoding": "^0.7.0",
     "ts-jest": "^29.1.0",
     "ts-node": "^10.8.2",
@@ -84,5 +83,9 @@
       "limit": "100 kB",
       "webpack": false
     }
-  ]
+  ],
+  "overrides": {
+    "semver": "7.5.3",
+    "word-wrap": "npm:@pavus/word-wrap@1.2.6"
+  }
 }

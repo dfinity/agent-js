@@ -71,7 +71,7 @@
     "jest-cli": "^29.5.0",
     "jest-environment-jsdom": "^29.5.0",
     "jest-environment-node": "^29.5.0",
-    "size-limit": "^8.1.0",
+    "size-limit": "^8.2.6",
     "ts-jest": "^29.1.0",
     "typedoc": "^0.22.11",
     "typescript": "^4.7.4"
@@ -86,5 +86,9 @@
       "limit": "100 kB",
       "webpack": false
     }
-  ]
+  ],
+  "overrides": {
+    "semver": "7.5.3",
+    "word-wrap": "npm:@pavus/word-wrap@1.2.6"
+  }
 }

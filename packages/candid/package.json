@@ -54,7 +54,7 @@
     "eslint": "^8.19.0",
     "eslint-plugin-jsdoc": "^39.3.3",
     "prettier": "^2.0.5",
-    "size-limit": "^8.1.0",
+    "size-limit": "^8.2.6",
     "text-encoding": "^0.7.0",
     "ts-node": "^10.8.2",
     "typedoc": "^0.22.11",
@@ -67,5 +67,9 @@
       "limit": "100 kB",
       "webpack": false
     }
-  ]
+  ],
+  "overrides": {
+    "semver": "7.5.3",
+    "word-wrap": "npm:@pavus/word-wrap@1.2.6"
+  }
 }
