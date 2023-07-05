@@ -65,6 +65,7 @@ describe('makeActor', () => {
         );
       })
       .mockImplementationOnce((resource, init) => {
+        // IC-1462 update call error
         const body = cbor.encode(<SubmitResponse['response']['body']>{
           error_code: 'IC0503',
           reject_code: 5,
