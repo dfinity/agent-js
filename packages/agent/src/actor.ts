@@ -61,7 +61,7 @@ export class UpdateCallRejectedError extends ActorCallError {
       ...(response.body
         ? {
             'Error code': response.body.error_code,
-            'Reject code': response.body.reject_code,
+            'Reject code': String(response.body.reject_code),
             'Reject message': response.body.reject_message,
           }
         : {

@@ -13,7 +13,7 @@ import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 
 import { JSDOM } from 'jsdom';
-import { AnonymousIdentity, SignIdentity } from '../..';
+import { AnonymousIdentity, SignIdentity, SubmitResponse, UpdateCallRejectedError } from '../..';
 import { Ed25519KeyIdentity } from '../../../../identity/src/identity/ed25519';
 import { toHexString } from '../../../../identity/src/buffer';
 import { AgentError } from '../../errors';
@@ -735,4 +735,32 @@ test('should fetch with given call options and fetch options', async () => {
 
   expect(calls[0][1].reactNative).toStrictEqual({ textStreaming: true });
   expect(calls[1][1].reactNative.__nativeResponseType).toBe('base64');
+});
+
+test('should handle IC-1462 update call errors', async () => {
+  const mockFetch: jest.Mock = jest.fn(() => {
+    const body = cbor.encode(<SubmitResponse['response']['body']>{
+      error_code: 'IC0503',
+      reject_code: 5,
+      reject_message:
+        'Canister (...) trapped explicitly: canister_inspect_message explicitly refused message',
+    });
+    return Promise.resolve(
+      new Response(body, {
+        status: 200,
+      }),
+    );
+  });
+
+  const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+  const httpAgent = new HttpAgent({
+    fetch: mockFetch,
+  });
+
+  expect(async () => {
+    await httpAgent.call(canisterId, {
+      methodName: 'greet',
+      arg: new Uint8Array([]),
+    });
+  }).toThrow(UpdateCallRejectedError);
 });
