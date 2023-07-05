@@ -331,12 +331,17 @@ export class HttpAgent implements Agent {
 
     const [response, requestId] = await Promise.all([request, requestIdOf(submit)]);
 
+    const responseBody = response.body
+      ? (cbor.decode(await response.arrayBuffer()) as SubmitResponse['response']['body'])
+      : null;
+
     return {
       requestId,
       response: {
         ok: response.ok,
         status: response.status,
         statusText: response.statusText,
+        body: responseBody,
       },
     };
   }

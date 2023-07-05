@@ -96,6 +96,11 @@ export interface SubmitResponse {
     ok: boolean;
     status: number;
     statusText: string;
+    body: {
+      error_code: string;
+      reject_code: string;
+      reject_message: string;
+    } | null;
   };
 }
 
