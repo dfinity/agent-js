@@ -566,7 +566,7 @@ describe('retry failures', () => {
     let calls = 0;
     const mockFetch: jest.Mock = jest.fn(() => {
       if (calls === 3) {
-        return new Response('test', {
+        return new Response(null, {
           status: 200,
           statusText: 'success!',
         });
