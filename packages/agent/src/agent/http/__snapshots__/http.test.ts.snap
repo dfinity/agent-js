@@ -4,6 +4,7 @@ exports[`retry failures should succeed after multiple failures within the config
 Object {
   "requestId": ArrayBuffer [],
   "response": Object {
+    "body": null,
     "ok": true,
     "status": 200,
     "statusText": "success!",
