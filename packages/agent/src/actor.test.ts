@@ -1,7 +1,7 @@
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
-import { Actor } from './actor';
-import { HttpAgent, Nonce } from './agent';
+import { Actor, UpdateCallRejectedError } from './actor';
+import { HttpAgent, Nonce, SubmitResponse } from './agent';
 import { Expiry, makeNonceTransform } from './agent/http/transforms';
 import { CallRequest, SubmitRequestType, UnSigned } from './agent/http/types';
 import * as cbor from './cbor';
@@ -63,9 +63,24 @@ describe('makeActor', () => {
             status: 200,
           }),
         );
+      })
+      .mockImplementationOnce((resource, init) => {
+        // IC-1462 update call error
+        const body = cbor.encode(<SubmitResponse['response']['body']>{
+          error_code: 'IC0503',
+          reject_code: 5,
+          reject_message:
+            'Canister (...) trapped explicitly: canister_inspect_message explicitly refused message',
+        });
+        return Promise.resolve(
+          new Response(body, {
+            status: 200,
+          }),
+        );
       });
 
     const methodName = 'greet';
+    const errorMethodName = 'error';
     const argValue = 'Name';
 
     const arg = IDL.encode([IDL.Text], [argValue]);
@@ -94,6 +109,18 @@ describe('makeActor', () => {
       },
     } as UnSigned<CallRequest>;
 
+    const expectedErrorCallRequest = {
+      content: {
+        request_type: SubmitRequestType.Call,
+        canister_id: canisterId,
+        method_name: errorMethodName,
+        arg,
+        nonce: nonces[0],
+        sender,
+        ingress_expiry: new Expiry(300000),
+      },
+    } as UnSigned<CallRequest>;
+
     const expectedCallRequestId = await requestIdOf(expectedCallRequest.content);
 
     let nonceCount = 0;
@@ -105,6 +132,8 @@ describe('makeActor', () => {
     const reply = await actor.greet(argValue);
 
     expect(reply).toEqual(IDL.decode([IDL.Text], expectedReplyArg)[0]);
+
+    await expect(async () => actor.error()).rejects.toThrow(UpdateCallRejectedError);
 
     const { calls } = mockFetch.mock;
 
@@ -180,6 +209,15 @@ describe('makeActor', () => {
           ingress_expiry: new Expiry(300000),
         },
       }),
+    });
+
+    expect(calls[5][0]).toBe('http://localhost/api/v1/call');
+    expect(calls[5][1]).toEqual({
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/cbor',
+      },
+      body: cbor.encode(expectedErrorCallRequest),
     });
   });
   it('should allow its agent to be invalidated', async () => {
