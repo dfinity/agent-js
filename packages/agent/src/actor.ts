@@ -58,9 +58,13 @@ export class UpdateCallRejectedError extends ActorCallError {
   ) {
     super(canisterId, methodName, 'update', {
       'Request ID': toHex(requestId),
-      ...(response.body
+      ...(response.body?.error_code
         ? {
             'Error code': response.body.error_code,
+          }
+        : {}),
+      ...(response.body
+        ? {
             'Reject code': String(response.body.reject_code),
             'Reject message': response.body.reject_message,
           }

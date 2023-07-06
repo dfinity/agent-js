@@ -97,7 +97,7 @@ export interface SubmitResponse {
     status: number;
     statusText: string;
     body: {
-      error_code: string;
+      error_code?: string;
       reject_code: number;
       reject_message: string;
     } | null;
