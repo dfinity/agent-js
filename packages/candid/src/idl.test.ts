@@ -357,6 +357,12 @@ test('IDL encoding (service)', () => {
     '4449444c026a0171017d00690103666f6f0001010103caffee',
     'service',
   );
+  testDecode(
+    IDL.Service({ foo: IDL.Func([IDL.Text], [IDL.Nat], []) }),
+    Principal.fromText('w7x7r-cok77-xa'),
+    '4449444c02690103666f6f016a0171017d0001010103caffee',
+    'service',
+  );
   test_(
     IDL.Service({ foo: IDL.Func([IDL.Text], [IDL.Nat], ['query']) }),
     Principal.fromText('w7x7r-cok77-xa'),

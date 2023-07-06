@@ -1802,8 +1802,17 @@ export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
   }
 
   rawTable.forEach((entry, i) => {
-    const t = buildType(entry);
-    table[i].fill(t);
+    // Process function type first, so that we can construct the correct service type
+    if (entry[0] === IDLTypeIds.Func) {
+      const t = buildType(entry);
+      table[i].fill(t);
+    }
+  });
+  rawTable.forEach((entry, i) => {
+    if (entry[0] !== IDLTypeIds.Func) {
+      const t = buildType(entry);
+      table[i].fill(t);
+    }
   });
 
   const types = rawTypes.map(t => getType(t));
