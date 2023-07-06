@@ -333,7 +333,7 @@ export class HttpAgent implements Agent {
 
     const responseBuffer = await response.arrayBuffer();
     const responseBody = (
-      responseBuffer.byteLength > 0 ? cbor.decode(responseBuffer) : null
+      response.status === 200 && responseBuffer.byteLength > 0 ? cbor.decode(responseBuffer) : null
     ) as SubmitResponse['response']['body'];
 
     return {
