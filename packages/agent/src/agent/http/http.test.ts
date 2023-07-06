@@ -13,7 +13,7 @@ import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 
 import { JSDOM } from 'jsdom';
-import { AnonymousIdentity, SignIdentity } from '../..';
+import { AnonymousIdentity, SignIdentity, SubmitResponse, UpdateCallRejectedError } from '../..';
 import { Ed25519KeyIdentity } from '../../../../identity/src/identity/ed25519';
 import { toHexString } from '../../../../identity/src/buffer';
 import { AgentError } from '../../errors';
@@ -566,7 +566,7 @@ describe('retry failures', () => {
     let calls = 0;
     const mockFetch: jest.Mock = jest.fn(() => {
       if (calls === 3) {
-        return new Response('test', {
+        return new Response(null, {
           status: 200,
           statusText: 'success!',
         });

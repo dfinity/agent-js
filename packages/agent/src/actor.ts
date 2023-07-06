@@ -58,8 +58,20 @@ export class UpdateCallRejectedError extends ActorCallError {
   ) {
     super(canisterId, methodName, 'update', {
       'Request ID': toHex(requestId),
-      'HTTP status code': response.status.toString(),
-      'HTTP status text': response.statusText,
+      ...(response.body
+        ? {
+            ...(response.body.error_code
+              ? {
+                  'Error code': response.body.error_code,
+                }
+              : {}),
+            'Reject code': String(response.body.reject_code),
+            'Reject message': response.body.reject_message,
+          }
+        : {
+            'HTTP status code': response.status.toString(),
+            'HTTP status text': response.statusText,
+          }),
     });
   }
 }
@@ -364,7 +376,7 @@ function _createActorMethod(
         effectiveCanisterId: ecid,
       });
 
-      if (!response.ok) {
+      if (!response.ok || response.body /* IC-1462 */) {
         throw new UpdateCallRejectedError(cid, methodName, requestId, response);
       }
 
