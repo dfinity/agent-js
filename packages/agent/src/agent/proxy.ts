@@ -1,6 +1,7 @@
 import { JsonObject } from '@dfinity/candid';
 import {
   Agent,
+  ApiQueryResponse,
   CallOptions,
   QueryFields,
   QueryResponse,
@@ -224,12 +225,12 @@ export class ProxyAgent implements Agent {
     }) as Promise<JsonObject>;
   }
 
-  public query(canisterId: Principal | string, fields: QueryFields): Promise<QueryResponse> {
+  public query(canisterId: Principal | string, fields: QueryFields): Promise<ApiQueryResponse> {
     return this._sendAndWait({
       id: this._nextId++,
       type: ProxyMessageKind.Query,
       args: [canisterId.toString(), fields],
-    }) as Promise<QueryResponse>;
+    }) as Promise<ApiQueryResponse>;
   }
 
   private async _sendAndWait(msg: ProxyMessage): Promise<unknown> {
