@@ -356,7 +356,12 @@ export class HttpAgent implements Agent {
       return await this._requestAndRetry(request, tries + 1);
     }
 
-    throw new AgentHTTPResponseError(errorMessage, response);
+    throw new AgentHTTPResponseError(errorMessage, {
+      ok: response.ok,
+      status: response.status,
+      statusText: response.statusText,
+      headers: httpHeadersTransform(response.headers),
+    });
   }
 
   public async query(
