@@ -54,6 +54,12 @@ Actor.createActor(interfaceFactory: InterfaceFactory, configuration: ActorConfig
 
 The `interfaceFactory` is a function that returns a runtime interface that the Actor uses to strucure calls to a canister. The interfaceFactory can be written manually, but it is recommended to use the `dfx generate` command to generate the interface for your project, or to use the `didc` tool to generate the interface for your project.
 
+Actors can also be initialized to include the boundary node http headers, This is done by calling the `Actor.createActor` constructor:
+
+```
+Actor.createActorWithHttpDetails(interfaceFactory: InterfaceFactory, configuration: ActorConfig): ActorSubclass<ActorMethodMappedWithHttpDetails<T>>
+```
+
 ### Inspecting an actor's agent
 
 Use the `Actor.agentOf` method to get the agent of an actor:
