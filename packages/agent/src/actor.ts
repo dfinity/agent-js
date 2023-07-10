@@ -192,6 +192,10 @@ interface ActorMetadata {
 
 const metadataSymbol = Symbol.for('ic-agent-metadata');
 
+export interface CreateActorClassOpts {
+  httpDetails?: boolean;
+}
+
 /**
  * An actor base class. An actor is an object containing only functions that will
  * return a promise. These functions are derived from the IDL definition.
@@ -273,7 +277,7 @@ export class Actor {
 
   public static createActorClass(
     interfaceFactory: IDL.InterfaceFactory,
-    withHttpDetails = false,
+    options?: CreateActorClassOpts,
   ): ActorConstructor {
     const service = interfaceFactory({ IDL });
 
@@ -296,7 +300,7 @@ export class Actor {
         });
 
         for (const [methodName, func] of service._fields) {
-          if (withHttpDetails) {
+          if (options?.httpDetails) {
             func.annotations.push(ACTOR_METHOD_WITH_HTTP_DETAILS);
           }
 
@@ -312,7 +316,7 @@ export class Actor {
     interfaceFactory: IDL.InterfaceFactory,
     configuration: ActorConfig,
   ): ActorSubclass<T> {
-    return new (this.createActorClass(interfaceFactory, false))(
+    return new (this.createActorClass(interfaceFactory))(
       configuration,
     ) as unknown as ActorSubclass<T>;
   }
@@ -321,7 +325,7 @@ export class Actor {
     interfaceFactory: IDL.InterfaceFactory,
     configuration: ActorConfig,
   ): ActorSubclass<ActorMethodMappedWithHttpDetails<T>> {
-    return new (this.createActorClass(interfaceFactory, true))(
+    return new (this.createActorClass(interfaceFactory, { httpDetails: true }))(
       configuration,
     ) as unknown as ActorSubclass<ActorMethodMappedWithHttpDetails<T>>;
   }
