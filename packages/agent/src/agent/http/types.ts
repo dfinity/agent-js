@@ -1,6 +1,5 @@
 import type { Principal } from '@dfinity/principal';
 import { Expiry } from './transforms';
-import { lebEncode } from '@dfinity/candid';
 
 /**
  * @internal
@@ -22,6 +21,8 @@ export interface HttpAgentBaseRequest {
   readonly endpoint: Endpoint;
   request: RequestInit;
 }
+
+export type HttpHeaderField = [string, string];
 
 export interface HttpAgentSubmitRequest extends HttpAgentBaseRequest {
   readonly endpoint: Endpoint.Call;

@@ -2,6 +2,7 @@ import { Principal } from '@dfinity/principal';
 import { RequestId } from '../request_id';
 import { JsonObject } from '@dfinity/candid';
 import { Identity } from '../auth';
+import { HttpHeaderField } from './http/types';
 
 /**
  * Codes used by the replica for rejecting a message.
@@ -34,6 +35,15 @@ export const enum QueryResponseStatus {
   Replied = 'replied',
   Rejected = 'rejected',
 }
+
+export interface HttpDetailsResponse {
+  ok: boolean;
+  status: number;
+  statusText: string;
+  headers: HttpHeaderField[];
+}
+
+export type ApiQueryResponse = QueryResponse & { httpDetails: HttpDetailsResponse };
 
 export interface QueryResponseBase {
   status: QueryResponseStatus;
@@ -101,6 +111,7 @@ export interface SubmitResponse {
       reject_code: number;
       reject_message: string;
     } | null;
+    headers: HttpHeaderField[];
   };
 }
 
@@ -161,11 +172,16 @@ export interface Agent {
    * @param canisterId The Principal of the Canister to send the query to. Sending a query to
    *     the management canister is not supported (as it has no meaning from an agent).
    * @param options Options to use to create and send the query.
+   * @param identity Sender principal to use when sending the query.
    * @returns The response from the replica. The Promise will only reject when the communication
    *     failed. If the query itself failed but no protocol errors happened, the response will
    *     be of type QueryResponseRejected.
    */
-  query(canisterId: Principal | string, options: QueryFields): Promise<QueryResponse>;
+  query(
+    canisterId: Principal | string,
+    options: QueryFields,
+    identity?: Identity | Promise<Identity>,
+  ): Promise<ApiQueryResponse>;
 
   /**
    * By default, the agent is configured to talk to the main Internet Computer,

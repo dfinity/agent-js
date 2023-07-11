@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { HttpAgent, Nonce } from '../index';
 import * as cbor from '../../cbor';
-import { Expiry, makeNonceTransform } from './transforms';
+import { Expiry, httpHeadersTransform, makeNonceTransform } from './transforms';
 import {
   CallRequest,
   Envelope,
@@ -17,7 +17,7 @@ import { AnonymousIdentity, SignIdentity, SubmitResponse, UpdateCallRejectedErro
 import { Ed25519KeyIdentity } from '../../../../identity/src/identity/ed25519';
 import { toHexString } from '../../../../identity/src/buffer';
 import { AgentError } from '../../errors';
-import fetch from 'isomorphic-fetch';
+import { AgentHTTPResponseError } from './errors';
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;
@@ -327,6 +327,15 @@ test('use anonymous principal if unspecified', async () => {
   expect(call2.headers['Content-Type']).toEqual('application/cbor');
 });
 
+describe('transforms', () => {
+  it('should map from fetch Headers to HttpFieldHeader', async () => {
+    const headers = new Headers([]);
+    headers.set('content-type', 'text/plain');
+
+    expect(httpHeadersTransform(headers)).toEqual([['content-type', 'text/plain']]);
+  });
+});
+
 describe('getDefaultFetch', () => {
   it("should use fetch from window if it's available", async () => {
     const generateAgent = () => new HttpAgent({ host: HTTP_AGENT_HOST });
@@ -524,22 +533,22 @@ describe('retry failures', () => {
     }
   });
 
-  it('should throw errors immediately if retryTimes is set to 0', () => {
-    const mockFetch: jest.Mock = jest.fn();
-
-    mockFetch.mockReturnValueOnce(
-      new Response('Error', {
-        status: 500,
-        statusText: 'Internal Server Error',
-      }),
+  it('should throw errors immediately if retryTimes is set to 0', async () => {
+    const mockFetch: jest.Mock = jest.fn(
+      () =>
+        new Response('Error', {
+          status: 500,
+          statusText: 'Internal Server Error',
+        }),
     );
     const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch, retryTimes: 0 });
-    expect(
-      agent.call(Principal.managementCanister(), {
+    const performCall = async () =>
+      await agent.call(Principal.managementCanister(), {
         methodName: 'test',
         arg: new Uint8Array().buffer,
-      }),
-    ).rejects.toThrowErrorMatchingSnapshot();
+      });
+    await expect(performCall).rejects.toThrow(AgentHTTPResponseError);
+    expect(mockFetch.mock.calls.length).toBe(1);
   });
   it('should throw errors after 3 retries by default', async () => {
     const mockFetch: jest.Mock = jest.fn(() => {
