@@ -367,7 +367,7 @@ function _createActorMethod(
   blsVerify?: CreateCertificateOptions['blsVerify'],
 ): ActorMethod {
   let caller: (options: CallConfig, ...args: unknown[]) => Promise<unknown>;
-  if (func.annotations.includes('query')) {
+  if (func.annotations.includes('query') || func.annotations.includes('composite_query')) {
     caller = async (options, ...args) => {
       // First, if there's a config transformation, call it.
       options = {
