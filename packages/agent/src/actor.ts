@@ -369,7 +369,14 @@ function _createActorMethod(
       }
 
       const pollStrategy = pollingStrategyFactory();
-      const responseBytes = await pollForResponse(agent, ecid, requestId, pollStrategy, blsVerify);
+      const responseBytes = await pollForResponse(
+        agent,
+        ecid,
+        requestId,
+        pollStrategy,
+        undefined,
+        blsVerify,
+      );
 
       if (responseBytes !== undefined) {
         return decodeReturnValue(func.retTypes, responseBytes);
