@@ -55,6 +55,7 @@
   },
   "dependencies": {
     "base64-arraybuffer": "^1.0.2",
+    "jsbi": "^4.3.0",
     "mime": "^3.0.0"
   },
   "devDependencies": {

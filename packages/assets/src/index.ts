@@ -23,6 +23,7 @@ import { ReadablePath } from './readable/readablePath';
 import { ReadableBytes } from './readable/readableBytes';
 import { limit, LimitFn } from './utils/limit';
 import fs from 'fs';
+import JSBI from 'jsbi';
 
 /**
  * Supported content encodings by asset canister
@@ -537,7 +538,8 @@ class Asset {
 
     // Check certificate time
     const decodedTime = lebDecode(new PipeArrayBuffer(cert.lookup(['time'])));
-    const certTime = Number(decodedTime / BigInt(1_000_000)); // Convert from nanos to millis
+
+    const certTime = JSBI.toNumber(JSBI.divide(decodedTime, JSBI.BigInt(1_000_000))); // Convert from nanos to millis
     const now = Date.now();
     const maxCertTimeOffset = 300_000; // 5 min
     if (certTime - maxCertTimeOffset > now || certTime + maxCertTimeOffset < now) {

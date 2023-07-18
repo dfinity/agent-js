@@ -7,6 +7,7 @@ import { HttpAgent } from '../agent/http';
 import { Certificate, CreateCertificateOptions } from '../certificate';
 import { toHex } from '../utils/buffer';
 import * as Cbor from '../cbor';
+import JSBI from 'jsbi';
 
 /**
  * Types of an entry on the canisterStatus map.
@@ -220,7 +221,7 @@ const decodeHex = (buf: ArrayBuffer): string => {
   return toHex(buf);
 };
 
-const decodeLeb128 = (buf: ArrayBuffer): bigint => {
+const decodeLeb128 = (buf: ArrayBuffer): JSBI => {
   return lebDecode(new PipeArrayBuffer(buf));
 };
 
@@ -235,7 +236,7 @@ const decodeUtf8 = (buf: ArrayBuffer): string => {
 // time is a LEB128-encoded Nat
 const decodeTime = (buf: ArrayBuffer): Date => {
   const decoded = decodeLeb128(buf);
-  return new Date(Number(decoded / BigInt(1_000_000)));
+  return new Date(JSBI.toNumber(JSBI.divide(decoded, JSBI.BigInt(1_000_000))));
 };
 
 // Controllers are CBOR-encoded buffers, starting with a Tag we don't need
