@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/assets",
-  "version": "0.16.0",
+  "version": "0.16.1",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to manage assets on the Internet Computer",
@@ -50,7 +50,7 @@
     "test:coverage": "jest --verbose --collectCoverage"
   },
   "peerDependencies": {
-    "@dfinity/agent": "^0.16.0",
+    "@dfinity/agent": "^0.16.1",
     "js-sha256": "0.9.0"
   },
   "dependencies": {
