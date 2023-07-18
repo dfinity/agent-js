@@ -1,3 +1,4 @@
+import JSBI from 'jsbi';
 import { fromHexString, PipeArrayBuffer as Pipe, toHexString } from './buffer';
 import {
   lebDecode,
@@ -24,9 +25,12 @@ test('leb', () => {
   expect(toHexString(lebEncode(BigInt(60000000000000000)))).toBe('808098f4e9b5ca6a');
   expect(toHexString(lebEncode(BigInt(60000000000000000)))).toBe('808098f4e9b5ca6a');
 
-  expect(lebDecode(new Pipe(new Uint8Array([0])))).toBe(BigInt(0));
-  expect(lebDecode(new Pipe(new Uint8Array([1])))).toBe(BigInt(1));
-  expect(lebDecode(new Pipe(new Uint8Array([0xe5, 0x8e, 0x26])))).toBe(BigInt(624485));
+  expect(lebDecode(new Pipe(new Uint8Array([0])))).toStrictEqual(JSBI.BigInt(0));
+  expect(lebDecode(new Pipe(new Uint8Array([1])))).toStrictEqual(JSBI.BigInt(1));
+  expect(JSBI.toNumber(lebDecode(new Pipe(new Uint8Array([0]))))).toBe(0);
+  expect(JSBI.toNumber(lebDecode(new Pipe(new Uint8Array([1]))))).toBe(1);
+
+  expect(JSBI.toNumber(lebDecode(new Pipe(new Uint8Array([0xe5, 0x8e, 0x26]))))).toBe(624485);
   expect(
     lebDecode(new Pipe(fromHexString('ef9baf8589cf959a92deb7de8a929eabb424'))).toString(16),
   ).toBe('1234567890abcdef1234567890abcdef');
@@ -45,9 +49,12 @@ test('sleb', () => {
   expect(toHexString(slebEncode(BigInt('2000000')))).toBe('8089fa00');
   expect(toHexString(slebEncode(BigInt('60000000000000000')))).toBe('808098f4e9b5caea00');
 
-  expect(slebDecode(new Pipe(new Uint8Array([0x7f])))).toBe(BigInt(-1));
-  expect(Number(slebDecode(new Pipe(new Uint8Array([0xc0, 0xbb, 0x78]))))).toBe(-123456);
-  expect(slebDecode(new Pipe(new Uint8Array([0x2a])))).toBe(BigInt(42));
+  expect(slebDecode(new Pipe(new Uint8Array([0x7f])))).toStrictEqual(JSBI.BigInt(-1));
+  expect(JSBI.toNumber(slebDecode(new Pipe(new Uint8Array([0x7f]))))).toBe(-1);
+
+  expect(JSBI.toNumber(slebDecode(new Pipe(new Uint8Array([0xc0, 0xbb, 0x78]))))).toBe(-123456);
+  expect(slebDecode(new Pipe(new Uint8Array([0x2a])))).toStrictEqual(JSBI.BigInt(42));
+  expect(JSBI.toNumber(slebDecode(new Pipe(new Uint8Array([0x2a]))))).toBe(42);
   expect(
     slebDecode(new Pipe(fromHexString('91e4d0faf6b0eae5eda1c8a1f5ede1d4cb5b'))).toString(16),
   ).toBe('-1234567890abcdef1234567890abcdef');

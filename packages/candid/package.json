@@ -52,10 +52,10 @@
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
     "esbuild": "^0.15.16",
-    "eslint-plugin-jsdoc": "^39.3.3",
     "eslint": "^8.19.0",
-    "jest-diff": "^27.3.1",
+    "eslint-plugin-jsdoc": "^39.3.3",
     "jest": "^28.1.2",
+    "jest-diff": "^27.3.1",
     "prettier": "^2.0.5",
     "size-limit": "^8.1.0",
     "text-encoding": "^0.7.0",
@@ -72,5 +72,8 @@
       "limit": "100 kB",
       "webpack": false
     }
-  ]
+  ],
+  "dependencies": {
+    "jsbi": "^4.3.0"
+  }
 }

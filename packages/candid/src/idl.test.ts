@@ -6,13 +6,24 @@ import * as IDL from './idl';
 import { Principal } from '@dfinity/principal';
 import { fromHexString, toHexString } from './utils/buffer';
 import { idlLabelToId } from './utils/hash';
+import JSBI from 'jsbi';
 
 function testEncode(typ: IDL.Type, val: any, hex: string, _str: string) {
   expect(toHexString(IDL.encode([typ], [val]))).toEqual(hex);
 }
 
 function testDecode(typ: IDL.Type, val: any, hex: string, _str: string) {
-  expect(IDL.decode([typ], fromHexString(hex))[0]).toEqual(val);
+  if (IDL.decode([typ], fromHexString(hex))[0] instanceof JSBI) {
+    expect(IDL.decode([typ], fromHexString(hex))[0]).toStrictEqual(JSBI.BigInt(val));
+
+    if (val instanceof JSBI) {
+      expect(IDL.decode([typ], fromHexString(hex))[0]).toEqual(val);
+    } else {
+      expect(JSBI.toNumber(IDL.decode([typ], fromHexString(hex))[0] as JSBI)).toEqual(val);
+    }
+  } else {
+    expect(IDL.decode([typ], fromHexString(hex))[0]).toEqual(val);
+  }
 }
 
 function test_(typ: IDL.Type, val: any, hex: string, str: string) {
@@ -68,17 +79,18 @@ test('IDL encoding (text)', () => {
 
 test('IDL encoding (int)', () => {
   // Int
-  test_(IDL.Int, BigInt(0), '4449444c00017c00', 'Int');
-  test_(IDL.Int, BigInt(42), '4449444c00017c2a', 'Int');
-  test_(IDL.Int, BigInt(1234567890), '4449444c00017cd285d8cc04', 'Positive Int');
+  test_(IDL.Int, 0, '4449444c00017c00', 'Int');
+  test_(IDL.Int, JSBI.BigInt(0), '4449444c00017c00', 'Int');
+  test_(IDL.Int, JSBI.BigInt(42), '4449444c00017c2a', 'Int');
+  test_(IDL.Int, JSBI.BigInt(1234567890), '4449444c00017cd285d8cc04', 'Positive Int');
   test_(
     IDL.Int,
-    BigInt('60000000000000000'),
+    JSBI.BigInt('60000000000000000'),
     '4449444c00017c808098f4e9b5caea00',
     'Positive BigInt',
   );
-  test_(IDL.Int, BigInt(-1234567890), '4449444c00017caefaa7b37b', 'Negative Int');
-  test_(IDL.Opt(IDL.Int), [BigInt(42)], '4449444c016e7c0100012a', 'Nested Int');
+  test_(IDL.Int, JSBI.BigInt(-1234567890), '4449444c00017caefaa7b37b', 'Negative Int');
+  test_(IDL.Opt(IDL.Int), [JSBI.BigInt(42)], '4449444c016e7c0100012a', 'Nested Int');
   testEncode(IDL.Opt(IDL.Int), [42], '4449444c016e7c0100012a', 'Nested Int (number)');
   expect(() => IDL.decode([IDL.Int], fromHexString('4449444c00017d2a'))).toThrow(
     /type mismatch: type on the wire nat, expect type int/,
@@ -87,10 +99,15 @@ test('IDL encoding (int)', () => {
 
 test('IDL encoding (nat)', () => {
   // Nat
-  test_(IDL.Nat, BigInt(42), '4449444c00017d2a', 'Nat');
-  test_(IDL.Nat, BigInt(0), '4449444c00017d00', 'Nat of 0');
-  test_(IDL.Nat, BigInt(1234567890), '4449444c00017dd285d8cc04', 'Positive Nat');
-  test_(IDL.Nat, BigInt('60000000000000000'), '4449444c00017d808098f4e9b5ca6a', 'Positive BigInt');
+  test_(IDL.Nat, JSBI.BigInt(42), '4449444c00017d2a', 'Nat');
+  test_(IDL.Nat, JSBI.BigInt(0), '4449444c00017d00', 'Nat of 0');
+  test_(IDL.Nat, JSBI.BigInt(1234567890), '4449444c00017dd285d8cc04', 'Positive Nat');
+  test_(
+    IDL.Nat,
+    JSBI.BigInt('60000000000000000'),
+    '4449444c00017d808098f4e9b5ca6a',
+    'Positive BigInt',
+  );
   testEncode(IDL.Opt(IDL.Nat), [42], '4449444c016e7d0100012a', 'Nested Nat (number)');
   expect(() => IDL.encode([IDL.Nat], [-1])).toThrow(/Invalid nat argument/);
 });
@@ -124,16 +141,16 @@ test('IDL encoding (fixed-width number)', () => {
   test_(IDL.Int32, -1234567890, '4449444c0001752efd69b6', 'Negative Int32');
   test_(IDL.Int32, -0x7fffffff, '4449444c00017501000080', 'Negative Int32');
   test_(IDL.Int32, 0x7fffffff, '4449444c000175ffffff7f', 'Positive Int32');
-  test_(IDL.Int64, BigInt(42), '4449444c0001742a00000000000000', 'Int64');
-  test_(IDL.Int64, BigInt(-42), '4449444c000174d6ffffffffffffff', 'Int64');
-  test_(IDL.Int64, BigInt(1234567890), '4449444c000174d202964900000000', 'Positive Int64');
+  test_(IDL.Int64, JSBI.BigInt(42), '4449444c0001742a00000000000000', 'Int64');
+  test_(IDL.Int64, JSBI.BigInt(-42), '4449444c000174d6ffffffffffffff', 'Int64');
+  test_(IDL.Int64, JSBI.BigInt(1234567890), '4449444c000174d202964900000000', 'Positive Int64');
   test_(IDL.Nat8, 42, '4449444c00017b2a', 'Nat8');
   test_(IDL.Nat8, 0, '4449444c00017b00', 'Nat8');
   test_(IDL.Nat8, 255, '4449444c00017bff', 'Nat8');
   test_(IDL.Nat32, 0, '4449444c00017900000000', 'Nat32');
   test_(IDL.Nat32, 42, '4449444c0001792a000000', 'Nat32');
   test_(IDL.Nat32, 0xffffffff, '4449444c000179ffffffff', 'Nat32');
-  test_(IDL.Nat64, BigInt(1234567890), '4449444c000178d202964900000000', 'Positive Nat64');
+  test_(IDL.Nat64, JSBI.BigInt(1234567890), '4449444c000178d202964900000000', 'Positive Nat64');
   expect(() => IDL.encode([IDL.Nat32], [-42])).toThrow(/Invalid nat32 argument/);
   expect(() => IDL.encode([IDL.Int8], [256])).toThrow(/Invalid int8 argument/);
   expect(() => IDL.encode([IDL.Int32], [0xffffffff])).toThrow(/Invalid int32 argument/);
@@ -143,7 +160,7 @@ test('IDL encoding (tuple)', () => {
   // Tuple
   test_(
     IDL.Tuple(IDL.Int, IDL.Text),
-    [BigInt(42), '💩'],
+    [JSBI.BigInt(42), '💩'],
     '4449444c016c02007c017101002a04f09f92a9',
     'Pairs',
   );
@@ -171,6 +188,12 @@ test('IDL encoding (arraybuffer)', () => {
     '4449444c016d760100060000010002000300ff7fffff',
     'Array of Int16s',
   );
+  // test_(
+  //   IDL.Vec(IDL.Nat64),
+  //   new BigUint64Array([JSBI.BigInt(0), JSBI.BigInt(1), JSBI.leftShift(JSBI.BigInt(1), JSBI.BigInt(60)), JSBI.BigInt(13)]),
+  //   '4449444c016d780100040000000000000000010000000000000000000000000000100d00000000000000',
+  //   'Array of Nat64s',
+  // );
   test_(
     IDL.Vec(IDL.Nat64),
     new BigUint64Array([BigInt(0), BigInt(1), BigInt(1) << BigInt(60), BigInt(13)]),
@@ -189,7 +212,7 @@ test('IDL encoding (array)', () => {
   // Array
   test_(
     IDL.Vec(IDL.Int),
-    [0, 1, 2, 3].map(x => BigInt(x)),
+    [0, 1, 2, 3].map(x => JSBI.BigInt(x)),
     '4449444c016d7c01000400010203',
     'Array of Ints',
   );
@@ -202,7 +225,7 @@ test('IDL encoding (array + tuples)', () => {
   // Array of Tuple
   test_(
     IDL.Vec(IDL.Tuple(IDL.Int, IDL.Text)),
-    [[BigInt(42), 'text']],
+    [[JSBI.BigInt(42), 'text']],
     '4449444c026c02007c01716d000101012a0474657874',
     'Arr of Tuple',
   );
@@ -226,7 +249,7 @@ test('IDL encoding (record)', () => {
   // Test that additional keys are ignored
   testEncode(
     IDL.Record({ foo: IDL.Text, bar: IDL.Int }),
-    { foo: '💩', bar: BigInt(42), baz: BigInt(0) },
+    { foo: '💩', bar: JSBI.BigInt(42), baz: JSBI.BigInt(0) },
     '4449444c016c02d3e3aa027c868eb7027101002a04f09f92a9',
     'Record',
   );
@@ -247,7 +270,7 @@ test('IDL decoding (skip fields)', () => {
   );
   testDecode(
     IDL.Record({ foo: IDL.Text, bar: IDL.Int }),
-    { foo: '💩', bar: BigInt(42) },
+    { foo: '💩', bar: JSBI.BigInt(42) },
     '4449444c016c04017f027ed3e3aa027c868eb702710100012a04f09f92a9',
     'ignore record fields',
   );
@@ -405,8 +428,13 @@ test('IDL encoding (variants)', () => {
 
   // Test for option
   test_(IDL.Opt(IDL.Nat), [], '4449444c016e7d010000', 'None option');
-  test_(IDL.Opt(IDL.Nat), [BigInt(1)], '4449444c016e7d01000101', 'Some option');
-  test_(IDL.Opt(IDL.Opt(IDL.Nat)), [[BigInt(1)]], '4449444c026e7d6e000101010101', 'Nested option');
+  test_(IDL.Opt(IDL.Nat), [JSBI.BigInt(1)], '4449444c016e7d01000101', 'Some option');
+  test_(
+    IDL.Opt(IDL.Opt(IDL.Nat)),
+    [[JSBI.BigInt(1)]],
+    '4449444c026e7d6e000101010101',
+    'Nested option',
+  );
   test_(IDL.Opt(IDL.Opt(IDL.Null)), [[null]], '4449444c026e7f6e0001010101', 'Null option');
 
   // Type description sharing
@@ -426,7 +454,7 @@ test('IDL encoding (rec)', () => {
   test_(List, [], '4449444c026e016c02a0d2aca8047c90eddae70400010000', 'Empty list');
   test_(
     List,
-    [{ head: BigInt(1), tail: [{ head: BigInt(2), tail: [] }] }],
+    [{ head: JSBI.BigInt(1), tail: [{ head: JSBI.BigInt(2), tail: [] }] }],
     '4449444c026e016c02a0d2aca8047c90eddae7040001000101010200',
     'List',
   );
@@ -439,7 +467,7 @@ test('IDL encoding (rec)', () => {
   test_(List1, [], '4449444c026e016c02a0d2aca8047c90eddae70400010000', 'Empty list');
   test_(
     List1,
-    [{ head: BigInt(1), tail: [{ head: BigInt(2), tail: [] }] }],
+    [{ head: JSBI.BigInt(1), tail: [{ head: JSBI.BigInt(2), tail: [] }] }],
     '4449444c026e016c02a0d2aca8047c90eddae7040001000101010200',
     'List',
   );
@@ -451,7 +479,7 @@ test('IDL encoding (multiple arguments)', () => {
   // Test for multiple arguments
   test_args(
     [IDL.Nat, IDL.Opt(IDL.Text), Result],
-    [BigInt(42), ['test'], { ok: 'good' }],
+    [JSBI.BigInt(42), ['test'], { ok: 'good' }],
     '4449444c026e716b029cc20171e58eb40271037d00012a0104746573740004676f6f64',
     'Multiple arguments',
   );
@@ -459,7 +487,7 @@ test('IDL encoding (multiple arguments)', () => {
 });
 
 test('Stringify bigint', () => {
-  expect(() => IDL.encode([IDL.Nat], [{ x: BigInt(42) }])).toThrow(/Invalid nat argument/);
+  expect(() => IDL.encode([IDL.Nat], [{ x: JSBI.BigInt(42) }])).toThrow(/Invalid nat argument/);
 });
 
 test('decode / encode unknown variant', () => {
@@ -486,13 +514,15 @@ test('decode unknown text', () => {
 
 test('decode unknown int', () => {
   const int = IDL.decode([IDL.Unknown], fromHexString('4449444c00017c2a'))[0] as any;
-  expect(int.valueOf()).toEqual(BigInt(42));
+  // expect(int.valueOf()).toEqual(BigInt(42));
+  expect(JSBI.toNumber(int)).toEqual(42);
   expect(int.type().name).toEqual(IDL.Int.name);
 });
 
 test('decode unknown nat', () => {
   const nat = IDL.decode([IDL.Unknown], fromHexString('4449444c00017d2a'))[0] as any;
-  expect(nat.valueOf()).toEqual(BigInt(42));
+  // expect(nat.valueOf()).toEqual(BigInt(42));
+  expect(JSBI.toNumber(nat)).toEqual(42);
   expect(nat.type().name).toEqual(IDL.Nat.name);
 });
 
@@ -521,7 +551,7 @@ test('decode unknown fixed-width number', () => {
     [IDL.Unknown],
     fromHexString('4449444c0001742a00000000000000'),
   )[0] as any;
-  expect(int64.valueOf()).toEqual(BigInt(42));
+  expect(JSBI.toNumber(int64)).toEqual(42);
   expect(int64.type().name).toEqual(IDL.Int64.name);
 
   const nat8 = IDL.decode([IDL.Unknown], fromHexString('4449444c00017b2a'))[0] as any;
@@ -536,7 +566,7 @@ test('decode unknown fixed-width number', () => {
     [IDL.Unknown],
     fromHexString('4449444c000178d202964900000000'),
   )[0] as any;
-  expect(nat64.valueOf()).toEqual(BigInt(1234567890));
+  expect(nat64).toStrictEqual(JSBI.BigInt(1234567890));
   expect(nat64.type().name).toEqual(IDL.Nat64.name);
 });
 
@@ -563,7 +593,7 @@ test('decode unknown float', () => {
 test('decode unknown vec of tuples', () => {
   const encoded = '4449444c026c02007c01716d000101012a0474657874';
   const value = IDL.decode([IDL.Unknown], fromHexString(encoded))[0] as any;
-  expect(value).toEqual([[BigInt(42), 'text']]);
+  expect(value).toEqual([[JSBI.BigInt(42), 'text']]);
   const reencoded = toHexString(IDL.encode([value.type()], [value]));
   expect(reencoded).toEqual(encoded);
 });
@@ -596,14 +626,17 @@ test('decode / encode unknown mutual recursive lists', () => {
   const encoded = '4449444c026e016c02a0d2aca8047c90eddae7040001000101010200';
   const value = IDL.decode([IDL.Unknown], fromHexString(encoded))[0] as any;
   expect(value).toEqual([
-    { _1158359328_: BigInt(1), _1291237008_: [{ _1158359328_: BigInt(2), _1291237008_: [] }] },
+    {
+      _1158359328_: JSBI.BigInt(1),
+      _1291237008_: [{ _1158359328_: JSBI.BigInt(2), _1291237008_: [] }],
+    },
   ]);
 
   const reencoded = toHexString(IDL.encode([value.type()], [value]));
   // expect(reencoded).toEqual(encoded); does not hold because type table is different
   // however the result is still compatible with original types:
   const value2 = IDL.decode([List1], fromHexString(reencoded))[0];
-  expect(value2).toEqual([{ head: BigInt(1), tail: [{ head: BigInt(2), tail: [] }] }]);
+  expect(value2).toEqual([{ head: JSBI.BigInt(1), tail: [{ head: JSBI.BigInt(2), tail: [] }] }]);
 });
 
 test('decode / encode unknown nested record', () => {
@@ -663,7 +696,7 @@ test('should correctly decode expected optional fields with lower hash than requ
   expect(value).toEqual({
     body: 'foo',
     headers: [],
-    status_code: BigInt(200),
+    status_code: JSBI.BigInt(200),
     streaming_strategy: [],
     upgrade: [true],
   });

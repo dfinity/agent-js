@@ -16,6 +16,7 @@ import {
   writeUIntLE,
 } from './utils/leb128';
 import { iexp2 } from './utils/bigint-math';
+import JSBI from 'jsbi';
 
 // tslint:disable:max-line-length
 /**
@@ -333,6 +334,7 @@ export class UnknownClass extends Type {
     } else {
       typeFunc = () => t;
     }
+
     // Do not use 'decodedValue.type = typeFunc' because this would lead to an enumerable property
     // 'type' which means it would be serialized if the value would be candid encoded again.
     // This in turn leads to problems if the decoded value is a variant because these values are
@@ -343,6 +345,7 @@ export class UnknownClass extends Type {
       enumerable: false,
       configurable: true,
     });
+
     return decodedValue;
   }
 
@@ -482,7 +485,7 @@ export class TextClass extends PrimitiveType<string> {
   public decodeValue(b: Pipe, t: Type) {
     this.checkType(t);
     const len = lebDecode(b);
-    const buf = safeRead(b, Number(len));
+    const buf = safeRead(b, JSBI.toNumber(len));
     const decoder = new TextDecoder('utf8', { fatal: true });
     return decoder.decode(buf);
   }
@@ -499,19 +502,19 @@ export class TextClass extends PrimitiveType<string> {
 /**
  * Represents an IDL Int
  */
-export class IntClass extends PrimitiveType<bigint> {
+export class IntClass extends PrimitiveType<JSBI> {
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitInt(this, d);
   }
 
-  public covariant(x: any): x is bigint {
+  public covariant(x: any): x is JSBI {
     // We allow encoding of JavaScript plain numbers.
     // But we will always decode to bigint.
-    if (typeof x === 'bigint' || Number.isInteger(x)) return true;
+    if (x instanceof JSBI || Number.isInteger(x)) return true;
     throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
-  public encodeValue(x: bigint | number) {
+  public encodeValue(x: JSBI | number) {
     return slebEncode(x);
   }
 
@@ -521,14 +524,14 @@ export class IntClass extends PrimitiveType<bigint> {
 
   public decodeValue(b: Pipe, t: Type) {
     this.checkType(t);
-    return slebDecode(b);
+    return JSBI.BigInt(slebDecode(b));
   }
 
   get name() {
     return 'int';
   }
 
-  public valueToString(x: bigint) {
+  public valueToString(x: JSBI) {
     return x.toString();
   }
 }
@@ -536,19 +539,23 @@ export class IntClass extends PrimitiveType<bigint> {
 /**
  * Represents an IDL Nat
  */
-export class NatClass extends PrimitiveType<bigint> {
+export class NatClass extends PrimitiveType<JSBI> {
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitNat(this, d);
   }
 
-  public covariant(x: any): x is bigint {
+  public covariant(x: any): x is JSBI {
     // We allow encoding of JavaScript plain numbers.
     // But we will always decode to bigint.
-    if ((typeof x === 'bigint' && x >= BigInt(0)) || (Number.isInteger(x) && x >= 0)) return true;
+    if (
+      (x instanceof JSBI && JSBI.greaterThanOrEqual(x, JSBI.BigInt(0))) ||
+      (Number.isInteger(x) && x >= 0)
+    )
+      return true;
     throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
-  public encodeValue(x: bigint | number) {
+  public encodeValue(x: JSBI | number) {
     return lebEncode(x);
   }
 
@@ -558,14 +565,14 @@ export class NatClass extends PrimitiveType<bigint> {
 
   public decodeValue(b: Pipe, t: Type) {
     this.checkType(t);
-    return lebDecode(b);
+    return JSBI.BigInt(lebDecode(b));
   }
 
   get name() {
     return 'nat';
   }
 
-  public valueToString(x: bigint) {
+  public valueToString(x: JSBI) {
     return x.toString();
   }
 }
@@ -628,7 +635,7 @@ export class FloatClass extends PrimitiveType<number> {
 /**
  * Represents an IDL fixed-width Int(n)
  */
-export class FixedIntClass extends PrimitiveType<bigint | number> {
+export class FixedIntClass extends PrimitiveType<JSBI | number> {
   constructor(public readonly _bits: number) {
     super();
   }
@@ -637,15 +644,22 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
     return v.visitFixedInt(this, d);
   }
 
-  public covariant(x: any): x is bigint {
-    const min = iexp2(this._bits - 1) * BigInt(-1);
-    const max = iexp2(this._bits - 1) - BigInt(1);
+  public covariant(x: any): x is JSBI {
+    const min = JSBI.multiply(
+      JSBI.exponentiate(JSBI.BigInt(2), JSBI.BigInt(this._bits - 1)),
+      JSBI.BigInt(-1),
+    );
+    const max = JSBI.subtract(
+      JSBI.exponentiate(JSBI.BigInt(2), JSBI.BigInt(this._bits - 1)),
+      JSBI.BigInt(1),
+    );
     let ok = false;
-    if (typeof x === 'bigint') {
-      ok = x >= min && x <= max;
+    if (x instanceof JSBI) {
+      ok =
+        JSBI.greaterThanOrEqual(x, JSBI.BigInt(min)) && JSBI.lessThanOrEqual(x, JSBI.BigInt(max));
     } else if (Number.isInteger(x)) {
-      const v = BigInt(x);
-      ok = v >= min && v <= max;
+      const v = JSBI.BigInt(x);
+      ok = JSBI.greaterThanOrEqual(v, min) && JSBI.lessThanOrEqual(v, max);
     } else {
       ok = false;
     }
@@ -654,7 +668,7 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
     throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
-  public encodeValue(x: bigint | number) {
+  public encodeValue(x: JSBI | number) {
     return writeIntLE(x, this._bits / 8);
   }
 
@@ -667,7 +681,7 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
     this.checkType(t);
     const num = readIntLE(b, this._bits / 8);
     if (this._bits <= 32) {
-      return Number(num);
+      return JSBI.toNumber(num);
     } else {
       return num;
     }
@@ -677,7 +691,7 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
     return `int${this._bits}`;
   }
 
-  public valueToString(x: bigint | number) {
+  public valueToString(x: JSBI | number) {
     return x.toString();
   }
 }
@@ -685,7 +699,7 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
 /**
  * Represents an IDL fixed-width Nat(n)
  */
-export class FixedNatClass extends PrimitiveType<bigint | number> {
+export class FixedNatClass extends PrimitiveType<JSBI | number> {
   constructor(public readonly _bits: number) {
     super();
   }
@@ -694,14 +708,16 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
     return v.visitFixedNat(this, d);
   }
 
-  public covariant(x: any): x is bigint {
-    const max = iexp2(this._bits);
+  public covariant(x: any): x is JSBI {
+    // const max = iexp2(this._bits);
+    const max = JSBI.exponentiate(JSBI.BigInt(2), JSBI.BigInt(this._bits));
+
     let ok = false;
-    if (typeof x === 'bigint' && x >= BigInt(0)) {
-      ok = x < max;
+    if (x instanceof JSBI && JSBI.greaterThanOrEqual(x, JSBI.BigInt(0))) {
+      ok = JSBI.lessThan(x, max);
     } else if (Number.isInteger(x) && x >= 0) {
-      const v = BigInt(x);
-      ok = v < max;
+      const v = JSBI.BigInt(x);
+      ok = JSBI.lessThan(v, max);
     } else {
       ok = false;
     }
@@ -709,7 +725,7 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
     throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
-  public encodeValue(x: bigint | number) {
+  public encodeValue(x: JSBI | number) {
     return writeUIntLE(x, this._bits / 8);
   }
 
@@ -722,7 +738,7 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
     this.checkType(t);
     const num = readUIntLE(b, this._bits / 8);
     if (this._bits <= 32) {
-      return Number(num);
+      return JSBI.toNumber(num);
     } else {
       return num;
     }
@@ -732,7 +748,7 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
     return `nat${this._bits}`;
   }
 
-  public valueToString(x: bigint | number) {
+  public valueToString(x: JSBI | number) {
     return x.toString();
   }
 }
@@ -820,7 +836,7 @@ export class VecClass<T> extends ConstructType<T[]> {
     if (!(vec instanceof VecClass)) {
       throw new Error('Not a vector type');
     }
-    const len = Number(lebDecode(b));
+    const len = JSBI.toNumber(lebDecode(b));
 
     if (this._type instanceof FixedNatClass) {
       if (this._type._bits == 8) {
@@ -948,7 +964,7 @@ export class OptClass<T> extends ConstructType<[T] | []> {
 
 /**
  * Represents an IDL Record
- * @param {Object} [fields] - mapping of function name to Type
+ * @param {object} [fields] - mapping of function name to Type
  */
 export class RecordClass extends ConstructType<Record<string, any>> {
   protected readonly _fields: Array<[string, Type]>;
@@ -1157,7 +1173,7 @@ export class TupleClass<T extends any[]> extends RecordClass {
 
 /**
  * Represents an IDL Variant
- * @param {Object} [fields] - mapping of function name to Type
+ * @param {object} [fields] - mapping of function name to Type
  */
 export class VariantClass extends ConstructType<Record<string, any>> {
   private readonly _fields: Array<[string, Type]>;
@@ -1220,11 +1236,11 @@ export class VariantClass extends ConstructType<Record<string, any>> {
     if (!(variant instanceof VariantClass)) {
       throw new Error('Not a variant type');
     }
-    const idx = Number(lebDecode(b));
-    if (idx >= variant._fields.length) {
+    const idx = lebDecode(b);
+    if (JSBI.greaterThanOrEqual(idx, JSBI.BigInt(variant._fields.length))) {
       throw Error('Invalid variant index: ' + idx);
     }
-    const [wireHash, wireType] = variant._fields[idx];
+    const [wireHash, wireType] = variant._fields[JSBI.toNumber(idx)];
     for (const [key, expectType] of this._fields) {
       if (idlLabelToId(wireHash) === idlLabelToId(key)) {
         const value = expectType.decodeValue(b, wireType);
@@ -1339,7 +1355,7 @@ function decodePrincipalId(b: Pipe): PrincipalId {
     throw new Error('Cannot decode principal');
   }
 
-  const len = Number(lebDecode(b));
+  const len = JSBI.toNumber(lebDecode(b));
   return PrincipalId.fromUint8Array(new Uint8Array(safeRead(b, len)));
 }
 
@@ -1438,7 +1454,7 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
     }
     const canister = decodePrincipalId(b);
 
-    const mLen = Number(lebDecode(b));
+    const mLen = JSBI.toNumber(lebDecode(b));
     const buf = safeRead(b, mLen);
     const decoder = new TextDecoder('utf8', { fatal: true });
     const method = decoder.decode(buf);
@@ -1590,32 +1606,32 @@ export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
 
   function readTypeTable(pipe: Pipe): [Array<[IDLTypeIds, any]>, number[]] {
     const typeTable: Array<[IDLTypeIds, any]> = [];
-    const len = Number(lebDecode(pipe));
+    const len = JSBI.toNumber(lebDecode(pipe));
 
     for (let i = 0; i < len; i++) {
-      const ty = Number(slebDecode(pipe));
+      const ty = JSBI.toNumber(slebDecode(pipe));
       switch (ty) {
         case IDLTypeIds.Opt:
         case IDLTypeIds.Vector: {
-          const t = Number(slebDecode(pipe));
+          const t = slebDecode(pipe);
           typeTable.push([ty, t]);
           break;
         }
         case IDLTypeIds.Record:
         case IDLTypeIds.Variant: {
           const fields = [];
-          let objectLength = Number(lebDecode(pipe));
+          let objectLength = JSBI.toNumber(lebDecode(pipe));
           let prevHash;
           while (objectLength--) {
-            const hash = Number(lebDecode(pipe));
-            if (hash >= Math.pow(2, 32)) {
+            const hash = lebDecode(pipe);
+            if (JSBI.greaterThanOrEqual(hash, JSBI.exponentiate(JSBI.BigInt(2), JSBI.BigInt(32)))) {
               throw new Error('field id out of 32-bit range');
             }
-            if (typeof prevHash === 'number' && prevHash >= hash) {
+            if (prevHash instanceof JSBI && JSBI.greaterThanOrEqual(prevHash, hash)) {
               throw new Error('field id collision or not sorted');
             }
             prevHash = hash;
-            const t = Number(slebDecode(pipe));
+            const t = slebDecode(pipe);
             fields.push([hash, t]);
           }
           typeTable.push([ty, fields]);
@@ -1623,19 +1639,19 @@ export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
         }
         case IDLTypeIds.Func: {
           const args = [];
-          let argLength = Number(lebDecode(pipe));
+          let argLength = JSBI.toNumber(lebDecode(pipe));
           while (argLength--) {
-            args.push(Number(slebDecode(pipe)));
+            args.push(JSBI.toNumber(slebDecode(pipe)));
           }
           const returnValues = [];
-          let returnValuesLength = Number(lebDecode(pipe));
+          let returnValuesLength = JSBI.toNumber(lebDecode(pipe));
           while (returnValuesLength--) {
-            returnValues.push(Number(slebDecode(pipe)));
+            returnValues.push(JSBI.toNumber(slebDecode(pipe)));
           }
           const annotations = [];
-          let annotationLength = Number(lebDecode(pipe));
+          let annotationLength = JSBI.toNumber(lebDecode(pipe));
           while (annotationLength--) {
-            const annotation = Number(lebDecode(pipe));
+            const annotation = JSBI.toNumber(lebDecode(pipe));
             switch (annotation) {
               case 1: {
                 annotations.push('query');
@@ -1653,10 +1669,10 @@ export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
           break;
         }
         case IDLTypeIds.Service: {
-          let servLength = Number(lebDecode(pipe));
+          let servLength = JSBI.toNumber(lebDecode(pipe));
           const methods = [];
           while (servLength--) {
-            const nameLength = Number(lebDecode(pipe));
+            const nameLength = JSBI.toNumber(lebDecode(pipe));
             const funcName = new TextDecoder().decode(safeRead(pipe, nameLength));
             const funcType = slebDecode(pipe);
             methods.push([funcName, funcType]);
@@ -1670,9 +1686,9 @@ export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
     }
 
     const rawList: number[] = [];
-    const length = Number(lebDecode(pipe));
+    const length = JSBI.toNumber(lebDecode(pipe));
     for (let i = 0; i < length; i++) {
-      rawList.push(Number(slebDecode(pipe)));
+      rawList.push(JSBI.toNumber(slebDecode(pipe)));
     }
     return [typeTable, rawList];
   }
@@ -1682,7 +1698,11 @@ export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
   }
 
   const table: RecClass[] = rawTable.map(_ => Rec());
-  function getType(t: number): Type {
+  function getType(t: number | JSBI): Type {
+    if (t instanceof JSBI) {
+      t = JSBI.toNumber(t);
+    }
+
     if (t < -24) {
       throw new Error('future value not supported');
     }

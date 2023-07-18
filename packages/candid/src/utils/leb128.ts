@@ -8,6 +8,7 @@
 // TODO: The best solution would be to have our own buffer type around
 //       Uint8Array which is standard.
 import { PipeArrayBuffer as Pipe } from './buffer';
+import JSBI from 'jsbi';
 
 function eob(): never {
   throw new Error('unexpected end of buffer');
@@ -38,25 +39,26 @@ export function safeReadUint8(pipe: Pipe): number {
 }
 
 /**
- * Encode a positive number (or bigint) into a Buffer. The number will be floored to the
+ * Encode a positive number (or JSBI) into a Buffer. The number will be floored to the
  * nearest integer.
  * @param value The number to encode.
  */
-export function lebEncode(value: bigint | number): ArrayBuffer {
-  if (typeof value === 'number') {
-    value = BigInt(value);
+export function lebEncode(value: JSBI | number | bigint): ArrayBuffer {
+  if (!(value instanceof JSBI)) {
+    value = JSBI.BigInt(`${value}`);
   }
 
-  if (value < BigInt(0)) {
+  if (JSBI.lessThan(value, JSBI.BigInt(0))) {
     throw new Error('Cannot leb encode negative values.');
   }
 
-  const byteLength = (value === BigInt(0) ? 0 : Math.ceil(Math.log2(Number(value)))) + 1;
+  const byteLength =
+    (JSBI.equal(value, JSBI.BigInt(0)) ? 0 : Math.ceil(Math.log2(JSBI.toNumber(value)))) + 1;
   const pipe = new Pipe(new ArrayBuffer(byteLength), 0);
   while (true) {
-    const i = Number(value & BigInt(0x7f));
-    value /= BigInt(0x80);
-    if (value === BigInt(0)) {
+    const i = JSBI.toNumber(JSBI.bitwiseAnd(value, JSBI.BigInt(0x7f)));
+    value = JSBI.divide(value, JSBI.BigInt(0x80));
+    if (JSBI.equal(value, JSBI.BigInt(0))) {
       pipe.write(new Uint8Array([i]));
       break;
     } else {
@@ -68,47 +70,51 @@ export function lebEncode(value: bigint | number): ArrayBuffer {
 }
 
 /**
- * Decode a leb encoded buffer into a bigint. The number will always be positive (does not
+ * Decode a leb encoded buffer into a JSBI. The number will always be positive (does not
  * support signed leb encoding).
  * @param pipe A Buffer containing the leb encoded bits.
  */
-export function lebDecode(pipe: Pipe): bigint {
-  let weight = BigInt(1);
-  let value = BigInt(0);
+export function lebDecode(pipe: Pipe): JSBI {
+  let weight = JSBI.BigInt(1);
+  let value = JSBI.BigInt(0);
   let byte;
 
   do {
     byte = safeReadUint8(pipe);
-    value += BigInt(byte & 0x7f).valueOf() * weight;
-    weight *= BigInt(128);
+    value = JSBI.add(
+      value,
+      JSBI.multiply(JSBI.bitwiseAnd(JSBI.BigInt(byte), JSBI.BigInt(0x7f)), weight),
+    );
+    weight = JSBI.multiply(weight, JSBI.BigInt(128));
   } while (byte >= 0x80);
 
   return value;
 }
 
 /**
- * Encode a number (or bigint) into a Buffer, with support for negative numbers. The number
+ * Encode a number (or JSBI) into a Buffer, with support for negative numbers. The number
  * will be floored to the nearest integer.
  * @param value The number to encode.
  */
-export function slebEncode(value: bigint | number): ArrayBuffer {
-  if (typeof value === 'number') {
-    value = BigInt(value);
+export function slebEncode(value: JSBI | number | bigint): ArrayBuffer {
+  if (!(value instanceof JSBI)) {
+    value = JSBI.BigInt(`${value}`);
   }
 
-  const isNeg = value < BigInt(0);
+  const isNeg = JSBI.lessThan(value, JSBI.BigInt(0));
   if (isNeg) {
-    value = -value - BigInt(1);
+    value = JSBI.subtract(JSBI.multiply(value, JSBI.BigInt(-1)), JSBI.BigInt(1));
   }
-  const byteLength = (value === BigInt(0) ? 0 : Math.ceil(Math.log2(Number(value)))) + 1;
+  const byteLength =
+    (JSBI.equal(value, JSBI.BigInt(0)) ? 0 : Math.ceil(Math.log2(JSBI.toNumber(value)))) + 1;
   const pipe = new Pipe(new ArrayBuffer(byteLength), 0);
   while (true) {
     const i = getLowerBytes(value);
-    value /= BigInt(0x80);
+    value = JSBI.divide(value, JSBI.BigInt(0x80));
 
     // prettier-ignore
-    if (   ( isNeg && value === BigInt(0) && (i & 0x40) !== 0)
-          || (!isNeg && value === BigInt(0) && (i & 0x40) === 0)) {
+    if (   ( isNeg && JSBI.equal(value, JSBI.BigInt(0)) && (i & 0x40) !== 0)
+          || (!isNeg && JSBI.equal(value, JSBI.BigInt(0)) && (i & 0x40) === 0)) {
         pipe.write(new Uint8Array([i]));
         break;
       } else {
@@ -116,24 +122,24 @@ export function slebEncode(value: bigint | number): ArrayBuffer {
       }
   }
 
-  function getLowerBytes(num: bigint): number {
-    const bytes = num % BigInt(0x80);
+  function getLowerBytes(num: JSBI): number {
+    const bytes = JSBI.remainder(num, JSBI.BigInt(0x80));
     if (isNeg) {
       // We swap the bits here again, and remove 1 to do two's complement.
-      return Number(BigInt(0x80) - bytes - BigInt(1));
+      return JSBI.toNumber(JSBI.subtract(JSBI.subtract(JSBI.BigInt(0x80), bytes), JSBI.BigInt(1)));
     } else {
-      return Number(bytes);
+      return JSBI.toNumber(bytes);
     }
   }
   return pipe.buffer;
 }
 
 /**
- * Decode a leb encoded buffer into a bigint. The number is decoded with support for negative
+ * Decode a leb encoded buffer into a JSBI. The number is decoded with support for negative
  * signed-leb encoding.
  * @param pipe A Buffer containing the signed leb encoded bits.
  */
-export function slebDecode(pipe: Pipe): bigint {
+export function slebDecode(pipe: Pipe): JSBI {
   // Get the size of the buffer, then cut a buffer of that size.
   const pipeView = new Uint8Array(pipe.buffer);
   let len = 0;
@@ -148,21 +154,28 @@ export function slebDecode(pipe: Pipe): bigint {
   }
 
   const bytes = new Uint8Array(safeRead(pipe, len + 1));
-  let value = BigInt(0);
+  let value = JSBI.BigInt(0);
   for (let i = bytes.byteLength - 1; i >= 0; i--) {
-    value = value * BigInt(0x80) + BigInt(0x80 - (bytes[i] & 0x7f) - 1);
+    value = JSBI.add(
+      JSBI.multiply(value, JSBI.BigInt(0x80)),
+      JSBI.subtract(JSBI.subtract(JSBI.BigInt(0x80), JSBI.BigInt(bytes[i] & 0x7f)), JSBI.BigInt(1)),
+    );
   }
-  return -value - BigInt(1);
+  return JSBI.subtract(JSBI.unaryMinus(value), JSBI.BigInt(1));
 }
 
 /**
  *
- * @param value bigint or number
+ * @param value JSBI or number
  * @param byteLength number
  * @returns Buffer
  */
-export function writeUIntLE(value: bigint | number, byteLength: number): ArrayBuffer {
-  if (BigInt(value) < BigInt(0)) {
+export function writeUIntLE(value: JSBI | number | bigint, byteLength: number): ArrayBuffer {
+  if (!(value instanceof JSBI)) {
+    value = JSBI.BigInt(`${value}`);
+  }
+
+  if (JSBI.lessThan(JSBI.BigInt(value), JSBI.BigInt(0))) {
     throw new Error('Cannot write negative values.');
   }
   return writeIntLE(value, byteLength);
@@ -173,22 +186,27 @@ export function writeUIntLE(value: bigint | number, byteLength: number): ArrayBu
  * @param value
  * @param byteLength
  */
-export function writeIntLE(value: bigint | number, byteLength: number): ArrayBuffer {
-  value = BigInt(value);
+export function writeIntLE(value: JSBI | number | bigint, byteLength: number): ArrayBuffer {
+  if (!(value instanceof JSBI)) {
+    value = JSBI.BigInt(`${value}`);
+  }
 
   const pipe = new Pipe(new ArrayBuffer(Math.min(1, byteLength)), 0);
   let i = 0;
-  let mul = BigInt(256);
-  let sub = BigInt(0);
-  let byte = Number(value % mul);
+  let mul = JSBI.BigInt(256);
+  let sub = JSBI.BigInt(0);
+  let byte = JSBI.toNumber(JSBI.remainder(value, mul));
   pipe.write(new Uint8Array([byte]));
   while (++i < byteLength) {
-    if (value < 0 && sub === BigInt(0) && byte !== 0) {
-      sub = BigInt(1);
+    if (JSBI.lessThan(value, JSBI.BigInt(0)) && JSBI.equal(sub, JSBI.BigInt(0)) && byte !== 0) {
+      sub = JSBI.BigInt(1);
     }
-    byte = Number((value / mul - sub) % BigInt(256));
+
+    byte = JSBI.toNumber(
+      JSBI.remainder(JSBI.subtract(JSBI.divide(value, mul), sub), JSBI.BigInt(256)),
+    );
     pipe.write(new Uint8Array([byte]));
-    mul *= BigInt(256);
+    mul = JSBI.multiply(mul, JSBI.BigInt(256));
   }
 
   return pipe.buffer;
@@ -198,16 +216,16 @@ export function writeIntLE(value: bigint | number, byteLength: number): ArrayBuf
  *
  * @param pipe Pipe from buffer-pipe
  * @param byteLength number
- * @returns bigint
+ * @returns JSBI
  */
-export function readUIntLE(pipe: Pipe, byteLength: number): bigint {
-  let val = BigInt(safeReadUint8(pipe));
-  let mul = BigInt(1);
+export function readUIntLE(pipe: Pipe, byteLength: number): JSBI {
+  let val = JSBI.BigInt(safeReadUint8(pipe));
+  let mul = JSBI.BigInt(1);
   let i = 0;
   while (++i < byteLength) {
-    mul *= BigInt(256);
-    const byte = BigInt(safeReadUint8(pipe));
-    val = val + mul * byte;
+    mul = JSBI.multiply(mul, JSBI.BigInt(256));
+    const byte = JSBI.BigInt(safeReadUint8(pipe));
+    val = JSBI.add(val, JSBI.multiply(mul, byte));
   }
   return val;
 }
@@ -216,13 +234,17 @@ export function readUIntLE(pipe: Pipe, byteLength: number): bigint {
  *
  * @param pipe Pipe from buffer-pipe
  * @param byteLength number
- * @returns bigint
+ * @returns JSBI
  */
-export function readIntLE(pipe: Pipe, byteLength: number): bigint {
+export function readIntLE(pipe: Pipe, byteLength: number): JSBI {
   let val = readUIntLE(pipe, byteLength);
-  const mul = BigInt(2) ** (BigInt(8) * BigInt(byteLength - 1) + BigInt(7));
-  if (val >= mul) {
-    val -= mul * BigInt(2);
+
+  const mul = JSBI.exponentiate(
+    JSBI.BigInt(2),
+    JSBI.add(JSBI.multiply(JSBI.BigInt(8), JSBI.BigInt(byteLength - 1)), JSBI.BigInt(7)),
+  );
+  if (JSBI.greaterThanOrEqual(val, mul)) {
+    val = JSBI.subtract(val, JSBI.multiply(mul, JSBI.BigInt(2)));
   }
   return val;
 }
