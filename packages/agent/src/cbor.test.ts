@@ -1,6 +1,7 @@
 import { Principal } from '@dfinity/principal';
 import { decode, encode } from './cbor';
 import { toHex } from './utils/buffer';
+import JSBI from 'jsbi';
 
 test('round trip', () => {
   interface Data {
@@ -10,7 +11,7 @@ test('round trip', () => {
     d: { four: string };
     e: Principal;
     f: ArrayBuffer;
-    g: bigint;
+    g: JSBI;
   }
 
   // FIXME: since we have limited control over CBOR decoding, we are relying on
@@ -23,20 +24,21 @@ test('round trip', () => {
     d: { four: 'four' },
     e: Principal.fromHex('FfFfFfFfFfFfFfFfd7'),
     f: new Uint8Array([]),
-    g: BigInt('0xffffffffffffffff'),
+    g: JSBI.BigInt('0xffffffffffffffff'),
   };
 
   const output = decode<Data>(encode(input));
 
   // Some values don't decode exactly to the value that was encoded,
   // but their hexadecimal representions are the same.
-  const { c: inputC, e: inputE, f: inputF, ...inputRest } = input;
+  const { c: inputC, e: inputE, f: inputF, g: inputG, ...inputRest } = input;
 
-  const { c: outputC, e: outputE, f: outputF, ...outputRest } = output;
+  const { c: outputC, e: outputE, f: outputF, g: outputG, ...outputRest } = output;
 
   expect(toHex(outputC)).toBe(toHex(inputC));
   expect(buf2hex(outputE as any as Uint8Array).toUpperCase()).toBe(inputE.toHex());
 
+  expect(outputG.toString(16)).toBe(inputG.toString(16));
   expect(outputRest).toEqual(inputRest);
 });
 
