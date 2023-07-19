@@ -7,6 +7,7 @@ import * as cbor from 'simple-cbor';
 import { CborEncoder, SelfDescribeCborSerializer } from 'simple-cbor';
 import { Principal } from '@dfinity/principal';
 import { concat, fromHex } from './utils/buffer';
+import JSBI from 'jsbi';
 
 // We are using hansl/simple-cbor for CBOR serialization, to avoid issues with
 // encoding the uint64 values that the HTTP handler of the client expects for
@@ -50,9 +51,9 @@ class BufferEncoder implements CborEncoder<ArrayBuffer> {
   }
 }
 
-class BigIntEncoder implements CborEncoder<BigInt> {
+class JSBIEncoder implements CborEncoder<JSBI> {
   public get name() {
-    return 'BigInt';
+    return 'JSBI';
   }
 
   public get priority() {
@@ -60,15 +61,20 @@ class BigIntEncoder implements CborEncoder<BigInt> {
   }
 
   public match(value: any): boolean {
-    return typeof value === `bigint`;
+    return value instanceof JSBI;
   }
 
-  public encode(v: bigint): cbor.CborValue {
+  public encode(v: JSBI | number): cbor.CborValue {
     // Always use a bigint encoding.
-    if (v > BigInt(0)) {
-      return cbor.value.tagged(2, cbor.value.bytes(fromHex(v.toString(16))));
+    if (JSBI.greaterThan(JSBI.BigInt(`${v}`), JSBI.BigInt(0))) {
+      return cbor.value.tagged(2, cbor.value.bytes(fromHex(JSBI.BigInt(`${v}`).toString(16))));
     } else {
-      return cbor.value.tagged(3, cbor.value.bytes(fromHex((BigInt('-1') * v).toString(16))));
+      return cbor.value.tagged(
+        3,
+        cbor.value.bytes(
+          fromHex(JSBI.multiply(JSBI.BigInt(`${v}`), JSBI.BigInt('-1')).toString(16)),
+        ),
+      );
     }
   }
 }
@@ -76,7 +82,7 @@ class BigIntEncoder implements CborEncoder<BigInt> {
 const serializer = SelfDescribeCborSerializer.withDefaultEncoders(true);
 serializer.addEncoder(new PrincipalEncoder());
 serializer.addEncoder(new BufferEncoder());
-serializer.addEncoder(new BigIntEncoder());
+serializer.addEncoder(new JSBIEncoder());
 
 export enum CborTag {
   Uint64LittleEndian = 71,
@@ -85,17 +91,18 @@ export enum CborTag {
 
 /**
  * Encode a JavaScript value into CBOR.
+ * @param value
  */
 export function encode(value: any): ArrayBuffer {
   return serializer.serialize(value);
 }
 
-function decodePositiveBigInt(buf: Uint8Array): bigint {
+function decodePositiveBigInt(buf: Uint8Array): JSBI {
   const len = buf.byteLength;
-  let res = BigInt(0);
+  let res = JSBI.BigInt(0);
   for (let i = 0; i < len; i++) {
     // tslint:disable-next-line:no-bitwise
-    res = res * BigInt(0x100) + BigInt(buf[i]);
+    res = JSBI.add(JSBI.multiply(res, JSBI.BigInt(0x100)), JSBI.BigInt(buf[i]));
   }
 
   return res;
@@ -116,14 +123,18 @@ class Uint8ArrayDecoder extends borc.Decoder {
   }
 }
 
+/**
+ *
+ * @param input
+ */
 export function decode<T>(input: ArrayBuffer): T {
   const buffer = new Uint8Array(input);
   const decoder = new Uint8ArrayDecoder({
     size: buffer.byteLength,
     tags: {
       // Override tags 2 and 3 for BigInt support (borc supports only BigNumber).
-      2: val => decodePositiveBigInt(val),
-      3: val => -decodePositiveBigInt(val),
+      // 2: val => decodePositiveBigInt(val).toString(),
+      // 3: val => JSBI.unaryMinus(decodePositiveBigInt(val)).toString(),
       [CborTag.Semantic]: (value: T): T => value,
     },
   });
