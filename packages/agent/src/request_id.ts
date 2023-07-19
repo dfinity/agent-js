@@ -3,6 +3,7 @@ import { Principal } from '@dfinity/principal';
 import borc from 'borc';
 import { sha256 as jsSha256 } from 'js-sha256';
 import { compare, concat } from './utils/buffer';
+import JSBI from 'jsbi';
 
 export type RequestId = ArrayBuffer & { __requestId__: void };
 
@@ -47,7 +48,7 @@ export function hashValue(value: unknown): ArrayBuffer {
     // the flow to be synchronous to ensure Safari touch id works.
     // } else if (value instanceof Promise) {
     //   return value.then(x => hashValue(x));
-  } else if (typeof value === 'bigint') {
+  } else if (typeof value === 'bigint' || value instanceof JSBI) {
     // Do this check much later than the other bigint check because this one is much less
     // type-safe.
     // So we want to try all the high-assurance type guards before this 'probable' one.
