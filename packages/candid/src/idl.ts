@@ -1238,7 +1238,7 @@ export class VariantClass extends ConstructType<Record<string, any>> {
     }
     const idx = lebDecode(b);
     if (JSBI.greaterThanOrEqual(idx, JSBI.BigInt(variant._fields.length))) {
-      throw Error('Invalid variant index: ' + idx);
+      throw Error('Invalid variant index: ' + JSBI.toNumber(idx));
     }
     const [wireHash, wireType] = variant._fields[JSBI.toNumber(idx)];
     for (const [key, expectType] of this._fields) {
@@ -1613,7 +1613,7 @@ export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
       switch (ty) {
         case IDLTypeIds.Opt:
         case IDLTypeIds.Vector: {
-          const t = slebDecode(pipe);
+          const t = JSBI.toNumber(slebDecode(pipe));
           typeTable.push([ty, t]);
           break;
         }
@@ -1631,8 +1631,8 @@ export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
               throw new Error('field id collision or not sorted');
             }
             prevHash = hash;
-            const t = slebDecode(pipe);
-            fields.push([hash, t]);
+            const t = JSBI.toNumber(slebDecode(pipe));
+            fields.push([JSBI.toNumber(hash), t]);
           }
           typeTable.push([ty, fields]);
           break;
