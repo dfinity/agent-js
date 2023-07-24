@@ -9,9 +9,14 @@ import { Actor, ActorSubclass } from './actor';
  *
  * @param agent The agent to use for the request (usually an `HttpAgent`)
  * @param canisterId A string corresponding to the canister ID
+ * @param blsVerify
  * @returns Candid source code
  */
-export async function fetchCandid(canisterId: string, agent?: HttpAgent): Promise<string> {
+export async function fetchCandid(
+  canisterId: string,
+  agent?: HttpAgent,
+  blsVerify?: (pk: Uint8Array, sig: Uint8Array, msg: Uint8Array) => Promise<boolean>,
+): Promise<string> {
   if (!agent) {
     // Create an anonymous `HttpAgent` (adapted from Candid UI)
     agent = new HttpAgent();
@@ -25,6 +30,7 @@ export async function fetchCandid(canisterId: string, agent?: HttpAgent): Promis
     agent,
     canisterId: Principal.fromText(canisterId),
     paths: ['candid'],
+    blsVerify,
   });
   const candid = status.get('candid') as string | undefined;
   if (candid) {

@@ -63,6 +63,7 @@ export type CanisterStatusOptions = {
  * @param {CanisterStatusOptions['canisterId']} options.canisterId {@link Principal}
  * @param {CanisterStatusOptions['agent']} options.agent {@link HttpAgent} optional authenticated agent to use to make the canister request. Useful for accessing private metadata under icp:private
  * @param {CanisterStatusOptions['paths']} options.paths {@link Path[]}
+ * @param options.blsVerify
  * @returns {Status} object populated with data from the requested paths
  * @example
  * const status = await canisterStatus({
@@ -76,8 +77,9 @@ export const request = async (options: {
   canisterId: Principal;
   agent: HttpAgent;
   paths?: Path[] | Set<Path>;
+  blsVerify?: (pk: Uint8Array, sig: Uint8Array, msg: Uint8Array) => Promise<boolean>;
 }): Promise<StatusMap> => {
-  const { canisterId, agent, paths } = options;
+  const { canisterId, agent, paths, blsVerify } = options;
 
   const uniquePaths = [...new Set(paths)];
 
@@ -97,6 +99,7 @@ export const request = async (options: {
           certificate: response.certificate,
           rootKey: agent.rootKey,
           canisterId: canisterId,
+          blsVerify,
         });
 
         const data = cert.lookup(encodePath(uniquePaths[index], canisterId));

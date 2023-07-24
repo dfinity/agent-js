@@ -188,6 +188,7 @@ export class Certificate {
       certificate: d.certificate,
       rootKey: this._rootKey,
       canisterId: this._canisterId,
+      blsVerify: this._blsVerify,
     });
 
     const rangeLookup = cert.lookup(['subnet', d.subnet_id, 'canister_ranges']);
