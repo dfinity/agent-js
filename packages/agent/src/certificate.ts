@@ -4,6 +4,7 @@ import { hash } from './request_id';
 import { concat, fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
 import * as bls from './utils/bls';
+import { Hex } from '@noble/curves/abstract/utils';
 
 /**
  * A certificate may fail verification with respect to the provided public key
@@ -98,7 +99,7 @@ function isBufferEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
   return true;
 }
 
-type VerifyFunc = (pk: Uint8Array, sig: Uint8Array, msg: Uint8Array) => Promise<boolean>;
+type VerifyFunc = (pk: Hex, sig: Hex, msg: Hex) => Promise<boolean>;
 
 export interface CreateCertificateOptions {
   /**
