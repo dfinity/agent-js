@@ -3,17 +3,18 @@ import { Principal } from '@dfinity/principal';
 import { AgentError } from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
-import { RequestId, requestIdOf } from '../../request_id';
+import { requestIdOf } from '../../request_id';
 import { fromHex } from '../../utils/buffer';
 import {
   Agent,
+  ApiQueryResponse,
   QueryFields,
   QueryResponse,
   ReadStateOptions,
   ReadStateResponse,
   SubmitResponse,
 } from '../api';
-import { Expiry, makeNonceTransform } from './transforms';
+import { Expiry, httpHeadersTransform, makeNonceTransform } from './transforms';
 import {
   CallRequest,
   Endpoint,
@@ -25,6 +26,7 @@ import {
   ReadRequestType,
   SubmitRequestType,
 } from './types';
+import { AgentHTTPResponseError } from './errors';
 
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
@@ -153,15 +155,6 @@ function getDefaultFetch(): typeof fetch {
   );
 }
 
-type _RequestResponse = {
-  requestId: RequestId;
-  response: {
-    ok: Response['ok'];
-    status: Response['status'];
-    statusText: Response['statusText'];
-  };
-};
-
 // A HTTP agent allows users to interact with a client of the internet computer
 // using the available methods. It exposes an API that closely follows the
 // public view of the internet computer, and is not intended to be exposed
@@ -182,7 +175,7 @@ export class HttpAgent implements Agent {
   private readonly _host: URL;
   private readonly _credentials: string | undefined;
   private _rootKeyFetched = false;
-  private _retryTimes = 3; // Retry requests 3 times before erroring by default
+  private readonly _retryTimes; // Retry requests N times before erroring by default
   public readonly _isAgent = true;
 
   constructor(options: HttpAgentOptions = {}) {
@@ -216,10 +209,9 @@ export class HttpAgent implements Agent {
       }
       this._host = new URL(location + '');
     }
-    // Default is 3, only set if option is provided
-    if (options.retryTimes !== undefined) {
-      this._retryTimes = options.retryTimes;
-    }
+    // Default is 3, only set from option if greater or equal to 0
+    this._retryTimes =
+      options.retryTimes !== undefined && options.retryTimes >= 0 ? options.retryTimes : 3;
     // Rewrite to avoid redirects
     if (this._host.hostname.endsWith(IC0_SUB_DOMAIN)) {
       this._host.hostname = IC0_DOMAIN;
@@ -320,7 +312,6 @@ export class HttpAgent implements Agent {
 
     // Run both in parallel. The fetch is quite expensive, so we have plenty of time to
     // calculate the requestId locally.
-
     const request = this._requestAndRetry(() =>
       this._fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this._host), {
         ...this._callOptions,
@@ -331,45 +322,53 @@ export class HttpAgent implements Agent {
 
     const [response, requestId] = await Promise.all([request, requestIdOf(submit)]);
 
+    const responseBuffer = await response.arrayBuffer();
+    const responseBody = (
+      response.status === 200 && responseBuffer.byteLength > 0 ? cbor.decode(responseBuffer) : null
+    ) as SubmitResponse['response']['body'];
+
     return {
       requestId,
       response: {
         ok: response.ok,
         status: response.status,
         statusText: response.statusText,
+        body: responseBody,
+        headers: httpHeadersTransform(response.headers),
       },
     };
   }
 
   private async _requestAndRetry(request: () => Promise<Response>, tries = 0): Promise<Response> {
-    if (tries > this._retryTimes && this._retryTimes !== 0) {
-      throw new Error(
-        `AgentError: Exceeded configured limit of ${this._retryTimes} retry attempts. Please check your network connection or try again in a few moments`,
-      );
-    }
     const response = await request();
-    if (!response.ok) {
-      const responseText = await response.clone().text();
-      const errorMessage =
-        `Server returned an error:\n` +
-        `  Code: ${response.status} (${response.statusText})\n` +
-        `  Body: ${responseText}\n`;
-      if (this._retryTimes > tries) {
-        console.warn(errorMessage + `  Retrying request.`);
-        return await this._requestAndRetry(request, tries + 1);
-      } else {
-        throw new Error(errorMessage);
-      }
+    if (response.ok) {
+      return response;
     }
 
-    return response;
+    const responseText = await response.clone().text();
+    const errorMessage =
+      `Server returned an error:\n` +
+      `  Code: ${response.status} (${response.statusText})\n` +
+      `  Body: ${responseText}\n`;
+
+    if (this._retryTimes > tries) {
+      console.warn(errorMessage + `  Retrying request.`);
+      return await this._requestAndRetry(request, tries + 1);
+    }
+
+    throw new AgentHTTPResponseError(errorMessage, {
+      ok: response.ok,
+      status: response.status,
+      statusText: response.statusText,
+      headers: httpHeadersTransform(response.headers),
+    });
   }
 
   public async query(
     canisterId: Principal | string,
     fields: QueryFields,
     identity?: Identity | Promise<Identity>,
-  ): Promise<QueryResponse> {
+  ): Promise<ApiQueryResponse> {
     const id = await (identity !== undefined ? await identity : await this._identity);
     if (!id) {
       throw new IdentityInvalidError(
@@ -415,7 +414,17 @@ export class HttpAgent implements Agent {
       }),
     );
 
-    return cbor.decode(await response.arrayBuffer());
+    const queryResponse: QueryResponse = cbor.decode(await response.arrayBuffer());
+
+    return {
+      ...queryResponse,
+      httpDetails: {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        headers: httpHeadersTransform(response.headers),
+      },
+    };
   }
 
   public async createReadStateRequest(
@@ -487,7 +496,7 @@ export class HttpAgent implements Agent {
 
   /**
    * Allows agent to sync its time with the network. Can be called during intialization or mid-lifecycle if the device's clock has drifted away from the network time. This is necessary to set the Expiry for a request
-   * @param {PrincipalLike} canisterId - Pass a canister ID if you need to sync the time with a particular replica. Uses the management canister by default
+   * @param {Principal} canisterId - Pass a canister ID if you need to sync the time with a particular replica. Uses the management canister by default
    */
   public async syncTime(canisterId?: Principal): Promise<void> {
     const CanisterStatus = await import('../../canisterStatus');

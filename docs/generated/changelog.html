@@ -12,17 +12,33 @@
     <section>
       <h2>Version x.x.x</h2>
       <ul>
+        <li>fix: fix composite query in actor.ts</li>
+        <li>
+          fix: handle new update call errors (<a
+            href="https://github.com/dfinity/interface-spec/pull/143"
+            >IC-1462</a
+          >)
+        </li>
         <li>
           chore: updates engines in package.json and recommended node version for development in
           nvmrc to support node 18+
         </li>
         <li>chore: corrections to publishing docs</li>
         <li>
-          fix: typo in JsonnableWebAuthnIdentitiy, breaking change that requires users to update their imports to JsonnableWebAuthnIdentity when this type is used
+          fix: typo in JsonnableWebAuthnIdentitiy, breaking change that requires users to update
+          their imports to JsonnableWebAuthnIdentity when this type is used
         </li>
         <li>
-          fix: fix a bug in decoding service types, when function types come after the service type in the type table
+          fix: fix a bug in decoding service types, when function types come after the service type
+          in the type table
         </li>
+        <li>feat: support composite_query in candid</li>
+        <li>
+          fix: fix a bug in decoding service types, when function types come after the service type
+          in the type table
+        </li>
+        <li>feat: include boundary node http details to query and update calls</li>
+        <li>feat: adds method for actor creation that includes boundary node http details</li>
       </ul>
       <h2>Version 0.15.7</h2>
       <ul>

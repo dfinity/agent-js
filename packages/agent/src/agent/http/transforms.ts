@@ -1,6 +1,13 @@
 import { lebEncode } from '@dfinity/candid';
 import * as cbor from 'simple-cbor';
-import { Endpoint, HttpAgentRequest, HttpAgentRequestTransformFn, makeNonce, Nonce } from './types';
+import {
+  Endpoint,
+  HttpAgentRequest,
+  HttpAgentRequestTransformFn,
+  HttpHeaderField,
+  makeNonce,
+  Nonce,
+} from './types';
 import { toHex } from '../../utils/buffer';
 import JSBI from 'jsbi';
 
@@ -62,4 +69,18 @@ export function makeExpiryTransform(delayInMilliseconds: number): HttpAgentReque
   return async (request: HttpAgentRequest) => {
     request.body.ingress_expiry = new Expiry(delayInMilliseconds);
   };
+}
+
+/**
+ * Maps the default fetch headers field to the serializable HttpHeaderField.
+ *
+ * @param headers Fetch definition of the headers type
+ * @returns array of header fields
+ */
+export function httpHeadersTransform(headers: Headers): HttpHeaderField[] {
+  const headerFields: HttpHeaderField[] = [];
+  headers.forEach((value, key) => {
+    headerFields.push([key, value]);
+  });
+  return headerFields;
 }

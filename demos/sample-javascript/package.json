@@ -1,7 +1,7 @@
 {
   "name": "@dfinity/ic-agent-sample-javascript-app",
   "private": true,
-  "version": "0.16.1",
+  "version": "0.18.1",
   "scripts": {
     "build": "webpack",
     "develop": "webpack-dev-server",
@@ -11,10 +11,10 @@
     "test": ""
   },
   "dependencies": {
-    "@dfinity/agent": "^0.16.1",
+    "@dfinity/agent": "^0.18.1",
     "@dfinity/authentication": "^0.14.1",
-    "@dfinity/identity": "^0.16.1",
-    "@dfinity/principal": "^0.16.1"
+    "@dfinity/identity": "^0.18.1",
+    "@dfinity/principal": "^0.18.1"
   },
   "devDependencies": {
     "assert": "^2.0.0",

@@ -2,6 +2,7 @@ import { Buffer } from 'buffer/';
 import {
   Agent,
   getDefaultAgent,
+  HttpDetailsResponse,
   QueryResponseRejected,
   QueryResponseStatus,
   ReplicaRejectCode,
@@ -58,8 +59,20 @@ export class UpdateCallRejectedError extends ActorCallError {
   ) {
     super(canisterId, methodName, 'update', {
       'Request ID': toHex(requestId),
-      'HTTP status code': response.status.toString(),
-      'HTTP status text': response.statusText,
+      ...(response.body
+        ? {
+            ...(response.body.error_code
+              ? {
+                  'Error code': response.body.error_code,
+                }
+              : {}),
+            'Reject code': String(response.body.reject_code),
+            'Reject message': response.body.reject_message,
+          }
+        : {
+            'HTTP status code': response.status.toString(),
+            'HTTP status text': response.statusText,
+          }),
     });
   }
 }
@@ -133,10 +146,29 @@ export type ActorSubclass<T = Record<string, ActorMethod>> = Actor & T;
 /**
  * An actor method type, defined for each methods of the actor service.
  */
-export interface ActorMethod<Args extends unknown[] = unknown[], Ret extends unknown = unknown> {
+export interface ActorMethod<Args extends unknown[] = unknown[], Ret = unknown> {
   (...args: Args): Promise<Ret>;
   withOptions(options: CallConfig): (...args: Args) => Promise<Ret>;
 }
+
+/**
+ * An actor method type, defined for each methods of the actor service.
+ */
+export interface ActorMethodWithHttpDetails<Args extends unknown[] = unknown[], Ret = unknown>
+  extends ActorMethod {
+  (...args: Args): Promise<{ httpDetails: HttpDetailsResponse; result: Ret }>;
+}
+
+export type FunctionWithArgsAndReturn<Args extends unknown[] = unknown[], Ret = unknown> = (
+  ...args: Args
+) => Ret;
+
+// Update all entries of T with the extra information from ActorMethodWithInfo
+export type ActorMethodMappedWithHttpDetails<T> = {
+  [K in keyof T]: T[K] extends FunctionWithArgsAndReturn<infer Args, infer Ret>
+    ? ActorMethodWithHttpDetails<Args, Ret>
+    : never;
+};
 
 /**
  * The mode used when installing a canister.
@@ -159,6 +191,10 @@ interface ActorMetadata {
 }
 
 const metadataSymbol = Symbol.for('ic-agent-metadata');
+
+export interface CreateActorClassOpts {
+  httpDetails?: boolean;
+}
 
 /**
  * An actor base class. An actor is an object containing only functions that will
@@ -239,7 +275,10 @@ export class Actor {
     return this.createActor(interfaceFactory, { ...config, canisterId });
   }
 
-  public static createActorClass(interfaceFactory: IDL.InterfaceFactory): ActorConstructor {
+  public static createActorClass(
+    interfaceFactory: IDL.InterfaceFactory,
+    options?: CreateActorClassOpts,
+  ): ActorConstructor {
     const service = interfaceFactory({ IDL });
 
     class CanisterActor extends Actor {
@@ -261,6 +300,10 @@ export class Actor {
         });
 
         for (const [methodName, func] of service._fields) {
+          if (options?.httpDetails) {
+            func.annotations.push(ACTOR_METHOD_WITH_HTTP_DETAILS);
+          }
+
           this[methodName] = _createActorMethod(this, methodName, func, config.blsVerify);
         }
       }
@@ -276,6 +319,15 @@ export class Actor {
     return new (this.createActorClass(interfaceFactory))(
       configuration,
     ) as unknown as ActorSubclass<T>;
+  }
+
+  public static createActorWithHttpDetails<T = Record<string, ActorMethod>>(
+    interfaceFactory: IDL.InterfaceFactory,
+    configuration: ActorConfig,
+  ): ActorSubclass<ActorMethodMappedWithHttpDetails<T>> {
+    return new (this.createActorClass(interfaceFactory, { httpDetails: true }))(
+      configuration,
+    ) as unknown as ActorSubclass<ActorMethodMappedWithHttpDetails<T>>;
   }
 
   private [metadataSymbol]: ActorMetadata;
@@ -306,6 +358,8 @@ const DEFAULT_ACTOR_CONFIG = {
 
 export type ActorConstructor = new (config: ActorConfig) => ActorSubclass;
 
+export const ACTOR_METHOD_WITH_HTTP_DETAILS = 'http-details';
+
 function _createActorMethod(
   actor: Actor,
   methodName: string,
@@ -313,7 +367,7 @@ function _createActorMethod(
   blsVerify?: CreateCertificateOptions['blsVerify'],
 ): ActorMethod {
   let caller: (options: CallConfig, ...args: unknown[]) => Promise<unknown>;
-  if (func.annotations.includes('query')) {
+  if (func.annotations.includes('query') || func.annotations.includes('composite_query')) {
     caller = async (options, ...args) => {
       // First, if there's a config transformation, call it.
       options = {
@@ -335,7 +389,12 @@ function _createActorMethod(
           throw new QueryCallRejectedError(cid, methodName, result);
 
         case QueryResponseStatus.Replied:
-          return decodeReturnValue(func.retTypes, result.reply.arg);
+          return func.annotations.includes(ACTOR_METHOD_WITH_HTTP_DETAILS)
+            ? {
+                httpDetails: result.httpDetails,
+                result: decodeReturnValue(func.retTypes, result.reply.arg),
+              }
+            : decodeReturnValue(func.retTypes, result.reply.arg);
       }
     };
   } else {
@@ -364,7 +423,7 @@ function _createActorMethod(
         effectiveCanisterId: ecid,
       });
 
-      if (!response.ok) {
+      if (!response.ok || response.body /* IC-1462 */) {
         throw new UpdateCallRejectedError(cid, methodName, requestId, response);
       }
 
@@ -377,11 +436,22 @@ function _createActorMethod(
         undefined,
         blsVerify,
       );
+      const shouldIncludeHttpDetails = func.annotations.includes(ACTOR_METHOD_WITH_HTTP_DETAILS);
 
       if (responseBytes !== undefined) {
-        return decodeReturnValue(func.retTypes, responseBytes);
+        return shouldIncludeHttpDetails
+          ? {
+              httpDetails: response,
+              result: decodeReturnValue(func.retTypes, responseBytes),
+            }
+          : decodeReturnValue(func.retTypes, responseBytes);
       } else if (func.retTypes.length === 0) {
-        return undefined;
+        return shouldIncludeHttpDetails
+          ? {
+              httpDetails: response,
+              result: undefined,
+            }
+          : undefined;
       } else {
         throw new Error(`Call was returned undefined, but type [${func.retTypes.join(',')}].`);
       }

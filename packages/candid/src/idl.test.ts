@@ -364,6 +364,12 @@ test('IDL encoding (function)', () => {
     '4449444c016a0171017d01010100010103caffee03666f6f',
     'query function',
   );
+  test_(
+    IDL.Func([IDL.Text], [IDL.Nat], ['composite_query']),
+    [Principal.fromText('w7x7r-cok77-xa'), 'foo'],
+    '4449444c016a0171017d01030100010103caffee03666f6f',
+    'composite_query function',
+  );
 });
 
 test('IDL encoding (service)', () => {
@@ -384,6 +390,12 @@ test('IDL encoding (service)', () => {
     IDL.Service({ foo: IDL.Func([IDL.Text], [IDL.Nat], ['query']) }),
     Principal.fromText('w7x7r-cok77-xa'),
     '4449444c026a0171017d0101690103666f6f0001010103caffee',
+    'service',
+  );
+  test_(
+    IDL.Service({ foo: IDL.Func([IDL.Text], [IDL.Nat], ['composite_query']) }),
+    Principal.fromText('w7x7r-cok77-xa'),
+    '4449444c026a0171017d0103690103666f6f0001010103caffee',
     'service',
   );
   test_(

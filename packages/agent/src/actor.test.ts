@@ -1,14 +1,22 @@
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
-import { Actor } from './actor';
-import { HttpAgent, Nonce } from './agent';
+import { HttpAgent, Nonce, SubmitResponse } from './agent';
 import { Expiry, makeNonceTransform } from './agent/http/transforms';
 import { CallRequest, SubmitRequestType, UnSigned } from './agent/http/types';
 import * as cbor from './cbor';
 import { requestIdOf } from './request_id';
+import * as pollingImport from './polling';
+
+const importActor = async (mockUpdatePolling?: () => void) => {
+  jest.dontMock('./polling');
+  mockUpdatePolling?.();
+
+  return await import('./actor');
+};
 
 const originalDateNowFn = global.Date.now;
 beforeEach(() => {
+  jest.resetModules();
   global.Date.now = jest.fn(() => new Date(1000000).getTime());
 });
 afterEach(() => {
@@ -18,6 +26,7 @@ afterEach(() => {
 describe('makeActor', () => {
   // TODO: update tests to be compatible with changes to Certificate
   it.skip('should encode calls', async () => {
+    const { Actor, UpdateCallRejectedError } = await importActor();
     const actorInterface = () => {
       return IDL.Service({
         greet: IDL.Func([IDL.Text], [IDL.Text]),
@@ -63,9 +72,24 @@ describe('makeActor', () => {
             status: 200,
           }),
         );
+      })
+      .mockImplementationOnce((resource, init) => {
+        // IC-1462 update call error
+        const body = cbor.encode(<SubmitResponse['response']['body']>{
+          error_code: 'IC0503',
+          reject_code: 5,
+          reject_message:
+            'Canister (...) trapped explicitly: canister_inspect_message explicitly refused message',
+        });
+        return Promise.resolve(
+          new Response(body, {
+            status: 200,
+          }),
+        );
       });
 
     const methodName = 'greet';
+    const errorMethodName = 'error';
     const argValue = 'Name';
 
     const arg = IDL.encode([IDL.Text], [argValue]);
@@ -94,6 +118,18 @@ describe('makeActor', () => {
       },
     } as UnSigned<CallRequest>;
 
+    const expectedErrorCallRequest = {
+      content: {
+        request_type: SubmitRequestType.Call,
+        canister_id: canisterId,
+        method_name: errorMethodName,
+        arg,
+        nonce: nonces[0],
+        sender,
+        ingress_expiry: new Expiry(300000),
+      },
+    } as UnSigned<CallRequest>;
+
     const expectedCallRequestId = await requestIdOf(expectedCallRequest.content);
 
     let nonceCount = 0;
@@ -105,6 +141,8 @@ describe('makeActor', () => {
     const reply = await actor.greet(argValue);
 
     expect(reply).toEqual(IDL.decode([IDL.Text], expectedReplyArg)[0]);
+
+    await expect(async () => actor.error()).rejects.toThrow(UpdateCallRejectedError);
 
     const { calls } = mockFetch.mock;
 
@@ -181,8 +219,92 @@ describe('makeActor', () => {
         },
       }),
     });
+
+    expect(calls[5][0]).toBe('http://localhost/api/v1/call');
+    expect(calls[5][1]).toEqual({
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/cbor',
+      },
+      body: cbor.encode(expectedErrorCallRequest),
+    });
+  });
+  it('should enrich actor interface with httpDetails', async () => {
+    const canisterDecodedReturnValue = 'Hello, World!';
+    const expectedReplyArg = IDL.encode([IDL.Text], [canisterDecodedReturnValue]);
+    const { Actor } = await importActor(() =>
+      jest.doMock('./polling', () => ({
+        ...pollingImport,
+        pollForResponse: jest.fn(() => expectedReplyArg),
+      })),
+    );
+
+    const mockFetch = jest.fn(resource => {
+      if (resource.endsWith('/call')) {
+        return Promise.resolve(
+          new Response(null, {
+            status: 202,
+            statusText: 'accepted',
+          }),
+        );
+      }
+
+      return Promise.resolve(
+        new Response(
+          cbor.encode({
+            status: 'replied',
+            reply: {
+              arg: expectedReplyArg,
+            },
+          }),
+          {
+            status: 200,
+            statusText: 'ok',
+          },
+        ),
+      );
+    });
+
+    const actorInterface = () => {
+      return IDL.Service({
+        greet: IDL.Func([IDL.Text], [IDL.Text], ['query']),
+        greet_update: IDL.Func([IDL.Text], [IDL.Text]),
+        // todo: add method to test update call after Certificate changes have been adjusted
+      });
+    };
+    const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://localhost' });
+    const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+    const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
+    const actorWithHttpDetails = Actor.createActorWithHttpDetails(actorInterface, {
+      canisterId,
+      agent: httpAgent,
+    });
+
+    const reply = await actor.greet('test');
+    const replyUpdate = await actor.greet_update('test');
+    const replyWithHttpDetails = await actorWithHttpDetails.greet('test');
+    const replyUpdateWithHttpDetails = await actorWithHttpDetails.greet_update('test');
+
+    expect(reply).toEqual(canisterDecodedReturnValue);
+    expect(replyUpdate).toEqual(canisterDecodedReturnValue);
+    expect(replyWithHttpDetails.result).toEqual(canisterDecodedReturnValue);
+    expect(replyWithHttpDetails.httpDetails).toEqual({
+      ok: true,
+      status: 200,
+      statusText: 'ok',
+      headers: [],
+    });
+    expect(replyUpdateWithHttpDetails.result).toEqual(canisterDecodedReturnValue);
+    expect(replyUpdateWithHttpDetails.httpDetails).toEqual({
+      body: null,
+      ok: true,
+      status: 202,
+      statusText: 'accepted',
+      headers: [],
+    });
   });
   it('should allow its agent to be invalidated', async () => {
+    const { Actor } = await importActor();
     const mockFetch = jest.fn();
     const actorInterface = () => {
       return IDL.Service({
@@ -193,7 +315,7 @@ describe('makeActor', () => {
     const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
     const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
 
-    Actor.agentOf(actor).invalidateIdentity();
+    httpAgent.invalidateIdentity();
 
     try {
       await actor.greet('test');

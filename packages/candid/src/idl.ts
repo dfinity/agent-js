@@ -1485,6 +1485,8 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
       return new Uint8Array([1]);
     } else if (ann === 'oneway') {
       return new Uint8Array([2]);
+    } else if (ann === 'composite_query') {
+      return new Uint8Array([3]);
     } else {
       throw new Error('Illegal function annotation');
     }
@@ -1659,6 +1661,10 @@ export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
               }
               case 2: {
                 annotations.push('oneway');
+                break;
+              }
+              case 3: {
+                annotations.push('composite_query');
                 break;
               }
               default:
