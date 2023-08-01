@@ -1,5 +1,6 @@
 import type { Principal } from '@dfinity/principal';
 import { Expiry } from './transforms';
+import { randomNumber } from '../../utils/random';
 
 /**
  * @internal
@@ -109,8 +110,9 @@ export function makeNonce(): Nonce {
   const buffer = new ArrayBuffer(16);
   const view = new DataView(buffer);
   const now = BigInt(+Date.now());
-  const randHi = Math.floor(Math.random() * 0xffffffff);
-  const randLo = Math.floor(Math.random() * 0xffffffff);
+  const randHi = Math.floor(randomNumber() * 0xffffffff); //?
+  const randLo = Math.floor(randomNumber() * 0xffffffff); //?
+
   // Fix for IOS < 14.8 setBigUint64 absence
   if (typeof view.setBigUint64 === 'function') {
     view.setBigUint64(0, now);
