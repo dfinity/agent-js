@@ -26,6 +26,7 @@
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
     "eslint": "^8.19.0",
+    "eslint-plugin-cypress": "^2.13.3",
     "eslint-plugin-jsdoc": "^39.3.3",
     "fs": "^0.0.1-security",
     "husky": "^8.0.1",
