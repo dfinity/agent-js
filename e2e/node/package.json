@@ -42,7 +42,7 @@
     "jest": "^28.1.2",
     "locus": "^2.0.4",
     "node-webcrypto-p11": "^2.5.0",
-    "size-limit": "^8.1.0",
+    "size-limit": "^8.2.6",
     "text-encoding": "^0.7.0",
     "ts-jest": "^28.0.5",
     "ts-node": "^10.8.2",

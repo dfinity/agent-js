@@ -22,7 +22,7 @@
     "esbuild": "^0.15.16",
     "events": "^3.2.0",
     "html-webpack-plugin": "^5.1.0",
-    "size-limit": "^8.1.0",
+    "size-limit": "^8.2.6",
     "stream-browserify": "^3.0.0",
     "ts-node": "^10.8.2",
     "util": "^0.12.3",
