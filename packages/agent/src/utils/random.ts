@@ -2,7 +2,7 @@
  * Generates a random unsigned 32-bit integer between 0 and 0xffffffff
  * @returns {number} a random number
  */
-export const randomNumber = () => {
+export const randomNumber = (): number => {
   // determine whether browser crypto is available
   if (typeof window !== 'undefined' && !!window.crypto && !!window.crypto.getRandomValues) {
     const array = new Uint32Array(1);
