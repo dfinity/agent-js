@@ -110,8 +110,8 @@ export function makeNonce(): Nonce {
   const buffer = new ArrayBuffer(16);
   const view = new DataView(buffer);
   const now = BigInt(+Date.now());
-  const randHi = Math.floor(randomNumber() * 0xffffffff); //?
-  const randLo = Math.floor(randomNumber() * 0xffffffff); //?
+  const randHi = randomNumber();
+  const randLo = randomNumber();
 
   // Fix for IOS < 14.8 setBigUint64 absence
   if (typeof view.setBigUint64 === 'function') {
