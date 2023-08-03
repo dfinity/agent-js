@@ -498,7 +498,7 @@ describe('makeNonce', () => {
 
     it('should create same value using polyfill', () => {
       const originalNonce = toHexString(makeNonce());
-      expect(spyOnSetUint32).toBeCalledTimes(2);
+      expect(spyOnSetUint32).toBeCalledTimes(4);
 
       usePolyfill = true;
 
