@@ -103,26 +103,21 @@ export type ReadRequest = QueryRequest | ReadStateRequest;
 export type Nonce = Uint8Array & { __nonce__: void };
 
 /**
- * Create a random Nonce, based on date and a random suffix.
+ * Create a random Nonce, based on random values
  */
 export function makeNonce(): Nonce {
   // Encode 128 bits.
   const buffer = new ArrayBuffer(16);
   const view = new DataView(buffer);
-  const now = BigInt(+Date.now());
-  const randHi = randomNumber();
-  const randLo = randomNumber();
+  const rand1 = randomNumber();
+  const rand2 = randomNumber();
+  const rand3 = randomNumber();
+  const rand4 = randomNumber();
 
-  // Fix for IOS < 14.8 setBigUint64 absence
-  if (typeof view.setBigUint64 === 'function') {
-    view.setBigUint64(0, now);
-  } else {
-    const TWO_TO_THE_32 = BigInt(1) << BigInt(32);
-    view.setUint32(0, Number(now >> BigInt(32)));
-    view.setUint32(4, Number(now % TWO_TO_THE_32));
-  }
-  view.setUint32(8, randHi);
-  view.setUint32(12, randLo);
+  view.setUint32(0, rand1);
+  view.setUint32(4, rand2);
+  view.setUint32(8, rand3);
+  view.setUint32(12, rand4);
 
   return buffer as Nonce;
 }
