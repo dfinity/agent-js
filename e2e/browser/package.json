@@ -20,7 +20,7 @@
   "devDependencies": {
     "@types/node": "^18.0.6",
     "concurrently": "^7.3.0",
-    "cypress": "^12.17.2",
+    "cypress": "^12.17.3",
     "esbuild": "^0.15.16",
     "parcel": "^2.6.2",
     "pm2": "^5.3.0",
