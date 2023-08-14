@@ -1,11 +1,11 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`retry failures should succeed after multiple failures within the configured limit 1`] = `
-Object {
+exports[`retry failures > should succeed after multiple failures within the configured limit 1`] = `
+{
   "requestId": ArrayBuffer [],
-  "response": Object {
+  "response": {
     "body": null,
-    "headers": Array [],
+    "headers": [],
     "ok": true,
     "status": 200,
     "statusText": "success!",

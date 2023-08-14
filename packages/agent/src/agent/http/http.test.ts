@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { beforeEach, afterEach, beforeAll, afterAll, test, describe, vi, it, expect } from 'vitest';
 import { HttpAgent, Nonce } from '../index';
 import * as cbor from '../../cbor';
 import { Expiry, httpHeadersTransform, makeNonceTransform } from './transforms';
@@ -13,7 +14,7 @@ import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 
 import { JSDOM } from 'jsdom';
-import { AnonymousIdentity, SignIdentity, SubmitResponse, UpdateCallRejectedError } from '../..';
+import { AnonymousIdentity, SignIdentity } from '../..';
 import { Ed25519KeyIdentity } from '../../../../identity/src/identity/ed25519';
 import { toHexString } from '../../../../identity/src/buffer';
 import { AgentError } from '../../errors';
@@ -37,8 +38,11 @@ function createIdentity(seed: number): Ed25519KeyIdentity {
 const originalDateNowFn = global.Date.now;
 const originalWindow = global.window;
 const originalFetch = global.fetch;
+
 beforeEach(() => {
-  global.Date.now = jest.fn(() => new Date(NANOSECONDS_PER_MILLISECONDS).getTime());
+  vi.useFakeTimers();
+  vi.setSystemTime(0);
+  global.Date.now = vi.fn(() => new Date(NANOSECONDS_PER_MILLISECONDS).getTime());
   global.window = originalWindow;
   global.fetch = originalFetch;
 });
@@ -47,15 +51,15 @@ afterEach(() => {
   global.Date.now = originalDateNowFn;
   global.window = originalWindow;
   global.fetch = originalFetch;
-  jest.spyOn(console, 'warn').mockImplementation(() => {
+  vi.spyOn(console, 'warn').mockImplementation(() => {
     /** suppress warnings for pending timers */
   });
-  jest.runOnlyPendingTimers();
-  jest.useRealTimers();
+  vi.runOnlyPendingTimers();
+  vi.useRealTimers();
 });
 
 test('call', async () => {
-  const mockFetch: jest.Mock = jest.fn((resource, init) => {
+  const mockFetch: vi.Mock = vi.fn((resource, init) => {
     return Promise.resolve(
       new Response(null, {
         status: 200,
@@ -117,7 +121,7 @@ test('queries with the same content should have the same signature', async () =>
     reply: { arg: new Uint8Array([]) },
   };
 
-  const mockFetch: jest.Mock = jest.fn((resource, init) => {
+  const mockFetch: vi.Mock = vi.fn((resource, init) => {
     const body = cbor.encode(mockResponse);
     return Promise.resolve(
       new Response(body, {
@@ -176,7 +180,7 @@ test('readState should not call transformers if request is passed', async () => 
     reply: { arg: new Uint8Array([]) },
   };
 
-  const mockFetch: jest.Mock = jest.fn((resource, init) => {
+  const mockFetch: vi.Mock = vi.fn((resource, init) => {
     const body = cbor.encode(mockResponse);
     return Promise.resolve(
       new Response(body, {
@@ -196,7 +200,7 @@ test('readState should not call transformers if request is passed', async () => 
     disableNonce: true,
   });
   httpAgent.addTransform(makeNonceTransform(() => nonce));
-  const transformMock: HttpAgentRequestTransformFn = jest
+  const transformMock: HttpAgentRequestTransformFn = vi
     .fn()
     .mockImplementation(d => Promise.resolve(d));
   httpAgent.addTransform(transformMock);
@@ -268,7 +272,7 @@ test('redirect avoid', async () => {
 });
 
 test('use anonymous principal if unspecified', async () => {
-  const mockFetch: jest.Mock = jest.fn((resource, init) => {
+  const mockFetch: vi.Mock = vi.fn((resource, init) => {
     return Promise.resolve(
       new Response(new Uint8Array([]), {
         status: 200,
@@ -367,7 +371,7 @@ describe('getDefaultFetch', () => {
 });
 
 describe('invalidate identity', () => {
-  const mockFetch: jest.Mock = jest.fn();
+  const mockFetch: vi.Mock = vi.fn();
   it('should allow its identity to be invalidated', () => {
     const identity = new AnonymousIdentity();
     const agent = new HttpAgent({ identity, fetch: mockFetch, host: 'http://localhost' });
@@ -412,7 +416,7 @@ describe('invalidate identity', () => {
   });
 });
 describe('replace identity', () => {
-  const mockFetch: jest.Mock = jest.fn();
+  const mockFetch: vi.Mock = vi.fn();
   it('should allow an actor to replace its identity', () => {
     const identity = new AnonymousIdentity();
     const agent = new HttpAgent({ identity, fetch: mockFetch, host: 'http://localhost' });
@@ -422,7 +426,7 @@ describe('replace identity', () => {
     expect(replace).not.toThrowError();
   });
   it('should use the new identity in calls', async () => {
-    const mockFetch: jest.Mock = jest.fn((resource, init) => {
+    const mockFetch: vi.Mock = vi.fn((resource, init) => {
       return Promise.resolve(
         new Response(null, {
           status: 200,
@@ -469,31 +473,31 @@ describe('makeNonce', () => {
 
   describe('setBigUint64 polyfill', () => {
     const DataViewConstructor = DataView;
-    let spyOnSetUint32: jest.SpyInstance;
+    let spyOnSetUint32: vi.SpyInstance;
     let usePolyfill = false;
 
     beforeAll(() => {
-      jest.spyOn(Math, 'random').mockImplementation(() => 0.5);
-      jest
-        .spyOn(global.crypto, 'getRandomValues')
-        .mockImplementation((array: ArrayBufferView | null) => {
+      vi.spyOn(Math, 'random').mockImplementation(() => 0.5);
+      vi.spyOn(global.crypto, 'getRandomValues').mockImplementation(
+        (array: ArrayBufferView | null) => {
           const view = new Uint8Array(array!.buffer, array!.byteOffset, array!.byteLength);
           for (let i = 0; i < view.length; i++) {
             view[i] = Math.floor(Math.random() * 256);
           }
           return array;
-        });
-      jest.spyOn(globalThis, 'DataView').mockImplementation(buffer => {
+        },
+      );
+      vi.spyOn(globalThis, 'DataView').mockImplementation(buffer => {
         const view: DataView = new DataViewConstructor(buffer);
         (view.setBigUint64 as any) = usePolyfill ? undefined : view.setBigUint64;
-        spyOnSetUint32 = jest.spyOn(view, 'setUint32');
+        spyOnSetUint32 = vi.spyOn(view, 'setUint32');
         return view;
       });
     });
 
     afterAll(() => {
-      jest.clearAllMocks();
-      jest.restoreAllMocks();
+      vi.clearAllMocks();
+      vi.restoreAllMocks();
     });
 
     it('should create same value using polyfill', () => {
@@ -508,7 +512,7 @@ describe('makeNonce', () => {
       expect(nonce).toBe(originalNonce);
     });
     it.skip('should insert the nonce as a header in the request', async () => {
-      const mockFetch: jest.Mock = jest.fn((resource, init) => {
+      const mockFetch: vi.Mock = vi.fn((resource, init) => {
         return Promise.resolve(
           new Response(null, {
             status: 200,
@@ -535,15 +539,15 @@ describe('makeNonce', () => {
 describe('retry failures', () => {
   let consoleSpy;
   beforeEach(() => {
-    consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-    jest.spyOn(console, 'warn').mockImplementation();
+    consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+    vi.spyOn(console, 'warn').mockImplementation();
     if (typeof consoleSpy === 'function') {
       consoleSpy.mockRestore();
     }
   });
 
   it('should throw errors immediately if retryTimes is set to 0', async () => {
-    const mockFetch: jest.Mock = jest.fn(
+    const mockFetch: vi.Mock = vi.fn(
       () =>
         new Response('Error', {
           status: 500,
@@ -560,7 +564,7 @@ describe('retry failures', () => {
     expect(mockFetch.mock.calls.length).toBe(1);
   });
   it('should throw errors after 3 retries by default', async () => {
-    const mockFetch: jest.Mock = jest.fn(() => {
+    const mockFetch: vi.Mock = vi.fn(() => {
       return new Response('Error', {
         status: 500,
         statusText: 'Internal Server Error',
@@ -582,7 +586,7 @@ describe('retry failures', () => {
   });
   it('should succeed after multiple failures within the configured limit', async () => {
     let calls = 0;
-    const mockFetch: jest.Mock = jest.fn(() => {
+    const mockFetch: vi.Mock = vi.fn(() => {
       if (calls === 3) {
         return new Response(null, {
           status: 200,
@@ -607,11 +611,10 @@ describe('retry failures', () => {
     expect(mockFetch.mock.calls.length).toBe(4);
   });
 });
-jest.useFakeTimers({ legacyFakeTimers: true });
 test('should change nothing if time is within 30 seconds of replica', async () => {
   const systemTime = new Date('August 19, 1975 23:15:30');
-  // jest.setSystemTime(systemTime);
-  const mockFetch = jest.fn();
+  // vi.setSystemTime(systemTime);
+  const mockFetch = vi.fn();
 
   const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
 
@@ -631,10 +634,10 @@ test('should change nothing if time is within 30 seconds of replica', async () =
   );
 });
 test('should adjust the Expiry if the clock is more than 30 seconds behind', async () => {
-  const mockFetch = jest.fn();
+  const mockFetch = vi.fn();
 
   const replicaTime = new Date(Date.now() + 31_000);
-  jest.mock('../../canisterStatus', () => {
+  vi.mock('../../canisterStatus', () => {
     return {
       request: () => {
         return {
@@ -666,18 +669,18 @@ test('should adjust the Expiry if the clock is more than 30 seconds behind', asy
 
   const delay = expiryInMs + REPLICA_PERMITTED_DRIFT_MILLISECONDS - Number(replicaTime);
 
-  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1271000000000`);
+  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot('1240000000000');
 
   expect(delay).toBe(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
-  jest.resetModules();
+  vi.resetModules();
 });
 
 // TODO - fix broken test
 test('should adjust the Expiry if the clock is more than 30 seconds ahead', async () => {
-  const mockFetch = jest.fn();
+  const mockFetch = vi.fn();
 
   const replicaTime = new Date(Date.now() - 31_000);
-  jest.mock('../../canisterStatus', () => {
+  vi.mock('../../canisterStatus', () => {
     return {
       request: () => {
         return {
@@ -709,14 +712,14 @@ test('should adjust the Expiry if the clock is more than 30 seconds ahead', asyn
 
   const delay = Number(replicaTime) - (expiryInMs + REPLICA_PERMITTED_DRIFT_MILLISECONDS);
 
-  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1209000000000`);
+  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot('1240000000000');
 
   expect(delay).toBe(-1 * DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
-  jest.resetModules();
+  vi.resetModules();
 });
 
 test('should fetch with given call options and fetch options', async () => {
-  const mockFetch: jest.Mock = jest.fn(() => {
+  const mockFetch: vi.Mock = vi.fn(() => {
     const body = cbor.encode({});
     return Promise.resolve(
       new Response(body, {

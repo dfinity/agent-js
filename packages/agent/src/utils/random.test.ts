@@ -1,11 +1,15 @@
+import { beforeAll, beforeEach, describe, it, expect } from 'vitest';
 import { randomNumber } from './random';
 import { Crypto } from '@peculiar/webcrypto';
 import { randomInt } from 'node:crypto';
 
 const webcrypto = new Crypto();
 beforeEach(() => {
-  (global as any).window = undefined;
-  (global as any).crypto = undefined;
+  if (!globalThis.crypto) {
+    Object.defineProperty(globalThis, 'crypto', {
+      value: webcrypto,
+    });
+  }
 });
 
 function isInteger(num) {
@@ -22,36 +26,42 @@ function isInteger(num) {
 
 describe('randomNumber', () => {
   it('should use window.crypto if available', () => {
-    global.window = {
-      crypto: {
+    Object.defineProperty(globalThis, 'crypto', {
+      value: {
         getRandomValues: webcrypto.getRandomValues,
       },
-    } as any;
+    });
     const result = randomNumber();
     expect(result).toBeGreaterThanOrEqual(0);
     expect(isInteger(result)).toBe(true);
     expect(result).toBeLessThanOrEqual(0xffffffff);
   });
   it('should use globabl webcrypto if available', () => {
-    global.crypto = {
-      getRandomValues: webcrypto.getRandomValues,
-    } as any;
+    Object.defineProperty(globalThis, 'crypto', {
+      value: {
+        getRandomValues: webcrypto.getRandomValues,
+      },
+    });
     const result = randomNumber();
     expect(result).toBeGreaterThanOrEqual(0);
     expect(isInteger(result)).toBe(true);
     expect(result).toBeLessThanOrEqual(0xffffffff);
   });
   it('should use node crypto if available', () => {
-    global.crypto = {
-      randomInt,
-    } as any;
+    Object.defineProperty(globalThis, 'crypto', {
+      value: {
+        randomInt,
+      },
+    });
     const result = randomNumber();
     expect(isInteger(result)).toBe(true);
     expect(result).toBeLessThanOrEqual(0xffffffff);
   });
   it('should use Math.random if nothing else is available', () => {
-    (global as any).window = undefined;
-    (global as any).crypto = undefined;
+    Object.defineProperty(globalThis, 'crypto', {
+      value: undefined,
+    });
+
     const result = randomNumber();
     expect(isInteger(result)).toBe(true);
     expect(result).toBeLessThanOrEqual(0xffffffff);

@@ -1,3 +1,4 @@
+import { vi, expect, beforeEach, afterEach, describe, it, test } from 'vitest';
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { HttpAgent, Nonce, SubmitResponse } from './agent';
@@ -8,16 +9,14 @@ import { requestIdOf } from './request_id';
 import * as pollingImport from './polling';
 
 const importActor = async (mockUpdatePolling?: () => void) => {
-  jest.dontMock('./polling');
   mockUpdatePolling?.();
-
   return await import('./actor');
 };
 
 const originalDateNowFn = global.Date.now;
 beforeEach(() => {
-  jest.resetModules();
-  global.Date.now = jest.fn(() => new Date(1000000).getTime());
+  vi.resetModules();
+  global.Date.now = vi.fn(() => new Date(1000000).getTime());
 });
 afterEach(() => {
   global.Date.now = originalDateNowFn;
@@ -35,7 +34,7 @@ describe('makeActor', () => {
 
     const expectedReplyArg = IDL.encode([IDL.Text], ['Hello, World!']);
 
-    const mockFetch: jest.Mock = jest
+    const mockFetch: vi.Mock = vi
       .fn()
       .mockImplementationOnce((/*resource, init*/) => {
         return Promise.resolve(
@@ -233,13 +232,13 @@ describe('makeActor', () => {
     const canisterDecodedReturnValue = 'Hello, World!';
     const expectedReplyArg = IDL.encode([IDL.Text], [canisterDecodedReturnValue]);
     const { Actor } = await importActor(() =>
-      jest.doMock('./polling', () => ({
+      vi.doMock('./polling', () => ({
         ...pollingImport,
-        pollForResponse: jest.fn(() => expectedReplyArg),
+        pollForResponse: vi.fn(() => expectedReplyArg),
       })),
     );
 
-    const mockFetch = jest.fn(resource => {
+    const mockFetch = vi.fn(resource => {
       if (resource.endsWith('/call')) {
         return Promise.resolve(
           new Response(null, {
@@ -305,7 +304,7 @@ describe('makeActor', () => {
   });
   it('should allow its agent to be invalidated', async () => {
     const { Actor } = await importActor();
-    const mockFetch = jest.fn();
+    const mockFetch = vi.fn();
     const actorInterface = () => {
       return IDL.Service({
         greet: IDL.Func([IDL.Text], [IDL.Text]),

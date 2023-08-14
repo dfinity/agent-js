@@ -1,3 +1,4 @@
+import { test, expect } from 'vitest';
 import { Principal } from '@dfinity/principal';
 import { decode, encode } from './cbor';
 import { toHex } from './utils/buffer';
