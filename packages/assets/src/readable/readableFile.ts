@@ -1,22 +1,28 @@
 import { Readable } from './readable';
+import mime from 'mime';
 
 export class ReadableFile implements Readable {
-  private readonly _file: File;
+  #file: File;
 
   constructor(file: File) {
-    this._file = file;
+    if (typeof file.type === 'undefined' || file.type === '') {
+      const type = mime.getType(file.name) ?? 'UNKNOWN';
+      this.#file = new File([file], file.name, { type });
+    } else {
+      this.#file = file;
+    }
   }
 
   public get fileName(): string {
-    return this._file.name;
+    return this.#file.name;
   }
 
   public get contentType(): string {
-    return this._file.type;
+    return this.#file.type;
   }
 
   public get length(): number {
-    return this._file.size;
+    return this.#file.size;
   }
 
   public async open(): Promise<void> {
@@ -28,6 +34,6 @@ export class ReadableFile implements Readable {
   }
 
   public async slice(start: number, end: number): Promise<Uint8Array> {
-    return new Uint8Array(await this._file.slice(start, end).arrayBuffer());
+    return new Uint8Array(await this.#file.slice(start, end).arrayBuffer());
   }
 }

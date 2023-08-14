@@ -6,6 +6,7 @@ describe('ReadableFile', () => {
     const readable = new ReadableFile(file);
 
     expect(readable.fileName).toEqual(file.name);
+    readable;
     expect(readable.contentType).toEqual('text/plain');
     expect(readable.length).toEqual(file.size);
     await readable.open();

@@ -9,16 +9,24 @@
 
 import mime from 'mime-types';
 
-global.crypto = require('@peculiar/webcrypto');
+if (!globalThis.crypto) {
+  global.crypto = require('@peculiar/webcrypto');
+}
 global.TextEncoder = require('text-encoding').TextEncoder;
 global.TextDecoder = require('text-encoding').TextDecoder;
 global.MessageChannel = require('worker_threads').MessageChannel;
-global.Blob = require('@web-std/file').Blob;
-// @ts-ignore File polyfill with additional mime type polyfill
-global.File = class FilePolyfill extends require('@web-std/file').File {
-  constructor(init: BlobPart[], name?: string, options?: FilePropertyBag | undefined) {
-    super(init, name, options);
-    this._type = mime.lookup(name) || 'application/octet-stream';
-  }
-};
+
+if (!globalThis.fetch) {
+  global.Blob = require('@web-std/file').Blob;
+}
+
+if (!globalThis.File) {
+  // @ts-ignore File polyfill with additional mime type polyfill
+  global.File = class FilePolyfill extends require('@web-std/file').File {
+    constructor(init: BlobPart[], name?: string, options?: FilePropertyBag | undefined) {
+      super(init, name, options);
+      this._type = mime.lookup(name) || 'application/octet-stream';
+    }
+  };
+}
 require('whatwg-fetch');
