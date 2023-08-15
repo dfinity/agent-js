@@ -47,6 +47,9 @@
     "test": "jest",
     "test:coverage": "jest --verbose --collectCoverage"
   },
+  "peerDependencies": {
+    "@dfinity/principal": "^0.18.1"
+  },
   "devDependencies": {
     "@types/jest": "^28.1.4",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
