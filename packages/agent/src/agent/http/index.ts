@@ -205,7 +205,10 @@ export class HttpAgent implements Agent {
     } else {
       const location = typeof window !== 'undefined' ? window.location : undefined;
       if (!location) {
-        throw new Error('Must specify a host to connect to.');
+        this._host = new URL('https://icp-api.io');
+        console.warn(
+          'Could not infer host from window.location, defaulting to mainnet gateway of https://icp-api.io. Please provide a host to the HttpAgent constructor to avoid this warning.',
+        );
       }
       this._host = new URL(location + '');
     }

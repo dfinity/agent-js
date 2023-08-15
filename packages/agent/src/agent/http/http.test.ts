@@ -474,6 +474,15 @@ describe('makeNonce', () => {
 
     beforeAll(() => {
       jest.spyOn(Math, 'random').mockImplementation(() => 0.5);
+      jest
+        .spyOn(global.crypto, 'getRandomValues')
+        .mockImplementation((array: ArrayBufferView | null) => {
+          const view = new Uint8Array(array!.buffer, array!.byteOffset, array!.byteLength);
+          for (let i = 0; i < view.length; i++) {
+            view[i] = Math.floor(Math.random() * 256);
+          }
+          return array;
+        });
       jest.spyOn(globalThis, 'DataView').mockImplementation(buffer => {
         const view: DataView = new DataViewConstructor(buffer);
         (view.setBigUint64 as any) = usePolyfill ? undefined : view.setBigUint64;
@@ -489,7 +498,7 @@ describe('makeNonce', () => {
 
     it('should create same value using polyfill', () => {
       const originalNonce = toHexString(makeNonce());
-      expect(spyOnSetUint32).toBeCalledTimes(2);
+      expect(spyOnSetUint32).toBeCalledTimes(4);
 
       usePolyfill = true;
 
