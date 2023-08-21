@@ -9,13 +9,16 @@ import {
 import { Principal } from '@dfinity/principal';
 import * as cbor from 'simple-cbor';
 import { fromHexString, toHexString } from '../buffer';
+import { DelegationError } from './errors';
 
 const domainSeparator = new TextEncoder().encode('\x1Aic-request-auth-delegation');
 const requestDomainSeparator = new TextEncoder().encode('\x0Aic-request');
+const MAXIMUM_NUMBER_OF_TARGETS = 1_000;
+const MAXIMUM_DELEGATION_CHAIN_LENGTH = 20;
 
 function _parseBlob(value: unknown): ArrayBuffer {
   if (typeof value !== 'string' || value.length < 64) {
-    throw new Error('Invalid public key.');
+    throw new DelegationError('Invalid public key.');
   }
 
   return fromHexString(value);
@@ -32,7 +35,11 @@ export class Delegation {
     public readonly pubkey: ArrayBuffer,
     public readonly expiration: bigint,
     public readonly targets?: Principal[],
-  ) {}
+  ) {
+    if (targets && targets?.length > MAXIMUM_NUMBER_OF_TARGETS) {
+      throw new DelegationError(`Delegation targets cannot exceed ${MAXIMUM_NUMBER_OF_TARGETS}`);
+    }
+  }
 
   public toCBOR(): cbor.CborValue {
     // Expiration field needs to be encoded as a u64 specifically.
@@ -97,6 +104,17 @@ async function _createSingleDelegation(
   expiration: Date,
   targets?: Principal[],
 ): Promise<SignedDelegation> {
+  // Validate inputs
+  if (targets && targets?.length > MAXIMUM_NUMBER_OF_TARGETS) {
+    throw new DelegationError(`Delegation targets cannot exceed ${MAXIMUM_NUMBER_OF_TARGETS}`);
+  }
+  if (!from.sign) {
+    throw new DelegationError('The from identity does not have a sign method.');
+  }
+  if (!to.toDer) {
+    throw new DelegationError('The to public key does not have a toDer method.');
+  }
+
   const delegation: Delegation = new Delegation(
     to.toDer(),
     BigInt(+expiration) * BigInt(1000000), // In nanoseconds.
@@ -192,14 +210,14 @@ export class DelegationChain {
   public static fromJSON(json: string | JsonnableDelegationChain): DelegationChain {
     const { publicKey, delegations } = typeof json === 'string' ? JSON.parse(json) : json;
     if (!Array.isArray(delegations)) {
-      throw new Error('Invalid delegations.');
+      throw new DelegationError('Invalid delegations.');
     }
 
     const parsedDelegations: SignedDelegation[] = delegations.map(signedDelegation => {
       const { delegation, signature } = signedDelegation;
       const { pubkey, expiration, targets } = delegation;
       if (targets !== undefined && !Array.isArray(targets)) {
-        throw new Error('Invalid targets.');
+        throw new DelegationError('Invalid targets.');
       }
 
       return {
@@ -209,7 +227,7 @@ export class DelegationChain {
           targets &&
             targets.map((t: unknown) => {
               if (typeof t !== 'string') {
-                throw new Error('Invalid target.');
+                throw new DelegationError('Invalid target.');
               }
               return Principal.fromHex(t);
             }),
@@ -237,7 +255,13 @@ export class DelegationChain {
   protected constructor(
     public readonly delegations: SignedDelegation[],
     public readonly publicKey: DerEncodedPublicKey,
-  ) {}
+  ) {
+    if (delegations.length > MAXIMUM_DELEGATION_CHAIN_LENGTH) {
+      throw new DelegationError(
+        `Delegation chain cannot exceed ${MAXIMUM_DELEGATION_CHAIN_LENGTH}`,
+      );
+    }
+  }
 
   public toJSON(): JsonnableDelegationChain {
     return {
