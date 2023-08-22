@@ -68,5 +68,8 @@
       "limit": "100 kB",
       "webpack": false
     }
-  ]
+  ],
+  "dependencies": {
+    "@noble/hashes": "^1.3.1"
+  }
 }
