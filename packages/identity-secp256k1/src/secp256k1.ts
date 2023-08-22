@@ -1,7 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 import { DerEncodedPublicKey, KeyPair, Signature } from '@dfinity/agent';
 import Secp256k1 from 'secp256k1';
-import { sha256 } from 'js-sha256';
+import { sha256 } from '@noble/hashes/sha256';
 import { randomBytes } from 'tweetnacl';
 import hdkey from './hdkey';
 import { mnemonicToSeedSync } from 'bip39';
@@ -201,7 +201,7 @@ export class Secp256k1KeyIdentity extends SignIdentity {
    */
   public async sign(challenge: ArrayBuffer): Promise<Signature> {
     const hash = sha256.create();
-    hash.update(challenge);
+    hash.update(new Uint8Array(challenge));
     const signature = Secp256k1.ecdsaSign(
       new Uint8Array(hash.digest()),
       new Uint8Array(this._privateKey),
