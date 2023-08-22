@@ -9,11 +9,12 @@ import {
   HashTree,
   lookup_path,
   reconstruct,
+  uint8ToBuf,
 } from '@dfinity/agent';
 import { lebDecode } from '@dfinity/candid';
 import { PipeArrayBuffer } from '@dfinity/candid/lib/cjs/utils/buffer';
 import { AssetsCanisterRecord, getAssetsCanister } from './canisters/assets';
-import { Hasher, sha256 as jsSha256 } from 'js-sha256';
+import { sha256 } from '@noble/hashes/sha256';
 import { BatchOperationKind } from './canisters/assets_service';
 import * as base64Arraybuffer from 'base64-arraybuffer';
 import { isReadable, Readable } from './readable/readable';
@@ -196,14 +197,12 @@ export class AssetManager {
         await readable.open();
         const bytes = await readable.slice(0, readable.length);
         await readable.close();
-        const sha256 =
-          config?.sha256 ??
-          new Uint8Array(jsSha256.create().update(new Uint8Array(bytes)).arrayBuffer());
+        const hash = config?.sha256 ?? sha256.create().update(new Uint8Array(bytes)).digest();
         return this._actor.store({
           key,
           content: bytes,
           content_type: readable.contentType,
-          sha256: [sha256],
+          sha256: [hash],
           content_encoding: config?.contentEncoding ?? 'identity',
         });
       });
@@ -268,11 +267,15 @@ export class AssetManager {
   }
 }
 
+// Required since the sha256 type is not exported
+const hasher = sha256.create();
+type SHA256TYPE = typeof hasher;
+
 class AssetManagerBatch {
   private _scheduledOperations: Array<
     (batch_id: bigint, onProgress?: (progress: Progress) => void) => Promise<BatchOperationKind[]>
   > = [];
-  private _sha256: { [key: string]: Hasher } = {};
+  private _sha256: { [key: string]: SHA256TYPE } = {};
   private _progress: { [key: string]: Progress } = {};
 
   constructor(
@@ -290,7 +293,7 @@ class AssetManagerBatch {
     const [, config] = args;
     const key = [config?.path ?? '', config?.fileName ?? readable.fileName].join('/');
     if (!config?.sha256) {
-      this._sha256[key] = jsSha256.create();
+      this._sha256[key] = sha256.create();
     }
     this._progress[key] = { current: 0, total: readable.length };
     config?.onProgress?.(this._progress[key]);
@@ -330,7 +333,7 @@ class AssetManagerBatch {
         {
           SetAssetContent: {
             key,
-            sha256: [config?.sha256 ?? new Uint8Array(this._sha256[key].arrayBuffer())],
+            sha256: [config?.sha256 ?? new Uint8Array(this._sha256[key].digest())],
             chunk_ids: chunkIds,
             content_encoding: config?.contentEncoding ?? 'identity',
           },
@@ -573,12 +576,12 @@ class Asset {
     if (!this.sha256?.buffer) {
       return false;
     }
-    const sha256 = jsSha256.create();
+    const hash = sha256.create();
     if (bytes) {
-      sha256.update(Array.isArray(bytes) ? new Uint8Array(bytes) : bytes);
+      hash.update(Array.isArray(bytes) ? new Uint8Array(bytes) : bytes);
     } else {
-      await this.getChunks((_, chunk) => sha256.update(chunk), true);
+      await this.getChunks((_, chunk) => hash.update(chunk), true);
     }
-    return compare(this.sha256.buffer, sha256.arrayBuffer()) === 0;
+    return compare(uint8ToBuf(this.sha256), uint8ToBuf(hash.digest())) === 0;
   }
 }

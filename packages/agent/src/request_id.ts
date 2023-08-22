@@ -1,8 +1,8 @@
 import { lebEncode } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import borc from 'borc';
-import { sha256 as jsSha256 } from 'js-sha256';
-import { compare, concat } from './utils/buffer';
+import { sha256 } from '@noble/hashes/sha256';
+import { compare, concat, uint8ToBuf } from './utils/buffer';
 
 export type RequestId = ArrayBuffer & { __requestId__: void };
 
@@ -11,7 +11,7 @@ export type RequestId = ArrayBuffer & { __requestId__: void };
  * @param data - input to hash function
  */
 export function hash(data: ArrayBuffer): ArrayBuffer {
-  return jsSha256.create().update(new Uint8Array(data)).arrayBuffer();
+  return uint8ToBuf(sha256.create().update(new Uint8Array(data)).digest());
 }
 
 interface ToHashable {

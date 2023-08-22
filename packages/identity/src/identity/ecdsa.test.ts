@@ -1,4 +1,4 @@
-import { sha256 } from 'js-sha256';
+import { sha256 } from '@noble/hashes/sha256';
 import { ECDSAKeyIdentity } from './ecdsa';
 import { Crypto } from '@peculiar/webcrypto';
 

@@ -55,3 +55,12 @@ export function compare(b1: ArrayBuffer, b2: ArrayBuffer): number {
   }
   return 0;
 }
+
+/**
+ * Returns a true ArrayBuffer from a Uint8Array, as Uint8Array.buffer is unsafe.
+ * @param {Uint8Array} arr Uint8Array to convert
+ * @returns ArrayBuffer
+ */
+export function uint8ToBuf(arr: Uint8Array): ArrayBuffer {
+  return new DataView(arr.buffer, arr.byteOffset, arr.byteLength).buffer;
+}

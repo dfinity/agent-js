@@ -1,7 +1,7 @@
 import { DerEncodedPublicKey, PublicKey } from '@dfinity/agent';
 import { toHexString } from '@dfinity/candid/lib/cjs/utils/buffer';
 import { randomBytes } from 'crypto';
-import { sha256 } from 'js-sha256';
+import { sha256 } from '@noble/hashes/sha256';
 import Secp256k1 from 'secp256k1';
 import { Secp256k1KeyIdentity, Secp256k1PublicKey } from './secp256k1';
 
