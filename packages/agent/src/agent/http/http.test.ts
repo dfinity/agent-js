@@ -13,7 +13,7 @@ import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 
 import { JSDOM } from 'jsdom';
-import { AnonymousIdentity, SignIdentity, SubmitResponse, UpdateCallRejectedError } from '../..';
+import { AnonymousIdentity, SignIdentity } from '../..';
 import { Ed25519KeyIdentity } from '../../../../identity/src/identity/ed25519';
 import { toHexString } from '../../../../identity/src/buffer';
 import { AgentError } from '../../errors';
@@ -39,7 +39,12 @@ const originalWindow = global.window;
 const originalFetch = global.fetch;
 beforeEach(() => {
   global.Date.now = jest.fn(() => new Date(NANOSECONDS_PER_MILLISECONDS).getTime());
-  global.window = originalWindow;
+  Object.assign(global, 'window', {
+    value: {
+      originalWindow,
+    },
+    writable: true,
+  });
   global.fetch = originalFetch;
 });
 
@@ -753,4 +758,29 @@ test('should fetch with given call options and fetch options', async () => {
 
   expect(calls[0][1].reactNative).toStrictEqual({ textStreaming: true });
   expect(calls[1][1].reactNative.__nativeResponseType).toBe('base64');
+});
+
+describe('default host', () => {
+  it('should use a default host of icp-api.io', () => {
+    const agent = new HttpAgent({ fetch: jest.fn() });
+    window.location.hostname; //?
+    expect((agent as any)._host.hostname).toBe('icp-api.io');
+  });
+  it('should use a default of icp-api.io if location is not available', () => {
+    delete (global as any).window;
+    const agent = new HttpAgent({ fetch: jest.fn() });
+    expect((agent as any)._host.hostname).toBe('icp-api.io');
+  });
+  it('should use the existing host if the agent is used on a known hostname', () => {
+    const knownHosts = ['ic0.app', 'icp0.io', 'localhost', '127.0.0.1'];
+    for (const host of knownHosts) {
+      delete window.location;
+      window.location = {
+        hostname: host,
+        protocol: 'https:',
+      } as any;
+      const agent = new HttpAgent({ fetch: jest.fn(), host });
+      expect((agent as any)._host.hostname).toBe(host);
+    }
+  });
 });
