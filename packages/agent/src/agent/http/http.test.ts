@@ -763,7 +763,6 @@ test('should fetch with given call options and fetch options', async () => {
 describe('default host', () => {
   it('should use a default host of icp-api.io', () => {
     const agent = new HttpAgent({ fetch: jest.fn() });
-    window.location.hostname; //?
     expect((agent as any)._host.hostname).toBe('icp-api.io');
   });
   it('should use a default of icp-api.io if location is not available', () => {
