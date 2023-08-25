@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/agent",
-  "version": "0.19.1",
+  "version": "0.19.2",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to interact with the Internet Computer",
@@ -50,8 +50,8 @@
     "tslint": "tslint --project tsconfig.json --config tslint.json"
   },
   "peerDependencies": {
-    "@dfinity/candid": "^0.19.1",
-    "@dfinity/principal": "^0.19.1"
+    "@dfinity/candid": "^0.19.2",
+    "@dfinity/principal": "^0.19.2"
   },
   "dependencies": {
     "@noble/hashes": "^1.3.1",
