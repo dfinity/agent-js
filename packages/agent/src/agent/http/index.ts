@@ -212,7 +212,12 @@ export class HttpAgent implements Agent {
       }
       // Mainnet and local will have the api route available
       const knownHosts = ['ic0.app', 'icp0.io', 'localhost', '127.0.0.1'];
-      const knownHost = knownHosts.find(host => location?.hostname.endsWith(host));
+      const hostname = location?.hostname;
+      let knownHost;
+      if (hostname && typeof hostname === 'string') {
+        knownHost = knownHosts.find(host => hostname.endsWith(host));
+      }
+
       if (location && knownHost) {
         // If the user is on a boundary-node provided host, we can use the same host for the agent
         this._host = new URL(
