@@ -195,6 +195,18 @@ export class DelegationChain {
       targets?: Principal[];
     } = {},
   ): Promise<DelegationChain> {
+    if (options.previous) {
+      const delegatedKeys: PublicKey[] = [
+        ...options.previous.delegations.map(signedDelegation => signedDelegation.delegation.pubkey),
+        from.getPublicKey(),
+        to,
+      ];
+      const delegatedKeysSet = new Set(delegatedKeys.map(key => toHexString(key.derKey)));
+      if (delegatedKeys.length !== delegatedKeysSet.size) {
+        throw new DelegationError('Delegation chain cannot repeat public keys');
+      }
+    }
+
     const delegation = await _createSingleDelegation(from, to, expiration, options.targets);
     return new DelegationChain(
       [...(options.previous?.delegations || []), delegation],
@@ -255,6 +267,7 @@ export class DelegationChain {
   protected constructor(
     public readonly delegations: SignedDelegation[],
     public readonly publicKey: DerEncodedPublicKey,
+    public readonly previous?: DelegationChain,
   ) {
     if (delegations.length > MAXIMUM_DELEGATION_CHAIN_LENGTH) {
       throw new DelegationError(
