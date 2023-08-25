@@ -164,3 +164,29 @@ test('Delegation targets cannot exceed 1_000', () => {
     'Delegation targets cannot exceed 1000',
   );
 });
+
+test('Delegation chains cannot repeat public keys', async () => {
+  const root = createIdentity(0);
+  const middle = createIdentity(1);
+  const bottom = createIdentity(2);
+
+  const rootToMiddle = await DelegationChain.create(
+    root,
+    middle.getPublicKey(),
+    new Date(1609459200000),
+  );
+  const middleToBottom = await DelegationChain.create(
+    middle,
+    bottom.getPublicKey(),
+    new Date(1609459200000),
+    {
+      previous: rootToMiddle,
+    },
+  );
+
+  expect(
+    DelegationChain.create(bottom, root.getPublicKey(), new Date(1609459200000), {
+      previous: middleToBottom,
+    }),
+  ).rejects.toThrow('Delegation chain cannot repeat public keys');
+});
