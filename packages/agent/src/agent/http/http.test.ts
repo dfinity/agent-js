@@ -783,4 +783,16 @@ describe('default host', () => {
       expect((agent as any)._host.hostname).toBe(host);
     }
   });
+  it('should correctly handle subdomains on known hosts', () => {
+    const knownHosts = ['ic0.app', 'icp0.io', 'localhost', '127.0.0.1'];
+    for (const host of knownHosts) {
+      delete window.location;
+      window.location = {
+        hostname: `rrkah-fqaaa-aaaaa-aaaaq-cai.${host}`,
+        protocol: 'https:',
+      } as any;
+      const agent = new HttpAgent({ fetch: jest.fn() });
+      expect((agent as any)._host.hostname).toBe(host);
+    }
+  });
 });
