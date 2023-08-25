@@ -763,7 +763,6 @@ test('should fetch with given call options and fetch options', async () => {
 describe('default host', () => {
   it('should use a default host of icp-api.io', () => {
     const agent = new HttpAgent({ fetch: jest.fn() });
-    window.location.hostname; //?
     expect((agent as any)._host.hostname).toBe('icp-api.io');
   });
   it('should use a default of icp-api.io if location is not available', () => {
@@ -780,6 +779,34 @@ describe('default host', () => {
         protocol: 'https:',
       } as any;
       const agent = new HttpAgent({ fetch: jest.fn(), host });
+      expect((agent as any)._host.hostname).toBe(host);
+    }
+  });
+  it('should correctly handle subdomains on known hosts', () => {
+    const knownHosts = ['ic0.app', 'icp0.io', 'localhost', '127.0.0.1'];
+    for (const host of knownHosts) {
+      delete window.location;
+      window.location = {
+        host: `foo.${host}`,
+        hostname: `rrkah-fqaaa-aaaaa-aaaaq-cai.${host}`,
+        protocol: 'https:',
+      } as any;
+      const agent = new HttpAgent({ fetch: jest.fn() });
+      expect((agent as any)._host.hostname).toBe(host);
+    }
+  });
+  it('should handle port numbers for localhost', () => {
+    const knownHosts = ['localhost', '127.0.0.1'];
+    for (const host of knownHosts) {
+      delete window.location;
+      // hostname is different from host when port is specified
+      window.location = {
+        host: `${host}:4943`,
+        hostname: `${host}`,
+        protocol: 'http:',
+        port: '4943',
+      } as any;
+      const agent = new HttpAgent({ fetch: jest.fn() });
       expect((agent as any)._host.hostname).toBe(host);
     }
   });

@@ -84,6 +84,9 @@ describe('Auth Client', () => {
     (window as any).location = {
       reload: jest.fn(),
       fetch,
+      hostname: 'localhost',
+      protocol: 'http:',
+      port: '4943',
       toString: jest.fn(() => 'http://localhost:4943'),
     };
 
