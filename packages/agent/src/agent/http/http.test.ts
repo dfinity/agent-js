@@ -788,8 +788,24 @@ describe('default host', () => {
     for (const host of knownHosts) {
       delete window.location;
       window.location = {
+        host: `foo.${host}`,
         hostname: `rrkah-fqaaa-aaaaa-aaaaq-cai.${host}`,
         protocol: 'https:',
+      } as any;
+      const agent = new HttpAgent({ fetch: jest.fn() });
+      expect((agent as any)._host.hostname).toBe(host);
+    }
+  });
+  it('should handle port numbers for localhost', () => {
+    const knownHosts = ['localhost', '127.0.0.1'];
+    for (const host of knownHosts) {
+      delete window.location;
+      // hostname is different from host when port is specified
+      window.location = {
+        host: `${host}:4943`,
+        hostname: `${host}`,
+        protocol: 'http:',
+        port: '4943',
       } as any;
       const agent = new HttpAgent({ fetch: jest.fn() });
       expect((agent as any)._host.hostname).toBe(host);
