@@ -697,3 +697,16 @@ test('should decode matching optional fields if wire type contains additional fi
     b: ['123'],
   });
 });
+
+test('should coerce value to opt value', () => {
+  const encoded = IDL.encode([IDL.Text], ['hello']);
+  const value = IDL.decode([IDL.Opt(IDL.Text)], encoded)[0] as [string];
+  expect(value).toEqual(['hello']);
+});
+
+test('should not coerce nested opt opt', () => {
+  const encoded = IDL.encode([IDL.Text], ['hello']);
+  expect(() => IDL.decode([IDL.Opt(IDL.Opt(IDL.Text))], encoded)).toThrow(
+    'type mismatch: type on the wire text, expect type opt opt text',
+  );
+});
