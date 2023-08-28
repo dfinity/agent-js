@@ -325,6 +325,18 @@ describe('makeActor', () => {
       );
     }
   });
+  it('should throw a helpful error if the canisterId is not set', async () => {
+    const httpAgent = new HttpAgent({ host: 'http://localhost' });
+    const actorInterface = () => {
+      return IDL.Service({
+        greet: IDL.Func([IDL.Text], [IDL.Text]),
+      });
+    };
+    const { Actor } = await importActor();
+    expect(() => Actor.createActor(actorInterface, { agent: httpAgent })).toThrowError(
+      'Canister ID is required, but recieved undefined instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.',
+    );
+  });
 });
 
 // TODO: tests for rejected, unknown time out
