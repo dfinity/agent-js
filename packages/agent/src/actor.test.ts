@@ -6,6 +6,7 @@ import { CallRequest, SubmitRequestType, UnSigned } from './agent/http/types';
 import * as cbor from './cbor';
 import { requestIdOf } from './request_id';
 import * as pollingImport from './polling';
+import { ActorConfig } from './actor';
 
 const importActor = async (mockUpdatePolling?: () => void) => {
   jest.dontMock('./polling');
@@ -333,7 +334,8 @@ describe('makeActor', () => {
       });
     };
     const { Actor } = await importActor();
-    expect(() => Actor.createActor(actorInterface, { agent: httpAgent })).toThrowError(
+    const config = { agent: httpAgent } as any as ActorConfig;
+    expect(() => Actor.createActor(actorInterface, config)).toThrowError(
       'Canister ID is required, but recieved undefined instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.',
     );
   });
