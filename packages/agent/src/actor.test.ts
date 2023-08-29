@@ -6,6 +6,7 @@ import { CallRequest, SubmitRequestType, UnSigned } from './agent/http/types';
 import * as cbor from './cbor';
 import { requestIdOf } from './request_id';
 import * as pollingImport from './polling';
+import { ActorConfig } from './actor';
 
 const importActor = async (mockUpdatePolling?: () => void) => {
   jest.dontMock('./polling');
@@ -324,6 +325,19 @@ describe('makeActor', () => {
         "This identity has expired due this application's security policy. Please refresh your authentication.",
       );
     }
+  });
+  it('should throw a helpful error if the canisterId is not set', async () => {
+    const httpAgent = new HttpAgent({ host: 'http://localhost' });
+    const actorInterface = () => {
+      return IDL.Service({
+        greet: IDL.Func([IDL.Text], [IDL.Text]),
+      });
+    };
+    const { Actor } = await importActor();
+    const config = { agent: httpAgent } as any as ActorConfig;
+    expect(() => Actor.createActor(actorInterface, config)).toThrowError(
+      'Canister ID is required, but recieved undefined instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.',
+    );
   });
 });
 
