@@ -196,14 +196,19 @@ export class DelegationChain {
     } = {},
   ): Promise<DelegationChain> {
     if (options.previous) {
-      const delegatedKeys: PublicKey[] = [
-        ...options.previous.delegations.map(signedDelegation => signedDelegation.delegation.pubkey),
-        from.getPublicKey(),
-        to,
-      ];
-      const delegatedKeysSet = new Set(delegatedKeys.map(key => toHexString(key.derKey)));
-      if (delegatedKeys.length !== delegatedKeysSet.size) {
-        throw new DelegationError('Delegation chain cannot repeat public keys');
+      const usedPublicKeys = new Set<ArrayBuffer>();
+      let currentPublicKey = to.toDer();
+
+      for (const delegation of options.previous.delegations) {
+        if (usedPublicKeys.has(currentPublicKey)) {
+          throw new DelegationError('Delegation target cannot be repeated in the chain.');
+        }
+        usedPublicKeys.add(currentPublicKey);
+        currentPublicKey = delegation.delegation.pubkey;
+      }
+
+      if (usedPublicKeys.has(currentPublicKey)) {
+        throw new DelegationError('Error: Cannot repeat public keys in a delegation chain.');
       }
     }
 
