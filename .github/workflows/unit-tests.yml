@@ -29,7 +29,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      - run: npm install -g npm
+      - run: npm install -g npm@9
 
       - run: npm ci
 
