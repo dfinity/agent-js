@@ -92,9 +92,9 @@ test('DelegationChain can be serialized to and from JSON', async () => {
   expect(middleToBottomActual).toEqual(middleToBottom);
 });
 
-test.skip('DelegationChain has a maximum length of 20 delegations', async () => {
+test('DelegationChain has a maximum length of 20 delegations', async () => {
   const identities = new Array(21).fill(0).map((_, i) => createIdentity(i));
-  const signedDelegations: DelegationChain[] = [];
+  let prevDelegationChain: DelegationChain | undefined;
 
   for (let i = 0; i < identities.length - 1; i++) {
     const identity = identities[i];
@@ -112,19 +112,19 @@ test.skip('DelegationChain has a maximum length of 20 delegations', async () => 
         nextIdentity.getPublicKey(),
         expiry_date,
         {
-          previous: signedDelegations[i - 1],
+          previous: prevDelegationChain,
         },
       );
     }
-    signedDelegations.push(signedDelegation);
+    prevDelegationChain = signedDelegation;
   }
-  expect(signedDelegations.length).toEqual(20);
+  expect(prevDelegationChain?.delegations.length).toEqual(20);
 
   const secondLastIdentity = identities[identities.length - 2];
   const lastIdentity = identities[identities.length - 1];
   expect(
     DelegationChain.create(secondLastIdentity, lastIdentity.getPublicKey(), expiry_date, {
-      previous: signedDelegations[signedDelegations.length - 1],
+      previous: prevDelegationChain,
     }),
   ).rejects.toThrow('Delegation chain cannot exceed 20');
 });
@@ -149,9 +149,9 @@ test('Delegation targets cannot exceed 1_000', () => {
 });
 
 test('Delegation chains cannot repeat public keys', async () => {
-  const root = createIdentity(0);
+  const root = createIdentity(2);
   const middle = createIdentity(1);
-  const bottom = createIdentity(2);
+  const bottom = createIdentity(0);
 
   const rootToMiddle = await DelegationChain.create(root, middle.getPublicKey(), expiry_date);
   const middleToBottom = await DelegationChain.create(middle, bottom.getPublicKey(), expiry_date, {
@@ -171,4 +171,35 @@ test('Delegation chains cannot repeat public keys', async () => {
       previous: middleToBottom,
     }),
   ).rejects.toThrow('Cannot repeat public keys in a delegation chain.');
+});
+
+test('Cannot create a delegation chain with an outdated expiry', async () => {
+  const root = createIdentity(2);
+  const middle = createIdentity(1);
+  const bottom = createIdentity(0);
+
+  const rootToMiddle = await DelegationChain.create(root, middle.getPublicKey(), expiry_date);
+
+  expect(
+    DelegationChain.create(middle, bottom.getPublicKey(), new Date(0), {
+      previous: rootToMiddle,
+    }),
+  ).rejects.toThrow('Delegation expiration date cannot be in the past.');
+});
+
+test('Cannot create a delegation chain with an outdated delegation', async () => {
+  const root = createIdentity(2);
+  const middle = createIdentity(1);
+  const bottom = createIdentity(0);
+
+  const rootToMiddle = await DelegationChain.create(root, middle.getPublicKey(), expiry_date);
+
+  // Modify the delegation to have an expiry of 0.
+  (rootToMiddle.delegations[0].delegation as any).expiration = BigInt(0);
+
+  expect(
+    DelegationChain.create(middle, bottom.getPublicKey(), new Date(0), {
+      previous: rootToMiddle,
+    }),
+  ).rejects.toThrow('Previous delegation in the chain has expired.');
 });
