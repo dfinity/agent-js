@@ -114,7 +114,6 @@ async function _createSingleDelegation(
   if (!to.toDer) {
     throw new DelegationError('The to public key does not have a toDer method.');
   }
-
   const delegation: Delegation = new Delegation(
     to.toDer(),
     BigInt(+expiration) * BigInt(1000000), // In nanoseconds.
@@ -195,11 +194,34 @@ export class DelegationChain {
       targets?: Principal[];
     } = {},
   ): Promise<DelegationChain> {
+    /**
+     * Validations
+     */
+
+    // Validate expiration
+    if (expiration.getTime() < Date.now()) {
+      throw new DelegationError('Delegation expiration date cannot be in the past.');
+    }
     if (options.previous) {
+      // Ensure we aren't extending beyond the maximum delegation chain length.
+      if (options.previous.delegations.length >= MAXIMUM_DELEGATION_CHAIN_LENGTH) {
+        throw new DelegationError(
+          `Delegation chain cannot exceed ${MAXIMUM_DELEGATION_CHAIN_LENGTH}`,
+        );
+      }
+
+      // Ensure that public keys are not repeated in the chain.
       const usedPublicKeys = new Set<ArrayBuffer>();
       let currentPublicKey = to.toDer();
 
       for (const delegation of options.previous.delegations) {
+        // Ensure that previous delegations have not expired.
+        if (delegation.delegation.expiration < BigInt(Date.now()) * BigInt(1000000)) {
+          throw new DelegationError(
+            'Previous delegation in the chain has expired.',
+            delegation.delegation.expiration,
+          );
+        }
         if (usedPublicKeys.has(currentPublicKey)) {
           throw new DelegationError('Delegation target cannot be repeated in the chain.');
         }
@@ -207,8 +229,12 @@ export class DelegationChain {
         currentPublicKey = delegation.delegation.pubkey;
       }
 
+      // Ensure that the last public key in the chain not repeated.
       if (usedPublicKeys.has(currentPublicKey)) {
-        throw new DelegationError('Error: Cannot repeat public keys in a delegation chain.');
+        throw new DelegationError('Error: Cannot repeat public keys in a delegation chain.', {
+          currentPublicKey,
+          usedPublicKeys,
+        });
       }
     }
 
@@ -273,13 +299,7 @@ export class DelegationChain {
     public readonly delegations: SignedDelegation[],
     public readonly publicKey: DerEncodedPublicKey,
     public readonly previous?: DelegationChain,
-  ) {
-    if (delegations.length > MAXIMUM_DELEGATION_CHAIN_LENGTH) {
-      throw new DelegationError(
-        `Delegation chain cannot exceed ${MAXIMUM_DELEGATION_CHAIN_LENGTH}`,
-      );
-    }
-  }
+  ) {}
 
   public toJSON(): JsonnableDelegationChain {
     return {
