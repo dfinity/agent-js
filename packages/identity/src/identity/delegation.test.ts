@@ -198,7 +198,7 @@ test('Cannot create a delegation chain with an outdated delegation', async () =>
   (rootToMiddle.delegations[0].delegation as any).expiration = BigInt(0);
 
   expect(
-    DelegationChain.create(middle, bottom.getPublicKey(), new Date(0), {
+    DelegationChain.create(middle, bottom.getPublicKey(), expiry_date, {
       previous: rootToMiddle,
     }),
   ).rejects.toThrow('Previous delegation in the chain has expired.');
