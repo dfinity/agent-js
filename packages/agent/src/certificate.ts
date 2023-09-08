@@ -4,6 +4,7 @@ import { hash } from './request_id';
 import { concat, fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
 import * as bls from './utils/bls';
+import { decodeTime } from './utils/leb';
 
 /**
  * A certificate may fail verification with respect to the provided public key
@@ -163,6 +164,10 @@ export class Certificate {
     return lookup_path(path, this.cert.tree);
   }
 
+  #compareDates(a: Date, b: Date): number {
+    return a.getTime() - b.getTime();
+  }
+
   private async verify(): Promise<void> {
     const rootHash = await reconstruct(this.cert.tree);
     const derKey = await this._checkDelegationAndGetKey(this.cert.delegation);
@@ -170,6 +175,19 @@ export class Certificate {
     const key = extractDER(derKey);
     const msg = concat(domain_sep('ic-state-root'), rootHash);
     let sigVer = false;
+
+    const certTime = decodeTime(this.lookup(['time'])!);
+
+    if (this.#compareDates(certTime, new Date(Date.now())) > 5 * 60 * 1000) {
+      throw new CertificateVerificationError(
+        'Certificate is signed more than 5 minutes in the future',
+      );
+    } else if (this.#compareDates(certTime, new Date(Date.now())) < -5 * 60 * 1000) {
+      throw new CertificateVerificationError(
+        'Certificate is signed more than 5 minutes in the past',
+      );
+    }
+
     try {
       sigVer = await this._blsVerify(new Uint8Array(key), new Uint8Array(sig), new Uint8Array(msg));
     } catch (err) {

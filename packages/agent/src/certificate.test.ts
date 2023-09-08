@@ -7,7 +7,6 @@ import * as cbor from './cbor';
 import * as Cert from './certificate';
 import { fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
-import { NodeBuilderFlags } from 'typescript';
 
 function label(str: string): ArrayBuffer {
   return new TextEncoder().encode(str);
@@ -161,10 +160,6 @@ test('delegation works for canisters within the subnet range', async () => {
   await verifies(rangeEnd);
 });
 
-function fail(reason) {
-  throw new Error(reason);
-}
-
 test('delegation check fails for canisters outside of the subnet range', async () => {
   // Use a different principal than the happy path, which isn't in the delegation ranges.
   // The certificate specifies the range from
@@ -203,4 +198,37 @@ test('certificate verification fails for an invalid signature', async () => {
       canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
     }),
   ).rejects.toThrow('Invalid certificate');
+});
+
+test('certificate verification fails if the time of the certificate is > 5 minutes in the past', async () => {
+  const badCert: FakeCert = cbor.decode(fromHex(SAMPLE_CERT));
+  (((badCert.tree[2] as Cert.HashTree)[1] as Cert.HashTree)[2] as any) = 0x7fffffff;
+  const badCertEncoded = cbor.encode(badCert);
+  const sevenMinutesFuture = Date.parse(
+    'Thu Feb 17 2022 02:24:00 GMT-0800 (Pacific Standard Time)',
+  );
+  jest.spyOn(Date, 'now').mockReturnValueOnce(sevenMinutesFuture);
+  await expect(
+    Cert.Certificate.create({
+      certificate: badCertEncoded,
+      rootKey: fromHex(IC_ROOT_KEY),
+      canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
+    }),
+  ).rejects.toThrow('Invalid certificate: Certificate is signed more than 5 minutes in the past');
+});
+
+test('certificate verification fails if the time of the certificate is > 5 minutes in the future', async () => {
+  const badCert: FakeCert = cbor.decode(fromHex(SAMPLE_CERT));
+  (((badCert.tree[2] as Cert.HashTree)[1] as Cert.HashTree)[2] as any) = 0;
+  const badCertEncoded = cbor.encode(badCert);
+  const sevenMinutesPast = Date.parse('Thu Feb 17 2022 02:10:00 GMT-0800 (Pacific Standard Time)');
+  jest.spyOn(Date, 'now').mockReturnValueOnce(sevenMinutesPast);
+
+  await expect(
+    Cert.Certificate.create({
+      certificate: badCertEncoded,
+      rootKey: fromHex(IC_ROOT_KEY),
+      canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
+    }),
+  ).rejects.toThrow('Invalid certificate: Certificate is signed more than 5 minutes in the future');
 });
