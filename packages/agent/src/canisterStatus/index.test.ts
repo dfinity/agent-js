@@ -16,6 +16,10 @@ jest.mock('../utils/bls', () => {
   };
 });
 
+jest.useFakeTimers();
+const certificateTime = Date.parse('2022-05-19T20:58:22.596Z');
+jest.setSystemTime(certificateTime);
+
 // Utils
 const encoder = new TextEncoder();
 const encode = (arg: string): ArrayBuffer => {

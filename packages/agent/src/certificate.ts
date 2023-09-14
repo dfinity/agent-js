@@ -164,10 +164,6 @@ export class Certificate {
     return lookup_path(path, this.cert.tree);
   }
 
-  #compareDates(a: Date, b: Date): number {
-    return a.getTime() - b.getTime();
-  }
-
   private async verify(): Promise<void> {
     const rootHash = await reconstruct(this.cert.tree);
     const derKey = await this._checkDelegationAndGetKey(this.cert.delegation);
@@ -176,15 +172,29 @@ export class Certificate {
     const msg = concat(domain_sep('ic-state-root'), rootHash);
     let sigVer = false;
 
-    const certTime = decodeTime(this.lookup(['time'])!);
+    const lookupTime = this.lookup(['time']);
+    if (!lookupTime) {
+      // Should never happen - time is always present in IC certificates
+      throw new CertificateVerificationError('Certificate does not contain a time');
+    }
+    const certTime = decodeTime(lookupTime);
+    const now = new Date(Date.now());
 
-    if (this.#compareDates(certTime, new Date(Date.now())) > 5 * 60 * 1000) {
+    const FIVE_MINUTES_IN_MSEC = 5 * 60 * 1000;
+
+    if (certTime.getTime() - now.getTime() > FIVE_MINUTES_IN_MSEC) {
       throw new CertificateVerificationError(
-        'Certificate is signed more than 5 minutes in the future',
+        'Certificate is signed more than 5 minutes in the future. Certificate time: ' +
+          certTime.toISOString() +
+          ' Current time: ' +
+          now.toISOString(),
       );
-    } else if (this.#compareDates(certTime, new Date(Date.now())) < -5 * 60 * 1000) {
+    } else if (certTime.getTime() - now.getTime() < -FIVE_MINUTES_IN_MSEC) {
       throw new CertificateVerificationError(
-        'Certificate is signed more than 5 minutes in the past',
+        'Certificate is signed more than 5 minutes in the past. Certificate time: ' +
+          certTime.toISOString() +
+          ' Current time: ' +
+          now.toISOString(),
       );
     }
 
