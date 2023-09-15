@@ -1,7 +1,7 @@
 /**
  * Need this to setup the proper ArrayBuffer type (otherwise in jest ArrayBuffer isn't
  * an instance of ArrayBuffer).
- * @jest-enjestronment node
+ * @jest-environment node
  */
 import * as cbor from './cbor';
 import * as Cert from './certificate';
