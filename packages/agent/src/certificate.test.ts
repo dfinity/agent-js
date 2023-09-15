@@ -170,31 +170,21 @@ test('delegation works for canisters within the subnet range', async () => {
   // to
   // 0x00000000002FFFFF0101
   const rangeStart = Principal.fromHex('00000000002000000101');
-  jest.setSystemTime(new Date(1645093069668));
-
-  expect(
-    Cert.Certificate.create({
-      certificate: fromHex(SAMPLE_CERT),
-      rootKey: fromHex(IC_ROOT_KEY),
-      canisterId: rangeStart,
-    }),
-  ).rejects.toThrow();
-
-  // expect(
-  //   Cert.Certificate.create({
-  //     certificate: fromHex(SAMPLE_CERT),
-  //     rootKey: fromHex(IC_ROOT_KEY),
-  //     canisterId: rangeInterior,
-  //   }),
-  // ).resolves.not.toThrow();
-
-  // expect(
-  //   Cert.Certificate.create({
-  //     certificate: fromHex(SAMPLE_CERT),
-  //     rootKey: fromHex(IC_ROOT_KEY),
-  //     canisterId: rangeEnd,
-  //   }),
-  // ).resolves.not.toThrow();
+  const rangeInterior = Principal.fromHex('000000000020000C0101');
+  const rangeEnd = Principal.fromHex('00000000002FFFFF0101');
+  async function verifies(canisterId) {
+    jest.setSystemTime(new Date(Date.parse('2022-02-23T07:38:00.652Z')));
+    await expect(
+      Cert.Certificate.create({
+        certificate: fromHex(SAMPLE_CERT),
+        rootKey: fromHex(IC_ROOT_KEY),
+        canisterId: canisterId,
+      }),
+    ).resolves.not.toThrow();
+  }
+  await verifies(rangeStart);
+  await verifies(rangeInterior);
+  await verifies(rangeEnd);
 });
 
 test('delegation check fails for canisters outside of the subnet range', async () => {
@@ -240,10 +230,9 @@ test('certificate verification fails for an invalid signature', async () => {
 test('certificate verification fails if the time of the certificate is > 5 minutes in the past', async () => {
   const badCert: FakeCert = cbor.decode(fromHex(SAMPLE_CERT));
   const badCertEncoded = cbor.encode(badCert);
-  const sevenMinutesFuture = Date.parse(
-    'Thu Feb 17 2022 02:24:00 GMT-0800 (Pacific Standard Time)',
-  );
-  jest.setSystemTime(sevenMinutesFuture);
+
+  const tenMinutesFuture = Date.parse('2022-02-23T07:48:00.652Z');
+  jest.setSystemTime(tenMinutesFuture);
   await expect(
     Cert.Certificate.create({
       certificate: badCertEncoded,
@@ -256,8 +245,8 @@ test('certificate verification fails if the time of the certificate is > 5 minut
 test('certificate verification fails if the time of the certificate is > 5 minutes in the future', async () => {
   const badCert: FakeCert = cbor.decode(fromHex(SAMPLE_CERT));
   const badCertEncoded = cbor.encode(badCert);
-  const sevenMinutesPast = Date.parse('Thu Feb 17 2022 02:10:00 GMT-0800 (Pacific Standard Time)');
-  jest.setSystemTime(sevenMinutesPast);
+  const tenMinutesPast = Date.parse('2022-02-23T07:28:00.652Z');
+  jest.setSystemTime(tenMinutesPast);
 
   await expect(
     Cert.Certificate.create({

@@ -9,5 +9,5 @@ export const decodeTime = (buf: ArrayBuffer): Date => {
   const decoded = decodeLeb128(buf);
 
   // nanoseconds to milliseconds
-  return new Date(Number(decoded / BigInt(1_000_000)));
+  return new Date(Number(decoded) / 1_000_000);
 };

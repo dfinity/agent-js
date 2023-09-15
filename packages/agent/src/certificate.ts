@@ -120,6 +120,14 @@ export interface CreateCertificateOptions {
    * BLS Verification strategy. Default strategy uses wasm for performance, but that may not be available in all contexts.
    */
   blsVerify?: VerifyFunc;
+
+  /**
+   * The maximum age of the certificate in minutes. Default is 5 minutes.
+   * @default 5
+   * This is used to verify the time the certificate was signed, particularly for validating Delegation certificates, which can live for longer than the default window of +/- 5 minutes. If the certificate is
+   * older than the specified age, it will fail verification.
+   */
+  maxAgeInMinutes?: number;
 }
 
 export class Certificate {
@@ -128,12 +136,12 @@ export class Certificate {
   /**
    * Create a new instance of a certificate, automatically verifying it. Throws a
    * CertificateVerificationError if the certificate cannot be verified.
-   * @constructs {@link AuthClient}
-   * @param {CreateCertificateOptions} options
-   * @see {@link CreateCertificateOptions}
+   * @constructs  Certificate
+   * @param {CreateCertificateOptions} options {@link CreateCertificateOptions}
    * @param {ArrayBuffer} options.certificate The bytes of the certificate
    * @param {ArrayBuffer} options.rootKey The root key to verify against
    * @param {Principal} options.canisterId The effective or signing canister ID
+   * @param {number} options.maxAgeInMinutes The maximum age of the certificate in minutes. Default is 5 minutes.
    * @throws {CertificateVerificationError}
    */
   public static async create(options: CreateCertificateOptions): Promise<Certificate> {
@@ -146,6 +154,7 @@ export class Certificate {
       options.rootKey,
       options.canisterId,
       blsVerify,
+      options.maxAgeInMinutes,
     );
     await cert.verify();
     return cert;
@@ -156,6 +165,8 @@ export class Certificate {
     private _rootKey: ArrayBuffer,
     private _canisterId: Principal,
     private _blsVerify: VerifyFunc,
+    // Default to 5 minutes
+    private _maxAgeInMinutes: number = 5,
   ) {
     this.cert = cbor.decode(new Uint8Array(certificate));
   }
@@ -177,24 +188,28 @@ export class Certificate {
       // Should never happen - time is always present in IC certificates
       throw new CertificateVerificationError('Certificate does not contain a time');
     }
-    const certTime = decodeTime(lookupTime);
-    const now = new Date(Date.now());
 
     const FIVE_MINUTES_IN_MSEC = 5 * 60 * 1000;
+    const MAX_AGE_IN_MSEC = this._maxAgeInMinutes * 60 * 1000;
+    const now = Date.now();
+    const earliestCertificateTime = now - MAX_AGE_IN_MSEC;
+    const fiveMinutesFromNow = now + FIVE_MINUTES_IN_MSEC;
 
-    if (certTime.getTime() - now.getTime() > FIVE_MINUTES_IN_MSEC) {
-      throw new CertificateVerificationError(
-        'Certificate is signed more than 5 minutes in the future. Certificate time: ' +
-          certTime.toISOString() +
-          ' Current time: ' +
-          now.toISOString(),
-      );
-    } else if (certTime.getTime() - now.getTime() < -FIVE_MINUTES_IN_MSEC) {
+    const certTime = decodeTime(lookupTime);
+
+    if (certTime.getTime() < earliestCertificateTime) {
       throw new CertificateVerificationError(
         'Certificate is signed more than 5 minutes in the past. Certificate time: ' +
           certTime.toISOString() +
           ' Current time: ' +
-          now.toISOString(),
+          new Date(now).toISOString(),
+      );
+    } else if (certTime.getTime() > fiveMinutesFromNow) {
+      throw new CertificateVerificationError(
+        'Certificate is signed more than 5 minutes in the future. Certificate time: ' +
+          certTime.toISOString() +
+          ' Current time: ' +
+          new Date(now).toISOString(),
       );
     }
 
@@ -212,10 +227,14 @@ export class Certificate {
     if (!d) {
       return this._rootKey;
     }
+
     const cert: Certificate = await Certificate.create({
       certificate: d.certificate,
       rootKey: this._rootKey,
       canisterId: this._canisterId,
+      blsVerify: this._blsVerify,
+      // Maximum age of 30 days for delegation certificates
+      maxAgeInMinutes: 60 * 24 * 30,
     });
 
     const rangeLookup = cert.lookup(['subnet', d.subnet_id, 'canister_ranges']);
