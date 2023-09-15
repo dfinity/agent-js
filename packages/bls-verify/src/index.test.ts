@@ -1,7 +1,7 @@
 import { blsVerify } from './index';
 import * as Cert from '../../agent/src/certificate';
 import * as cbor from '../../agent/src/cbor';
-import { fromHex, toHex } from '../../agent/src/utils/buffer';
+import { fromHex } from '../../agent/src/utils/buffer';
 import { Principal } from '@dfinity/principal';
 
 // Root public key for the IC main net, encoded as hex
@@ -27,7 +27,9 @@ test('delegation works for canisters within the subnet range', async () => {
   const rangeStart = Principal.fromHex('00000000002000000101');
   const rangeInterior = Principal.fromHex('000000000020000C0101');
   const rangeEnd = Principal.fromHex('00000000002FFFFF0101');
+  jest.useFakeTimers();
   async function verifies(canisterId) {
+    jest.setSystemTime(new Date(Date.parse('2022-02-23T07:38:00.652Z')));
     await expect(
       Cert.Certificate.create({
         certificate: fromHex(SAMPLE_CERT),

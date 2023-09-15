@@ -1,12 +1,12 @@
 /** @module CanisterStatus */
 
-import { lebDecode, PipeArrayBuffer } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { AgentError } from '../errors';
 import { HttpAgent } from '../agent/http';
 import { Certificate, CreateCertificateOptions } from '../certificate';
 import { toHex } from '../utils/buffer';
 import * as Cbor from '../cbor';
+import { decodeLeb128, decodeTime } from '../utils/leb';
 
 /**
  * Types of an entry on the canisterStatus map.
@@ -220,22 +220,12 @@ const decodeHex = (buf: ArrayBuffer): string => {
   return toHex(buf);
 };
 
-const decodeLeb128 = (buf: ArrayBuffer): bigint => {
-  return lebDecode(new PipeArrayBuffer(buf));
-};
-
 const decodeCbor = (buf: ArrayBuffer): ArrayBuffer[] => {
   return Cbor.decode(buf);
 };
 
 const decodeUtf8 = (buf: ArrayBuffer): string => {
   return new TextDecoder().decode(buf);
-};
-
-// time is a LEB128-encoded Nat
-const decodeTime = (buf: ArrayBuffer): Date => {
-  const decoded = decodeLeb128(buf);
-  return new Date(Number(decoded / BigInt(1_000_000)));
 };
 
 // Controllers are CBOR-encoded buffers, starting with a Tag we don't need

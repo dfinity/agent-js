@@ -12,6 +12,14 @@
     <section>
       <h2>Version x.x.x</h2>
       <ul>
+        <li>
+          feat: certificate checks validate that certificate time is not more than 5 minutes ahead
+          of or behind system time.
+        </li>
+        <li>
+          feat: two new `leb` decoding utils added to @dfinity/agent/utils/leb to make it simpler to
+          decode leb values and time from a certificate tree
+        </li>
         <li>chore: limit npm version to 9 in ci for compatibility with node 16</li>
         <li>
           Adds more helpful error message for when principal is undefined during actor creation
