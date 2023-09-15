@@ -199,7 +199,7 @@ export class Certificate {
 
     if (certTime.getTime() < earliestCertificateTime) {
       throw new CertificateVerificationError(
-        'Certificate is signed more than 5 minutes in the past. Certificate time: ' +
+        `Certificate is signed more than ${this._maxAgeInMinutes} minutes in the past. Certificate time: ` +
           certTime.toISOString() +
           ' Current time: ' +
           new Date(now).toISOString(),
