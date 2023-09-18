@@ -50,7 +50,7 @@ class BufferEncoder implements CborEncoder<ArrayBuffer> {
   }
 }
 
-class BigIntEncoder implements CborEncoder<BigInt> {
+class BigIntEncoder implements CborEncoder<bigint> {
   public get name() {
     return 'BigInt';
   }
@@ -64,12 +64,29 @@ class BigIntEncoder implements CborEncoder<BigInt> {
   }
 
   public encode(v: bigint): cbor.CborValue {
-    // Always use a bigint encoding.
-    if (v > BigInt(0)) {
+    // Use a bigint encoding for large values
+    if (v > BigInt(Number.MAX_SAFE_INTEGER)) {
       return cbor.value.tagged(2, cbor.value.bytes(fromHex(v.toString(16))));
-    } else {
-      return cbor.value.tagged(3, cbor.value.bytes(fromHex((BigInt('-1') * v).toString(16))));
     }
+    // If zero, use the zero encoding.
+    else if (v === BigInt(0)) {
+      return cbor.value.tagged(2, cbor.value.bytes(new Uint8Array([])));
+    }
+    // Use Number serialization for safe numbers
+    else if (v >= BigInt(-1 * Number.MAX_SAFE_INTEGER) && v <= BigInt(Number.MAX_SAFE_INTEGER)) {
+      const serialized = serializer.serialize(Number(v)) as cbor.CborValue;
+      // Add CBOR tag
+      Object.defineProperty(serialized, '__brand', { value: 'CBOR' });
+
+      return serialized;
+    } else if (v < BigInt(Number.MAX_SAFE_INTEGER)) {
+      return cbor.value.tagged(3, cbor.value.bytes(fromHex((BigInt('-1') * v).toString(16))));
+    } else {
+      this.#never();
+    }
+  }
+  #never(): never {
+    throw new Error('Should never happen');
   }
 }
 

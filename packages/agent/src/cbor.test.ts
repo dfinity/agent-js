@@ -60,3 +60,43 @@ function buf2hex(buffer: Uint8Array) {
   // join the elements.
   return Array.prototype.map.call(buffer, x => ('00' + x.toString(16)).slice(-2)).join('');
 }
+
+describe('encode + decode numbers', () => {
+  it('should handle 0', () => {
+    expect(decode(encode(0))).toBe(0);
+  });
+  it('should handle 1', () => {
+    expect(decode(encode(1))).toBe(1);
+  });
+  it('should handle -1', () => {
+    expect(decode(encode(-1))).toBe(-1);
+  });
+  it('should handle 255', () => {
+    expect(decode(encode(255))).toBe(255);
+  });
+  it('should handle 256', () => {
+    expect(decode(encode(256))).toBe(256);
+  });
+  it('should handle 65535', () => {
+    expect(decode(encode(65535))).toBe(65535);
+  });
+  it('should handle 65536', () => {
+    expect(decode(encode(65536))).toBe(65536);
+  });
+  it('should handle 4294967295', () => {
+    expect(decode(encode(4294967295))).toBe(4294967295);
+  });
+  it('should handle 4294967296', () => {
+    expect(decode(encode(4294967296))).toBe(4294967296);
+  });
+  it('should handle 18446744073709551615n', () => {
+    expect(decode(encode(BigInt('18446744073709551615')))).toBe(BigInt('18446744073709551615'));
+  });
+  it('should encode 0n', () => {
+    expect(decode(encode(0n))).toBe(0n);
+  });
+  it('should encode 1n', () => {
+    // Is this valid?
+    expect(decode(encode(1n))).toBe(1);
+  });
+});
