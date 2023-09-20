@@ -228,13 +228,6 @@ export class DelegationChain {
         usedPublicKeys.add(delegation.delegation.pubkey);
       }
 
-      // Ensure that the last public key in the chain not repeated.
-      if (usedPublicKeys.has(currentPublicKey)) {
-        throw new DelegationError('Error: Cannot repeat public keys in a delegation chain.', {
-          currentPublicKey,
-          usedPublicKeys,
-        });
-      }
     }
 
     const delegation = await _createSingleDelegation(from, to, expiration, options.targets);
