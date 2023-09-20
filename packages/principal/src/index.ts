@@ -108,6 +108,14 @@ export class Principal {
   }
 
   /**
+   * Serializes to JSON
+   * @returns {string} string
+   */
+  public toJSON(): string {
+    return this.toText();
+  }
+
+  /**
    * Utility method taking a Principal to compare against. Used for determining canister ranges in certificate verification
    * @param {Principal} other - a {@link Principal} to compare
    * @returns {'lt' | 'eq' | 'gt'} `'lt' | 'eq' | 'gt'` a string, representing less than, equal to, or greater than

@@ -2,21 +2,7 @@
 
 exports[`Canister Status utility should query canister controllers 1`] = `
 Array [
-  Principal {
-    "_arr": Uint8Array [
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      1,
-      1,
-    ],
-    "_isPrincipal": true,
-  },
+  "rwlgt-iiaaa-aaaaa-aaaaa-cai",
 ]
 `;
 
@@ -36,21 +22,7 @@ exports[`Canister Status utility should support multiple requests 1`] = `2022-05
 
 exports[`Canister Status utility should support multiple requests 2`] = `
 Array [
-  Principal {
-    "_arr": Uint8Array [
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      1,
-      1,
-    ],
-    "_isPrincipal": true,
-  },
+  "rwlgt-iiaaa-aaaaa-aaaaa-cai",
 ]
 `;
 

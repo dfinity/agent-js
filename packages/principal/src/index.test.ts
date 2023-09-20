@@ -41,4 +41,15 @@ describe('Principal', () => {
     expect(anonymous.compareTo(principal1)).toBe('gt');
     expect(anonymous.compareTo(principal2)).toBe('gt');
   });
+
+  it('serializes to String constructor', () => {
+    const principal = Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai');
+    expect(principal.toString()).toBe('ryjl3-tyaaa-aaaaa-aaaba-cai');
+    expect(String(principal)).toBe('ryjl3-tyaaa-aaaaa-aaaba-cai');
+  });
+
+  it('serializes to JSON', () => {
+    const principal = Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai');
+    expect(JSON.stringify(principal)).toBe('"ryjl3-tyaaa-aaaaa-aaaba-cai"');
+  });
 });
