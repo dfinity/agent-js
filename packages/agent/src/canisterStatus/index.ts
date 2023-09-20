@@ -1,5 +1,4 @@
 /** @module CanisterStatus */
-
 import { Principal } from '@dfinity/principal';
 import { AgentError } from '../errors';
 import { HttpAgent } from '../agent/http';
@@ -97,7 +96,8 @@ export const request = async (options: {
           rootKey: agent.rootKey,
           canisterId: canisterId,
         });
-
+        let decoded = Cbor.decode(new Uint8Array(response.certificate));
+        decoded?.delegation; //?
         const data = cert.lookup(encodePath(uniquePaths[index], canisterId));
         if (!data) {
           // Typically, the cert lookup will throw
@@ -108,6 +108,7 @@ export const request = async (options: {
             status.set(path.key, null);
           }
         } else {
+          path;
           switch (path) {
             case 'time': {
               status.set(path, decodeTime(data));
@@ -118,6 +119,10 @@ export const request = async (options: {
               break;
             }
             case 'module_hash': {
+              status.set(path, decodeHex(data));
+              break;
+            }
+            case 'subnet': {
               status.set(path, decodeHex(data));
               break;
             }
@@ -153,6 +158,7 @@ export const request = async (options: {
           }
         }
       } catch (error) {
+        error;
         // Break on signature verification errors
         if ((error as AgentError)?.message?.includes('Invalid certificate')) {
           throw new AgentError((error as AgentError).message);

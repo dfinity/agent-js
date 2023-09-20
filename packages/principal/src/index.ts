@@ -117,6 +117,10 @@ export class Principal {
     return matches.join('-');
   }
 
+  public toJSON(): string {
+    return this.toText();
+  }
+
   public toString(): string {
     return this.toText();
   }

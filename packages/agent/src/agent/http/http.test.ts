@@ -811,3 +811,13 @@ describe('default host', () => {
     }
   });
 });
+
+describe('fetchSubnetKeys', () => {
+  it('should fetch subnet keys for a given canister', async () => {
+    jest.useFakeTimers();
+    const abbbb = (await import('isomorphic-fetch')).default;
+    const agent = new HttpAgent({ fetch: abbbb, host: 'https://icp-api.io' });
+    await agent.fetchRootKey();
+    const subnetKeys = await agent.fetchSubnetKeys('erxue-5aaaa-aaaab-qaagq-cai'); //?
+  });
+});

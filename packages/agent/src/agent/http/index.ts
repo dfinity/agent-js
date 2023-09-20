@@ -27,6 +27,7 @@ import {
   SubmitRequestType,
 } from './types';
 import { AgentHTTPResponseError } from './errors';
+import { request } from '../../canisterStatus';
 
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
@@ -573,6 +574,19 @@ export class HttpAgent implements Agent {
 
   public replaceIdentity(identity: Identity): void {
     this._identity = Promise.resolve(identity);
+  }
+
+  public async fetchSubnetKeys(canisterId: Principal | string): Promise<any> {
+    const effectiveCanisterId: Principal = Principal.from(canisterId);
+    const response = await request({
+      canisterId: effectiveCanisterId,
+      paths: ['subnet'],
+      agent: this,
+    });
+    const subnetResponse = response.get('subnet');
+    response.get('time'); //?
+    console.log(subnetResponse);
+    return subnetResponse;
   }
 
   protected _transform(request: HttpAgentRequest): Promise<HttpAgentRequest> {
