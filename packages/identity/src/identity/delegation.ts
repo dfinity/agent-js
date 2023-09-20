@@ -211,23 +211,19 @@ export class DelegationChain {
       }
 
       // Ensure that public keys are not repeated in the chain.
-      const usedPublicKeys = new Set<ArrayBuffer>();
-      usedPublicKeys.add(to.toDer());
-
-      for (const delegation of options.previous.delegations) {
-        // Ensure that previous delegations have not expired.
-        if (delegation.delegation.expiration < BigInt(Date.now()) * BigInt(1000000)) {
+      options.previous.delegations.reduce((previous, current) => {
+        if (current.delegation.expiration < BigInt(Date.now()) * BigInt(1000000)) {
           throw new DelegationError(
             'Previous delegation in the chain has expired.',
-            delegation.delegation.expiration,
+            current.delegation.expiration,
           );
         }
-        if (usedPublicKeys.has(delegation.delegation.pubkey)) {
+        if (previous.has(current.delegation.pubkey)) {
           throw new DelegationError('Delegation target cannot be repeated in the chain.');
         }
-        usedPublicKeys.add(delegation.delegation.pubkey);
-      }
-
+        previous.add(current.delegation.pubkey);
+        return previous;
+      }, new Set<ArrayBuffer>([to.toDer()]));
     }
 
     const delegation = await _createSingleDelegation(from, to, expiration, options.targets);

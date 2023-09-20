@@ -2,7 +2,6 @@ import { SignIdentity } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import { Delegation, DelegationChain } from './delegation';
 import { Ed25519KeyIdentity } from './ed25519';
-import { toHexString } from '../buffer';
 
 function createIdentity(seed: number): SignIdentity {
   const s = new Uint8Array([seed, ...new Array(31).fill(0)]);
@@ -163,14 +162,14 @@ test('Delegation chains cannot repeat public keys', async () => {
     DelegationChain.create(middle, bottom.getPublicKey(), expiry_date, {
       previous: middleToBottom,
     }),
-  ).rejects.toThrow('Cannot repeat public keys in a delegation chain.');
+  ).rejects.toThrow('Delegation target cannot be repeated in the chain.');
 
   // Repeating root's public key in the delegation chain should throw an error.
   expect(
     DelegationChain.create(root, bottom.getPublicKey(), expiry_date, {
       previous: middleToBottom,
     }),
-  ).rejects.toThrow('Cannot repeat public keys in a delegation chain.');
+  ).rejects.toThrow('Delegation target cannot be repeated in the chain.');
 });
 
 test('Cannot create a delegation chain with an outdated expiry', async () => {
