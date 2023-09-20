@@ -212,7 +212,7 @@ export class DelegationChain {
 
       // Ensure that public keys are not repeated in the chain.
       const usedPublicKeys = new Set<ArrayBuffer>();
-      let currentPublicKey = to.toDer();
+      usedPublicKeys.add(to.toDer());
 
       for (const delegation of options.previous.delegations) {
         // Ensure that previous delegations have not expired.
