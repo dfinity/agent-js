@@ -222,7 +222,7 @@ export class DelegationChain {
             delegation.delegation.expiration,
           );
         }
-        if (usedPublicKeys.has(currentPublicKey)) {
+        if (usedPublicKeys.has(delegation.delegation.pubkey)) {
           throw new DelegationError('Delegation target cannot be repeated in the chain.');
         }
         usedPublicKeys.add(delegation.delegation.pubkey);
