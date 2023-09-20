@@ -225,8 +225,7 @@ export class DelegationChain {
         if (usedPublicKeys.has(currentPublicKey)) {
           throw new DelegationError('Delegation target cannot be repeated in the chain.');
         }
-        usedPublicKeys.add(currentPublicKey);
-        currentPublicKey = delegation.delegation.pubkey;
+        usedPublicKeys.add(delegation.delegation.pubkey);
       }
 
       // Ensure that the last public key in the chain not repeated.
