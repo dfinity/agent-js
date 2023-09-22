@@ -1,4 +1,5 @@
 import { Principal } from '.';
+import { jsonReviver } from '@dfinity/utils';
 
 describe('Principal', () => {
   it('encodes properly', () => {
@@ -50,6 +51,13 @@ describe('Principal', () => {
 
   it('serializes to JSON', () => {
     const principal = Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai');
-    expect(JSON.stringify(principal)).toBe('"ryjl3-tyaaa-aaaaa-aaaba-cai"');
+
+    const json = principal.toJSON();
+    expect(json).toEqual({ __principal__: 'ryjl3-tyaaa-aaaaa-aaaba-cai' });
+
+    const stringified = JSON.stringify(principal);
+    expect(stringified).toEqual('{"__principal__":"ryjl3-tyaaa-aaaaa-aaaba-cai"}');
+
+    expect(JSON.parse(stringified, jsonReviver)).toEqual(principal);
   });
 });

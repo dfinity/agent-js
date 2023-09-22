@@ -2,6 +2,7 @@ import { decode, encode } from './utils/base32';
 import { getCrc32 } from './utils/getCrc';
 import { sha224 } from './utils/sha224';
 
+export const JSON_KEY_PRINCIPAL = '__principal__';
 const SELF_AUTHENTICATING_SUFFIX = 2;
 const ANONYMOUS_SUFFIX = 4;
 
@@ -12,6 +13,10 @@ const fromHexString = (hexString: string) =>
 
 const toHexString = (bytes: Uint8Array) =>
   bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
+
+export type JsonnablePrincipal = {
+  [JSON_KEY_PRINCIPAL]: string;
+};
 
 export class Principal {
   public static anonymous(): Principal {
@@ -50,15 +55,24 @@ export class Principal {
   }
 
   public static fromText(text: string): Principal {
-    const canisterIdNoDash = text.toLowerCase().replace(/-/g, '');
+    let maybePrincipal = text;
+    // If formatted as JSON string, parse it first
+    if (text.includes(JSON_KEY_PRINCIPAL)) {
+      const obj = JSON.parse(text);
+      if (JSON_KEY_PRINCIPAL in obj) {
+        maybePrincipal = obj[JSON_KEY_PRINCIPAL];
+      }
+    }
+
+    const canisterIdNoDash = maybePrincipal.toLowerCase().replace(/-/g, '');
 
     let arr = decode(canisterIdNoDash);
     arr = arr.slice(4, arr.length);
 
     const principal = new this(arr);
-    if (principal.toText() !== text) {
+    if (principal.toText() !== maybePrincipal) {
       throw new Error(
-        `Principal "${principal.toText()}" does not have a valid checksum (original value "${text}" may not be a valid Principal ID).`,
+        `Principal "${principal.toText()}" does not have a valid checksum (original value "${maybePrincipal}" may not be a valid Principal ID).`,
       );
     }
 
@@ -109,10 +123,10 @@ export class Principal {
 
   /**
    * Serializes to JSON
-   * @returns {string} string
+   * @returns {JsonnablePrincipal} a JSON object with a single key, {@link JSON_KEY_PRINCIPAL}, whose value is the principal as a string
    */
-  public toJSON(): string {
-    return this.toText();
+  public toJSON(): JsonnablePrincipal {
+    return { [JSON_KEY_PRINCIPAL]: this.toText() };
   }
 
   /**
