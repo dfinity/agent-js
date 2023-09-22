@@ -60,4 +60,11 @@ describe('Principal', () => {
 
     expect(JSON.parse(stringified, jsonReviver)).toEqual(principal);
   });
+
+  it('serializes from JSON string', () => {
+    const principal = Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai');
+    const json = JSON.stringify(principal);
+    json;
+    expect(Principal.from(json)).toEqual(principal);
+  });
 });
