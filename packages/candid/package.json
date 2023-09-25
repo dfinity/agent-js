@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/candid",
-  "version": "0.19.2",
+  "version": "0.19.3",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to work with candid interfaces",
@@ -48,7 +48,7 @@
     "test:coverage": "jest --verbose --collectCoverage"
   },
   "peerDependencies": {
-    "@dfinity/principal": "^0.19.2"
+    "@dfinity/principal": "^0.19.3"
   },
   "devDependencies": {
     "@types/jest": "^28.1.4",
