@@ -811,3 +811,20 @@ describe('default host', () => {
     }
   });
 });
+
+test('retry requests that fail due to a network failure', async () => {
+  const mockFetch: jest.Mock = jest.fn(() => {
+    throw new Error('Network failure');
+  });
+
+  const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
+  try {
+    await agent.call(Principal.managementCanister(), {
+      methodName: 'test',
+      arg: new Uint8Array().buffer,
+    });
+  } catch (error) {
+    // One try + three retries
+    expect(mockFetch.mock.calls.length).toBe(4);
+  }
+});
