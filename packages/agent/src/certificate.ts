@@ -1,10 +1,12 @@
 import * as cbor from './cbor';
 import { AgentError } from './errors';
 import { hash } from './request_id';
-import { concat, fromHex, toHex } from './utils/buffer';
+import { compare, concat, fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
 import * as bls from './utils/bls';
-import { decodeTime } from './utils/leb';
+import { decodeLeb128, decodeTime } from './utils/leb';
+import { lebDecode, PipeArrayBuffer } from '@dfinity/candid';
+import { assert } from 'console';
 
 /**
  * A certificate may fail verification with respect to the provided public key
@@ -132,6 +134,7 @@ export interface CreateCertificateOptions {
 
 export class Certificate {
   private readonly cert: Cert;
+  #nodeKeys: string[] = [];
 
   /**
    * Create a new instance of a certificate, automatically verifying it. Throws a
@@ -171,8 +174,163 @@ export class Certificate {
     this.cert = cbor.decode(new Uint8Array(certificate));
   }
 
-  public lookup(path: Array<ArrayBuffer | string>): ArrayBuffer | undefined {
+  public lookup(path: Array<ArrayBuffer | string>): ArrayBuffer | HashTree | undefined {
     return lookup_path(path, this.cert.tree);
+  }
+
+  public lookup_label(label: ArrayBuffer): ArrayBuffer | HashTree | undefined {
+    return this.lookup([label]);
+  }
+
+  public cache_node_keys(root_key?: Uint8Array): string[] {
+    const tree = this.cert.tree;
+    let delegation = this.cert.delegation;
+    // On local replica, with System type subnet, there is no delegation
+    if (!delegation && typeof root_key !== 'undefined') {
+      delegation = {
+        subnet_id: Principal.selfAuthenticating(root_key).toUint8Array(),
+        certificate: new ArrayBuffer(0),
+      };
+    }
+    // otherwise use default NNS subnet id
+    else if (!delegation) {
+      delegation = {
+        subnet_id: Principal.fromText(
+          'tdb26-jop6k-aogll-7ltgs-eruif-6kk7m-qpktf-gdiqx-mxtrf-vb5e6-eqe',
+        ).toUint8Array(),
+        certificate: new ArrayBuffer(0),
+      };
+    }
+
+    delegation;
+    // Map principals into a readable format, with the subnet id as the key
+    let iter = 0;
+
+    const nodeTree = lookup_path(['subnet', delegation?.subnet_id as ArrayBuffer, 'node'], tree);
+    const nodeForks = flatten_forks(nodeTree as HashTree) as HashTree[];
+    nodeForks.length;
+
+    this.#nodeKeys = nodeForks.map(fork => {
+      iter++;
+      const derEncodedPublicKey = lookup_path(['public_key'], fork[2] as HashTree) as ArrayBuffer;
+      if (derEncodedPublicKey.byteLength !== 44) {
+        throw new Error('Invalid public key length');
+      } else {
+        return toHex(derEncodedPublicKey);
+      }
+    });
+
+    return this.#nodeKeys;
+  }
+
+  // turn the certificate into a JavaScript object
+  public parse(): Record<string, any> {
+    // utf-8 decoder
+    const decoder = new TextDecoder();
+    const tree = this.cert.tree;
+    const signature = this.cert.signature;
+    const delegation = this.cert.delegation;
+    const result: Record<string, any> = {};
+    if (delegation) {
+      result.delegation = delegation;
+    }
+
+    result.signature = toHex(new Uint8Array(signature));
+
+    const subnet_id = this.lookup(['subnet']) as HashTree;
+    const subnet_forks = flatten_forks(subnet_id) as HashTree[];
+    // Map principals into a readable format, with the subnet id as the key
+    let iter = 0;
+
+    const nodeTree = lookup_path(['subnet', delegation?.subnet_id as ArrayBuffer, 'node'], tree);
+    const nodeForks = flatten_forks(nodeTree as HashTree) as HashTree[];
+    nodeForks.length;
+
+    const hexNodeKeys = nodeForks.map(fork => {
+      iter++;
+      const derEncodedPublicKey = lookup_path(['public_key'], fork[2] as HashTree) as ArrayBuffer;
+      if (derEncodedPublicKey.byteLength !== 44) {
+        throw new Error('Invalid public key length');
+      } else {
+        return toHex(derEncodedPublicKey);
+      }
+    });
+
+    hexNodeKeys; //?
+
+    iter;
+    // const mapped = subnet_forks.reduce((start, next) => {
+    //   if (next[2]) {
+    //     const idBuffer = new Uint8Array(next[1] as ArrayBuffer);
+    //     const textId = Principal.fromUint8Array(idBuffer).toText();
+
+    //     textId;
+
+    //     const nodeTree = lookup_path(
+    //       ['subnet', delegation?.subnet_id as ArrayBuffer, 'node'],
+    //       tree,
+    //     );
+    //     const nodeForks = flatten_forks(nodeTree as HashTree) as HashTree[];
+    //     nodeForks.length;
+
+    //     toHex(new Uint8Array(public_key as ArrayBuffer)); //?
+
+    //     start[textId] = next[2];
+    //   }
+    //   return start;
+    // }, {} as Record<string, HashTree>);
+    iter;
+    try {
+      toHex(new Uint8Array(subnet_forks[0][1] as ArrayBuffer)); //?
+      Principal.fromUint8Array(new Uint8Array(subnet_forks[0][1] as ArrayBuffer)).toText(); //?
+    } catch (error) {
+      console.log(error);
+    }
+
+    // subnet_forks.forEach(fork => {
+    //   const label = new Uint8Array(fork[1] as ArrayBuffer); //?
+
+    // });
+
+    // recursively parse the tree using flatten_forks
+    // to get a list of all the nodes in the tree
+
+    // de all ArrayBuffer values
+    const process_node = (node: HashTree): Record<string, any> => {
+      const result: Record<string, any> = {};
+
+      switch (node[0]) {
+        case NodeId.Empty:
+          result.type = 'empty';
+          break;
+        case NodeId.Fork:
+          result.type = 'fork';
+          result.left = process_node(node[1] as HashTree);
+          result.right = process_node(node[2] as HashTree);
+
+          break;
+        case NodeId.Labeled:
+          result.type = 'labeled';
+          result.label = toHex(new Uint8Array(node[1] as ArrayBuffer));
+          result.sub = process_node(node[2] as HashTree);
+          break;
+        case NodeId.Leaf:
+          result.type = 'leaf';
+          result.data = toHex(new Uint8Array(node[1] as ArrayBuffer));
+          break;
+        case NodeId.Pruned:
+          result.type = 'pruned';
+          result.data = toHex(new Uint8Array(node[1] as ArrayBuffer));
+          break;
+        default:
+          throw new Error('unreachable');
+      }
+
+      return result;
+    };
+
+    result.tree = process_node(tree);
+    return result;
   }
 
   private async verify(): Promise<void> {
@@ -332,11 +490,14 @@ function domain_sep(s: string): ArrayBuffer {
 export function lookup_path(
   path: Array<ArrayBuffer | string>,
   tree: HashTree,
-): ArrayBuffer | undefined {
+): ArrayBuffer | HashTree | undefined {
   if (path.length === 0) {
     switch (tree[0]) {
       case NodeId.Leaf: {
         return new Uint8Array(tree[1]).buffer;
+      }
+      case NodeId.Fork: {
+        return tree;
       }
       default: {
         return undefined;

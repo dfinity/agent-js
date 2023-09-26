@@ -96,8 +96,12 @@ export const request = async (options: {
           rootKey: agent.rootKey,
           canisterId: canisterId,
         });
-        let decoded = Cbor.decode(new Uint8Array(response.certificate));
-        decoded?.delegation; //?
+
+        response.certificate;
+        // must pass in the rootKey if we have no delegation
+        const parsed = cert.cache_node_keys(); //??
+        const asdf = Cbor.decode(new Uint8Array(response.certificate));
+
         const data = cert.lookup(encodePath(uniquePaths[index], canisterId));
         if (!data) {
           // Typically, the cert lookup will throw

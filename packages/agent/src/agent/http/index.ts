@@ -583,6 +583,7 @@ export class HttpAgent implements Agent {
       paths: ['subnet'],
       agent: this,
     });
+
     const subnetResponse = response.get('subnet');
     response.get('time'); //?
     console.log(subnetResponse);
