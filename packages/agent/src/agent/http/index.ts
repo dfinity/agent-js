@@ -28,6 +28,7 @@ import {
 } from './types';
 import { AgentHTTPResponseError } from './errors';
 import { request } from '../../canisterStatus';
+import { SubnetStatus } from '../../certificate';
 
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
@@ -178,6 +179,8 @@ export class HttpAgent implements Agent {
   private _rootKeyFetched = false;
   private readonly _retryTimes; // Retry requests N times before erroring by default
   public readonly _isAgent = true;
+
+  #subnetKeys: Map<string, SubnetStatus> = new Map();
 
   constructor(options: HttpAgentOptions = {}) {
     if (options.source) {
@@ -585,8 +588,9 @@ export class HttpAgent implements Agent {
     });
 
     const subnetResponse = response.get('subnet');
-    response.get('time'); //?
-    console.log(subnetResponse);
+    if (subnetResponse && typeof subnetResponse === 'object' && 'nodeKeys' in subnetResponse) {
+      this.#subnetKeys.set(effectiveCanisterId.toText(), subnetResponse as SubnetStatus);
+    }
     return subnetResponse;
   }
 

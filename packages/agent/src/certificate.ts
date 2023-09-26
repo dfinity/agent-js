@@ -39,6 +39,17 @@ export type HashTree =
   | [NodeId.Pruned, ArrayBuffer];
 
 /**
+ * Represents the useful information about a subnet
+ * @param {string} subnetId the principal id of the canister's subnet
+ * @param {string[]} nodeKeys the keys of the individual nodes in the subnet
+ */
+export type SubnetStatus = {
+  // Principal as a string
+  subnetId: string;
+  nodeKeys: string[];
+};
+
+/**
  * Make a human readable string out of a hash tree.
  * @param tree
  */
@@ -182,7 +193,7 @@ export class Certificate {
     return this.lookup([label]);
   }
 
-  public cache_node_keys(root_key?: Uint8Array): string[] {
+  public cache_node_keys(root_key?: Uint8Array): SubnetStatus {
     const tree = this.cert.tree;
     let delegation = this.cert.delegation;
     // On local replica, with System type subnet, there is no delegation
@@ -201,17 +212,11 @@ export class Certificate {
         certificate: new ArrayBuffer(0),
       };
     }
-
-    delegation;
-    // Map principals into a readable format, with the subnet id as the key
-    let iter = 0;
-
     const nodeTree = lookup_path(['subnet', delegation?.subnet_id as ArrayBuffer, 'node'], tree);
     const nodeForks = flatten_forks(nodeTree as HashTree) as HashTree[];
     nodeForks.length;
 
     this.#nodeKeys = nodeForks.map(fork => {
-      iter++;
       const derEncodedPublicKey = lookup_path(['public_key'], fork[2] as HashTree) as ArrayBuffer;
       if (derEncodedPublicKey.byteLength !== 44) {
         throw new Error('Invalid public key length');
@@ -220,117 +225,10 @@ export class Certificate {
       }
     });
 
-    return this.#nodeKeys;
-  }
-
-  // turn the certificate into a JavaScript object
-  public parse(): Record<string, any> {
-    // utf-8 decoder
-    const decoder = new TextDecoder();
-    const tree = this.cert.tree;
-    const signature = this.cert.signature;
-    const delegation = this.cert.delegation;
-    const result: Record<string, any> = {};
-    if (delegation) {
-      result.delegation = delegation;
-    }
-
-    result.signature = toHex(new Uint8Array(signature));
-
-    const subnet_id = this.lookup(['subnet']) as HashTree;
-    const subnet_forks = flatten_forks(subnet_id) as HashTree[];
-    // Map principals into a readable format, with the subnet id as the key
-    let iter = 0;
-
-    const nodeTree = lookup_path(['subnet', delegation?.subnet_id as ArrayBuffer, 'node'], tree);
-    const nodeForks = flatten_forks(nodeTree as HashTree) as HashTree[];
-    nodeForks.length;
-
-    const hexNodeKeys = nodeForks.map(fork => {
-      iter++;
-      const derEncodedPublicKey = lookup_path(['public_key'], fork[2] as HashTree) as ArrayBuffer;
-      if (derEncodedPublicKey.byteLength !== 44) {
-        throw new Error('Invalid public key length');
-      } else {
-        return toHex(derEncodedPublicKey);
-      }
-    });
-
-    hexNodeKeys; //?
-
-    iter;
-    // const mapped = subnet_forks.reduce((start, next) => {
-    //   if (next[2]) {
-    //     const idBuffer = new Uint8Array(next[1] as ArrayBuffer);
-    //     const textId = Principal.fromUint8Array(idBuffer).toText();
-
-    //     textId;
-
-    //     const nodeTree = lookup_path(
-    //       ['subnet', delegation?.subnet_id as ArrayBuffer, 'node'],
-    //       tree,
-    //     );
-    //     const nodeForks = flatten_forks(nodeTree as HashTree) as HashTree[];
-    //     nodeForks.length;
-
-    //     toHex(new Uint8Array(public_key as ArrayBuffer)); //?
-
-    //     start[textId] = next[2];
-    //   }
-    //   return start;
-    // }, {} as Record<string, HashTree>);
-    iter;
-    try {
-      toHex(new Uint8Array(subnet_forks[0][1] as ArrayBuffer)); //?
-      Principal.fromUint8Array(new Uint8Array(subnet_forks[0][1] as ArrayBuffer)).toText(); //?
-    } catch (error) {
-      console.log(error);
-    }
-
-    // subnet_forks.forEach(fork => {
-    //   const label = new Uint8Array(fork[1] as ArrayBuffer); //?
-
-    // });
-
-    // recursively parse the tree using flatten_forks
-    // to get a list of all the nodes in the tree
-
-    // de all ArrayBuffer values
-    const process_node = (node: HashTree): Record<string, any> => {
-      const result: Record<string, any> = {};
-
-      switch (node[0]) {
-        case NodeId.Empty:
-          result.type = 'empty';
-          break;
-        case NodeId.Fork:
-          result.type = 'fork';
-          result.left = process_node(node[1] as HashTree);
-          result.right = process_node(node[2] as HashTree);
-
-          break;
-        case NodeId.Labeled:
-          result.type = 'labeled';
-          result.label = toHex(new Uint8Array(node[1] as ArrayBuffer));
-          result.sub = process_node(node[2] as HashTree);
-          break;
-        case NodeId.Leaf:
-          result.type = 'leaf';
-          result.data = toHex(new Uint8Array(node[1] as ArrayBuffer));
-          break;
-        case NodeId.Pruned:
-          result.type = 'pruned';
-          result.data = toHex(new Uint8Array(node[1] as ArrayBuffer));
-          break;
-        default:
-          throw new Error('unreachable');
-      }
-
-      return result;
+    return {
+      subnetId: Principal.fromUint8Array(new Uint8Array(delegation.subnet_id)).toText(),
+      nodeKeys: this.#nodeKeys,
     };
-
-    result.tree = process_node(tree);
-    return result;
   }
 
   private async verify(): Promise<void> {
@@ -342,7 +240,7 @@ export class Certificate {
     let sigVer = false;
 
     const lookupTime = this.lookup(['time']);
-    if (!lookupTime) {
+    if (!lookupTime || !(lookupTime instanceof ArrayBuffer)) {
       // Should never happen - time is always present in IC certificates
       throw new CertificateVerificationError('Certificate does not contain a time');
     }
@@ -396,7 +294,7 @@ export class Certificate {
     });
 
     const rangeLookup = cert.lookup(['subnet', d.subnet_id, 'canister_ranges']);
-    if (!rangeLookup) {
+    if (!rangeLookup || !(rangeLookup instanceof ArrayBuffer)) {
       throw new CertificateVerificationError(
         `Could not find canister ranges for subnet 0x${toHex(d.subnet_id)}`,
       );
@@ -418,7 +316,7 @@ export class Certificate {
       );
     }
     const publicKeyLookup = cert.lookup(['subnet', d.subnet_id, 'public_key']);
-    if (!publicKeyLookup) {
+    if (!publicKeyLookup || !(publicKeyLookup instanceof ArrayBuffer)) {
       throw new Error(`Could not find subnet key for subnet 0x${toHex(d.subnet_id)}`);
     }
     return publicKeyLookup;
