@@ -813,12 +813,15 @@ describe('default host', () => {
 });
 
 describe('fetchSubnetKeys', () => {
-  it.only('should fetch subnet keys for a given canister', async () => {
+  it.skip('should fetch node keys on application canisters for mainnet.', async () => {
     jest.useFakeTimers();
-    const abbbb = (await import('isomorphic-fetch')).default;
-    const agent = new HttpAgent({ fetch: abbbb, host: 'https://icp-api.io' });
-    await agent.fetchRootKey();
-    const subnetKeys = await agent.fetchSubnetKeys('erxue-5aaaa-aaaab-qaagq-cai'); //?
+    // const abbbb = (await import('isomorphic-fetch')).default;
+    // const agent = new HttpAgent({ fetch: abbbb, host: 'https://icp-api.io' });
+    // await agent.fetchRootKey();
+    // const subnetKeys = await agent.fetchSubnetKeys('erxue-5aaaa-aaaab-qaagq-cai'); //?
     // const subnetKeys = await agent.fetchSubnetKeys('ryjl3-tyaaa-aaaaa-aaaba-cai'); //?
+
+    // docs bkyz2-fmaaa-aaaaa-qaaaq-cai
+    // docs system bnz7o-iuaaa-aaaaa-qaaaa-cai
   });
 });

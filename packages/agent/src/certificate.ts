@@ -1,12 +1,10 @@
 import * as cbor from './cbor';
 import { AgentError } from './errors';
 import { hash } from './request_id';
-import { compare, concat, fromHex, toHex } from './utils/buffer';
+import { concat, fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
 import * as bls from './utils/bls';
-import { decodeLeb128, decodeTime } from './utils/leb';
-import { lebDecode, PipeArrayBuffer } from '@dfinity/candid';
-import { assert } from 'console';
+import { decodeTime } from './utils/leb';
 
 /**
  * A certificate may fail verification with respect to the provided public key
@@ -170,6 +168,8 @@ export class Certificate {
       blsVerify,
       options.maxAgeInMinutes,
     );
+
+    console.log(toHex(options.certificate));
     await cert.verify();
     return cert;
   }
