@@ -11,7 +11,13 @@
 
     <section>
       <h2>Version x.x.x</h2>
-      <ul></ul>
+      <ul>
+        <li>
+          feat!: adds certificate logic to decode subnet and node key paths from the hashtree.
+          Changes the interface for `lookup_path` to allow returning a HashTree, but also constrains
+          `lookup` response to an ArrayBuffer using a new `lookupResultToBuffer` export
+        </li>
+      </ul>
       <h2>Version 0.19.3</h2>
       <ul>
         <li>fix: Principal JSON is compatible with @dfinity/utils jsonReviver helper</li>

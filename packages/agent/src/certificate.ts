@@ -207,8 +207,8 @@ export class Certificate {
     this.cert = cbor.decode(new Uint8Array(certificate));
   }
 
-  public lookup(path: Array<ArrayBuffer | string>): ArrayBuffer | HashTree | undefined {
-    return lookup_path(path, this.cert.tree);
+  public lookup(path: Array<ArrayBuffer | string>): ArrayBuffer | undefined {
+    return lookupResultToBuffer(lookup_path(path, this.cert.tree));
   }
 
   public lookup_label(label: ArrayBuffer): ArrayBuffer | HashTree | undefined {
