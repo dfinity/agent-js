@@ -21,20 +21,24 @@ interface Cert {
   delegation?: Delegation;
 }
 
-const enum NodeId {
-  Empty = 0,
-  Fork = 1,
-  Labeled = 2,
-  Leaf = 3,
-  Pruned = 4,
-}
+const NodeId = {
+  Empty: 0,
+  Fork: 1,
+  Labeled: 2,
+  Leaf: 3,
+  Pruned: 4,
+};
+
+export type NodeIdType = typeof NodeId[keyof typeof NodeId];
+
+export { NodeId };
 
 export type HashTree =
-  | [NodeId.Empty]
-  | [NodeId.Fork, HashTree, HashTree]
-  | [NodeId.Labeled, ArrayBuffer, HashTree]
-  | [NodeId.Leaf, ArrayBuffer]
-  | [NodeId.Pruned, ArrayBuffer];
+  | [typeof NodeId.Empty]
+  | [typeof NodeId.Fork, HashTree, HashTree]
+  | [typeof NodeId.Labeled, ArrayBuffer, HashTree]
+  | [typeof NodeId.Leaf, ArrayBuffer]
+  | [typeof NodeId.Pruned, ArrayBuffer];
 
 /**
  * Represents the useful information about a subnet
@@ -70,19 +74,38 @@ export function hashTreeToString(tree: HashTree): string {
     case NodeId.Empty:
       return '()';
     case NodeId.Fork: {
-      const left = hashTreeToString(tree[1]);
-      const right = hashTreeToString(tree[2]);
-      return `sub(\n left:\n${indent(left)}\n---\n right:\n${indent(right)}\n)`;
+      if (tree[1] instanceof Array && tree[2] instanceof ArrayBuffer) {
+        const left = hashTreeToString(tree[1]);
+        const right = hashTreeToString(tree[2]);
+        return `sub(\n left:\n${indent(left)}\n---\n right:\n${indent(right)}\n)`;
+      } else {
+        throw new Error('Invalid tree structure for fork');
+      }
     }
     case NodeId.Labeled: {
-      const label = labelToString(tree[1]);
-      const sub = hashTreeToString(tree[2]);
-      return `label(\n label:\n${indent(label)}\n sub:\n${indent(sub)}\n)`;
+      if (tree[1] instanceof ArrayBuffer && tree[2] instanceof ArrayBuffer) {
+        const label = labelToString(tree[1]);
+        const sub = hashTreeToString(tree[2]);
+        return `label(\n label:\n${indent(label)}\n sub:\n${indent(sub)}\n)`;
+      } else {
+        throw new Error('Invalid tree structure for labeled');
+      }
     }
     case NodeId.Leaf: {
+      if (!tree[1]) {
+        throw new Error('Invalid tree structure for leaf');
+      } else if (Array.isArray(tree[1])) {
+        return JSON.stringify(tree[1]);
+      }
       return `leaf(...${tree[1].byteLength} bytes)`;
     }
     case NodeId.Pruned: {
+      if (!tree[1]) {
+        throw new Error('Invalid tree structure for pruned');
+      } else if (Array.isArray(tree[1])) {
+        return JSON.stringify(tree[1]);
+      }
+
       return `pruned(${toHex(new Uint8Array(tree[1]))}`;
     }
     default: {
@@ -169,7 +192,6 @@ export class Certificate {
       options.maxAgeInMinutes,
     );
 
-    console.log(toHex(options.certificate));
     await cert.verify();
     return cert;
   }
@@ -344,6 +366,22 @@ function extractDER(buf: ArrayBuffer): ArrayBuffer {
 }
 
 /**
+ * utility function to constrain the type of a path
+ * @param {ArrayBuffer | HashTree | undefined} result - the result of a lookup
+ * @returns ArrayBuffer or Undefined
+ */
+export function lookupResultToBuffer(
+  result: ArrayBuffer | HashTree | undefined,
+): ArrayBuffer | undefined {
+  if (result instanceof ArrayBuffer) {
+    return result;
+  } else if (result instanceof Uint8Array) {
+    return result.buffer;
+  }
+  return undefined;
+}
+
+/**
  * @param t
  */
 export async function reconstruct(t: HashTree): Promise<ArrayBuffer> {
@@ -392,7 +430,13 @@ export function lookup_path(
   if (path.length === 0) {
     switch (tree[0]) {
       case NodeId.Leaf: {
-        return new Uint8Array(tree[1]).buffer;
+        // should not be undefined
+        if (!tree[1]) throw new Error('Invalid tree structure for leaf');
+        if (tree[1] instanceof ArrayBuffer) {
+          return tree[1];
+        } else if (tree[1] instanceof Uint8Array) {
+          return tree[1].buffer;
+        } else return tree[1];
       }
       case NodeId.Fork: {
         return tree;

@@ -8,7 +8,7 @@ import * as Cert from './certificate';
 import { fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
 import { decodeTime } from './utils/leb';
-import { lookup_path } from './certificate';
+import { lookupResultToBuffer, lookup_path } from './certificate';
 import { goldenCertificates } from './agent/http/__certificates__/goldenCertificates.test';
 
 function label(str: string): ArrayBuffer {
@@ -127,12 +127,14 @@ test('lookup', () => {
     return new TextEncoder().encode(str);
   }
   expect(Cert.lookup_path([fromText('a'), fromText('a')], tree)).toEqual(undefined);
-  expect(toText(Cert.lookup_path([fromText('a'), fromText('y')], tree))).toEqual('world');
+  expect(
+    toText(lookupResultToBuffer(Cert.lookup_path([fromText('a'), fromText('y')], tree))!),
+  ).toEqual('world');
   expect(Cert.lookup_path([fromText('aa')], tree)).toEqual(undefined);
   expect(Cert.lookup_path([fromText('ax')], tree)).toEqual(undefined);
   expect(Cert.lookup_path([fromText('b')], tree)).toEqual(undefined);
   expect(Cert.lookup_path([fromText('bb')], tree)).toEqual(undefined);
-  expect(toText(Cert.lookup_path([fromText('d')], tree))).toEqual('morning');
+  expect(toText(lookupResultToBuffer(Cert.lookup_path([fromText('d')], tree))!)).toEqual('morning');
   expect(Cert.lookup_path([fromText('e')], tree)).toEqual(undefined);
 });
 
@@ -144,7 +146,7 @@ const SAMPLE_CERT: string =
 const parseTimeFromCert = (cert: ArrayBuffer): Date => {
   const certObj = cbor.decode(new Uint8Array(cert)) as any;
   if (!certObj.tree) throw new Error('Invalid certificate');
-  const lookup = lookup_path(['time'], certObj.tree);
+  const lookup = lookupResultToBuffer(lookup_path(['time'], certObj.tree));
   if (!lookup) throw new Error('Invalid certificate');
 
   return decodeTime(lookup);
