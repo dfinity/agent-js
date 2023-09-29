@@ -361,29 +361,9 @@ export class HttpAgent implements Agent {
   }
 
   private async _requestAndRetry(request: () => Promise<Response>, tries = 0): Promise<Response> {
+    let response: Response;
     try {
-      const response = await request();
-      if (response.ok) {
-        return response;
-      }
-
-      const responseText = await response.clone().text();
-      const errorMessage =
-        `Server returned an error:\n` +
-        `  Code: ${response.status} (${response.statusText})\n` +
-        `  Body: ${responseText}\n`;
-
-      if (this._retryTimes > tries) {
-        console.warn(errorMessage + `  Retrying request.`);
-        return await this._requestAndRetry(request, tries + 1);
-      }
-
-      throw new AgentHTTPResponseError(errorMessage, {
-        ok: response.ok,
-        status: response.status,
-        statusText: response.statusText,
-        headers: httpHeadersTransform(response.headers),
-      });
+      response = await request();
     } catch (error) {
       if (this._retryTimes > tries) {
         console.warn(
@@ -393,9 +373,29 @@ export class HttpAgent implements Agent {
         );
         return await this._requestAndRetry(request, tries + 1);
       }
-
       throw error;
     }
+    if (response.ok) {
+      return response;
+    }
+
+    const responseText = await response.clone().text();
+    const errorMessage =
+      `Server returned an error:\n` +
+      `  Code: ${response.status} (${response.statusText})\n` +
+      `  Body: ${responseText}\n`;
+
+    if (this._retryTimes > tries) {
+      console.warn(errorMessage + `  Retrying request.`);
+      return await this._requestAndRetry(request, tries + 1);
+    }
+
+    throw new AgentHTTPResponseError(errorMessage, {
+      ok: response.ok,
+      status: response.status,
+      statusText: response.statusText,
+      headers: httpHeadersTransform(response.headers),
+    });
   }
 
   public async query(
