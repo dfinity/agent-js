@@ -8,6 +8,7 @@ import {
   getDefaultAgent,
   HashTree,
   lookup_path,
+  lookupResultToBuffer,
   reconstruct,
   uint8ToBuf,
 } from '@dfinity/agent';
@@ -563,7 +564,7 @@ class Asset {
     }
 
     // Lookup hash of asset in tree
-    const treeSha = lookup_path(['http_assets', this._key], hashTree);
+    const treeSha = lookupResultToBuffer(lookup_path(['http_assets', this._key], hashTree));
 
     return !!treeSha && !!this.sha256 && compare(this.sha256.buffer, treeSha) === 0;
   }

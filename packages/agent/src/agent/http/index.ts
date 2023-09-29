@@ -27,6 +27,8 @@ import {
   SubmitRequestType,
 } from './types';
 import { AgentHTTPResponseError } from './errors';
+import { request } from '../../canisterStatus';
+import { SubnetStatus } from '../../certificate';
 
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
@@ -177,6 +179,8 @@ export class HttpAgent implements Agent {
   private _rootKeyFetched = false;
   private readonly _retryTimes; // Retry requests N times before erroring by default
   public readonly _isAgent = true;
+
+  #subnetKeys: Map<string, SubnetStatus> = new Map();
 
   constructor(options: HttpAgentOptions = {}) {
     if (options.source) {
@@ -573,6 +577,21 @@ export class HttpAgent implements Agent {
 
   public replaceIdentity(identity: Identity): void {
     this._identity = Promise.resolve(identity);
+  }
+
+  public async fetchSubnetKeys(canisterId: Principal | string): Promise<any> {
+    const effectiveCanisterId: Principal = Principal.from(canisterId);
+    const response = await request({
+      canisterId: effectiveCanisterId,
+      paths: ['subnet'],
+      agent: this,
+    });
+
+    const subnetResponse = response.get('subnet');
+    if (subnetResponse && typeof subnetResponse === 'object' && 'nodeKeys' in subnetResponse) {
+      this.#subnetKeys.set(effectiveCanisterId.toText(), subnetResponse as SubnetStatus);
+    }
+    return subnetResponse;
   }
 
   protected _transform(request: HttpAgentRequest): Promise<HttpAgentRequest> {
