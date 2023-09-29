@@ -1,9 +1,13 @@
 /** @module CanisterStatus */
-
 import { Principal } from '@dfinity/principal';
 import { AgentError } from '../errors';
 import { HttpAgent } from '../agent/http';
-import { Certificate, CreateCertificateOptions } from '../certificate';
+import {
+  Certificate,
+  CreateCertificateOptions,
+  SubnetStatus,
+  lookupResultToBuffer,
+} from '../certificate';
 import { toHex } from '../utils/buffer';
 import * as Cbor from '../cbor';
 import { decodeLeb128, decodeTime } from '../utils/leb';
@@ -12,7 +16,15 @@ import { decodeLeb128, decodeTime } from '../utils/leb';
  * Types of an entry on the canisterStatus map.
  * An entry of null indicates that the request failed, due to lack of permissions or the result being missing.
  */
-export type Status = string | ArrayBuffer | Date | ArrayBuffer[] | Principal[] | bigint | null;
+export type Status =
+  | string
+  | ArrayBuffer
+  | Date
+  | ArrayBuffer[]
+  | Principal[]
+  | SubnetStatus
+  | bigint
+  | null;
 
 /**
  * Interface to define a custom path. Nested paths will be represented as individual buffers, and can be created from text using {@link TextEncoder}
@@ -98,7 +110,24 @@ export const request = async (options: {
           canisterId: canisterId,
         });
 
-        const data = cert.lookup(encodePath(uniquePaths[index], canisterId));
+        response.certificate;
+        const lookup = (cert: Certificate, path: Path) => {
+          if (path === 'subnet') {
+            const data = cert.cache_node_keys();
+            return {
+              path: path,
+              data,
+            };
+          } else {
+            return {
+              path: path,
+              data: lookupResultToBuffer(cert.lookup(encodePath(path, canisterId))),
+            };
+          }
+        };
+
+        // must pass in the rootKey if we have no delegation
+        const { path, data } = lookup(cert, uniquePaths[index]);
         if (!data) {
           // Typically, the cert lookup will throw
           console.warn(`Expected to find result for path ${path}, but instead found nothing.`);
@@ -119,6 +148,10 @@ export const request = async (options: {
             }
             case 'module_hash': {
               status.set(path, decodeHex(data));
+              break;
+            }
+            case 'subnet': {
+              status.set(path, data);
               break;
             }
             case 'candid': {

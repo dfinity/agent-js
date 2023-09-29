@@ -188,6 +188,6 @@ describe('Canister Status utility', () => {
     expect(status.get('asdf' as unknown as Path)).toBe(null);
     // Expect undefined for unset value
     expect(status.get('test123')).toBe(undefined);
-    expect(consoleSpy).toBeCalledTimes(2);
+    expect(consoleSpy).toBeCalledTimes(3);
   });
 });

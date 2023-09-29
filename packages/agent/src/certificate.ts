@@ -21,20 +21,35 @@ interface Cert {
   delegation?: Delegation;
 }
 
-const enum NodeId {
-  Empty = 0,
-  Fork = 1,
-  Labeled = 2,
-  Leaf = 3,
-  Pruned = 4,
-}
+const NodeId = {
+  Empty: 0,
+  Fork: 1,
+  Labeled: 2,
+  Leaf: 3,
+  Pruned: 4,
+};
+
+export type NodeIdType = typeof NodeId[keyof typeof NodeId];
+
+export { NodeId };
 
 export type HashTree =
-  | [NodeId.Empty]
-  | [NodeId.Fork, HashTree, HashTree]
-  | [NodeId.Labeled, ArrayBuffer, HashTree]
-  | [NodeId.Leaf, ArrayBuffer]
-  | [NodeId.Pruned, ArrayBuffer];
+  | [typeof NodeId.Empty]
+  | [typeof NodeId.Fork, HashTree, HashTree]
+  | [typeof NodeId.Labeled, ArrayBuffer, HashTree]
+  | [typeof NodeId.Leaf, ArrayBuffer]
+  | [typeof NodeId.Pruned, ArrayBuffer];
+
+/**
+ * Represents the useful information about a subnet
+ * @param {string} subnetId the principal id of the canister's subnet
+ * @param {string[]} nodeKeys the keys of the individual nodes in the subnet
+ */
+export type SubnetStatus = {
+  // Principal as a string
+  subnetId: string;
+  nodeKeys: string[];
+};
 
 /**
  * Make a human readable string out of a hash tree.
@@ -59,19 +74,38 @@ export function hashTreeToString(tree: HashTree): string {
     case NodeId.Empty:
       return '()';
     case NodeId.Fork: {
-      const left = hashTreeToString(tree[1]);
-      const right = hashTreeToString(tree[2]);
-      return `sub(\n left:\n${indent(left)}\n---\n right:\n${indent(right)}\n)`;
+      if (tree[1] instanceof Array && tree[2] instanceof ArrayBuffer) {
+        const left = hashTreeToString(tree[1]);
+        const right = hashTreeToString(tree[2]);
+        return `sub(\n left:\n${indent(left)}\n---\n right:\n${indent(right)}\n)`;
+      } else {
+        throw new Error('Invalid tree structure for fork');
+      }
     }
     case NodeId.Labeled: {
-      const label = labelToString(tree[1]);
-      const sub = hashTreeToString(tree[2]);
-      return `label(\n label:\n${indent(label)}\n sub:\n${indent(sub)}\n)`;
+      if (tree[1] instanceof ArrayBuffer && tree[2] instanceof ArrayBuffer) {
+        const label = labelToString(tree[1]);
+        const sub = hashTreeToString(tree[2]);
+        return `label(\n label:\n${indent(label)}\n sub:\n${indent(sub)}\n)`;
+      } else {
+        throw new Error('Invalid tree structure for labeled');
+      }
     }
     case NodeId.Leaf: {
+      if (!tree[1]) {
+        throw new Error('Invalid tree structure for leaf');
+      } else if (Array.isArray(tree[1])) {
+        return JSON.stringify(tree[1]);
+      }
       return `leaf(...${tree[1].byteLength} bytes)`;
     }
     case NodeId.Pruned: {
+      if (!tree[1]) {
+        throw new Error('Invalid tree structure for pruned');
+      } else if (Array.isArray(tree[1])) {
+        return JSON.stringify(tree[1]);
+      }
+
       return `pruned(${toHex(new Uint8Array(tree[1]))}`;
     }
     default: {
@@ -132,6 +166,7 @@ export interface CreateCertificateOptions {
 
 export class Certificate {
   private readonly cert: Cert;
+  #nodeKeys: string[] = [];
 
   /**
    * Create a new instance of a certificate, automatically verifying it. Throws a
@@ -156,6 +191,7 @@ export class Certificate {
       blsVerify,
       options.maxAgeInMinutes,
     );
+
     await cert.verify();
     return cert;
   }
@@ -172,7 +208,50 @@ export class Certificate {
   }
 
   public lookup(path: Array<ArrayBuffer | string>): ArrayBuffer | undefined {
-    return lookup_path(path, this.cert.tree);
+    // constrain the type of the result, so that empty HashTree is undefined
+    return lookupResultToBuffer(lookup_path(path, this.cert.tree));
+  }
+
+  public lookup_label(label: ArrayBuffer): ArrayBuffer | HashTree | undefined {
+    return this.lookup([label]);
+  }
+
+  public cache_node_keys(root_key?: Uint8Array): SubnetStatus {
+    const tree = this.cert.tree;
+    let delegation = this.cert.delegation;
+    // On local replica, with System type subnet, there is no delegation
+    if (!delegation && typeof root_key !== 'undefined') {
+      delegation = {
+        subnet_id: Principal.selfAuthenticating(root_key).toUint8Array(),
+        certificate: new ArrayBuffer(0),
+      };
+    }
+    // otherwise use default NNS subnet id
+    else if (!delegation) {
+      delegation = {
+        subnet_id: Principal.fromText(
+          'tdb26-jop6k-aogll-7ltgs-eruif-6kk7m-qpktf-gdiqx-mxtrf-vb5e6-eqe',
+        ).toUint8Array(),
+        certificate: new ArrayBuffer(0),
+      };
+    }
+    const nodeTree = lookup_path(['subnet', delegation?.subnet_id as ArrayBuffer, 'node'], tree);
+    const nodeForks = flatten_forks(nodeTree as HashTree) as HashTree[];
+    nodeForks.length;
+
+    this.#nodeKeys = nodeForks.map(fork => {
+      const derEncodedPublicKey = lookup_path(['public_key'], fork[2] as HashTree) as ArrayBuffer;
+      if (derEncodedPublicKey.byteLength !== 44) {
+        throw new Error('Invalid public key length');
+      } else {
+        return toHex(derEncodedPublicKey);
+      }
+    });
+
+    return {
+      subnetId: Principal.fromUint8Array(new Uint8Array(delegation.subnet_id)).toText(),
+      nodeKeys: this.#nodeKeys,
+    };
   }
 
   private async verify(): Promise<void> {
@@ -288,6 +367,22 @@ function extractDER(buf: ArrayBuffer): ArrayBuffer {
 }
 
 /**
+ * utility function to constrain the type of a path
+ * @param {ArrayBuffer | HashTree | undefined} result - the result of a lookup
+ * @returns ArrayBuffer or Undefined
+ */
+export function lookupResultToBuffer(
+  result: ArrayBuffer | HashTree | undefined,
+): ArrayBuffer | undefined {
+  if (result instanceof ArrayBuffer) {
+    return result;
+  } else if (result instanceof Uint8Array) {
+    return result.buffer;
+  }
+  return undefined;
+}
+
+/**
  * @param t
  */
 export async function reconstruct(t: HashTree): Promise<ArrayBuffer> {
@@ -332,11 +427,20 @@ function domain_sep(s: string): ArrayBuffer {
 export function lookup_path(
   path: Array<ArrayBuffer | string>,
   tree: HashTree,
-): ArrayBuffer | undefined {
+): ArrayBuffer | HashTree | undefined {
   if (path.length === 0) {
     switch (tree[0]) {
       case NodeId.Leaf: {
-        return new Uint8Array(tree[1]).buffer;
+        // should not be undefined
+        if (!tree[1]) throw new Error('Invalid tree structure for leaf');
+        if (tree[1] instanceof ArrayBuffer) {
+          return tree[1];
+        } else if (tree[1] instanceof Uint8Array) {
+          return tree[1].buffer;
+        } else return tree[1];
+      }
+      case NodeId.Fork: {
+        return tree;
       }
       default: {
         return undefined;
