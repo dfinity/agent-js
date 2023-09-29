@@ -208,6 +208,7 @@ export class Certificate {
   }
 
   public lookup(path: Array<ArrayBuffer | string>): ArrayBuffer | undefined {
+    // constrain the type of the result, so that empty HashTree is undefined
     return lookupResultToBuffer(lookup_path(path, this.cert.tree));
   }
 
@@ -262,7 +263,7 @@ export class Certificate {
     let sigVer = false;
 
     const lookupTime = this.lookup(['time']);
-    if (!lookupTime || !(lookupTime instanceof ArrayBuffer)) {
+    if (!lookupTime) {
       // Should never happen - time is always present in IC certificates
       throw new CertificateVerificationError('Certificate does not contain a time');
     }
@@ -316,7 +317,7 @@ export class Certificate {
     });
 
     const rangeLookup = cert.lookup(['subnet', d.subnet_id, 'canister_ranges']);
-    if (!rangeLookup || !(rangeLookup instanceof ArrayBuffer)) {
+    if (!rangeLookup) {
       throw new CertificateVerificationError(
         `Could not find canister ranges for subnet 0x${toHex(d.subnet_id)}`,
       );
@@ -338,7 +339,7 @@ export class Certificate {
       );
     }
     const publicKeyLookup = cert.lookup(['subnet', d.subnet_id, 'public_key']);
-    if (!publicKeyLookup || !(publicKeyLookup instanceof ArrayBuffer)) {
+    if (!publicKeyLookup) {
       throw new Error(`Could not find subnet key for subnet 0x${toHex(d.subnet_id)}`);
     }
     return publicKeyLookup;

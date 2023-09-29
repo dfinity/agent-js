@@ -2,7 +2,12 @@
 import { Principal } from '@dfinity/principal';
 import { AgentError } from '../errors';
 import { HttpAgent } from '../agent/http';
-import { Certificate, CreateCertificateOptions, SubnetStatus } from '../certificate';
+import {
+  Certificate,
+  CreateCertificateOptions,
+  SubnetStatus,
+  lookupResultToBuffer,
+} from '../certificate';
 import { toHex } from '../utils/buffer';
 import * as Cbor from '../cbor';
 import { decodeLeb128, decodeTime } from '../utils/leb';
@@ -116,7 +121,7 @@ export const request = async (options: {
           } else {
             return {
               path: path,
-              data: cert.lookup(encodePath(path, canisterId)),
+              data: lookupResultToBuffer(cert.lookup(encodePath(path, canisterId))),
             };
           }
         };
@@ -131,7 +136,7 @@ export const request = async (options: {
           } else {
             status.set(path.key, null);
           }
-        } else if (!Array.isArray(data)) {
+        } else {
           switch (path) {
             case 'time': {
               status.set(path, decodeTime(data));
@@ -181,7 +186,6 @@ export const request = async (options: {
           }
         }
       } catch (error) {
-        error;
         // Break on signature verification errors
         if ((error as AgentError)?.message?.includes('Invalid certificate')) {
           throw new AgentError((error as AgentError).message);
