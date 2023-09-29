@@ -365,7 +365,20 @@ export class HttpAgent implements Agent {
   }
 
   private async _requestAndRetry(request: () => Promise<Response>, tries = 0): Promise<Response> {
-    const response = await request();
+    let response: Response;
+    try {
+      response = await request();
+    } catch (error) {
+      if (this._retryTimes > tries) {
+        console.warn(
+          `Caught exception while attempting to make request:\n` +
+            `  ${error}\n` +
+            `  Retrying request.`,
+        );
+        return await this._requestAndRetry(request, tries + 1);
+      }
+      throw error;
+    }
     if (response.ok) {
       return response;
     }
