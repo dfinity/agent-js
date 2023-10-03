@@ -49,15 +49,26 @@ export interface QueryResponseBase {
   status: QueryResponseStatus;
 }
 
+export type NodeSignature = {
+  // the batch time
+  timestamp: bigint;
+  // the signature
+  signature: Uint8Array;
+  // the ID of the node that created the signature
+  signer: Principal;
+};
+
 export interface QueryResponseReplied extends QueryResponseBase {
   status: QueryResponseStatus.Replied;
   reply: { arg: ArrayBuffer };
+  nodeSignatures?: NodeSignature[];
 }
 
 export interface QueryResponseRejected extends QueryResponseBase {
   status: QueryResponseStatus.Rejected;
   reject_code: ReplicaRejectCode;
   reject_message: string;
+  signatures?: NodeSignature[];
 }
 
 /**
