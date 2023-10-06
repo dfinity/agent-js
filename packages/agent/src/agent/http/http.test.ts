@@ -849,7 +849,6 @@ describe('certified query', () => {
     });
 
     const result = await actor.whoami();
-    result;
-    result?.toText(); //?
+    expect(result).toBeInstanceOf(Principal);
   });
 });

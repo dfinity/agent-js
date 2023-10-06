@@ -511,7 +511,7 @@ export class HttpAgent implements Agent {
         const { timestamp } = sig;
 
         const hash = hashOfMap({
-          // status: status,
+          status: status,
           // FIX: arg will be removed shortly
           reply: reply.arg ?? reply,
           timestamp: BigInt(timestamp),
@@ -525,11 +525,7 @@ export class HttpAgent implements Agent {
 
         const matchingKey = subnetStatus.nodeKeys.find(key => {
           try {
-            const validity = ed25519.verify(
-              sig.signature,
-              new Uint8Array(separatorWithHash),
-              new Uint8Array(fromHex(key)),
-            );
+            const validity = ed25519.verify(sig.signature, new Uint8Array(separatorWithHash), key);
             if (validity) return true;
           } catch (error) {
             error;
@@ -537,6 +533,8 @@ export class HttpAgent implements Agent {
           }
           return false;
         });
+
+        matchingKey;
 
         if (!matchingKey) {
           throw new CertificateVerificationError('Invalid signature from replica signed query.');
