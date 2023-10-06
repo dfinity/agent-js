@@ -3,8 +3,8 @@ import { Principal } from '@dfinity/principal';
 import { AgentError } from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
-import { hash, hashOfMap, hashValue, requestIdOf } from '../../request_id';
-import { compare, concat, fromHex, toHex } from '../../utils/buffer';
+import { hashOfMap, requestIdOf } from '../../request_id';
+import { concat, fromHex } from '../../utils/buffer';
 import {
   Agent,
   ApiQueryResponse,
@@ -28,9 +28,8 @@ import {
 } from './types';
 import { AgentHTTPResponseError } from './errors';
 import { request } from '../../canisterStatus';
-import { Certificate, CertificateVerificationError, SubnetStatus } from '../../certificate';
+import { CertificateVerificationError, SubnetStatus } from '../../certificate';
 import { ed25519 } from '@noble/curves/ed25519';
-import { Ed25519KeyIdentity, Ed25519PublicKey } from '@dfinity/identity';
 
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
@@ -509,7 +508,7 @@ export class HttpAgent implements Agent {
       const { reply } = queryResponse;
 
       signatures?.forEach(sig => {
-        const { timestamp, identity } = sig;
+        const { timestamp } = sig;
 
         const hash = hashOfMap({
           // status: status,
@@ -519,23 +518,27 @@ export class HttpAgent implements Agent {
           request_id: requestId,
         });
 
-        toHex(identity); //?
-        subnetStatus.nodeKeys; //?
+        // TODO: check if the identity matches node keys
 
-        subnetStatus.nodeKeys.includes(Principal.fromUint8Array(identity).toText()); //?
+        const domainSeparator = new TextEncoder().encode('\x0Bic-response');
+        const separatorWithHash = concat(domainSeparator, new Uint8Array(hash));
 
-        // const validity = ed25519.verify(sig.signature, new Uint8Array(hash), identity);
+        const matchingKey = subnetStatus.nodeKeys.find(key => {
+          try {
+            const validity = ed25519.verify(
+              sig.signature,
+              new Uint8Array(separatorWithHash),
+              new Uint8Array(fromHex(key)),
+            );
+            if (validity) return true;
+          } catch (error) {
+            error;
+            //
+          }
+          return false;
+        });
 
-        identity.byteLength; //?
-
-        const DER_PREFIX = new Uint8Array([48, 42, 48, 5, 6, 3, 43, 101, 112, 3, 33, 0]);
-        const identityPrefix = identity.slice(0, DER_PREFIX.length);
-
-        compare(identityPrefix, DER_PREFIX); //?
-
-        const validity = Ed25519KeyIdentity.verify(sig.signature, new Uint8Array(hash), identity);
-
-        if (!validity) {
+        if (!matchingKey) {
           throw new CertificateVerificationError('Invalid signature from replica signed query.');
         }
       });
