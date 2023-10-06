@@ -3,8 +3,8 @@ import { Principal } from '@dfinity/principal';
 import { AgentError } from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
-import { requestIdOf } from '../../request_id';
-import { fromHex } from '../../utils/buffer';
+import { hash, hashOfMap, hashValue, requestIdOf } from '../../request_id';
+import { compare, concat, fromHex, toHex } from '../../utils/buffer';
 import {
   Agent,
   ApiQueryResponse,
@@ -28,7 +28,9 @@ import {
 } from './types';
 import { AgentHTTPResponseError } from './errors';
 import { request } from '../../canisterStatus';
-import { SubnetStatus } from '../../certificate';
+import { Certificate, CertificateVerificationError, SubnetStatus } from '../../certificate';
+import { ed25519 } from '@noble/curves/ed25519';
+import { Ed25519KeyIdentity, Ed25519PublicKey } from '@dfinity/identity';
 
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
@@ -407,63 +409,140 @@ export class HttpAgent implements Agent {
     fields: QueryFields,
     identity?: Identity | Promise<Identity>,
   ): Promise<ApiQueryResponse> {
-    const id = await (identity !== undefined ? await identity : await this._identity);
-    if (!id) {
-      throw new IdentityInvalidError(
-        "This identity has expired due this application's security policy. Please refresh your authentication.",
-      );
-    }
+    const makeQuery = async () => {
+      const id = await (identity !== undefined ? await identity : await this._identity);
+      if (!id) {
+        throw new IdentityInvalidError(
+          "This identity has expired due this application's security policy. Please refresh your authentication.",
+        );
+      }
 
-    const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
-    const sender = id?.getPrincipal() || Principal.anonymous();
+      const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
+      const sender = id?.getPrincipal() || Principal.anonymous();
 
-    const request: QueryRequest = {
-      request_type: ReadRequestType.Query,
-      canister_id: canister,
-      method_name: fields.methodName,
-      arg: fields.arg,
-      sender,
-      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
-    };
+      const request: QueryRequest = {
+        request_type: ReadRequestType.Query,
+        canister_id: canister,
+        method_name: fields.methodName,
+        arg: fields.arg,
+        sender,
+        ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+      };
 
-    // TODO: remove this any. This can be a Signed or UnSigned request.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let transformedRequest: any = await this._transform({
-      request: {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/cbor',
-          ...(this._credentials ? { Authorization: 'Basic ' + btoa(this._credentials) } : {}),
+      const requestId = await requestIdOf(request);
+
+      // TODO: remove this any. This can be a Signed or UnSigned request.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let transformedRequest: any = await this._transform({
+        request: {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/cbor',
+            ...(this._credentials ? { Authorization: 'Basic ' + btoa(this._credentials) } : {}),
+          },
         },
-      },
-      endpoint: Endpoint.Query,
-      body: request,
+        endpoint: Endpoint.Query,
+        body: request,
+      });
+
+      // Apply transform for identity.
+      transformedRequest = await id?.transformRequest(transformedRequest);
+
+      const body = cbor.encode(transformedRequest.body);
+
+      const response = await this._requestAndRetry(() =>
+        this._fetch('' + new URL(`/api/v2/canister/${canister.toText()}/query`, this._host), {
+          ...this._fetchOptions,
+          ...transformedRequest.request,
+          body,
+        }),
+      );
+
+      const queryResponse: QueryResponse = cbor.decode(await response.arrayBuffer());
+
+      return {
+        ...queryResponse,
+        httpDetails: {
+          ok: response.ok,
+          status: response.status,
+          statusText: response.statusText,
+          headers: httpHeadersTransform(response.headers),
+        },
+        requestId,
+      };
+    };
+    const queryPromise = new Promise<ApiQueryResponse>((resolve, reject) => {
+      makeQuery()
+        .then(response => {
+          resolve(response);
+        })
+        .catch(error => {
+          reject(error);
+        });
     });
 
-    // Apply transform for identity.
-    transformedRequest = await id?.transformRequest(transformedRequest);
-
-    const body = cbor.encode(transformedRequest.body);
-    const response = await this._requestAndRetry(() =>
-      this._fetch('' + new URL(`/api/v2/canister/${canister.toText()}/query`, this._host), {
-        ...this._fetchOptions,
-        ...transformedRequest.request,
-        body,
-      }),
-    );
-
-    const queryResponse: QueryResponse = cbor.decode(await response.arrayBuffer());
-
-    return {
-      ...queryResponse,
-      httpDetails: {
-        ok: response.ok,
-        status: response.status,
-        statusText: response.statusText,
-        headers: httpHeadersTransform(response.headers),
-      },
-    };
+    const subnetStatusPromise = new Promise<SubnetStatus>((resolve, reject) => {
+      const subnetStatus = this.#subnetKeys.get(canisterId.toString());
+      if (subnetStatus) {
+        resolve(subnetStatus);
+      } else {
+        this.fetchSubnetKeys(canisterId)
+          .then(response => {
+            resolve(response);
+          })
+          .catch(error => {
+            reject(error);
+          });
+      }
+    });
+    const [query, subnetStatus] = await Promise.all([queryPromise, subnetStatusPromise]);
+    return this.#verifyQueryResponse(Principal.from(canisterId), [query, subnetStatus]);
   }
+
+  #verifyQueryResponse = (
+    canisterId: Principal,
+    [queryResponse, subnetStatus]: [ApiQueryResponse, SubnetStatus],
+  ): ApiQueryResponse => {
+    const { status, signatures, requestId } = queryResponse;
+
+    if (status === 'replied') {
+      const { reply } = queryResponse;
+
+      signatures?.forEach(sig => {
+        const { timestamp, identity } = sig;
+
+        const hash = hashOfMap({
+          // status: status,
+          // FIX: arg will be removed shortly
+          reply: reply.arg ?? reply,
+          timestamp: BigInt(timestamp),
+          request_id: requestId,
+        });
+
+        toHex(identity); //?
+        subnetStatus.nodeKeys; //?
+
+        subnetStatus.nodeKeys.includes(Principal.fromUint8Array(identity).toText()); //?
+
+        // const validity = ed25519.verify(sig.signature, new Uint8Array(hash), identity);
+
+        identity.byteLength; //?
+
+        const DER_PREFIX = new Uint8Array([48, 42, 48, 5, 6, 3, 43, 101, 112, 3, 33, 0]);
+        const identityPrefix = identity.slice(0, DER_PREFIX.length);
+
+        compare(identityPrefix, DER_PREFIX); //?
+
+        const validity = Ed25519KeyIdentity.verify(sig.signature, new Uint8Array(hash), identity);
+
+        if (!validity) {
+          throw new CertificateVerificationError('Invalid signature from replica signed query.');
+        }
+      });
+    }
+
+    return queryResponse;
+  };
 
   public async createReadStateRequest(
     fields: ReadStateOptions,

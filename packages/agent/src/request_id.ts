@@ -73,7 +73,18 @@ const hashString = (value: string): ArrayBuffer => {
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function requestIdOf(request: Record<string, any>): RequestId {
-  const hashed: Array<[ArrayBuffer, ArrayBuffer]> = Object.entries(request)
+  return hashOfMap(request) as RequestId;
+}
+
+/**
+ * Hash a map into an ArrayBuffer using the representation-independent-hash function.
+ * https://sdk.dfinity.org/docs/interface-spec/index.html#hash-of-map
+ * @param map - Any non-nested object
+ * @param domainSeparator - optional domain separator
+ * @returns ArrayBuffer
+ */
+export function hashOfMap(map: Record<string, unknown>): ArrayBuffer {
+  const hashed: Array<[ArrayBuffer, ArrayBuffer]> = Object.entries(map)
     .filter(([, value]) => value !== undefined)
     .map(([key, value]: [string, unknown]) => {
       const hashedKey = hashString(key);
@@ -89,6 +100,6 @@ export function requestIdOf(request: Record<string, any>): RequestId {
   });
 
   const concatenated: ArrayBuffer = concat(...sorted.map(x => concat(...x)));
-  const requestId = hash(concatenated) as RequestId;
-  return requestId;
+  const result = hash(concatenated);
+  return result;
 }

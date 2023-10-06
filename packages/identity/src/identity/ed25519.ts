@@ -130,6 +130,30 @@ export class Ed25519KeyIdentity extends SignIdentity {
     const signature = tweetnacl.sign.detached(blob, new Uint8Array(this._privateKey)).buffer;
     return signature as Signature;
   }
+
+  /**
+   * Verify
+   * @param sig - signature to verify
+   * @param msg - message to verify
+   * @param pk - public key
+   * @returns - true if the signature is valid, false otherwise
+   */
+  public static verify(
+    sig: ArrayBuffer | Uint8Array | string,
+    msg: ArrayBuffer | Uint8Array | string,
+    pk: ArrayBuffer | Uint8Array | string,
+  ) {
+    const [signature, message, publicKey] = [sig, msg, pk].map(x => {
+      if (typeof x === 'string') {
+        x = fromHexString(x);
+      }
+      if (x instanceof Uint8Array) {
+        x = x.buffer;
+      }
+      return new Uint8Array(x);
+    });
+    return tweetnacl.sign.detached.verify(message, signature, publicKey);
+  }
 }
 
 type PublicKeyHex = string;

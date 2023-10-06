@@ -43,7 +43,10 @@ export interface HttpDetailsResponse {
   headers: HttpHeaderField[];
 }
 
-export type ApiQueryResponse = QueryResponse & { httpDetails: HttpDetailsResponse };
+export type ApiQueryResponse = QueryResponse & {
+  httpDetails: HttpDetailsResponse;
+  requestId: RequestId;
+};
 
 export interface QueryResponseBase {
   status: QueryResponseStatus;
@@ -55,13 +58,13 @@ export type NodeSignature = {
   // the signature
   signature: Uint8Array;
   // the ID of the node that created the signature
-  signer: Principal;
+  identity: Uint8Array;
 };
 
 export interface QueryResponseReplied extends QueryResponseBase {
   status: QueryResponseStatus.Replied;
   reply: { arg: ArrayBuffer };
-  nodeSignatures?: NodeSignature[];
+  signatures?: NodeSignature[];
 }
 
 export interface QueryResponseRejected extends QueryResponseBase {

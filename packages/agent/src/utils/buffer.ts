@@ -41,6 +41,12 @@ export function fromHex(hex: string): ArrayBuffer {
   return new Uint8Array(buffer).buffer;
 }
 
+/**
+ *
+ * @param b1 array buffer 1
+ * @param b2 array buffer 2
+ * @returns number - negative if b1 < b2, positive if b1 > b2, 0 if b1 === b2
+ */
 export function compare(b1: ArrayBuffer, b2: ArrayBuffer): number {
   if (b1.byteLength !== b2.byteLength) {
     return b1.byteLength - b2.byteLength;
@@ -54,6 +60,16 @@ export function compare(b1: ArrayBuffer, b2: ArrayBuffer): number {
     }
   }
   return 0;
+}
+
+/**
+ * Checks two array buffers for equality.
+ * @param b1 array buffer 1
+ * @param b2 array buffer 2
+ * @returns boolean
+ */
+export function bufEquals(b1: ArrayBuffer, b2: ArrayBuffer): boolean {
+  return compare(b1, b2) === 0;
 }
 
 /**
