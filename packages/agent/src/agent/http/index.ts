@@ -524,8 +524,13 @@ export class HttpAgent implements Agent {
         const separatorWithHash = concat(domainSeparator, new Uint8Array(hash));
 
         const matchingKey = subnetStatus.nodeKeys.find(key => {
+          const pubKey = new Uint8Array(fromHex(key).slice(12));
           try {
-            const validity = ed25519.verify(sig.signature, new Uint8Array(separatorWithHash), key);
+            const validity = ed25519.verify(
+              sig.signature,
+              new Uint8Array(separatorWithHash),
+              pubKey,
+            );
             if (validity) return true;
           } catch (error) {
             error;
