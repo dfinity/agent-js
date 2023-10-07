@@ -287,7 +287,7 @@ export class Actor {
       constructor(config: ActorConfig) {
         if (!config.canisterId)
           throw new AgentError(
-            `Canister ID is required, but recieved ${typeof config.canisterId} instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.`,
+            `Canister ID is required, but received ${typeof config.canisterId} instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.`,
           );
         const canisterId =
           typeof config.canisterId === 'string'
@@ -322,7 +322,7 @@ export class Actor {
   ): ActorSubclass<T> {
     if (!configuration.canisterId) {
       throw new AgentError(
-        `Canister ID is required, but recieved ${typeof configuration.canisterId} instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.`,
+        `Canister ID is required, but received ${typeof configuration.canisterId} instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.`,
       );
     }
     return new (this.createActorClass(interfaceFactory))(

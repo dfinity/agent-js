@@ -532,7 +532,7 @@ describe('Auth Client login', () => {
     expect(idpWindow.close).toBeCalled();
   });
 
-  it('should call onError if recieved an invalid success message', done => {
+  it('should call onError if received an invalid success message', done => {
     setup({
       onAuthRequest: () => {
         idpMock.send({
@@ -556,7 +556,7 @@ describe('Auth Client login', () => {
       });
   });
 
-  it('should call onSuccess if recieved a valid success message', done => {
+  it('should call onSuccess if received a valid success message', done => {
     setup({
       onAuthRequest: () => {
         // Send a valid request.
