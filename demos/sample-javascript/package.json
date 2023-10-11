@@ -1,7 +1,7 @@
 {
   "name": "@dfinity/ic-agent-sample-javascript-app",
   "private": true,
-  "version": "0.19.3",
+  "version": "0.19.4",
   "scripts": {
     "build": "webpack",
     "develop": "webpack-dev-server",
