@@ -315,8 +315,8 @@ describe('node keys', () => {
 
     const nodeKeys = cert.cache_node_keys();
     expect(nodeKeys).toMatchInlineSnapshot(`
-      Object {
-        "nodeKeys": Array [
+      {
+        "nodeKeys": [
           "302a300506032b6570032100526742592f1e331aa13db7d1ebf224ff0b8231e0626eeefad0b629413a93e798",
           "302a300506032b657003210099c734e5f28c50741b04b63e87c77533d47dc2347524ed1ec8c266e429cef636",
           "302a300506032b657003210054432c37b495e9206b46b5ce85da87a7eb2d853cd3f02feec4acf39efe982850",
@@ -375,8 +375,8 @@ describe('node keys', () => {
 
     const nodeKeys = cert.cache_node_keys();
     expect(nodeKeys).toMatchInlineSnapshot(`
-      Object {
-        "nodeKeys": Array [
+      {
+        "nodeKeys": [
           "302a300506032b6570032100526742592f1e331aa13db7d1ebf224ff0b8231e0626eeefad0b629413a93e798",
           "302a300506032b657003210099c734e5f28c50741b04b63e87c77533d47dc2347524ed1ec8c266e429cef636",
           "302a300506032b657003210054432c37b495e9206b46b5ce85da87a7eb2d853cd3f02feec4acf39efe982850",
@@ -435,8 +435,8 @@ describe('node keys', () => {
 
     const nodeKeys = cert.cache_node_keys();
     expect(nodeKeys).toMatchInlineSnapshot(`
-      Object {
-        "nodeKeys": Array [
+      {
+        "nodeKeys": [
           "302a300506032b6570032100526742592f1e331aa13db7d1ebf224ff0b8231e0626eeefad0b629413a93e798",
           "302a300506032b657003210099c734e5f28c50741b04b63e87c77533d47dc2347524ed1ec8c266e429cef636",
           "302a300506032b657003210054432c37b495e9206b46b5ce85da87a7eb2d853cd3f02feec4acf39efe982850",

@@ -729,7 +729,7 @@ describe('Migration from Ed25519Key', () => {
 
     // expect the delegation to be removed
     expect(storage.remove as jest.Mock).toBeCalledTimes(3);
-    expect(fakeStore).toMatchInlineSnapshot(`Object {}`);
+    expect(fakeStore).toMatchInlineSnapshot(`{}`);
   });
   it('should generate and store a ECDSAKey if no key is stored', async () => {
     const fakeStore: Record<any, any> = {};
@@ -744,7 +744,7 @@ describe('Migration from Ed25519Key', () => {
 
     // It should have stored a cryptoKey
     expect(Object.keys(fakeStore[KEY_STORAGE_KEY])).toMatchInlineSnapshot(`
-      Array [
+      [
         "privateKey",
         "publicKey",
       ]

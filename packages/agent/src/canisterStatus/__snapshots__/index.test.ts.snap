@@ -1,8 +1,8 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Canister Status utility should query canister controllers 1`] = `
-Array [
-  Object {
+[
+  {
     "__principal__": "rwlgt-iiaaa-aaaaa-aaaaa-cai",
   },
 ]
@@ -23,8 +23,8 @@ exports[`Canister Status utility should query the time 1`] = `2022-05-19T20:58:2
 exports[`Canister Status utility should support multiple requests 1`] = `2022-05-19T20:58:22.596Z`;
 
 exports[`Canister Status utility should support multiple requests 2`] = `
-Array [
-  Object {
+[
+  {
     "__principal__": "rwlgt-iiaaa-aaaaa-aaaaa-cai",
   },
 ]
@@ -47,7 +47,7 @@ service : {
 exports[`Canister Status utility should support valid custom paths 4`] = `"80f485e1a4a6a7f816"`;
 
 exports[`Canister Status utility should support valid custom paths 5`] = `
-Array [
+[
   Uint8Array [
     4,
   ],

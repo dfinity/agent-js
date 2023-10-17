@@ -2,11 +2,11 @@ import { IdleManager } from './idleManager';
 
 jest.useFakeTimers();
 
-const { location } = window;
-
-beforeEach(() => {
-  delete (window as any).location;
-  (window as any).location = { reload: jest.fn() };
+beforeAll(() => {
+  Object.defineProperty(window, 'location', {
+    writable: true,
+    value: { assign: jest.fn(), reload: jest.fn() },
+  });
 });
 
 describe('IdleManager tests', () => {

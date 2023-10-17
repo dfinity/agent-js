@@ -2,10 +2,10 @@
 
 exports[`Migration from Ed25519Key should continue using an existing Ed25519Key and delegation 1`] = `
 DelegationIdentity {
-  "_delegation": Object {
-    "delegations": Array [
-      Object {
-        "delegation": Object {
+  "_delegation": {
+    "delegations": [
+      {
+        "delegation": {
           "expiration": "15e6375edc280000",
           "pubkey": "302a300506032b6570032100d1fa89134802051c8b5d4e53c08b87381b87097bca4c4f348611eb8ce6c91809",
         },
@@ -14,11 +14,11 @@ DelegationIdentity {
     ],
     "publicKey": "302a300506032b6570032100d1fa89134802051c8b5d4e53c08b87381b87097bca4c4f348611eb8ce6c91809",
   },
-  "_inner": Array [
+  "_inner": [
     "302a300506032b6570032100d1fa89134802051c8b5d4e53c08b87381b87097bca4c4f348611eb8ce6c91809",
     "4bbff6b476463558d7be318aa342d1a97778d70833038680187950e9e02486c0d1fa89134802051c8b5d4e53c08b87381b87097bca4c4f348611eb8ce6c91809",
   ],
 }
 `;
 
-exports[`Migration from Ed25519Key should generate and store a ECDSAKey if no key is stored and keyType is set to Ed25519 1`] = `"[\\"302a300506032b6570032100d1fa89134802051c8b5d4e53c08b87381b87097bca4c4f348611eb8ce6c91809\\",\\"4bbff6b476463558d7be318aa342d1a97778d70833038680187950e9e02486c0d1fa89134802051c8b5d4e53c08b87381b87097bca4c4f348611eb8ce6c91809\\"]"`;
+exports[`Migration from Ed25519Key should generate and store a ECDSAKey if no key is stored and keyType is set to Ed25519 1`] = `"["302a300506032b6570032100d1fa89134802051c8b5d4e53c08b87381b87097bca4c4f348611eb8ce6c91809","4bbff6b476463558d7be318aa342d1a97778d70833038680187950e9e02486c0d1fa89134802051c8b5d4e53c08b87381b87097bca4c4f348611eb8ce6c91809"]"`;
