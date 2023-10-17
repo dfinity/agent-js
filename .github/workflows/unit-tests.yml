@@ -31,7 +31,7 @@ jobs:
 
       - run: npm install -g npm@9
 
-      - run: npm ci
+      - run: npm install
 
       # build monorepo incl. each subpackage
       - run: npm run build --workspaces --if-present
