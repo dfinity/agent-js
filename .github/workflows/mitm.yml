@@ -20,7 +20,7 @@ jobs:
         spec:
           - '0.16.1'
         node:
-          - 16
+          - 20
 
     steps:
       - uses: actions/checkout@v2
