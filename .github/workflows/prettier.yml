@@ -24,7 +24,7 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node }}
-      - run: npm install -g npm@9
+      - run: npm install -g npm
       - run: npm install prettier pretty-quick
       - run: npm run prettier:check
 

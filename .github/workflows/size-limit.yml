@@ -7,7 +7,7 @@ jobs:
       CI_JOB_NUMBER: 1
     steps:
       - uses: actions/checkout@v1
-      - run: npm install -g npm@9
+      - run: npm install -g npm
       # - run: npm run size-limit --workspaces --if-present
 
       # commented out until the job can be configured
