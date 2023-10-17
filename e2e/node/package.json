@@ -44,7 +44,6 @@
     "node-webcrypto-p11": "^2.5.0",
     "size-limit": "^8.2.6",
     "text-encoding": "^0.7.0",
-    "ts-jest": "^29.1.1",
     "ts-node": "^10.8.2",
     "typescript": "^4.7.4",
     "webcrypto-core": "^1.7.5"
