@@ -62,7 +62,6 @@
     "prettier": "^2.0.5",
     "size-limit": "^8.2.6",
     "text-encoding": "^0.7.0",
-    "ts-jest": "^29.1.1",
     "ts-node": "^10.8.2",
     "tslint": "^5.20.0",
     "typedoc": "^0.22.11",
