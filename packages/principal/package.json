@@ -51,7 +51,6 @@
     "@typescript-eslint/parser": "^5.30.5",
     "esbuild": "^0.15.16",
     "eslint": "^8.19.0",
-    "eslint-plugin-jsdoc": "^39.3.3",
     "jest": "^29.7.0",
     "size-limit": "^8.2.6",
     "text-encoding": "^0.7.0",
