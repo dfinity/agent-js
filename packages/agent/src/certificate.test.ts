@@ -273,8 +273,8 @@ describe('node keys', () => {
 
     const nodeKeys = cert.cache_node_keys();
     expect(nodeKeys).toMatchInlineSnapshot(`
-      Object {
-        "nodeKeys": Array [
+      {
+        "nodeKeys": [
           "302a300506032b65700321005b0bdf0329932ab0a78fa7192ad76cf37d67eb2024739774d3b67da7799ebc9c",
           "302a300506032b65700321009776d25542873dafb8099303d1fca8e4aa344e73cf5a3d7df5b40f9c8ed5a085",
           "302a300506032b6570032100e5a9296571826cc3be977490296405ae9da1da7d59cce1642421bc19804cc310",
@@ -306,8 +306,8 @@ describe('node keys', () => {
 
     const nodeKeys = cert.cache_node_keys();
     expect(nodeKeys).toMatchInlineSnapshot(`
-      Object {
-        "nodeKeys": Array [
+      {
+        "nodeKeys": [
           "302a300506032b6570032100526742592f1e331aa13db7d1ebf224ff0b8231e0626eeefad0b629413a93e798",
           "302a300506032b657003210099c734e5f28c50741b04b63e87c77533d47dc2347524ed1ec8c266e429cef636",
           "302a300506032b657003210054432c37b495e9206b46b5ce85da87a7eb2d853cd3f02feec4acf39efe982850",
@@ -366,8 +366,8 @@ describe('node keys', () => {
 
     const nodeKeys = cert.cache_node_keys();
     expect(nodeKeys).toMatchInlineSnapshot(`
-      Object {
-        "nodeKeys": Array [
+      {
+        "nodeKeys": [
           "302a300506032b6570032100526742592f1e331aa13db7d1ebf224ff0b8231e0626eeefad0b629413a93e798",
           "302a300506032b657003210099c734e5f28c50741b04b63e87c77533d47dc2347524ed1ec8c266e429cef636",
           "302a300506032b657003210054432c37b495e9206b46b5ce85da87a7eb2d853cd3f02feec4acf39efe982850",
@@ -426,8 +426,8 @@ describe('node keys', () => {
 
     const nodeKeys = cert.cache_node_keys();
     expect(nodeKeys).toMatchInlineSnapshot(`
-      Object {
-        "nodeKeys": Array [
+      {
+        "nodeKeys": [
           "302a300506032b6570032100526742592f1e331aa13db7d1ebf224ff0b8231e0626eeefad0b629413a93e798",
           "302a300506032b657003210099c734e5f28c50741b04b63e87c77533d47dc2347524ed1ec8c266e429cef636",
           "302a300506032b657003210054432c37b495e9206b46b5ce85da87a7eb2d853cd3f02feec4acf39efe982850",
