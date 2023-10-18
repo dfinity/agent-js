@@ -840,7 +840,7 @@ describe('certified query', () => {
       });
     };
     jest.useFakeTimers();
-    new Date(Date.now()); //?
+    new Date(Date.now());
     const agent = new HttpAgent({ host: 'https://icp-api.io', fetch: fetch });
 
     const actor = Actor.createActor(idlFactory, {

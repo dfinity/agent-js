@@ -15,7 +15,7 @@ export class CertificateVerificationError extends AgentError {
   }
 }
 
-interface Cert {
+export interface Cert {
   tree: HashTree;
   signature: ArrayBuffer;
   delegation?: Delegation;
@@ -166,7 +166,6 @@ export interface CreateCertificateOptions {
 
 export class Certificate {
   private readonly cert: Cert;
-  #nodeKeys: string[] = [];
 
   /**
    * Create a new instance of a certificate, automatically verifying it. Throws a
@@ -214,44 +213,6 @@ export class Certificate {
 
   public lookup_label(label: ArrayBuffer): ArrayBuffer | HashTree | undefined {
     return this.lookup([label]);
-  }
-
-  public cache_node_keys(root_key?: Uint8Array): SubnetStatus {
-    const tree = this.cert.tree;
-    let delegation = this.cert.delegation;
-    // On local replica, with System type subnet, there is no delegation
-    if (!delegation && typeof root_key !== 'undefined') {
-      delegation = {
-        subnet_id: Principal.selfAuthenticating(root_key).toUint8Array(),
-        certificate: new ArrayBuffer(0),
-      };
-    }
-    // otherwise use default NNS subnet id
-    else if (!delegation) {
-      delegation = {
-        subnet_id: Principal.fromText(
-          'tdb26-jop6k-aogll-7ltgs-eruif-6kk7m-qpktf-gdiqx-mxtrf-vb5e6-eqe',
-        ).toUint8Array(),
-        certificate: new ArrayBuffer(0),
-      };
-    }
-    const nodeTree = lookup_path(['subnet', delegation?.subnet_id as ArrayBuffer, 'node'], tree);
-    const nodeForks = flatten_forks(nodeTree as HashTree) as HashTree[];
-    nodeForks.length;
-
-    this.#nodeKeys = nodeForks.map(fork => {
-      const derEncodedPublicKey = lookup_path(['public_key'], fork[2] as HashTree) as ArrayBuffer;
-      if (derEncodedPublicKey.byteLength !== 44) {
-        throw new Error('Invalid public key length');
-      } else {
-        return toHex(derEncodedPublicKey);
-      }
-    });
-
-    return {
-      subnetId: Principal.fromUint8Array(new Uint8Array(delegation.subnet_id)).toText(),
-      nodeKeys: this.#nodeKeys,
-    };
   }
 
   private async verify(): Promise<void> {
@@ -454,7 +415,13 @@ export function lookup_path(
     return lookup_path(path.slice(1), t);
   }
 }
-function flatten_forks(t: HashTree): HashTree[] {
+
+/**
+ * If the tree is a fork, flatten it into an array of trees
+ * @param t - the tree to flatten
+ * @returns HashTree[] - the flattened tree
+ */
+export function flatten_forks(t: HashTree): HashTree[] {
   switch (t[0]) {
     case NodeId.Empty:
       return [];
@@ -464,6 +431,7 @@ function flatten_forks(t: HashTree): HashTree[] {
       return [t];
   }
 }
+
 function find_label(l: ArrayBuffer, trees: HashTree[]): HashTree | undefined {
   if (trees.length === 0) {
     return undefined;

@@ -3,10 +3,14 @@ import { Principal } from '@dfinity/principal';
 import { AgentError } from '../errors';
 import { HttpAgent } from '../agent/http';
 import {
+  Cert,
   Certificate,
   CreateCertificateOptions,
+  HashTree,
   SubnetStatus,
+  flatten_forks,
   lookupResultToBuffer,
+  lookup_path,
 } from '../certificate';
 import { toHex } from '../utils/buffer';
 import * as Cbor from '../cbor';
@@ -110,10 +114,9 @@ export const request = async (options: {
           canisterId: canisterId,
         });
 
-        response.certificate;
         const lookup = (cert: Certificate, path: Path) => {
           if (path === 'subnet') {
-            const data = cert.cache_node_keys();
+            const data = fetchNodeKeys(response.certificate, agent.rootKey);
             return {
               path: path,
               data,
@@ -207,6 +210,48 @@ export const request = async (options: {
   await Promise.all(promises);
 
   return status;
+};
+
+export const fetchNodeKeys = (
+  certificate: ArrayBuffer,
+  root_key?: ArrayBuffer | Uint8Array,
+): SubnetStatus => {
+  const cert = Cbor.decode(new Uint8Array(certificate)) as Cert;
+  const tree = cert.tree;
+  let delegation = cert.delegation;
+  // On local replica, with System type subnet, there is no delegation
+  if (!delegation && typeof root_key !== 'undefined') {
+    delegation = {
+      subnet_id: Principal.selfAuthenticating(new Uint8Array(root_key)).toUint8Array(),
+      certificate: new ArrayBuffer(0),
+    };
+  }
+  // otherwise use default NNS subnet id
+  else if (!delegation) {
+    delegation = {
+      subnet_id: Principal.fromText(
+        'tdb26-jop6k-aogll-7ltgs-eruif-6kk7m-qpktf-gdiqx-mxtrf-vb5e6-eqe',
+      ).toUint8Array(),
+      certificate: new ArrayBuffer(0),
+    };
+  }
+  const nodeTree = lookup_path(['subnet', delegation?.subnet_id as ArrayBuffer, 'node'], tree);
+  const nodeForks = flatten_forks(nodeTree as HashTree) as HashTree[];
+  nodeForks.length;
+
+  const nodeKeys = nodeForks.map(fork => {
+    const derEncodedPublicKey = lookup_path(['public_key'], fork[2] as HashTree) as ArrayBuffer;
+    if (derEncodedPublicKey.byteLength !== 44) {
+      throw new Error('Invalid public key length');
+    } else {
+      return toHex(derEncodedPublicKey);
+    }
+  });
+
+  return {
+    subnetId: Principal.fromUint8Array(new Uint8Array(delegation.subnet_id)).toText(),
+    nodeKeys,
+  };
 };
 
 export const encodePath = (path: Path, canisterId: Principal): ArrayBuffer[] => {
