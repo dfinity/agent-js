@@ -513,7 +513,7 @@ export class HttpAgent implements Agent {
         const hash = hashOfMap({
           status: status,
           // FIX: arg will be removed shortly
-          reply: reply.arg ?? reply,
+          reply: hashOfMap(reply),
           timestamp: BigInt(timestamp),
           request_id: requestId,
         });
@@ -524,7 +524,7 @@ export class HttpAgent implements Agent {
         const separatorWithHash = concat(domainSeparator, new Uint8Array(hash));
 
         const matchingKey = subnetStatus.nodeKeys.find(key => {
-          const pubKey = new Uint8Array(fromHex(key).slice(12));
+          const pubKey = new Uint8Array(fromHex(key).slice(12, 44));
           try {
             const validity = ed25519.verify(
               sig.signature,
