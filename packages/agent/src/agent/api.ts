@@ -71,6 +71,7 @@ export interface QueryResponseRejected extends QueryResponseBase {
   status: QueryResponseStatus.Rejected;
   reject_code: ReplicaRejectCode;
   reject_message: string;
+  error_code: string;
   signatures?: NodeSignature[];
 }
 

@@ -4,7 +4,7 @@ import { AgentError } from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
 import { hashOfMap, requestIdOf } from '../../request_id';
-import { concat, fromHex } from '../../utils/buffer';
+import { compare, concat, fromHex } from '../../utils/buffer';
 import {
   Agent,
   ApiQueryResponse,
@@ -495,58 +495,67 @@ export class HttpAgent implements Agent {
       }
     });
     const [query, subnetStatus] = await Promise.all([queryPromise, subnetStatusPromise]);
-    return this.#verifyQueryResponse(Principal.from(canisterId), [query, subnetStatus]);
+    return this.#verifyQueryResponse(query, subnetStatus);
   }
 
+  /**
+   * See https://internetcomputer.org/docs/current/references/ic-interface-spec/#http-query for details on validation
+   * @param queryResponse - The response from the query
+   * @param subnetStatus - The subnet status, including all node keys
+   * @returns ApiQueryResponse
+   */
   #verifyQueryResponse = (
-    canisterId: Principal,
-    [queryResponse, subnetStatus]: [ApiQueryResponse, SubnetStatus],
+    queryResponse: ApiQueryResponse,
+    subnetStatus: SubnetStatus,
   ): ApiQueryResponse => {
     const { status, signatures, requestId } = queryResponse;
 
-    if (status === 'replied') {
-      const { reply } = queryResponse;
+    const domainSeparator = new TextEncoder().encode('\x0Bic-response');
+    signatures?.forEach(sig => {
+      const { timestamp } = sig;
+      let hash: ArrayBuffer;
 
-      signatures?.forEach(sig => {
-        const { timestamp } = sig;
-
-        const hash = hashOfMap({
+      // Hash is constructed differently depending on the status
+      if (status === 'replied') {
+        const { reply } = queryResponse;
+        hash = hashOfMap({
           status: status,
-          // FIX: arg will be removed shortly
           reply: hashOfMap(reply),
           timestamp: BigInt(timestamp),
           request_id: requestId,
         });
-
-        // TODO: check if the identity matches node keys
-
-        const domainSeparator = new TextEncoder().encode('\x0Bic-response');
-        const separatorWithHash = concat(domainSeparator, new Uint8Array(hash));
-
-        const matchingKey = subnetStatus.nodeKeys.find(key => {
-          const pubKey = new Uint8Array(fromHex(key).slice(12, 44));
-          try {
-            const validity = ed25519.verify(
-              sig.signature,
-              new Uint8Array(separatorWithHash),
-              pubKey,
-            );
-            if (validity) return true;
-          } catch (error) {
-            error;
-            //
-          }
-          return false;
+      } else if (status === 'rejected') {
+        const { reject_code, reject_message, error_code } = queryResponse;
+        hash = hashOfMap({
+          status: status,
+          reject_code: reject_code,
+          reject_message: reject_message,
+          error_code: error_code,
+          timestamp: BigInt(timestamp),
+          request_id: requestId,
         });
+      } else {
+        throw new Error(`Unknown status: ${status}`);
+      }
 
-        matchingKey;
+      const separatorWithHash = concat(domainSeparator, new Uint8Array(hash));
 
-        if (!matchingKey) {
-          throw new CertificateVerificationError('Invalid signature from replica signed query.');
+      // FIX: check for match without verifying N times
+      const matchingKey = subnetStatus.nodeKeys.find(key => {
+        const pubKey = new Uint8Array(fromHex(key).slice(12, 44));
+        try {
+          const validity = ed25519.verify(sig.signature, new Uint8Array(separatorWithHash), pubKey);
+          if (validity) return true;
+        } catch (error) {
+          // suppress error
         }
+        return false;
       });
-    }
 
+      if (!matchingKey) {
+        throw new CertificateVerificationError('Invalid signature from replica signed query.');
+      }
+    });
     return queryResponse;
   };
 
