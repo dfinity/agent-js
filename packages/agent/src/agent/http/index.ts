@@ -524,6 +524,10 @@ export class HttpAgent implements Agent {
     queryResponse: ApiQueryResponse,
     subnetStatus: SubnetStatus | void,
   ): ApiQueryResponse => {
+    if (!subnetStatus || this.#verifyQuerySignatures === false) {
+      // This should not be called if the user has disabled verification
+      return queryResponse;
+    }
     const { status, signatures, requestId } = queryResponse;
 
     const domainSeparator = new TextEncoder().encode('\x0Bic-response');
