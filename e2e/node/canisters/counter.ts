@@ -3,7 +3,7 @@ import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { readFileSync } from 'fs';
 import path from 'path';
-import agent, { port, identity } from '../utils/agent';
+import agent, { port, identity, makeAgent } from '../utils/agent';
 
 let cache: {
   canisterId: Principal;
@@ -52,15 +52,9 @@ export async function noncelessCanister(): Promise<{
   actor: any;
 }> {
   const module = readFileSync(path.join(__dirname, 'counter.wasm'));
-  const disableNonceAgent = await Promise.resolve(
-    new HttpAgent({
-      host: 'http://127.0.0.1:' + port,
-      identity,
-      disableNonce: true,
-    }),
-  ).then(async agent => {
-    await agent.fetchRootKey();
-    return agent;
+  const disableNonceAgent = await makeAgent({
+    identity,
+    disableNonce: true,
   });
 
   const canisterId = await Actor.createCanister({ agent: disableNonceAgent });
@@ -84,7 +78,9 @@ export async function noncelessCanister(): Promise<{
 
 export const createActor = async (options?: HttpAgentOptions) => {
   const module = readFileSync(path.join(__dirname, 'counter.wasm'));
-  const agent = new HttpAgent({ host: `http://localhost:${process.env.REPLICA_PORT}`, ...options });
+  const agent = await makeAgent({
+    ...options,
+  });
   await agent.fetchRootKey();
 
   const canisterId = await Actor.createCanister({ agent });

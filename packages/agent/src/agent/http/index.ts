@@ -4,7 +4,7 @@ import { AgentError } from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
 import { hashOfMap, requestIdOf } from '../../request_id';
-import { compare, concat, fromHex } from '../../utils/buffer';
+import { concat, fromHex } from '../../utils/buffer';
 import {
   Agent,
   ApiQueryResponse,
@@ -121,6 +121,11 @@ export interface HttpAgentOptions {
    * @default 3
    */
   retryTimes?: number;
+  /**
+   * Whether the agent should verify signatures signed by node keys on query responses. Increases security, but adds overhead and must make a separate request to cache the node keys for the canister's subnet.
+   * @default true
+   */
+  verifyQuerySignatures?: boolean;
 }
 
 function getDefaultFetch(): typeof fetch {
@@ -182,6 +187,7 @@ export class HttpAgent implements Agent {
   public readonly _isAgent = true;
 
   #subnetKeys: Map<string, SubnetStatus> = new Map();
+  #verifyQuerySignatures = true;
 
   constructor(options: HttpAgentOptions = {}) {
     if (options.source) {
@@ -234,6 +240,9 @@ export class HttpAgent implements Agent {
           'Could not infer host from window.location, defaulting to mainnet gateway of https://icp-api.io. Please provide a host to the HttpAgent constructor to avoid this warning.',
         );
       }
+    }
+    if (options.verifyQuerySignatures !== undefined) {
+      this.#verifyQuerySignatures = options.verifyQuerySignatures;
     }
     // Default is 3, only set from option if greater or equal to 0
     this._retryTimes =
@@ -480,7 +489,10 @@ export class HttpAgent implements Agent {
         });
     });
 
-    const subnetStatusPromise = new Promise<SubnetStatus>((resolve, reject) => {
+    const subnetStatusPromise = new Promise<SubnetStatus | void>((resolve, reject) => {
+      if (!this.#verifyQuerySignatures) {
+        resolve();
+      }
       const subnetStatus = this.#subnetKeys.get(canisterId.toString());
       if (subnetStatus) {
         resolve(subnetStatus);
@@ -495,6 +507,10 @@ export class HttpAgent implements Agent {
       }
     });
     const [query, subnetStatus] = await Promise.all([queryPromise, subnetStatusPromise]);
+    // Skip verification if the user has disabled it
+    if (!this.#verifyQuerySignatures) {
+      return query;
+    }
     return this.#verifyQueryResponse(query, subnetStatus);
   }
 
@@ -506,7 +522,7 @@ export class HttpAgent implements Agent {
    */
   #verifyQueryResponse = (
     queryResponse: ApiQueryResponse,
-    subnetStatus: SubnetStatus,
+    subnetStatus: SubnetStatus | void,
   ): ApiQueryResponse => {
     const { status, signatures, requestId } = queryResponse;
 
@@ -541,7 +557,7 @@ export class HttpAgent implements Agent {
       const separatorWithHash = concat(domainSeparator, new Uint8Array(hash));
 
       // FIX: check for match without verifying N times
-      const matchingKey = subnetStatus.nodeKeys.find(key => {
+      const matchingKey = subnetStatus?.nodeKeys.find(key => {
         const pubKey = new Uint8Array(fromHex(key).slice(12, 44));
         try {
           const validity = ed25519.verify(sig.signature, new Uint8Array(separatorWithHash), pubKey);

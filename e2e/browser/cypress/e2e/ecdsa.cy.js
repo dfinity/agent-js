@@ -6,7 +6,9 @@ const canisterId = ids.whoami.local;
 
 const setup = async () => {
   const identity1 = await ECDSAKeyIdentity.generate();
-  const whoami1 = createActor(ids.whoami.local, { agentOptions: { identity: identity1 } });
+  const whoami1 = createActor(ids.whoami.local, {
+    agentOptions: { verifyQuerySignatures: false, identity: identity1 },
+  });
 
   const principal1 = await whoami1.whoami();
 
@@ -34,7 +36,9 @@ describe('ECDSAKeyIdentity tests with SubtleCrypto', () => {
 
       const identity2 = await ECDSAKeyIdentity.fromKeyPair(storedKeyPair);
 
-      const whoami2 = createActor(canisterId, { agentOptions: { identity: identity2 } });
+      const whoami2 = createActor(canisterId, {
+        agentOptions: { verifyQuerySignatures: false, identity: identity2 },
+      });
 
       const principal2 = await whoami2.whoami();
 
