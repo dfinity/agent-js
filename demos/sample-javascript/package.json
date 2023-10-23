@@ -6,7 +6,6 @@
     "build": "webpack",
     "develop": "webpack-dev-server",
     "lint:fix": "npm run lint -- --fix",
-    "publish:release": "",
     "test:coverage": "",
     "test": ""
   },
