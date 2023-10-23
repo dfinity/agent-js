@@ -1,6 +1,3 @@
-/**
- * @jest-environment node
- */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Actor, HttpAgent, SignIdentity } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
@@ -14,6 +11,7 @@ import {
 import { Secp256k1KeyIdentity } from '@dfinity/identity-secp256k1';
 import agent, { makeAgent } from '../utils/agent';
 import identityCanister from '../canisters/identity';
+import { test, expect } from 'vitest';
 
 function createIdentity(seed: number): SignIdentity {
   const seed1 = new Array(32).fill(0);
@@ -90,7 +88,6 @@ async function installIdentityCanister(): Promise<{
   };
 }
 
-jest.setTimeout(30000);
 test('identity: query and call gives same principal', async () => {
   const { canisterId, idl } = await installIdentityCanister();
   const identity = Actor.createActor(idl, {
@@ -100,9 +97,8 @@ test('identity: query and call gives same principal', async () => {
   const callPrincipal = await identity.whoami();
   const queryPrincipal = await identity.whoami_query();
   expect(callPrincipal).toEqual(queryPrincipal);
-});
+}, 30000);
 
-jest.setTimeout(30000);
 test('identity: two different Ed25519 keys should have a different principal', async () => {
   const { canisterId, idl } = await installIdentityCanister();
   const identity1 = await createIdentityActor(0, canisterId, idl);
@@ -111,9 +107,7 @@ test('identity: two different Ed25519 keys should have a different principal', a
   const principal1 = await identity1.whoami_query();
   const principal2 = await identity2.whoami_query();
   expect(principal1).not.toEqual(principal2);
-});
-
-jest.setTimeout(30000);
+}, 30000);
 test('identity: two different Secp256k1 keys should have a different principal', async () => {
   const { canisterId, idl } = await installIdentityCanister();
   // Seeded identity
@@ -124,9 +118,8 @@ test('identity: two different Secp256k1 keys should have a different principal',
   const principal1 = await identity1.whoami_query();
   const principal2 = await identity2.whoami_query();
   expect(principal1).not.toEqual(principal2);
-});
+}, 30000);
 
-jest.setTimeout(30000);
 test('identity: two different Ecdsa keys should have a different principal', async () => {
   const { canisterId, idl } = await installIdentityCanister();
   const identity1 = await createEcdsaIdentityActor(canisterId, idl);
@@ -135,9 +128,8 @@ test('identity: two different Ecdsa keys should have a different principal', asy
   const principal1 = await identity1.whoami_query();
   const principal2 = await identity2.whoami_query();
   expect(principal1).not.toEqual(principal2);
-});
+}, 30000);
 
-jest.setTimeout(30000);
 test('delegation: principal is the same between delegated keys with secp256k1', async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
@@ -170,9 +162,8 @@ test('delegation: principal is the same between delegated keys with secp256k1', 
   expect(principal1).not.toEqual(principal2);
   expect(principal1).toEqual(principal3);
   expect(principal2).not.toEqual(principal3);
-});
+}, 30000);
 
-jest.setTimeout(30000);
 test('delegation: principal is the same between delegated keys', async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
@@ -205,9 +196,8 @@ test('delegation: principal is the same between delegated keys', async () => {
   expect(principal1).not.toEqual(principal2);
   expect(principal1).toEqual(principal3);
   expect(principal2).not.toEqual(principal3);
-});
+}, 30000);
 
-jest.setTimeout(30000);
 test('delegation: works with 3 keys', async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
@@ -256,9 +246,8 @@ test('delegation: works with 3 keys', async () => {
   expect(principalMiddle).not.toEqual(principalRoot);
   expect(principalBottom).not.toEqual(principalRoot);
   expect(principalRoot).toEqual(principalDelegated);
-});
+}, 30000);
 
-jest.setTimeout(30000);
 test('delegation: works with 4 keys', async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
@@ -325,4 +314,4 @@ test('delegation: works with 4 keys', async () => {
   expect(principalBottom).not.toEqual(principalRoot);
   expect(principalBottom).not.toEqual(principalMiddle2);
   expect(principalRoot).toEqual(principalDelegated);
-});
+}, 30000);

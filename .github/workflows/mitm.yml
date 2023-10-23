@@ -51,7 +51,7 @@ jobs:
         id: mitmdump
         run: |
           set -ex
-          mitmdump -p 8888 --mode reverse:http://127.0.0.1:4943 \
+          mitmproxy -p 8888 --mode reverse:https://icp-api.io \
             --modify-headers '/~s/Transfer-Encoding/' \
             --modify-body '/~s/Hello/Hullo' \
             &
@@ -60,8 +60,6 @@ jobs:
       - name: mitm e2e
         env:
           CI: true
-          REPLICA_PORT: 8888
-          MITM: true
         run: npm run mitm --workspaces --if-present
 
   aggregate:

@@ -1,9 +1,9 @@
-import { Actor, HttpAgent, HttpAgentOptions } from '@dfinity/agent';
+import { Actor, HttpAgentOptions } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { readFileSync } from 'fs';
 import path from 'path';
-import agent, { port, identity, makeAgent } from '../utils/agent';
+import agent, { identity, makeAgent } from '../utils/agent';
 
 let cache: {
   canisterId: Principal;
@@ -81,10 +81,16 @@ export const createActor = async (options?: HttpAgentOptions) => {
   const agent = await makeAgent({
     ...options,
   });
-  await agent.fetchRootKey();
+  try {
+    if (!options?.host?.includes('icp-api')) {
+      await agent.fetchRootKey();
+    }
+  } catch (_) {
+    //
+  }
 
   const canisterId = await Actor.createCanister({ agent });
-  await Actor.install({ module }, { canisterId, agent: await agent });
+  await Actor.install({ module }, { canisterId, agent });
   const idl: IDL.InterfaceFactory = ({ IDL }) => {
     return IDL.Service({
       inc: IDL.Func([], [], []),
@@ -94,5 +100,5 @@ export const createActor = async (options?: HttpAgentOptions) => {
       queryGreet: IDL.Func([IDL.Text], [IDL.Text], ['query']),
     });
   };
-  return Actor.createActor(idl, { canisterId, agent: await agent }) as any;
+  return Actor.createActor(idl, { canisterId, agent }) as any;
 };

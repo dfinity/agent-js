@@ -10,12 +10,21 @@ if (Number.isNaN(port)) {
 }
 
 export const makeAgent = async (options?: HttpAgentOptions) => {
+  if (!global.fetch) {
+    await import('isomorphic-fetch').then(module => {
+      global.fetch = module.default;
+    });
+  }
   const agent = new HttpAgent({
     host: `http://localhost:${process.env.REPLICA_PORT ?? 4943}`,
     verifyQuerySignatures: false,
     ...options,
   });
-  await agent.fetchRootKey();
+  try {
+    await agent.fetchRootKey();
+  } catch (_) {
+    //
+  }
   return agent;
 };
 
