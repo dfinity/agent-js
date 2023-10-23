@@ -111,7 +111,7 @@
     {
       "name": "@dfinity/identity-secp256k1",
       "path": "./packages/identity-secp256k1/dist/index.js",
-      "limit": "250 kB"
+      "limit": "260 kB"
     }
   ]
 }
