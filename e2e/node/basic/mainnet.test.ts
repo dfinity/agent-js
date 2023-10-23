@@ -3,8 +3,9 @@ import { IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
 import { describe, it, expect, vi } from 'vitest';
+import { makeAgent } from '../utils/agent';
 
-const createWhoamiActor = (identity: Identity) => {
+const createWhoamiActor = async (identity: Identity) => {
   const canisterId = 'ivcos-eqaaa-aaaab-qablq-cai';
   const idlFactory = () => {
     return IDL.Service({
@@ -14,7 +15,7 @@ const createWhoamiActor = (identity: Identity) => {
   vi.useFakeTimers();
   new Date(Date.now());
 
-  const agent = new HttpAgent({ host: 'https://icp-api.io', fetch: fetch, identity });
+  const agent = await makeAgent({ host: 'https://icp-api.io', identity });
 
   return Actor.createActor(idlFactory, {
     agent,
@@ -24,7 +25,7 @@ const createWhoamiActor = (identity: Identity) => {
 
 describe('certified query', () => {
   it('should verify a query certificate', async () => {
-    const actor = createWhoamiActor(new AnonymousIdentity());
+    const actor = await createWhoamiActor(new AnonymousIdentity());
 
     const result = await actor.whoami();
     expect(Principal.from(result)).toBeInstanceOf(Principal);
@@ -36,8 +37,9 @@ describe('certified query', () => {
       count++;
       return newIdentity;
     });
-    const actors = identities.map(createWhoamiActor);
-    const promises = actors.map(actor => actor.whoami());
+    const actors = await identities.map(async identity => await createWhoamiActor(identity));
+
+    const promises = actors.map(async actor => (await actor).whoami());
 
     const results = await Promise.all(promises);
     results.forEach(result => {

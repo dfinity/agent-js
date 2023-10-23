@@ -22,7 +22,7 @@ const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;
 
-const HTTP_AGENT_HOST = 'http://localhost:4943';
+const HTTP_AGENT_HOST = 'http://127.0.0.1:4943';
 
 const DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS = 5 * 60 * 1000;
 const REPLICA_PERMITTED_DRIFT_MILLISECONDS = 60 * 1000;
@@ -72,7 +72,7 @@ test('call', async () => {
   const nonce = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
   const principal = Principal.anonymous();
 
-  const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://localhost' });
+  const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://127.0.0.1' });
 
   const methodName = 'greet';
   const arg = new Uint8Array([]);
@@ -108,7 +108,7 @@ test('call', async () => {
   expect(requestId).toEqual(expectedRequestId);
   const call1 = calls[0][0];
   const call2 = calls[0][1];
-  expect(call1).toBe(`http://localhost/api/v2/canister/${canisterId.toText()}/call`);
+  expect(call1).toBe(`http://127.0.0.1/api/v2/canister/${canisterId.toText()}/call`);
   expect(call2.method).toEqual('POST');
   expect(call2.body).toEqual(cbor.encode(expectedRequest));
   expect(call2.headers['Content-Type']).toEqual('application/cbor');
@@ -138,7 +138,7 @@ test('queries with the same content should have the same signature', async () =>
 
   const httpAgent = new HttpAgent({
     fetch: mockFetch,
-    host: 'http://localhost',
+    host: 'http://127.0.0.1',
     disableNonce: true,
   });
   httpAgent.addTransform(makeNonceTransform(() => nonce));
@@ -198,7 +198,7 @@ test('readState should not call transformers if request is passed', async () => 
 
   const httpAgent = new HttpAgent({
     fetch: mockFetch,
-    host: 'http://localhost',
+    host: 'http://127.0.0.1',
     disableNonce: true,
   });
   httpAgent.addTransform(makeNonceTransform(() => nonce));
@@ -288,7 +288,7 @@ test('use anonymous principal if unspecified', async () => {
 
   const httpAgent = new HttpAgent({
     fetch: mockFetch,
-    host: 'http://localhost',
+    host: 'http://127.0.0.1',
     disableNonce: true,
   });
   httpAgent.addTransform(makeNonceTransform(() => nonce));
@@ -326,7 +326,7 @@ test('use anonymous principal if unspecified', async () => {
   expect(calls.length).toBe(1);
   expect(requestId).toEqual(expectedRequestId);
 
-  expect(calls[0][0]).toBe(`http://localhost/api/v2/canister/${canisterId.toText()}/call`);
+  expect(calls[0][0]).toBe(`http://127.0.0.1/api/v2/canister/${canisterId.toText()}/call`);
   const call2 = calls[0][1];
   expect(call2.method).toEqual('POST');
   expect(call2.body).toEqual(cbor.encode(expectedRequest));
@@ -376,14 +376,14 @@ describe('invalidate identity', () => {
   const mockFetch: jest.Mock = jest.fn();
   it('should allow its identity to be invalidated', () => {
     const identity = new AnonymousIdentity();
-    const agent = new HttpAgent({ identity, fetch: mockFetch, host: 'http://localhost' });
+    const agent = new HttpAgent({ identity, fetch: mockFetch, host: 'http://127.0.0.1' });
     const invalidate = () => agent.invalidateIdentity();
     expect(invalidate).not.toThrowError();
   });
   it('should throw an error instead of making a call if its identity is invalidated', async () => {
     const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
     const identity = new AnonymousIdentity();
-    const agent = new HttpAgent({ identity, fetch: mockFetch, host: 'http://localhost' });
+    const agent = new HttpAgent({ identity, fetch: mockFetch, host: 'http://127.0.0.1' });
     agent.invalidateIdentity();
 
     const expectedError =
@@ -421,7 +421,7 @@ describe('replace identity', () => {
   const mockFetch: jest.Mock = jest.fn();
   it('should allow an actor to replace its identity', () => {
     const identity = new AnonymousIdentity();
-    const agent = new HttpAgent({ identity, fetch: mockFetch, host: 'http://localhost' });
+    const agent = new HttpAgent({ identity, fetch: mockFetch, host: 'http://127.0.0.1' });
 
     const identity2 = new AnonymousIdentity();
     const replace = () => agent.replaceIdentity(identity2);
@@ -440,7 +440,7 @@ describe('replace identity', () => {
 
     const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
     const identity = new AnonymousIdentity();
-    const agent = new HttpAgent({ identity, fetch: mockFetch, host: 'http://localhost' });
+    const agent = new HttpAgent({ identity, fetch: mockFetch, host: 'http://127.0.0.1' });
     // First invalidate identity
     agent.invalidateIdentity();
     await agent
@@ -734,7 +734,7 @@ test('should fetch with given call options and fetch options', async () => {
   const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
   const httpAgent = new HttpAgent({
     fetch: mockFetch,
-    host: 'http://localhost',
+    host: 'http://127.0.0.1',
     callOptions: {
       reactNative: { textStreaming: true },
     },
@@ -772,7 +772,7 @@ describe('default host', () => {
     expect((agent as any)._host.hostname).toBe('icp-api.io');
   });
   it('should use the existing host if the agent is used on a known hostname', () => {
-    const knownHosts = ['ic0.app', 'icp0.io', 'localhost', '127.0.0.1'];
+    const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', '127.0.0.1'];
     for (const host of knownHosts) {
       delete window.location;
       window.location = {
@@ -784,7 +784,7 @@ describe('default host', () => {
     }
   });
   it('should correctly handle subdomains on known hosts', () => {
-    const knownHosts = ['ic0.app', 'icp0.io', 'localhost', '127.0.0.1'];
+    const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', '127.0.0.1'];
     for (const host of knownHosts) {
       delete window.location;
       window.location = {
@@ -796,8 +796,8 @@ describe('default host', () => {
       expect((agent as any)._host.hostname).toBe(host);
     }
   });
-  it('should handle port numbers for localhost', () => {
-    const knownHosts = ['localhost', '127.0.0.1'];
+  it('should handle port numbers for 127.0.0.1', () => {
+    const knownHosts = ['127.0.0.1', '127.0.0.1'];
     for (const host of knownHosts) {
       delete window.location;
       // hostname is different from host when port is specified

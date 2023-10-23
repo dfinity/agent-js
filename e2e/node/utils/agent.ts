@@ -1,5 +1,6 @@
 import { HttpAgent, HttpAgentOptions } from '@dfinity/agent';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
+import fetch from 'isomorphic-fetch';
 
 export const identity = Ed25519KeyIdentity.generate();
 export const principal = identity.getPrincipal();
@@ -10,13 +11,9 @@ if (Number.isNaN(port)) {
 }
 
 export const makeAgent = async (options?: HttpAgentOptions) => {
-  if (!global.fetch) {
-    await import('isomorphic-fetch').then(module => {
-      global.fetch = module.default;
-    });
-  }
   const agent = new HttpAgent({
-    host: `http://localhost:${process.env.REPLICA_PORT ?? 4943}`,
+    host: `http://127.0.0.1:${process.env.REPLICA_PORT ?? 4943}`,
+    fetch: global.fetch ?? fetch,
     verifyQuerySignatures: false,
     ...options,
   });

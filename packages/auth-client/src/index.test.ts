@@ -84,10 +84,10 @@ describe('Auth Client', () => {
     (window as any).location = {
       reload: jest.fn(),
       fetch,
-      hostname: 'localhost',
+      hostname: '127.0.0.1',
       protocol: 'http:',
       port: '4943',
-      toString: jest.fn(() => 'http://localhost:4943'),
+      toString: jest.fn(() => 'http://127.0.0.1:4943'),
     };
 
     const identity = Ed25519KeyIdentity.generate();
@@ -444,13 +444,13 @@ describe('Auth Client login', () => {
     setup();
     const client = await AuthClient.create();
     // Try without #authorize hash.
-    await client.login({ identityProvider: 'http://localhost' });
-    expect(global.open).toBeCalledWith('http://localhost/#authorize', 'idpWindow', undefined);
+    await client.login({ identityProvider: 'http://127.0.0.1' });
+    expect(global.open).toBeCalledWith('http://127.0.0.1/#authorize', 'idpWindow', undefined);
 
     // Try with #authorize hash.
     global.open = jest.fn();
-    await client.login({ identityProvider: 'http://localhost#authorize' });
-    expect(global.open).toBeCalledWith('http://localhost/#authorize', 'idpWindow', undefined);
+    await client.login({ identityProvider: 'http://127.0.0.1#authorize' });
+    expect(global.open).toBeCalledWith('http://127.0.0.1/#authorize', 'idpWindow', undefined);
 
     // Default url
     global.open = jest.fn();
@@ -477,14 +477,14 @@ describe('Auth Client login', () => {
     const client = await AuthClient.create();
     // Try without #authorize hash.
     await client.login({
-      identityProvider: 'http://localhost',
-      derivationOrigin: 'http://localhost:1234',
+      identityProvider: 'http://127.0.0.1',
+      derivationOrigin: 'http://127.0.0.1:1234',
     });
 
-    idpMock.ready('http://localhost');
+    idpMock.ready('http://127.0.0.1');
 
     const call = (idpWindow.postMessage as jest.Mock).mock.calls[0][0];
-    expect(call['derivationOrigin']).toBe('http://localhost:1234');
+    expect(call['derivationOrigin']).toBe('http://127.0.0.1:1234');
   });
 
   it('should ignore authorize-ready events with bad origin', async () => {

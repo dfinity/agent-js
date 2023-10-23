@@ -2,8 +2,8 @@ import { CanisterStatus, HttpAgent } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import counter from '../canisters/counter';
 import { makeAgent } from '../utils/agent';
+import { describe, it, afterEach, expect } from 'vitest';
 
-jest.setTimeout(30_000);
 afterEach(async () => {
   await Promise.resolve();
 });
@@ -23,7 +23,7 @@ describe('canister status', () => {
   it('should throw an error if fetchRootKey has not been called', async () => {
     const counterObj = await (await counter)();
     const agent = new HttpAgent({
-      host: `http://localhost:${process.env.REPLICA_PORT ?? 4943}`,
+      host: `http://127.0.0.1:${process.env.REPLICA_PORT ?? 4943}`,
       verifyQuerySignatures: false,
     });
     const shouldThrow = async () => {
