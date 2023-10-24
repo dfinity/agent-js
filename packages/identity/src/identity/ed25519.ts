@@ -38,13 +38,25 @@ export class Ed25519PublicKey implements PublicKey {
     return unwrapped;
   }
 
-  private readonly rawKey: ArrayBuffer;
-  private readonly derKey: DerEncodedPublicKey;
+  #rawKey: ArrayBuffer;
+
+  public get rawKey(): ArrayBuffer {
+    return this.#rawKey;
+  }
+
+  #derKey: DerEncodedPublicKey;
+
+  public get derKey(): DerEncodedPublicKey {
+    return this.#derKey;
+  }
 
   // `fromRaw` and `fromDer` should be used for instantiation, not this constructor.
   private constructor(key: ArrayBuffer) {
-    this.rawKey = key;
-    this.derKey = Ed25519PublicKey.derEncode(key);
+    if (key.byteLength !== Ed25519PublicKey.RAW_KEY_LENGTH) {
+      throw new Error('An Ed25519 public key must be exactly 32bytes long');
+    }
+    this.#rawKey = key;
+    this.#derKey = Ed25519PublicKey.derEncode(key);
   }
 
   public toDer(): DerEncodedPublicKey {
@@ -61,8 +73,10 @@ export class Ed25519KeyIdentity extends SignIdentity {
     if (seed && seed.length !== 32) {
       throw new Error('Ed25519 Seed needs to be 32 bytes long.');
     }
+    if (!seed) seed = ed25519.utils.randomPrivateKey();
     const sk = new Uint8Array(32);
     for (let i = 0; i < 32; i++) sk[i] = new Uint8Array(seed)[i];
+
     const pk = ed25519.getPublicKey(sk);
     return Ed25519KeyIdentity.fromKeyPair(pk, sk);
   }
@@ -126,7 +140,7 @@ export class Ed25519KeyIdentity extends SignIdentity {
   /**
    * Return the public key.
    */
-  public getPublicKey(): PublicKey {
+  public getPublicKey(): Required<PublicKey> {
     return this.#publicKey;
   }
 
@@ -136,7 +150,8 @@ export class Ed25519KeyIdentity extends SignIdentity {
    */
   public async sign(challenge: ArrayBuffer): Promise<Signature> {
     const blob = new Uint8Array(challenge);
-    const signature = uint8ToBuf(ed25519.sign(blob, this.#privateKey));
+    // Some implementations of Ed25519 private keys append a public key to the end of the private key. We only want the private key.
+    const signature = uint8ToBuf(ed25519.sign(blob, this.#privateKey.slice(0, 32)));
     // add { __signature__: void; } to the signature to make it compatible with the agent
 
     Object.defineProperty(signature, '__signature__', {

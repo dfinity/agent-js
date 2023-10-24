@@ -103,4 +103,30 @@ describe('Ed25519KeyIdentity tests', () => {
       new Uint8Array(key2.getPublicKey().toDer()),
     );
   });
+
+  test('produces a valid signature', async () => {
+    const identity = Ed25519KeyIdentity.generate();
+    const message = new TextEncoder().encode('Hello, World!');
+
+    const signature = await identity.sign(message);
+    const pubkey = identity.getPublicKey();
+
+    const isValid = Ed25519KeyIdentity.verify(message, signature, pubkey.rawKey);
+
+    expect(isValid).toBe(true);
+  });
+});
+
+test('from JSON', async () => {
+  const testSecrets = [
+    '302a300506032b6570032100d1fa89134802051c8b5d4e53c08b87381b87097bca4c4f348611eb8ce6c91809',
+    '4bbff6b476463558d7be318aa342d1a97778d70833038680187950e9e02486c0d1fa89134802051c8b5d4e53c08b87381b87097bca4c4f348611eb8ce6c91809',
+  ];
+
+  const identity = Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
+
+  const msg = new TextEncoder().encode('Hello, World!');
+  const signature = await identity.sign(msg);
+  const isValid = Ed25519KeyIdentity.verify(msg, signature, identity.getPublicKey().rawKey);
+  expect(isValid).toBe(true);
 });

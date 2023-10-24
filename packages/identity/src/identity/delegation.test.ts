@@ -1,9 +1,9 @@
 import { SignIdentity } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
-import { DelegationChain } from './delegation';
+import { DelegationChain, DelegationIdentity } from './delegation';
 import { Ed25519KeyIdentity } from './ed25519';
 
-function createIdentity(seed: number): SignIdentity {
+function createIdentity(seed: number): Ed25519KeyIdentity {
   const s = new Uint8Array([seed, ...new Array(31).fill(0)]);
   return Ed25519KeyIdentity.generate(s);
 }
@@ -96,4 +96,30 @@ test('DelegationChain can be serialized to and from JSON', async () => {
   const middleToBottomJson = JSON.stringify(middleToBottom);
   const middleToBottomActual = DelegationChain.fromJSON(middleToBottomJson);
   expect(middleToBottomActual).toEqual(middleToBottom);
+});
+
+test('Delegation Chain can sign', async () => {
+  const root = createIdentity(2);
+  const middle = createIdentity(1);
+
+  const rootToMiddle = await DelegationChain.create(
+    root,
+    middle.getPublicKey(),
+    new Date(1609459200000),
+    {
+      targets: [Principal.fromText('jyi7r-7aaaa-aaaab-aaabq-cai')],
+    },
+  );
+
+  const identity = DelegationIdentity.fromDelegation(middle, rootToMiddle);
+
+  const signature = await identity.sign(new Uint8Array([1, 2, 3]));
+
+  const isValid = Ed25519KeyIdentity.verify(
+    new Uint8Array([1, 2, 3]),
+    signature,
+    middle.getPublicKey().rawKey as Uint8Array,
+  );
+  expect(isValid).toBe(true);
+  expect(middle.toJSON()[1].length).toBe(64);
 });

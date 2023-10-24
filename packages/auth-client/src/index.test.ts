@@ -707,6 +707,7 @@ describe('Migration from Ed25519Key', () => {
     const expiration = new Date('2019-12-30T00:00:00.000Z');
 
     const key = await Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
+
     const chain = DelegationChain.create(key, key.getPublicKey(), expiration);
     const fakeStore: Record<any, any> = {};
     fakeStore[KEY_STORAGE_DELEGATION] = JSON.stringify((await chain).toJSON());

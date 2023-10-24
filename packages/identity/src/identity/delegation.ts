@@ -293,6 +293,7 @@ export class DelegationIdentity extends SignIdentity {
 
   public getPublicKey(): PublicKey {
     return {
+      derKey: this._delegation.publicKey,
       toDer: () => this._delegation.publicKey,
     };
   }
