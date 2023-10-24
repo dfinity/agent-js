@@ -1,5 +1,12 @@
-import { DerEncodedPublicKey, KeyPair, PublicKey, Signature, SignIdentity } from '@dfinity/agent';
-import * as tweetnacl from 'tweetnacl';
+import {
+  DerEncodedPublicKey,
+  KeyPair,
+  PublicKey,
+  Signature,
+  SignIdentity,
+  uint8ToBuf,
+} from '@dfinity/agent';
+import { ed25519 } from '@noble/curves/ed25519';
 import { fromHexString, toHexString } from '../buffer';
 import { ED25519_OID, unwrapDER, wrapDER } from './der';
 
@@ -50,14 +57,14 @@ export class Ed25519PublicKey implements PublicKey {
 }
 
 export class Ed25519KeyIdentity extends SignIdentity {
-  public static generate(seed?: Uint8Array): Ed25519KeyIdentity {
+  public static generate(seed = new Uint8Array(32)): Ed25519KeyIdentity {
     if (seed && seed.length !== 32) {
       throw new Error('Ed25519 Seed needs to be 32 bytes long.');
     }
-
-    const { publicKey, secretKey } =
-      seed === undefined ? tweetnacl.sign.keyPair() : tweetnacl.sign.keyPair.fromSeed(seed);
-    return new this(Ed25519PublicKey.fromRaw(publicKey), secretKey);
+    const sk = new Uint8Array(32);
+    for (let i = 0; i < 32; i++) sk[i] = new Uint8Array(seed)[i];
+    const pk = ed25519.getPublicKey(sk);
+    return Ed25519KeyIdentity.fromKeyPair(pk, sk);
   }
 
   public static fromParsedJson(obj: JsonnableEd25519KeyIdentity): Ed25519KeyIdentity {
@@ -85,23 +92,25 @@ export class Ed25519KeyIdentity extends SignIdentity {
   }
 
   public static fromSecretKey(secretKey: ArrayBuffer): Ed25519KeyIdentity {
-    const keyPair = tweetnacl.sign.keyPair.fromSecretKey(new Uint8Array(secretKey));
-    return Ed25519KeyIdentity.fromKeyPair(keyPair.publicKey, keyPair.secretKey);
+    const publicKey = ed25519.getPublicKey(new Uint8Array(secretKey));
+    return Ed25519KeyIdentity.fromKeyPair(publicKey, secretKey);
   }
 
-  protected _publicKey: Ed25519PublicKey;
+  #publicKey: Ed25519PublicKey;
+  #privateKey: Uint8Array;
 
   // `fromRaw` and `fromDer` should be used for instantiation, not this constructor.
-  protected constructor(publicKey: PublicKey, protected _privateKey: ArrayBuffer) {
+  protected constructor(publicKey: PublicKey, privateKey: ArrayBuffer) {
     super();
-    this._publicKey = Ed25519PublicKey.from(publicKey);
+    this.#publicKey = Ed25519PublicKey.from(publicKey);
+    this.#privateKey = new Uint8Array(privateKey);
   }
 
   /**
    * Serialize this key to JSON.
    */
   public toJSON(): JsonnableEd25519KeyIdentity {
-    return [toHexString(this._publicKey.toDer()), toHexString(this._privateKey)];
+    return [toHexString(this.#publicKey.toDer()), toHexString(this.#privateKey)];
   }
 
   /**
@@ -109,8 +118,8 @@ export class Ed25519KeyIdentity extends SignIdentity {
    */
   public getKeyPair(): KeyPair {
     return {
-      secretKey: this._privateKey,
-      publicKey: this._publicKey,
+      secretKey: this.#privateKey,
+      publicKey: this.#publicKey,
     };
   }
 
@@ -118,7 +127,7 @@ export class Ed25519KeyIdentity extends SignIdentity {
    * Return the public key.
    */
   public getPublicKey(): PublicKey {
-    return this._publicKey;
+    return this.#publicKey;
   }
 
   /**
@@ -127,7 +136,14 @@ export class Ed25519KeyIdentity extends SignIdentity {
    */
   public async sign(challenge: ArrayBuffer): Promise<Signature> {
     const blob = new Uint8Array(challenge);
-    const signature = tweetnacl.sign.detached(blob, new Uint8Array(this._privateKey)).buffer;
+    const signature = uint8ToBuf(ed25519.sign(blob, this.#privateKey));
+    // add { __signature__: void; } to the signature to make it compatible with the agent
+
+    Object.defineProperty(signature, '__signature__', {
+      enumerable: false,
+      value: undefined,
+    });
+
     return signature as Signature;
   }
 
@@ -152,7 +168,7 @@ export class Ed25519KeyIdentity extends SignIdentity {
       }
       return new Uint8Array(x);
     });
-    return tweetnacl.sign.detached.verify(message, signature, publicKey);
+    return ed25519.verify(message, signature, publicKey);
   }
 }
 

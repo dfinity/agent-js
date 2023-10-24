@@ -1,7 +1,7 @@
 import { DerEncodedPublicKey, PublicKey, Signature, SignIdentity } from '@dfinity/agent';
 import borc from 'borc';
-import * as tweetnacl from 'tweetnacl';
 import { fromHexString, toHexString } from '../buffer';
+import { randomBytes } from '@noble/hashes/utils';
 import { DER_COSE_OID, wrapDER } from './der';
 
 function _coseToDerEncodedBlob(cose: ArrayBuffer): DerEncodedPublicKey {
@@ -93,7 +93,7 @@ async function _createCredential(
           name: 'Internet Identity Service',
         },
         user: {
-          id: tweetnacl.randomBytes(16),
+          id: randomBytes(16),
           name: 'Internet Identity',
           displayName: 'Internet Identity',
         },
