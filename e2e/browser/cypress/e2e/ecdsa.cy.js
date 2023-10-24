@@ -2,13 +2,18 @@ import { ECDSAKeyIdentity } from '@dfinity/identity';
 import { get, set } from 'idb-keyval';
 import { createActor } from '../utils/actor';
 import ids from '../../.dfx/local/canister_ids.json';
-import fetch from 'isomorphic-fetch';
+import fetchPolyfill from 'isomorphic-fetch';
 const canisterId = ids.whoami.local;
 
 const setup = async () => {
   const identity1 = await ECDSAKeyIdentity.generate();
   const whoami1 = createActor(ids.whoami.local, {
-    agentOptions: { verifyQuerySignatures: false, identity: identity1 },
+    agentOptions: {
+      verifyQuerySignatures: false,
+      identity: identity1,
+      fetch: fetchPolyfill,
+      host: 'http://127.0.0.1:4943/',
+    },
   });
 
   const principal1 = await whoami1.whoami();
@@ -38,7 +43,12 @@ describe('ECDSAKeyIdentity tests with SubtleCrypto', () => {
       const identity2 = await ECDSAKeyIdentity.fromKeyPair(storedKeyPair);
 
       const whoami2 = createActor(canisterId, {
-        agentOptions: { verifyQuerySignatures: false, identity: identity2, fetch },
+        agentOptions: {
+          verifyQuerySignatures: false,
+          identity: identity2,
+          fetchPolyfill,
+          host: 'http://127.0.0.1:4943/',
+        },
       });
 
       const principal2 = await whoami2.whoami();
