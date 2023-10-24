@@ -12,6 +12,27 @@
     <section>
       <h2>Version x.x.x</h2>
       <ul>
+        <ul>
+          <strong>feat!: node signature verification</strong
+          ><br />
+          This feature includes additional changes in support of testing and releasing the feature:
+          <br />
+          <li>Mainnet e2e tests for queries and calls</li>
+          <li>published counter canister</li>
+          <li>using vitest for e2e tests instead of Jest</li>
+          <li>
+            New HttpAgent option - verifyQuerySignatures. Defaults to true, but allows you to opt
+            out of verification. Useful for testing against older replica versions
+          </li>
+          <li>Introducing ed25519 logic to agent for validating node signatures</li>
+          <li>Standardizing around @noble/curves instead of tweetnacl in @dfinity/identity</li>
+          <li>
+            new export - hashOfMap from agent, matching the naming used in the interface
+            specification
+          </li>
+          <li>new unit tests</li>
+          <li>new Verify export on ed25519 because why not</li>
+        </ul>
         <li>feat: retry logic will catch and retry for thrown errors</li>
         <li>
           feat!: adds certificate logic to decode subnet and node key paths from the hashtree.
