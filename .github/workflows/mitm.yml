@@ -52,7 +52,7 @@ jobs:
         id: mitmdump
         run: |
           set -ex
-          mitmproxy -p 8888 --mode reverse:https://icp-api.io \
+          mitmdump -p 8888 --mode reverse:https://icp-api.io \
             --modify-headers '/~s/Transfer-Encoding/' \
             --modify-body '/~s/Hello/Hullo' \
             &
