@@ -7,6 +7,7 @@ on:
       - reopened
       - edited
       - synchronize
+  workflow_dispatch:
 
 jobs:
   test:
@@ -37,8 +38,8 @@ jobs:
 
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
-      - run: pip3 install mitmproxy~=8.0.0
+          python-version: '3.11'
+      - run: pip3 install mitmproxy~=10.0.0
 
       - run: echo y | sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
 
@@ -51,17 +52,15 @@ jobs:
         id: mitmdump
         run: |
           set -ex
-          mitmdump -p 8888 --mode reverse:http://127.0.0.1:4943 \
+          mitmdump -p 8888 --mode reverse:https://icp-api.io \
             --modify-headers '/~s/Transfer-Encoding/' \
             --modify-body '/~s/Hello/Hullo' \
             &
-          sleep 5
+          sleep 20
 
       - name: mitm e2e
         env:
           CI: true
-          REPLICA_PORT: 8888
-          MITM: true
         run: npm run mitm --workspaces --if-present
 
   aggregate:
