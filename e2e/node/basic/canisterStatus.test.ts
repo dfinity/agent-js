@@ -9,7 +9,7 @@ afterEach(async () => {
 describe('canister status', () => {
   it('should fetch successfully', async () => {
     const counterObj = await (await counter)();
-    const agent = new HttpAgent({ host: `http://localhost:${process.env.REPLICA_PORT}` });
+    const agent = new HttpAgent({ host: `http://127.0.0.1:${process.env.REPLICA_PORT}` });
     await agent.fetchRootKey();
     const request = await CanisterStatus.request({
       canisterId: Principal.from(counterObj.canisterId),
@@ -21,7 +21,7 @@ describe('canister status', () => {
   });
   it('should throw an error if fetchRootKey has not been called', async () => {
     const counterObj = await (await counter)();
-    const agent = new HttpAgent({ host: `http://localhost:${process.env.REPLICA_PORT}` });
+    const agent = new HttpAgent({ host: `http://127.0.0.1:${process.env.REPLICA_PORT}` });
     const shouldThrow = async () => {
       // eslint-disable-next-line no-useless-catch
       try {

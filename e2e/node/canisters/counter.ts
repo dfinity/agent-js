@@ -84,7 +84,7 @@ export async function noncelessCanister(): Promise<{
 
 export const createActor = async (options?: HttpAgentOptions) => {
   const module = readFileSync(path.join(__dirname, 'counter.wasm'));
-  const agent = new HttpAgent({ host: `http://localhost:${process.env.REPLICA_PORT}`, ...options });
+  const agent = new HttpAgent({ host: `http://127.0.0.1:${process.env.REPLICA_PORT}`, ...options });
   await agent.fetchRootKey();
 
   const canisterId = await Actor.createCanister({ agent });
