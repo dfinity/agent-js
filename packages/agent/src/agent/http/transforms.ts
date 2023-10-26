@@ -8,7 +8,6 @@ import {
   makeNonce,
   Nonce,
 } from './types';
-import { toHex } from '../../utils/buffer';
 
 const NANOSECONDS_PER_MILLISECONDS = BigInt(1_000_000);
 
@@ -19,9 +18,14 @@ export class Expiry {
 
   constructor(deltaInMSec: number) {
     // Use bigint because it can overflow the maximum number allowed in a double float.
-    this._value =
+    const raw_value =
       (BigInt(Date.now()) + BigInt(deltaInMSec) - REPLICA_PERMITTED_DRIFT_MILLISECONDS) *
       NANOSECONDS_PER_MILLISECONDS;
+
+    // round down to the nearest second
+    const ingress_as_seconds = raw_value / BigInt(1_000_000_000);
+    const rounded_down_nanos = ingress_as_seconds * BigInt(1_000_000_000);
+    this._value = rounded_down_nanos;
   }
 
   public toCBOR(): cbor.CborValue {
