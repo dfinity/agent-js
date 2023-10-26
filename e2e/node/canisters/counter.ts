@@ -1,9 +1,9 @@
-import { Actor, HttpAgent, HttpAgentOptions } from '@dfinity/agent';
+import { Actor, HttpAgentOptions } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { readFileSync } from 'fs';
 import path from 'path';
-import agent, { port, identity } from '../utils/agent';
+import agent, { identity, makeAgent } from '../utils/agent';
 
 let cache: {
   canisterId: Principal;
@@ -52,15 +52,9 @@ export async function noncelessCanister(): Promise<{
   actor: any;
 }> {
   const module = readFileSync(path.join(__dirname, 'counter.wasm'));
-  const disableNonceAgent = await Promise.resolve(
-    new HttpAgent({
-      host: 'http://127.0.0.1:' + port,
-      identity,
-      disableNonce: true,
-    }),
-  ).then(async agent => {
-    await agent.fetchRootKey();
-    return agent;
+  const disableNonceAgent = await makeAgent({
+    identity,
+    disableNonce: true,
   });
 
   const canisterId = await Actor.createCanister({ agent: disableNonceAgent });
@@ -84,11 +78,19 @@ export async function noncelessCanister(): Promise<{
 
 export const createActor = async (options?: HttpAgentOptions) => {
   const module = readFileSync(path.join(__dirname, 'counter.wasm'));
-  const agent = new HttpAgent({ host: `http://127.0.0.1:${process.env.REPLICA_PORT}`, ...options });
-  await agent.fetchRootKey();
+  const agent = await makeAgent({
+    ...options,
+  });
+  try {
+    if (!options?.host?.includes('icp-api')) {
+      await agent.fetchRootKey();
+    }
+  } catch (_) {
+    //
+  }
 
   const canisterId = await Actor.createCanister({ agent });
-  await Actor.install({ module }, { canisterId, agent: await agent });
+  await Actor.install({ module }, { canisterId, agent });
   const idl: IDL.InterfaceFactory = ({ IDL }) => {
     return IDL.Service({
       inc: IDL.Func([], [], []),
@@ -98,5 +100,5 @@ export const createActor = async (options?: HttpAgentOptions) => {
       queryGreet: IDL.Func([IDL.Text], [IDL.Text], ['query']),
     });
   };
-  return Actor.createActor(idl, { canisterId, agent: await agent }) as any;
+  return Actor.createActor(idl, { canisterId, agent }) as any;
 };

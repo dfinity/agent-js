@@ -5,6 +5,7 @@ import { ActorMethod, Certificate, getManagementCanister } from '@dfinity/agent'
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import agent from '../utils/agent';
+import { test, expect } from 'vitest';
 
 test('read_state', async () => {
   const resolvedAgent = await agent;
