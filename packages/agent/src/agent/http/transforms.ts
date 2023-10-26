@@ -24,7 +24,12 @@ export class Expiry {
 
     // round down to the nearest second
     const ingress_as_seconds = raw_value / BigInt(1_000_000_000);
-    const rounded_down_nanos = ingress_as_seconds * BigInt(1_000_000_000);
+
+    // round down to nearest minute
+    const ingress_as_minutes = ingress_as_seconds / BigInt(60);
+
+    const rounded_down_nanos = ingress_as_minutes * BigInt(60) * BigInt(1_000_000_000);
+
     this._value = rounded_down_nanos;
   }
 
