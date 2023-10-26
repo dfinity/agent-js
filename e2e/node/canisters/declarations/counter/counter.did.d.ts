@@ -7,5 +7,6 @@ export interface _SERVICE {
   inc_read: ActorMethod<[], bigint>;
   queryGreet: ActorMethod<[string], string>;
   read: ActorMethod<[], bigint>;
+  reset: ActorMethod<[], undefined>;
   write: ActorMethod<[bigint], undefined>;
 }

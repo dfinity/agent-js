@@ -12,6 +12,7 @@ describe('counter', () => {
   }, 40000);
   it('should submit distinct requests with nonce by default', async () => {
     const { actor: counter } = await counterCanister();
+    await counter.reset();
     const values = await Promise.all(new Array(4).fill(undefined).map(() => counter.inc_read()));
     const set1 = new Set(values);
     const values2 = await Promise.all(new Array(4).fill(undefined).map(() => counter.inc_read()));
@@ -23,6 +24,7 @@ describe('counter', () => {
   }, 40000);
   it('should submit duplicate requests if nonce is disabled', async () => {
     const { actor: counter } = await noncelessCanister();
+    await counter.reset();
     const values = await Promise.all(new Array(4).fill(undefined).map(() => counter.inc_read()));
     const set1 = new Set(values);
     const values2 = await Promise.all(new Array(4).fill(undefined).map(() => counter.inc_read()));
@@ -32,7 +34,7 @@ describe('counter', () => {
   }, 40000);
   it('should increment', async () => {
     const { actor: counter } = await noncelessCanister();
-
+    await counter.reset();
     expect(Number(await counter.read())).toEqual(0);
     await counter.inc();
     expect(Number(await counter.read())).toEqual(1);
