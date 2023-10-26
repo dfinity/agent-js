@@ -49,6 +49,15 @@ export type SubnetStatus = {
   // Principal as a string
   subnetId: string;
   nodeKeys: string[];
+  metrics?: {
+    num_canisters: bigint;
+    canister_state_bytes: bigint;
+    consumed_cycles_total: {
+      current: bigint;
+      deleted: bigint;
+    };
+    update_transactions_total: bigint;
+  };
 };
 
 /**
@@ -164,6 +173,8 @@ export interface CreateCertificateOptions {
   maxAgeInMinutes?: number;
 }
 
+type MetricsResult = number | bigint | Map<number, number | bigint> | undefined;
+
 export class Certificate {
   private readonly cert: Cert;
   #nodeKeys: string[] = [];
@@ -216,6 +227,12 @@ export class Certificate {
     return this.lookup([label]);
   }
 
+  #toBigInt(n: MetricsResult): bigint {
+    if (typeof n === 'undefined') return BigInt(0);
+    if (typeof n === 'bigint') return n;
+    return BigInt(Number(n));
+  }
+
   public cache_node_keys(root_key?: Uint8Array): SubnetStatus {
     const tree = this.cert.tree;
     let delegation = this.cert.delegation;
@@ -248,10 +265,47 @@ export class Certificate {
       }
     });
 
-    return {
+    const metricsTree = lookup_path(
+      ['subnet', delegation?.subnet_id as ArrayBuffer, 'metrics'],
+      tree,
+    );
+    let metrics: SubnetStatus['metrics'] | undefined = undefined;
+    if (metricsTree) {
+      const decoded = cbor.decode(metricsTree as ArrayBuffer) as Map<
+        number,
+        Map<number, number | bigint>
+      >;
+
+      // Cbor may decode values as either number or bigint. For consistency, we convert all numbers to bigint
+      const num_canisters = this.#toBigInt(decoded.get(0));
+      const canister_state_bytes = this.#toBigInt(decoded.get(1));
+      const current_consumed_cycles = this.#toBigInt(
+        (decoded.get(2) as Map<number, number>).get(0),
+      );
+      const deleted_consumed_cycles = this.#toBigInt(
+        (decoded.get(2) as Map<number, number>).get(1),
+      );
+      const update_transactions_total = this.#toBigInt(decoded.get(3));
+
+      metrics = {
+        num_canisters: num_canisters,
+        canister_state_bytes: canister_state_bytes,
+        consumed_cycles_total: {
+          current: current_consumed_cycles,
+          deleted: deleted_consumed_cycles,
+        },
+        update_transactions_total: update_transactions_total,
+      };
+    }
+
+    const result: SubnetStatus = {
       subnetId: Principal.fromUint8Array(new Uint8Array(delegation.subnet_id)).toText(),
       nodeKeys: this.#nodeKeys,
     };
+    if (metrics) {
+      result.metrics = metrics;
+    }
+    return result;
   }
 
   private async verify(): Promise<void> {

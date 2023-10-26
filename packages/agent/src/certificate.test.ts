@@ -274,6 +274,15 @@ describe('node keys', () => {
     const nodeKeys = cert.cache_node_keys();
     expect(nodeKeys).toMatchInlineSnapshot(`
       Object {
+        "metrics": Object {
+          "canister_state_bytes": 10007399447n,
+          "consumed_cycles_total": Object {
+            "current": 15136490391288n,
+            "deleted": 0n,
+          },
+          "num_canisters": 451n,
+          "update_transactions_total": 222360n,
+        },
         "nodeKeys": Array [
           "302a300506032b65700321005b0bdf0329932ab0a78fa7192ad76cf37d67eb2024739774d3b67da7799ebc9c",
           "302a300506032b65700321009776d25542873dafb8099303d1fca8e4aa344e73cf5a3d7df5b40f9c8ed5a085",
