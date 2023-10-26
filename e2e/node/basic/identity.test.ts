@@ -1,6 +1,3 @@
-/**
- * @jest-environment node
- */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Actor, HttpAgent, SignIdentity } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
@@ -12,8 +9,9 @@ import {
   ECDSAKeyIdentity,
 } from '@dfinity/identity';
 import { Secp256k1KeyIdentity } from '@dfinity/identity-secp256k1';
-import agent from '../utils/agent';
+import agent, { makeAgent } from '../utils/agent';
 import identityCanister from '../canisters/identity';
+import { test, expect } from 'vitest';
 
 function createIdentity(seed: number): SignIdentity {
   const seed1 = new Array(32).fill(0);
@@ -33,7 +31,7 @@ async function createIdentityActor(
   idl: IDL.InterfaceFactory,
 ): Promise<any> {
   const identity = createIdentity(seed);
-  const agent1 = new HttpAgent({ source: await agent, identity });
+  const agent1 = await makeAgent({ identity });
   return Actor.createActor(idl, {
     canisterId,
     agent: agent1,
@@ -52,7 +50,7 @@ async function createSecp256k1IdentityActor(
   }
 
   const identity = Secp256k1KeyIdentity.generate(seed1);
-  const agent1 = new HttpAgent({ source: await agent, identity });
+  const agent1 = await makeAgent({ identity });
   return Actor.createActor(idl, {
     canisterId,
     agent: agent1,
@@ -70,7 +68,9 @@ async function createEcdsaIdentityActor(
   } else {
     effectiveIdentity = await ECDSAKeyIdentity.generate();
   }
-  const agent1 = new HttpAgent({ source: await agent, identity: effectiveIdentity });
+  const agent1 = await makeAgent({
+    identity: effectiveIdentity,
+  });
   return Actor.createActor(idl, {
     canisterId,
     agent: agent1,
@@ -88,7 +88,6 @@ async function installIdentityCanister(): Promise<{
   };
 }
 
-jest.setTimeout(30000);
 test('identity: query and call gives same principal', async () => {
   const { canisterId, idl } = await installIdentityCanister();
   const identity = Actor.createActor(idl, {
@@ -98,9 +97,8 @@ test('identity: query and call gives same principal', async () => {
   const callPrincipal = await identity.whoami();
   const queryPrincipal = await identity.whoami_query();
   expect(callPrincipal).toEqual(queryPrincipal);
-});
+}, 30000);
 
-jest.setTimeout(30000);
 test('identity: two different Ed25519 keys should have a different principal', async () => {
   const { canisterId, idl } = await installIdentityCanister();
   const identity1 = await createIdentityActor(0, canisterId, idl);
@@ -109,9 +107,7 @@ test('identity: two different Ed25519 keys should have a different principal', a
   const principal1 = await identity1.whoami_query();
   const principal2 = await identity2.whoami_query();
   expect(principal1).not.toEqual(principal2);
-});
-
-jest.setTimeout(30000);
+}, 30000);
 test('identity: two different Secp256k1 keys should have a different principal', async () => {
   const { canisterId, idl } = await installIdentityCanister();
   // Seeded identity
@@ -122,9 +118,8 @@ test('identity: two different Secp256k1 keys should have a different principal',
   const principal1 = await identity1.whoami_query();
   const principal2 = await identity2.whoami_query();
   expect(principal1).not.toEqual(principal2);
-});
+}, 30000);
 
-jest.setTimeout(30000);
 test('identity: two different Ecdsa keys should have a different principal', async () => {
   const { canisterId, idl } = await installIdentityCanister();
   const identity1 = await createEcdsaIdentityActor(canisterId, idl);
@@ -133,9 +128,8 @@ test('identity: two different Ecdsa keys should have a different principal', asy
   const principal1 = await identity1.whoami_query();
   const principal2 = await identity2.whoami_query();
   expect(principal1).not.toEqual(principal2);
-});
+}, 30000);
 
-jest.setTimeout(30000);
 test('delegation: principal is the same between delegated keys with secp256k1', async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
@@ -147,15 +141,19 @@ test('delegation: principal is the same between delegated keys with secp256k1', 
 
   const identityActor1 = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: await agent, identity: masterKey }),
+    agent: await makeAgent({
+      identity: masterKey,
+    }),
   }) as any;
   const identityActor2 = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: await agent, identity: sessionKey }),
+    agent: await makeAgent({
+      identity: sessionKey,
+    }),
   }) as any;
   const identityActor3 = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: await agent, identity: id3 }),
+    agent: await makeAgent({ identity: id3 }),
   }) as any;
 
   const principal1 = await identityActor1.whoami_query();
@@ -164,9 +162,8 @@ test('delegation: principal is the same between delegated keys with secp256k1', 
   expect(principal1).not.toEqual(principal2);
   expect(principal1).toEqual(principal3);
   expect(principal2).not.toEqual(principal3);
-});
+}, 30000);
 
-jest.setTimeout(30000);
 test('delegation: principal is the same between delegated keys', async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
@@ -178,15 +175,19 @@ test('delegation: principal is the same between delegated keys', async () => {
 
   const identityActor1 = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: await agent, identity: masterKey }),
+    agent: await makeAgent({
+      identity: masterKey,
+    }),
   }) as any;
   const identityActor2 = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: await agent, identity: sessionKey }),
+    agent: await makeAgent({
+      identity: sessionKey,
+    }),
   }) as any;
   const identityActor3 = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: await agent, identity: id3 }),
+    agent: await makeAgent({ identity: id3 }),
   }) as any;
 
   const principal1 = await identityActor1.whoami_query();
@@ -195,9 +196,8 @@ test('delegation: principal is the same between delegated keys', async () => {
   expect(principal1).not.toEqual(principal2);
   expect(principal1).toEqual(principal3);
   expect(principal2).not.toEqual(principal3);
-});
+}, 30000);
 
-jest.setTimeout(30000);
 test('delegation: works with 3 keys', async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
@@ -215,19 +215,27 @@ test('delegation: works with 3 keys', async () => {
 
   const identityActorBottom = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: await agent, identity: bottomKey }),
+    agent: await makeAgent({
+      identity: bottomKey,
+    }),
   }) as any;
   const identityActorMiddle = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: await agent, identity: middleKey }),
+    agent: await makeAgent({
+      identity: middleKey,
+    }),
   }) as any;
   const identityActorRoot = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: await agent, identity: rootKey }),
+    agent: await makeAgent({
+      identity: rootKey,
+    }),
   }) as any;
   const identityActorDelegated = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: await agent, identity: idDelegated }),
+    agent: await makeAgent({
+      identity: idDelegated,
+    }),
   }) as any;
 
   const principalBottom = await identityActorBottom.whoami_query();
@@ -238,9 +246,8 @@ test('delegation: works with 3 keys', async () => {
   expect(principalMiddle).not.toEqual(principalRoot);
   expect(principalBottom).not.toEqual(principalRoot);
   expect(principalRoot).toEqual(principalDelegated);
-});
+}, 30000);
 
-jest.setTimeout(30000);
 test('delegation: works with 4 keys', async () => {
   const { canisterId, idl } = await installIdentityCanister();
 
@@ -267,23 +274,33 @@ test('delegation: works with 4 keys', async () => {
 
   const identityActorBottom = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: await agent, identity: bottomKey }),
+    agent: await makeAgent({
+      identity: bottomKey,
+    }),
   }) as any;
   const identityActorMiddle = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: await agent, identity: middleKey }),
+    agent: await makeAgent({
+      identity: middleKey,
+    }),
   }) as any;
   const identityActorMiddle2 = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: await agent, identity: middle2Key }),
+    agent: await makeAgent({
+      identity: middle2Key,
+    }),
   }) as any;
   const identityActorRoot = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: await agent, identity: rootKey }),
+    agent: await makeAgent({
+      identity: rootKey,
+    }),
   }) as any;
   const identityActorDelegated = Actor.createActor(idl, {
     canisterId,
-    agent: new HttpAgent({ source: await agent, identity: idDelegated }),
+    agent: await makeAgent({
+      identity: idDelegated,
+    }),
   }) as any;
 
   const principalBottom = await identityActorBottom.whoami_query();
@@ -297,4 +314,4 @@ test('delegation: works with 4 keys', async () => {
   expect(principalBottom).not.toEqual(principalRoot);
   expect(principalBottom).not.toEqual(principalMiddle2);
   expect(principalRoot).toEqual(principalDelegated);
-});
+}, 30000);

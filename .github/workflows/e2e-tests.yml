@@ -42,6 +42,10 @@ jobs:
         run: |
           dfx start --background
 
+      - name: setup
+        id: setup
+        run: npm run setup --workspaces --if-present
+
       - run: npm run e2e --workspaces --if-present
         env:
           CI: true
