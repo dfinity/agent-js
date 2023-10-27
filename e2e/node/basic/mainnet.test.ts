@@ -4,6 +4,7 @@ import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
 import { describe, it, expect, vi } from 'vitest';
 import { makeAgent } from '../utils/agent';
+import { createActor, canisterId } from '../canisters/declarations/counter';
 
 const createWhoamiActor = async (identity: Identity) => {
   const canisterId = 'ivcos-eqaaa-aaaab-qablq-cai';
@@ -112,4 +113,13 @@ describe('certified query', () => {
       ]
     `);
   });
+});
+
+describe('call', async () => {
+  it('should make update calls against mainnet', async () => {
+    const counter = createActor(canisterId, { agentOptions: { host: 'https://ic0.app' } });
+    await counter.reset();
+    await counter.inc();
+    expect(await counter.read()).toEqual(1n);
+  }, 100_000);
 });

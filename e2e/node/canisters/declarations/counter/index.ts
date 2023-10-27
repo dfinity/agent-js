@@ -1,4 +1,4 @@
-import { Actor, HttpAgent } from '@dfinity/agent';
+import { Actor, ActorConfig, HttpAgent, HttpAgentOptions } from '@dfinity/agent';
 
 // Imports and re-exports candid interface
 import { idlFactory } from './counter.did.js';
@@ -9,9 +9,12 @@ export { idlFactory } from './counter.did.js';
  * process.env.CANISTER_ID_<CANISTER_NAME_UPPERCASE>
  * beginning in dfx 0.15.0
  */
-export const canisterId = process.env.CANISTER_ID_COUNTER || process.env.COUNTER_CANISTER_ID;
+export const canisterId = 'teog5-mqaaa-aaaab-qaija-cai';
 
-export const createActor = (canisterId, options = {}) => {
+export const createActor = (
+  canisterId,
+  options: { agentOptions?: HttpAgentOptions; actorOptions?: ActorConfig; agent?: HttpAgent } = {},
+) => {
   const agent = options.agent || new HttpAgent({ ...options.agentOptions });
 
   if (options.agent && options.agentOptions) {

@@ -24,7 +24,6 @@ describe('canister status', () => {
     const counterObj = await (await counter)();
     const agent = new HttpAgent({
       host: `http://127.0.0.1:${process.env.REPLICA_PORT ?? 4943}`,
-      verifyQuerySignatures: false,
     });
     const shouldThrow = async () => {
       // eslint-disable-next-line no-useless-catch

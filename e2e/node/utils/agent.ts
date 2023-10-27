@@ -17,8 +17,8 @@ export const makeAgent = async (options?: HttpAgentOptions) => {
     ...options,
   });
   try {
-    await agent.syncTime();
     await agent.fetchRootKey();
+    await agent.syncTime();
   } catch (_) {
     //
   }
