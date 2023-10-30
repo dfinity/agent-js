@@ -1,3 +1,5 @@
+import { ActorSubclass } from '@dfinity/agent';
+import type { _SERVICE } from '../canisters/declarations/counter/index';
 import counterCanister, { noncelessCanister, createActor } from '../canisters/counter';
 import { it, expect, describe, vi } from 'vitest';
 
@@ -31,13 +33,16 @@ describe('counter', () => {
     expect(set1.size < values.length || set2.size < values2.length).toBe(true);
   }, 40000);
   it('should increment', async () => {
-    const { actor: counter } = await noncelessCanister();
+    const { actor } = await noncelessCanister();
+    const counter = actor as ActorSubclass<_SERVICE>;
 
+    await counter.write(BigInt(0));
     expect(Number(await counter.read())).toEqual(0);
+
     await counter.inc();
     expect(Number(await counter.read())).toEqual(1);
-    await counter.inc();
-    expect(Number(await counter.read())).toEqual(2);
+
+    expect(await counter.inc_read()).toEqual(BigInt(2));
   }, 40000);
 });
 describe('retrytimes', () => {
