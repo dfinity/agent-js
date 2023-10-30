@@ -11,14 +11,16 @@ import {
 
 const NANOSECONDS_PER_MILLISECONDS = BigInt(1_000_000);
 
-const REPLICA_PERMITTED_DRIFT_MILLISECONDS = BigInt(60 * 1000);
+const REPLICA_PERMITTED_DRIFT_MILLISECONDS = 60 * 1000;
 
 export class Expiry {
   private readonly _value: bigint;
 
   constructor(deltaInMSec: number) {
     // Use bigint because it can overflow the maximum number allowed in a double float.
-    const raw_value = (BigInt(Date.now()) + BigInt(deltaInMSec)) * NANOSECONDS_PER_MILLISECONDS;
+    const raw_value =
+      BigInt(Math.floor(Date.now() + deltaInMSec - REPLICA_PERMITTED_DRIFT_MILLISECONDS)) *
+      NANOSECONDS_PER_MILLISECONDS;
 
     // round down to the nearest second
     const ingress_as_seconds = raw_value / BigInt(1_000_000_000);
