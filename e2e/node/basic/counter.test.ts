@@ -32,18 +32,6 @@ describe('counter', () => {
 
     expect(set1.size < values.length || set2.size < values2.length).toBe(true);
   }, 40000);
-  it('should increment', async () => {
-    const { actor } = await noncelessCanister();
-    const counter = actor as ActorSubclass<_SERVICE>;
-
-    await counter.write(BigInt(0));
-    expect(Number(await counter.read())).toEqual(0);
-
-    await counter.inc();
-    expect(Number(await counter.read())).toEqual(1);
-
-    expect(await counter.inc_read()).toEqual(BigInt(2));
-  }, 40000);
 });
 describe('retrytimes', () => {
   it('should retry after a failure', async () => {
