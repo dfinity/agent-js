@@ -14,11 +14,11 @@ export const makeAgent = async (options?: HttpAgentOptions) => {
   const agent = new HttpAgent({
     host: `http://127.0.0.1:${process.env.REPLICA_PORT ?? 4943}`,
     fetch: global.fetch ?? fetch,
+    verifyQuerySignatures: false,
     ...options,
   });
   try {
     await agent.fetchRootKey();
-    await agent.syncTime();
   } catch (_) {
     //
   }

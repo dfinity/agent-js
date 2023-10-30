@@ -45,8 +45,6 @@ export enum RequestStatusResponseStatus {
 // Default delta for ingress expiry is 5 minutes.
 const DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS = 5 * 60 * 1000;
 
-const MILLIS_PER_SECOND = 1000;
-
 // Root public key for the IC, encoded as hex
 const IC_ROOT_KEY =
   '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100814' +
@@ -370,30 +368,7 @@ export class HttpAgent implements Agent {
     let response: Response;
     try {
       response = await request();
-    } catch (error: unknown) {
-      const errorResponse = (error as AgentHTTPResponseError).message;
-      if (errorResponse.startsWith('Specified ingress_expiry')) {
-        const errorParts = errorResponse.split(': ');
-        errorParts;
-        const minExpiry = new Date(errorParts[2].split(',')[0].trim()); //?
-        const maxExpiry = new Date(errorParts[3].split(',')[0].trim()); //?
-        const providedExpiry = new Date(errorParts[4].trim()); //?
-
-        const result = {
-          minimum: minExpiry,
-          maximum: maxExpiry,
-          provided: providedExpiry,
-        };
-
-        console.log(
-          'HttpAgent has detected a disagreement about time with the replica. Retrying with adjusted expiry.',
-          result,
-        );
-        this._timeDiffMsecs = maxExpiry.getTime() - 1 * MILLIS_PER_SECOND;
-        return await this._requestAndRetry(request, tries);
-      } else {
-        console.log('Error parsing the response.');
-      }
+    } catch (error) {
       if (this._retryTimes > tries) {
         console.warn(
           `Caught exception while attempting to make request:\n` +

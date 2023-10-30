@@ -4,7 +4,7 @@
     "incremental": true,
     "target": "ESNext",
     "module": "ESNext",
-    "lib": ["ESNext"],
+    "lib": ["ES2023"],
     "declaration": true,
     "sourceMap": true,
     "tsBuildInfoFile": "./build_info.json",

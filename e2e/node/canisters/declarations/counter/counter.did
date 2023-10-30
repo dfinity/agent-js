@@ -4,6 +4,5 @@ service : {
   inc_read: () -> (nat);
   queryGreet: (text) -> (text) query;
   read: () -> (nat) query;
-  reset: () -> ();
   write: (nat) -> ();
 }

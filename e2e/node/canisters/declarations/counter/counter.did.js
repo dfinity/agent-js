@@ -5,7 +5,6 @@ export const idlFactory = ({ IDL }) => {
     inc_read: IDL.Func([], [IDL.Nat], []),
     queryGreet: IDL.Func([IDL.Text], [IDL.Text], ['query']),
     read: IDL.Func([], [IDL.Nat], ['query']),
-    reset: IDL.Func([], [], []),
     write: IDL.Func([IDL.Nat], [], []),
   });
 };

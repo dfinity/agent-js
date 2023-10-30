@@ -3,10 +3,6 @@
     "docs": {
       "type": "assets",
       "source": ["docs/generated"]
-    },
-    "counter": {
-      "type": "motoko",
-      "main": "e2e/node/canisters/counter.mo"
     }
   }
 }
