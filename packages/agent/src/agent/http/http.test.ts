@@ -139,9 +139,7 @@ test('queries with the same content should have the same signature', async () =>
   const httpAgent = new HttpAgent({
     fetch: mockFetch,
     host: 'http://127.0.0.1',
-    disableNonce: true,
   });
-  httpAgent.addTransform(makeNonceTransform(() => nonce));
 
   const methodName = 'greet';
   const arg = new Uint8Array([]);
@@ -198,13 +196,12 @@ test('readState should not call transformers if request is passed', async () => 
   const httpAgent = new HttpAgent({
     fetch: mockFetch,
     host: 'http://127.0.0.1',
-    disableNonce: true,
+    useQueryNonces: true,
   });
-  httpAgent.addTransform(makeNonceTransform(() => nonce));
   const transformMock: HttpAgentRequestTransformFn = jest
     .fn()
     .mockImplementation(d => Promise.resolve(d));
-  httpAgent.addTransform(transformMock);
+  httpAgent.addTransform('query', transformMock);
 
   const methodName = 'greet';
   const arg = new Uint8Array([]);
@@ -288,9 +285,7 @@ test('use anonymous principal if unspecified', async () => {
   const httpAgent = new HttpAgent({
     fetch: mockFetch,
     host: 'http://127.0.0.1',
-    disableNonce: true,
   });
-  httpAgent.addTransform(makeNonceTransform(() => nonce));
 
   const methodName = 'greet';
   const arg = new Uint8Array([]);

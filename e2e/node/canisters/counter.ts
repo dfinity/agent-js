@@ -29,6 +29,7 @@ export default async function (): Promise<{
         inc: IDL.Func([], [], []),
         inc_read: IDL.Func([], [IDL.Nat], []),
         read: IDL.Func([], [IDL.Nat], ['query']),
+        write: IDL.Func([IDL.Nat], [], []),
         greet: IDL.Func([IDL.Text], [IDL.Text], []),
         queryGreet: IDL.Func([IDL.Text], [IDL.Text], ['query']),
       });
@@ -42,38 +43,6 @@ export default async function (): Promise<{
   }
 
   return cache;
-}
-/**
- * With no cache and nonce disabled
- */
-export async function noncelessCanister(): Promise<{
-  canisterId: Principal;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  actor: any;
-}> {
-  const module = readFileSync(path.join(__dirname, 'counter.wasm'));
-  const disableNonceAgent = await makeAgent({
-    identity,
-    disableNonce: true,
-  });
-
-  const canisterId = await Actor.createCanister({ agent: disableNonceAgent });
-  await Actor.install({ module }, { canisterId, agent: disableNonceAgent });
-  const idl: IDL.InterfaceFactory = ({ IDL }) => {
-    return IDL.Service({
-      inc: IDL.Func([], [], []),
-      inc_read: IDL.Func([], [IDL.Nat], []),
-      read: IDL.Func([], [IDL.Nat], ['query']),
-      greet: IDL.Func([IDL.Text], [IDL.Text], []),
-      queryGreet: IDL.Func([IDL.Text], [IDL.Text], ['query']),
-    });
-  };
-
-  return {
-    canisterId,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    actor: Actor.createActor(idl, { canisterId, agent: await disableNonceAgent }) as any,
-  };
 }
 
 export const createActor = async (options?: HttpAgentOptions) => {

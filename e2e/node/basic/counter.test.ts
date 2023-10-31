@@ -1,4 +1,4 @@
-import counterCanister, { noncelessCanister, createActor } from '../canisters/counter';
+import counterCanister, { createActor } from '../canisters/counter';
 import { it, expect, describe, vi } from 'vitest';
 
 describe('counter', () => {
@@ -21,18 +21,10 @@ describe('counter', () => {
     expect(set1.size).toBe(values.length);
     expect(set2.size).toEqual(values2.length);
   }, 40000);
-  it('should submit duplicate requests if nonce is disabled', async () => {
-    const { actor: counter } = await noncelessCanister();
-    const values = await Promise.all(new Array(4).fill(undefined).map(() => counter.inc_read()));
-    const set1 = new Set(values);
-    const values2 = await Promise.all(new Array(4).fill(undefined).map(() => counter.inc_read()));
-    const set2 = new Set(values2);
-
-    expect(set1.size < values.length || set2.size < values2.length).toBe(true);
-  }, 40000);
   it('should increment', async () => {
-    const { actor: counter } = await noncelessCanister();
+    const { actor: counter } = await counterCanister();
 
+    await counter.write(0);
     expect(Number(await counter.read())).toEqual(0);
     await counter.inc();
     expect(Number(await counter.read())).toEqual(1);
