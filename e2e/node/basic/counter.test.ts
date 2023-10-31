@@ -32,6 +32,21 @@ describe('counter', () => {
 
     expect(set1.size < values.length || set2.size < values2.length).toBe(true);
   }, 40000);
+  // FIX: Run same test with nonceless canister once
+  // https://dfinity.atlassian.net/browse/BOUN-937 is fixed
+  it('should increment', async () => {
+    const { actor } = await counterCanister();
+    const counter = actor as ActorSubclass<_SERVICE>;
+
+    await counter.write(BigInt(0));
+    expect(Number(await counter.read())).toEqual(0);
+    let expected = 1;
+    for (let i = 0; i < 5; i++) {
+      await counter.inc();
+      expect(Number(await counter.read())).toEqual(expected);
+      expected += 1;
+    }
+  }, 40000);
 });
 describe('retrytimes', () => {
   it('should retry after a failure', async () => {
