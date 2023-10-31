@@ -215,7 +215,7 @@ export class HttpAgent implements Agent {
         );
       }
       // Mainnet and local will have the api route available
-      const knownHosts = ['ic0.app', 'icp0.io', 'localhost', '127.0.0.1'];
+      const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', '127.0.0.1'];
       const hostname = location?.hostname;
       let knownHost;
       if (hostname && typeof hostname === 'string') {
@@ -260,7 +260,7 @@ export class HttpAgent implements Agent {
 
   public isLocal(): boolean {
     const hostname = this._host.hostname;
-    return hostname === '127.0.0.1' || hostname.endsWith('localhost');
+    return hostname === '127.0.0.1' || hostname.endsWith('127.0.0.1');
   }
 
   public addTransform(fn: HttpAgentRequestTransformFn, priority = fn.priority || 0): void {
