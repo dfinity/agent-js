@@ -49,6 +49,15 @@ export type SubnetStatus = {
   // Principal as a string
   subnetId: string;
   nodeKeys: string[];
+  metrics?: {
+    num_canisters: bigint;
+    canister_state_bytes: bigint;
+    consumed_cycles_total: {
+      current: bigint;
+      deleted: bigint;
+    };
+    update_transactions_total: bigint;
+  };
 };
 
 /**
@@ -163,6 +172,8 @@ export interface CreateCertificateOptions {
    */
   maxAgeInMinutes?: number;
 }
+
+type MetricsResult = number | bigint | Map<number, number | bigint> | undefined;
 
 export class Certificate {
   private readonly cert: Cert;

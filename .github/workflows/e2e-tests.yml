@@ -35,7 +35,7 @@ jobs:
       # build monorepo incl. each subpackage
       - run: npm run build --workspaces --if-present
 
-      - run: echo y | sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
+      - uses: dfinity/setup-dfx@main
 
       - name: running dfx
         id: dfx

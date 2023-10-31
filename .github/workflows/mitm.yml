@@ -41,7 +41,7 @@ jobs:
           python-version: '3.11'
       - run: pip3 install mitmproxy~=10.0.0
 
-      - run: echo y | sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
+      - uses: dfinity/setup-dfx@main
 
       - name: running dfx
         id: dfx
