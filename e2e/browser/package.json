@@ -4,9 +4,10 @@
   "version": "0.19.3",
   "scripts": {
     "ci": "npm run e2e",
-    "pree2e": "dfx deploy; dfx generate; pm2 --name parcel start npm -- start",
-    "e2e": "cypress run",
-    "poste2e": "pm2 delete 0",
+    "setup": "dfx deploy; dfx generate; pm2 --name parcel start npm -- start",
+    "cypress": "cypress run",
+    "e2e": "npm run cypress",
+    "poste2e": "pm2 kill",
     "eslint:fix": "npm run lint -- --fix",
     "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' cypress *.js",
     "lint": "npm run eslint",
@@ -15,7 +16,7 @@
     "publish:release": "",
     "test:coverage": "",
     "test": "",
-    "start": "parcel --watch-for-stdin src/index.html"
+    "start": "parcel src/index.html"
   },
   "devDependencies": {
     "@types/node": "^18.0.6",

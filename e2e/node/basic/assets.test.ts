@@ -1,12 +1,10 @@
-/**
- * @jest-environment node
- */
 import { existsSync, readFileSync, unlinkSync } from 'fs';
 import path from 'path';
 import agent from '../utils/agent';
 import { Actor } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import { AssetManager } from '@dfinity/assets';
+import { test, describe, it, expect, beforeAll, afterEach } from 'vitest';
 
 /**
  * Create (pseudo) random bytes Readable
@@ -43,7 +41,6 @@ const testFile = {
   target: path.join(__dirname, '../package_copy.json'),
 };
 
-jest.setTimeout(100000);
 describe('assets', () => {
   let canisterId: Principal;
 
@@ -84,9 +81,17 @@ describe('assets', () => {
     }
   });
 
-  it('store, get and delete 1MB asset (single chunk)', () => testRandomBytes('1MB.bin', 1000000));
+  it(
+    'store, get and delete 1MB asset (single chunk)',
+    () => testRandomBytes('1MB.bin', 1000000),
+    100000,
+  );
 
-  it('store, get and delete 3MB asset (multiple chunk)', () => testRandomBytes('3MB.bin', 3000000));
+  it(
+    'store, get and delete 3MB asset (multiple chunk)',
+    () => testRandomBytes('3MB.bin', 3000000),
+    100000,
+  );
 
   it('batch process assets and verify asset list', async () => {
     const assetManager = new AssetManager({ canisterId, agent: await agent });

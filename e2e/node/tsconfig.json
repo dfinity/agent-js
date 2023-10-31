@@ -1,10 +1,10 @@
 {
-  "extends": "@tsconfig/node16/tsconfig.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "incremental": true,
-    "target": "es2021",
-    "module": "esnext",
-    "lib": ["es2021"],
+    "target": "ESNext",
+    "module": "ESNext",
+    "lib": ["ES2023"],
     "declaration": true,
     "sourceMap": true,
     "tsBuildInfoFile": "./build_info.json",
@@ -14,9 +14,5 @@
     "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true
   },
-  "references": [
-    { "path": "../../packages/agent" },
-    { "path": "../../packages/authentication" },
-    { "path": "../../packages/identity" }
-  ]
+  "references": [{ "path": "../../packages/agent" }, { "path": "../../packages/identity" }]
 }
