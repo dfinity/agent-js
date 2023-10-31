@@ -205,7 +205,7 @@ export class DelegationChain {
       return {
         delegation: new Delegation(
           _parseBlob(pubkey),
-          BigInt(`0x${expiration}`), // expiration in JSON is an hexa string (See toJSON() below).
+          BigInt('0x' + expiration), // expiration in JSON is an hexa string (See toJSON() below).
           targets &&
             targets.map((t: unknown) => {
               if (typeof t !== 'string') {
