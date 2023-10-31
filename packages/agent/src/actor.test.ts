@@ -149,7 +149,7 @@ describe('makeActor', () => {
 
     expect(calls.length).toBe(5);
     expect(calls[0]).toEqual([
-      `http://localhost/api/v2/canister/${canisterId.toText()}/call`,
+      `http://127.0.0.1/api/v2/canister/${canisterId.toText()}/call`,
       {
         method: 'POST',
         headers: {
@@ -160,7 +160,7 @@ describe('makeActor', () => {
     ]);
 
     expect(calls[1]).toEqual([
-      `http://localhost/api/v2/canister/${canisterId.toText()}/read_state`,
+      `http://127.0.0.1/api/v2/canister/${canisterId.toText()}/read_state`,
       {
         method: 'POST',
         headers: {
@@ -176,7 +176,7 @@ describe('makeActor', () => {
       },
     ]);
 
-    expect(calls[2][0]).toBe('http://localhost/api/v1/read');
+    expect(calls[2][0]).toBe('http://127.0.0.1/api/v1/read');
     expect(calls[2][1]).toEqual({
       method: 'POST',
       headers: {
@@ -191,7 +191,7 @@ describe('makeActor', () => {
       }),
     });
 
-    expect(calls[3][0]).toBe('http://localhost/api/v1/read');
+    expect(calls[3][0]).toBe('http://127.0.0.1/api/v1/read');
     expect(calls[3][1]).toEqual({
       method: 'POST',
       headers: {
@@ -206,7 +206,7 @@ describe('makeActor', () => {
       }),
     });
 
-    expect(calls[4][0]).toBe('http://localhost/api/v1/read');
+    expect(calls[4][0]).toBe('http://127.0.0.1/api/v1/read');
     expect(calls[4][1]).toEqual({
       method: 'POST',
       headers: {
@@ -221,7 +221,7 @@ describe('makeActor', () => {
       }),
     });
 
-    expect(calls[5][0]).toBe('http://localhost/api/v1/call');
+    expect(calls[5][0]).toBe('http://127.0.0.1/api/v1/call');
     expect(calls[5][1]).toEqual({
       method: 'POST',
       headers: {
@@ -273,7 +273,7 @@ describe('makeActor', () => {
         // todo: add method to test update call after Certificate changes have been adjusted
       });
     };
-    const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://localhost' });
+    const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://127.0.0.1' });
     const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
     const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
     const actorWithHttpDetails = Actor.createActorWithHttpDetails(actorInterface, {
@@ -312,7 +312,7 @@ describe('makeActor', () => {
         greet: IDL.Func([IDL.Text], [IDL.Text]),
       });
     };
-    const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://localhost' });
+    const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://127.0.0.1' });
     const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
     const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
 
@@ -327,7 +327,7 @@ describe('makeActor', () => {
     }
   });
   it('should throw a helpful error if the canisterId is not set', async () => {
-    const httpAgent = new HttpAgent({ host: 'http://localhost' });
+    const httpAgent = new HttpAgent({ host: 'http://127.0.0.1' });
     const actorInterface = () => {
       return IDL.Service({
         greet: IDL.Func([IDL.Text], [IDL.Text]),
