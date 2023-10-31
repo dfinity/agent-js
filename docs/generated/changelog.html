@@ -14,6 +14,10 @@
       <ul>
         <li>feat: adds subnet metrics decoding to canisterStatus for `/subnet` path</li>
         <li>
+          feat!: sets expiry to 1 minute less than the configured expiry, and then down to the
+          nearest second. This matches existing behaviour, but adds the rounding
+        </li>
+        <li>
           chore: replaces use of localhost with 127.0.0.1 for better node 18 support. Also swaps
           Jest for vitest, runs mitm against mainnet, and updates some packages
         </li>

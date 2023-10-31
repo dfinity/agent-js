@@ -11,6 +11,17 @@ let cache: {
   actor: any;
 } | null = null;
 
+const idl: IDL.InterfaceFactory = ({ IDL }) => {
+  return IDL.Service({
+    inc: IDL.Func([], [], []),
+    inc_read: IDL.Func([], [IDL.Nat], []),
+    read: IDL.Func([], [IDL.Nat], ['query']),
+    write: IDL.Func([IDL.Nat], [], []),
+    greet: IDL.Func([IDL.Text], [IDL.Text], []),
+    queryGreet: IDL.Func([IDL.Text], [IDL.Text], ['query']),
+  });
+};
+
 /**
  * Create a counter Actor + canisterId
  */
@@ -24,15 +35,6 @@ export default async function (): Promise<{
 
     const canisterId = await Actor.createCanister({ agent: await agent });
     await Actor.install({ module }, { canisterId, agent: await agent });
-    const idl: IDL.InterfaceFactory = ({ IDL }) => {
-      return IDL.Service({
-        inc: IDL.Func([], [], []),
-        inc_read: IDL.Func([], [IDL.Nat], []),
-        read: IDL.Func([], [IDL.Nat], ['query']),
-        greet: IDL.Func([IDL.Text], [IDL.Text], []),
-        queryGreet: IDL.Func([IDL.Text], [IDL.Text], ['query']),
-      });
-    };
 
     cache = {
       canisterId,
@@ -59,20 +61,11 @@ export async function noncelessCanister(): Promise<{
 
   const canisterId = await Actor.createCanister({ agent: disableNonceAgent });
   await Actor.install({ module }, { canisterId, agent: disableNonceAgent });
-  const idl: IDL.InterfaceFactory = ({ IDL }) => {
-    return IDL.Service({
-      inc: IDL.Func([], [], []),
-      inc_read: IDL.Func([], [IDL.Nat], []),
-      read: IDL.Func([], [IDL.Nat], ['query']),
-      greet: IDL.Func([IDL.Text], [IDL.Text], []),
-      queryGreet: IDL.Func([IDL.Text], [IDL.Text], ['query']),
-    });
-  };
-
+  const actor = Actor.createActor(idl, { canisterId, agent: await disableNonceAgent }) as any;
   return {
     canisterId,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    actor: Actor.createActor(idl, { canisterId, agent: await disableNonceAgent }) as any,
+    actor,
   };
 }
 
@@ -91,14 +84,5 @@ export const createActor = async (options?: HttpAgentOptions) => {
 
   const canisterId = await Actor.createCanister({ agent });
   await Actor.install({ module }, { canisterId, agent });
-  const idl: IDL.InterfaceFactory = ({ IDL }) => {
-    return IDL.Service({
-      inc: IDL.Func([], [], []),
-      inc_read: IDL.Func([], [IDL.Nat], []),
-      read: IDL.Func([], [IDL.Nat], ['query']),
-      greet: IDL.Func([IDL.Text], [IDL.Text], []),
-      queryGreet: IDL.Func([IDL.Text], [IDL.Text], ['query']),
-    });
-  };
   return Actor.createActor(idl, { canisterId, agent }) as any;
 };
