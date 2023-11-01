@@ -1481,7 +1481,15 @@ export class ServiceClass extends ConstructType<PrincipalId> {
   public readonly _fields: Array<[string, FuncClass]>;
   constructor(fields: Record<string, FuncClass>) {
     super();
-    this._fields = Object.entries(fields).sort((a, b) => idlLabelToId(a[0]) - idlLabelToId(b[0]));
+    this._fields = Object.entries(fields).sort((a, b) => {
+      if (a[0] < b[0]) {
+        return -1;
+      }
+      if (a[0] > b[0]) {
+        return 1;
+      }
+      return 0;
+    });
   }
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitService(this, d);
