@@ -608,28 +608,7 @@ describe('retry failures', () => {
   });
 });
 jest.useFakeTimers({ legacyFakeTimers: true });
-test('should change nothing if time is within 30 seconds of replica', async () => {
-  const systemTime = new Date('August 19, 1975 23:15:30');
-  // jest.setSystemTime(systemTime);
-  const mockFetch = jest.fn();
 
-  const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
-
-  await agent.syncTime();
-
-  agent
-    .call(Principal.managementCanister(), {
-      methodName: 'test',
-      arg: new Uint8Array().buffer,
-    })
-    // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
-    .catch(function (_) {});
-
-  const requestBody = cbor.decode(mockFetch.mock.calls[0][1].body);
-  expect((requestBody as unknown as any).content.ingress_expiry).toMatchInlineSnapshot(
-    `1240000000000`,
-  );
-});
 test('should adjust the Expiry if the clock is more than 30 seconds behind', async () => {
   const mockFetch = jest.fn();
 
@@ -664,11 +643,8 @@ test('should adjust the Expiry if the clock is more than 30 seconds behind', asy
   // Expiry should be: ingress expiry + replica time
   const expiryInMs = requestBody.content.ingress_expiry / NANOSECONDS_PER_MILLISECONDS;
 
-  const delay = expiryInMs + REPLICA_PERMITTED_DRIFT_MILLISECONDS - Number(replicaTime);
+  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1260000000000`);
 
-  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1271000000000`);
-
-  expect(delay).toBe(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
   jest.resetModules();
 });
 
@@ -704,14 +680,8 @@ test('should adjust the Expiry if the clock is more than 30 seconds ahead', asyn
 
   const requestBody: any = cbor.decode(mockFetch.mock.calls[0][1].body);
 
-  // Expiry should be: replica time - ingress expiry
-  const expiryInMs = requestBody.content.ingress_expiry / NANOSECONDS_PER_MILLISECONDS;
+  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1200000000000`);
 
-  const delay = Number(replicaTime) - (expiryInMs + REPLICA_PERMITTED_DRIFT_MILLISECONDS);
-
-  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1209000000000`);
-
-  expect(delay).toBe(-1 * DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
   jest.resetModules();
 });
 

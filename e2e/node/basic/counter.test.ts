@@ -26,10 +26,12 @@ describe('counter', () => {
 
     await counter.write(0);
     expect(Number(await counter.read())).toEqual(0);
-    await counter.inc();
-    expect(Number(await counter.read())).toEqual(1);
-    await counter.inc();
-    expect(Number(await counter.read())).toEqual(2);
+    let expected = 1;
+    for (let i = 0; i < 5; i++) {
+      await counter.inc();
+      expect(Number(await counter.read())).toEqual(expected);
+      expected += 1;
+    }
   }, 40000);
 });
 describe('retrytimes', () => {

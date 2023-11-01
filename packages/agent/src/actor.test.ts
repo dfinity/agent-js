@@ -333,7 +333,7 @@ describe('makeActor', () => {
     const { Actor } = await importActor();
     const config = { agent: httpAgent } as any as ActorConfig;
     expect(() => Actor.createActor(actorInterface, config)).toThrowError(
-      'Canister ID is required, but recieved undefined instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.',
+      'Canister ID is required, but received undefined instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.',
     );
   });
 });

@@ -11,6 +11,17 @@ let cache: {
   actor: any;
 } | null = null;
 
+const idl: IDL.InterfaceFactory = ({ IDL }) => {
+  return IDL.Service({
+    inc: IDL.Func([], [], []),
+    inc_read: IDL.Func([], [IDL.Nat], []),
+    read: IDL.Func([], [IDL.Nat], ['query']),
+    write: IDL.Func([IDL.Nat], [], []),
+    greet: IDL.Func([IDL.Text], [IDL.Text], []),
+    queryGreet: IDL.Func([IDL.Text], [IDL.Text], ['query']),
+  });
+};
+
 /**
  * Create a counter Actor + canisterId
  */
@@ -24,16 +35,6 @@ export default async function (): Promise<{
 
     const canisterId = await Actor.createCanister({ agent: await agent });
     await Actor.install({ module }, { canisterId, agent: await agent });
-    const idl: IDL.InterfaceFactory = ({ IDL }) => {
-      return IDL.Service({
-        inc: IDL.Func([], [], []),
-        inc_read: IDL.Func([], [IDL.Nat], []),
-        read: IDL.Func([], [IDL.Nat], ['query']),
-        write: IDL.Func([IDL.Nat], [], []),
-        greet: IDL.Func([IDL.Text], [IDL.Text], []),
-        queryGreet: IDL.Func([IDL.Text], [IDL.Text], ['query']),
-      });
-    };
 
     cache = {
       canisterId,
@@ -60,14 +61,5 @@ export const createActor = async (options?: HttpAgentOptions) => {
 
   const canisterId = await Actor.createCanister({ agent });
   await Actor.install({ module }, { canisterId, agent });
-  const idl: IDL.InterfaceFactory = ({ IDL }) => {
-    return IDL.Service({
-      inc: IDL.Func([], [], []),
-      inc_read: IDL.Func([], [IDL.Nat], []),
-      read: IDL.Func([], [IDL.Nat], ['query']),
-      greet: IDL.Func([IDL.Text], [IDL.Text], []),
-      queryGreet: IDL.Func([IDL.Text], [IDL.Text], ['query']),
-    });
-  };
   return Actor.createActor(idl, { canisterId, agent }) as any;
 };
