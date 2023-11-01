@@ -12,6 +12,11 @@
     <section>
       <h2>Version x.x.x</h2>
       <ul>
+        <li>
+          feat!: replaces disableNonce feature with useQueryNonces. Going forward, updates will use
+          nonces, but queries and readstate calls will not. Queries and readsatate calls will use
+          nonces if `useQueryNonces` is set to true
+        </li>
         <li>feat: adds subnet metrics decoding to canisterStatus for `/subnet` path</li>
         <li>
           feat!: sets expiry to 1 minute less than the configured expiry, and then down to the

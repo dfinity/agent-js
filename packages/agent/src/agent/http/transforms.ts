@@ -50,7 +50,6 @@ export class Expiry {
  */
 export function makeNonceTransform(nonceFn: () => Nonce = makeNonce): HttpAgentRequestTransformFn {
   return async (request: HttpAgentRequest) => {
-    const nonce = nonceFn();
     // Nonce needs to be inserted into the header for all requests, to enable logs to be correlated with requests.
     const headers = request.request.headers;
     // TODO: uncomment this when the http proxy supports it.

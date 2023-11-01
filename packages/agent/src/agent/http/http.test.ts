@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { HttpAgent, Nonce } from '../index';
 import * as cbor from '../../cbor';
-import { Expiry, httpHeadersTransform, makeNonceTransform } from './transforms';
+import { Expiry, httpHeadersTransform } from './transforms';
 import {
   CallRequest,
   Envelope,
@@ -24,8 +24,6 @@ window.fetch = global.fetch;
 
 const HTTP_AGENT_HOST = 'http://127.0.0.1:4943';
 
-const DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS = 5 * 60 * 1000;
-const REPLICA_PERMITTED_DRIFT_MILLISECONDS = 60 * 1000;
 const NANOSECONDS_PER_MILLISECONDS = 1_000_000;
 
 function createIdentity(seed: number): Ed25519KeyIdentity {
@@ -139,9 +137,7 @@ test('queries with the same content should have the same signature', async () =>
   const httpAgent = new HttpAgent({
     fetch: mockFetch,
     host: 'http://127.0.0.1',
-    disableNonce: true,
   });
-  httpAgent.addTransform(makeNonceTransform(() => nonce));
 
   const methodName = 'greet';
   const arg = new Uint8Array([]);
@@ -198,13 +194,12 @@ test('readState should not call transformers if request is passed', async () => 
   const httpAgent = new HttpAgent({
     fetch: mockFetch,
     host: 'http://127.0.0.1',
-    disableNonce: true,
+    useQueryNonces: true,
   });
-  httpAgent.addTransform(makeNonceTransform(() => nonce));
   const transformMock: HttpAgentRequestTransformFn = jest
     .fn()
     .mockImplementation(d => Promise.resolve(d));
-  httpAgent.addTransform(transformMock);
+  httpAgent.addTransform('query', transformMock);
 
   const methodName = 'greet';
   const arg = new Uint8Array([]);
@@ -288,9 +283,7 @@ test('use anonymous principal if unspecified', async () => {
   const httpAgent = new HttpAgent({
     fetch: mockFetch,
     host: 'http://127.0.0.1',
-    disableNonce: true,
   });
-  httpAgent.addTransform(makeNonceTransform(() => nonce));
 
   const methodName = 'greet';
   const arg = new Uint8Array([]);

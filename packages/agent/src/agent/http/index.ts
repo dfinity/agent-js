@@ -103,18 +103,15 @@ export interface HttpAgentOptions {
     password?: string;
   };
   /**
-   * Prevents the agent from providing a unique {@link Nonce} with each call.
-   * Enabling may cause rate limiting of identical requests
-   * at the boundary nodes.
+   * Adds a unique {@link Nonce} with each query.
+   * Enabling will prevent queries from being answered with a cached response.
    *
-   * To add your own nonce generation logic, you can use the following:
    * @example
-   * import {makeNonceTransform, makeNonce} from '@dfinity/agent';
-   * const agent = new HttpAgent({ disableNonce: true });
+   * const agent = new HttpAgent({ useQueryNonces: true });
    * agent.addTransform(makeNonceTransform(makeNonce);
    * @default false
    */
-  disableNonce?: boolean;
+  useQueryNonces?: boolean;
   /**
    * Number of times to retry requests before throwing an error
    * @default 3
@@ -168,7 +165,6 @@ function getDefaultFetch(): typeof fetch {
 // allowing extensions.
 export class HttpAgent implements Agent {
   public rootKey = fromHex(IC_ROOT_KEY);
-  private readonly _pipeline: HttpAgentRequestTransformFn[] = [];
   private _identity: Promise<Identity> | null;
   private readonly _fetch: typeof fetch;
   private readonly _fetchOptions?: Record<string, unknown>;
@@ -180,6 +176,9 @@ export class HttpAgent implements Agent {
   private readonly _retryTimes; // Retry requests N times before erroring by default
   public readonly _isAgent = true;
 
+  #queryPipeline: HttpAgentRequestTransformFn[] = [];
+  #updatePipeline: HttpAgentRequestTransformFn[] = [];
+
   #subnetKeys: Map<string, SubnetStatus> = new Map();
 
   constructor(options: HttpAgentOptions = {}) {
@@ -187,7 +186,6 @@ export class HttpAgent implements Agent {
       if (!(options.source instanceof HttpAgent)) {
         throw new Error("An Agent's source can only be another HttpAgent");
       }
-      this._pipeline = [...options.source._pipeline];
       this._identity = options.source._identity;
       this._fetch = options.source._fetch;
       this._host = options.source._host;
@@ -253,8 +251,9 @@ export class HttpAgent implements Agent {
     this._identity = Promise.resolve(options.identity || new AnonymousIdentity());
 
     // Add a nonce transform to ensure calls are unique
-    if (!options.disableNonce) {
-      this.addTransform(makeNonceTransform(makeNonce));
+    this.addTransform('update', makeNonceTransform(makeNonce));
+    if (options.useQueryNonces) {
+      this.addTransform('query', makeNonceTransform(makeNonce));
     }
   }
 
@@ -263,10 +262,28 @@ export class HttpAgent implements Agent {
     return hostname === '127.0.0.1' || hostname.endsWith('127.0.0.1');
   }
 
-  public addTransform(fn: HttpAgentRequestTransformFn, priority = fn.priority || 0): void {
-    // Keep the pipeline sorted at all time, by priority.
-    const i = this._pipeline.findIndex(x => (x.priority || 0) < priority);
-    this._pipeline.splice(i >= 0 ? i : this._pipeline.length, 0, Object.assign(fn, { priority }));
+  public addTransform(
+    type: 'update' | 'query',
+    fn: HttpAgentRequestTransformFn,
+    priority = fn.priority || 0,
+  ): void {
+    if (type === 'update') {
+      // Keep the pipeline sorted at all time, by priority.
+      const i = this.#updatePipeline.findIndex(x => (x.priority || 0) < priority);
+      this.#updatePipeline.splice(
+        i >= 0 ? i : this.#updatePipeline.length,
+        0,
+        Object.assign(fn, { priority }),
+      );
+    } else if (type === 'query') {
+      // Keep the pipeline sorted at all time, by priority.
+      const i = this.#queryPipeline.findIndex(x => (x.priority || 0) < priority);
+      this.#queryPipeline.splice(
+        i >= 0 ? i : this.#queryPipeline.length,
+        0,
+        Object.assign(fn, { priority }),
+      );
+    }
   }
 
   public async getPrincipal(): Promise<Principal> {
@@ -609,9 +626,14 @@ export class HttpAgent implements Agent {
 
   protected _transform(request: HttpAgentRequest): Promise<HttpAgentRequest> {
     let p = Promise.resolve(request);
-
-    for (const fn of this._pipeline) {
-      p = p.then(r => fn(r).then(r2 => r2 || r));
+    if (request.endpoint === Endpoint.Call) {
+      for (const fn of this.#updatePipeline) {
+        p = p.then(r => fn(r).then(r2 => r2 || r));
+      }
+    } else {
+      for (const fn of this.#queryPipeline) {
+        p = p.then(r => fn(r).then(r2 => r2 || r));
+      }
     }
 
     return p;

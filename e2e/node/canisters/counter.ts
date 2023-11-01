@@ -45,29 +45,6 @@ export default async function (): Promise<{
 
   return cache;
 }
-/**
- * With no cache and nonce disabled
- */
-export async function noncelessCanister(): Promise<{
-  canisterId: Principal;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  actor: any;
-}> {
-  const module = readFileSync(path.join(__dirname, 'counter.wasm'));
-  const disableNonceAgent = await makeAgent({
-    identity,
-    disableNonce: true,
-  });
-
-  const canisterId = await Actor.createCanister({ agent: disableNonceAgent });
-  await Actor.install({ module }, { canisterId, agent: disableNonceAgent });
-  const actor = Actor.createActor(idl, { canisterId, agent: await disableNonceAgent }) as any;
-  return {
-    canisterId,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    actor,
-  };
-}
 
 export const createActor = async (options?: HttpAgentOptions) => {
   const module = readFileSync(path.join(__dirname, 'counter.wasm'));
