@@ -12,3 +12,16 @@ Object {
   },
 }
 `;
+
+exports[`should succeed after multiple failures within the configured limit 1`] = `
+Object {
+  "requestId": ArrayBuffer [],
+  "response": Object {
+    "body": null,
+    "headers": Array [],
+    "ok": true,
+    "status": 200,
+    "statusText": "success!",
+  },
+}
+`;

@@ -13,9 +13,8 @@ import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 
 import { JSDOM } from 'jsdom';
-import { AnonymousIdentity, SignIdentity } from '../..';
-import { Ed25519KeyIdentity } from '../../../../identity/src/identity/ed25519';
-import { toHexString } from '../../../../identity/src/buffer';
+import { AnonymousIdentity, SignIdentity, toHex } from '../..';
+import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { AgentError } from '../../errors';
 import { AgentHTTPResponseError } from './errors';
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
@@ -389,7 +388,7 @@ describe('invalidate identity', () => {
         arg: new ArrayBuffer(16),
       });
     } catch (error) {
-      expect(error.message).toBe(expectedError);
+      expect((error as Error).message).toBe(expectedError);
     }
     // Test Agent.query
     try {
@@ -398,7 +397,7 @@ describe('invalidate identity', () => {
         arg: new ArrayBuffer(16),
       });
     } catch (error) {
-      expect(error.message).toBe(expectedError);
+      expect((error as Error).message).toBe(expectedError);
     }
     // Test readState
     try {
@@ -406,7 +405,7 @@ describe('invalidate identity', () => {
         paths: [[new ArrayBuffer(16)]],
       });
     } catch (error) {
-      expect(error.message).toBe(expectedError);
+      expect((error as Error).message).toBe(expectedError);
     }
   });
 });
@@ -461,7 +460,7 @@ describe('makeNonce', () => {
   it('should create unique values', () => {
     const nonces = new Set();
     for (let i = 0; i < 100; i++) {
-      nonces.add(toHexString(makeNonce()));
+      nonces.add(toHex(makeNonce()));
     }
     expect(nonces.size).toBe(100);
   });
@@ -496,12 +495,12 @@ describe('makeNonce', () => {
     });
 
     it('should create same value using polyfill', () => {
-      const originalNonce = toHexString(makeNonce());
+      const originalNonce = toHex(makeNonce());
       expect(spyOnSetUint32).toBeCalledTimes(4);
 
       usePolyfill = true;
 
-      const nonce = toHexString(makeNonce());
+      const nonce = toHex(makeNonce());
       expect(spyOnSetUint32).toBeCalledTimes(4);
 
       expect(nonce).toBe(originalNonce);
@@ -532,13 +531,10 @@ describe('makeNonce', () => {
   });
 });
 describe('retry failures', () => {
-  let consoleSpy;
   beforeEach(() => {
-    consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
     jest.spyOn(console, 'warn').mockImplementation();
-    if (typeof consoleSpy === 'function') {
-      consoleSpy.mockRestore();
-    }
+    consoleSpy.mockRestore();
   });
 
   it('should throw errors immediately if retryTimes is set to 0', async () => {
