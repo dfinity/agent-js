@@ -30,6 +30,7 @@ import { AgentHTTPResponseError } from './errors';
 import { request } from '../../canisterStatus';
 import { CertificateVerificationError, SubnetStatus } from '../../certificate';
 import { ed25519 } from '@noble/curves/ed25519';
+import { Ed25519PublicKey } from '../../publicKey';
 
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
@@ -579,9 +580,13 @@ export class HttpAgent implements Agent {
 
       // FIX: check for match without verifying N times
       const matchingKey = subnetStatus?.nodeKeys.find(key => {
-        const pubKey = new Uint8Array(fromHex(key).slice(12, 44));
+        const pubKey = Ed25519PublicKey.fromDer(fromHex(key));
         try {
-          const validity = ed25519.verify(sig.signature, new Uint8Array(separatorWithHash), pubKey);
+          const validity = ed25519.verify(
+            sig.signature,
+            new Uint8Array(separatorWithHash),
+            new Uint8Array(pubKey.rawKey),
+          );
           if (validity) return true;
         } catch (error) {
           // suppress error

@@ -7,7 +7,9 @@ import fetch from 'isomorphic-fetch';
 import { HttpAgent } from '../agent';
 import { fromHex, toHex } from '../utils/buffer';
 import * as Cert from '../certificate';
-import { goldenCertificates } from '../agent/http/__certificates__/goldenCertificates.test';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import { goldenCertificates } from '../agent/http/__certificates__/goldenCertificates';
 
 const IC_ROOT_KEY =
   '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100814' +
