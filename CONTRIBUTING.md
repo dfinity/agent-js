@@ -62,11 +62,9 @@ GitHub Actions for this repo are configured in [./.github/workflows](./.github/w
 
 A member of the team will review your changes. Once the member has reviewed your changes, they will comment on your pull request. If the member has any questions, they will add a comment to your pull request. If the member is happy with your changes, they will merge your pull request.
 
-## Master Branch Conventions and Mergify
+## Main Branch Conventions
 
 All commits in the master branch should come from squashed GitHub Pull Requests, and those commit messages should follow the [conventionalcommits.org](https://conventionalcommits.org) syntax.
-
-Mergify can take care of enforcing all of this. Just add the `automerge-squash` label to each Pull Request that Mergify should merge. This policy is configured via [./.mergify.yml](./.mergify).
 
 # Release new version and Publish it to NPM
 
