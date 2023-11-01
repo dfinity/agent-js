@@ -48,6 +48,7 @@ jobs:
         continue-on-error: true
         run: npm list
       - run: npm ci
+      - run: npm audit
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
