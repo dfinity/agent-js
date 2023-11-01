@@ -1,22 +1,14 @@
+// Bumps the version (@jsonpaths: .version, .dependencies, .peerDependencies, and .devDependencies
+// of each package's `package.json` in the monorepo.
+// TODO: to be replaced with @release-it/bumper when https://github.com/release-it/bumper/pull/35 is merged
+
 import fs from 'fs';
 import path from 'path';
-import yargs from 'yargs';
 import { exec } from 'child_process';
+import process from 'process';
 
 console.time('script duration');
 console.log('Updating package versions...');
-
-// Manage CLI options
-const argv = yargs
-  .command('patch', 'Increments up a patch version for all packages')
-  .command('minor', 'Increments a minor version for all packages')
-  .command('major', 'Increments a major version for all packages')
-  .example('patch', 'npm run version -- patch')
-  .example('minor', 'npm run version -- minor')
-  .example('major', 'npm run version -- major')
-  .example('custom', 'npm run version -- 0.9.0-beta.1')
-  .help()
-  .alias('help', 'h').argv;
 
 // Infer info about workspaces from package.json
 const rootPackage = JSON.parse(
@@ -27,25 +19,7 @@ if (!rootPackage.name) throw new Error("Couldn't find root package.json");
 
 const baseVersion = rootPackage.version;
 
-const newVersion = (() => {
-  // eslint-disable-next-line
-  let [major, minor, patch, ...rest] = baseVersion.split('.');
-  if (argv['_'].includes('patch')) {
-    patch = Number(patch) + 1;
-  } else if (argv['_'].includes('minor')) {
-    minor = Number(minor) + 1;
-    patch = 0;
-  } else if (argv['_'].includes('major')) {
-    major = Number(major) + 1;
-    minor = 0;
-    patch = 0;
-  } else {
-    // else use the first argument
-    return argv['_'][0].toString();
-  }
-  return [major, minor, patch, ...rest].join('.');
-})();
-
+const newVersion = process.argv[2];
 console.log('New version will be: ' + newVersion);
 
 // Read workspaces from root package.json
