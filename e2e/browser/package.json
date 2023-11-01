@@ -13,7 +13,6 @@
     "lint": "npm run eslint",
     "build": "",
     "lint:fix": "npm run lint -- --fix",
-    "publish:release": "",
     "test:coverage": "",
     "test": "",
     "start": "parcel src/index.html"

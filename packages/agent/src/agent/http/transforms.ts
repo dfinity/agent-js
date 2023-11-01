@@ -8,20 +8,29 @@ import {
   makeNonce,
   Nonce,
 } from './types';
-import { toHex } from '../../utils/buffer';
 
 const NANOSECONDS_PER_MILLISECONDS = BigInt(1_000_000);
 
-const REPLICA_PERMITTED_DRIFT_MILLISECONDS = BigInt(60 * 1000);
+const REPLICA_PERMITTED_DRIFT_MILLISECONDS = 60 * 1000;
 
 export class Expiry {
   private readonly _value: bigint;
 
   constructor(deltaInMSec: number) {
     // Use bigint because it can overflow the maximum number allowed in a double float.
-    this._value =
-      (BigInt(Date.now()) + BigInt(deltaInMSec) - REPLICA_PERMITTED_DRIFT_MILLISECONDS) *
+    const raw_value =
+      BigInt(Math.floor(Date.now() + deltaInMSec - REPLICA_PERMITTED_DRIFT_MILLISECONDS)) *
       NANOSECONDS_PER_MILLISECONDS;
+
+    // round down to the nearest second
+    const ingress_as_seconds = raw_value / BigInt(1_000_000_000);
+
+    // round down to nearest minute
+    const ingress_as_minutes = ingress_as_seconds / BigInt(60);
+
+    const rounded_down_nanos = ingress_as_minutes * BigInt(60) * BigInt(1_000_000_000);
+
+    this._value = rounded_down_nanos;
   }
 
   public toCBOR(): cbor.CborValue {
@@ -41,7 +50,6 @@ export class Expiry {
  */
 export function makeNonceTransform(nonceFn: () => Nonce = makeNonce): HttpAgentRequestTransformFn {
   return async (request: HttpAgentRequest) => {
-    const nonce = nonceFn();
     // Nonce needs to be inserted into the header for all requests, to enable logs to be correlated with requests.
     const headers = request.request.headers;
     // TODO: uncomment this when the http proxy supports it.

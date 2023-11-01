@@ -1,4 +1,4 @@
-import { Actor, HttpAgent } from '@dfinity/agent';
+import { Actor, ActorMethod, HttpAgent } from '@dfinity/agent';
 
 // Imports and re-exports candid interface
 import { idlFactory } from './counter.did.js';
@@ -35,3 +35,12 @@ export const createActor = (canisterId, options = {}) => {
     ...options.actorOptions,
   });
 };
+
+export interface _SERVICE {
+  greet: ActorMethod<[string], string>;
+  inc: ActorMethod<[], undefined>;
+  inc_read: ActorMethod<[], bigint>;
+  queryGreet: ActorMethod<[string], string>;
+  read: ActorMethod<[], bigint>;
+  write: ActorMethod<[bigint], undefined>;
+}

@@ -1,7 +1,7 @@
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { HttpAgent, Nonce, SubmitResponse } from './agent';
-import { Expiry, makeNonceTransform } from './agent/http/transforms';
+import { Expiry } from './agent/http/transforms';
 import { CallRequest, SubmitRequestType, UnSigned } from './agent/http/types';
 import * as cbor from './cbor';
 import { requestIdOf } from './request_id';
@@ -133,10 +133,7 @@ describe('makeActor', () => {
 
     const expectedCallRequestId = await requestIdOf(expectedCallRequest.content);
 
-    let nonceCount = 0;
-
-    const httpAgent = new HttpAgent({ fetch: mockFetch, disableNonce: true });
-    httpAgent.addTransform(makeNonceTransform(() => nonces[nonceCount++]));
+    const httpAgent = new HttpAgent({ fetch: mockFetch });
 
     const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
     const reply = await actor.greet(argValue);
@@ -336,7 +333,7 @@ describe('makeActor', () => {
     const { Actor } = await importActor();
     const config = { agent: httpAgent } as any as ActorConfig;
     expect(() => Actor.createActor(actorInterface, config)).toThrowError(
-      'Canister ID is required, but recieved undefined instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.',
+      'Canister ID is required, but received undefined instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.',
     );
   });
 });
