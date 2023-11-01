@@ -177,7 +177,7 @@ export class HttpAgent implements Agent {
   public readonly _isAgent = true;
 
   #queryPipeline: HttpAgentRequestTransformFn[] = [];
-  #callPipeline: HttpAgentRequestTransformFn[] = [];
+  #updatePipeline: HttpAgentRequestTransformFn[] = [];
 
   #subnetKeys: Map<string, SubnetStatus> = new Map();
 
@@ -251,7 +251,7 @@ export class HttpAgent implements Agent {
     this._identity = Promise.resolve(options.identity || new AnonymousIdentity());
 
     // Add a nonce transform to ensure calls are unique
-    this.addTransform('call', makeNonceTransform(makeNonce));
+    this.addTransform('update', makeNonceTransform(makeNonce));
     if (options.useQueryNonces) {
       this.addTransform('query', makeNonceTransform(makeNonce));
     }
@@ -263,15 +263,15 @@ export class HttpAgent implements Agent {
   }
 
   public addTransform(
-    type: 'call' | 'query',
+    type: 'update' | 'query',
     fn: HttpAgentRequestTransformFn,
     priority = fn.priority || 0,
   ): void {
-    if (type === 'call') {
+    if (type === 'update') {
       // Keep the pipeline sorted at all time, by priority.
-      const i = this.#callPipeline.findIndex(x => (x.priority || 0) < priority);
-      this.#callPipeline.splice(
-        i >= 0 ? i : this.#callPipeline.length,
+      const i = this.#updatePipeline.findIndex(x => (x.priority || 0) < priority);
+      this.#updatePipeline.splice(
+        i >= 0 ? i : this.#updatePipeline.length,
         0,
         Object.assign(fn, { priority }),
       );
@@ -627,7 +627,7 @@ export class HttpAgent implements Agent {
   protected _transform(request: HttpAgentRequest): Promise<HttpAgentRequest> {
     let p = Promise.resolve(request);
     if (request.endpoint === Endpoint.Call) {
-      for (const fn of this.#callPipeline) {
+      for (const fn of this.#updatePipeline) {
         p = p.then(r => fn(r).then(r2 => r2 || r));
       }
     } else {

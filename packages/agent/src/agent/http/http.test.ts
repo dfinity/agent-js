@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { HttpAgent, Nonce } from '../index';
 import * as cbor from '../../cbor';
-import { Expiry, httpHeadersTransform, makeNonceTransform } from './transforms';
+import { Expiry, httpHeadersTransform } from './transforms';
 import {
   CallRequest,
   Envelope,
@@ -24,8 +24,6 @@ window.fetch = global.fetch;
 
 const HTTP_AGENT_HOST = 'http://127.0.0.1:4943';
 
-const DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS = 5 * 60 * 1000;
-const REPLICA_PERMITTED_DRIFT_MILLISECONDS = 60 * 1000;
 const NANOSECONDS_PER_MILLISECONDS = 1_000_000;
 
 function createIdentity(seed: number): Ed25519KeyIdentity {
