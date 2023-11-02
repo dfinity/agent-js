@@ -396,7 +396,7 @@ export function lookup_path(
         return tree;
       }
       default: {
-        return undefined;
+        return tree;
       }
     }
   }

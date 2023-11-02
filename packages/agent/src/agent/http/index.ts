@@ -27,8 +27,8 @@ import {
   SubmitRequestType,
 } from './types';
 import { AgentHTTPResponseError } from './errors';
-import { request } from '../../canisterStatus';
-import { CertificateVerificationError, SubnetStatus } from '../../certificate';
+import { SubnetStatus, request } from '../../canisterStatus';
+import { CertificateVerificationError } from '../../certificate';
 import { ed25519 } from '@noble/curves/ed25519';
 import { Ed25519PublicKey } from '../../public_key';
 
@@ -509,7 +509,7 @@ export class HttpAgent implements Agent {
 
     const subnetStatusPromise = new Promise<SubnetStatus | void>((resolve, reject) => {
       if (!this.#verifyQuerySignatures) {
-        resolve();
+        resolve(undefined);
       }
       const subnetStatus = this.#subnetKeys.get(canisterId.toString());
       if (subnetStatus) {
@@ -551,7 +551,7 @@ export class HttpAgent implements Agent {
     const domainSeparator = new TextEncoder().encode('\x0Bic-response');
     signatures?.forEach(sig => {
       const { timestamp, identity } = sig;
-      const nodeId = Principal.fromUint8Array(identity).toText(); //?
+      const nodeId = Principal.fromUint8Array(identity).toText();
       let hash: ArrayBuffer;
 
       // Hash is constructed differently depending on the status
