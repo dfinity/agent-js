@@ -443,7 +443,7 @@ export class HttpAgent implements Agent {
         );
       }
 
-      const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
+      const canister = Principal.from(canisterId);
       const sender = id?.getPrincipal() || Principal.anonymous();
 
       const request: QueryRequest = {
