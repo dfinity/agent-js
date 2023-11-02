@@ -318,7 +318,7 @@ describe('makeActor', () => {
     try {
       await actor.greet('test');
     } catch (error) {
-      expect(error.message).toBe(
+      expect((error as Error).message).toBe(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
       );
     }

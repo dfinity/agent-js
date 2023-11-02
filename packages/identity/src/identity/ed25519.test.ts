@@ -1,5 +1,4 @@
-import { DerEncodedPublicKey } from '@dfinity/agent';
-import { fromHexString } from '../buffer';
+import { DerEncodedPublicKey, fromHex } from '@dfinity/agent';
 import { Ed25519KeyIdentity, Ed25519PublicKey } from './ed25519';
 
 const testVectors: Array<[string, string]> = [
@@ -20,16 +19,16 @@ const testVectors: Array<[string, string]> = [
 describe('Ed25519PublicKey Tests', () => {
   test('DER encoding of ED25519 keys', async () => {
     testVectors.forEach(([rawPublicKeyHex, derEncodedPublicKeyHex]) => {
-      const publicKey = Ed25519PublicKey.fromRaw(fromHexString(rawPublicKeyHex));
-      const expectedDerPublicKey = fromHexString(derEncodedPublicKeyHex);
+      const publicKey = Ed25519PublicKey.fromRaw(fromHex(rawPublicKeyHex));
+      const expectedDerPublicKey = fromHex(derEncodedPublicKeyHex);
       expect(publicKey.toDer()).toEqual(expectedDerPublicKey);
     });
   });
 
   test('DER decoding of ED25519 keys', async () => {
     testVectors.forEach(([rawPublicKeyHex, derEncodedPublicKeyHex]) => {
-      const derPublicKey = fromHexString(derEncodedPublicKeyHex) as DerEncodedPublicKey;
-      const expectedPublicKey = fromHexString(rawPublicKeyHex);
+      const derPublicKey = fromHex(derEncodedPublicKeyHex) as DerEncodedPublicKey;
+      const expectedPublicKey = fromHex(rawPublicKeyHex);
       expect(new Uint8Array(Ed25519PublicKey.fromDer(derPublicKey).toRaw())).toEqual(
         new Uint8Array(expectedPublicKey),
       );
@@ -40,7 +39,7 @@ describe('Ed25519PublicKey Tests', () => {
     // Too short.
     expect(() => {
       Ed25519PublicKey.fromDer(
-        fromHexString(
+        fromHex(
           '302A300506032B6570032100B3997656BA51FF6DA37B61D8D549EC80717266ECF48FB5DA52B65441263484',
         ) as DerEncodedPublicKey,
       );
@@ -48,7 +47,7 @@ describe('Ed25519PublicKey Tests', () => {
     // Too long.
     expect(() => {
       Ed25519PublicKey.fromDer(
-        fromHexString(
+        fromHex(
           '302A300506032B6570032100B3997656BA51FF6DA37B61D8D549EC8071726' +
             '6ECF48FB5DA52B654412634844C00',
         ) as DerEncodedPublicKey,
@@ -58,7 +57,7 @@ describe('Ed25519PublicKey Tests', () => {
     // Invalid DER-encoding.
     expect(() => {
       Ed25519PublicKey.fromDer(
-        fromHexString(
+        fromHex(
           '002A300506032B6570032100B3997656BA51FF6DA37B61D8D549EC80717266ECF48FB5DA52B654412634844C',
         ) as DerEncodedPublicKey,
       );

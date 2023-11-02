@@ -174,7 +174,7 @@ test('delegation works for canisters within the subnet range', async () => {
   const rangeStart = Principal.fromHex('00000000002000000101');
   const rangeInterior = Principal.fromHex('000000000020000C0101');
   const rangeEnd = Principal.fromHex('00000000002FFFFF0101');
-  async function verifies(canisterId) {
+  async function verifies(canisterId: Principal) {
     jest.setSystemTime(new Date(Date.parse('2022-02-23T07:38:00.652Z')));
     await expect(
       Cert.Certificate.create({
@@ -197,7 +197,7 @@ test('delegation check fails for canisters outside of the subnet range', async (
   // 0x00000000002FFFFF0101
   const beforeRange = Principal.fromHex('00000000000000020101');
   const afterRange = Principal.fromHex('00000000003000020101');
-  async function certificateFails(canisterId) {
+  async function certificateFails(canisterId: Principal) {
     await expect(
       Cert.Certificate.create({
         certificate: fromHex(SAMPLE_CERT),

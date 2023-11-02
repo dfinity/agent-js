@@ -5,10 +5,13 @@ import {
   Signature,
   SignIdentity,
   uint8ToBuf,
+  ED25519_OID,
+  unwrapDER,
+  wrapDER,
+  fromHex,
+  toHex,
 } from '@dfinity/agent';
 import { ed25519 } from '@noble/curves/ed25519';
-import { fromHexString, toHexString } from '../buffer';
-import { ED25519_OID, unwrapDER, wrapDER } from './der';
 
 export class Ed25519PublicKey implements PublicKey {
   public static from(key: PublicKey): Ed25519PublicKey {
@@ -84,8 +87,8 @@ export class Ed25519KeyIdentity extends SignIdentity {
   public static fromParsedJson(obj: JsonnableEd25519KeyIdentity): Ed25519KeyIdentity {
     const [publicKeyDer, privateKeyRaw] = obj;
     return new Ed25519KeyIdentity(
-      Ed25519PublicKey.fromDer(fromHexString(publicKeyDer) as DerEncodedPublicKey),
-      fromHexString(privateKeyRaw),
+      Ed25519PublicKey.fromDer(fromHex(publicKeyDer) as DerEncodedPublicKey),
+      fromHex(privateKeyRaw),
     );
   }
 
@@ -124,7 +127,7 @@ export class Ed25519KeyIdentity extends SignIdentity {
    * Serialize this key to JSON.
    */
   public toJSON(): JsonnableEd25519KeyIdentity {
-    return [toHexString(this.#publicKey.toDer()), toHexString(this.#privateKey)];
+    return [toHex(this.#publicKey.toDer()), toHex(this.#privateKey)];
   }
 
   /**
@@ -176,7 +179,7 @@ export class Ed25519KeyIdentity extends SignIdentity {
   ) {
     const [signature, message, publicKey] = [sig, msg, pk].map(x => {
       if (typeof x === 'string') {
-        x = fromHexString(x);
+        x = fromHex(x);
       }
       if (x instanceof Uint8Array) {
         x = x.buffer;

@@ -733,8 +733,8 @@ describe('default host', () => {
   it('should use the existing host if the agent is used on a known hostname', () => {
     const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', '127.0.0.1'];
     for (const host of knownHosts) {
-      delete window.location;
-      window.location = {
+      delete (window as any).location;
+      (window as any).location = {
         hostname: host,
         protocol: 'https:',
       } as any;
@@ -745,8 +745,8 @@ describe('default host', () => {
   it('should correctly handle subdomains on known hosts', () => {
     const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', '127.0.0.1'];
     for (const host of knownHosts) {
-      delete window.location;
-      window.location = {
+      delete (window as any).location;
+      (window as any).location = {
         host: `foo.${host}`,
         hostname: `rrkah-fqaaa-aaaaa-aaaaq-cai.${host}`,
         protocol: 'https:',
@@ -758,9 +758,9 @@ describe('default host', () => {
   it('should handle port numbers for 127.0.0.1', () => {
     const knownHosts = ['127.0.0.1', '127.0.0.1'];
     for (const host of knownHosts) {
-      delete window.location;
+      delete (window as any).location;
       // hostname is different from host when port is specified
-      window.location = {
+      (window as any).location = {
         host: `${host}:4943`,
         hostname: `${host}`,
         protocol: 'http:',
