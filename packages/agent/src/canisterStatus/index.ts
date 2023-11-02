@@ -7,7 +7,6 @@ import {
   Certificate,
   CreateCertificateOptions,
   HashTree,
-  SubnetStatus,
   flatten_forks,
   lookupResultToBuffer,
   lookup_path,
@@ -15,6 +14,27 @@ import {
 import { toHex } from '../utils/buffer';
 import * as Cbor from '../cbor';
 import { decodeLeb128, decodeTime } from '../utils/leb';
+import { DerEncodedPublicKey } from '..';
+
+/**
+ * Represents the useful information about a subnet
+ * @param {string} subnetId the principal id of the canister's subnet
+ * @param {string[]} nodeKeys the keys of the individual nodes in the subnet
+ */
+export type SubnetStatus = {
+  // Principal as a string
+  subnetId: string;
+  nodeKeys: Map<string, DerEncodedPublicKey>;
+  metrics?: {
+    num_canisters: bigint;
+    canister_state_bytes: bigint;
+    consumed_cycles_total: {
+      current: bigint;
+      deleted: bigint;
+    };
+    update_transactions_total: bigint;
+  };
+};
 
 /**
  * Types of an entry on the canisterStatus map.
@@ -238,13 +258,14 @@ export const fetchNodeKeys = (
   const nodeTree = lookup_path(['subnet', delegation?.subnet_id as ArrayBuffer, 'node'], tree);
   const nodeForks = flatten_forks(nodeTree as HashTree) as HashTree[];
   nodeForks.length;
-
-  const nodeKeys = nodeForks.map(fork => {
+  const nodeKeys = new Map<string, DerEncodedPublicKey>();
+  nodeForks.forEach(fork => {
+    const node_id = Principal.from(new Uint8Array(fork[1] as ArrayBuffer)).toText();
     const derEncodedPublicKey = lookup_path(['public_key'], fork[2] as HashTree) as ArrayBuffer;
     if (derEncodedPublicKey.byteLength !== 44) {
       throw new Error('Invalid public key length');
     } else {
-      return toHex(derEncodedPublicKey);
+      nodeKeys.set(node_id, derEncodedPublicKey as DerEncodedPublicKey);
     }
   });
 

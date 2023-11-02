@@ -550,7 +550,8 @@ export class HttpAgent implements Agent {
 
     const domainSeparator = new TextEncoder().encode('\x0Bic-response');
     signatures?.forEach(sig => {
-      const { timestamp } = sig;
+      const { timestamp, identity } = sig;
+      const nodeId = Principal.fromUint8Array(identity).toText(); //?
       let hash: ArrayBuffer;
 
       // Hash is constructed differently depending on the status
@@ -579,24 +580,23 @@ export class HttpAgent implements Agent {
       const separatorWithHash = concat(domainSeparator, new Uint8Array(hash));
 
       // FIX: check for match without verifying N times
-      const matchingKey = subnetStatus?.nodeKeys.find(key => {
-        const pubKey = Ed25519PublicKey.fromDer(fromHex(key));
-        try {
-          const validity = ed25519.verify(
-            sig.signature,
-            new Uint8Array(separatorWithHash),
-            new Uint8Array(pubKey.rawKey),
-          );
-          if (validity) return true;
-        } catch (error) {
-          // suppress error
-        }
-        return false;
-      });
-
-      if (!matchingKey) {
-        throw new CertificateVerificationError('Invalid signature from replica signed query.');
+      const pubKey = subnetStatus?.nodeKeys.get(nodeId);
+      if (!pubKey) {
+        throw new CertificateVerificationError(
+          'Invalid signature from replica signed query: no matching node key found.',
+        );
       }
+      const rawKey = Ed25519PublicKey.fromDer(pubKey).rawKey;
+      const valid = ed25519.verify(
+        sig.signature,
+        new Uint8Array(separatorWithHash),
+        new Uint8Array(rawKey),
+      );
+      if (valid) return queryResponse;
+
+      throw new CertificateVerificationError(
+        `Invalid signature from replica ${nodeId} signed query.`,
+      );
     });
     return queryResponse;
   };

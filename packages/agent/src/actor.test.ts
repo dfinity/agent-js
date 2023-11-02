@@ -6,7 +6,7 @@ import { CallRequest, SubmitRequestType, UnSigned } from './agent/http/types';
 import * as cbor from './cbor';
 import { requestIdOf } from './request_id';
 import * as pollingImport from './polling';
-import { ActorConfig } from './actor';
+import { Actor, ActorConfig } from './actor';
 
 const importActor = async (mockUpdatePolling?: () => void) => {
   jest.dontMock('./polling');
@@ -336,6 +336,19 @@ describe('makeActor', () => {
       'Canister ID is required, but received undefined instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.',
     );
   });
+});
+
+test('whoami', async () => {
+  jest.useRealTimers();
+  const agent = new HttpAgent({ host: 'https://icp-api.io' });
+  const idl = () =>
+    IDL.Service({
+      whoami: IDL.Func([], [IDL.Principal], ['query']),
+    });
+  const canisterId = Principal.fromText('ivcos-eqaaa-aaaab-qablq-cai');
+  const actor = Actor.createActor(idl, { canisterId, agent });
+
+  const result = await actor.whoami();
 });
 
 // TODO: tests for rejected, unknown time out

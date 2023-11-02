@@ -5,6 +5,7 @@ import { concat, fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
 import * as bls from './utils/bls';
 import { decodeTime } from './utils/leb';
+import { DerEncodedPublicKey } from './auth';
 
 /**
  * A certificate may fail verification with respect to the provided public key
@@ -39,26 +40,6 @@ export type HashTree =
   | [typeof NodeId.Labeled, ArrayBuffer, HashTree]
   | [typeof NodeId.Leaf, ArrayBuffer]
   | [typeof NodeId.Pruned, ArrayBuffer];
-
-/**
- * Represents the useful information about a subnet
- * @param {string} subnetId the principal id of the canister's subnet
- * @param {string[]} nodeKeys the keys of the individual nodes in the subnet
- */
-export type SubnetStatus = {
-  // Principal as a string
-  subnetId: string;
-  nodeKeys: string[];
-  metrics?: {
-    num_canisters: bigint;
-    canister_state_bytes: bigint;
-    consumed_cycles_total: {
-      current: bigint;
-      deleted: bigint;
-    };
-    update_transactions_total: bigint;
-  };
-};
 
 /**
  * Make a human readable string out of a hash tree.
