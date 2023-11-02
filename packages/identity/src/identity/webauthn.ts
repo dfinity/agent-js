@@ -1,8 +1,15 @@
-import { DerEncodedPublicKey, PublicKey, Signature, SignIdentity } from '@dfinity/agent';
+import {
+  DerEncodedPublicKey,
+  PublicKey,
+  Signature,
+  SignIdentity,
+  wrapDER,
+  DER_COSE_OID,
+  fromHex,
+  toHex,
+} from '@dfinity/agent';
 import borc from 'borc';
-import { fromHexString, toHexString } from '../buffer';
 import { randomBytes } from '@noble/hashes/utils';
-import { DER_COSE_OID, wrapDER } from './der';
 
 function _coseToDerEncodedBlob(cose: ArrayBuffer): DerEncodedPublicKey {
   return wrapDER(cose, DER_COSE_OID).buffer as DerEncodedPublicKey;
@@ -132,7 +139,7 @@ export class WebAuthnIdentity extends SignIdentity {
       throw new Error('Invalid JSON string.');
     }
 
-    return new this(fromHexString(rawId), fromHexString(publicKey), undefined);
+    return new this(fromHex(rawId), fromHex(publicKey), undefined);
   }
 
   /**
@@ -234,8 +241,8 @@ export class WebAuthnIdentity extends SignIdentity {
    */
   public toJSON(): JsonnableWebAuthnIdentity {
     return {
-      publicKey: toHexString(this._publicKey.getCose()),
-      rawId: toHexString(this.rawId),
+      publicKey: toHex(this._publicKey.getCose()),
+      rawId: toHex(this.rawId),
     };
   }
 }
