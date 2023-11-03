@@ -270,7 +270,11 @@ describe('makeActor', () => {
         // todo: add method to test update call after Certificate changes have been adjusted
       });
     };
-    const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://127.0.0.1' });
+    const httpAgent = new HttpAgent({
+      fetch: mockFetch,
+      host: 'http://127.0.0.1',
+      verifyQuerySignatures: false,
+    });
     const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
     const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
     const actorWithHttpDetails = Actor.createActorWithHttpDetails(actorInterface, {

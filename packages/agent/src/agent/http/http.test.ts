@@ -136,6 +136,7 @@ test('queries with the same content should have the same signature', async () =>
   const httpAgent = new HttpAgent({
     fetch: mockFetch,
     host: 'http://127.0.0.1',
+    verifyQuerySignatures: false,
   });
 
   const methodName = 'greet';
@@ -702,6 +703,7 @@ test('should fetch with given call options and fetch options', async () => {
         __nativeResponseType: 'base64',
       },
     },
+    verifyQuerySignatures: false,
   });
 
   await httpAgent.call(canisterId, {

@@ -542,9 +542,14 @@ export class HttpAgent implements Agent {
     queryResponse: ApiQueryResponse,
     subnetStatus: SubnetStatus | void,
   ): ApiQueryResponse => {
-    if (!subnetStatus || this.#verifyQuerySignatures === false) {
+    if (this.#verifyQuerySignatures === false) {
       // This should not be called if the user has disabled verification
       return queryResponse;
+    }
+    if (!subnetStatus) {
+      throw new CertificateVerificationError(
+        'Invalid signature from replica signed query: no matching node key found.',
+      );
     }
     const { status, signatures, requestId } = queryResponse;
 
