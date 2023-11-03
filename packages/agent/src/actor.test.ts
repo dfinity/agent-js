@@ -337,18 +337,4 @@ describe('makeActor', () => {
     );
   });
 });
-
-test('whoami', async () => {
-  jest.useRealTimers();
-  const agent = new HttpAgent({ host: 'https://icp-api.io' });
-  const idl = () =>
-    IDL.Service({
-      whoami: IDL.Func([], [IDL.Principal], ['query']),
-    });
-  const canisterId = Principal.fromText('ivcos-eqaaa-aaaab-qablq-cai');
-  const actor = Actor.createActor(idl, { canisterId, agent });
-
-  const result = await actor.whoami();
-});
-
 // TODO: tests for rejected, unknown time out

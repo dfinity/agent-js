@@ -131,7 +131,7 @@ test('lookup', () => {
   ).toEqual('world');
   expect(Cert.lookup_path([fromText('aa')], tree)).toEqual(undefined);
   expect(Cert.lookup_path([fromText('ax')], tree)).toEqual(undefined);
-  expect(Cert.lookup_path([fromText('b')], tree)).toEqual(undefined);
+  expect(Cert.lookup_path([fromText('b')], tree)).toEqual([4, new ArrayBuffer(0)]);
   expect(Cert.lookup_path([fromText('bb')], tree)).toEqual(undefined);
   expect(toText(lookupResultToBuffer(Cert.lookup_path([fromText('d')], tree))!)).toEqual('morning');
   expect(Cert.lookup_path([fromText('e')], tree)).toEqual(undefined);

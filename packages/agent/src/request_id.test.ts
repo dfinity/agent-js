@@ -135,9 +135,13 @@ describe('hashValue', () => {
     const value = hashValue(BigInt(7));
     expect(value instanceof ArrayBuffer).toBe(true);
   });
+  it('should hash objects using HashOfMap on their contents', () => {
+    const value = hashValue({ foo: 'bar' });
+    expect(value instanceof ArrayBuffer).toBe(true);
+  });
   it('should throw otherwise', () => {
     const shouldThrow = () => {
-      hashValue({ foo: 'bar' });
+      hashValue(() => undefined);
     };
     expect(shouldThrow).toThrowError('Attempt to hash');
   });

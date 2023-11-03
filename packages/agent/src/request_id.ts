@@ -47,6 +47,8 @@ export function hashValue(value: unknown): ArrayBuffer {
     // the flow to be synchronous to ensure Safari touch id works.
     // } else if (value instanceof Promise) {
     //   return value.then(x => hashValue(x));
+  } else if (typeof value === 'object') {
+    return hashOfMap(value as Record<string, unknown>);
   } else if (typeof value === 'bigint') {
     // Do this check much later than the other bigint check because this one is much less
     // type-safe.

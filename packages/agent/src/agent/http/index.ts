@@ -559,7 +559,7 @@ export class HttpAgent implements Agent {
         const { reply } = queryResponse;
         hash = hashOfMap({
           status: status,
-          reply: hashOfMap(reply),
+          reply: reply,
           timestamp: BigInt(timestamp),
           request_id: requestId,
         });
