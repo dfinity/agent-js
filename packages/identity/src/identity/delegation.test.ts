@@ -1,6 +1,6 @@
 import { SignIdentity } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
-import { DelegationChain } from './delegation';
+import { Delegation, DelegationChain } from './delegation';
 import { Ed25519KeyIdentity } from './ed25519';
 
 function createIdentity(seed: number): SignIdentity {
@@ -8,24 +8,27 @@ function createIdentity(seed: number): SignIdentity {
   return Ed25519KeyIdentity.generate(s);
 }
 
+function randomPrincipal(): Principal {
+  const bytes = new Uint8Array(29);
+  crypto.getRandomValues(bytes);
+  return Principal.fromUint8Array(bytes);
+}
+
+const expiry_date = new Date(1609459200000);
+const current_date = new Date(1609459200000 - 10000);
+
+jest.useFakeTimers();
+jest.setSystemTime(current_date);
+
 test('delegation signs with proper keys (3)', async () => {
   const root = createIdentity(2);
   const middle = createIdentity(1);
   const bottom = createIdentity(0);
 
-  const rootToMiddle = await DelegationChain.create(
-    root,
-    middle.getPublicKey(),
-    new Date(1609459200000),
-  );
-  const middleToBottom = await DelegationChain.create(
-    middle,
-    bottom.getPublicKey(),
-    new Date(1609459200000),
-    {
-      previous: rootToMiddle,
-    },
-  );
+  const rootToMiddle = await DelegationChain.create(root, middle.getPublicKey(), expiry_date);
+  const middleToBottom = await DelegationChain.create(middle, bottom.getPublicKey(), expiry_date, {
+    previous: rootToMiddle,
+  });
 
   const golden = {
     delegations: [
@@ -60,23 +63,13 @@ test('DelegationChain can be serialized to and from JSON', async () => {
   const middle = createIdentity(1);
   const bottom = createIdentity(0);
 
-  const rootToMiddle = await DelegationChain.create(
-    root,
-    middle.getPublicKey(),
-    new Date(1609459200000),
-    {
-      targets: [Principal.fromText('jyi7r-7aaaa-aaaab-aaabq-cai')],
-    },
-  );
-  const middleToBottom = await DelegationChain.create(
-    middle,
-    bottom.getPublicKey(),
-    new Date(1609459200000),
-    {
-      previous: rootToMiddle,
-      targets: [Principal.fromText('u76ha-lyaaa-aaaab-aacha-cai')],
-    },
-  );
+  const rootToMiddle = await DelegationChain.create(root, middle.getPublicKey(), expiry_date, {
+    targets: [Principal.fromText('jyi7r-7aaaa-aaaab-aaabq-cai')],
+  });
+  const middleToBottom = await DelegationChain.create(middle, bottom.getPublicKey(), expiry_date, {
+    previous: rootToMiddle,
+    targets: [Principal.fromText('u76ha-lyaaa-aaaab-aacha-cai')],
+  });
 
   const rootToMiddleJson = JSON.stringify(rootToMiddle);
   // All strings in the JSON should be hex so it is clear how to decode this as different versions
@@ -96,4 +89,116 @@ test('DelegationChain can be serialized to and from JSON', async () => {
   const middleToBottomJson = JSON.stringify(middleToBottom);
   const middleToBottomActual = DelegationChain.fromJSON(middleToBottomJson);
   expect(middleToBottomActual).toEqual(middleToBottom);
+});
+
+test('DelegationChain has a maximum length of 20 delegations', async () => {
+  const identities = new Array(21).fill(0).map((_, i) => createIdentity(i));
+  let prevDelegationChain: DelegationChain | undefined;
+
+  for (let i = 0; i < identities.length - 1; i++) {
+    const identity = identities[i];
+    const nextIdentity = identities[i + 1];
+    let signedDelegation: DelegationChain;
+    if (i === 0) {
+      signedDelegation = await DelegationChain.create(
+        identity,
+        nextIdentity.getPublicKey(),
+        expiry_date,
+      );
+    } else {
+      signedDelegation = await DelegationChain.create(
+        identity,
+        nextIdentity.getPublicKey(),
+        expiry_date,
+        {
+          previous: prevDelegationChain,
+        },
+      );
+    }
+    prevDelegationChain = signedDelegation;
+  }
+  expect(prevDelegationChain?.delegations.length).toEqual(20);
+
+  const secondLastIdentity = identities[identities.length - 2];
+  const lastIdentity = identities[identities.length - 1];
+  expect(
+    DelegationChain.create(secondLastIdentity, lastIdentity.getPublicKey(), expiry_date, {
+      previous: prevDelegationChain,
+    }),
+  ).rejects.toThrow('Delegation chain cannot exceed 20');
+});
+
+test('Delegation can include multiple targets', async () => {
+  const pubkey = new Uint8Array([1, 2, 3]);
+  const expiration = BigInt(Number(expiry_date));
+  const targets = [
+    Principal.fromText('jyi7r-7aaaa-aaaab-aaabq-cai'),
+    Principal.fromText('u76ha-lyaaa-aaaab-aacha-cai'),
+  ];
+  const delegation = new Delegation(pubkey, expiration, targets);
+  expect(delegation.targets).toEqual(targets);
+  expect(delegation.toJSON()).toMatchSnapshot();
+});
+
+test('Delegation targets cannot exceed 1_000', () => {
+  const targets = new Array(1_001).fill(randomPrincipal());
+  expect(() => new Delegation(new Uint8Array([1, 2, 3]), BigInt(0), targets)).toThrow(
+    'Delegation targets cannot exceed 1000',
+  );
+});
+
+test('Delegation chains cannot repeat public keys', async () => {
+  const root = createIdentity(2);
+  const middle = createIdentity(1);
+  const bottom = createIdentity(0);
+
+  const rootToMiddle = await DelegationChain.create(root, middle.getPublicKey(), expiry_date);
+  const middleToBottom = await DelegationChain.create(middle, bottom.getPublicKey(), expiry_date, {
+    previous: rootToMiddle,
+  });
+
+  // Repeating middle's public key in the delegation chain should throw an error.
+  expect(
+    DelegationChain.create(middle, bottom.getPublicKey(), expiry_date, {
+      previous: middleToBottom,
+    }),
+  ).rejects.toThrow('Delegation target cannot be repeated in the chain.');
+
+  // Repeating root's public key in the delegation chain should throw an error.
+  expect(
+    DelegationChain.create(root, bottom.getPublicKey(), expiry_date, {
+      previous: middleToBottom,
+    }),
+  ).rejects.toThrow('Delegation target cannot be repeated in the chain.');
+});
+
+test('Cannot create a delegation chain with an outdated expiry', async () => {
+  const root = createIdentity(2);
+  const middle = createIdentity(1);
+  const bottom = createIdentity(0);
+
+  const rootToMiddle = await DelegationChain.create(root, middle.getPublicKey(), expiry_date);
+
+  expect(
+    DelegationChain.create(middle, bottom.getPublicKey(), new Date(0), {
+      previous: rootToMiddle,
+    }),
+  ).rejects.toThrow('Delegation expiration date cannot be in the past.');
+});
+
+test('Cannot create a delegation chain with an outdated delegation', async () => {
+  const root = createIdentity(2);
+  const middle = createIdentity(1);
+  const bottom = createIdentity(0);
+
+  const rootToMiddle = await DelegationChain.create(root, middle.getPublicKey(), expiry_date);
+
+  // Modify the delegation to have an expiry of 0.
+  (rootToMiddle.delegations[0].delegation as any).expiration = BigInt(0);
+
+  expect(
+    DelegationChain.create(middle, bottom.getPublicKey(), expiry_date, {
+      previous: rootToMiddle,
+    }),
+  ).rejects.toThrow('Previous delegation in the chain has expired.');
 });

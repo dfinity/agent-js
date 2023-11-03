@@ -1,0 +1,12 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Delegation can include multiple targets 1`] = `
+Object {
+  "expiration": "176bb3e7000",
+  "pubkey": "010203",
+  "targets": Array [
+    "00000000002000030101",
+    "000000000020008E0101",
+  ],
+}
+`;

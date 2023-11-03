@@ -704,10 +704,14 @@ describe('Migration from Ed25519Key', () => {
     jest.setSystemTime(new Date('2020-01-01T00:00:00.000Z'));
 
     // two days ago
-    const expiration = new Date('2019-12-30T00:00:00.000Z');
+    const properExpiration = new Date('2020-01-03T00:00:00.000Z');
+    const expiredExpiration = new Date('2019-12-30T00:00:00.000Z');
 
     const key = await Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
-    const chain = DelegationChain.create(key, key.getPublicKey(), expiration);
+    const chain = await DelegationChain.create(key, key.getPublicKey(), properExpiration);
+    // Override the expiration to be expired before storing
+    (chain.delegations[0].delegation as any).expiration =
+      BigInt(Number(expiredExpiration)) * BigInt(10000);
     const fakeStore: Record<any, any> = {};
     fakeStore[KEY_STORAGE_DELEGATION] = JSON.stringify((await chain).toJSON());
     fakeStore[KEY_STORAGE_KEY] = JSON.stringify(testSecrets);
