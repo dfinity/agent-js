@@ -39,8 +39,8 @@ export class Principal {
   public static from(other: unknown): Principal {
     if (typeof other === 'string') {
       return Principal.fromText(other);
-    } else if (other instanceof Uint8Array) {
-      return new Principal(other);
+    } else if (Object.getPrototypeOf(other) === Uint8Array.prototype) {
+      return new Principal(other as Uint8Array);
     } else if (
       typeof other === 'object' &&
       other !== null &&

@@ -5,7 +5,6 @@ import { concat, fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
 import * as bls from './utils/bls';
 import { decodeTime } from './utils/leb';
-import { DerEncodedPublicKey } from './auth';
 
 /**
  * A certificate may fail verification with respect to the provided public key
@@ -269,21 +268,11 @@ export class Certificate {
       maxAgeInMinutes: 60 * 24 * 30,
     });
 
-    const rangeLookup = cert.lookup(['subnet', d.subnet_id, 'canister_ranges']);
-    if (!rangeLookup) {
-      throw new CertificateVerificationError(
-        `Could not find canister ranges for subnet 0x${toHex(d.subnet_id)}`,
-      );
-    }
-    const ranges_arr: Array<[Uint8Array, Uint8Array]> = cbor.decode(rangeLookup);
-    const ranges: Array<[Principal, Principal]> = ranges_arr.map(v => [
-      Principal.fromUint8Array(v[0]),
-      Principal.fromUint8Array(v[1]),
-    ]);
-
-    const canisterInRange = ranges.some(
-      r => r[0].ltEq(this._canisterId) && r[1].gtEq(this._canisterId),
-    );
+    const canisterInRange = check_canister_ranges({
+      canisterId: this._canisterId,
+      subnetId: Principal.fromUint8Array(new Uint8Array(d.subnet_id)),
+      tree: cert.cert.tree,
+    });
     if (!canisterInRange) {
       throw new CertificateVerificationError(
         `Canister ${this._canisterId} not in range of delegations for subnet 0x${toHex(
@@ -436,4 +425,33 @@ function find_label(l: ArrayBuffer, trees: HashTree[]): HashTree | undefined {
       }
     }
   }
+}
+
+/**
+ * Check if a canister falls within a range of canisters
+ * @param canisterId Principal
+ * @param ranges [Principal, Principal][]
+ * @returns
+ */
+export function check_canister_ranges(params: {
+  canisterId: Principal;
+  subnetId: Principal;
+  tree: HashTree;
+}): boolean {
+  const { canisterId, subnetId, tree } = params;
+  const rangeLookup = lookup_path(['subnet', subnetId.toUint8Array(), 'canister_ranges'], tree);
+
+  if (!rangeLookup || !(rangeLookup instanceof ArrayBuffer)) {
+    throw new Error(`Could not find canister ranges for subnet ${subnetId}`);
+  }
+
+  const ranges_arr: Array<[Uint8Array, Uint8Array]> = cbor.decode(rangeLookup);
+  const ranges: Array<[Principal, Principal]> = ranges_arr.map(v => [
+    Principal.fromUint8Array(v[0]),
+    Principal.fromUint8Array(v[1]),
+  ]);
+
+  const canisterInRange = ranges.some(r => r[0].ltEq(canisterId) && r[1].gtEq(canisterId));
+
+  return canisterInRange;
 }

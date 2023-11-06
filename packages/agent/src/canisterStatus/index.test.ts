@@ -212,7 +212,11 @@ describe('node keys', () => {
       rootKey: fromHex(IC_ROOT_KEY),
     });
 
-    const nodeKeys = fetchNodeKeys(fromHex(mainnetApplication), fromHex(IC_ROOT_KEY));
+    const nodeKeys = fetchNodeKeys(
+      fromHex(mainnetApplication),
+      Principal.fromText('erxue-5aaaa-aaaab-qaagq-cai'),
+      fromHex(IC_ROOT_KEY),
+    );
     expect(nodeKeys).toMatchInlineSnapshot(`
       Object {
         "nodeKeys": Map {
@@ -245,7 +249,11 @@ describe('node keys', () => {
       rootKey: fromHex(IC_ROOT_KEY),
     });
 
-    const nodeKeys = fetchNodeKeys(fromHex(mainnetSystem), fromHex(IC_ROOT_KEY));
+    const nodeKeys = fetchNodeKeys(
+      fromHex(mainnetSystem),
+      Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai'),
+      fromHex(IC_ROOT_KEY),
+    );
     expect(nodeKeys).toMatchInlineSnapshot(`
       Object {
         "nodeKeys": Map {
@@ -305,7 +313,11 @@ describe('node keys', () => {
       rootKey: fromHex(IC_ROOT_KEY),
     });
 
-    const nodeKeys = fetchNodeKeys(fromHex(localApplication), fromHex(IC_ROOT_KEY));
+    const nodeKeys = fetchNodeKeys(
+      fromHex(localApplication),
+      Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai'),
+      fromHex(IC_ROOT_KEY),
+    );
     expect(nodeKeys).toMatchInlineSnapshot(`
       Object {
         "nodeKeys": Map {
@@ -365,7 +377,11 @@ describe('node keys', () => {
       rootKey: fromHex(IC_ROOT_KEY),
     });
 
-    const nodeKeys = fetchNodeKeys(fromHex(localSystem), fromHex(IC_ROOT_KEY));
+    const nodeKeys = fetchNodeKeys(
+      fromHex(localSystem),
+      Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai'),
+      fromHex(IC_ROOT_KEY),
+    );
     expect(nodeKeys).toMatchInlineSnapshot(`
       Object {
         "nodeKeys": Map {
