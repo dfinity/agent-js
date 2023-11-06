@@ -46,28 +46,37 @@ export class ExpirableMap<K, V> implements Map<K, V> {
   // Implementing the Map interface
 
   /**
-   * Set the value for the given key.
+   * Set the value for the given key. Prunes expired entries.
    * @param key for the entry
    * @param value of the entry
    * @returns this
    */
   set(key: K, value: V) {
+    this.prune();
     const entry = {
       value,
       timestamp: Date.now(),
     };
     this.#inner.set(key, entry);
+
     return this;
   }
 
   /**
-   * Get the value associated with the key, if it exists and has not expired. Prunes expired entries.
+   * Get the value associated with the key, if it exists and has not expired.
    * @param key K
    * @returns the value associated with the key, or undefined if the key is not present or has expired.
    */
   get(key: K) {
-    this.prune();
-    return this.#inner.get(key)?.value;
+    const entry = this.#inner.get(key);
+    if (entry === undefined) {
+      return undefined;
+    }
+    if (Date.now() - entry.timestamp > this.#expirationTime) {
+      this.#inner.delete(key);
+      return undefined;
+    }
+    return entry.value;
   }
 
   /**
