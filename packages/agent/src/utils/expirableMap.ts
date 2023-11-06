@@ -1,5 +1,11 @@
+export type ExpirableMapOptions<K, V> = {
+  source?: Iterable<[K, V]>;
+  expirationTime?: number;
+};
+
 /**
  * A map that expires entries after a given time.
+ * Defaults to 10 minutes.
  */
 export class ExpirableMap<K, V> implements Map<K, V> {
   // Internals
@@ -9,8 +15,18 @@ export class ExpirableMap<K, V> implements Map<K, V> {
   [Symbol.iterator]: () => IterableIterator<[K, V]> = this.entries.bind(this);
   [Symbol.toStringTag] = 'ExpirableMap';
 
-  constructor(expirationTime: number) {
-    this.#inner = new Map();
+  /**
+   * Create a new ExpirableMap.
+   * @param {ExpirableMapOptions<any, any>} options - options for the map.
+   * @param {Iterable<[any, any]>} options.source - an optional source of entries to initialize the map with.
+   * @param {number} options.expirationTime - the time in milliseconds after which entries will expire.
+   */
+  constructor(options: ExpirableMapOptions<K, V> = {}) {
+    const { source = [], expirationTime = 10 * 60 * 1000 } = options;
+    const currentTime = Date.now();
+    this.#inner = new Map(
+      [...source].map(([key, value]) => [key, { value, timestamp: currentTime }]),
+    );
     this.#expirationTime = expirationTime;
   }
 
