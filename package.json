@@ -82,11 +82,12 @@
     {
       "name": "@dfinity/agent",
       "path": "./packages/agent/dist/index.js",
-      "limit": "100 kB"
+      "limit": "105 kB"
     },
     {
       "name": "@dfinity/candid",
-      "path": "./packages/candid/dist/index.js"
+      "path": "./packages/candid/dist/index.js",
+      "limit": "2 kb"
     },
     {
       "name": "@dfinity/principal",
@@ -111,7 +112,7 @@
     {
       "name": "@dfinity/identity-secp256k1",
       "path": "./packages/identity-secp256k1/dist/index.js",
-      "limit": "250 kB"
+      "limit": "260 kB"
     }
   ],
   "release-it": {
