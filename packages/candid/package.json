@@ -45,7 +45,7 @@
     "prettier": "prettier --check \"src/**/*.ts\"",
     "prettier:write": "npm run prettier -- --write",
     "test": "jest",
-    "test:coverage": "jest --verbose --collectCoverage"
+    "test:coverage": "jest --collectCoverage"
   },
   "peerDependencies": {
     "@dfinity/principal": "^0.19.3"

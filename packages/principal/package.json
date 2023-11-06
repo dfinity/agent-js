@@ -42,7 +42,7 @@
     "lint:fix": "npm run lint -- --fix",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/principal --excludeInternal",
     "test": "jest",
-    "test:coverage": "jest --verbose --collectCoverage"
+    "test:coverage": "jest --collectCoverage"
   },
   "devDependencies": {
     "@types/jest": "^29.5.5",

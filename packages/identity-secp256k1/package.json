@@ -11,7 +11,7 @@
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/identity-secp256k1 --excludeInternal",
     "bundle": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=node",
     "test": "jest",
-    "test:coverage": "jest --verbose --collectCoverage"
+    "test:coverage": "jest --collectCoverage"
   },
   "dependencies": {
     "@dfinity/agent": "^0.19.3",

@@ -42,7 +42,7 @@
     "lint:fix": "npm run lint -- --fix",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/identity",
     "test": "jest",
-    "test:coverage": "jest --verbose --collectCoverage"
+    "test:coverage": "jest --collectCoverage"
   },
   "peerDependencies": {
     "@dfinity/agent": "^0.19.3",
