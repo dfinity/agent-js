@@ -264,8 +264,8 @@ export class Certificate {
       rootKey: this._rootKey,
       canisterId: this._canisterId,
       blsVerify: this._blsVerify,
-      // Maximum age of 30 days for delegation certificates
-      maxAgeInMinutes: 60 * 24 * 30,
+      // Do not check max age for delegation certificates
+      maxAgeInMinutes: Infinity,
     });
 
     const canisterInRange = check_canister_ranges({
