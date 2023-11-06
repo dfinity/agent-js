@@ -40,7 +40,7 @@
     "size-limit": "^8.2.6",
     "text-encoding": "^0.7.0",
     "ts-node": "^10.8.2",
-    "typescript": "^4.7.4",
+    "typescript": "^5.2.2",
     "vitest": "^0.34.6",
     "webcrypto-core": "^1.7.5"
   }
