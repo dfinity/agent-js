@@ -33,6 +33,10 @@
           <li>new Verify export on ed25519 because why not</li>
         </ul>
         <li>
+          chore: increases size limit for agent-js to allow for Ed25519 support for node key
+          signature verification
+        </li>
+        <li>
           feat!: replaces disableNonce feature with useQueryNonces. Going forward, updates will use
           nonces, but queries and readstate calls will not. Queries and readsatate calls will use
           nonces if `useQueryNonces` is set to true
