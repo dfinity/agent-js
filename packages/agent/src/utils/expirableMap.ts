@@ -45,21 +45,13 @@ export class ExpirableMap<K, V> implements Map<K, V> {
   }
 
   /**
-   * Get the value associated with the key, if it exists and has not expired.
+   * Get the value associated with the key, if it exists and has not expired. Prunes expired entries.
    * @param key K
    * @returns the value associated with the key, or undefined if the key is not present or has expired.
    */
   get(key: K) {
-    const entry = this.#inner.get(key);
-    if (!entry) return undefined;
-
-    const currentTime = Date.now();
-    if (currentTime - entry.timestamp > this.#expirationTime) {
-      this.#inner.delete(key);
-      return undefined;
-    }
-
-    return entry.value;
+    this.prune();
+    return this.#inner.get(key)?.value;
   }
 
   /**
