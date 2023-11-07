@@ -25,6 +25,5 @@
     "index.d.ts",
     "../identity-secp256k1/src/secp256k1.test.ts",
     "../identity-secp256k1/hdkey.ts"
-  ],
-  "references": [{ "path": "../agent" }]
+  ]
 }

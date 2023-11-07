@@ -15,7 +15,7 @@ export class CertificateVerificationError extends AgentError {
   }
 }
 
-interface Cert {
+export interface Cert {
   tree: HashTree;
   signature: ArrayBuffer;
   delegation?: Delegation;
@@ -39,26 +39,6 @@ export type HashTree =
   | [typeof NodeId.Labeled, ArrayBuffer, HashTree]
   | [typeof NodeId.Leaf, ArrayBuffer]
   | [typeof NodeId.Pruned, ArrayBuffer];
-
-/**
- * Represents the useful information about a subnet
- * @param {string} subnetId the principal id of the canister's subnet
- * @param {string[]} nodeKeys the keys of the individual nodes in the subnet
- */
-export type SubnetStatus = {
-  // Principal as a string
-  subnetId: string;
-  nodeKeys: string[];
-  metrics?: {
-    num_canisters: bigint;
-    canister_state_bytes: bigint;
-    consumed_cycles_total: {
-      current: bigint;
-      deleted: bigint;
-    };
-    update_transactions_total: bigint;
-  };
-};
 
 /**
  * Make a human readable string out of a hash tree.
@@ -177,7 +157,6 @@ type MetricsResult = number | bigint | Map<number, number | bigint> | undefined;
 
 export class Certificate {
   private readonly cert: Cert;
-  #nodeKeys: string[] = [];
 
   /**
    * Create a new instance of a certificate, automatically verifying it. Throws a
@@ -225,87 +204,6 @@ export class Certificate {
 
   public lookup_label(label: ArrayBuffer): ArrayBuffer | HashTree | undefined {
     return this.lookup([label]);
-  }
-
-  #toBigInt(n: MetricsResult): bigint {
-    if (typeof n === 'undefined') return BigInt(0);
-    if (typeof n === 'bigint') return n;
-    return BigInt(Number(n));
-  }
-
-  public cache_node_keys(root_key?: Uint8Array): SubnetStatus {
-    const tree = this.cert.tree;
-    let delegation = this.cert.delegation;
-    // On local replica, with System type subnet, there is no delegation
-    if (!delegation && typeof root_key !== 'undefined') {
-      delegation = {
-        subnet_id: Principal.selfAuthenticating(root_key).toUint8Array(),
-        certificate: new ArrayBuffer(0),
-      };
-    }
-    // otherwise use default NNS subnet id
-    else if (!delegation) {
-      delegation = {
-        subnet_id: Principal.fromText(
-          'tdb26-jop6k-aogll-7ltgs-eruif-6kk7m-qpktf-gdiqx-mxtrf-vb5e6-eqe',
-        ).toUint8Array(),
-        certificate: new ArrayBuffer(0),
-      };
-    }
-    const nodeTree = lookup_path(['subnet', delegation?.subnet_id as ArrayBuffer, 'node'], tree);
-    const nodeForks = flatten_forks(nodeTree as HashTree) as HashTree[];
-    nodeForks.length;
-
-    this.#nodeKeys = nodeForks.map(fork => {
-      const derEncodedPublicKey = lookup_path(['public_key'], fork[2] as HashTree) as ArrayBuffer;
-      if (derEncodedPublicKey.byteLength !== 44) {
-        throw new Error('Invalid public key length');
-      } else {
-        return toHex(derEncodedPublicKey);
-      }
-    });
-
-    const metricsTree = lookup_path(
-      ['subnet', delegation?.subnet_id as ArrayBuffer, 'metrics'],
-      tree,
-    );
-    let metrics: SubnetStatus['metrics'] | undefined = undefined;
-    if (metricsTree) {
-      const decoded = cbor.decode(metricsTree as ArrayBuffer) as Map<
-        number,
-        Map<number, number | bigint>
-      >;
-
-      // Cbor may decode values as either number or bigint. For consistency, we convert all numbers to bigint
-      const num_canisters = this.#toBigInt(decoded.get(0));
-      const canister_state_bytes = this.#toBigInt(decoded.get(1));
-      const current_consumed_cycles = this.#toBigInt(
-        (decoded.get(2) as Map<number, number>).get(0),
-      );
-      const deleted_consumed_cycles = this.#toBigInt(
-        (decoded.get(2) as Map<number, number>).get(1),
-      );
-      const update_transactions_total = this.#toBigInt(decoded.get(3));
-
-      metrics = {
-        num_canisters: num_canisters,
-        canister_state_bytes: canister_state_bytes,
-        consumed_cycles_total: {
-          current: current_consumed_cycles,
-          deleted: deleted_consumed_cycles,
-        },
-        update_transactions_total: update_transactions_total,
-      };
-    }
-
-    const result: SubnetStatus = {
-      subnetId: Principal.fromUint8Array(new Uint8Array(delegation.subnet_id)).toText(),
-      nodeKeys: this.#nodeKeys,
-    };
-    if (metrics) {
-      result.metrics = metrics;
-    }
-    return result;
   }
 
   private async verify(): Promise<void> {
@@ -366,25 +264,15 @@ export class Certificate {
       rootKey: this._rootKey,
       canisterId: this._canisterId,
       blsVerify: this._blsVerify,
-      // Maximum age of 30 days for delegation certificates
-      maxAgeInMinutes: 60 * 24 * 30,
+      // Do not check max age for delegation certificates
+      maxAgeInMinutes: Infinity,
     });
 
-    const rangeLookup = cert.lookup(['subnet', d.subnet_id, 'canister_ranges']);
-    if (!rangeLookup) {
-      throw new CertificateVerificationError(
-        `Could not find canister ranges for subnet 0x${toHex(d.subnet_id)}`,
-      );
-    }
-    const ranges_arr: Array<[Uint8Array, Uint8Array]> = cbor.decode(rangeLookup);
-    const ranges: Array<[Principal, Principal]> = ranges_arr.map(v => [
-      Principal.fromUint8Array(v[0]),
-      Principal.fromUint8Array(v[1]),
-    ]);
-
-    const canisterInRange = ranges.some(
-      r => r[0].ltEq(this._canisterId) && r[1].gtEq(this._canisterId),
-    );
+    const canisterInRange = check_canister_ranges({
+      canisterId: this._canisterId,
+      subnetId: Principal.fromUint8Array(new Uint8Array(d.subnet_id)),
+      tree: cert.cert.tree,
+    });
     if (!canisterInRange) {
       throw new CertificateVerificationError(
         `Canister ${this._canisterId} not in range of delegations for subnet 0x${toHex(
@@ -497,7 +385,7 @@ export function lookup_path(
         return tree;
       }
       default: {
-        return undefined;
+        return tree;
       }
     }
   }
@@ -508,7 +396,13 @@ export function lookup_path(
     return lookup_path(path.slice(1), t);
   }
 }
-function flatten_forks(t: HashTree): HashTree[] {
+
+/**
+ * If the tree is a fork, flatten it into an array of trees
+ * @param t - the tree to flatten
+ * @returns HashTree[] - the flattened tree
+ */
+export function flatten_forks(t: HashTree): HashTree[] {
   switch (t[0]) {
     case NodeId.Empty:
       return [];
@@ -518,6 +412,7 @@ function flatten_forks(t: HashTree): HashTree[] {
       return [t];
   }
 }
+
 function find_label(l: ArrayBuffer, trees: HashTree[]): HashTree | undefined {
   if (trees.length === 0) {
     return undefined;
@@ -530,4 +425,33 @@ function find_label(l: ArrayBuffer, trees: HashTree[]): HashTree | undefined {
       }
     }
   }
+}
+
+/**
+ * Check if a canister falls within a range of canisters
+ * @param canisterId Principal
+ * @param ranges [Principal, Principal][]
+ * @returns
+ */
+export function check_canister_ranges(params: {
+  canisterId: Principal;
+  subnetId: Principal;
+  tree: HashTree;
+}): boolean {
+  const { canisterId, subnetId, tree } = params;
+  const rangeLookup = lookup_path(['subnet', subnetId.toUint8Array(), 'canister_ranges'], tree);
+
+  if (!rangeLookup || !(rangeLookup instanceof ArrayBuffer)) {
+    throw new Error(`Could not find canister ranges for subnet ${subnetId}`);
+  }
+
+  const ranges_arr: Array<[Uint8Array, Uint8Array]> = cbor.decode(rangeLookup);
+  const ranges: Array<[Principal, Principal]> = ranges_arr.map(v => [
+    Principal.fromUint8Array(v[0]),
+    Principal.fromUint8Array(v[1]),
+  ]);
+
+  const canisterInRange = ranges.some(r => r[0].ltEq(canisterId) && r[1].gtEq(canisterId));
+
+  return canisterInRange;
 }

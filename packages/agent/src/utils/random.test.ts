@@ -8,7 +8,7 @@ beforeEach(() => {
   (global as any).crypto = undefined;
 });
 
-function isInteger(num) {
+function isInteger(num: number) {
   if (typeof num !== 'number') return false;
   if (isNaN(num)) return false;
   if (num % 1 !== 0) {

@@ -6,7 +6,7 @@ import { CallRequest, SubmitRequestType, UnSigned } from './agent/http/types';
 import * as cbor from './cbor';
 import { requestIdOf } from './request_id';
 import * as pollingImport from './polling';
-import { ActorConfig } from './actor';
+import { Actor, ActorConfig } from './actor';
 
 const importActor = async (mockUpdatePolling?: () => void) => {
   jest.dontMock('./polling');
@@ -270,7 +270,11 @@ describe('makeActor', () => {
         // todo: add method to test update call after Certificate changes have been adjusted
       });
     };
-    const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://127.0.0.1' });
+    const httpAgent = new HttpAgent({
+      fetch: mockFetch,
+      host: 'http://127.0.0.1',
+      verifyQuerySignatures: false,
+    });
     const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
     const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
     const actorWithHttpDetails = Actor.createActorWithHttpDetails(actorInterface, {
@@ -318,7 +322,7 @@ describe('makeActor', () => {
     try {
       await actor.greet('test');
     } catch (error) {
-      expect(error.message).toBe(
+      expect((error as Error).message).toBe(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
       );
     }
@@ -337,5 +341,4 @@ describe('makeActor', () => {
     );
   });
 });
-
 // TODO: tests for rejected, unknown time out

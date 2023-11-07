@@ -1,12 +1,4 @@
-export const bufEquals = (b1: ArrayBuffer, b2: ArrayBuffer): boolean => {
-  if (b1.byteLength !== b2.byteLength) return false;
-  const u1 = new Uint8Array(b1);
-  const u2 = new Uint8Array(b2);
-  for (let i = 0; i < u1.length; i++) {
-    if (u1[i] !== u2[i]) return false;
-  }
-  return true;
-};
+import { bufEquals } from './utils/buffer';
 
 export const encodeLenBytes = (len: number): number => {
   if (len <= 0x7f) {

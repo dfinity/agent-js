@@ -3,14 +3,39 @@ import { Principal } from '@dfinity/principal';
 import { AgentError } from '../errors';
 import { HttpAgent } from '../agent/http';
 import {
+  Cert,
   Certificate,
   CreateCertificateOptions,
-  SubnetStatus,
+  HashTree,
+  flatten_forks,
+  check_canister_ranges,
   lookupResultToBuffer,
+  lookup_path,
 } from '../certificate';
 import { toHex } from '../utils/buffer';
 import * as Cbor from '../cbor';
 import { decodeLeb128, decodeTime } from '../utils/leb';
+import { DerEncodedPublicKey } from '..';
+
+/**
+ * Represents the useful information about a subnet
+ * @param {string} subnetId the principal id of the canister's subnet
+ * @param {string[]} nodeKeys the keys of the individual nodes in the subnet
+ */
+export type SubnetStatus = {
+  // Principal as a string
+  subnetId: string;
+  nodeKeys: Map<string, DerEncodedPublicKey>;
+  metrics?: {
+    num_canisters: bigint;
+    canister_state_bytes: bigint;
+    consumed_cycles_total: {
+      current: bigint;
+      deleted: bigint;
+    };
+    update_transactions_total: bigint;
+  };
+};
 
 /**
  * Types of an entry on the canisterStatus map.
@@ -88,7 +113,8 @@ export const request = async (options: {
   agent: HttpAgent;
   paths?: Path[] | Set<Path>;
 }): Promise<StatusMap> => {
-  const { canisterId, agent, paths } = options;
+  const { agent, paths } = options;
+  const canisterId = Principal.from(options.canisterId);
 
   const uniquePaths = [...new Set(paths)];
 
@@ -110,10 +136,9 @@ export const request = async (options: {
           canisterId: canisterId,
         });
 
-        response.certificate;
         const lookup = (cert: Certificate, path: Path) => {
           if (path === 'subnet') {
-            const data = cert.cache_node_keys();
+            const data = fetchNodeKeys(response.certificate, canisterId, agent.rootKey);
             return {
               path: path,
               data,
@@ -207,6 +232,69 @@ export const request = async (options: {
   await Promise.all(promises);
 
   return status;
+};
+
+export const fetchNodeKeys = (
+  certificate: ArrayBuffer,
+  canisterId: Principal,
+  root_key?: ArrayBuffer | Uint8Array,
+): SubnetStatus => {
+  if (!canisterId._isPrincipal) {
+    throw new Error('Invalid canisterId');
+  }
+  const cert = Cbor.decode(new Uint8Array(certificate)) as Cert;
+  const tree = cert.tree;
+  let delegation = cert.delegation;
+  let subnetId: Principal;
+  if (delegation && delegation.subnet_id) {
+    subnetId = Principal.fromUint8Array(new Uint8Array(delegation.subnet_id));
+  }
+
+  // On local replica, with System type subnet, there is no delegation
+  else if (!delegation && typeof root_key !== 'undefined') {
+    subnetId = Principal.selfAuthenticating(new Uint8Array(root_key));
+    delegation = {
+      subnet_id: subnetId.toUint8Array(),
+      certificate: new ArrayBuffer(0),
+    };
+  }
+  // otherwise use default NNS subnet id
+  else {
+    subnetId = Principal.selfAuthenticating(
+      Principal.fromText(
+        'tdb26-jop6k-aogll-7ltgs-eruif-6kk7m-qpktf-gdiqx-mxtrf-vb5e6-eqe',
+      ).toUint8Array(),
+    );
+    delegation = {
+      subnet_id: subnetId.toUint8Array(),
+      certificate: new ArrayBuffer(0),
+    };
+  }
+
+  const canisterInRange = check_canister_ranges({ canisterId, subnetId, tree });
+  if (!canisterInRange) {
+    throw new Error('Canister not in range');
+  }
+
+  const nodeTree = lookup_path(['subnet', delegation?.subnet_id as ArrayBuffer, 'node'], tree);
+  const nodeForks = flatten_forks(nodeTree as HashTree) as HashTree[];
+  nodeForks.length;
+  const nodeKeys = new Map<string, DerEncodedPublicKey>();
+  nodeForks.forEach(fork => {
+    Object.getPrototypeOf(new Uint8Array(fork[1] as ArrayBuffer));
+    const node_id = Principal.from(new Uint8Array(fork[1] as ArrayBuffer)).toText();
+    const derEncodedPublicKey = lookup_path(['public_key'], fork[2] as HashTree) as ArrayBuffer;
+    if (derEncodedPublicKey.byteLength !== 44) {
+      throw new Error('Invalid public key length');
+    } else {
+      nodeKeys.set(node_id, derEncodedPublicKey as DerEncodedPublicKey);
+    }
+  });
+
+  return {
+    subnetId: Principal.fromUint8Array(new Uint8Array(delegation.subnet_id)).toText(),
+    nodeKeys,
+  };
 };
 
 export const encodePath = (path: Path, canisterId: Principal): ArrayBuffer[] => {

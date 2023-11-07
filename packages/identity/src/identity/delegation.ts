@@ -1,14 +1,15 @@
 import {
   DerEncodedPublicKey,
+  fromHex,
   HttpAgentRequest,
   PublicKey,
   requestIdOf,
   Signature,
   SignIdentity,
+  toHex,
 } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import * as cbor from 'simple-cbor';
-import { fromHexString, toHexString } from '../buffer';
 
 const domainSeparator = new TextEncoder().encode('\x1Aic-request-auth-delegation');
 const requestDomainSeparator = new TextEncoder().encode('\x0Aic-request');
@@ -18,7 +19,7 @@ function _parseBlob(value: unknown): ArrayBuffer {
     throw new Error('Invalid public key.');
   }
 
-  return fromHexString(value);
+  return fromHex(value);
 }
 
 /**
@@ -51,7 +52,7 @@ export class Delegation {
     // with an OID). After de-hex, if it's not obvious what it is, it's an ArrayBuffer.
     return {
       expiration: this.expiration.toString(16),
-      pubkey: toHexString(this.pubkey),
+      pubkey: toHex(this.pubkey),
       ...(this.targets && { targets: this.targets.map(p => p.toHex()) }),
     };
   }
@@ -247,15 +248,15 @@ export class DelegationChain {
         return {
           delegation: {
             expiration: delegation.expiration.toString(16),
-            pubkey: toHexString(delegation.pubkey),
+            pubkey: toHex(delegation.pubkey),
             ...(targets && {
               targets: targets.map(t => t.toHex()),
             }),
           },
-          signature: toHexString(signature),
+          signature: toHex(signature),
         };
       }),
-      publicKey: toHexString(this.publicKey),
+      publicKey: toHex(this.publicKey),
     };
   }
 }
@@ -293,6 +294,7 @@ export class DelegationIdentity extends SignIdentity {
 
   public getPublicKey(): PublicKey {
     return {
+      derKey: this._delegation.publicKey,
       toDer: () => this._delegation.publicKey,
     };
   }

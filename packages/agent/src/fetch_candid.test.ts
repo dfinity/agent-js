@@ -19,7 +19,11 @@ test('simulate fetching a Candid interface', async () => {
     );
   });
 
-  const agent = new HttpAgent({ fetch: mockFetch, host: 'http://127.0.0.1' });
+  const agent = new HttpAgent({
+    fetch: mockFetch,
+    host: 'http://127.0.0.1',
+    verifyQuerySignatures: false,
+  });
 
   const candid = await fetchCandid('ryjl3-tyaaa-aaaaa-aaaba-cai', agent);
 

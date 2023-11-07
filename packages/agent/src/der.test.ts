@@ -1,4 +1,5 @@
-import { bufEquals, encodeLenBytes, encodeLen, decodeLenBytes, decodeLen } from './der';
+import { encodeLenBytes, encodeLen, decodeLenBytes, decodeLen } from './der';
+import { bufEquals } from './utils/buffer';
 
 describe('bufEquals tests', () => {
   test('equal buffers', () => {

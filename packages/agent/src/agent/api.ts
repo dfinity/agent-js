@@ -43,21 +43,36 @@ export interface HttpDetailsResponse {
   headers: HttpHeaderField[];
 }
 
-export type ApiQueryResponse = QueryResponse & { httpDetails: HttpDetailsResponse };
+export type ApiQueryResponse = QueryResponse & {
+  httpDetails: HttpDetailsResponse;
+  requestId: RequestId;
+};
 
 export interface QueryResponseBase {
   status: QueryResponseStatus;
 }
 
+export type NodeSignature = {
+  // the batch time
+  timestamp: bigint;
+  // the signature
+  signature: Uint8Array;
+  // the ID of the node that created the signature
+  identity: Uint8Array;
+};
+
 export interface QueryResponseReplied extends QueryResponseBase {
   status: QueryResponseStatus.Replied;
   reply: { arg: ArrayBuffer };
+  signatures?: NodeSignature[];
 }
 
 export interface QueryResponseRejected extends QueryResponseBase {
   status: QueryResponseStatus.Rejected;
   reject_code: ReplicaRejectCode;
   reject_message: string;
+  error_code: string;
+  signatures?: NodeSignature[];
 }
 
 /**
