@@ -68,8 +68,7 @@
     "eslint": "^8.19.0",
     "jest": "^29.7.0",
     "size-limit": "^8.2.6",
-    "typedoc": "^0.22.11",
-    "typescript": "^5.2.2"
+    "typedoc": "^0.22.11"
   },
   "browser": {
     "fs": "./lib/cjs/utils/browserShim.js",

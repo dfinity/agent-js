@@ -1,6 +1,4 @@
-// tslint:disable:max-classes-per-file
 // This file is based on:
-// tslint:disable-next-line: max-line-length
 // https://github.com/dfinity-lab/dfinity/blob/9bca65f8edd65701ea6bdb00e0752f9186bbc893/docs/spec/public/index.adoc#cbor-encoding-of-requests-and-responses
 import borc from 'borc';
 import * as cbor from 'simple-cbor';
@@ -94,7 +92,6 @@ function decodePositiveBigInt(buf: Uint8Array): bigint {
   const len = buf.byteLength;
   let res = BigInt(0);
   for (let i = 0; i < len; i++) {
-    // tslint:disable-next-line:no-bitwise
     res = res * BigInt(0x100) + BigInt(buf[i]);
   }
 

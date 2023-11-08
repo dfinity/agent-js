@@ -2,8 +2,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as IDL from './idl';
 
-// tslint:disable:max-classes-per-file
-
 export interface ParseConfig {
   random?: boolean;
 }

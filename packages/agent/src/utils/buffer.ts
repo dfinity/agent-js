@@ -32,7 +32,6 @@ export function fromHex(hex: string): ArrayBuffer {
   }
   const buffer = [...hex]
     .reduce((acc, curr, i) => {
-      // tslint:disable-next-line:no-bitwise
       acc[(i / 2) | 0] = (acc[(i / 2) | 0] || '') + curr;
       return acc;
     }, [] as string[])

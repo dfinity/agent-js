@@ -54,9 +54,7 @@
     "size-limit": "^8.2.6",
     "text-encoding": "^0.7.0",
     "ts-node": "^10.8.2",
-    "tslint": "^5.20.0",
     "typedoc": "^0.22.11",
-    "typescript": "^5.2.2",
     "whatwg-fetch": "^3.0.0"
   },
   "size-limit": [

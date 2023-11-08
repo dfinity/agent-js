@@ -1,7 +1,8 @@
 /**
  * This file is generated from the candid for asset management.
  */
-/* tslint:disable */
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import type { Principal } from '@dfinity/principal';
 export type canister_id = Principal;

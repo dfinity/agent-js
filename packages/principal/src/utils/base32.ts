@@ -1,4 +1,3 @@
-// tslint:disable:no-bitwise
 const alphabet = 'abcdefghijklmnopqrstuvwxyz234567';
 
 // Build a lookup table for decoding.

@@ -1,7 +1,6 @@
 /**
  * @jest-environment node
  */
-// tslint:disable
 import * as IDL from './idl';
 import { Principal } from '@dfinity/principal';
 import { fromHexString, toHexString } from './utils/buffer';

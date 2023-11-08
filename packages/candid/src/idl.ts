@@ -1,4 +1,3 @@
-// tslint:disable:max-classes-per-file
 import { Principal as PrincipalId } from '@dfinity/principal';
 import { JsonValue } from './types';
 import { concat, PipeArrayBuffer as Pipe } from './utils/buffer';
@@ -17,13 +16,11 @@ import {
 } from './utils/leb128';
 import { iexp2 } from './utils/bigint-math';
 
-// tslint:disable:max-line-length
 /**
  * This module provides a combinator library to create serializers/deserializers
  * between JavaScript values and IDL used by canisters on the Internet Computer,
  * as documented at https://github.com/dfinity/candid/blob/119703ba342d2fef6ab4972d2541b9fe36ae8e36/spec/Candid.md
  */
-// tslint:enable:max-line-length
 
 const enum IDLTypeIds {
   Null = -1,

@@ -56,7 +56,6 @@
   },
   "devDependencies": {
     "@types/jest": "^29.5.5",
-    "@types/webappsec-credential-management": "^0.6.2",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
     "esbuild": "^0.15.16",
@@ -65,9 +64,7 @@
     "jest": "^29.7.0",
     "size-limit": "^8.2.6",
     "text-encoding": "^0.7.0",
-    "tslint": "^5.20.1",
     "typedoc": "^0.22.11",
-    "typescript": "^5.2.2",
     "whatwg-fetch": "^3.0.0"
   },
   "size-limit": [
