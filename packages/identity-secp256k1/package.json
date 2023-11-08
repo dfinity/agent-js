@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "@types/bs58check": "^2.1.0",
-    "@types/hdkey": "^2.0.3"
+    "@types/hdkey": "^2.0.3",
+    "@types/secp256k1": "^4.0.6"
   }
 }
