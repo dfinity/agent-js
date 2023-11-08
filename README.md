@@ -4,6 +4,8 @@ Use an Agent to interact with the Internet Computer from your JavaScript program
 
 This source code repository contains multiple npm packages, each under `./packages/`.
 
+Note: the `@noble/curves` `verifyShortSignature` function has been audited and merged, but has not yet been released. Once the release is available, we will update the `@dfinity/agent` dependency to use it instead of this manually compiled version
+
 ## Development
 
 ### Getting Started
