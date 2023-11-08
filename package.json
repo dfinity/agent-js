@@ -146,5 +146,8 @@
       "draft": true,
       "autoGenerate": true
     }
+  },
+  "dependencies": {
+    "@noble/curves": "^1.2.0"
   }
 }
