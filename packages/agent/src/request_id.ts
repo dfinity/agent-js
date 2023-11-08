@@ -25,7 +25,8 @@ interface ToHashable {
  */
 export function hashValue(value: unknown): ArrayBuffer {
   if (value instanceof borc.Tagged) {
-    return hashValue(value.value);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return hashValue((value as any).value);
   } else if (typeof value === 'string') {
     return hashString(value);
   } else if (typeof value === 'number') {
@@ -35,7 +36,7 @@ export function hashValue(value: unknown): ArrayBuffer {
   } else if (Array.isArray(value)) {
     const vals = value.map(hashValue);
     return hash(concat(...vals));
-  } else if (value && typeof value === 'object' && (value as any)._isPrincipal) {
+  } else if (value && typeof value === 'object' && (value as Principal)._isPrincipal) {
     return hash((value as Principal).toUint8Array());
   } else if (
     typeof value === 'object' &&
@@ -82,7 +83,6 @@ export function requestIdOf(request: Record<string, any>): RequestId {
  * Hash a map into an ArrayBuffer using the representation-independent-hash function.
  * https://sdk.dfinity.org/docs/interface-spec/index.html#hash-of-map
  * @param map - Any non-nested object
- * @param domainSeparator - optional domain separator
  * @returns ArrayBuffer
  */
 export function hashOfMap(map: Record<string, unknown>): ArrayBuffer {
