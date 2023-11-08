@@ -9,5 +9,5 @@ export const blsVerify = async (
   const pk = typeof primaryKey === 'string' ? primaryKey : toHex(primaryKey);
   const sig = typeof signature === 'string' ? signature : toHex(signature);
   const msg = typeof message === 'string' ? message : toHex(message);
-  return bls.verify(sig, msg, pk);
+  return bls.verifyShortSignature(sig, msg, pk);
 };

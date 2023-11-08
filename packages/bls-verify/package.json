@@ -39,16 +39,16 @@
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
     "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=node",
     "size-limit": "size-limit",
+    "test": "vitest",
     "ci": "npm run prettier && npm run lint && npm run test",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/bls-verify --excludeInternal",
-    "test": "jest",
     "prettier": "prettier --check \"src/**/*.ts\"",
     "prettier:write": "npm run prettier -- --write"
   },
   "dependencies": {
-    "amcl-js": "file:src/vendor/amcl-js"
+    "@noble/curves": "file:../../noble-curves-1.2.0.tgz"
   },
   "devDependencies": {
     "@types/jest": "^29.5.5",
