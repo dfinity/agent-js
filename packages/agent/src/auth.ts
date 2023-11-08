@@ -27,8 +27,10 @@ export type Signature = ArrayBuffer & { __signature__: void };
  * A Public Key implementation.
  */
 export interface PublicKey {
-  // Get the public key bytes encoded with DER.
   toDer(): DerEncodedPublicKey;
+  // rawKey and derKey are optional for backwards compatibility.
+  rawKey?: ArrayBuffer;
+  derKey?: DerEncodedPublicKey;
 }
 
 /**

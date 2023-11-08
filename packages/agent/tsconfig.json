@@ -23,5 +23,6 @@
     "target": "es2017",
     "tsBuildInfoFile": "./build_info.json"
   },
-  "include": ["types/*", "src/**/*.ts", "../candid/src/utils/bls.test.ts"]
+  "include": ["types/*", "src/**/*.ts", "../candid/src/utils/bls.test.ts"],
+  "exclude": ["**/src/**/__certificates__/**", "**/src/**/*.test.ts"]
 }

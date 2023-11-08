@@ -1,4 +1,4 @@
-import { DerEncodedPublicKey, PublicKey, Signature, SignIdentity } from '@dfinity/agent';
+import { DerEncodedPublicKey, Signature, SignIdentity } from '@dfinity/agent';
 
 /**
  * Options used in a {@link ECDSAKeyIdentity}

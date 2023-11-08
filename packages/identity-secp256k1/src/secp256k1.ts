@@ -39,9 +39,9 @@ export class Secp256k1PublicKey implements PublicKey {
     return unwrapDER(key, SECP256K1_OID);
   }
 
-  private readonly rawKey: ArrayBuffer;
+  readonly rawKey: ArrayBuffer;
 
-  private readonly derKey: DerEncodedPublicKey;
+  readonly derKey: DerEncodedPublicKey;
 
   // `fromRaw` and `fromDer` should be used for instantiation, not this constructor.
   private constructor(key: ArrayBuffer) {
@@ -160,7 +160,7 @@ export class Secp256k1KeyIdentity extends SignIdentity {
     return Secp256k1KeyIdentity.fromSecretKey(addrnode.privateKey);
   }
 
-  protected _publicKey: Secp256k1PublicKey;
+  _publicKey: Secp256k1PublicKey;
 
   protected constructor(publicKey: Secp256k1PublicKey, protected _privateKey: ArrayBuffer) {
     super();

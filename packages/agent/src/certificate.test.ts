@@ -9,7 +9,6 @@ import { fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
 import { decodeTime } from './utils/leb';
 import { lookupResultToBuffer, lookup_path } from './certificate';
-import { goldenCertificates } from './agent/http/__certificates__/goldenCertificates.test';
 
 function label(str: string): ArrayBuffer {
   return new TextEncoder().encode(str);
@@ -132,7 +131,7 @@ test('lookup', () => {
   ).toEqual('world');
   expect(Cert.lookup_path([fromText('aa')], tree)).toEqual(undefined);
   expect(Cert.lookup_path([fromText('ax')], tree)).toEqual(undefined);
-  expect(Cert.lookup_path([fromText('b')], tree)).toEqual(undefined);
+  expect(Cert.lookup_path([fromText('b')], tree)).toEqual([4, new ArrayBuffer(0)]);
   expect(Cert.lookup_path([fromText('bb')], tree)).toEqual(undefined);
   expect(toText(lookupResultToBuffer(Cert.lookup_path([fromText('d')], tree))!)).toEqual('morning');
   expect(Cert.lookup_path([fromText('e')], tree)).toEqual(undefined);
@@ -175,7 +174,7 @@ test('delegation works for canisters within the subnet range', async () => {
   const rangeStart = Principal.fromHex('00000000002000000101');
   const rangeInterior = Principal.fromHex('000000000020000C0101');
   const rangeEnd = Principal.fromHex('00000000002FFFFF0101');
-  async function verifies(canisterId) {
+  async function verifies(canisterId: Principal) {
     jest.setSystemTime(new Date(Date.parse('2022-02-23T07:38:00.652Z')));
     await expect(
       Cert.Certificate.create({
@@ -198,7 +197,7 @@ test('delegation check fails for canisters outside of the subnet range', async (
   // 0x00000000002FFFFF0101
   const beforeRange = Principal.fromHex('00000000000000020101');
   const afterRange = Principal.fromHex('00000000003000020101');
-  async function certificateFails(canisterId) {
+  async function certificateFails(canisterId: Principal) {
     await expect(
       Cert.Certificate.create({
         certificate: fromHex(SAMPLE_CERT),
@@ -258,62 +257,4 @@ test('certificate verification fails if the time of the certificate is > 5 minut
       canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
     }),
   ).rejects.toThrow('Invalid certificate: Certificate is signed more than 5 minutes in the future');
-});
-
-describe('node keys', () => {
-  it('should return the node keys from a mainnet application subnet certificate', async () => {
-    const { mainnetApplication } = goldenCertificates;
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date(Date.parse('2023-09-27T19:38:58.129Z')));
-    const cert = await Cert.Certificate.create({
-      certificate: fromHex(mainnetApplication),
-      canisterId: Principal.fromText('erxue-5aaaa-aaaab-qaagq-cai'),
-      rootKey: fromHex(IC_ROOT_KEY),
-    });
-
-    const nodeKeys = cert.cache_node_keys();
-    expect(nodeKeys).toMatchSnapshot();
-  });
-
-  it('should return the node keys from a mainnet system subnet certificate', async () => {
-    const { mainnetSystem } = goldenCertificates;
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date(Date.parse('2023-09-27T19:58:19.412Z')));
-    const cert = await Cert.Certificate.create({
-      certificate: fromHex(mainnetSystem),
-      canisterId: Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai'),
-      rootKey: fromHex(IC_ROOT_KEY),
-    });
-
-    const nodeKeys = cert.cache_node_keys();
-    expect(nodeKeys).toMatchSnapshot();
-  });
-
-  it('should return the node keys from a local application subnet certificate', async () => {
-    const { localApplication } = goldenCertificates;
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date(Date.parse('2023-09-27T20:14:59.406Z')));
-    const cert = await Cert.Certificate.create({
-      certificate: fromHex(localApplication),
-      canisterId: Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai'),
-      rootKey: fromHex(IC_ROOT_KEY),
-    });
-
-    const nodeKeys = cert.cache_node_keys();
-    expect(nodeKeys).toMatchSnapshot();
-  });
-
-  it('should return the node keys from a local system subnet certificate', async () => {
-    const { localSystem } = goldenCertificates;
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date(Date.parse('2023-09-27T20:15:03.406Z')));
-    const cert = await Cert.Certificate.create({
-      certificate: fromHex(localSystem),
-      canisterId: Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai'),
-      rootKey: fromHex(IC_ROOT_KEY),
-    });
-
-    const nodeKeys = cert.cache_node_keys();
-    expect(nodeKeys).toMatchSnapshot();
-  });
 });

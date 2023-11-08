@@ -3,8 +3,8 @@ import { Principal } from '@dfinity/principal';
 import { AgentError } from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
-import { requestIdOf } from '../../request_id';
-import { fromHex } from '../../utils/buffer';
+import { hashOfMap, requestIdOf } from '../../request_id';
+import { concat, fromHex } from '../../utils/buffer';
 import {
   Agent,
   ApiQueryResponse,
@@ -27,8 +27,10 @@ import {
   SubmitRequestType,
 } from './types';
 import { AgentHTTPResponseError } from './errors';
-import { request } from '../../canisterStatus';
-import { SubnetStatus } from '../../certificate';
+import { SubnetStatus, request } from '../../canisterStatus';
+import { CertificateVerificationError } from '../../certificate';
+import { ed25519 } from '@noble/curves/ed25519';
+import { Ed25519PublicKey } from '../../public_key';
 
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
@@ -117,6 +119,11 @@ export interface HttpAgentOptions {
    * @default 3
    */
   retryTimes?: number;
+  /**
+   * Whether the agent should verify signatures signed by node keys on query responses. Increases security, but adds overhead and must make a separate request to cache the node keys for the canister's subnet.
+   * @default true
+   */
+  verifyQuerySignatures?: boolean;
 }
 
 function getDefaultFetch(): typeof fetch {
@@ -180,6 +187,7 @@ export class HttpAgent implements Agent {
   #updatePipeline: HttpAgentRequestTransformFn[] = [];
 
   #subnetKeys: Map<string, SubnetStatus> = new Map();
+  #verifyQuerySignatures = true;
 
   constructor(options: HttpAgentOptions = {}) {
     if (options.source) {
@@ -231,6 +239,9 @@ export class HttpAgent implements Agent {
           'Could not infer host from window.location, defaulting to mainnet gateway of https://icp-api.io. Please provide a host to the HttpAgent constructor to avoid this warning.',
         );
       }
+    }
+    if (options.verifyQuerySignatures !== undefined) {
+      this.#verifyQuerySignatures = options.verifyQuerySignatures;
     }
     // Default is 3, only set from option if greater or equal to 0
     this._retryTimes =
@@ -424,63 +435,176 @@ export class HttpAgent implements Agent {
     fields: QueryFields,
     identity?: Identity | Promise<Identity>,
   ): Promise<ApiQueryResponse> {
-    const id = await (identity !== undefined ? await identity : await this._identity);
-    if (!id) {
-      throw new IdentityInvalidError(
-        "This identity has expired due this application's security policy. Please refresh your authentication.",
-      );
-    }
+    const makeQuery = async () => {
+      const id = await (identity !== undefined ? await identity : await this._identity);
+      if (!id) {
+        throw new IdentityInvalidError(
+          "This identity has expired due this application's security policy. Please refresh your authentication.",
+        );
+      }
 
-    const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
-    const sender = id?.getPrincipal() || Principal.anonymous();
+      const canister = Principal.from(canisterId);
+      const sender = id?.getPrincipal() || Principal.anonymous();
 
-    const request: QueryRequest = {
-      request_type: ReadRequestType.Query,
-      canister_id: canister,
-      method_name: fields.methodName,
-      arg: fields.arg,
-      sender,
-      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
-    };
+      const request: QueryRequest = {
+        request_type: ReadRequestType.Query,
+        canister_id: canister,
+        method_name: fields.methodName,
+        arg: fields.arg,
+        sender,
+        ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+      };
 
-    // TODO: remove this any. This can be a Signed or UnSigned request.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let transformedRequest: any = await this._transform({
-      request: {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/cbor',
-          ...(this._credentials ? { Authorization: 'Basic ' + btoa(this._credentials) } : {}),
+      const requestId = await requestIdOf(request);
+
+      // TODO: remove this any. This can be a Signed or UnSigned request.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let transformedRequest: any = await this._transform({
+        request: {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/cbor',
+            ...(this._credentials ? { Authorization: 'Basic ' + btoa(this._credentials) } : {}),
+          },
         },
-      },
-      endpoint: Endpoint.Query,
-      body: request,
+        endpoint: Endpoint.Query,
+        body: request,
+      });
+
+      // Apply transform for identity.
+      transformedRequest = await id?.transformRequest(transformedRequest);
+
+      const body = cbor.encode(transformedRequest.body);
+
+      const response = await this._requestAndRetry(() =>
+        this._fetch('' + new URL(`/api/v2/canister/${canister.toText()}/query`, this._host), {
+          ...this._fetchOptions,
+          ...transformedRequest.request,
+          body,
+        }),
+      );
+
+      const queryResponse: QueryResponse = cbor.decode(await response.arrayBuffer());
+
+      return {
+        ...queryResponse,
+        httpDetails: {
+          ok: response.ok,
+          status: response.status,
+          statusText: response.statusText,
+          headers: httpHeadersTransform(response.headers),
+        },
+        requestId,
+      };
+    };
+    const queryPromise = new Promise<ApiQueryResponse>((resolve, reject) => {
+      makeQuery()
+        .then(response => {
+          resolve(response);
+        })
+        .catch(error => {
+          reject(error);
+        });
     });
 
-    // Apply transform for identity.
-    transformedRequest = await id?.transformRequest(transformedRequest);
-
-    const body = cbor.encode(transformedRequest.body);
-    const response = await this._requestAndRetry(() =>
-      this._fetch('' + new URL(`/api/v2/canister/${canister.toText()}/query`, this._host), {
-        ...this._fetchOptions,
-        ...transformedRequest.request,
-        body,
-      }),
-    );
-
-    const queryResponse: QueryResponse = cbor.decode(await response.arrayBuffer());
-
-    return {
-      ...queryResponse,
-      httpDetails: {
-        ok: response.ok,
-        status: response.status,
-        statusText: response.statusText,
-        headers: httpHeadersTransform(response.headers),
-      },
-    };
+    const subnetStatusPromise = new Promise<SubnetStatus | void>((resolve, reject) => {
+      if (!this.#verifyQuerySignatures) {
+        resolve(undefined);
+      }
+      const subnetStatus = this.#subnetKeys.get(canisterId.toString());
+      if (subnetStatus) {
+        resolve(subnetStatus);
+      } else {
+        this.fetchSubnetKeys(canisterId)
+          .then(response => {
+            resolve(response);
+          })
+          .catch(error => {
+            reject(error);
+          });
+      }
+    });
+    const [query, subnetStatus] = await Promise.all([queryPromise, subnetStatusPromise]);
+    // Skip verification if the user has disabled it
+    if (!this.#verifyQuerySignatures) {
+      return query;
+    }
+    return this.#verifyQueryResponse(query, subnetStatus);
   }
+
+  /**
+   * See https://internetcomputer.org/docs/current/references/ic-interface-spec/#http-query for details on validation
+   * @param queryResponse - The response from the query
+   * @param subnetStatus - The subnet status, including all node keys
+   * @returns ApiQueryResponse
+   */
+  #verifyQueryResponse = (
+    queryResponse: ApiQueryResponse,
+    subnetStatus: SubnetStatus | void,
+  ): ApiQueryResponse => {
+    if (this.#verifyQuerySignatures === false) {
+      // This should not be called if the user has disabled verification
+      return queryResponse;
+    }
+    if (!subnetStatus) {
+      throw new CertificateVerificationError(
+        'Invalid signature from replica signed query: no matching node key found.',
+      );
+    }
+    const { status, signatures, requestId } = queryResponse;
+
+    const domainSeparator = new TextEncoder().encode('\x0Bic-response');
+    signatures?.forEach(sig => {
+      const { timestamp, identity } = sig;
+      const nodeId = Principal.fromUint8Array(identity).toText();
+      let hash: ArrayBuffer;
+
+      // Hash is constructed differently depending on the status
+      if (status === 'replied') {
+        const { reply } = queryResponse;
+        hash = hashOfMap({
+          status: status,
+          reply: reply,
+          timestamp: BigInt(timestamp),
+          request_id: requestId,
+        });
+      } else if (status === 'rejected') {
+        const { reject_code, reject_message, error_code } = queryResponse;
+        hash = hashOfMap({
+          status: status,
+          reject_code: reject_code,
+          reject_message: reject_message,
+          error_code: error_code,
+          timestamp: BigInt(timestamp),
+          request_id: requestId,
+        });
+      } else {
+        throw new Error(`Unknown status: ${status}`);
+      }
+
+      const separatorWithHash = concat(domainSeparator, new Uint8Array(hash));
+
+      // FIX: check for match without verifying N times
+      const pubKey = subnetStatus?.nodeKeys.get(nodeId);
+      if (!pubKey) {
+        throw new CertificateVerificationError(
+          'Invalid signature from replica signed query: no matching node key found.',
+        );
+      }
+      const rawKey = Ed25519PublicKey.fromDer(pubKey).rawKey;
+      const valid = ed25519.verify(
+        sig.signature,
+        new Uint8Array(separatorWithHash),
+        new Uint8Array(rawKey),
+      );
+      if (valid) return queryResponse;
+
+      throw new CertificateVerificationError(
+        `Invalid signature from replica ${nodeId} signed query.`,
+      );
+    });
+    return queryResponse;
+  };
 
   public async createReadStateRequest(
     fields: ReadStateOptions,
