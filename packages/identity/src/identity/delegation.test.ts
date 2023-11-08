@@ -1,4 +1,3 @@
-import { SignIdentity } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import { DelegationChain, DelegationIdentity } from './delegation';
 import { Ed25519KeyIdentity } from './ed25519';

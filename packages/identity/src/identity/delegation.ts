@@ -86,7 +86,6 @@ export interface SignedDelegation {
 
 /**
  * Sign a single delegation object for a period of time.
- *
  * @param from The identity that lends its delegation.
  * @param to The identity that receives the delegation.
  * @param expiration An expiration date for this delegation.
@@ -144,7 +143,6 @@ export class DelegationChain {
    *
    * To build a chain of more than 2 identities, this function needs to be called multiple times,
    * passing the previous delegation chain into the options argument. For example:
-   *
    * @example
    * const rootKey = createKey();
    * const middleKey = createKey();
@@ -159,7 +157,6 @@ export class DelegationChain {
    *
    * // We can now use a delegation identity that uses the delegation above:
    * const identity = DelegationIdentity.fromDelegation(bottomKey, middleToBottom);
-   *
    * @param from The identity that will delegate.
    * @param to The identity that gets delegated. It can now sign messages as if it was the
    *           identity above.
@@ -187,7 +184,6 @@ export class DelegationChain {
 
   /**
    * Creates a DelegationChain object from a JSON string.
-   *
    * @param json The JSON string to parse.
    */
   public static fromJSON(json: string | JsonnableDelegationChain): DelegationChain {
@@ -224,7 +220,6 @@ export class DelegationChain {
 
   /**
    * Creates a DelegationChain object from a list of delegations and a DER-encoded public key.
-   *
    * @param delegations The list of delegations.
    * @param publicKey The DER-encoded public key of the key-pair signing the first delegation.
    */
@@ -270,7 +265,6 @@ export class DelegationChain {
 export class DelegationIdentity extends SignIdentity {
   /**
    * Create a delegation without having access to delegateKey.
-   *
    * @param key The key used to sign the reqyests.
    * @param delegation A delegation object created using `createDelegation`.
    */

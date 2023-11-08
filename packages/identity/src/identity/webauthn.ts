@@ -30,7 +30,6 @@ type PublicKeyCredentialWithAttachment = PublicKeyCredential & {
  * the array and converting them into usable objects.
  *
  * See https://webauthn.guide/#registration (subsection "Example: Parsing the authenticator data").
- *
  * @param authData The authData field of the attestation response.
  * @returns The COSE key of the authData.
  */
@@ -65,7 +64,6 @@ export class CosePublicKey implements PublicKey {
  * because we don't need to verify the authenticity of the key on the server (we don't
  * register our keys with the IC). Any challenge would do, even one per key, randomly
  * generated.
- *
  * @param challenge The challenge to transform into a byte array. By default a hard
  *        coded string.
  */
