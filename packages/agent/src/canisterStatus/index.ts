@@ -90,7 +90,6 @@ export type CanisterStatusOptions = {
   canisterId: Principal;
   agent: HttpAgent;
   paths?: Path[] | Set<Path>;
-  blsVerify?: CreateCertificateOptions['blsVerify'];
 };
 
 /**

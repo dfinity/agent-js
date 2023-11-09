@@ -14,7 +14,6 @@ import { pollForResponse, PollStrategyFactory, strategy } from './polling';
 import { Principal } from '@dfinity/principal';
 import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
-import { CreateCertificateOptions } from './certificate';
 import managementCanisterIdl from './canisters/management_idl';
 import _SERVICE from './canisters/management_service';
 
@@ -130,11 +129,6 @@ export interface ActorConfig extends CallConfig {
     args: unknown[],
     callConfig: CallConfig,
   ): Partial<CallConfig> | void;
-
-  /**
-   * Polyfill for BLS Certificate verification in case wasm is not supported
-   */
-  blsVerify?: CreateCertificateOptions['blsVerify'];
 }
 
 // TODO: move this to proper typing when Candid support TypeScript.
@@ -308,7 +302,7 @@ export class Actor {
             func.annotations.push(ACTOR_METHOD_WITH_HTTP_DETAILS);
           }
 
-          this[methodName] = _createActorMethod(this, methodName, func, config.blsVerify);
+          this[methodName] = _createActorMethod(this, methodName, func);
         }
       }
     }
@@ -369,12 +363,7 @@ export type ActorConstructor = new (config: ActorConfig) => ActorSubclass;
 
 export const ACTOR_METHOD_WITH_HTTP_DETAILS = 'http-details';
 
-function _createActorMethod(
-  actor: Actor,
-  methodName: string,
-  func: IDL.FuncClass,
-  blsVerify?: CreateCertificateOptions['blsVerify'],
-): ActorMethod {
+function _createActorMethod(actor: Actor, methodName: string, func: IDL.FuncClass): ActorMethod {
   let caller: (options: CallConfig, ...args: unknown[]) => Promise<unknown>;
   if (func.annotations.includes('query') || func.annotations.includes('composite_query')) {
     caller = async (options, ...args) => {
@@ -437,7 +426,7 @@ function _createActorMethod(
       }
 
       const pollStrategy = pollingStrategyFactory();
-      const responseBytes = await pollForResponse(agent, ecid, requestId, pollStrategy, blsVerify);
+      const responseBytes = await pollForResponse(agent, ecid, requestId, pollStrategy);
       const shouldIncludeHttpDetails = func.annotations.includes(ACTOR_METHOD_WITH_HTTP_DETAILS);
 
       if (responseBytes !== undefined) {

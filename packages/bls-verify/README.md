@@ -20,11 +20,4 @@ npm i --save @dfinity/bls-verify
 
 ```ts
 import { blsVerify } from '@dfinity/bls-verify';
-import { createActor, canisterId } from '../declarations/example';
-
-const exampleActor = createActor(canisterId, {
-  actorOptions: {
-    blsVerify,
-  },
-});
 ```
