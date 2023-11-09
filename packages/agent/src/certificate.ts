@@ -3,7 +3,7 @@ import { AgentError } from './errors';
 import { hash } from './request_id';
 import { concat, fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
-import * as bls from './utils/bls';
+import { blsVerify as blsVerifyImport } from '@dfinity/bls-verify';
 import { decodeTime } from './utils/leb';
 
 /**
@@ -179,13 +179,12 @@ export class Certificate {
   private static createUnverified(options: CreateCertificateOptions): Certificate {
     let blsVerify = options.blsVerify;
     if (!blsVerify) {
-      blsVerify = bls.blsVerify;
+      blsVerify = blsVerifyImport;
     }
     return new Certificate(
       options.certificate,
       options.rootKey,
       options.canisterId,
-      blsVerify,
       options.maxAgeInMinutes,
     );
   }
@@ -194,8 +193,6 @@ export class Certificate {
     certificate: ArrayBuffer,
     private _rootKey: ArrayBuffer,
     private _canisterId: Principal,
-    private _blsVerify: VerifyFunc,
-    // Default to 5 minutes
     private _maxAgeInMinutes: number = 5,
   ) {
     this.cert = cbor.decode(new Uint8Array(certificate));
@@ -249,7 +246,7 @@ export class Certificate {
     }
 
     try {
-      sigVer = await this._blsVerify(new Uint8Array(key), new Uint8Array(sig), new Uint8Array(msg));
+      sigVer = await blsVerify(new Uint8Array(key), new Uint8Array(sig), new Uint8Array(msg));
     } catch (err) {
       sigVer = false;
     }
@@ -267,7 +264,6 @@ export class Certificate {
       certificate: d.certificate,
       rootKey: this._rootKey,
       canisterId: this._canisterId,
-      blsVerify: this._blsVerify,
       // Do not check max age for delegation certificates
       maxAgeInMinutes: Infinity,
     });
