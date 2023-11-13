@@ -4,7 +4,6 @@ const packageName = 'auth-client';
 module.exports = {
   testEnvironment: 'jsdom',
   ...baseConfig,
-  bail: false,
   moduleDirectories: ['node_modules'],
   modulePaths: [`<rootDir>/packages/${packageName}/src/`],
   setupFiles: [`./test-setup.ts`],

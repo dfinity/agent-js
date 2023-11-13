@@ -4,7 +4,6 @@ const packageName = 'principal';
 module.exports = {
   ...baseConfig,
   roots: [`<rootDir>/packages/${packageName}`],
-  bail: false,
   moduleDirectories: ['node_modules'],
   modulePaths: [`<rootDir>/packages/${packageName}/src/`],
   setupFiles: [`<rootDir>/packages/${packageName}/test-setup.ts`],

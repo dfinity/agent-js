@@ -114,7 +114,6 @@ export class PipeArrayBuffer {
    */
   public alloc(amount: number) {
     // Add a little bit of exponential growth.
-    // tslint:disable-next-line:no-bitwise
     const b = new ArrayBuffer(((this._buffer.byteLength + amount) * 1.2) | 0);
     const v = new Uint8Array(b, 0, this._view.byteLength + amount);
     v.set(this._view);

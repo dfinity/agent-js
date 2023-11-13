@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import * as IDL from './idl';
 import { Principal } from '@dfinity/principal';
 import * as UI from './candid-core';
 
-// tslint:disable:max-classes-per-file
 type InputBox = UI.InputBox;
 
 const InputConfig: UI.UIConfig = { parse: parsePrimitive };

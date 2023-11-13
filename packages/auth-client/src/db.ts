@@ -63,9 +63,9 @@ export class IdbKeyVal {
    *
    * @param {DBCreateOptions} options {@link DbCreateOptions}
    * @param {DBCreateOptions['dbName']} options.dbName name for the indexeddb database
-   * @default 'auth-client-db'
+   * @default
    * @param {DBCreateOptions['storeName']} options.storeName name for the indexeddb Data Store
-   * @default 'ic-keyval'
+   * @default
    * @param {DBCreateOptions['version']} options.version version of the database. Increment to safely upgrade
    * @constructs an {@link IdbKeyVal}
    */

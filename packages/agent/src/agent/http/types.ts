@@ -58,7 +58,6 @@ export interface HttpAgentRequestTransformFn {
 }
 
 // The fields in a "call" submit request.
-// tslint:disable:camel-case
 export interface CallRequest extends Record<string, any> {
   request_type: SubmitRequestType.Call;
   canister_id: Principal;
@@ -67,7 +66,6 @@ export interface CallRequest extends Record<string, any> {
   sender: Uint8Array | Principal;
   ingress_expiry: Expiry;
 }
-// tslint:enable:camel-case
 
 // The types of values allowed in the `request_type` field for submit requests.
 export enum SubmitRequestType {

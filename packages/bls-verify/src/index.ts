@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { CTX } from 'amcl-js';
 import { toHex } from './utils';
 

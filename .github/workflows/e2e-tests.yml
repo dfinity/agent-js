@@ -19,7 +19,7 @@ jobs:
         spec:
           - '0.16.1'
         node:
-          - 16
+          - 18
 
     steps:
       - uses: actions/checkout@v2
@@ -28,9 +28,11 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      - run: npm install -g npm@9
+      - run: npm install -g npm
 
       - run: npm install
+      - run: pushd e2e/browser && npm install && popd
+      - run: pushd e2e/node && npm install && popd
 
       # build monorepo incl. each subpackage
       - run: npm run build --workspaces --if-present
