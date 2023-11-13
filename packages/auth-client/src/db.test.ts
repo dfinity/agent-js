@@ -50,15 +50,15 @@ describe('indexeddb wrapper', () => {
     expect(storedKey).toMatchInlineSnapshot(
       keyPair,
       `
-      Object {
-        "privateKey": Object {
-          "algorithm": Object {
-            "hash": Object {
+      {
+        "privateKey": {
+          "algorithm": {
+            "hash": {
               "name": "SHA-256",
             },
             "modulusLength": 2048,
             "name": "RSA-OAEP",
-            "publicExponent": Object {
+            "publicExponent": {
               "0": 1,
               "1": 0,
               "2": 1,
@@ -66,18 +66,18 @@ describe('indexeddb wrapper', () => {
           },
           "extractable": true,
           "type": "private",
-          "usages": Array [
+          "usages": [
             "decrypt",
           ],
         },
-        "publicKey": Object {
-          "algorithm": Object {
-            "hash": Object {
+        "publicKey": {
+          "algorithm": {
+            "hash": {
               "name": "SHA-256",
             },
             "modulusLength": 2048,
             "name": "RSA-OAEP",
-            "publicExponent": Object {
+            "publicExponent": {
               "0": 1,
               "1": 0,
               "2": 1,
@@ -85,7 +85,7 @@ describe('indexeddb wrapper', () => {
           },
           "extractable": true,
           "type": "public",
-          "usages": Array [
+          "usages": [
             "encrypt",
           ],
         },

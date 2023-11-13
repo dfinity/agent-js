@@ -1,4 +1,5 @@
-// tslint:disable:max-classes-per-file
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Principal as PrincipalId } from '@dfinity/principal';
 import { JsonValue } from './types';
 import { concat, PipeArrayBuffer as Pipe } from './utils/buffer';
@@ -17,13 +18,11 @@ import {
 } from './utils/leb128';
 import { iexp2 } from './utils/bigint-math';
 
-// tslint:disable:max-line-length
 /**
  * This module provides a combinator library to create serializers/deserializers
  * between JavaScript values and IDL used by canisters on the Internet Computer,
  * as documented at https://github.com/dfinity/candid/blob/119703ba342d2fef6ab4972d2541b9fe36ae8e36/spec/Candid.md
  */
-// tslint:enable:max-line-length
 
 const enum IDLTypeIds {
   Null = -1,
@@ -228,6 +227,7 @@ export abstract class PrimitiveType<T = any> extends Type<T> {
     }
     return t;
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public _buildTypeTableImpl(typeTable: TypeTable): void {
     // No type table encoding for Primitive types.
     return;
@@ -742,7 +742,6 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
  *
  * Arrays of fixed-sized nat/int type (e.g. nat8), are encoded from and decoded to TypedArrays (e.g. Uint8Array).
  * Arrays of float or other non-primitive types are encoded/decoded as untyped array in Javascript.
- *
  * @param {Type} t
  */
 export class VecClass<T> extends ConstructType<T[]> {
@@ -948,7 +947,7 @@ export class OptClass<T> extends ConstructType<[T] | []> {
 
 /**
  * Represents an IDL Record
- * @param {Object} [fields] - mapping of function name to Type
+ * @param {object} [fields] - mapping of function name to Type
  */
 export class RecordClass extends ConstructType<Record<string, any>> {
   protected readonly _fields: Array<[string, Type]>;
@@ -1157,7 +1156,7 @@ export class TupleClass<T extends any[]> extends RecordClass {
 
 /**
  * Represents an IDL Variant
- * @param {Object} [fields] - mapping of function name to Type
+ * @param {object} [fields] - mapping of function name to Type
  */
 export class VariantClass extends ConstructType<Record<string, any>> {
   private readonly _fields: Array<[string, Type]>;

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import 'fake-indexeddb/auto';
 import { Actor, HttpAgent } from '@dfinity/agent';
 import { AgentError } from '@dfinity/agent/lib/cjs/errors';
@@ -308,7 +309,7 @@ describe('Auth Client', () => {
     };
 
     // setup auth client
-    const test = await AuthClient.create({
+    await AuthClient.create({
       identity,
       idleOptions: {
         idleTimeout: 1000,
@@ -374,7 +375,7 @@ describe('Auth Client', () => {
       set: jest.fn(),
     };
 
-    const test = await AuthClient.create({
+    await AuthClient.create({
       storage,
       idleOptions: {
         idleTimeout: 1000,
@@ -730,7 +731,7 @@ describe('Migration from Ed25519Key', () => {
 
     // expect the delegation to be removed
     expect(storage.remove as jest.Mock).toBeCalledTimes(3);
-    expect(fakeStore).toMatchInlineSnapshot(`Object {}`);
+    expect(fakeStore).toMatchInlineSnapshot(`{}`);
   });
   it('should generate and store a ECDSAKey if no key is stored', async () => {
     const fakeStore: Record<any, any> = {};
@@ -741,11 +742,11 @@ describe('Migration from Ed25519Key', () => {
         fakeStore[x] = y;
       }),
     };
-    const client = await AuthClient.create({ storage });
+    await AuthClient.create({ storage });
 
     // It should have stored a cryptoKey
     expect(Object.keys(fakeStore[KEY_STORAGE_KEY])).toMatchInlineSnapshot(`
-      Array [
+      [
         "privateKey",
         "publicKey",
       ]

@@ -1,5 +1,3 @@
-// tslint:disable:no-bitwise
-
 // This file is translated to JavaScript from
 // https://lxp32.github.io/docs/a-simple-example-crc32-calculation/
 const lookUpTable: Uint32Array = new Uint32Array([
@@ -45,7 +43,6 @@ export function getCrc32(buf: ArrayBufferLike): number {
   const b = new Uint8Array(buf);
   let crc = -1;
 
-  // tslint:disable-next-line:prefer-for-of
   for (let i = 0; i < b.length; i++) {
     const byte = b[i];
     const t = (byte ^ crc) & 0xff;

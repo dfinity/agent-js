@@ -1,7 +1,8 @@
 /**
  * This file is generated from the candid for asset management.
  */
-/* tslint:disable */
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 export default ({ IDL }) => {
   const canister_id = IDL.Principal;

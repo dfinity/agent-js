@@ -2,8 +2,8 @@
 import { DerEncodedPublicKey, KeyPair, Signature } from '@dfinity/agent';
 import Secp256k1 from 'secp256k1';
 import { sha256 } from '@noble/hashes/sha256';
-import { randomBytes } from 'tweetnacl';
-import hdkey from './hdkey';
+import { randomBytes } from '@noble/hashes/utils';
+import hdkey from 'hdkey';
 import { mnemonicToSeedSync } from 'bip39';
 import { PublicKey, SignIdentity } from '@dfinity/agent';
 import { fromHexString, toHexString } from './buffer';

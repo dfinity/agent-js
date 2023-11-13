@@ -19,8 +19,8 @@ jobs:
         spec:
           - '0.16.1'
         node:
-          - 14
-          - 16
+          - 18
+          - 20
 
     steps:
       - uses: actions/checkout@v2
@@ -29,9 +29,9 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      - run: npm install -g npm@9
+      - run: npm install -g npm
 
-      - run: npm ci
+      - run: npm install
 
       # build monorepo incl. each subpackage
       - run: npm run build --workspaces --if-present

@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * @jest-environment node
  */
-// tslint:disable
 import * as IDL from './idl';
 import { Principal } from '@dfinity/principal';
 import { fromHexString, toHexString } from './utils/buffer';

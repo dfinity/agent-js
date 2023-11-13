@@ -4,8 +4,6 @@ import * as base64Arraybuffer from 'base64-arraybuffer';
 // https://github.com/dfinity/miracl_core_bls12381/)
 import { wasmBytesBase64 } from './wasm';
 
-/* tslint:disable */
-/* eslint-disable */
 let wasm: InitOutput;
 
 const wasmBytes = base64Arraybuffer.decode(wasmBytesBase64);
