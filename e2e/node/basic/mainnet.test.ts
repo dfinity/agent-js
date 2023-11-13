@@ -118,6 +118,7 @@ describe('controllers', () => {
   it('should return the controllers of a canister with multiple controllers', async () => {
     const agent = new HttpAgent({ host: 'https://icp-api.io' });
     const status = await CanisterStatus.request({
+      // Whoami canister
       canisterId: Principal.from('ivcos-eqaaa-aaaab-qablq-cai'),
       agent: agent,
       paths: ['controllers'],
@@ -134,14 +135,28 @@ describe('controllers', () => {
   it('should return the controllers of a canister with one controller', async () => {
     const agent = new HttpAgent({ host: 'https://icp-api.io' });
     const status = await CanisterStatus.request({
+      // NNS Governance Canister
       canisterId: Principal.from('rrkah-fqaaa-aaaaa-aaaaq-cai'),
       agent: agent,
       paths: ['controllers'],
     });
+    // Should be root canister
     expect((status.get('controllers') as Principal[]).map(p => p.toText())).toMatchInlineSnapshot(`
     [
       "r7inp-6aaaa-aaaaa-aaabq-cai",
     ]
+  `);
+  });
+  it('should return the controllers of a canister with no controllers', async () => {
+    const agent = new HttpAgent({ host: 'https://icp-api.io' });
+    const status = await CanisterStatus.request({
+      // nomeata's capture-the-ic-token canister
+      canisterId: Principal.from('fj6bh-taaaa-aaaab-qaacq-cai'),
+      agent: agent,
+      paths: ['controllers'],
+    });
+    expect((status.get('controllers') as Principal[]).map(p => p.toText())).toMatchInlineSnapshot(`
+    []
   `);
   });
 });
