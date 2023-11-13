@@ -1,8 +1,8 @@
-import { Actor, AnonymousIdentity, HttpAgent, Identity } from '@dfinity/agent';
+import { Actor, AnonymousIdentity, HttpAgent, Identity, CanisterStatus } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, test, vi } from 'vitest';
 import { makeAgent } from '../utils/agent';
 
 const createWhoamiActor = async (identity: Identity) => {
@@ -111,5 +111,52 @@ describe('certified query', () => {
         },
       ]
     `);
+  });
+});
+
+describe('controllers', () => {
+  it('should return the controllers of a canister with multiple controllers', async () => {
+    const agent = new HttpAgent({ host: 'https://icp-api.io' });
+    const status = await CanisterStatus.request({
+      // Whoami canister
+      canisterId: Principal.from('ivcos-eqaaa-aaaab-qablq-cai'),
+      agent: agent,
+      paths: ['controllers'],
+    });
+    expect((status.get('controllers') as Principal[]).map(p => p.toText())).toMatchInlineSnapshot(`
+    [
+      "hgfyw-myaaa-aaaab-qaaoa-cai",
+      "b73qn-rqaaa-aaaap-aazvq-cai",
+      "aux4w-bi6yf-a3bhr-zydhx-qvf2p-ymdeg-ddvg6-gmobi-ct4dk-wf4xd-nae",
+      "jhnlf-yu2dz-v7beb-c77gl-76tj7-shaqo-5qfvi-htvel-gzamb-bvzx6-yqe",
+    ]
+  `);
+  });
+  it('should return the controllers of a canister with one controller', async () => {
+    const agent = new HttpAgent({ host: 'https://icp-api.io' });
+    const status = await CanisterStatus.request({
+      // NNS Governance Canister
+      canisterId: Principal.from('rrkah-fqaaa-aaaaa-aaaaq-cai'),
+      agent: agent,
+      paths: ['controllers'],
+    });
+    // Should be root canister
+    expect((status.get('controllers') as Principal[]).map(p => p.toText())).toMatchInlineSnapshot(`
+    [
+      "r7inp-6aaaa-aaaaa-aaabq-cai",
+    ]
+  `);
+  });
+  it('should return the controllers of a canister with no controllers', async () => {
+    const agent = new HttpAgent({ host: 'https://icp-api.io' });
+    const status = await CanisterStatus.request({
+      // nomeata's capture-the-ic-token canister
+      canisterId: Principal.from('fj6bh-taaaa-aaaab-qaacq-cai'),
+      agent: agent,
+      paths: ['controllers'],
+    });
+    expect((status.get('controllers') as Principal[]).map(p => p.toText())).toMatchInlineSnapshot(`
+    []
+  `);
   });
 });
