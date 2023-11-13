@@ -30,6 +30,7 @@ import { AgentHTTPResponseError } from './errors';
 import { SubnetStatus, request } from '../../canisterStatus';
 import { CertificateVerificationError } from '../../certificate';
 import { ed25519 } from '@noble/curves/ed25519';
+import { ExpirableMap } from '../../utils/expirableMap';
 import { Ed25519PublicKey } from '../../public_key';
 
 export * from './transforms';
@@ -186,7 +187,9 @@ export class HttpAgent implements Agent {
   #queryPipeline: HttpAgentRequestTransformFn[] = [];
   #updatePipeline: HttpAgentRequestTransformFn[] = [];
 
-  #subnetKeys: Map<string, SubnetStatus> = new Map();
+  #subnetKeys: ExpirableMap<string, SubnetStatus> = new ExpirableMap({
+    expirationTime: 60 * 60 * 1000, // 1 hour
+  });
   #verifyQuerySignatures = true;
 
   constructor(options: HttpAgentOptions = {}) {
