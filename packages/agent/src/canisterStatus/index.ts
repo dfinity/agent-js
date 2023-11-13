@@ -349,10 +349,10 @@ const decodeUtf8 = (buf: ArrayBuffer): string => {
   return new TextDecoder().decode(buf);
 };
 
-// Controllers are CBOR-encoded buffers, starting with a Tag we don't need
+// Controllers are CBOR-encoded buffers
 const decodeControllers = (buf: ArrayBuffer): Principal[] => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [tag, ...controllersRaw] = decodeCbor(buf);
+  const controllersRaw = decodeCbor(buf);
   return controllersRaw.map((buf: ArrayBuffer) => {
     return Principal.fromUint8Array(new Uint8Array(buf));
   });
