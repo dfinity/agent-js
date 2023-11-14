@@ -19,8 +19,3 @@ global.TextEncoder = TextEncoder;
 // (global.fetch as any) = fetch;
 import fetch from 'isomorphic-fetch';
 global.fetch = fetch;
-import * as crypto from 'crypto';
-
-(global as any).crypto = {
-  subtle: (crypto.webcrypto as any).subtle,
-};
