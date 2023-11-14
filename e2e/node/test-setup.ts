@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // This file may be used to polyfill features that aren't available in the test
 // environment, i.e. JSDom.
 //

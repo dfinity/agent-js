@@ -24,7 +24,7 @@ const setup = async () => {
 describe('ECDSAKeyIdentity tests with SubtleCrypto', () => {
   it('generates a new identity', () => {
     cy.visit('http://localhost:1234');
-    cy.window().then(async window => {
+    cy.window().then(async () => {
       const { principal1 } = await setup();
       const str = principal1.toString();
       expect(str).to.be.an('string');
@@ -32,7 +32,7 @@ describe('ECDSAKeyIdentity tests with SubtleCrypto', () => {
   });
   it('can persist an identity in indexeddb', () => {
     cy.visit('http://localhost:1234');
-    cy.window().then(async window => {
+    cy.window().then(async () => {
       const { principal1, identity1 } = await setup();
       const str = principal1.toString();
       expect(str).to.be.an('string');
