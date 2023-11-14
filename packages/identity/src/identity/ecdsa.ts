@@ -26,6 +26,9 @@ export interface DerCryptoKey extends CryptoKey {
  * @returns subleCrypto
  */
 function _getEffectiveCrypto(subtleCrypto: CryptoKeyOptions['subtleCrypto']): SubtleCrypto {
+  if (typeof global !== 'undefined' && global['crypto'] && global['crypto']['subtle']) {
+    return global['crypto']['subtle'];
+  }
   if (subtleCrypto) {
     return subtleCrypto;
   } else if (typeof crypto !== 'undefined' && crypto['subtle']) {

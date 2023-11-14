@@ -62,6 +62,7 @@ async function createEcdsaIdentityActor(
   idl: IDL.InterfaceFactory,
   identity?: SignIdentity,
 ): Promise<any> {
+  global.crypto;
   let effectiveIdentity: SignIdentity;
   if (identity) {
     effectiveIdentity = identity;
