@@ -1,8 +1,8 @@
 import { createActor } from '../canisters/declarations/counter/index';
-import { test, expect } from 'vitest';
+import { test, expect, TestAPI } from 'vitest';
 import { makeAgent } from '../utils/agent';
 
-let mitmTest: any = test;
+let mitmTest: TestAPI | typeof test.skip = test;
 if (!process.env['MITM']) {
   mitmTest = test.skip;
 }

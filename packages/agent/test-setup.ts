@@ -8,8 +8,11 @@
 // Node.js in a similar way.
 
 global.crypto = require('@trust/webcrypto');
-global.TextEncoder = require('text-encoding').TextEncoder;
-global.TextDecoder = require('text-encoding').TextDecoder;
+import { TextEncoder } from 'text-encoding';
+global.TextEncoder = TextEncoder;
+import { TextDecoder } from 'text-encoding';
+global.TextDecoder = TextDecoder;
+
 global.fetch = require('isomorphic-fetch');
 Object.defineProperty(global, 'performance', {
   writable: true,

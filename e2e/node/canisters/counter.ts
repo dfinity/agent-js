@@ -1,9 +1,10 @@
-import { Actor, HttpAgentOptions } from '@dfinity/agent';
+import { Actor, ActorSubclass, HttpAgentOptions } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { readFileSync } from 'fs';
 import path from 'path';
-import agent, { identity, makeAgent } from '../utils/agent';
+import agent, { makeAgent } from '../utils/agent';
+import { _SERVICE } from './declarations/counter';
 
 let cache: {
   canisterId: Principal;
@@ -61,5 +62,5 @@ export const createActor = async (options?: HttpAgentOptions) => {
 
   const canisterId = await Actor.createCanister({ agent });
   await Actor.install({ module }, { canisterId, agent });
-  return Actor.createActor(idl, { canisterId, agent }) as any;
+  return Actor.createActor(idl, { canisterId, agent }) as ActorSubclass<_SERVICE>;
 };

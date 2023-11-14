@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/agent-monorepo",
-  "version": "0.19.3",
+  "version": "0.20.0",
   "private": true,
   "description": "Use an Agent to interact with the Internet Computer from your JavaScript program.",
   "workspaces": {
@@ -12,7 +12,9 @@
       "packages/identity",
       "packages/auth-client",
       "packages/assets",
-      "packages/identity-secp256k1"
+      "packages/identity-secp256k1",
+      "e2e/browser",
+      "e2e/node"
     ]
   },
   "devDependencies": {
@@ -110,7 +112,7 @@
     {
       "name": "@dfinity/identity-secp256k1",
       "path": "./packages/identity-secp256k1/dist/index.js",
-      "limit": "260 kB"
+      "limit": "265 kB"
     }
   ],
   "release-it": {

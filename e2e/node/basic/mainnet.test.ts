@@ -2,7 +2,7 @@ import { Actor, AnonymousIdentity, HttpAgent, Identity, CanisterStatus } from '@
 import { IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
-import { describe, it, expect, test, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { makeAgent } from '../utils/agent';
 
 const createWhoamiActor = async (identity: Identity) => {

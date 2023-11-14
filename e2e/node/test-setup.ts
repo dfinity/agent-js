@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // This file may be used to polyfill features that aren't available in the test
 // environment, i.e. JSDom.
 //
@@ -7,19 +8,17 @@
 // Note that we can use webpack configuration to make some features available to
 
 // Node.js in a similar way.
-import { TextEncoder, TextDecoder } from 'text-encoding'; // eslint-disable-line
-// import fetch from 'isomorphic-fetch';
-// global.crypto = crypto as unknown as Crypto;
-// console.log('subtle', crypto['subtle']); // eslint-disable-line
-global.TextDecoder = TextDecoder; // eslint-disable-line
+import { TextEncoder, TextDecoder } from 'text-encoding';
+global.TextDecoder = TextDecoder;
 global.TextEncoder = TextEncoder;
 
-// global.TextDecoder = TextDecoder; // eslint-disable-line
-// (global.fetch as any) = fetch;
 import fetch from 'isomorphic-fetch';
 global.fetch = fetch;
-import * as crypto from 'crypto';
 
-(global as any).crypto = {
-  subtle: (crypto.webcrypto as any).subtle,
-};
+import { subtle } from 'crypto';
+
+// make global.crypto writeable
+Object.defineProperty(global, 'crypto', {
+  writable: true,
+  value: { ...global.crypto, subtle },
+});

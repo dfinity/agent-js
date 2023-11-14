@@ -8,6 +8,3 @@ export const idlFactory = ({ IDL }) => {
     write: IDL.Func([IDL.Nat], [], []),
   });
 };
-export const init = ({ IDL }) => {
-  return [];
-};

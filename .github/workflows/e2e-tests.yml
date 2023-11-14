@@ -31,8 +31,6 @@ jobs:
       - run: npm install -g npm
 
       - run: npm install
-      - run: pushd e2e/browser && npm install && popd
-      - run: pushd e2e/node && npm install && popd
 
       # build monorepo incl. each subpackage
       - run: npm run build --workspaces --if-present
