@@ -537,12 +537,23 @@ export class HttpAgent implements Agent {
     } catch (error) {
       // In case the node signatures have changed, refresh the subnet keys and try again
       console.warn('Query response verification failed. Retrying with fresh subnet keys.');
-      const nodeId = Principal.from(query.signatures?.[0].identity);
       this.#subnetKeys.delete(canisterId.toString());
-      await this.fetchSubnetKeys(nodeId);
+      await this.fetchSubnetKeys(canisterId.toString());
     }
     const updatedSubnetStatus = this.#subnetKeys.get(canisterId.toString());
-    return this.#verifyQueryResponse(query, updatedSubnetStatus);
+    if (!updatedSubnetStatus) {
+      throw new CertificateVerificationError(
+        'Invalid signature from replica signed query: no matching node key found.',
+      );
+    }
+    const isValid = this.#verifyQueryResponse(query, updatedSubnetStatus);
+    if (isValid) {
+      return query;
+    } else {
+      throw new CertificateVerificationError(
+        'Invalid signature from replica signed query: no matching node key found.',
+      );
+    }
   }
 
   /**
