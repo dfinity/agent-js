@@ -206,7 +206,7 @@ describe('node keys', () => {
     const { mainnetApplication } = goldenCertificates;
     jest.useFakeTimers();
     jest.setSystemTime(new Date(Date.parse('2023-09-27T19:38:58.129Z')));
-    const cert = await Cert.Certificate.create({
+    await Cert.Certificate.create({
       certificate: fromHex(mainnetApplication),
       canisterId: Principal.fromText('erxue-5aaaa-aaaab-qaagq-cai'),
       rootKey: fromHex(IC_ROOT_KEY),
@@ -224,7 +224,7 @@ describe('node keys', () => {
     const { mainnetSystem } = goldenCertificates;
     jest.useFakeTimers();
     jest.setSystemTime(new Date(Date.parse('2023-09-27T19:58:19.412Z')));
-    const cert = await Cert.Certificate.create({
+    await Cert.Certificate.create({
       certificate: fromHex(mainnetSystem),
       canisterId: Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai'),
       rootKey: fromHex(IC_ROOT_KEY),
@@ -242,7 +242,7 @@ describe('node keys', () => {
     const { localApplication } = goldenCertificates;
     jest.useFakeTimers();
     jest.setSystemTime(new Date(Date.parse('2023-09-27T20:14:59.406Z')));
-    const cert = await Cert.Certificate.create({
+    await Cert.Certificate.create({
       certificate: fromHex(localApplication),
       canisterId: Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai'),
       rootKey: fromHex(IC_ROOT_KEY),
@@ -260,7 +260,7 @@ describe('node keys', () => {
     const { localSystem } = goldenCertificates;
     jest.useFakeTimers();
     jest.setSystemTime(new Date(Date.parse('2023-09-27T20:15:03.406Z')));
-    const cert = await Cert.Certificate.create({
+    await Cert.Certificate.create({
       certificate: fromHex(localSystem),
       canisterId: Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai'),
       rootKey: fromHex(IC_ROOT_KEY),
@@ -273,4 +273,24 @@ describe('node keys', () => {
     );
     expect(nodeKeys).toMatchSnapshot();
   });
+});
+
+test('mainnet', async () => {
+  const agent = new HttpAgent({ host: 'https://icp-api.io' });
+  await agent.fetchRootKey();
+  jest.useFakeTimers();
+  const status = await request({
+    canisterId: Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai'),
+    paths: [
+      {
+        kind: 'metadata',
+        path: 'foo',
+        key: 'foo',
+        decodeStrategy: 'hex',
+      },
+      'time',
+    ],
+    agent,
+  });
+  console.log(status);
 });

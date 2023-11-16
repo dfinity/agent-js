@@ -20,12 +20,12 @@ test('simulate fetching a Candid interface', async () => {
   });
 
   const agent = new HttpAgent({
-    fetch: mockFetch,
-    host: 'http://127.0.0.1',
+    host: 'https://icp-api.io',
     verifyQuerySignatures: false,
   });
 
   const candid = await fetchCandid('ryjl3-tyaaa-aaaaa-aaaba-cai', agent);
+  candid;
 
-  expect(candid).toMatch(/service/);
+  expect(candid).toMatchSnapshot();
 });
