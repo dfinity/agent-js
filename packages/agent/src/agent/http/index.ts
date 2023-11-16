@@ -532,7 +532,20 @@ export class HttpAgent implements Agent {
     if (!this.#verifyQuerySignatures) {
       return query;
     }
-    return this.#verifyQueryResponse(query, subnetStatus);
+
+    try {
+      return this.#verifyQueryResponse(query, subnetStatus);
+    } catch (error) {
+      // In case the node signatures have changed, refresh the subnet keys and try again
+      console.warn('Query response verification failed. Retrying with fresh subnet keys.');
+      const nodeId = Principal.from(query.signatures?.[0].identity);
+      this.#subnetKeys.delete(nodeId.toText());
+      await this.fetchSubnetKeys(nodeId);
+
+      const updatedSubnetStatus = this.#subnetKeys.get(nodeId.toText());
+      return this.#verifyQueryResponse(query, updatedSubnetStatus);
+    }
+
   }
 
   /**
@@ -557,7 +570,7 @@ export class HttpAgent implements Agent {
     const { status, signatures, requestId } = queryResponse;
 
     const domainSeparator = new TextEncoder().encode('\x0Bic-response');
-    signatures?.forEach(sig => {
+    signatures?.forEach(async sig => {
       const { timestamp, identity } = sig;
       const nodeId = Principal.fromUint8Array(identity).toText();
       let hash: ArrayBuffer;
