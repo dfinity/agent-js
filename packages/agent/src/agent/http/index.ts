@@ -188,7 +188,7 @@ export class HttpAgent implements Agent {
   #updatePipeline: HttpAgentRequestTransformFn[] = [];
 
   #subnetKeys: ExpirableMap<string, SubnetStatus> = new ExpirableMap({
-    expirationTime: 60 * 60 * 1000, // 1 hour
+    expirationTime: 5 * 60 * 1000, // 5 minutes
   });
   #verifyQuerySignatures = true;
 
@@ -532,20 +532,17 @@ export class HttpAgent implements Agent {
     if (!this.#verifyQuerySignatures) {
       return query;
     }
-
     try {
       return this.#verifyQueryResponse(query, subnetStatus);
     } catch (error) {
       // In case the node signatures have changed, refresh the subnet keys and try again
       console.warn('Query response verification failed. Retrying with fresh subnet keys.');
       const nodeId = Principal.from(query.signatures?.[0].identity);
-      this.#subnetKeys.delete(nodeId.toText());
+      this.#subnetKeys.delete(canisterId.toString());
       await this.fetchSubnetKeys(nodeId);
-
-      const updatedSubnetStatus = this.#subnetKeys.get(nodeId.toText());
-      return this.#verifyQueryResponse(query, updatedSubnetStatus);
     }
-
+    const updatedSubnetStatus = this.#subnetKeys.get(canisterId.toString());
+    return this.#verifyQueryResponse(query, updatedSubnetStatus);
   }
 
   /**
