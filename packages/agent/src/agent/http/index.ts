@@ -500,34 +500,19 @@ export class HttpAgent implements Agent {
         requestId,
       };
     };
-    const queryPromise = new Promise<ApiQueryResponse>((resolve, reject) => {
-      makeQuery()
-        .then(response => {
-          resolve(response);
-        })
-        .catch(error => {
-          reject(error);
-        });
-    });
 
-    const subnetStatusPromise = new Promise<SubnetStatus | void>((resolve, reject) => {
+    const getSubnetStatus = async (): Promise<SubnetStatus | void> => {
       if (!this.#verifyQuerySignatures) {
-        resolve(undefined);
+        return undefined;
       }
       const subnetStatus = this.#subnetKeys.get(canisterId.toString());
       if (subnetStatus) {
-        resolve(subnetStatus);
-      } else {
-        this.fetchSubnetKeys(canisterId)
-          .then(response => {
-            resolve(response);
-          })
-          .catch(error => {
-            reject(error);
-          });
+        return subnetStatus;
       }
-    });
-    const [query, subnetStatus] = await Promise.all([queryPromise, subnetStatusPromise]);
+      return await this.fetchSubnetKeys(canisterId);
+    };
+    // Make query and fetch subnet keys in parallel
+    const [query, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
     // Skip verification if the user has disabled it
     if (!this.#verifyQuerySignatures) {
       return query;
