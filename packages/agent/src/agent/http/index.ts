@@ -188,7 +188,7 @@ export class HttpAgent implements Agent {
   #updatePipeline: HttpAgentRequestTransformFn[] = [];
 
   #subnetKeys: ExpirableMap<string, SubnetStatus> = new ExpirableMap({
-    expirationTime: 60 * 60 * 1000, // 1 hour
+    expirationTime: 5 * 60 * 1000, // 5 minutes
   });
   #verifyQuerySignatures = true;
 
@@ -532,7 +532,22 @@ export class HttpAgent implements Agent {
     if (!this.#verifyQuerySignatures) {
       return query;
     }
-    return this.#verifyQueryResponse(query, subnetStatus);
+    try {
+      return this.#verifyQueryResponse(query, subnetStatus);
+    } catch (_) {
+      // In case the node signatures have changed, refresh the subnet keys and try again
+      console.warn('Query response verification failed. Retrying with fresh subnet keys.');
+      this.#subnetKeys.delete(canisterId.toString());
+      await this.fetchSubnetKeys(canisterId.toString());
+
+      const updatedSubnetStatus = this.#subnetKeys.get(canisterId.toString());
+      if (!updatedSubnetStatus) {
+        throw new CertificateVerificationError(
+          'Invalid signature from replica signed query: no matching node key found.',
+        );
+      }
+      return this.#verifyQueryResponse(query, updatedSubnetStatus);
+    }
   }
 
   /**
@@ -554,10 +569,10 @@ export class HttpAgent implements Agent {
         'Invalid signature from replica signed query: no matching node key found.',
       );
     }
-    const { status, signatures, requestId } = queryResponse;
+    const { status, signatures = [], requestId } = queryResponse;
 
     const domainSeparator = new TextEncoder().encode('\x0Bic-response');
-    signatures?.forEach(sig => {
+    for (const sig of signatures) {
       const { timestamp, identity } = sig;
       const nodeId = Principal.fromUint8Array(identity).toText();
       let hash: ArrayBuffer;
@@ -605,7 +620,7 @@ export class HttpAgent implements Agent {
       throw new CertificateVerificationError(
         `Invalid signature from replica ${nodeId} signed query.`,
       );
-    });
+    }
     return queryResponse;
   };
 
