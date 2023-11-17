@@ -736,7 +736,7 @@ export class HttpAgent implements Agent {
     this._identity = Promise.resolve(identity);
   }
 
-  public async fetchSubnetKeys(canisterId: Principal | string): Promise<any> {
+  public async fetchSubnetKeys(canisterId: Principal | string) {
     const effectiveCanisterId: Principal = Principal.from(canisterId);
     const response = await request({
       canisterId: effectiveCanisterId,
