@@ -509,7 +509,7 @@ export class HttpAgent implements Agent {
       if (subnetStatus) {
         return subnetStatus;
       }
-      return await this.fetchSubnetKeys(canisterId);
+      return (await this.fetchSubnetKeys(canisterId)) ?? undefined;
     };
     // Make query and fetch subnet keys in parallel
     const [query, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
@@ -747,8 +747,10 @@ export class HttpAgent implements Agent {
     const subnetResponse = response.get('subnet');
     if (subnetResponse && typeof subnetResponse === 'object' && 'nodeKeys' in subnetResponse) {
       this.#subnetKeys.set(effectiveCanisterId.toText(), subnetResponse as SubnetStatus);
+      return subnetResponse as SubnetStatus;
     }
-    return subnetResponse;
+    // If the subnet status is not returned, return undefined
+    return undefined;
   }
 
   protected _transform(request: HttpAgentRequest): Promise<HttpAgentRequest> {
