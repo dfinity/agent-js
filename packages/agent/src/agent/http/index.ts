@@ -500,34 +500,20 @@ export class HttpAgent implements Agent {
         requestId,
       };
     };
-    const queryPromise = new Promise<ApiQueryResponse>((resolve, reject) => {
-      makeQuery()
-        .then(response => {
-          resolve(response);
-        })
-        .catch(error => {
-          reject(error);
-        });
-    });
 
-    const subnetStatusPromise = new Promise<SubnetStatus | void>((resolve, reject) => {
+    const getSubnetStatus = async (): Promise<SubnetStatus | void> => {
       if (!this.#verifyQuerySignatures) {
-        resolve(undefined);
+        return undefined;
       }
       const subnetStatus = this.#subnetKeys.get(canisterId.toString());
       if (subnetStatus) {
-        resolve(subnetStatus);
-      } else {
-        this.fetchSubnetKeys(canisterId)
-          .then(response => {
-            resolve(response);
-          })
-          .catch(error => {
-            reject(error);
-          });
+        return subnetStatus;
       }
-    });
-    const [query, subnetStatus] = await Promise.all([queryPromise, subnetStatusPromise]);
+      await this.fetchSubnetKeys(canisterId.toString());
+      return this.#subnetKeys.get(canisterId.toString());
+    };
+    // Make query and fetch subnet keys in parallel
+    const [query, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
     // Skip verification if the user has disabled it
     if (!this.#verifyQuerySignatures) {
       return query;
@@ -751,7 +737,7 @@ export class HttpAgent implements Agent {
     this._identity = Promise.resolve(identity);
   }
 
-  public async fetchSubnetKeys(canisterId: Principal | string): Promise<any> {
+  public async fetchSubnetKeys(canisterId: Principal | string) {
     const effectiveCanisterId: Principal = Principal.from(canisterId);
     const response = await request({
       canisterId: effectiveCanisterId,
@@ -762,8 +748,10 @@ export class HttpAgent implements Agent {
     const subnetResponse = response.get('subnet');
     if (subnetResponse && typeof subnetResponse === 'object' && 'nodeKeys' in subnetResponse) {
       this.#subnetKeys.set(effectiveCanisterId.toText(), subnetResponse as SubnetStatus);
+      return subnetResponse as SubnetStatus;
     }
-    return subnetResponse;
+    // If the subnet status is not returned, return undefined
+    return undefined;
   }
 
   protected _transform(request: HttpAgentRequest): Promise<HttpAgentRequest> {

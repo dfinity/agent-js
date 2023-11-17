@@ -162,7 +162,7 @@ test('queries with the same content should have the same signature', async () =>
   const response4 = await httpAgent.query(canisterIdent, { methodName, arg });
 
   const { calls } = mockFetch.mock;
-  expect(calls.length).toBe(6);
+  expect(calls.length).toBe(4);
 
   expect(calls[0]).toEqual(calls[1]);
   expect(response1).toEqual(response2);
