@@ -532,12 +532,9 @@ export class HttpAgent implements Agent {
     if (!this.#verifyQuerySignatures) {
       return query;
     }
-    console.log("here");
-    const isValid = this.#verifyQueryResponse(query, subnetStatus);
-    console.log("isValid 1", isValid);
-    if (isValid === true) {
-      return query;
-    } else {
+    try {
+      return this.#verifyQueryResponse(query, subnetStatus);
+    } catch (_) {
       // In case the node signatures have changed, refresh the subnet keys and try again
       console.warn('Query response verification failed. Retrying with fresh subnet keys.');
       this.#subnetKeys.delete(canisterId.toString());
@@ -549,13 +546,7 @@ export class HttpAgent implements Agent {
           'Invalid signature from replica signed query: no matching node key found.',
         );
       }
-      const isValid = this.#verifyQueryResponse(query, updatedSubnetStatus);
-      console.log('isValid 2', isValid);
-      if (isValid === true) {
-        return query;
-      } else {
-        throw isValid;
-      }
+      return this.#verifyQueryResponse(query, updatedSubnetStatus);
     }
   }
 
@@ -568,23 +559,19 @@ export class HttpAgent implements Agent {
   #verifyQueryResponse = (
     queryResponse: ApiQueryResponse,
     subnetStatus: SubnetStatus | void,
-  ): true | CertificateVerificationError => {
-    let result: true | CertificateVerificationError = true;
-
+  ): ApiQueryResponse => {
     if (this.#verifyQuerySignatures === false) {
       // This should not be called if the user has disabled verification
-      result = true;
+      return queryResponse;
     }
     if (!subnetStatus) {
-      return new CertificateVerificationError(
+      throw new CertificateVerificationError(
         'Invalid signature from replica signed query: no matching node key found.',
       );
     }
     const { status, signatures = [], requestId } = queryResponse;
 
     const domainSeparator = new TextEncoder().encode('\x0Bic-response');
-
-
     for (const sig of signatures) {
       const { timestamp, identity } = sig;
       const nodeId = Principal.fromUint8Array(identity).toText();
@@ -610,7 +597,7 @@ export class HttpAgent implements Agent {
           request_id: requestId,
         });
       } else {
-        return new CertificateVerificationError(`Unknown status: ${status}`);
+        throw new Error(`Unknown status: ${status}`);
       }
 
       const separatorWithHash = concat(domainSeparator, new Uint8Array(hash));
@@ -618,7 +605,7 @@ export class HttpAgent implements Agent {
       // FIX: check for match without verifying N times
       const pubKey = subnetStatus?.nodeKeys.get(nodeId);
       if (!pubKey) {
-        return new CertificateVerificationError(
+        throw new CertificateVerificationError(
           'Invalid signature from replica signed query: no matching node key found.',
         );
       }
@@ -628,13 +615,13 @@ export class HttpAgent implements Agent {
         new Uint8Array(separatorWithHash),
         new Uint8Array(rawKey),
       );
-      if (valid) result = true;
+      if (valid) return queryResponse;
 
-      return new CertificateVerificationError(
+      throw new CertificateVerificationError(
         `Invalid signature from replica ${nodeId} signed query.`,
       );
     }
-    return result;
+    return queryResponse;
   };
 
   public async createReadStateRequest(
