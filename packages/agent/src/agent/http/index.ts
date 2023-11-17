@@ -532,27 +532,30 @@ export class HttpAgent implements Agent {
     if (!this.#verifyQuerySignatures) {
       return query;
     }
-    try {
-      return this.#verifyQueryResponse(query, subnetStatus);
-    } catch (error) {
+    console.log("here");
+    const isValid = this.#verifyQueryResponse(query, subnetStatus);
+    console.log("isValid 1", isValid);
+    if (isValid === true) {
+      return query;
+    } else {
       // In case the node signatures have changed, refresh the subnet keys and try again
       console.warn('Query response verification failed. Retrying with fresh subnet keys.');
       this.#subnetKeys.delete(canisterId.toString());
       await this.fetchSubnetKeys(canisterId.toString());
-    }
-    const updatedSubnetStatus = this.#subnetKeys.get(canisterId.toString());
-    if (!updatedSubnetStatus) {
-      throw new CertificateVerificationError(
-        'Invalid signature from replica signed query: no matching node key found.',
-      );
-    }
-    const isValid = this.#verifyQueryResponse(query, updatedSubnetStatus);
-    if (isValid) {
-      return query;
-    } else {
-      throw new CertificateVerificationError(
-        'Invalid signature from replica signed query: no matching node key found.',
-      );
+
+      const updatedSubnetStatus = this.#subnetKeys.get(canisterId.toString());
+      if (!updatedSubnetStatus) {
+        throw new CertificateVerificationError(
+          'Invalid signature from replica signed query: no matching node key found.',
+        );
+      }
+      const isValid = this.#verifyQueryResponse(query, updatedSubnetStatus);
+      console.log('isValid 2', isValid);
+      if (isValid === true) {
+        return query;
+      } else {
+        throw isValid;
+      }
     }
   }
 
@@ -565,20 +568,24 @@ export class HttpAgent implements Agent {
   #verifyQueryResponse = (
     queryResponse: ApiQueryResponse,
     subnetStatus: SubnetStatus | void,
-  ): ApiQueryResponse => {
+  ): true | CertificateVerificationError => {
+    let result: true | CertificateVerificationError = true;
+
     if (this.#verifyQuerySignatures === false) {
       // This should not be called if the user has disabled verification
-      return queryResponse;
+      result = true;
     }
     if (!subnetStatus) {
-      throw new CertificateVerificationError(
+      return new CertificateVerificationError(
         'Invalid signature from replica signed query: no matching node key found.',
       );
     }
-    const { status, signatures, requestId } = queryResponse;
+    const { status, signatures = [], requestId } = queryResponse;
 
     const domainSeparator = new TextEncoder().encode('\x0Bic-response');
-    signatures?.forEach(async sig => {
+
+
+    for (const sig of signatures) {
       const { timestamp, identity } = sig;
       const nodeId = Principal.fromUint8Array(identity).toText();
       let hash: ArrayBuffer;
@@ -603,7 +610,7 @@ export class HttpAgent implements Agent {
           request_id: requestId,
         });
       } else {
-        throw new Error(`Unknown status: ${status}`);
+        return new CertificateVerificationError(`Unknown status: ${status}`);
       }
 
       const separatorWithHash = concat(domainSeparator, new Uint8Array(hash));
@@ -611,7 +618,7 @@ export class HttpAgent implements Agent {
       // FIX: check for match without verifying N times
       const pubKey = subnetStatus?.nodeKeys.get(nodeId);
       if (!pubKey) {
-        throw new CertificateVerificationError(
+        return new CertificateVerificationError(
           'Invalid signature from replica signed query: no matching node key found.',
         );
       }
@@ -621,13 +628,13 @@ export class HttpAgent implements Agent {
         new Uint8Array(separatorWithHash),
         new Uint8Array(rawKey),
       );
-      if (valid) return queryResponse;
+      if (valid) result = true;
 
-      throw new CertificateVerificationError(
+      return new CertificateVerificationError(
         `Invalid signature from replica ${nodeId} signed query.`,
       );
-    });
-    return queryResponse;
+    }
+    return result;
   };
 
   public async createReadStateRequest(
