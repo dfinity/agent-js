@@ -329,15 +329,18 @@ export class AuthClient {
     // The event handler for processing events from the IdP.
     private _eventHandler?: (event: MessageEvent) => void,
   ) {
-    const logout = this.logout.bind(this);
-    const idleOptions = _createOptions?.idleOptions;
+    this._registerDefaultIdleCallback();
+  }
+
+  private _registerDefaultIdleCallback() {
+    const idleOptions = this._createOptions?.idleOptions;
     /**
      * Default behavior is to clear stored identity and reload the page.
      * By either setting the disableDefaultIdleCallback flag or passing in a custom idle callback, we will ignore this config
      */
     if (!idleOptions?.onIdle && !idleOptions?.disableDefaultIdleCallback) {
       this.idleManager?.registerCallback(() => {
-        logout();
+        this.logout();
         location.reload();
       });
     }
@@ -372,17 +375,14 @@ export class AuthClient {
     this._identity = DelegationIdentity.fromDelegation(key, this._chain);
 
     this._idpWindow?.close();
-    if (!this.idleManager) {
-      const idleOptions = this._createOptions?.idleOptions;
+    const idleOptions = this._createOptions?.idleOptions;
+    // create the idle manager on a successful login if we haven't disabled it
+    // and it doesn't already exist.
+    if (!this.idleManager && !idleOptions?.disableIdle) {
       this.idleManager = IdleManager.create(idleOptions);
-
-      if (!idleOptions?.onIdle && !idleOptions?.disableDefaultIdleCallback) {
-        this.idleManager?.registerCallback(() => {
-          this.logout();
-          location.reload();
-        });
-      }
+      this._registerDefaultIdleCallback();
     }
+
     this._removeEventListener();
     delete this._idpWindow;
 
