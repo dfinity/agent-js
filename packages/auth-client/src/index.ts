@@ -340,7 +340,6 @@ export class AuthClient {
      */
     if (!idleOptions?.onIdle && !idleOptions?.disableDefaultIdleCallback) {
       this.idleManager?.registerCallback(() => {
-        console.log('User is idle. Logging out.');
         this.logout();
         location.reload();
       });
