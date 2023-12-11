@@ -46,7 +46,7 @@ export class PartialIdentity implements Identity {
    * Required for the Identity interface, but cannot implemented for just a public key.
    */
   public transformRequest(): Promise<never> {
-    throw new Error(
+    return Promise.reject(
       'Not implemented. You are attempting to use a partial identity to sign calls, but this identity only has access to the public key.To sign calls, use a DelegationIdentity instead.',
     );
   }
