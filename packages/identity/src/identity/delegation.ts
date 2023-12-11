@@ -10,6 +10,7 @@ import {
 } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import * as cbor from 'simple-cbor';
+import { PartialIdentity } from './partial';
 
 const domainSeparator = new TextEncoder().encode('\x1Aic-request-auth-delegation');
 const requestDomainSeparator = new TextEncoder().encode('\x0Aic-request');
@@ -310,6 +311,81 @@ export class DelegationIdentity extends SignIdentity {
         sender_pubkey: this._delegation.publicKey,
       },
     };
+  }
+}
+
+/**
+ * A partial delegated identity, representing a delegation chain and the public key that it targets
+ */
+export class PartialDelegationIdentity extends PartialIdentity {
+  #inner: PublicKey;
+  #delegation: DelegationChain;
+
+  /**
+   * The raw public key of this identity.
+   */
+  get rawKey(): ArrayBuffer | undefined {
+    return this.#inner.rawKey;
+  }
+
+  /**
+   * The DER-encoded public key of this identity.
+   */
+  get derKey(): ArrayBuffer | undefined {
+    return this.#inner.derKey;
+  }
+
+  /**
+   * The delegation chain of this identity.
+   */
+  get delegation(): DelegationChain {
+    return this.#delegation;
+  }
+
+  /**
+   * The DER-encoded public key of this identity.
+   */
+  public toDer(): ArrayBuffer {
+    return this.#inner.toDer();
+  }
+
+  /**
+   * The inner {@link PublicKey} used by this identity.
+   */
+  public getPublicKey(): PublicKey {
+    return this.#inner;
+  }
+
+  /**
+   * The {@link Principal} of this identity.
+   */
+  public getPrincipal(): Principal {
+    return Principal.from(this.#inner.rawKey);
+  }
+
+  /**
+   * Required for the Identity interface, but cannot implemented for just a public key.
+   */
+  public transformRequest(): Promise<never> {
+    throw new Error(
+      'Not implemented. You are attempting to use a partial identity to sign calls, but this identity only has access to the public key.To sign calls, use a DelegationIdentity instead.',
+    );
+  }
+
+  private constructor(inner: PublicKey, delegation: DelegationChain) {
+    super(inner);
+    this.#inner = inner;
+    this.#delegation = delegation;
+  }
+
+  /**
+   * Create a {@link PartialDelegationIdentity} from a {@link PublicKey} and a {@link DelegationChain}.
+   * @param key The {@link PublicKey} to delegate to.
+   * @param delegation a {@link DelegationChain} targeting the inner key.
+   * @constructs PartialDelegationIdentity
+   */
+  public static fromDelegation(key: PublicKey, delegation: DelegationChain) {
+    return new PartialDelegationIdentity(key, delegation);
   }
 }
 
