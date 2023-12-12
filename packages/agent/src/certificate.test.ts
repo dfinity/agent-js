@@ -9,6 +9,7 @@ import { fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
 import { decodeTime } from './utils/leb';
 import { lookupResultToBuffer, lookup_path } from './certificate';
+import { readFileSync } from 'fs';
 
 function label(str: string): ArrayBuffer {
   return new TextEncoder().encode(str);
@@ -257,4 +258,28 @@ test('certificate verification fails if the time of the certificate is > 5 minut
       canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
     }),
   ).rejects.toThrow('Invalid certificate: Certificate is signed more than 5 minutes in the future');
+});
+
+test('certificate verification fails on nested delegations', async () => {
+  // This is a recorded certificate from a read_state request to the II
+  // subnet, with the /subnet tree included. Thus, it could be used as its
+  // own delegation, according to the old interface spec definition.
+  const withSubnetSubtree = readFileSync('packages/agent/src/bin/with_subnet_key.bin');
+  const canisterId = Principal.fromText("rdmx6-jaaaa-aaaaa-aaadq-cai");
+  const subnetId = Principal.fromText("uzr34-akd3s-xrdag-3ql62-ocgoh-ld2ao-tamcv-54e7j-krwgb-2gm4z-oqe");
+  jest.setSystemTime(new Date(Date.parse('2023-12-12T10:40:00.652Z')));
+  let cert: Cert.Cert = cbor.decode(withSubnetSubtree);
+  const overlyNested = cbor.encode({
+    tree: cert.tree,
+    signature: cert.signature,
+    delegation: {
+      subnet_id: subnetId.toUint8Array(),
+      certificate: withSubnetSubtree,
+    },
+  })
+  await expect(Cert.Certificate.create({
+    certificate: overlyNested,
+    rootKey: fromHex(IC_ROOT_KEY),
+    canisterId: canisterId,
+  })).rejects.toThrow('Invalid certificate: Delegation certificates cannot be nested');
 });
