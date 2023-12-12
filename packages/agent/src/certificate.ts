@@ -170,20 +170,24 @@ export class Certificate {
    * @throws {CertificateVerificationError}
    */
   public static async create(options: CreateCertificateOptions): Promise<Certificate> {
+    const cert = Certificate.createUnverified(options);
+
+    await cert.verify();
+    return cert;
+  }
+
+  private static createUnverified(options: CreateCertificateOptions): Certificate {
     let blsVerify = options.blsVerify;
     if (!blsVerify) {
       blsVerify = bls.blsVerify;
     }
-    const cert = new Certificate(
+    return new Certificate(
       options.certificate,
       options.rootKey,
       options.canisterId,
       blsVerify,
       options.maxAgeInMinutes,
     );
-
-    await cert.verify();
-    return cert;
   }
 
   private constructor(
@@ -259,7 +263,7 @@ export class Certificate {
       return this._rootKey;
     }
 
-    const cert: Certificate = await Certificate.create({
+    const cert: Certificate = await Certificate.createUnverified({
       certificate: d.certificate,
       rootKey: this._rootKey,
       canisterId: this._canisterId,
@@ -267,6 +271,12 @@ export class Certificate {
       // Do not check max age for delegation certificates
       maxAgeInMinutes: Infinity,
     });
+
+    if (cert.cert.delegation) {
+      throw new CertificateVerificationError('Delegation certificates cannot be nested');
+    }
+
+    await cert.verify();
 
     const canisterInRange = check_canister_ranges({
       canisterId: this._canisterId,
