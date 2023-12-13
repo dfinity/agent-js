@@ -5,6 +5,7 @@ export const blsVerify = async (
   signature: Uint8Array | string,
   message: Uint8Array | string,
 ): Promise<boolean> => {
+
   const pk = typeof primaryKey === 'string' ? primaryKey : toHex(primaryKey);
   const sig = typeof signature === 'string' ? signature : toHex(signature);
   const msg = typeof message === 'string' ? message : toHex(message);
