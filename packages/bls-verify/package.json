@@ -47,7 +47,8 @@
     "prettier:write": "npm run prettier -- --write"
   },
   "dependencies": {
-    "@noble/curves": "file:../../noble-curves-1.2.0.tgz"
+    "@noble/curves": "^1.3.0",
+    "@noble/hashes": "^1.3.3"
   },
   "devDependencies": {
     "@types/jest": "^29.5.5",
