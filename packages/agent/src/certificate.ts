@@ -3,8 +3,19 @@ import { AgentError } from './errors';
 import { hash } from './request_id';
 import { concat, fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
-import { blsVerify as blsVerifyImport } from '@dfinity/bls-verify';
+import { bls12_381 } from '@noble/curves/bls12-381';
 import { decodeTime } from './utils/leb';
+
+const verifyFunc = async (
+  primaryKey: Uint8Array | string,
+  signature: Uint8Array | string,
+  message: Uint8Array | string,
+): Promise<boolean> => {
+  const pk = typeof primaryKey === 'string' ? primaryKey : toHex(primaryKey);
+  const sig = typeof signature === 'string' ? signature : toHex(signature);
+  const msg = typeof message === 'string' ? message : toHex(message);
+  return bls12_381.verifyShortSignature(sig, msg, pk);
+};
 
 /**
  * A certificate may fail verification with respect to the provided public key
@@ -29,7 +40,7 @@ const NodeId = {
   Pruned: 4,
 };
 
-export type NodeIdType = typeof NodeId[keyof typeof NodeId];
+export type NodeIdType = (typeof NodeId)[keyof typeof NodeId];
 
 export { NodeId };
 
@@ -103,7 +114,7 @@ export function hashTreeToString(tree: HashTree): string {
   }
 }
 
-interface Delegation extends Record<string, any> {
+interface Delegation extends Record<string, unknown> {
   subnet_id: ArrayBuffer;
   certificate: ArrayBuffer;
 }
@@ -153,8 +164,6 @@ export interface CreateCertificateOptions {
   maxAgeInMinutes?: number;
 }
 
-type MetricsResult = number | bigint | Map<number, number | bigint> | undefined;
-
 export class Certificate {
   private readonly cert: Cert;
 
@@ -179,7 +188,7 @@ export class Certificate {
   private static createUnverified(options: CreateCertificateOptions): Certificate {
     let blsVerify = options.blsVerify;
     if (!blsVerify) {
-      blsVerify = blsVerifyImport;
+      blsVerify = verifyFunc;
     }
     return new Certificate(
       options.certificate,
@@ -246,7 +255,7 @@ export class Certificate {
     }
 
     try {
-      sigVer = await blsVerify(new Uint8Array(key), new Uint8Array(sig), new Uint8Array(msg));
+      sigVer = await verifyFunc(new Uint8Array(key), new Uint8Array(sig), new Uint8Array(msg));
     } catch (err) {
       sigVer = false;
     }
