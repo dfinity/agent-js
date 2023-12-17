@@ -47,7 +47,19 @@ const RenderInput = (input: ExtractFieldResult) => {
     return null;
   }
 
-  const { children, name, options, recursive, component: Comp, type } = input;
+  const { children, name, options, clickHandler, recursive, component: Comp, type } = input;
+
+  if (Comp === 'button' && clickHandler) {
+    const handler = (e: any) => {
+      console.log(clickHandler());
+    };
+
+    return (
+      <button key={name} onClick={handler}>
+        {name}
+      </button>
+    );
+  }
 
   if (type === 'recursive' && recursive) {
     console.log('recursive');

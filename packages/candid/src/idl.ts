@@ -172,7 +172,15 @@ export abstract class Visitor<D, R> {
   }
 }
 
-export type FieldComponent = 'form' | 'input' | 'label' | 'select' | 'span' | 'option' | 'div';
+export type FieldComponent =
+  | 'form'
+  | 'button'
+  | 'input'
+  | 'label'
+  | 'select'
+  | 'span'
+  | 'option'
+  | 'div';
 
 export type ExtractFieldResult = {
   component: FieldComponent;
@@ -181,12 +189,8 @@ export type ExtractFieldResult = {
   type?: string;
   options?: string[];
   recursive?: () => ExtractFieldResult | null;
-  children:
-    | ExtractFieldResult
-    | ExtractFieldResult[]
-    | (ExtractFieldResult | null)[]
-    | (() => ExtractFieldResult | null)
-    | null;
+  clickHandler?: (name?: string) => ExtractFieldResult | null;
+  children?: ExtractFieldResult | ExtractFieldResult[];
 };
 
 /**
@@ -233,7 +237,7 @@ export abstract class Type<T = any> {
 
   public abstract checkType(t: Type): Type;
   public abstract decodeValue(x: Pipe, t: Type): T;
-  public abstract extractFields(name?: string, recursive?: boolean): ExtractFieldResult | null;
+  public abstract extractFields(name?: string): ExtractFieldResult;
   protected abstract _buildTypeTableImpl(typeTable: TypeTable): void;
 }
 
@@ -278,7 +282,6 @@ export class EmptyClass extends PrimitiveType<never> {
       component: 'span',
       class: this,
       name,
-      children: null,
     };
   }
 
@@ -324,7 +327,6 @@ export class UnknownClass extends Type {
       component: 'span',
       class: this,
       name,
-      children: null,
     };
   }
 
@@ -400,7 +402,6 @@ export class BoolClass extends PrimitiveType<boolean> {
       class: this,
       name,
       type: 'checkbox',
-      children: null,
     };
   }
 
@@ -447,7 +448,6 @@ export class NullClass extends PrimitiveType<null> {
       component: 'span',
       name,
       class: this,
-      children: null,
     };
   }
 
@@ -487,7 +487,6 @@ export class ReservedClass extends PrimitiveType<any> {
       component: 'span',
       name,
       class: this,
-      children: null,
     };
   }
 
@@ -529,7 +528,6 @@ export class TextClass extends PrimitiveType<string> {
       name,
       class: this,
       type: 'text',
-      children: null,
     };
   }
 
@@ -579,7 +577,6 @@ export class IntClass extends PrimitiveType<bigint> {
       name,
       class: this,
       type: 'number',
-      children: null,
     };
   }
 
@@ -626,7 +623,6 @@ export class NatClass extends PrimitiveType<bigint> {
       name,
       class: this,
       type: 'number',
-      children: null,
     };
   }
 
@@ -673,7 +669,6 @@ export class FloatClass extends PrimitiveType<number> {
       name,
       class: this,
       type: 'number',
-      children: null,
     };
   }
 
@@ -742,7 +737,6 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
       name,
       class: this,
       type: 'number',
-      children: null,
     };
   }
 
@@ -809,7 +803,6 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
       name,
       class: this,
       type: 'number',
-      children: null,
     };
   }
 
@@ -883,8 +876,13 @@ export class VecClass<T> extends ConstructType<T[]> {
     }
   }
 
-  public extractFields(name?: string, recursive?: boolean): ExtractFieldResult | null {
-    return this._type.extractFields(name, recursive);
+  public extractFields(name?: string): ExtractFieldResult {
+    return {
+      component: 'button',
+      class: this,
+      name: name ?? 'new',
+      clickHandler: (name?: string) => this._type.extractFields(name),
+    };
   }
 
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
@@ -1004,13 +1002,13 @@ export class VecClass<T> extends ConstructType<T[]> {
  * @param {Type} t
  */
 export class OptClass<T> extends ConstructType<[T] | []> {
-  public extractFields(name?: string, recursive?: boolean): ExtractFieldResult {
+  public extractFields(name?: string): ExtractFieldResult {
     return {
       component: 'input',
       name,
       type: 'checkbox',
       class: this,
-      children: this._type.extractFields(undefined, recursive),
+      children: this._type.extractFields(undefined),
     };
   }
 
@@ -1087,12 +1085,12 @@ export class OptClass<T> extends ConstructType<[T] | []> {
  * @param {object} [fields] - mapping of function name to Type
  */
 export class RecordClass extends ConstructType<Record<string, any>> {
-  public extractFields(name?: string, recursive?: boolean): ExtractFieldResult {
+  public extractFields(name?: string): ExtractFieldResult {
     return {
       component: 'div',
       class: this,
-      name,
-      children: this._fields.map(([key, value]) => value.extractFields(key, recursive)),
+      name: name,
+      children: this._fields.map(([key, value]) => value.extractFields(key)),
     };
   }
 
@@ -1305,13 +1303,13 @@ export class TupleClass<T extends any[]> extends RecordClass {
  * @param {object} [fields] - mapping of function name to Type
  */
 export class VariantClass extends ConstructType<Record<string, any>> {
-  public extractFields(name?: string, recursive?: boolean): ExtractFieldResult {
+  public extractFields(name?: string): ExtractFieldResult {
     return {
       component: 'select',
       class: this,
       name,
       options: this._fields.map(([key]) => key),
-      children: this._fields.map(([key, value]) => value.extractFields(key, recursive)),
+      children: this._fields.map(([key, value]) => value.extractFields(key)),
     };
   }
 
@@ -1422,14 +1420,13 @@ export class VariantClass extends ConstructType<Record<string, any>> {
  * types.
  */
 export class RecClass<T = any> extends ConstructType<T> {
-  public extractFields(name?: string): ExtractFieldResult | null {
+  public extractFields(name?: string): ExtractFieldResult {
     return {
       component: 'div',
       name,
       class: this,
       type: 'recursive',
-      recursive: () => (this._type ? this._type.extractFields(`${this._id}`, true) : null),
-      children: null,
+      recursive: () => (this._type ? this._type.extractFields(`${this._id}`) : null),
     };
   }
 
@@ -1519,7 +1516,6 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
       name,
       class: this,
       type: 'principal',
-      children: null,
     };
   }
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
@@ -1567,7 +1563,6 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
       name,
       class: this,
       type: 'func',
-      children: null,
     };
   }
 
@@ -1669,7 +1664,6 @@ export class ServiceClass extends ConstructType<PrincipalId> {
       name,
       class: this,
       type: 'service',
-      children: null,
     };
   }
 
