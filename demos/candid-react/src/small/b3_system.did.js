@@ -16,12 +16,6 @@ export const idlFactory = ({ IDL }) => {
     name: IDL.Text,
     description: IDL.Text,
   });
-  const AppArgs = IDL.Record({
-    optional: IDL.Opt(IDL.Bool),
-    metadata: IDL.Tuple(IDL.Text, IDL.Text),
-    name: IDL.Text,
-    description: IDL.Text,
-  });
   const ReleaseView = IDL.Record({
     features: IDL.Text,
     date: IDL.Nat64,
@@ -40,6 +34,12 @@ export const idlFactory = ({ IDL }) => {
     created_by: IDL.Text,
     latest_release: IDL.Opt(ReleaseView),
     install_count: IDL.Nat64,
+  });
+  const AppArgs = IDL.Record({
+    optional: IDL.Opt(ReleaseView),
+    metadata: IDL.Tuple(IDL.Text, IDL.Text),
+    name: IDL.Text,
+    description: IDL.Text,
   });
   return IDL.Service({
     features: IDL.Func([IDL.Vec(IDL.Text)], [IDL.Vec(IDL.Text)], []),

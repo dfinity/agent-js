@@ -1,5 +1,6 @@
 import { IDL } from '@dfinity/candid';
 import { ExtractFieldResult, Type } from '@dfinity/candid/lib/cjs/idl';
+import { useState } from 'react';
 
 interface CandidProps {
   methods: [string, IDL.FuncClass][];
@@ -47,59 +48,113 @@ const RenderInput = (input: ExtractFieldResult) => {
     return null;
   }
 
-  const { children, name, options, clickHandler, recursive, component: Comp, type } = input;
+  const {
+    children,
+    label,
+    options,
+    toggleHandler,
+    clickHandler,
+    recursive,
+    component: Comp,
+    type,
+  } = input;
 
-  if (Comp === 'button' && clickHandler) {
-    const handler = (e: any) => {
-      console.log(clickHandler());
-    };
-
-    return (
-      <button key={name} onClick={handler}>
-        {name}
-      </button>
-    );
+  if (type === 'checkbox' && toggleHandler) {
+    console.log(children);
+    return <CheckBox key={label} name={label} toggleHandler={toggleHandler} />;
   }
 
-  if (type === 'recursive' && recursive) {
-    console.log('recursive');
-
-    const handler = (e: any) => {
-      console.log(recursive());
-    };
-
-    return (
-      <button key={name} onClick={handler}>
-        New
-      </button>
-    );
+  if (Comp === 'button' && clickHandler) {
+    return <Button key={label} label={label} clickHandler={clickHandler} />;
   }
 
   if (Comp === 'input') {
-    return <input key={name} type={type} placeholder={name} />;
+    return <input key={label} type={type} placeholder={label} />;
   } else if (Comp === 'select') {
     return (
-      <select key={name}>
-        {options?.map((option: string, index) => (
-          <option key={option} value={index}>
-            {option}
-          </option>
-        ))}
-      </select>
+      <Select key={label} label={label} options={options}>
+        {children}
+      </Select>
     );
   } else if (Comp === 'form') {
     return (
       <form
-        key={name}
+        key={label}
         style={{
           border: '1px solid black',
         }}
       >
-        <label>{name}</label>
+        <label>{label}</label>
         {CompileInput(children)}
       </form>
     );
   }
 
-  return <Comp key={name}>{CompileInput(children)}</Comp>;
+  return <Comp key={label}>{CompileInput(children)}</Comp>;
+};
+
+const CheckBox = ({ name, toggleHandler }: any) => {
+  const [element, setElement] = useState<ExtractFieldResult>();
+
+  const changeHandler = (e: any) => {
+    const elements = toggleHandler && toggleHandler(e.target.checked);
+    console.log({ elements });
+    setElement(elements);
+  };
+
+  return (
+    <div>
+      <label>{name}</label>
+      <input type="checkbox" name={name} onChange={changeHandler} />
+      {CompileInput(element)}
+    </div>
+  );
+};
+
+const Button = ({ label, clickHandler }: any) => {
+  const [element, setElement] = useState<ExtractFieldResult>();
+
+  const handler = (e: any) => {
+    const elements = clickHandler && clickHandler(e.target.checked);
+    console.log({ elements });
+    setElement(elements);
+  };
+
+  return (
+    <div>
+      <label>{label}</label>
+      <button onClick={handler}>{label}</button>
+      {CompileInput(element)}
+    </div>
+  );
+};
+
+const Select = ({ label, options, children }: any) => {
+  const [selected, setSelected] = useState<number>(0);
+
+  const changeHandler = (e: any) => {
+    setSelected(e.target.value);
+  };
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        width: '100%',
+        justifyContent: 'space-between',
+        border: '1px solid black',
+      }}
+    >
+      <label>{label}</label>
+      <select onChange={changeHandler}>
+        {options?.map((option: string, index: number) => (
+          <option key={option} value={index}>
+            {option}
+          </option>
+        ))}
+      </select>
+      {CompileInput(children[selected])}
+    </div>
+  );
 };
