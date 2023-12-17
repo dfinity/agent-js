@@ -172,6 +172,23 @@ export abstract class Visitor<D, R> {
   }
 }
 
+export type FieldComponent = 'form' | 'input' | 'label' | 'select' | 'span' | 'option' | 'div';
+
+export type ExtractFieldResult = {
+  component: FieldComponent;
+  class: Type;
+  name?: string;
+  type?: string;
+  options?: string[];
+  recursive?: () => ExtractFieldResult | null;
+  children:
+    | ExtractFieldResult
+    | ExtractFieldResult[]
+    | (ExtractFieldResult | null)[]
+    | (() => ExtractFieldResult | null)
+    | null;
+};
+
 /**
  * Represents an IDL type.
  */
@@ -216,7 +233,7 @@ export abstract class Type<T = any> {
 
   public abstract checkType(t: Type): Type;
   public abstract decodeValue(x: Pipe, t: Type): T;
-
+  public abstract extractFields(name?: string, recursive?: boolean): ExtractFieldResult | null;
   protected abstract _buildTypeTableImpl(typeTable: TypeTable): void;
 }
 
@@ -256,6 +273,15 @@ export abstract class ConstructType<T = any> extends Type<T> {
  * Result types like `Result<Text, Empty>` should always succeed.
  */
 export class EmptyClass extends PrimitiveType<never> {
+  public extractFields(name?: string): ExtractFieldResult {
+    return {
+      component: 'span',
+      class: this,
+      name,
+      children: null,
+    };
+  }
+
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitEmpty(this, d);
   }
@@ -293,6 +319,15 @@ export class EmptyClass extends PrimitiveType<never> {
  * Unknown cannot be serialized and attempting to do so will throw an error.
  */
 export class UnknownClass extends Type {
+  public extractFields(name?: string): ExtractFieldResult {
+    return {
+      component: 'span',
+      class: this,
+      name,
+      children: null,
+    };
+  }
+
   public checkType(t: Type): Type {
     throw new Error('Method not implemented for unknown.');
   }
@@ -359,6 +394,16 @@ export class UnknownClass extends Type {
  * Represents an IDL Bool
  */
 export class BoolClass extends PrimitiveType<boolean> {
+  public extractFields(name?: string): ExtractFieldResult {
+    return {
+      component: 'input',
+      class: this,
+      name,
+      type: 'checkbox',
+      children: null,
+    };
+  }
+
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitBool(this, d);
   }
@@ -397,6 +442,15 @@ export class BoolClass extends PrimitiveType<boolean> {
  * Represents an IDL Null
  */
 export class NullClass extends PrimitiveType<null> {
+  public extractFields(name?: string): ExtractFieldResult {
+    return {
+      component: 'span',
+      name,
+      class: this,
+      children: null,
+    };
+  }
+
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitNull(this, d);
   }
@@ -428,6 +482,15 @@ export class NullClass extends PrimitiveType<null> {
  * Represents an IDL Reserved
  */
 export class ReservedClass extends PrimitiveType<any> {
+  public extractFields(name?: string): ExtractFieldResult {
+    return {
+      component: 'span',
+      name,
+      class: this,
+      children: null,
+    };
+  }
+
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitReserved(this, d);
   }
@@ -460,6 +523,16 @@ export class ReservedClass extends PrimitiveType<any> {
  * Represents an IDL Text
  */
 export class TextClass extends PrimitiveType<string> {
+  public extractFields(name?: string): ExtractFieldResult {
+    return {
+      component: 'input',
+      name,
+      class: this,
+      type: 'text',
+      children: null,
+    };
+  }
+
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitText(this, d);
   }
@@ -500,6 +573,16 @@ export class TextClass extends PrimitiveType<string> {
  * Represents an IDL Int
  */
 export class IntClass extends PrimitiveType<bigint> {
+  public extractFields(name?: string): ExtractFieldResult {
+    return {
+      component: 'input',
+      name,
+      class: this,
+      type: 'number',
+      children: null,
+    };
+  }
+
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitInt(this, d);
   }
@@ -537,6 +620,16 @@ export class IntClass extends PrimitiveType<bigint> {
  * Represents an IDL Nat
  */
 export class NatClass extends PrimitiveType<bigint> {
+  public extractFields(name?: string): ExtractFieldResult {
+    return {
+      component: 'input',
+      name,
+      class: this,
+      type: 'number',
+      children: null,
+    };
+  }
+
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitNat(this, d);
   }
@@ -574,6 +667,16 @@ export class NatClass extends PrimitiveType<bigint> {
  * Represents an IDL Float
  */
 export class FloatClass extends PrimitiveType<number> {
+  public extractFields(name?: string): ExtractFieldResult {
+    return {
+      component: 'input',
+      name,
+      class: this,
+      type: 'number',
+      children: null,
+    };
+  }
+
   constructor(private _bits: number) {
     super();
     if (_bits !== 32 && _bits !== 64) {
@@ -633,6 +736,16 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
     super();
   }
 
+  public extractFields(name?: string): ExtractFieldResult {
+    return {
+      component: 'input',
+      name,
+      class: this,
+      type: 'number',
+      children: null,
+    };
+  }
+
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitFixedInt(this, d);
   }
@@ -688,6 +801,16 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
 export class FixedNatClass extends PrimitiveType<bigint | number> {
   constructor(public readonly _bits: number) {
     super();
+  }
+
+  public extractFields(name?: string): ExtractFieldResult {
+    return {
+      component: 'input',
+      name,
+      class: this,
+      type: 'number',
+      children: null,
+    };
   }
 
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
@@ -758,6 +881,10 @@ export class VecClass<T> extends ConstructType<T[]> {
     if (_type instanceof FixedNatClass && _type._bits === 8) {
       this._blobOptimization = true;
     }
+  }
+
+  public extractFields(name?: string, recursive?: boolean): ExtractFieldResult | null {
+    return this._type.extractFields(name, recursive);
   }
 
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
@@ -877,6 +1004,16 @@ export class VecClass<T> extends ConstructType<T[]> {
  * @param {Type} t
  */
 export class OptClass<T> extends ConstructType<[T] | []> {
+  public extractFields(name?: string, recursive?: boolean): ExtractFieldResult {
+    return {
+      component: 'input',
+      name,
+      type: 'checkbox',
+      class: this,
+      children: this._type.extractFields(undefined, recursive),
+    };
+  }
+
   constructor(protected _type: Type<T>) {
     super();
   }
@@ -950,6 +1087,15 @@ export class OptClass<T> extends ConstructType<[T] | []> {
  * @param {object} [fields] - mapping of function name to Type
  */
 export class RecordClass extends ConstructType<Record<string, any>> {
+  public extractFields(name?: string, recursive?: boolean): ExtractFieldResult {
+    return {
+      component: 'div',
+      class: this,
+      name,
+      children: this._fields.map(([key, value]) => value.extractFields(key, recursive)),
+    };
+  }
+
   protected readonly _fields: Array<[string, Type]>;
 
   constructor(fields: Record<string, Type> = {}) {
@@ -1159,6 +1305,16 @@ export class TupleClass<T extends any[]> extends RecordClass {
  * @param {object} [fields] - mapping of function name to Type
  */
 export class VariantClass extends ConstructType<Record<string, any>> {
+  public extractFields(name?: string, recursive?: boolean): ExtractFieldResult {
+    return {
+      component: 'select',
+      class: this,
+      name,
+      options: this._fields.map(([key]) => key),
+      children: this._fields.map(([key, value]) => value.extractFields(key, recursive)),
+    };
+  }
+
   private readonly _fields: Array<[string, Type]>;
 
   constructor(fields: Record<string, Type> = {}) {
@@ -1266,6 +1422,17 @@ export class VariantClass extends ConstructType<Record<string, any>> {
  * types.
  */
 export class RecClass<T = any> extends ConstructType<T> {
+  public extractFields(name?: string): ExtractFieldResult | null {
+    return {
+      component: 'div',
+      name,
+      class: this,
+      type: 'recursive',
+      recursive: () => (this._type ? this._type.extractFields(`${this._id}`, true) : null),
+      children: null,
+    };
+  }
+
   private static _counter = 0;
   private _id = RecClass._counter++;
   private _type: ConstructType<T> | undefined = undefined;
@@ -1346,6 +1513,15 @@ function decodePrincipalId(b: Pipe): PrincipalId {
  * Represents an IDL principal reference
  */
 export class PrincipalClass extends PrimitiveType<PrincipalId> {
+  public extractFields(name?: string): ExtractFieldResult {
+    return {
+      component: 'input',
+      name,
+      class: this,
+      type: 'principal',
+      children: null,
+    };
+  }
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitPrincipal(this, d);
   }
@@ -1385,6 +1561,16 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
  * @param annotations Function annotations.
  */
 export class FuncClass extends ConstructType<[PrincipalId, string]> {
+  public extractFields(name?: string): ExtractFieldResult {
+    return {
+      component: 'div',
+      name,
+      class: this,
+      type: 'func',
+      children: null,
+    };
+  }
+
   public static argsToString(types: Type[], v: any[]) {
     if (types.length !== v.length) {
       throw new Error('arity mismatch');
@@ -1477,6 +1663,16 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
 }
 
 export class ServiceClass extends ConstructType<PrincipalId> {
+  public extractFields(name?: string): ExtractFieldResult {
+    return {
+      component: 'div',
+      name,
+      class: this,
+      type: 'service',
+      children: null,
+    };
+  }
+
   public readonly _fields: Array<[string, FuncClass]>;
   constructor(fields: Record<string, FuncClass>) {
     super();
@@ -1532,8 +1728,8 @@ export class ServiceClass extends ConstructType<PrincipalId> {
 
 /**
  *
- * @param x
- * @returns {string}
+ * @param x The value to convert to a readable string.
+ * @returns {string} The value as a readable string.
  */
 function toReadableString(x: unknown): string {
   const str = JSON.stringify(x, (_key, value) =>
@@ -1546,10 +1742,10 @@ function toReadableString(x: unknown): string {
 }
 
 /**
- * Encode a array of values
- * @param argTypes
- * @param args
- * @returns {Buffer} serialised value
+ * Encode an array of values.
+ * @param argTypes The types of the arguments to encode.
+ * @param args The arguments to encode.
+ * @returns {ArrayBuffer} The serialized value.
  */
 export function encode(argTypes: Array<Type<any>>, args: any[]): ArrayBuffer {
   if (args.length < argTypes.length) {

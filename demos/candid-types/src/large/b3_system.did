@@ -1,0 +1,215 @@
+type AppBug = record {
+  logs : vec text;
+  name : text;
+  canister_id : principal;
+  description : text;
+  version : text;
+};
+type AppSystemError = variant {
+  InvalidSigner;
+  UserAlreadyExists;
+  WasmGetError : text;
+  CreateCanisterError : text;
+  UpdateCanisterControllersError : text;
+  HelperError : HelperError;
+  CanisterIdNotFound;
+  InvalidWalletCanister;
+  ValidateSignerError : text;
+  AppIdMismatch;
+  EncodeError : text;
+  InstallArgError : text;
+  AppAlreadyExists;
+  OwnerMismatch : record { owner : text; user : text };
+  ReleaseNameNotFound;
+  InvalidAccountIdentifier;
+  AppNotFound;
+  WalletCanisterAlreadyInstalled;
+  WalletCanisterRateError : text;
+  WalletCanisterAlreadyExists : text;
+  AppIsDeprecated;
+  RateLimitExceeded;
+  UpdateControllersError : text;
+  WasmHashError : text;
+  ReleaseNotFound;
+  WasmNotFound;
+  WasmInstallError : text;
+  VersionError : text;
+  NoCanisterAvailable;
+  WalletCanisterDoesNotExist : text;
+  InstallCodeError : text;
+  WalletCanisterNotFound;
+  CanisterStatusError : text;
+  WasmAlreadyLoaded;
+  InvalidReleaseName : text;
+  ReleaseAlreadyExists;
+};
+type AppView = record {
+  id : text;
+  updated_at : nat64;
+  metadata : vec record { text; Value };
+  name : text;
+  description : text;
+  created_at : nat64;
+  created_by : text;
+  latest_release : opt ReleaseView;
+  install_count : nat64;
+};
+type CanisterChange = record {
+  timestamp_nanos : nat64;
+  canister_version : nat64;
+  origin : CanisterChangeOrigin;
+  details : CanisterChangeDetails;
+};
+type CanisterChangeDetails = variant {
+  creation : CreationRecord;
+  code_deployment : CodeDeploymentRecord;
+  controllers_change : CreationRecord;
+  code_uninstall;
+};
+type CanisterChangeOrigin = variant {
+  from_user : FromUserRecord;
+  from_canister : FromCanisterRecord;
+};
+type CanisterInfoResponse = record {
+  controllers : vec principal;
+  module_hash : opt vec nat8;
+  recent_changes : vec CanisterChange;
+  total_num_changes : nat64;
+};
+type CanisterInstallMode = variant { reinstall; upgrade; install };
+type CanisterStatusResponse = record {
+  status : CanisterStatusType;
+  memory_size : nat;
+  cycles : nat;
+  settings : DefiniteCanisterSettings;
+  query_stats : QueryStats;
+  idle_cycles_burned_per_day : nat;
+  module_hash : opt vec nat8;
+};
+type CanisterStatusType = variant { stopped; stopping; running };
+type CodeDeploymentRecord = record {
+  mode : CanisterInstallMode;
+  module_hash : vec nat8;
+};
+type CreateAppArgs = record {
+  metadata : vec record { text; Value };
+  name : text;
+  description : text;
+};
+type CreateReleaseArgs = record {
+  id : text;
+  features : text;
+  size : nat64;
+  version : text;
+  wasm_hash : vec nat8;
+};
+type CreationRecord = record { controllers : vec principal };
+type DefiniteCanisterSettings = record {
+  freezing_threshold : nat;
+  controllers : vec principal;
+  memory_allocation : nat;
+  compute_allocation : nat;
+};
+type FromCanisterRecord = record {
+  canister_version : opt nat64;
+  canister_id : principal;
+};
+type FromUserRecord = record { user_id : principal };
+type HelperError = variant {
+  CreateCanisterError : text;
+  UpdateCanisterControllersError : text;
+  ValidateSignerError : text;
+  HexStringToVecError : text;
+  InvalidHexString;
+  InvalidSubaccount : text;
+  EncodeError : text;
+  InvalidAccountIdentifier;
+  RateLimitExceeded;
+  WasmHashError : text;
+  HexStringToU64Error : text;
+  HexStringToNatError : text;
+  VersionError : text;
+  SignerNotAvailable;
+  HexStringToU128Error : text;
+  InstallCodeError : text;
+  CanisterStatusError : text;
+  InvalidReleaseName : text;
+};
+type LoadRelease = record { total : nat64; chunks : nat64 };
+type QueryStats = record {
+  response_payload_bytes_total : nat;
+  num_instructions_total : nat;
+  num_calls_total : nat;
+  request_payload_bytes_total : nat;
+};
+type ReleaseView = record {
+  features : text;
+  date : nat64;
+  name : text;
+  size : nat64;
+  version : text;
+  deprecated : bool;
+};
+type Result = variant { Ok : UserView; Err : text };
+type Result_1 = variant { Ok : ReleaseView; Err : AppSystemError };
+type SystemCanisterStatus = record {
+  user_status : nat64;
+  status_at : nat64;
+  version : text;
+  canister_status : CanisterStatusResponse;
+};
+type UserCanisterStatus = record {
+  version : text;
+  canister_status : CanisterStatusResponse;
+};
+type UserStatus = variant {
+  Unregistered;
+  SingleCanister : principal;
+  MultipleCanister : vec principal;
+  Registered;
+};
+type UserView = record {
+  updated_at : nat64;
+  metadata : vec record { text; Value };
+  created_at : nat64;
+  canisters : vec principal;
+};
+type Value = variant {
+  Int : int;
+  Map : vec record { text; Value };
+  Nat : nat;
+  Nat64 : nat64;
+  Blob : vec nat8;
+  Text : text;
+  Array : vec Value;
+};
+service : () -> {
+  add_release : (text, CreateReleaseArgs) -> ();
+  add_user_app : (principal, text) -> ();
+  clear_bugs : (principal) -> ();
+  create_app : (CreateAppArgs) -> (AppView);
+  create_app_canister : (text) -> (Result);
+  deprecate_release : (text, vec nat8) -> (ReleaseView);
+  get_app_version : (principal) -> (text) composite_query;
+  get_bugs : (principal) -> (vec AppBug) query;
+  get_canister_info : (principal) -> (CanisterInfoResponse);
+  get_canisters : () -> (vec principal) query;
+  get_create_canister_app_cycle : () -> (nat) query;
+  get_latest_release : (text) -> (Result_1) query;
+  get_release : (vec nat8) -> (ReleaseView) query;
+  get_states : () -> (UserView) query;
+  get_user_app_status : (principal) -> (UserCanisterStatus);
+  get_user_ids : () -> (vec vec nat8) query;
+  get_user_states : () -> (vec UserView) query;
+  get_user_status : () -> (UserStatus) query;
+  install_app : (principal, text) -> (Result);
+  load_wasm : (vec nat8, vec nat8) -> (LoadRelease);
+  releases : (text) -> (vec ReleaseView) query;
+  remove_release : (vec nat8) -> ();
+  remove_user : (principal) -> ();
+  remove_user_app : (principal) -> ();
+  report_bug : (AppBug) -> ();
+  status : () -> (SystemCanisterStatus);
+  update_app : (text, CreateAppArgs) -> (AppView);
+  version : () -> (text) query;
+}
