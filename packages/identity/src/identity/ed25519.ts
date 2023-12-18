@@ -21,6 +21,11 @@ function isObject(value: unknown) {
 }
 
 export class Ed25519PublicKey implements PublicKey {
+  /**
+   * Construct Ed25519PublicKey from an existing PublicKey
+   * @param {unknown} maybeKey - existing PublicKey, ArrayBuffer, DerEncodedPublicKey, or hex string
+   * @returns {Ed25519PublicKey} Instance of Ed25519PublicKey
+   */
   public static from(maybeKey: unknown): Ed25519PublicKey {
     if (typeof maybeKey === 'string') {
       const key = fromHex(maybeKey);
