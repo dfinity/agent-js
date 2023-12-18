@@ -116,7 +116,7 @@ export class ECDSAKeyIdentity extends SignIdentity {
 
   /**
    * Return the public key.
-   * @returns an {@link DerCryptoKey}
+   * @returns an {@link PublicKey & DerCryptoKey}
    */
   public getPublicKey(): PublicKey & DerCryptoKey {
     const derKey = this._derKey;
