@@ -187,10 +187,12 @@ export type ExtractFieldResult = {
   class: Type;
   label?: string;
   type?: string;
+  recursiveCount?: number;
   options?: string[];
   recursive?: () => ExtractFieldResult | null;
   toggleHandler?: (toggle: boolean) => ExtractFieldResult | null;
-  clickHandler?: (label?: string) => ExtractFieldResult | null;
+  clickHandler?: (label?: string) => ExtractFieldResult[];
+  removeHandler?: (index: number) => ExtractFieldResult[];
   children?: ExtractFieldResult | ExtractFieldResult[];
 };
 
@@ -878,11 +880,22 @@ export class VecClass<T> extends ConstructType<T[]> {
   }
 
   public extractFields(label?: string): ExtractFieldResult {
+    const children: ExtractFieldResult[] = [];
     return {
       component: 'button',
       class: this,
       label: label ?? 'new',
-      clickHandler: (label?: string) => this._type.extractFields(label),
+      children,
+      clickHandler: (label?: string) => {
+        const child = this._type.extractFields(`New ${label ?? 'record'}`);
+        children.push(child);
+        return children;
+      },
+      removeHandler: (index: number) => {
+        children.splice(index, 1);
+
+        return children;
+      },
     };
   }
 
@@ -1423,14 +1436,14 @@ export class VariantClass extends ConstructType<Record<string, any>> {
  * types.
  */
 export class RecClass<T = any> extends ConstructType<T> {
+  private recursiveCount = 0;
   public extractFields(label?: string): ExtractFieldResult {
     return {
       component: 'div',
       label,
       class: this,
       type: 'recursive',
-      children: this._type ? this._type.extractFields(`${this._id + 1}`) : undefined,
-      recursive: () => (this._type ? this._type.extractFields(`${this._id + 1}`) : null),
+      children: this._type ? this._type.extractFields() : undefined,
     };
   }
 

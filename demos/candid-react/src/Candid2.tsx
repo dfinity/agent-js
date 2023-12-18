@@ -1,29 +1,38 @@
 import { IDL } from '@dfinity/candid';
 import { ExtractFieldResult, Type } from '@dfinity/candid/lib/cjs/idl';
 import { useState } from 'react';
-import { _SERVICE } from './small/b3_system.did';
-import { ActorSubclass } from '@dfinity/agent';
+import { Actor } from '@dfinity/agent';
+import { createActor } from './large';
 
-interface CandidProps {
-  methods: [string, IDL.FuncClass][];
-  actor: ActorSubclass<_SERVICE>;
-}
+const actor = createActor('xeka7-ryaaa-aaaal-qb57a-cai', {
+  agentOptions: {
+    host: 'https://ic0.app',
+  },
+});
 
-const Candid: React.FC<CandidProps> = ({ actor, methods }) => {
+const methods: [string, IDL.FuncClass][] = Actor.interfaceOf(actor as Actor)._fields;
+
+interface CandidProps {}
+
+const Candid2: React.FC<CandidProps> = () => {
   return (
     <div>
-      {methods.map(([method, types]: any) => {
-        const type: ExtractFieldResult[] = types.argTypes.map((type: Type) => {
-          return type.extractFields();
-        });
-
+      {methods.map(([method, types]) => {
         console.log({ method }, types.argTypes);
 
         return (
           <div key={method}>
             <h3>{method}</h3>
-            <CompileInput input={type} />
-            <button onClick={() => {}}>Submit</button>
+            {types.argTypes.map((type: Type) => {
+              const fields = type.extractFields();
+              console.log({ fields });
+              return (
+                <div>
+                  <CompileInput input={fields} />
+                </div>
+              );
+            })}
+            <button onClick={() => {}}>Call {method}</button>
           </div>
         );
       })}
@@ -31,7 +40,7 @@ const Candid: React.FC<CandidProps> = ({ actor, methods }) => {
   );
 };
 
-export default Candid;
+export default Candid2;
 
 function CompileInput({ input }: any) {
   if (!input) {

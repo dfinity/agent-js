@@ -4,19 +4,13 @@ import { Actor } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { createActor } from './small';
 import Candid from './Candid';
-
-const actor = createActor('xeka7-ryaaa-aaaal-qb57a-cai', {
-  agentOptions: {
-    host: 'https://ic0.app',
-  },
-});
-
-const methods: [string, IDL.FuncClass][] = Actor.interfaceOf(actor as Actor)._fields;
+import Candid2 from './Candid2';
 
 function App() {
   return (
     <div className="App">
-      <Candid methods={methods} />
+      <Candid2 />
+      {/* <Candid methods={methods} actor={actor} /> */}
     </div>
   );
 }
