@@ -1,3 +1,4 @@
+//@ts-nocheck
 import { IDL } from '@dfinity/candid';
 import { ExtractFieldResult, Type } from '@dfinity/candid/lib/cjs/idl';
 import { useState } from 'react';

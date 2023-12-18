@@ -42,9 +42,14 @@ export const idlFactory = ({ IDL }) => {
     description: IDL.Text,
   });
   return IDL.Service({
-    features: IDL.Func([IDL.Vec(IDL.Text)], [IDL.Vec(IDL.Text)], []),
-    app: IDL.Func([AppArgs], [AppView], []),
-    create_app: IDL.Func([CreateAppArgs], [AppView], []),
+    app_number: IDL.Func([IDL.Nat8], [IDL.Text], []),
+    // app_name: IDL.Func([IDL.Text], [IDL.Text], []),
+    // app_opt: IDL.Func([IDL.Opt(IDL.Text)], [IDL.Text], []),
+    // app_vec: IDL.Func([IDL.Vec(IDL.Text)], [IDL.Text], []),
+    // app_number_vec: IDL.Func([IDL.Vec(IDL.Nat8)], [IDL.Text], []),
+    features: IDL.Func([IDL.Opt(IDL.Vec(IDL.Text))], [IDL.Vec(IDL.Text)], []),
+    // app: IDL.Func([AppArgs], [AppView], []),
+    // create_app: IDL.Func([CreateAppArgs], [AppView], []),
   });
 };
 export const init = () => {

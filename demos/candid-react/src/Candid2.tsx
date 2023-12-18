@@ -1,8 +1,8 @@
-import { IDL } from '@dfinity/candid';
-import { ExtractFieldResult, Type } from '@dfinity/candid/lib/cjs/idl';
-import { useState } from 'react';
+import { ExtractFields } from '@dfinity/candid/lib/cjs/idl';
 import { Actor } from '@dfinity/agent';
-import { createActor } from './large';
+import { createActor } from './small';
+import { UseFormRegister, useFieldArray, useForm } from 'react-hook-form';
+import React from 'react';
 
 const actor = createActor('xeka7-ryaaa-aaaal-qb57a-cai', {
   agentOptions: {
@@ -10,29 +10,25 @@ const actor = createActor('xeka7-ryaaa-aaaal-qb57a-cai', {
   },
 });
 
-const methods: [string, IDL.FuncClass][] = Actor.interfaceOf(actor as Actor)._fields;
+const methods: ExtractFields[] = Actor.interfaceOf(actor as Actor).extractFields().fields;
 
 interface CandidProps {}
 
 const Candid2: React.FC<CandidProps> = () => {
   return (
     <div>
-      {methods.map(([method, types]) => {
-        console.log({ method }, types.argTypes);
-
+      {methods.map(({ label, fields }) => {
+        console.log(label, fields);
         return (
-          <div key={method}>
-            <h3>{method}</h3>
-            {types.argTypes.map((type: Type) => {
-              const fields = type.extractFields();
-              console.log({ fields });
-              return (
-                <div>
-                  <CompileInput input={fields} />
-                </div>
-              );
-            })}
-            <button onClick={() => {}}>Call {method}</button>
+          <div key={label}>
+            <h3>{label}</h3>
+            {fields.map((field, index) =>
+              field.parent === 'vector' ? (
+                <RenderVector fields={field} key={index} />
+              ) : (
+                <RenderInput fields={field} key={index} />
+              ),
+            )}
           </div>
         );
       })}
@@ -42,153 +38,124 @@ const Candid2: React.FC<CandidProps> = () => {
 
 export default Candid2;
 
-function CompileInput({ input }: any) {
-  if (!input) {
-    return null;
-  }
+let renderCount = 0;
 
-  if (input instanceof Array) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'row', width: '100%' }}>
-        {input.map((input, index) => (
-          <RenderInput input={input} key={index} />
+const RenderVector = ({ fields: values }: { fields: ExtractFields }) => {
+  const { register, formState, control, handleSubmit } = useForm({
+    shouldUseNativeValidation: true,
+    values,
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'values',
+  });
+
+  const onSubmit = (data: any) => console.log('data', data);
+
+  renderCount++;
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <h1>{values.type}</h1>
+      <span className="counter">Render Count: {renderCount}</span>
+      <ul>
+        {fields.map((item, index) => (
+          <li key={item.id} style={{ display: 'flex' }}>
+            <Input
+              register={register}
+              index={index}
+              fields={values}
+              onRemove={() => remove(index)}
+              isError={!!formState.errors.root?.[index]?.message}
+            />
+          </li>
         ))}
-      </div>
-    );
-  }
+      </ul>
+      <button
+        type="button"
+        onClick={() => {
+          append(values, { shouldFocus: true });
+        }}
+      >
+        Append
+      </button>
+      <input type="submit" />
+    </form>
+  );
+};
 
-  return <RenderInput input={input} />;
+const RenderInput = ({ fields }: { fields: ExtractFields }) => {
+  const { register, formState, handleSubmit } = useForm({
+    shouldUseNativeValidation: true,
+  });
+
+  const onSubmit = async (data: any) => {
+    console.log(data);
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <h1>single {fields.component}</h1>
+      <ul>
+        <li>
+          <Input
+            register={register}
+            index={0}
+            fields={fields}
+            isError={!!formState.errors[fields.type]?.message}
+          />
+        </li>
+      </ul>
+      <input type="submit" />
+    </form>
+  );
+};
+
+interface MyComponentProps {
+  register: UseFormRegister<any>;
+  onRemove?: () => void;
+  fields: ExtractFields;
+  isError?: boolean;
+  error?: string;
+  index?: number;
 }
 
-const RenderInput = ({ input }: { input: ExtractFieldResult }) => {
-  if (!input) {
-    return null;
-  }
-
-  const {
-    children,
-    label,
-    options,
-    toggleHandler,
-    clickHandler,
-    removeHandler,
-    component: Comp,
-    type,
-  } = input;
-
-  if (type === 'checkbox') {
-    return <CheckBox key={label} label={label} toggleHandler={toggleHandler} />;
-  }
-
-  if (Comp === 'button' && clickHandler) {
-    return (
-      <Button key={label} label={label} removeHandler={removeHandler} clickHandler={clickHandler} />
-    );
-  }
-
-  if (Comp === 'input') {
-    return <input key={label} type={type} placeholder={label} />;
-  } else if (Comp === 'select') {
-    return (
-      <Select key={label} label={label} options={options}>
-        {children}
-      </Select>
-    );
-  }
-
+const Input: React.FC<MyComponentProps> = ({
+  register,
+  onRemove,
+  index,
+  fields,
+  isError,
+  error,
+}) => {
   return (
-    <Comp key={label}>
-      <CompileInput input={children} />
-    </Comp>
-  );
-};
-
-const CheckBox = ({ label, toggleHandler }: any) => {
-  const [element, setElement] = useState<ExtractFieldResult>();
-
-  const changeHandler = (e: any) => {
-    const elements = toggleHandler && toggleHandler(e.target.checked);
-    console.log({ elements });
-    setElement(elements);
-  };
-
-  return (
-    <div>
-      <label>{label}</label>
-      <input type="checkbox" name={label} onChange={changeHandler} />
-      <CompileInput input={element} />
-    </div>
-  );
-};
-
-const Select = ({ label, options, children }: any) => {
-  const [selected, setSelected] = useState<number>(0);
-
-  const changeHandler = (e: any) => {
-    setSelected(e.target.value);
-  };
-
-  return (
-    <div>
-      <label>{label}</label>
-      <select onChange={changeHandler}>
-        {options?.map((option: string, index: number) => (
-          <option key={option} value={index}>
-            {option}
-          </option>
-        ))}
-      </select>
-      <CompileInput input={children[selected]} />
-    </div>
-  );
-};
-
-const Button = ({ label, clickHandler, removeHandler }: any) => {
-  const [elements, setElements] = useState<ExtractFieldResult[]>([]);
-
-  const add = () => {
-    const newElements = clickHandler && clickHandler('feature');
-    console.log({ newElements });
-    setElements([...newElements]);
-  };
-
-  const remove = () => {
-    const newElements = removeHandler && removeHandler('feature');
-    console.log({ newElements });
-    setElements([...newElements]);
-  };
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-      <div>
-        <label>{label}</label>
-        <button onClick={add}>+</button>
-      </div>
-      <div style={{ display: 'flex', width: '100%' }}>
-        <div
+    <div style={{ display: 'flex', alignItems: 'start' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'start',
+        }}
+      >
+        <input
+          {...register(`values[${index}].value`, { ...fields })}
+          defaultValue={fields.value}
+          placeholder={fields.type}
+          type={fields.type}
           style={{
-            display: 'flex',
-            flexDirection: 'column',
-            width: '100%',
+            margin: 0,
+            border: !!isError ? '1px solid red' : '1px solid black',
           }}
-        >
-          {elements.map((element, index) => (
-            <div
-              style={{
-                display: 'flex',
-                width: '100%',
-                justifyContent: 'space-between',
-                border: '1px solid black',
-                flexDirection: 'row',
-              }}
-              key={index}
-            >
-              <CompileInput input={element} />
-              <button onClick={remove}>x</button>
-            </div>
-          ))}
-        </div>
+        />
+        {fields.required && <p style={{ color: 'red', marginTop: 0, fontSize: 8 }}>Required</p>}
+        {error && <p style={{ color: 'red', marginTop: 0, fontSize: 8 }}>{error}</p>}
       </div>
+      {onRemove && (
+        <button type="button" onClick={onRemove}>
+          x
+        </button>
+      )}
     </div>
   );
 };
