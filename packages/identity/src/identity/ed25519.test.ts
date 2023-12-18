@@ -1,4 +1,4 @@
-import { DerEncodedPublicKey, fromHex } from '@dfinity/agent';
+import { DerEncodedPublicKey, PublicKey, fromHex, toHex } from '@dfinity/agent';
 import { Ed25519KeyIdentity, Ed25519PublicKey } from './ed25519';
 
 const testVectors: Array<[string, string]> = [
@@ -128,4 +128,48 @@ test('from JSON', async () => {
   const signature = await identity.sign(msg);
   const isValid = Ed25519KeyIdentity.verify(msg, signature, identity.getPublicKey().rawKey);
   expect(isValid).toBe(true);
+});
+
+describe('public key serialization from various types', () => {
+  it('should serialize from an existing public key', () => {
+    const baseKey = Ed25519KeyIdentity.generate();
+    const publicKey: PublicKey = baseKey.getPublicKey();
+    const newKey = Ed25519PublicKey.from(publicKey);
+    expect(newKey).toBeDefined();
+  });
+  it('should serialize from a raw key', () => {
+    const baseKey = Ed25519KeyIdentity.generate();
+    const publicKey = baseKey.getPublicKey().rawKey;
+    ArrayBuffer.isView(publicKey); //?
+    publicKey instanceof ArrayBuffer; //?
+
+    const newKey = Ed25519PublicKey.from(publicKey);
+    expect(newKey).toBeDefined();
+  });
+  it('should serialize from a DER key', () => {
+    const baseKey = Ed25519KeyIdentity.generate();
+    const publicKey = baseKey.getPublicKey().derKey;
+    const newKey = Ed25519PublicKey.from(publicKey);
+    expect(newKey).toBeDefined();
+  });
+  it('should serialize from a Uint8Array', () => {
+    const baseKey = Ed25519KeyIdentity.generate();
+    const publicKey = new Uint8Array(baseKey.getPublicKey().toRaw());
+    const newKey = Ed25519PublicKey.from(publicKey);
+    expect(newKey).toBeDefined();
+  });
+  it('should serialize from a hex string', () => {
+    const baseKey = Ed25519KeyIdentity.generate();
+    const publicKey = toHex(baseKey.getPublicKey().toRaw());
+    const newKey = Ed25519PublicKey.from(publicKey);
+    expect(newKey).toBeDefined();
+  });
+  it('should fail to parse an invalid key', () => {
+    const baseKey = 7;
+    const shouldFail = () => Ed25519PublicKey.from(baseKey as unknown);
+    expect(shouldFail).toThrow('Cannot construct Ed25519PublicKey from the provided key.');
+
+    const shouldFailHex = () => Ed25519PublicKey.from('not a hex string');
+    expect(shouldFailHex).toThrow('Invalid hexadecimal string');
+  });
 });

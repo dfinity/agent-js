@@ -5,6 +5,8 @@ import {
   Signature,
   uint8ToBuf,
   bufFromBufLike,
+  fromHex,
+  toHex,
 } from '@dfinity/agent';
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { sha256 } from '@noble/hashes/sha256';
@@ -12,7 +14,6 @@ import { randomBytes } from '@noble/hashes/utils';
 import hdkey from 'hdkey';
 import { mnemonicToSeedSync } from 'bip39';
 import { PublicKey, SignIdentity } from '@dfinity/agent';
-import { fromHexString, toHexString } from './buffer';
 import { SECP256K1_OID, unwrapDER, wrapDER } from './der';
 
 declare type PublicKeyHex = string;
@@ -41,7 +42,7 @@ export class Secp256k1PublicKey implements PublicKey {
    */
   public static from(maybeKey: unknown): Secp256k1PublicKey {
     if (typeof maybeKey === 'string') {
-      const key = fromHexString(maybeKey);
+      const key = fromHex(maybeKey);
       return this.fromRaw(key);
     } else if (isObject(maybeKey)) {
       const key = maybeKey as KeyLike;
@@ -87,9 +88,6 @@ export class Secp256k1PublicKey implements PublicKey {
 
   // `fromRaw` and `fromDer` should be used for instantiation, not this constructor.
   private constructor(key: ArrayBuffer) {
-    if (key.byteLength !== 33 && key.byteLength !== 65) {
-      throw new Error('A Secp256k1 public key must be exactly 33 or 65 bytes long');
-    }
     this.#rawKey = bufFromBufLike(key);
     this.#derKey = Secp256k1PublicKey.derEncode(key);
   }
@@ -141,8 +139,8 @@ export class Secp256k1KeyIdentity extends SignIdentity {
   public static fromParsedJson(obj: JsonableSecp256k1Identity): Secp256k1KeyIdentity {
     const [publicKeyRaw, privateKeyRaw] = obj;
     return new Secp256k1KeyIdentity(
-      Secp256k1PublicKey.fromRaw(fromHexString(publicKeyRaw)),
-      fromHexString(privateKeyRaw),
+      Secp256k1PublicKey.fromRaw(fromHex(publicKeyRaw)),
+      fromHex(privateKeyRaw),
     );
   }
 
@@ -216,7 +214,7 @@ export class Secp256k1KeyIdentity extends SignIdentity {
    * @returns {JsonableSecp256k1Identity}
    */
   public toJSON(): JsonableSecp256k1Identity {
-    return [toHexString(this._publicKey.toRaw()), toHexString(this._privateKey)];
+    return [toHex(this._publicKey.toRaw()), toHex(this._privateKey)];
   }
 
   /**
@@ -232,9 +230,9 @@ export class Secp256k1KeyIdentity extends SignIdentity {
 
   /**
    * Return the public key.
-   * @returns {Secp256k1PublicKey}
+   * @returns {Required<PublicKey>}
    */
-  public getPublicKey(): Secp256k1PublicKey {
+  public getPublicKey(): Required<PublicKey> {
     return this._publicKey;
   }
 
