@@ -2,7 +2,7 @@ import { DerEncodedPublicKey, PublicKey } from '@dfinity/agent';
 import { toHexString } from '@dfinity/candid/lib/cjs/utils/buffer';
 import { randomBytes } from 'crypto';
 import { sha256 } from '@noble/hashes/sha256';
-import Secp256k1 from 'secp256k1';
+import { secp256k1 } from '@noble/curves/secp256k1';
 import { Secp256k1KeyIdentity, Secp256k1PublicKey } from './secp256k1';
 
 function fromHexString(hexString: string): ArrayBuffer {
@@ -166,7 +166,7 @@ describe('Secp256k1KeyIdentity Tests', () => {
       const shortArray = new Uint8Array(secretKey).subarray(1, 32);
       Secp256k1KeyIdentity.fromSecretKey(Uint8Array.from(shortArray).subarray(1, 32));
     };
-    expect(shouldFail).toThrowError('Expected private key to be an Uint8Array with length 32');
+    expect(shouldFail).toThrowError('private key must be 32 bytes, hex or bigint, not object');
   });
 
   test('getKeyPair should return a copy of the key pair', () => {
@@ -186,12 +186,55 @@ describe('Secp256k1KeyIdentity Tests', () => {
     const signature = await identity.sign(challenge);
     const hash = sha256.create();
     hash.update(challenge);
-
-    const isValid = Secp256k1.ecdsaVerify(
+    const isValid = secp256k1.verify(
       new Uint8Array(signature),
       new Uint8Array(hash.digest()),
       new Uint8Array(rawPublicKey),
     );
     expect(isValid).toBe(true);
+  });
+});
+
+describe('public key serialization from', () => {
+  it('should serialize from an existing public key', () => {
+    const baseKey = Secp256k1KeyIdentity.generate();
+    const publicKey: PublicKey = baseKey.getPublicKey();
+    const newKey = Secp256k1PublicKey.from(publicKey);
+    expect(newKey).toBeDefined();
+  });
+  it('should serialize from a raw key', () => {
+    const baseKey = Secp256k1KeyIdentity.generate();
+    const publicKey = baseKey.getPublicKey().rawKey;
+    ArrayBuffer.isView(publicKey); //?
+    publicKey instanceof ArrayBuffer; //?
+
+    const newKey = Secp256k1PublicKey.from(publicKey);
+    expect(newKey).toBeDefined();
+  });
+  it('should serialize from a DER key', () => {
+    const baseKey = Secp256k1KeyIdentity.generate();
+    const publicKey = baseKey.getPublicKey().derKey;
+    const newKey = Secp256k1PublicKey.from(publicKey);
+    expect(newKey).toBeDefined();
+  });
+  it('should serialize from a Uint8Array', () => {
+    const baseKey = Secp256k1KeyIdentity.generate();
+    const publicKey = new Uint8Array(baseKey.getPublicKey().toRaw());
+    const newKey = Secp256k1PublicKey.from(publicKey);
+    expect(newKey).toBeDefined();
+  });
+  it('should serialize from a hex string', () => {
+    const baseKey = Secp256k1KeyIdentity.generate();
+    const publicKey = toHexString(baseKey.getPublicKey().toRaw());
+    const newKey = Secp256k1PublicKey.from(publicKey);
+    expect(newKey).toBeDefined();
+  });
+  it('should fail to parse an invalid key', () => {
+    const baseKey = 7;
+    const shouldFail = () => Secp256k1PublicKey.from(baseKey as unknown);
+    expect(shouldFail).toThrow('Cannot construct Secp256k1PublicKey from the provided key.');
+
+    const shouldFailHex = () => Secp256k1PublicKey.from('not a hex string');
+    expect(shouldFailHex).toThrow('A Secp256k1 public key must be exactly 33 or 65 bytes long');
   });
 });

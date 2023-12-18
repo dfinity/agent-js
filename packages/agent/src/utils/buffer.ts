@@ -79,3 +79,23 @@ export function bufEquals(b1: ArrayBuffer, b2: ArrayBuffer): boolean {
 export function uint8ToBuf(arr: Uint8Array): ArrayBuffer {
   return new DataView(arr.buffer, arr.byteOffset, arr.byteLength).buffer;
 }
+
+/**
+ * Returns a true ArrayBuffer from an ArrayBufferLike object.
+ * @param bufLike a buffer-like object
+ * @returns ArrayBuffer
+ */
+export function bufFromBufLike(
+  bufLike: ArrayBuffer | Uint8Array | DataView | ArrayBufferView | ArrayBufferLike,
+): ArrayBuffer {
+  if (bufLike instanceof Uint8Array) {
+    return uint8ToBuf(bufLike);
+  }
+  if (bufLike instanceof ArrayBuffer) {
+    return bufLike;
+  }
+  if ('buffer' in bufLike) {
+    return bufLike.buffer;
+  }
+  return new Uint8Array(bufLike);
+}

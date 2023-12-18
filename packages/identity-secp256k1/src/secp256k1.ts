@@ -1,6 +1,12 @@
 /* eslint-disable no-underscore-dangle */
-import { DerEncodedPublicKey, KeyPair, Signature } from '@dfinity/agent';
-import Secp256k1 from 'secp256k1';
+import {
+  DerEncodedPublicKey,
+  KeyPair,
+  Signature,
+  uint8ToBuf,
+  bufFromBufLike,
+} from '@dfinity/agent';
+import { secp256k1 } from '@noble/curves/secp256k1';
 import { sha256 } from '@noble/hashes/sha256';
 import { randomBytes } from '@noble/hashes/utils';
 import hdkey from 'hdkey';
@@ -13,41 +19,79 @@ declare type PublicKeyHex = string;
 declare type SecretKeyHex = string;
 export declare type JsonableSecp256k1Identity = [PublicKeyHex, SecretKeyHex];
 
-export class Secp256k1PublicKey implements PublicKey {
-  /**
-   * Construct Secp256k1PublicKey from an existing PublicKey
-   * @param {PublicKey} key
-   * @returns {Secp256k1PublicKey} Instance of Secp256k1PublicKey
-   */
-  public static from(key: PublicKey): Secp256k1PublicKey {
-    return this.fromDer(key.toDer());
-  }
+declare type KeyLike = PublicKey | DerEncodedPublicKey | ArrayBuffer | ArrayBufferView;
 
+function isObject(value: unknown) {
+  return value !== null && typeof value === 'object';
+}
+
+export class Secp256k1PublicKey implements PublicKey {
   public static fromRaw(rawKey: ArrayBuffer): Secp256k1PublicKey {
-    return new Secp256k1PublicKey(rawKey);
+    return new Secp256k1PublicKey(bufFromBufLike(rawKey));
   }
 
   public static fromDer(derKey: DerEncodedPublicKey): Secp256k1PublicKey {
     return new Secp256k1PublicKey(this.derDecode(derKey));
   }
 
+  /**
+   * Construct Secp256k1PublicKey from an existing PublicKey
+   * @param {unknown} maybeKey - existing PublicKey, ArrayBuffer, DerEncodedPublicKey, or hex string
+   * @returns {Secp256k1PublicKey} Instance of Secp256k1PublicKey
+   */
+  public static from(maybeKey: unknown): Secp256k1PublicKey {
+    if (typeof maybeKey === 'string') {
+      const key = fromHexString(maybeKey);
+      return this.fromRaw(key);
+    } else if (isObject(maybeKey)) {
+      const key = maybeKey as KeyLike;
+      if (isObject(key) && Object.hasOwnProperty.call(key, '__derEncodedPublicKey__')) {
+        return this.fromDer(key as DerEncodedPublicKey);
+      } else if (ArrayBuffer.isView(key)) {
+        const view = key as ArrayBufferView;
+        return this.fromRaw(bufFromBufLike(view.buffer));
+      } else if (key instanceof ArrayBuffer) {
+        return this.fromRaw(key);
+      } else if ('rawKey' in key) {
+        return this.fromRaw(key.rawKey as ArrayBuffer);
+      } else if ('derKey' in key) {
+        return this.fromDer(key.derKey as DerEncodedPublicKey);
+      } else if ('toDer' in key) {
+        return this.fromDer(key.toDer() as ArrayBuffer);
+      }
+    }
+    throw new Error('Cannot construct Secp256k1PublicKey from the provided key.');
+  }
+
   private static derEncode(publicKey: ArrayBuffer): DerEncodedPublicKey {
-    return wrapDER(publicKey, SECP256K1_OID).buffer as DerEncodedPublicKey;
+    const key = bufFromBufLike(wrapDER(publicKey, SECP256K1_OID).buffer) as DerEncodedPublicKey;
+    key.__derEncodedPublicKey__ = undefined;
+    return key;
   }
 
   private static derDecode(key: DerEncodedPublicKey): ArrayBuffer {
     return unwrapDER(key, SECP256K1_OID);
   }
 
-  readonly rawKey: ArrayBuffer;
+  #rawKey: ArrayBuffer;
 
-  readonly derKey: DerEncodedPublicKey;
+  public get rawKey(): ArrayBuffer {
+    return this.#rawKey;
+  }
+
+  #derKey: DerEncodedPublicKey;
+
+  public get derKey(): DerEncodedPublicKey {
+    return this.#derKey;
+  }
 
   // `fromRaw` and `fromDer` should be used for instantiation, not this constructor.
   private constructor(key: ArrayBuffer) {
-    key.byteLength;
-    this.rawKey = key;
-    this.derKey = Secp256k1PublicKey.derEncode(key);
+    if (key.byteLength !== 33 && key.byteLength !== 65) {
+      throw new Error('A Secp256k1 public key must be exactly 33 or 65 bytes long');
+    }
+    this.#rawKey = bufFromBufLike(key);
+    this.#derKey = Secp256k1PublicKey.derEncode(key);
   }
 
   public toDer(): DerEncodedPublicKey {
@@ -78,17 +122,17 @@ export class Secp256k1KeyIdentity extends SignIdentity {
       // private key from seed according to https://en.bitcoin.it/wiki/BIP_0032
       // master key generation:
       privateKey = seed;
-      if (!Secp256k1.privateKeyVerify(privateKey)) {
+      if (!secp256k1.utils.isValidPrivateKey(privateKey)) {
         throw new Error('The seed is invalid.');
       }
     } else {
       privateKey = new Uint8Array(randomBytes(32));
-      while (!Secp256k1.privateKeyVerify(privateKey)) {
+      while (!secp256k1.utils.isValidPrivateKey(privateKey)) {
         privateKey = new Uint8Array(randomBytes(32));
       }
     }
 
-    const publicKeyRaw = Secp256k1.publicKeyCreate(privateKey, false);
+    const publicKeyRaw = secp256k1.getPublicKey(privateKey, false);
 
     const publicKey = Secp256k1PublicKey.fromRaw(publicKeyRaw);
     return new this(publicKey, privateKey);
@@ -129,7 +173,7 @@ export class Secp256k1KeyIdentity extends SignIdentity {
    * @returns {Secp256k1KeyIdentity}
    */
   public static fromSecretKey(secretKey: ArrayBuffer): Secp256k1KeyIdentity {
-    const publicKey = Secp256k1.publicKeyCreate(new Uint8Array(secretKey), false);
+    const publicKey = secp256k1.getPublicKey(new Uint8Array(secretKey), false);
     const identity = Secp256k1KeyIdentity.fromKeyPair(publicKey, new Uint8Array(secretKey));
     return identity;
   }
@@ -202,10 +246,11 @@ export class Secp256k1KeyIdentity extends SignIdentity {
   public async sign(challenge: ArrayBuffer): Promise<Signature> {
     const hash = sha256.create();
     hash.update(new Uint8Array(challenge));
-    const signature = Secp256k1.ecdsaSign(
-      new Uint8Array(hash.digest()),
-      new Uint8Array(this._privateKey),
-    ).signature.buffer;
+    const signature = uint8ToBuf(
+      secp256k1
+        .sign(new Uint8Array(hash.digest()), new Uint8Array(this._privateKey))
+        .toCompactRawBytes(),
+    );
     return signature as Signature;
   }
 }
