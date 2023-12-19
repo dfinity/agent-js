@@ -41,12 +41,18 @@ type FormValues = {
 };
 
 const RenderForm = ({ fields }: { fields: ExtractFields[] }) => {
-  const { register, formState, control, handleSubmit } = useForm<FormValues>({
+  const {
+    register,
+    formState: { errors },
+    control,
+    handleSubmit,
+  } = useForm<FormValues>({
     shouldUseNativeValidation: true,
-    reValidateMode: 'onSubmit',
+    mode: 'onChange',
     values: {
-      inputs: fields.reduce((acc, _, index) => {
-        acc[index] = [];
+      inputs: fields.reduce((acc, field, index) => {
+        const optional = field.optional || field.parent === 'vector';
+        acc[`${field.label}-${index}`] = optional ? [] : [{ value: '' }];
         return acc;
       }, {} as FormValues['inputs']),
     },
@@ -57,11 +63,13 @@ const RenderForm = ({ fields }: { fields: ExtractFields[] }) => {
       {fields.map((field, index) => {
         return (
           <div key={index}>
+            <h2>{field.parent}</h2>
             <h3>{field.parentName}</h3>
             <RenderField
               control={control}
               field={field}
-              name={`inputs.${index}`}
+              error={errors.inputs?.[`${field.label}-${index}`]?.[index]?.value}
+              name={`inputs.${field.label}-${index}`}
               register={register}
             />
           </div>
@@ -77,11 +85,13 @@ const RenderField = ({
   field,
   name,
   register,
+  error,
 }: {
   control: any;
   field: ExtractFields;
   name: string;
   register: any;
+  error?: any;
 }) => {
   const { fields, append, remove } = useFieldArray({
     control,
@@ -89,20 +99,24 @@ const RenderField = ({
   });
 
   const handleAppend = () => {
-    append({}, { shouldFocus: true });
+    append('', { shouldFocus: true });
   };
 
   return (
     <div>
-      <label>{field.label}</label>
-      <button type="button" onClick={handleAppend}>
-        +
-      </button>
+      <label>{name}</label>
+      {(field.parent === 'vector' || (field.optional && fields.length === 0)) && (
+        <button type="button" onClick={handleAppend}>
+          +
+        </button>
+      )}
       {fields.map((item, index) => (
         <div key={item.id}>
           <Input
-            {...register(`inputs.${name}[${index}].value`, field)}
+            {...register(`${name}[${index}].value`, field)}
             type={field.type}
+            isError={!!error}
+            error={error?.message?.toString()}
             required={field.required}
             onRemove={() => remove(index)}
           />
