@@ -6,19 +6,12 @@ export interface JsonObject extends Record<string, JsonValue> {}
 
 export type JsonValue = boolean | string | number | JsonArray | JsonObject;
 
-export type FieldComponent = 'form' | 'input' | 'select' | 'option' | 'div';
+export type FieldComponent = 'form' | 'input' | 'select' | 'option' | 'span';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyValue = any;
 
-export type ExtractFields = {
-  label: string;
-  type: string;
-  parent?: string;
-  parentLabel?: string;
-  options?: string[];
-  component?: FieldComponent;
-} & Partial<{
+export type FormFields = Partial<{
   required: boolean;
   min: number | string;
   max: number | string;
@@ -32,29 +25,23 @@ export type ExtractFields = {
   onBlur?: (event: Event) => void;
   disabled: boolean;
   deps: AnyValue | AnyValue[];
-}> &
-  (
-    | {
-        pattern?: RegExp;
-        valueAsNumber?: false;
-        valueAsDate?: false;
-      }
-    | {
-        pattern?: undefined;
-        valueAsNumber?: false;
-        valueAsDate?: true;
-      }
-    | {
-        pattern?: undefined;
-        valueAsNumber?: true;
-        valueAsDate?: false;
-      }
-  );
+}> & {
+  [key: string]: AnyValue;
+};
+
+export interface ExtractFields extends FormFields {
+  label: string;
+  type: string;
+  parent: string;
+  parentName?: string;
+  options?: string[];
+  component?: FieldComponent;
+}
 
 export type ExtractFieldsArgs = {
   label?: string;
-  parent?: string;
-  parentLabel?: string;
-  recursive?: boolean;
-  required?: boolean;
+  parent: string;
+  parentName?: string;
+  recursive: boolean;
+  required: boolean;
 };
