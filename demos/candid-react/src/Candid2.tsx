@@ -2,7 +2,7 @@ import { Actor } from '@dfinity/agent';
 import { createActor } from './small';
 import { useFieldArray, useForm } from 'react-hook-form';
 import React from 'react';
-import { ExtractFields } from '@dfinity/candid';
+import { ExtractFields, FormFields } from '@dfinity/candid';
 
 const actor = createActor('xeka7-ryaaa-aaaal-qb57a-cai', {
   agentOptions: {
@@ -21,7 +21,7 @@ const Candid2: React.FC<CandidProps> = () => {
         console.log({ functionName, fields });
         return (
           <div key={functionName}>
-            <h3>{functionName}</h3>
+            <h1>{functionName}</h1>
             {fields.map((field, index) =>
               field.parent === 'vector' ? (
                 <RenderVector field={field} key={index} />
@@ -40,45 +40,50 @@ export default Candid2;
 
 let renderCount = 0;
 
+type FormInputs = {
+  inputs: Array<{
+    value: string;
+  }>;
+};
+
 const RenderVector = ({ field }: { field: ExtractFields }) => {
-  const { register, formState, control, handleSubmit } = useForm({
+  const { register, formState, control, handleSubmit, setValue, getValues } = useForm<FormInputs>({
     shouldUseNativeValidation: true,
+    reValidateMode: 'onSubmit',
+    values: {
+      inputs: [],
+    },
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove } = useFieldArray<FormInputs>({
     control,
-    name: 'root',
+    name: 'inputs',
   });
 
-  const onSubmit = (submitData: any) => console.log('submitData', submitData);
+  const onSubmit = (submitData: any) => {
+    console.log('submitData', submitData);
+  };
 
-  renderCount++;
+  const handleAppend = () => {
+    append({ value: '' }, { shouldFocus: true });
+  };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <h1>{field.type}</h1>
+      <h3>{field.parentName}</h3>
       <span className="counter">Render Count: {renderCount}</span>
       <ul>
         {fields.map((item, index) => (
           <li key={item.id} style={{ display: 'flex' }}>
             <Input
-              {...register(`root[${index}].value`, field)} // Adjust according to the structure of your data
-              onRemove={() => remove(index)}
-              isError={!!formState.errors.root?.[index]?.message}
-              error={formState.errors.root?.[index]?.message}
+              {...register(`inputs.${index}.value`, field)}
               type={field.type}
-              required={field.required}
+              onRemove={() => remove(index)}
             />
           </li>
         ))}
       </ul>
-      <button
-        type="button"
-        onClick={() => {
-          // Append with an object representing the default values for the new field
-          append({ value: '' }); // Adjust 'value' to match the structure of your field
-        }}
-      >
+      <button type="button" onClick={handleAppend}>
         Append
       </button>
       <input type="submit" />
@@ -87,8 +92,21 @@ const RenderVector = ({ field }: { field: ExtractFields }) => {
 };
 
 const RenderSimpleForm = ({ field }: { field: ExtractFields }) => {
-  const { register, formState, handleSubmit } = useForm({
+  const {
+    register,
+    control,
+    formState: { errors },
+    handleSubmit,
+  } = useForm<FormInputs>({
     shouldUseNativeValidation: true,
+    values: {
+      inputs: field.optional ? [] : [{ value: '' }],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray<FormInputs>({
+    control,
+    name: 'inputs',
   });
 
   const onSubmit = async (submitData: any) => {
@@ -97,18 +115,24 @@ const RenderSimpleForm = ({ field }: { field: ExtractFields }) => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <h1>{field.name}</h1>
-      <ul>
-        <li>
+      <h3>{field.label}</h3>
+      {fields.map((item, index) => (
+        <div key={item.id}>
           <Input
-            {...register('value', field)}
-            isError={!!formState.errors.value?.message}
-            error={formState.errors.value?.message}
+            {...register(`inputs.${index}.value`, field)}
             type={field.type}
+            error={errors.inputs?.[index]?.message}
+            isError={!!errors.inputs?.[index]}
             required={field.required}
+            onRemove={field.optional ? () => remove(index) : undefined}
           />
-        </li>
-      </ul>
+        </div>
+      ))}
+      {field.optional && fields.length === 0 && (
+        <button type="button" onClick={() => append({ value: '' })}>
+          +
+        </button>
+      )}
       <input type="submit" />
     </form>
   );

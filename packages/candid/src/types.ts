@@ -8,6 +8,18 @@ export type JsonValue = boolean | string | number | JsonArray | JsonObject;
 
 export type FieldComponent = 'form' | 'input' | 'select' | 'option' | 'span';
 
+export type FieldType =
+  | 'text'
+  | 'number'
+  | 'checkbox'
+  | 'select'
+  | 'textarea'
+  | 'reserved'
+  | 'null'
+  | 'empty'
+  | 'principal'
+  | 'unknown';
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyValue = any;
 
@@ -31,10 +43,11 @@ export type FormFields = Partial<{
 
 export interface ExtractFields extends FormFields {
   label: string;
-  type: string;
+  type: FieldType;
   parent: string;
   parentName?: string;
   options?: string[];
+  optional?: boolean;
   component?: FieldComponent;
 }
 
@@ -42,6 +55,6 @@ export type ExtractFieldsArgs = {
   label?: string;
   parent: string;
   parentName?: string;
-  recursive: boolean;
-  required: boolean;
+  recursive?: boolean;
+  optional?: boolean;
 };

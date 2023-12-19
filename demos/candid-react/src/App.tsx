@@ -1,9 +1,7 @@
 import './App.css';
 /* eslint-disable no-console */
 import Candid2 from './Candid2';
-import MyForm from './Form';
 import * as zod from 'zod';
-import RecursiveForm from './RecursiveForm';
 
 // Example schema
 const exampleSchema = zod.object({

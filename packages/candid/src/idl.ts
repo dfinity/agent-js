@@ -527,6 +527,7 @@ export class TextClass extends PrimitiveType<string> {
       component: 'input',
       type: 'text',
       valueAsNumber: false,
+      required: true,
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       ...rest,
@@ -578,6 +579,7 @@ export class IntClass extends PrimitiveType<bigint> {
       component: 'input',
       type: 'number',
       valueAsNumber: true,
+      required: true,
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       ...rest,
@@ -626,6 +628,7 @@ export class NatClass extends PrimitiveType<bigint> {
       component: 'input',
       type: 'number',
       valueAsNumber: true,
+      required: true,
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       ...rest,
@@ -681,6 +684,7 @@ export class FloatClass extends PrimitiveType<number> {
       component: 'input',
       type: 'number',
       valueAsNumber: true,
+      required: true,
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       ...rest,
@@ -744,6 +748,7 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
     return {
       component: 'input',
       type: 'number',
+      required: true,
       valueAsNumber: true,
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
@@ -814,6 +819,7 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
       type: 'number',
       valueAsNumber: true,
       label: label ?? this.name,
+      required: true,
       validate: validateError(this.covariant, this),
       ...rest,
     };
@@ -890,7 +896,11 @@ export class VecClass<T> extends ConstructType<T[]> {
   }
 
   public extractFields({ label: parentName, ...rest }: ExtractFieldsArgs): ExtractFields {
-    return this._type.extractFields({ ...rest, parentName, parent: 'vector' }) as ExtractFields;
+    return this._type.extractFields({
+      ...rest,
+      parentName,
+      parent: 'vector',
+    }) as ExtractFields;
   }
 
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
@@ -1013,9 +1023,9 @@ export class OptClass<T> extends ConstructType<[T] | []> {
   public extractFields({ label: parentName, ...rest }: ExtractFieldsArgs): ExtractFields {
     return this._type.extractFields({
       ...rest,
-      label: 'option',
+      label: 'optional',
       parentName,
-      required: false,
+      optional: true,
     }) as ExtractFields;
   }
 
@@ -1516,7 +1526,7 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
   public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractFields {
     return {
       component: 'input',
-      type: 'string',
+      type: 'text',
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       ...rest,
@@ -1670,9 +1680,7 @@ export class ServiceClass extends ConstructType<PrincipalId> {
       fields: value.extractFields({
         label: functionName,
         parent: 'service',
-        required: true,
         parentName: 'service',
-        recursive: false,
       }),
     }));
   }
