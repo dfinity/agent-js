@@ -1102,10 +1102,20 @@ export class OptClass<T> extends ConstructType<[T] | []> {
  * @param {object} [fields] - mapping of function name to Type
  */
 export class RecordClass extends ConstructType<Record<string, any>> {
-  public extractFields({ label: parentName, ...rest }: ExtractFieldsArgs): ExtractFields[] {
-    return this._fields.map(([label, value]) =>
-      value.extractFields({ ...rest, label, parent: 'record', parentName }),
-    ) as ExtractFields[];
+  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractFields {
+    return {
+      component: 'fieldset',
+      type: 'record',
+      label: label ?? this.name,
+      fields: this._fields.map(([name, type]) =>
+        type.extractFields({
+          ...rest,
+          parentName: name,
+          parent: 'record',
+        }),
+      ) as ExtractFields[],
+      ...rest,
+    };
   }
 
   protected readonly _fields: Array<[string, Type]>;

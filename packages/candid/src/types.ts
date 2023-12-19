@@ -6,7 +6,7 @@ export interface JsonObject extends Record<string, JsonValue> {}
 
 export type JsonValue = boolean | string | number | JsonArray | JsonObject;
 
-export type FieldComponent = 'form' | 'input' | 'select' | 'option' | 'span';
+export type FieldComponent = 'form' | 'input' | 'select' | 'option' | 'span' | 'fieldset';
 
 export type FieldType =
   | 'text'
@@ -15,6 +15,7 @@ export type FieldType =
   | 'select'
   | 'textarea'
   | 'reserved'
+  | 'record'
   | 'null'
   | 'empty'
   | 'principal'
@@ -48,6 +49,7 @@ export interface ExtractFields extends FormFields {
   parentName?: string;
   options?: string[];
   optional?: boolean;
+  fields?: ExtractFields[];
   component?: FieldComponent;
 }
 

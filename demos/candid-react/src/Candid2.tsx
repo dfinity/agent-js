@@ -60,24 +60,46 @@ const RenderForm = ({ fields }: { fields: ExtractFields[] }) => {
 
   return (
     <form onSubmit={handleSubmit(data => console.log(data))}>
-      {fields.map((field, index) => {
-        return (
-          <div key={index}>
-            <h2>{field.parent}</h2>
-            <h3>{field.parentName}</h3>
-            <RenderField
-              control={control}
-              field={field}
-              error={errors.inputs?.[`${field.label}-${index}`]?.[index]?.value}
-              name={`inputs.${field.label}-${index}`}
-              register={register}
-            />
-          </div>
-        );
-      })}
+      {fields.map((field, index) => (
+        <div key={index}>
+          <h2>{field.parent}</h2>
+          <h3>{field.parentName}</h3>
+          <RenderFormField
+            control={control}
+            field={field}
+            error={errors.inputs?.[`${field.label}-${index}`]}
+            name={`inputs.${field.label}-${index}`}
+            register={register}
+          />
+        </div>
+      ))}
       <input type="submit" />
     </form>
   );
+};
+
+const RenderFormField = ({
+  field,
+  name,
+  ...rest
+}: {
+  field: ExtractFields;
+  name: string;
+  register: any;
+  control: any;
+  error?: any;
+}) => {
+  if (field.type === 'record') {
+    return (
+      <div>
+        {field.fields?.map((field, index) => (
+          <RenderField key={index} field={field} name={`${name}.${index}`} {...rest} />
+        ))}
+      </div>
+    );
+  }
+
+  return <RenderField name={name} field={field} {...rest} />;
 };
 
 const RenderField = ({
@@ -93,6 +115,8 @@ const RenderField = ({
   register: any;
   error?: any;
 }) => {
+  console.log({ field });
+
   const { fields, append, remove } = useFieldArray({
     control,
     name,
@@ -102,10 +126,13 @@ const RenderField = ({
     append('', { shouldFocus: true });
   };
 
+  const activeAdd = field.parent === 'vector' || (field.optional && fields.length === 0);
+  const activeRemove = field.parent === 'vector' || (field.optional && fields.length > 0);
+
   return (
     <div>
       <label>{name}</label>
-      {(field.parent === 'vector' || (field.optional && fields.length === 0)) && (
+      {activeAdd && (
         <button type="button" onClick={handleAppend}>
           +
         </button>
@@ -118,7 +145,7 @@ const RenderField = ({
             isError={!!error}
             error={error?.message?.toString()}
             required={field.required}
-            onRemove={() => remove(index)}
+            onRemove={activeRemove ? () => remove(index) : undefined}
           />
         </div>
       ))}

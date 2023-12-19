@@ -41,7 +41,7 @@ type FormInputs = {
 };
 
 const RenderVector = ({ field }: { field: ExtractFields }) => {
-  const { register, formState, control, handleSubmit, setValue, getValues } = useForm<FormInputs>({
+  const { register, formState, control, handleSubmit } = useForm<FormInputs>({
     shouldUseNativeValidation: true,
     reValidateMode: 'onSubmit',
     values: {
