@@ -1,30 +1,28 @@
-//@ts-nocheck
-import { IDL } from '@dfinity/candid';
-import { ExtractFieldResult, Type } from '@dfinity/candid/lib/cjs/idl';
-import { useState } from 'react';
-import { _SERVICE } from './small/b3_system.did';
-import { ActorSubclass } from '@dfinity/agent';
+import { useFieldArray, useForm } from 'react-hook-form';
+import React from 'react';
+import { ExtractFields } from '@dfinity/candid';
+import { Actor } from '@dfinity/agent';
+import { createActor } from './small';
 
-interface CandidProps {
-  methods: [string, IDL.FuncClass][];
-  actor: ActorSubclass<_SERVICE>;
-}
+const actor = createActor('xeka7-ryaaa-aaaal-qb57a-cai', {
+  agentOptions: {
+    host: 'https://ic0.app',
+  },
+});
 
-const Candid: React.FC<CandidProps> = ({ actor, methods }) => {
+const fields = Actor.interfaceOf(actor).extractFields();
+
+interface CandidProps {}
+
+const Candid: React.FC<CandidProps> = () => {
   return (
     <div>
-      {methods.map(([method, types]: any) => {
-        const type: ExtractFieldResult[] = types.argTypes.map((type: Type) => {
-          return type.extractFields();
-        });
-
-        console.log({ method }, types.argTypes);
-
+      {fields.map(({ functionName, fields }) => {
+        console.log({ functionName, fields });
         return (
-          <div key={method}>
-            <h3>{method}</h3>
-            <CompileInput input={type} />
-            <button onClick={() => {}}>Submit</button>
+          <div key={functionName}>
+            <h1>{functionName}</h1>
+            <RenderVector field={{ parentName: functionName, ...fields[1] }} />
           </div>
         );
       })}
@@ -34,153 +32,144 @@ const Candid: React.FC<CandidProps> = ({ actor, methods }) => {
 
 export default Candid;
 
-function CompileInput({ input }: any) {
-  if (!input) {
-    return null;
-  }
+let renderCount = 0;
 
-  if (input instanceof Array) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'row', width: '100%' }}>
-        {input.map((input, index) => (
-          <RenderInput input={input} key={index} />
+type FormInputs = {
+  inputs: Array<{
+    value: string;
+  }>;
+};
+
+const RenderVector = ({ field }: { field: ExtractFields }) => {
+  const { register, formState, control, handleSubmit, setValue, getValues } = useForm<FormInputs>({
+    shouldUseNativeValidation: true,
+    reValidateMode: 'onSubmit',
+    values: {
+      inputs: [],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray<FormInputs>({
+    control,
+    name: 'inputs',
+  });
+
+  const onSubmit = (submitData: any) => {
+    console.log('submitData', submitData);
+  };
+
+  const handleAppend = () => {
+    append({ value: '' }, { shouldFocus: true });
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <h3>{field.parentName}</h3>
+      <span className="counter">Render Count: {renderCount}</span>
+      <ul>
+        {fields.map((item, index) => (
+          <li key={item.id} style={{ display: 'flex' }}>
+            <Input
+              {...register(`inputs.${index}.value`, field)}
+              type={field.type}
+              required={field.required}
+              onRemove={() => remove(index)}
+            />
+          </li>
         ))}
-      </div>
-    );
-  }
+      </ul>
+      <button type="button" onClick={handleAppend}>
+        +
+      </button>
+      <input type="submit" />
+    </form>
+  );
+};
 
-  return <RenderInput input={input} />;
+const RenderSimpleForm = ({ field }: { field: ExtractFields }) => {
+  const {
+    register,
+    control,
+    formState: { errors },
+    handleSubmit,
+  } = useForm<FormInputs>({
+    shouldUseNativeValidation: true,
+    values: {
+      inputs: field.optional ? [] : [{ value: '' }],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray<FormInputs>({
+    control,
+    name: 'inputs',
+  });
+
+  const onSubmit = async (submitData: any) => {
+    console.log({ submitData });
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <h3>{field.label}</h3>
+      {fields.map((item, index) => (
+        <div key={item.id}>
+          <Input
+            {...register(`inputs.${index}.value`, field)}
+            type={field.type}
+            error={errors.inputs?.[index]?.message}
+            isError={!!errors.inputs?.[index]}
+            required={field.required}
+            onRemove={field.optional ? () => remove(index) : undefined}
+          />
+        </div>
+      ))}
+      {field.optional && fields.length === 0 && (
+        <button type="button" onClick={() => append({ value: '' })}>
+          +
+        </button>
+      )}
+      <input type="submit" />
+    </form>
+  );
+};
+
+interface MyComponentProps extends ExtractFields {
+  onRemove?: () => void;
+  isError?: boolean;
+  error?: string;
 }
 
-const RenderInput = ({ input }: { input: ExtractFieldResult }) => {
-  if (!input) {
-    return null;
-  }
-
-  const {
-    children,
-    label,
-    options,
-    toggleHandler,
-    clickHandler,
-    removeHandler,
-    component: Comp,
-    type,
-  } = input;
-
-  if (type === 'checkbox') {
-    return <CheckBox key={label} label={label} toggleHandler={toggleHandler} />;
-  }
-
-  if (Comp === 'button' && clickHandler) {
-    return (
-      <Button key={label} label={label} removeHandler={removeHandler} clickHandler={clickHandler} />
-    );
-  }
-
-  if (Comp === 'input') {
-    return <input key={label} type={type} placeholder={label} />;
-  } else if (Comp === 'select') {
-    return (
-      <Select key={label} label={label} options={options}>
-        {children}
-      </Select>
-    );
-  }
-
+const Input: React.ForwardRefExoticComponent<
+  React.PropsWithoutRef<MyComponentProps> & React.RefAttributes<HTMLInputElement>
+> = React.forwardRef(({ onRemove, isError, name, type, required, error, ...rest }, ref) => {
   return (
-    <Comp key={label}>
-      <CompileInput input={children} />
-    </Comp>
-  );
-};
-
-const CheckBox = ({ label, toggleHandler }: any) => {
-  const [element, setElement] = useState<ExtractFieldResult>();
-
-  const changeHandler = (e: any) => {
-    const elements = toggleHandler && toggleHandler(e.target.checked);
-    console.log({ elements });
-    setElement(elements);
-  };
-
-  return (
-    <div>
-      <label>{label}</label>
-      <input type="checkbox" name={label} onChange={changeHandler} />
-      <CompileInput input={element} />
-    </div>
-  );
-};
-
-const Select = ({ label, options, children }: any) => {
-  const [selected, setSelected] = useState<number>(0);
-
-  const changeHandler = (e: any) => {
-    setSelected(e.target.value);
-  };
-
-  return (
-    <div>
-      <label>{label}</label>
-      <select onChange={changeHandler}>
-        {options?.map((option: string, index: number) => (
-          <option key={option} value={index}>
-            {option}
-          </option>
-        ))}
-      </select>
-      <CompileInput input={children[selected]} />
-    </div>
-  );
-};
-
-const Button = ({ label, clickHandler, removeHandler }: any) => {
-  const [elements, setElements] = useState<ExtractFieldResult[]>([]);
-
-  const add = () => {
-    const newElements = clickHandler && clickHandler('feature');
-    console.log({ newElements });
-    setElements([...newElements]);
-  };
-
-  const remove = () => {
-    const newElements = removeHandler && removeHandler('feature');
-    console.log({ newElements });
-    setElements([...newElements]);
-  };
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-      <div>
-        <label>{label}</label>
-        <button onClick={add}>+</button>
-      </div>
-      <div style={{ display: 'flex', width: '100%' }}>
-        <div
+    <div style={{ display: 'flex', alignItems: 'start' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'start',
+        }}
+      >
+        {error && <p style={{ color: 'red', margin: 0, fontSize: 8 }}>{error}</p>}
+        <input
+          name={name}
+          type={type}
+          placeholder={type}
+          ref={ref}
           style={{
-            display: 'flex',
-            flexDirection: 'column',
-            width: '100%',
+            margin: 0,
+            border: !!isError ? '1px solid red' : '1px solid black',
           }}
-        >
-          {elements.map((element, index) => (
-            <div
-              style={{
-                display: 'flex',
-                width: '100%',
-                justifyContent: 'space-between',
-                border: '1px solid black',
-                flexDirection: 'row',
-              }}
-              key={index}
-            >
-              <CompileInput input={element} />
-              <button onClick={remove}>x</button>
-            </div>
-          ))}
-        </div>
+          {...rest}
+        />
+        {required && <p style={{ color: 'red', marginTop: 0, fontSize: 8 }}>Required</p>}
       </div>
+      {onRemove && (
+        <button type="button" onClick={onRemove}>
+          x
+        </button>
+      )}
     </div>
   );
-};
+});

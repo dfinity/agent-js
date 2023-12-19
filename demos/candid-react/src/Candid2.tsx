@@ -2,7 +2,7 @@ import { Actor } from '@dfinity/agent';
 import { createActor } from './small';
 import { useFieldArray, useForm } from 'react-hook-form';
 import React from 'react';
-import { ExtractFields, FormFields } from '@dfinity/candid';
+import { ExtractFields } from '@dfinity/candid';
 
 const actor = createActor('xeka7-ryaaa-aaaal-qb57a-cai', {
   agentOptions: {
@@ -22,13 +22,7 @@ const Candid2: React.FC<CandidProps> = () => {
         return (
           <div key={functionName}>
             <h1>{functionName}</h1>
-            {fields.map((field, index) =>
-              field.parent === 'vector' ? (
-                <RenderVector field={field} key={index} />
-              ) : (
-                <RenderSimpleForm field={field} key={index} />
-              ),
-            )}
+            <RenderForm fields={fields} />
           </div>
         );
       })}
@@ -38,103 +32,83 @@ const Candid2: React.FC<CandidProps> = () => {
 
 export default Candid2;
 
-let renderCount = 0;
-
-type FormInputs = {
-  inputs: Array<{
-    value: string;
-  }>;
+type FormValues = {
+  inputs: {
+    [name: string]: Array<{
+      value: string;
+    }>;
+  };
 };
 
-const RenderVector = ({ field }: { field: ExtractFields }) => {
-  const { register, formState, control, handleSubmit, setValue, getValues } = useForm<FormInputs>({
+const RenderForm = ({ fields }: { fields: ExtractFields[] }) => {
+  const { register, formState, control, handleSubmit } = useForm<FormValues>({
     shouldUseNativeValidation: true,
     reValidateMode: 'onSubmit',
     values: {
-      inputs: [],
+      inputs: fields.reduce((acc, _, index) => {
+        acc[index] = [];
+        return acc;
+      }, {} as FormValues['inputs']),
     },
   });
 
-  const { fields, append, remove } = useFieldArray<FormInputs>({
-    control,
-    name: 'inputs',
-  });
-
-  const onSubmit = (submitData: any) => {
-    console.log('submitData', submitData);
-  };
-
-  const handleAppend = () => {
-    append({ value: '' }, { shouldFocus: true });
-  };
-
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <h3>{field.parentName}</h3>
-      <span className="counter">Render Count: {renderCount}</span>
-      <ul>
-        {fields.map((item, index) => (
-          <li key={item.id} style={{ display: 'flex' }}>
-            <Input
-              {...register(`inputs.${index}.value`, field)}
-              type={field.type}
-              onRemove={() => remove(index)}
+    <form onSubmit={handleSubmit(data => console.log(data))}>
+      {fields.map((field, index) => {
+        return (
+          <div key={index}>
+            <h3>{field.parentName}</h3>
+            <RenderField
+              control={control}
+              field={field}
+              name={`inputs.${index}`}
+              register={register}
             />
-          </li>
-        ))}
-      </ul>
-      <button type="button" onClick={handleAppend}>
-        Append
-      </button>
+          </div>
+        );
+      })}
       <input type="submit" />
     </form>
   );
 };
 
-const RenderSimpleForm = ({ field }: { field: ExtractFields }) => {
-  const {
-    register,
+const RenderField = ({
+  control,
+  field,
+  name,
+  register,
+}: {
+  control: any;
+  field: ExtractFields;
+  name: string;
+  register: any;
+}) => {
+  const { fields, append, remove } = useFieldArray({
     control,
-    formState: { errors },
-    handleSubmit,
-  } = useForm<FormInputs>({
-    shouldUseNativeValidation: true,
-    values: {
-      inputs: field.optional ? [] : [{ value: '' }],
-    },
+    name,
   });
 
-  const { fields, append, remove } = useFieldArray<FormInputs>({
-    control,
-    name: 'inputs',
-  });
-
-  const onSubmit = async (submitData: any) => {
-    console.log({ submitData });
+  const handleAppend = () => {
+    append({}, { shouldFocus: true });
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <h3>{field.label}</h3>
+    <div>
+      <label>{field.label}</label>
+      <button type="button" onClick={handleAppend}>
+        +
+      </button>
       {fields.map((item, index) => (
         <div key={item.id}>
           <Input
-            {...register(`inputs.${index}.value`, field)}
+            {...register(`inputs.${name}[${index}].value`, field)}
             type={field.type}
-            error={errors.inputs?.[index]?.message}
-            isError={!!errors.inputs?.[index]}
             required={field.required}
-            onRemove={field.optional ? () => remove(index) : undefined}
+            onRemove={() => remove(index)}
           />
         </div>
       ))}
-      {field.optional && fields.length === 0 && (
-        <button type="button" onClick={() => append({ value: '' })}>
-          +
-        </button>
-      )}
-      <input type="submit" />
-    </form>
+    </div>
   );
 };
 
