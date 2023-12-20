@@ -1,16 +1,15 @@
 export const idlFactory = ({ IDL }) => {
   const Value = IDL.Rec();
-  Value.fill(
-    IDL.Variant({
-      Int: IDL.Int,
-      Map: IDL.Vec(IDL.Tuple(IDL.Text, Value)),
-      Nat: IDL.Nat,
-      Nat64: IDL.Nat64,
-      Blob: IDL.Vec(IDL.Nat8),
-      Text: IDL.Text,
-      Array: IDL.Vec(Value),
-    }),
-  );
+  const Variant = IDL.Variant({
+    Int: IDL.Int,
+    Map: IDL.Vec(IDL.Tuple(IDL.Text, Value)),
+    Nat: IDL.Nat,
+    Nat64: IDL.Nat64,
+    Blob: IDL.Vec(IDL.Nat8),
+    Text: IDL.Text,
+    Array: IDL.Vec(Value),
+  });
+  Value.fill(Variant);
   const CreateAppArgs = IDL.Record({
     metadata: IDL.Vec(IDL.Tuple(IDL.Text, Value)),
     name: IDL.Text,
@@ -42,19 +41,20 @@ export const idlFactory = ({ IDL }) => {
     description: IDL.Text,
   });
   return IDL.Service({
-    // app_number: IDL.Func([IDL.Nat8], [IDL.Text], []),
-    // app_name: IDL.Func([IDL.Text], [IDL.Text], []),
-    // app_opt_text: IDL.Func([IDL.Opt(IDL.Text)], [IDL.Text], []),
-    // app_opt_number: IDL.Func([IDL.Opt(IDL.Nat16), IDL.Vec(IDL.Text)], [IDL.Text], []),
-    // app_opt_vec: IDL.Func([IDL.Opt(IDL.Vec(IDL.Text))], [IDL.Text], []),
-    // app_vec: IDL.Func([IDL.Vec(IDL.Text)], [IDL.Text], []),
-    // app_number_vec: IDL.Func([IDL.Vec(IDL.Nat8)], [IDL.Text], []),
-    // features: IDL.Func([IDL.Opt(IDL.Vec(IDL.Text))], [IDL.Vec(IDL.Text)], []),
+    app_number: IDL.Func([IDL.Nat8], [IDL.Text], []),
+    app_name: IDL.Func([IDL.Text], [IDL.Text], []),
+    app_opt_text: IDL.Func([IDL.Opt(IDL.Text)], [IDL.Text], []),
+    app_opt_number: IDL.Func([IDL.Opt(IDL.Nat16), IDL.Vec(IDL.Text)], [IDL.Text], []),
+    app_opt_vec: IDL.Func([IDL.Opt(IDL.Vec(IDL.Text))], [IDL.Text], []),
+    app_vec: IDL.Func([IDL.Vec(IDL.Text)], [IDL.Text], []),
+    app_number_vec: IDL.Func([IDL.Vec(IDL.Nat8)], [IDL.Text], []),
+    features: IDL.Func([IDL.Opt(IDL.Vec(IDL.Text))], [IDL.Vec(IDL.Text)], []),
     add_metadata: IDL.Func(
       [IDL.Record({ newField: IDL.Text, otherField: IDL.Text })],
       [IDL.Vec(IDL.Text)],
       [],
     ),
+    // receive: IDL.Func([ReleaseView], [IDL.Text], []),
     // app: IDL.Func([AppArgs], [AppView], []),
     // create_app: IDL.Func([CreateAppArgs], [AppView], []),
   });

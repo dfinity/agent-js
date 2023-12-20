@@ -18,7 +18,6 @@ const Candid2: React.FC<CandidProps> = () => {
   return (
     <div>
       {fields.map(({ functionName, fields }) => {
-        console.log({ functionName, fields });
         return (
           <div key={functionName}>
             <h1>{functionName}</h1>
@@ -33,11 +32,19 @@ const Candid2: React.FC<CandidProps> = () => {
 export default Candid2;
 
 type FormValues = {
-  inputs: {
-    [name: string]: Array<{
-      value: string;
-    }>;
-  };
+  inputs:
+    | {
+        [name: string]: Array<{
+          value: string;
+        }>;
+      }
+    | {
+        [name: string]: {
+          [name: string]: Array<{
+            value: string;
+          }>;
+        };
+      };
 };
 
 const RenderForm = ({ fields }: { fields: ExtractFields[] }) => {
@@ -51,7 +58,10 @@ const RenderForm = ({ fields }: { fields: ExtractFields[] }) => {
     values: {
       inputs: fields.reduce((acc, field, index) => {
         const optional = field.optional || field.parent === 'vector';
-        acc[`${field.label}-${index}`] = optional ? [] : [{ value: '' }];
+        const name = `${field.label}-${index}`;
+
+        acc[name] = optional ? [] : [{ value: '' }];
+
         return acc;
       }, {} as FormValues['inputs']),
     },
@@ -86,12 +96,12 @@ const RenderFormField = ({
   control: any;
   error?: any;
 }) => {
-  if (field.type === 'record') {
+  if (field.type === 'record' || field.parent === 'variant') {
     console.log('Record: ', field);
     return (
       <fieldset>
         {field.fields?.map((field, index) => (
-          <RenderField key={index} field={field} name={`${name}.[${index}]`} {...rest} />
+          <RenderField key={index} field={field} name={`${name}-${index}`} {...rest} />
         ))}
       </fieldset>
     );
@@ -131,18 +141,21 @@ const RenderField = ({
           +
         </button>
       )}
-      {fields.map((item, index) => (
-        <div key={item.id}>
-          <Input
-            {...control.register(`${name}[${index}].value`, field)}
-            type={field.type}
-            isError={!!error?.[index]}
-            error={error?.[index]?.value?.message?.toString()}
-            required={field.required}
-            onRemove={activeRemove ? () => remove(index) : undefined}
-          />
-        </div>
-      ))}
+      {fields.map((item, index) => {
+        console.log(`${name}[${index}].value`);
+        return (
+          <div key={item.id}>
+            <Input
+              {...control.register(`${name}[${index}].value`, field)}
+              type={field.type}
+              isError={!!error?.[index]}
+              error={error?.[index]?.value?.message?.toString()}
+              required={field.required}
+              onRemove={activeRemove ? () => remove(index) : undefined}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 };

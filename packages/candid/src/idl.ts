@@ -1685,7 +1685,7 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
 
 export class ServiceClass extends ConstructType<PrincipalId> {
   public extractFields(): { functionName: string; fields: ExtractFields[] }[] {
-    return this._fields.flatMap(([functionName, value]) => ({
+    return this._fields.map(([functionName, value]) => ({
       functionName,
       fields: value.extractFields({
         label: functionName,
