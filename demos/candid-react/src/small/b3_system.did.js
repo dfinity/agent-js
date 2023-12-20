@@ -50,7 +50,7 @@ export const idlFactory = ({ IDL }) => {
     app_number_vec: IDL.Func([IDL.Vec(IDL.Nat8)], [IDL.Text], []),
     features: IDL.Func([IDL.Opt(IDL.Vec(IDL.Text))], [IDL.Vec(IDL.Text)], []),
     add_metadata: IDL.Func(
-      [IDL.Record({ newField: IDL.Text, otherField: IDL.Text })],
+      [IDL.Record({ newField: IDL.Text, otherField: IDL.Nat8 })],
       [IDL.Vec(IDL.Text)],
       [],
     ),

@@ -1582,7 +1582,7 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
  */
 export class FuncClass extends ConstructType<[PrincipalId, string]> {
   public extractFields({ label: parentName, ...rest }: ExtractFieldsArgs): ExtractFields[] {
-    return this.argTypes.map(arg =>
+    const fields = this.argTypes.map(arg =>
       arg.extractFields({
         ...rest,
         label: arg.name,
@@ -1590,6 +1590,8 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
         parent: 'function',
       }),
     ) as ExtractFields[];
+
+    return fields;
   }
 
   public static argsToString(types: Type[], v: any[]) {
@@ -1682,17 +1684,70 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
     }
   }
 }
+type ServiceClassFields = {
+  functionName: string;
+  inputs: {
+    [name: string]: Array<{
+      value: string;
+    }>;
+  };
+  fields: ExtractFields[];
+};
+
+function processFields(fields: any[], functionName: string, inputs = {} as any) {
+  fields.forEach(
+    (
+      field: { component: string; optional: boolean; parent: string; label: any; fields: any },
+      index,
+    ) => {
+      const optional = field.optional || field.parent === 'vector';
+      const name = field.label;
+
+      // If the field has nested fields, process them recursively
+      if (field.fields) {
+        processFields(field.fields, `${name}-${index}`, inputs);
+      } else {
+        inputs[name] = optional ? [] : [{ value: '' }];
+      }
+    },
+  );
+
+  return inputs;
+}
 
 export class ServiceClass extends ConstructType<PrincipalId> {
-  public extractFields(): { functionName: string; fields: ExtractFields[] }[] {
-    return this._fields.map(([functionName, value]) => ({
-      functionName,
-      fields: value.extractFields({
-        label: functionName,
-        parent: 'service',
-        parentName: 'service',
-      }),
-    }));
+  public extractFields(): ServiceClassFields[] {
+    return this._fields.map(([functionName, value]) => {
+      const inputs: ServiceClassFields['inputs'] = {};
+
+      const fields: ExtractFields[] = value
+        .extractFields({
+          label: functionName,
+          parent: 'service',
+          parentName: 'service',
+        })
+        .map(field => {
+          const optional = field.optional || field.parent === 'vector';
+          const name = field.label;
+
+          // If the field has nested fields, process them recursively
+          if (field.fields) {
+            processFields(field.fields, name, inputs);
+          } else {
+            inputs[name] = optional ? [] : [{ value: '' }];
+          }
+
+          field.fieldNames = Object.keys(inputs);
+
+          return field;
+        });
+
+      return {
+        functionName,
+        inputs,
+        fields,
+      };
+    });
   }
 
   public readonly _fields: Array<[string, FuncClass]>;

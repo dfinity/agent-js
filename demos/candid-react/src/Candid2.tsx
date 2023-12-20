@@ -12,16 +12,41 @@ const actor = createActor('xeka7-ryaaa-aaaal-qb57a-cai', {
 
 const fields = Actor.interfaceOf(actor as Actor).extractFields();
 
+function extractInputs(fields: ExtractFields[]) {
+  const inputs = fields.reduce((acc, field, index) => {
+    const optional = field.optional || field.parent === 'vector';
+    const name = `${field.label}-${index}`;
+
+    if (field.type === 'record' || field.parent === 'variant') {
+      field.fields?.reduce((acc, field, index) => {
+        const optional = field.optional || field.parent === 'vector';
+        const name = `${field.parentName}-${field.type}-${index}`;
+
+        acc[`${name}-${index}`] = optional ? [] : [{ value: '' }];
+
+        return acc;
+      }, {} as any);
+    }
+
+    acc[name] = optional ? [] : [{ value: '' }];
+
+    return acc;
+  }, {} as any);
+
+  return inputs;
+}
+
 interface CandidProps {}
 
 const Candid2: React.FC<CandidProps> = () => {
   return (
     <div>
-      {fields.map(({ functionName, fields }) => {
+      {fields.map(({ functionName, fields, inputs }) => {
+        console.log(fields);
         return (
           <div key={functionName}>
             <h1>{functionName}</h1>
-            <RenderForm fields={fields} />
+            <RenderForm fields={fields} inputs={inputs} />
           </div>
         );
       })}
@@ -31,23 +56,21 @@ const Candid2: React.FC<CandidProps> = () => {
 
 export default Candid2;
 
+type FromInputs = {
+  [name: string]: Array<{
+    value: string;
+  }>;
+};
+
 type FormValues = {
   inputs:
+    | FromInputs
     | {
-        [name: string]: Array<{
-          value: string;
-        }>;
-      }
-    | {
-        [name: string]: {
-          [name: string]: Array<{
-            value: string;
-          }>;
-        };
+        [name: string]: FromInputs;
       };
 };
 
-const RenderForm = ({ fields }: { fields: ExtractFields[] }) => {
+const RenderForm = ({ fields, inputs }: { fields: ExtractFields[]; inputs: FromInputs }) => {
   const {
     formState: { errors },
     control,
@@ -55,16 +78,7 @@ const RenderForm = ({ fields }: { fields: ExtractFields[] }) => {
   } = useForm<FormValues>({
     shouldUseNativeValidation: true,
     mode: 'onChange',
-    values: {
-      inputs: fields.reduce((acc, field, index) => {
-        const optional = field.optional || field.parent === 'vector';
-        const name = `${field.label}-${index}`;
-
-        acc[name] = optional ? [] : [{ value: '' }];
-
-        return acc;
-      }, {} as FormValues['inputs']),
-    },
+    values: { inputs },
   });
 
   return (
@@ -76,8 +90,8 @@ const RenderForm = ({ fields }: { fields: ExtractFields[] }) => {
           <RenderFormField
             control={control}
             field={field}
+            name={field.fieldNames}
             error={errors.inputs?.[`${field.label}-${index}`]}
-            name={`inputs.${field.label}-${index}`}
           />
         </div>
       ))}
@@ -92,22 +106,22 @@ const RenderFormField = ({
   ...rest
 }: {
   field: ExtractFields;
-  name: string;
   control: any;
+  name: string[];
   error?: any;
 }) => {
+  console.log(name);
   if (field.type === 'record' || field.parent === 'variant') {
-    console.log('Record: ', field);
     return (
       <fieldset>
         {field.fields?.map((field, index) => (
-          <RenderField key={index} field={field} name={`${name}-${index}`} {...rest} />
+          <RenderField key={index} field={field} name={name[index]} {...rest} />
         ))}
       </fieldset>
     );
   }
 
-  return <RenderField name={name} field={field} {...rest} />;
+  return <RenderField field={field} name={name[0]} {...rest} />;
 };
 
 const RenderField = ({
@@ -142,11 +156,10 @@ const RenderField = ({
         </button>
       )}
       {fields.map((item, index) => {
-        console.log(`${name}[${index}].value`);
         return (
           <div key={item.id}>
             <Input
-              {...control.register(`${name}[${index}].value`, field)}
+              {...control.register(`${name}.value`, field)}
               type={field.type}
               isError={!!error?.[index]}
               error={error?.[index]?.value?.message?.toString()}
