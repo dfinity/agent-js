@@ -522,7 +522,7 @@ export class ReservedClass extends PrimitiveType<any> {
  * Represents an IDL Text
  */
 export class TextClass extends PrimitiveType<string> {
-  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractFields {
+  public extractFields({ label, parentName, ...rest }: ExtractFieldsArgs): ExtractFields {
     return {
       component: 'input',
       type: 'text',
@@ -1110,7 +1110,7 @@ export class RecordClass extends ConstructType<Record<string, any>> {
       fields: this._fields.map(([name, type]) =>
         type.extractFields({
           ...rest,
-          parentName: name,
+          label: name,
           parent: 'record',
         }),
       ) as ExtractFields[],
