@@ -42,7 +42,6 @@ type FormValues = {
 
 const RenderForm = ({ fields }: { fields: ExtractFields[] }) => {
   const {
-    register,
     formState: { errors },
     control,
     handleSubmit,
@@ -69,7 +68,6 @@ const RenderForm = ({ fields }: { fields: ExtractFields[] }) => {
             field={field}
             error={errors.inputs?.[`${field.label}-${index}`]}
             name={`inputs.${field.label}-${index}`}
-            register={register}
           />
         </div>
       ))}
@@ -85,17 +83,17 @@ const RenderFormField = ({
 }: {
   field: ExtractFields;
   name: string;
-  register: any;
   control: any;
   error?: any;
 }) => {
   if (field.type === 'record') {
+    console.log('Record: ', field);
     return (
-      <div>
+      <fieldset>
         {field.fields?.map((field, index) => (
-          <RenderField key={index} field={field} name={`${name}.${index}`} {...rest} />
+          <RenderField key={index} field={field} name={`${name}.[${index}]`} {...rest} />
         ))}
-      </div>
+      </fieldset>
     );
   }
 
@@ -106,17 +104,13 @@ const RenderField = ({
   control,
   field,
   name,
-  register,
   error,
 }: {
   control: any;
   field: ExtractFields;
   name: string;
-  register: any;
   error?: any;
 }) => {
-  console.log({ field });
-
   const { fields, append, remove } = useFieldArray({
     control,
     name,
@@ -140,10 +134,10 @@ const RenderField = ({
       {fields.map((item, index) => (
         <div key={item.id}>
           <Input
-            {...register(`${name}[${index}].value`, field)}
+            {...control.register(`${name}[${index}].value`, field)}
             type={field.type}
-            isError={!!error}
-            error={error?.message?.toString()}
+            isError={!!error?.[index]}
+            error={error?.[index]?.value?.message?.toString()}
             required={field.required}
             onRemove={activeRemove ? () => remove(index) : undefined}
           />
