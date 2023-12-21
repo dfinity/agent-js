@@ -32,15 +32,9 @@ const Candid2: React.FC<CandidProps> = () => {
 
 export default Candid2;
 
-type FromInputs = ServiceClassFields['inputs'];
+type FormValues = ServiceClassFields['inputs'];
 
-type FormValues =
-  | FromInputs
-  | {
-      [name: string]: FromInputs;
-    };
-
-const RenderForm = ({ fields, inputs }: { fields: ExtractFields[]; inputs: FromInputs }) => {
+const RenderForm = ({ fields, inputs }: { fields: ExtractFields[]; inputs: FormValues }) => {
   const {
     formState: { errors },
     control,
@@ -52,7 +46,7 @@ const RenderForm = ({ fields, inputs }: { fields: ExtractFields[]; inputs: FromI
   });
 
   return (
-    <form onSubmit={handleSubmit(data => console.log(Object.values(data)))}>
+    <form onSubmit={handleSubmit(data => console.log(data))}>
       {fields.map((field, index) => (
         <div key={index}>
           <h2>{field.parent}</h2>
@@ -74,26 +68,43 @@ const RenderFormField = ({
   field,
   error,
   fromVectors,
+  fromOptional,
   registerName,
   ...rest
 }: {
   fromVectors?: boolean;
+  fromOptional?: boolean;
   field: ExtractFields;
   registerName: string;
   control: Control<FormValues, any>;
   onRemove?: () => void;
   error?: FieldErrors<FormValues>;
 }) => {
-  if ((field.parent === 'optional' || field.parent === 'vector') && !fromVectors) {
+  if (field.parent === 'vector' && !fromVectors) {
+    console.log('fromVectors', fromVectors);
     return (
       <RenderVectors
         field={field}
         error={error?.[field.fieldName]}
         name={field.fieldName}
+        fromVectors
         {...rest}
       />
     );
-  } else if (field.type === 'record' || field.parent === 'variant') {
+  }
+  if (field.parent === 'optional' && !fromOptional) {
+    console.log('fromVectors', fromVectors);
+    return (
+      <RenderVectors
+        field={field}
+        error={error?.[field.fieldName]}
+        name={field.fieldName}
+        fromOptional
+        {...rest}
+      />
+    );
+  }
+  if (field.type === 'record' || field.parent === 'variant') {
     return (
       <fieldset>
         <legend>{field.fieldName}</legend>
@@ -127,11 +138,14 @@ const RenderVectors = ({
   field,
   error,
   name,
+  ...rest
 }: {
   control: Control<FormValues, any>;
   field: ExtractFields;
   error?: any;
   name: string;
+  fromVectors?: boolean;
+  fromOptional?: boolean;
 }) => {
   const { fields, append, remove } = useFieldArray({
     control,
@@ -165,7 +179,7 @@ const RenderVectors = ({
               registerName={`${name}.[${index}]`}
               error={error}
               onRemove={activeRemove ? () => remove(index) : undefined}
-              fromVectors
+              {...rest}
             />
           </div>
         );
