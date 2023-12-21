@@ -395,7 +395,7 @@ export class BoolClass extends PrimitiveType<boolean> {
     return {
       component: 'input',
       type: 'checkbox',
-      fieldName: `${fieldName}_${this.name}`,
+      fieldName,
       validate: validateError(this.covariant, this),
       label: label ?? this.name,
       ...rest,
@@ -535,7 +535,7 @@ export class TextClass extends PrimitiveType<string> {
       valueAsNumber: false,
       required: true,
       label: label ?? this.name,
-      fieldName: `${fieldName}_${this.name}`,
+      fieldName,
       validate: validateError(this.covariant, this),
       ...rest,
     };
@@ -588,7 +588,7 @@ export class IntClass extends PrimitiveType<bigint> {
       valueAsNumber: true,
       required: true,
       label: label ?? this.name,
-      fieldName: `${fieldName}_${this.name}`,
+      fieldName,
       validate: validateError(this.covariant, this),
       ...rest,
     };
@@ -638,7 +638,7 @@ export class NatClass extends PrimitiveType<bigint> {
       valueAsNumber: true,
       required: true,
       label: label ?? this.name,
-      fieldName: `${fieldName}_${this.name}`,
+      fieldName,
       validate: validateError(this.covariant, this),
       ...rest,
     };
@@ -695,7 +695,7 @@ export class FloatClass extends PrimitiveType<number> {
       valueAsNumber: true,
       required: true,
       label: label ?? this.name,
-      fieldName: `${fieldName}_${this.name}`,
+      fieldName,
       validate: validateError(this.covariant, this),
       ...rest,
     };
@@ -761,7 +761,7 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
       required: true,
       valueAsNumber: true,
       label: label ?? this.name,
-      fieldName: `${fieldName}_${this.name}`,
+      fieldName,
       validate: validateError(this.covariant, this),
       ...rest,
     };
@@ -831,7 +831,7 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
       valueAsNumber: true,
       label: label ?? this.name,
       required: true,
-      fieldName: `${fieldName}_${this.name}`,
+      fieldName,
       validate: validateError(this.covariant, this),
       ...rest,
     };
@@ -1044,10 +1044,9 @@ export class OptClass<T> extends ConstructType<[T] | []> {
   }: ExtractFieldsArgs): ExtractFields {
     return this._type.extractFields({
       ...rest,
-      label: 'optional',
+      parent: 'optional',
       parentName,
       fieldName: `${fieldName}_optional`,
-      optional: true,
     }) as ExtractFields;
   }
 
@@ -1134,7 +1133,7 @@ export class RecordClass extends ConstructType<Record<string, any>> {
         type.extractFields({
           ...rest,
           label: name,
-          fieldName: `${fieldName}_${name}`,
+          fieldName: `${fieldName}.${name}`,
           parent: 'record',
         }),
       ) as ExtractFields[],
@@ -1734,8 +1733,9 @@ function processFields(fields: ExtractFields[], inputs: ServiceClassFields['inpu
     if (field.fields) {
       processFields(field.fields, inputs);
     } else {
-      const isArray = field.optional || field.parent === 'vector';
-      inputs[field.fieldName] = isArray ? [] : '';
+      const isArray = field.parent === 'optional' || field.parent === 'vector';
+      const name = field.parent === 'record' ? field.label : field.fieldName;
+      inputs[name] = isArray ? [] : '';
     }
   });
 }
@@ -1754,9 +1754,12 @@ export class ServiceClass extends ConstructType<PrincipalId> {
         })
         .map(field => {
           if (field.fields) {
-            processFields(field.fields, inputs);
+            if (field.fields.length > 0) {
+              inputs[field.fieldName] = {};
+            }
+            processFields(field.fields, inputs[field.fieldName] as ServiceClassFields['inputs']);
           } else {
-            const isArray = field.optional || field.parent === 'vector';
+            const isArray = field.parent === 'optional' || field.parent === 'vector';
             inputs[field.fieldName] = isArray ? [] : '';
           }
 

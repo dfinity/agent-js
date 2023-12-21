@@ -57,7 +57,12 @@ const RenderForm = ({ fields, inputs }: { fields: ExtractFields[]; inputs: FromI
         <div key={index}>
           <h2>{field.parent}</h2>
           <h3>{field.parentName}</h3>
-          <RenderFormField control={control} field={field} error={errors} />
+          <RenderFormField
+            control={control}
+            field={field}
+            error={errors}
+            registerName={field.fieldName}
+          />
         </div>
       ))}
       <input type="submit" />
@@ -69,14 +74,16 @@ const RenderFormField = ({
   field,
   error,
   fromVectors,
+  registerName,
   ...rest
 }: {
   fromVectors?: boolean;
   field: ExtractFields;
+  registerName: string;
   control: Control<FormValues, any>;
   error?: FieldErrors<FormValues>;
 }) => {
-  if ((field.optional || field.parent === 'vector') && !fromVectors) {
+  if ((field.parent === 'optional' || field.parent === 'vector') && !fromVectors) {
     return (
       <RenderVectors
         field={field}
@@ -85,13 +92,18 @@ const RenderFormField = ({
         {...rest}
       />
     );
-  }
-
-  if (field.type === 'record' || field.parent === 'variant') {
+  } else if (field.type === 'record' || field.parent === 'variant') {
     return (
       <fieldset>
+        <legend>{field.fieldName}</legend>
         {field.fields?.map(field => (
-          <RenderFormField key={field.fieldName} field={field} error={error} {...rest} />
+          <RenderFormField
+            key={field.fieldName}
+            registerName={`${registerName}.${field.fieldName}`}
+            field={field}
+            error={error}
+            {...rest}
+          />
         ))}
       </fieldset>
     );
@@ -99,8 +111,9 @@ const RenderFormField = ({
 
   return (
     <Input
-      {...rest.control.register(field.fieldName, field)}
+      {...rest.control.register(registerName, field)}
       type={field.type}
+      label={field.label}
       error={error?.[field.fieldName]?.message?.toString()}
       required={field.required}
     />
@@ -124,11 +137,13 @@ const RenderVectors = ({
   });
 
   const handleAppend = () => {
-    append('', { shouldFocus: true });
+    append('');
   };
 
-  const activeAdd = (field.optional && fields.length === 0) || field.parent === 'vector';
-  const activeRemove = (field.optional && fields.length > 0) || field.parent === 'vector';
+  const activeAdd =
+    (field.parent === 'optional' && fields.length === 0) || field.parent === 'vector';
+  const activeRemove =
+    (field.parent === 'optional' && fields.length > 0) || field.parent === 'vector';
 
   return (
     <div>
@@ -145,6 +160,7 @@ const RenderVectors = ({
               key={index}
               field={field}
               control={control}
+              registerName={`${name}.[${index}]`}
               error={error}
               fromVectors
             />
@@ -168,7 +184,7 @@ interface MyComponentProps extends ExtractFields {
 
 const Input: React.ForwardRefExoticComponent<
   React.PropsWithoutRef<MyComponentProps> & React.RefAttributes<HTMLInputElement>
-> = React.forwardRef(({ onRemove, isError, name, type, required, error, ...rest }, ref) => {
+> = React.forwardRef(({ label, onRemove, isError, name, type, required, error, ...rest }, ref) => {
   return (
     <div style={{ display: 'flex', alignItems: 'start' }}>
       <div
@@ -178,6 +194,16 @@ const Input: React.ForwardRefExoticComponent<
           alignItems: 'start',
         }}
       >
+        <label
+          style={{
+            margin: 0,
+            marginBottom: 1,
+            fontSize: 10,
+          }}
+          htmlFor={name}
+        >
+          {label}
+        </label>
         {error && <p style={{ color: 'red', margin: 0, fontSize: 8 }}>{error}</p>}
         <input
           name={name}
