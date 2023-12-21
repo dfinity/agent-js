@@ -52,7 +52,7 @@ const RenderForm = ({ fields, inputs }: { fields: ExtractFields[]; inputs: FromI
   });
 
   return (
-    <form onSubmit={handleSubmit(data => console.log(data))}>
+    <form onSubmit={handleSubmit(data => console.log(Object.values(data)))}>
       {fields.map((field, index) => (
         <div key={index}>
           <h2>{field.parent}</h2>
@@ -81,6 +81,7 @@ const RenderFormField = ({
   field: ExtractFields;
   registerName: string;
   control: Control<FormValues, any>;
+  onRemove?: () => void;
   error?: FieldErrors<FormValues>;
 }) => {
   if ((field.parent === 'optional' || field.parent === 'vector') && !fromVectors) {
@@ -111,6 +112,7 @@ const RenderFormField = ({
 
   return (
     <Input
+      {...rest}
       {...rest.control.register(registerName, field)}
       type={field.type}
       label={field.label}
@@ -162,13 +164,9 @@ const RenderVectors = ({
               control={control}
               registerName={`${name}.[${index}]`}
               error={error}
+              onRemove={activeRemove ? () => remove(index) : undefined}
               fromVectors
             />
-            {activeRemove && (
-              <button type="button" onClick={() => remove(index)}>
-                -
-              </button>
-            )}
           </div>
         );
       })}
@@ -186,43 +184,45 @@ const Input: React.ForwardRefExoticComponent<
   React.PropsWithoutRef<MyComponentProps> & React.RefAttributes<HTMLInputElement>
 > = React.forwardRef(({ label, onRemove, isError, name, type, required, error, ...rest }, ref) => {
   return (
-    <div style={{ display: 'flex', alignItems: 'start' }}>
-      <div
+    <div>
+      <label
         style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'start',
+          margin: 0,
+          marginBottom: 1,
+          fontSize: 10,
         }}
+        htmlFor={name}
       >
-        <label
+        {label}
+      </label>
+      <div style={{ display: 'flex', alignItems: 'start' }}>
+        <div
           style={{
-            margin: 0,
-            marginBottom: 1,
-            fontSize: 10,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'start',
           }}
-          htmlFor={name}
         >
-          {label}
-        </label>
-        {error && <p style={{ color: 'red', margin: 0, fontSize: 8 }}>{error}</p>}
-        <input
-          name={name}
-          type={type}
-          placeholder={type}
-          ref={ref}
-          style={{
-            margin: 0,
-            border: !!isError ? '1px solid red' : '1px solid black',
-          }}
-          {...rest}
-        />
-        {required && <p style={{ color: 'red', marginTop: 0, fontSize: 8 }}>Required</p>}
+          {error && <p style={{ color: 'red', margin: 0, fontSize: 8 }}>{error}</p>}
+          <input
+            name={name}
+            type={type}
+            placeholder={type}
+            ref={ref}
+            style={{
+              margin: 0,
+              border: !!isError ? '1px solid red' : '1px solid black',
+            }}
+            {...rest}
+          />
+          {required && <p style={{ color: 'red', marginTop: 0, fontSize: 8 }}>Required</p>}
+        </div>
+        {onRemove && (
+          <button type="button" onClick={onRemove}>
+            -
+          </button>
+        )}
       </div>
-      {onRemove && (
-        <button type="button" onClick={onRemove}>
-          x
-        </button>
-      )}
     </div>
   );
 });
