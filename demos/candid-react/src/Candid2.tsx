@@ -1,8 +1,8 @@
 import { Actor } from '@dfinity/agent';
 import { createActor } from './small';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { Control, FieldErrors, useFieldArray, useForm } from 'react-hook-form';
 import React from 'react';
-import { ExtractFields } from '@dfinity/candid';
+import { ExtractFields, ServiceClassFields } from '@dfinity/candid';
 
 const actor = createActor('xeka7-ryaaa-aaaal-qb57a-cai', {
   agentOptions: {
@@ -12,37 +12,13 @@ const actor = createActor('xeka7-ryaaa-aaaal-qb57a-cai', {
 
 const fields = Actor.interfaceOf(actor as Actor).extractFields();
 
-function extractInputs(fields: ExtractFields[]) {
-  const inputs = fields.reduce((acc, field, index) => {
-    const optional = field.optional || field.parent === 'vector';
-    const name = `${field.label}-${index}`;
-
-    if (field.type === 'record' || field.parent === 'variant') {
-      field.fields?.reduce((acc, field, index) => {
-        const optional = field.optional || field.parent === 'vector';
-        const name = `${field.parentName}-${field.type}-${index}`;
-
-        acc[`${name}-${index}`] = optional ? [] : [{ value: '' }];
-
-        return acc;
-      }, {} as any);
-    }
-
-    acc[name] = optional ? [] : [{ value: '' }];
-
-    return acc;
-  }, {} as any);
-
-  return inputs;
-}
-
 interface CandidProps {}
 
 const Candid2: React.FC<CandidProps> = () => {
   return (
     <div>
-      {fields.map(({ functionName, fields, inputs }) => {
-        console.log(fields);
+      {fields.map(({ functionName, fieldNames, fields, inputs }) => {
+        console.log({ functionName, fieldNames, fields, inputs });
         return (
           <div key={functionName}>
             <h1>{functionName}</h1>
@@ -56,19 +32,13 @@ const Candid2: React.FC<CandidProps> = () => {
 
 export default Candid2;
 
-type FromInputs = {
-  [name: string]: Array<{
-    value: string;
-  }>;
-};
+type FromInputs = ServiceClassFields['inputs'];
 
-type FormValues = {
-  inputs:
-    | FromInputs
-    | {
-        [name: string]: FromInputs;
-      };
-};
+type FormValues =
+  | FromInputs
+  | {
+      [name: string]: FromInputs;
+    };
 
 const RenderForm = ({ fields, inputs }: { fields: ExtractFields[]; inputs: FromInputs }) => {
   const {
@@ -78,7 +48,7 @@ const RenderForm = ({ fields, inputs }: { fields: ExtractFields[]; inputs: FromI
   } = useForm<FormValues>({
     shouldUseNativeValidation: true,
     mode: 'onChange',
-    values: { inputs },
+    values: inputs,
   });
 
   return (
@@ -87,12 +57,7 @@ const RenderForm = ({ fields, inputs }: { fields: ExtractFields[]; inputs: FromI
         <div key={index}>
           <h2>{field.parent}</h2>
           <h3>{field.parentName}</h3>
-          <RenderFormField
-            control={control}
-            field={field}
-            name={field.fieldNames}
-            error={errors.inputs?.[`${field.label}-${index}`]}
-          />
+          <RenderFormField control={control} field={field} error={errors} />
         </div>
       ))}
       <input type="submit" />
@@ -102,50 +67,68 @@ const RenderForm = ({ fields, inputs }: { fields: ExtractFields[]; inputs: FromI
 
 const RenderFormField = ({
   field,
-  name,
+  error,
+  fromVectors,
   ...rest
 }: {
+  fromVectors?: boolean;
   field: ExtractFields;
-  control: any;
-  name: string[];
-  error?: any;
+  control: Control<FormValues, any>;
+  error?: FieldErrors<FormValues>;
 }) => {
-  console.log(name);
+  if ((field.optional || field.parent === 'vector') && !fromVectors) {
+    return (
+      <RenderVectors
+        field={field}
+        error={error?.[field.fieldName]}
+        name={field.fieldName}
+        {...rest}
+      />
+    );
+  }
+
   if (field.type === 'record' || field.parent === 'variant') {
     return (
       <fieldset>
-        {field.fields?.map((field, index) => (
-          <RenderField key={index} field={field} name={name[index]} {...rest} />
+        {field.fields?.map(field => (
+          <RenderFormField key={field.fieldName} field={field} error={error} {...rest} />
         ))}
       </fieldset>
     );
   }
 
-  return <RenderField field={field} name={name[0]} {...rest} />;
+  return (
+    <Input
+      {...rest.control.register(field.fieldName, field)}
+      type={field.type}
+      error={error?.[field.fieldName]?.message?.toString()}
+      required={field.required}
+    />
+  );
 };
 
-const RenderField = ({
+const RenderVectors = ({
   control,
   field,
-  name,
   error,
+  name,
 }: {
-  control: any;
+  control: Control<FormValues, any>;
   field: ExtractFields;
-  name: string;
   error?: any;
+  name: string;
 }) => {
   const { fields, append, remove } = useFieldArray({
     control,
-    name,
+    name: field.fieldName as never,
   });
 
   const handleAppend = () => {
     append('', { shouldFocus: true });
   };
 
-  const activeAdd = field.parent === 'vector' || (field.optional && fields.length === 0);
-  const activeRemove = field.parent === 'vector' || (field.optional && fields.length > 0);
+  const activeAdd = (field.optional && fields.length === 0) || field.parent === 'vector';
+  const activeRemove = (field.optional && fields.length > 0) || field.parent === 'vector';
 
   return (
     <div>
@@ -158,14 +141,18 @@ const RenderField = ({
       {fields.map((item, index) => {
         return (
           <div key={item.id}>
-            <Input
-              {...control.register(`${name}.value`, field)}
-              type={field.type}
-              isError={!!error?.[index]}
-              error={error?.[index]?.value?.message?.toString()}
-              required={field.required}
-              onRemove={activeRemove ? () => remove(index) : undefined}
+            <RenderFormField
+              key={index}
+              field={field}
+              control={control}
+              error={error}
+              fromVectors
             />
+            {activeRemove && (
+              <button type="button" onClick={() => remove(index)}>
+                -
+              </button>
+            )}
           </div>
         );
       })}

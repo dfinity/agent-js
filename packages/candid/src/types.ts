@@ -6,6 +6,15 @@ export interface JsonObject extends Record<string, JsonValue> {}
 
 export type JsonValue = boolean | string | number | JsonArray | JsonObject;
 
+export type ServiceClassFields = {
+  functionName: string;
+  inputs: {
+    [name: string]: Array<string> | string;
+  };
+  fieldNames: string[];
+  fields: ExtractFields[];
+};
+
 export type FieldComponent = 'form' | 'input' | 'select' | 'option' | 'span' | 'fieldset';
 
 export type FieldType =
@@ -50,12 +59,14 @@ export interface ExtractFields extends FormFields {
   options?: string[];
   optional?: boolean;
   fields?: ExtractFields[];
+  fieldName: string;
   component?: FieldComponent;
 }
 
 export type ExtractFieldsArgs = {
   label?: string;
   parent: string;
+  fieldName: string;
   parentName?: string;
   recursive?: boolean;
   optional?: boolean;
