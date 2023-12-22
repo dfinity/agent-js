@@ -1,6 +1,12 @@
 import { Actor } from '@dfinity/agent';
 import { createActor } from './small';
-import { Control, UseFormResetField, useFieldArray, useForm } from 'react-hook-form';
+import {
+  Control,
+  UseFormTrigger,
+  UseFormResetField,
+  useFieldArray,
+  useForm,
+} from 'react-hook-form';
 import React from 'react';
 import { ExtractFields, FieldInputs, FieldType } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
@@ -56,6 +62,7 @@ const Form = ({
     control,
     handleSubmit,
     resetField,
+    trigger,
   } = useForm({
     shouldUseNativeValidation: true,
     reValidateMode: 'onChange',
@@ -89,6 +96,7 @@ const Form = ({
               field={field}
               inputs={inputs}
               resetField={resetField}
+              trigger={trigger}
               error={errors[functionName as never]?.[index]}
               registerName={`${functionName}.[${index}]`}
             />
@@ -134,6 +142,7 @@ const FormField = ({
   control: Control<any, any>;
   onRemove?: () => void;
   resetField: UseFormResetField<{}>;
+  trigger: UseFormTrigger<{}>;
   error?: any;
 }) => {
   switch (field.fieldNames[recursiveNumber]) {
@@ -240,6 +249,7 @@ const ArrayField = ({
   registerName: string;
   field: ExtractFields;
   resetField: UseFormResetField<{}>;
+  trigger: UseFormTrigger<{}>;
   fieldLabel?: string;
   error?: any;
 }) => {
@@ -303,6 +313,7 @@ const OptionalField = ({
   field: ExtractFields;
   registerName: string;
   resetField: UseFormResetField<{}>;
+  trigger: UseFormTrigger<{}>;
   fieldLabel: string;
   error?: any;
 }) => {
@@ -344,6 +355,7 @@ const SelectForm = ({
   registerName: string;
   fields: ExtractFields;
   resetField: UseFormResetField<{}>;
+  trigger: UseFormTrigger<{}>;
   control: Control<any, any>;
   error?: any;
 }) => {
@@ -387,11 +399,12 @@ interface MyComponentProps {
   required?: boolean;
   isError?: boolean;
   error?: string;
+  trigger: UseFormTrigger<{}>;
   resetField: UseFormResetField<{}>;
 }
 
 const Input: React.FC<MyComponentProps> = React.forwardRef(
-  ({ label, resetField, isError, name, type, required, error, ...rest }, ref) => {
+  ({ label, resetField, trigger, isError, name, type, required, error, ...rest }, ref) => {
     return (
       <div style={{ width: '100%', padding: 5 }}>
         <label htmlFor={name}>
@@ -432,7 +445,10 @@ const Input: React.FC<MyComponentProps> = React.forwardRef(
                 background: 'transparent',
                 color: 'red',
               }}
-              onClick={() => resetField(name as never)}
+              onClick={() => {
+                resetField(name as never);
+                trigger(name as never, { shouldFocus: true });
+              }}
             >
               x
             </Button>
