@@ -1107,18 +1107,21 @@ export class OptClass<T> extends ConstructType<[T] | []> {
 export class RecordClass extends ConstructType<Record<string, any>> {
   public extractFields({ label, fieldNames, ...rest }: ExtractFieldsArgs): ExtractFields {
     fieldNames.push('record');
+    const fieldNamesConcat = fieldNames.join('.');
+
     return {
       component: 'fieldset',
       type: 'record',
       label: label ?? this.name,
       fieldNames,
-      fields: this._fields.map(([name, type]) =>
-        type.extractFields({
+      fields: this._fields.map(([name, type]) => {
+        const fieldNames: string[] = [fieldNamesConcat];
+        return type.extractFields({
           ...rest,
           label: name,
           fieldNames,
-        }),
-      ) as ExtractFields[],
+        }) as ExtractFields;
+      }),
       ...rest,
     };
   }
@@ -1718,12 +1721,27 @@ function processFields(fields: ExtractFields[], inputs: ServiceClassFields['inpu
     if (field.fields) {
       processFields(field.fields, inputs);
     } else {
-      const isArray = field.fieldNames.includes('optional') || field.fieldNames.includes('vector');
-
-      const name = field.parent === 'record' ? field.label : field.fieldName;
-      inputs[name] = isArray ? [] : '';
+      generateFieldValue(field, inputs, 1);
     }
   });
+}
+
+function generateFieldValue(
+  field: ExtractFields,
+  inputs: ServiceClassFields['inputs'],
+  recursiveNumber: number,
+) {
+  // switch (field.fieldNames[recursiveNumber]) {
+  //   case 'vector':
+  //     inputs[0] = [inputs[0]];
+  //   case 'optional':
+  //     return [];
+  //   case 'record':
+  //   case 'variant':
+  //     return {};
+  //   default:
+  //     return '';
+  // }
 }
 
 export class ServiceClass extends ConstructType<PrincipalId> {
@@ -1731,25 +1749,18 @@ export class ServiceClass extends ConstructType<PrincipalId> {
     return this._fields.map(([functionName, value]) => {
       const inputs: ServiceClassFields['inputs'] = {};
 
-      const fields: ExtractFields[] = value
-        .extractFields({
-          label: functionName,
-          fieldNames: [],
-        })
-        .map(field => {
-          if (field.fields) {
-            if (field.fields.length > 0) {
-              inputs[field.fieldName] = {};
-            }
-            processFields(field.fields, inputs[field.fieldName] as ServiceClassFields['inputs']);
-          } else {
-            const isArray =
-              field.fieldNames.includes('optional') || field.fieldNames.includes('vector');
-            inputs[field.fieldName] = isArray ? [] : '';
-          }
+      const fields: ExtractFields[] = value.extractFields({
+        label: functionName,
+        fieldNames: [],
+      });
 
-          return field;
-        });
+      fields.forEach(field => {
+        if (field.fields) {
+          processFields(field.fields, inputs);
+        } else {
+          generateFieldValue(field, inputs, 0);
+        }
+      });
 
       const fieldNames = Object.keys(inputs);
 

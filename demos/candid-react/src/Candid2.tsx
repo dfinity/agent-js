@@ -65,7 +65,6 @@ const Form = ({
               field={field}
               inputs={inputs}
               error={errors[functionName as never]?.[index]}
-              recursiveNumber={1}
               registerName={`${functionName}.[${index}]`}
             />
           </div>
@@ -80,7 +79,7 @@ const FormField = ({
   field,
   error,
   registerName,
-  recursiveNumber = 0,
+  recursiveNumber = 1,
   ...rest
 }: {
   inputs?:
@@ -124,7 +123,6 @@ const FormField = ({
           {field.fields?.map((field, index) => (
             <FormField
               key={index}
-              recursiveNumber={recursiveNumber + 1}
               registerName={`${registerName}.${field.label}`}
               field={field}
               error={error?.[field.label]}
@@ -153,7 +151,7 @@ const ArrayField = ({
   field,
   error,
   registerName,
-  recursiveNumber = 0,
+  recursiveNumber = 1,
   ...rest
 }: {
   recursiveNumber?: number;
@@ -197,7 +195,7 @@ const OptionalField = ({
   control,
   field,
   error,
-  recursiveNumber = 0,
+  recursiveNumber = 1,
   registerName,
   ...rest
 }: {

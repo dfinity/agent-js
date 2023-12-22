@@ -43,9 +43,9 @@ export const idlFactory = ({ IDL }) => {
   return IDL.Service({
     // number: IDL.Func([IDL.Nat8], [IDL.Text], []),
     // name: IDL.Func([IDL.Text], [IDL.Text], []),
-    opt_text: IDL.Func([IDL.Opt(IDL.Text)], [IDL.Text], []),
+    // opt_text: IDL.Func([IDL.Opt(IDL.Text)], [IDL.Text], []),
     vec_nat8: IDL.Func([IDL.Vec(IDL.Nat8)], [IDL.Text], []),
-    // opt_number: IDL.Func([IDL.Opt(IDL.Nat16)], [IDL.Text], []),
+    opt_number: IDL.Func([IDL.Opt(IDL.Nat16)], [IDL.Text], []),
     // opt_vec: IDL.Func([IDL.Opt(IDL.Nat16), IDL.Vec(IDL.Text)], [IDL.Text], []),
     // vec_in_opt: IDL.Func([IDL.Opt(IDL.Vec(IDL.Text))], [IDL.Text], []),
     // number_vec: IDL.Func([IDL.Vec(IDL.Nat8)], [IDL.Text], []),
@@ -59,11 +59,11 @@ export const idlFactory = ({ IDL }) => {
     //   [IDL.Vec(IDL.Text)],
     //   [],
     // ),
-    // add_vec_metadata: IDL.Func(
-    //   [IDL.Opt(IDL.Vec(IDL.Record({ newField: IDL.Nat8, otherField: IDL.Text })))],
-    //   [IDL.Vec(IDL.Text)],
-    //   [],
-    // ),
+    add_vec_metadata: IDL.Func(
+      [IDL.Opt(IDL.Vec(IDL.Record({ newField: IDL.Nat8, otherField: IDL.Opt(IDL.Text) })))],
+      [IDL.Vec(IDL.Text)],
+      [],
+    ),
     // add_value: IDL.Func([IDL.Variant({ Int: IDL.Int, Text: IDL.Text })], [IDL.Vec(IDL.Text)], []),
     // receive: IDL.Func([ReleaseView], [IDL.Text], []),
     // app: IDL.Func([AppArgs], [AppView], []),
