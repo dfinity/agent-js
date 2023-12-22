@@ -2,7 +2,7 @@ import { Actor } from '@dfinity/agent';
 import { createActor } from './small';
 import { Control, useFieldArray, useForm } from 'react-hook-form';
 import React from 'react';
-import { ExtractFields } from '@dfinity/candid';
+import { ExtractFields, FieldInputs } from '@dfinity/candid';
 
 const actor = createActor('xeka7-ryaaa-aaaal-qb57a-cai', {
   agentOptions: {
@@ -17,9 +17,11 @@ interface CandidProps {}
 const Candid2: React.FC<CandidProps> = () => {
   return (
     <div>
-      {fields.map(({ functionName, fieldNames, fields, ...rest }) => {
-        console.log({ functionName, fieldNames, fields, ...rest });
-        return <Form key={functionName} fields={fields} functionName={functionName} />;
+      {fields.map(({ functionName, fieldNames, inputs, fields, ...rest }) => {
+        console.log({ functionName, fieldNames, inputs, fields, ...rest });
+        return (
+          <Form key={functionName} inputs={inputs} fields={fields} functionName={functionName} />
+        );
       })}
     </div>
   );
@@ -27,7 +29,19 @@ const Candid2: React.FC<CandidProps> = () => {
 
 export default Candid2;
 
-const Form = ({ fields, functionName }: { fields: ExtractFields[]; functionName: string }) => {
+const Form = ({
+  fields,
+  inputs,
+  functionName,
+}: {
+  inputs:
+    | FieldInputs
+    | {
+        [name: string]: FieldInputs;
+      };
+  fields: ExtractFields[];
+  functionName: string;
+}) => {
   const {
     formState: { errors },
     control,
@@ -49,6 +63,7 @@ const Form = ({ fields, functionName }: { fields: ExtractFields[]; functionName:
             <FormField
               control={control}
               field={field}
+              inputs={inputs}
               error={errors[functionName as never]?.[index]}
               recursiveNumber={1}
               registerName={`${functionName}.[${index}]`}
@@ -68,6 +83,11 @@ const FormField = ({
   recursiveNumber = 0,
   ...rest
 }: {
+  inputs?:
+    | FieldInputs
+    | {
+        [name: string]: FieldInputs;
+      };
   recursiveNumber?: number;
   field: ExtractFields;
   registerName: string;
@@ -114,6 +134,7 @@ const FormField = ({
         </fieldset>
       );
     default:
+      console.log({ registerName }, rest.inputs);
       return (
         <Input
           {...rest}
@@ -193,17 +214,13 @@ const OptionalField = ({
 
   return (
     <div>
-      <label>Optional</label>
+      <label htmlFor={registerName}>Optional</label>
+      <input
+        type="checkbox"
+        id={registerName}
+        onChange={e => (e.target.checked ? append('') : remove(0))}
+      />
       {fields.length > 0 && (
-        <button type="button" onClick={() => remove(0)}>
-          x
-        </button>
-      )}
-      {fields.length === 0 ? (
-        <button type="button" onClick={() => append('')}>
-          +
-        </button>
-      ) : (
         <FormField
           field={field}
           error={error?.[0]}

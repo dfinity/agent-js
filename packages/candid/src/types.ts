@@ -56,21 +56,15 @@ export type FormFields = Partial<{
 export interface ExtractFields extends FormFields {
   label: string;
   type: FieldType;
-  parent: string;
-  parentName?: string;
   options?: string[];
   fields?: ExtractFields[];
-  fieldName: string;
   fieldNames: string[];
   component?: FieldComponent;
 }
 
 export type ExtractFieldsArgs = {
   label?: string;
-  parent: string;
-  fieldName: string;
   fieldNames: string[];
-  parentName?: string;
   recursive?: boolean;
   optional?: boolean;
 };
