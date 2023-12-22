@@ -1,8 +1,8 @@
 import { Actor } from '@dfinity/agent';
 import { createActor } from './small';
-import { Control, FieldErrors, useFieldArray, useForm } from 'react-hook-form';
+import { Control, useFieldArray, useForm } from 'react-hook-form';
 import React from 'react';
-import { ExtractFields, ServiceClassFields } from '@dfinity/candid';
+import { ExtractFields } from '@dfinity/candid';
 
 const actor = createActor('xeka7-ryaaa-aaaal-qb57a-cai', {
   agentOptions: {
@@ -27,15 +27,12 @@ const Candid2: React.FC<CandidProps> = () => {
 
 export default Candid2;
 
-type FormValues = ServiceClassFields['inputs'];
-
 const Form = ({ fields, functionName }: { fields: ExtractFields[]; functionName: string }) => {
   const {
     formState: { errors },
     control,
-
     handleSubmit,
-  } = useForm<FormValues>({
+  } = useForm({
     shouldUseNativeValidation: true,
     mode: 'onChange',
     values: {},
@@ -52,7 +49,7 @@ const Form = ({ fields, functionName }: { fields: ExtractFields[]; functionName:
             <FormField
               control={control}
               field={field}
-              error={errors}
+              error={errors[functionName as never]}
               recursiveNumber={1}
               registerName={functionName}
             />
@@ -74,19 +71,18 @@ const FormField = ({
   recursiveNumber?: number;
   field: ExtractFields;
   registerName: string;
-  control: Control<FormValues, any>;
+  control: Control<any, any>;
   onRemove?: () => void;
-  error?: FieldErrors<FormValues>;
+  error?: any;
 }) => {
-  console.log(registerName);
   switch (field.fieldNames[recursiveNumber]) {
     case 'vector':
       return (
         <ArrayField
           field={field}
-          error={error?.[field.fieldName]}
           recursiveNumber={recursiveNumber + 1}
           registerName={registerName}
+          error={error}
           {...rest}
         />
       );
@@ -94,37 +90,39 @@ const FormField = ({
       return (
         <OptionalField
           field={field}
-          error={error?.[field.fieldName]}
           recursiveNumber={recursiveNumber + 1}
           registerName={registerName}
+          error={error}
           {...rest}
         />
       );
     case 'record':
     case 'variant':
+      console.log(error, registerName);
       return (
         <fieldset>
-          <legend>{field.fieldName}</legend>
-          {field.fields?.map(field => (
+          <legend>{registerName}</legend>
+          {field.fields?.map((field, index) => (
             <FormField
-              key={field.fieldName}
+              key={index}
               recursiveNumber={recursiveNumber + 1}
               registerName={`${registerName}.${field.label}`}
               field={field}
-              error={error}
+              error={error?.[field.label]}
               {...rest}
             />
           ))}
         </fieldset>
       );
     default:
+      console.log(error);
       return (
         <Input
           {...rest}
           {...rest.control.register(registerName, field)}
           type={field.type}
           label={field.label}
-          error={error?.[field.fieldName]?.message?.toString()}
+          error={error?.message?.toString()}
           required={field.required}
         />
       );
@@ -140,7 +138,7 @@ const ArrayField = ({
   ...rest
 }: {
   recursiveNumber?: number;
-  control: Control<FormValues, any>;
+  control: Control<any, any>;
   registerName: string;
   field: ExtractFields;
   error?: any;
@@ -156,24 +154,22 @@ const ArrayField = ({
       <button type="button" onClick={() => append('')}>
         +
       </button>
-      {fields.map((item, index) => {
-        return (
-          <div key={item.id} style={{ display: 'flex', alignItems: 'start' }}>
-            <FormField
-              key={index}
-              field={field}
-              error={error}
-              control={control}
-              registerName={`${registerName}.[${index}]`}
-              recursiveNumber={recursiveNumber}
-              {...rest}
-            />
-            <button type="button" onClick={() => remove(index)}>
-              x
-            </button>
-          </div>
-        );
-      })}
+      {fields.map((item, index) => (
+        <div key={item.id} style={{ display: 'flex', alignItems: 'end' }}>
+          <FormField
+            key={index}
+            field={field}
+            error={error?.[index]}
+            control={control}
+            registerName={`${registerName}.[${index}]`}
+            recursiveNumber={recursiveNumber}
+            {...rest}
+          />
+          <button type="button" onClick={() => remove(index)}>
+            x
+          </button>
+        </div>
+      ))}
     </div>
   );
 };
@@ -187,7 +183,7 @@ const OptionalField = ({
   ...rest
 }: {
   recursiveNumber?: number;
-  control: Control<FormValues, any>;
+  control: Control<any, any>;
   field: ExtractFields;
   registerName: string;
   error?: any;
@@ -212,7 +208,7 @@ const OptionalField = ({
       ) : (
         <FormField
           field={field}
-          error={error}
+          error={error?.[0]}
           control={control}
           registerName={`${registerName}.[0]`}
           recursiveNumber={recursiveNumber}
@@ -264,7 +260,6 @@ const Input: React.ForwardRefExoticComponent<
             }}
             {...rest}
           />
-          {required && <p style={{ color: 'red', marginTop: 0, fontSize: 8 }}>Required</p>}
         </div>
         {onRemove && (
           <button type="button" onClick={onRemove}>
