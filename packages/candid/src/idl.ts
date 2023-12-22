@@ -1264,6 +1264,26 @@ export class RecordClass extends ConstructType<Record<string, any>> {
 export class TupleClass<T extends any[]> extends RecordClass {
   protected readonly _components: Type[];
 
+  public extractFields({ label, fieldNames, ...rest }: ExtractFieldsArgs): ExtractFields {
+    fieldNames.push('tuple');
+    const fieldNamesConcat = fieldNames.join('.');
+
+    return {
+      component: 'fieldset',
+      type: 'record',
+      label: label ?? this.name,
+      fieldNames,
+      fields: this._fields.map(([_, type]) => {
+        const fieldNames: string[] = [fieldNamesConcat];
+        return type.extractFields({
+          ...rest,
+          fieldNames,
+        }) as ExtractFields;
+      }),
+      ...rest,
+    };
+  }
+
   constructor(_components: Type[]) {
     const x: Record<string, any> = {};
     _components.forEach((e, i) => (x['_' + i + '_'] = e));
@@ -1335,19 +1355,25 @@ export class TupleClass<T extends any[]> extends RecordClass {
  * @param {object} [fields] - mapping of function name to Type
  */
 export class VariantClass extends ConstructType<Record<string, any>> {
-  public extractFields({
-    label: parentName,
-    fieldNames,
-    ...rest
-  }: ExtractFieldsArgs): ExtractFields[] {
+  public extractFields({ label, fieldNames, ...rest }: ExtractFieldsArgs): ExtractFields {
     fieldNames.push('variant');
-    return this._fields.map(([label, value]) =>
-      value.extractFields({
-        ...rest,
-        label,
-        fieldNames,
+    const fieldNamesConcat = fieldNames.join('.');
+
+    return {
+      component: 'fieldset',
+      type: 'variant',
+      label: label ?? this.name,
+      fieldNames,
+      fields: this._fields.map(([name, type]) => {
+        const fieldNames: string[] = [fieldNamesConcat];
+        return type.extractFields({
+          ...rest,
+          label: name,
+          fieldNames,
+        }) as ExtractFields;
       }),
-    ) as ExtractFields[];
+      ...rest,
+    };
   }
 
   private readonly _fields: Array<[string, Type]>;

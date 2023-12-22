@@ -27,6 +27,8 @@ export type FieldType =
   | 'textarea'
   | 'reserved'
   | 'record'
+  | 'variant'
+  | 'tuple'
   | 'null'
   | 'empty'
   | 'principal'

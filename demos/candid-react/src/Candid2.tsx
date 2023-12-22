@@ -116,7 +116,6 @@ const FormField = ({
         />
       );
     case 'record':
-    case 'variant':
       return (
         <fieldset>
           <legend>{registerName}</legend>
@@ -124,6 +123,22 @@ const FormField = ({
             <FormField
               key={index}
               registerName={`${registerName}.${field.label}`}
+              field={field}
+              error={error?.[field.label]}
+              {...rest}
+            />
+          ))}
+        </fieldset>
+      );
+    case 'tuple':
+    case 'variant':
+      return (
+        <fieldset>
+          <legend>{registerName}</legend>
+          {field.fields?.map((field, index) => (
+            <FormField
+              key={index}
+              registerName={`${registerName}.[${index}]`}
               field={field}
               error={error?.[field.label]}
               {...rest}
@@ -140,6 +155,7 @@ const FormField = ({
           type={field.type}
           label={field.label}
           error={error?.message?.toString()}
+          isError={!!error}
           required={field.required}
         />
       );
@@ -252,6 +268,8 @@ const Input: React.ForwardRefExoticComponent<
         htmlFor={name}
       >
         {label}
+        {required && <span style={{ color: 'red' }}>*</span>}
+        {error && <span style={{ color: 'red', margin: 0, fontSize: 8 }}>({error})</span>}
       </label>
       <div style={{ display: 'flex', alignItems: 'start' }}>
         <div
@@ -261,7 +279,6 @@ const Input: React.ForwardRefExoticComponent<
             alignItems: 'start',
           }}
         >
-          {error && <p style={{ color: 'red', margin: 0, fontSize: 8 }}>{error}</p>}
           <input
             name={name}
             type={type}
