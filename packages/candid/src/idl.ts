@@ -910,11 +910,14 @@ export class VecClass<T> extends ConstructType<T[]> {
   public extractFields({
     label: parentName,
     fieldName,
+    fieldNames,
     ...rest
   }: ExtractFieldsArgs): ExtractFields {
+    fieldNames.push('vector');
     return this._type.extractFields({
       ...rest,
       parentName,
+      fieldNames,
       parent: 'vector',
       fieldName: `${fieldName}_vector`,
     }) as ExtractFields;
@@ -1039,12 +1042,15 @@ export class VecClass<T> extends ConstructType<T[]> {
 export class OptClass<T> extends ConstructType<[T] | []> {
   public extractFields({
     label: parentName,
+    fieldNames,
     fieldName,
     ...rest
   }: ExtractFieldsArgs): ExtractFields {
+    fieldNames.push('optional');
     return this._type.extractFields({
       ...rest,
       parent: 'optional',
+      fieldNames,
       parentName,
       fieldName: `${fieldName}_optional`,
     }) as ExtractFields;
@@ -1123,16 +1129,24 @@ export class OptClass<T> extends ConstructType<[T] | []> {
  * @param {object} [fields] - mapping of function name to Type
  */
 export class RecordClass extends ConstructType<Record<string, any>> {
-  public extractFields({ label, fieldName, ...rest }: ExtractFieldsArgs): ExtractFields {
+  public extractFields({
+    label,
+    fieldName,
+    fieldNames,
+    ...rest
+  }: ExtractFieldsArgs): ExtractFields {
+    fieldNames.push('record');
     return {
       component: 'fieldset',
       type: 'record',
       label: label ?? this.name,
       fieldName,
+      fieldNames,
       fields: this._fields.map(([name, type]) =>
         type.extractFields({
           ...rest,
           label: name,
+          fieldNames,
           fieldName: `${fieldName}.${name}`,
           parent: 'record',
         }),
@@ -1352,13 +1366,16 @@ export class TupleClass<T extends any[]> extends RecordClass {
 export class VariantClass extends ConstructType<Record<string, any>> {
   public extractFields({
     label: parentName,
+    fieldNames,
     fieldName,
     ...rest
   }: ExtractFieldsArgs): ExtractFields[] {
+    fieldNames.push('variant');
     return this._fields.map(([label, value]) =>
       value.extractFields({
         ...rest,
         label,
+        fieldNames,
         fieldName: `${fieldName}_${label}`,
         parentName,
         parent: 'variant',
@@ -1477,16 +1494,19 @@ export class RecClass<T = any> extends ConstructType<T> {
     label: parentName,
     recursive,
     fieldName,
+    fieldNames,
     ...rest
   }: ExtractFieldsArgs): ExtractFields {
     if (!this._type) {
       throw Error('Recursive type uninitialized.');
     }
+    fieldNames.push('recursive');
     return (
       !recursive
         ? this._type.extractFields({
             ...rest,
             parentName,
+            fieldNames,
             fieldName: `${fieldName}_recursive`,
             recursive: true,
           })
@@ -1574,11 +1594,18 @@ function decodePrincipalId(b: Pipe): PrincipalId {
  * Represents an IDL principal reference
  */
 export class PrincipalClass extends PrimitiveType<PrincipalId> {
-  public extractFields({ label, fieldName, ...rest }: ExtractFieldsArgs): ExtractFields {
+  public extractFields({
+    label,
+    fieldName,
+    fieldNames,
+    ...rest
+  }: ExtractFieldsArgs): ExtractFields {
+    fieldNames.push('principal');
     return {
       component: 'input',
       type: 'text',
       label: label ?? this.name,
+      fieldNames,
       fieldName: `${fieldName}_principal`,
       validate: validateError(this.covariant, this),
       ...rest,
@@ -1623,12 +1650,18 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
  * @param annotations Function annotations.
  */
 export class FuncClass extends ConstructType<[PrincipalId, string]> {
-  public extractFields({ label: parentName, ...rest }: ExtractFieldsArgs): ExtractFields[] {
+  public extractFields({
+    label: parentName,
+    fieldNames,
+    ...rest
+  }: ExtractFieldsArgs): ExtractFields[] {
+    fieldNames.push(parentName ?? this.name);
     const fields = this.argTypes.map(arg =>
       arg.extractFields({
         ...rest,
         label: arg.name,
         parentName,
+        fieldNames,
         fieldName: `${parentName}`,
         parent: 'function',
       }),
@@ -1733,7 +1766,8 @@ function processFields(fields: ExtractFields[], inputs: ServiceClassFields['inpu
     if (field.fields) {
       processFields(field.fields, inputs);
     } else {
-      const isArray = field.parent === 'optional' || field.parent === 'vector';
+      const isArray = field.fieldNames.includes('optional') || field.fieldNames.includes('vector');
+
       const name = field.parent === 'record' ? field.label : field.fieldName;
       inputs[name] = isArray ? [] : '';
     }
@@ -1751,6 +1785,7 @@ export class ServiceClass extends ConstructType<PrincipalId> {
           parent: 'service',
           parentName: 'service',
           fieldName: '',
+          fieldNames: [],
         })
         .map(field => {
           if (field.fields) {
@@ -1759,7 +1794,8 @@ export class ServiceClass extends ConstructType<PrincipalId> {
             }
             processFields(field.fields, inputs[field.fieldName] as ServiceClassFields['inputs']);
           } else {
-            const isArray = field.parent === 'optional' || field.parent === 'vector';
+            const isArray =
+              field.fieldNames.includes('optional') || field.fieldNames.includes('vector');
             inputs[field.fieldName] = isArray ? [] : '';
           }
 

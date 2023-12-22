@@ -22,7 +22,7 @@ const Candid2: React.FC<CandidProps> = () => {
         return (
           <div key={functionName}>
             <h1>{functionName}</h1>
-            <RenderForm fields={fields} inputs={inputs} />
+            <Form fields={fields} inputs={inputs} />
           </div>
         );
       })}
@@ -34,7 +34,7 @@ export default Candid2;
 
 type FormValues = ServiceClassFields['inputs'];
 
-const RenderForm = ({ fields, inputs }: { fields: ExtractFields[]; inputs: FormValues }) => {
+const Form = ({ fields, inputs }: { fields: ExtractFields[]; inputs: FormValues }) => {
   const {
     formState: { errors },
     control,
@@ -51,10 +51,11 @@ const RenderForm = ({ fields, inputs }: { fields: ExtractFields[]; inputs: FormV
         <div key={index}>
           <h2>{field.parent}</h2>
           <h3>{field.parentName}</h3>
-          <RenderFormField
+          <FormField
             control={control}
             field={field}
             error={errors}
+            recursiveNumber={1}
             registerName={field.fieldName}
           />
         </div>
@@ -64,53 +65,56 @@ const RenderForm = ({ fields, inputs }: { fields: ExtractFields[]; inputs: FormV
   );
 };
 
-const RenderFormField = ({
+const FormField = ({
   field,
   error,
-  fromVectors,
-  fromOptional,
   registerName,
+  recursiveNumber = 0,
   ...rest
 }: {
-  fromVectors?: boolean;
-  fromOptional?: boolean;
+  recursiveNumber?: number;
   field: ExtractFields;
   registerName: string;
   control: Control<FormValues, any>;
   onRemove?: () => void;
   error?: FieldErrors<FormValues>;
 }) => {
-  if (field.parent === 'vector' && !fromVectors) {
-    console.log('fromVectors', fromVectors);
+  console.log(field.fieldNames[recursiveNumber], recursiveNumber);
+  if (field.fieldNames[recursiveNumber] === 'vector') {
     return (
-      <RenderVectors
+      <ArrayField
         field={field}
         error={error?.[field.fieldName]}
-        name={field.fieldName}
+        name={field.fieldNames[recursiveNumber]}
+        recursiveNumber={recursiveNumber + 1}
         fromVectors
         {...rest}
       />
     );
   }
-  if (field.parent === 'optional' && !fromOptional) {
-    console.log('fromVectors', fromVectors);
+  if (field.fieldNames[recursiveNumber] === 'optional') {
     return (
-      <RenderVectors
+      <ArrayField
         field={field}
         error={error?.[field.fieldName]}
-        name={field.fieldName}
+        name={field.fieldNames[recursiveNumber]}
+        recursiveNumber={recursiveNumber + 1}
         fromOptional
         {...rest}
       />
     );
   }
-  if (field.type === 'record' || field.parent === 'variant') {
+  if (
+    field.fieldNames[recursiveNumber] === 'record' ||
+    field.fieldNames[recursiveNumber] === 'variant'
+  ) {
     return (
       <fieldset>
         <legend>{field.fieldName}</legend>
         {field.fields?.map(field => (
-          <RenderFormField
+          <FormField
             key={field.fieldName}
+            recursiveNumber={recursiveNumber + 1}
             registerName={`${registerName}.${field.fieldName}`}
             field={field}
             error={error}
@@ -133,13 +137,17 @@ const RenderFormField = ({
   );
 };
 
-const RenderVectors = ({
+const ArrayField = ({
   control,
   field,
   error,
   name,
+  fromOptional,
+  fromVectors,
+  recursiveNumber = 0,
   ...rest
 }: {
+  recursiveNumber?: number;
   control: Control<FormValues, any>;
   field: ExtractFields;
   error?: any;
@@ -156,10 +164,8 @@ const RenderVectors = ({
     append('');
   };
 
-  const activeAdd =
-    (field.parent === 'optional' && fields.length === 0) || field.parent === 'vector';
-  const activeRemove =
-    (field.parent === 'optional' && fields.length > 0) || field.parent === 'vector';
+  const activeAdd = (fromOptional && fields.length === 0) || fromVectors;
+  const activeRemove = (fromOptional && fields.length > 0) || fromVectors;
 
   return (
     <div>
@@ -172,12 +178,13 @@ const RenderVectors = ({
       {fields.map((item, index) => {
         return (
           <div key={item.id}>
-            <RenderFormField
+            <FormField
               key={index}
               field={field}
+              error={error}
               control={control}
               registerName={`${name}.[${index}]`}
-              error={error}
+              recursiveNumber={recursiveNumber}
               onRemove={activeRemove ? () => remove(index) : undefined}
               {...rest}
             />

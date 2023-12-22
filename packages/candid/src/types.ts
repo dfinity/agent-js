@@ -61,6 +61,7 @@ export interface ExtractFields extends FormFields {
   options?: string[];
   fields?: ExtractFields[];
   fieldName: string;
+  fieldNames: string[];
   component?: FieldComponent;
 }
 
@@ -68,6 +69,7 @@ export type ExtractFieldsArgs = {
   label?: string;
   parent: string;
   fieldName: string;
+  fieldNames: string[];
   parentName?: string;
   recursive?: boolean;
   optional?: boolean;
