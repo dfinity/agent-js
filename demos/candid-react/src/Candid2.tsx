@@ -49,9 +49,9 @@ const Form = ({ fields, functionName }: { fields: ExtractFields[]; functionName:
             <FormField
               control={control}
               field={field}
-              error={errors[functionName as never]}
+              error={errors[functionName as never]?.[index]}
               recursiveNumber={1}
-              registerName={functionName}
+              registerName={`${functionName}.[${index}]`}
             />
           </div>
         ))}
@@ -98,7 +98,6 @@ const FormField = ({
       );
     case 'record':
     case 'variant':
-      console.log(error, registerName);
       return (
         <fieldset>
           <legend>{registerName}</legend>
@@ -115,7 +114,6 @@ const FormField = ({
         </fieldset>
       );
     default:
-      console.log(error);
       return (
         <Input
           {...rest}
