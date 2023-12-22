@@ -42,19 +42,18 @@ export const idlFactory = ({ IDL }) => {
   });
   // Define some basic types
   const BasicTypes = IDL.Record({
-    intVal: IDL.Int,
-    natVal: IDL.Nat,
-    textVal: IDL.Text,
-    boolVal: IDL.Bool,
-    floatVal: IDL.Float64,
-    nullVal: IDL.Null,
-    principalVal: IDL.Principal,
+    IntVal: IDL.Int,
+    NatVal: IDL.Nat,
+    TextVal: IDL.Text,
+    BoolVal: IDL.Bool,
+    FloatVal: IDL.Float64,
+    PrincipalVal: IDL.Principal,
   });
 
   // Define a variant type (similar to an enum)
   const Status = IDL.Variant({
     ok: IDL.Null,
-    error: IDL.Text,
+    err: IDL.Text,
   });
 
   // Define a complex nested record
@@ -68,6 +67,7 @@ export const idlFactory = ({ IDL }) => {
   });
 
   return IDL.Service({
+    principal: IDL.Func([IDL.Principal], [IDL.Text], ['query']),
     number: IDL.Func([IDL.Nat8], [IDL.Text], ['query']),
     name: IDL.Func([IDL.Text], [IDL.Text], ['query']),
     opt_text: IDL.Func([IDL.Opt(IDL.Text)], [IDL.Text], ['query']),
@@ -77,7 +77,7 @@ export const idlFactory = ({ IDL }) => {
     vec_in_opt: IDL.Func([IDL.Opt(IDL.Vec(IDL.Text))], [IDL.Text], ['query']),
     number_vec: IDL.Func([IDL.Vec(IDL.Nat8)], [IDL.Text], ['query']),
     process_basic_types: IDL.Func([BasicTypes], [Status], ['query']),
-    handle_complex_record: IDL.Func([ComplexRecord], [IDL.Text], ['query']),
+    handle_complex_record: IDL.Func([ComplexRecord], [Status], ['query']),
     add_metadata: IDL.Func(
       [IDL.Record({ newField: IDL.Nat8, otherField: IDL.Text })],
       [IDL.Vec(IDL.Text)],
@@ -88,21 +88,42 @@ export const idlFactory = ({ IDL }) => {
       [IDL.Vec(IDL.Text)],
       [],
     ),
-
     add_vec_metadata: IDL.Func(
       [IDL.Opt(IDL.Vec(IDL.Record({ newField: IDL.Nat8, otherField: IDL.Opt(IDL.Text) })))],
       [IDL.Vec(IDL.Text)],
       [],
     ),
-    variant: IDL.Func([IDL.Variant({ Int: IDL.Int, Text: IDL.Text })], [IDL.Vec(IDL.Text)], []),
+    variant: IDL.Func(
+      [
+        IDL.Text,
+        IDL.Opt(
+          IDL.Variant({
+            Int: IDL.Int,
+            Int8: IDL.Int8,
+            Int16: IDL.Int16,
+            Int32: IDL.Int32,
+            Int64: IDL.Int64,
+            Text: IDL.Text,
+            Nat: IDL.Nat,
+            Nat8: IDL.Nat8,
+            Nat16: IDL.Nat16,
+            Nat32: IDL.Nat32,
+            Nat64: IDL.Nat64,
+          }),
+        ),
+      ],
+      [IDL.Vec(IDL.Text)],
+      [],
+    ),
     tuple_text_nat8_int16: IDL.Func(
       [IDL.Tuple(IDL.Text, IDL.Nat8, IDL.Int16)],
       [IDL.Vec(IDL.Text)],
       [],
     ),
-    // receive: IDL.Func([ReleaseView], [IDL.Text], []),
-    // app: IDL.Func([AppArgs], [AppView], []),
-    // create_app: IDL.Func([CreateAppArgs], [AppView], []),
+    receive: IDL.Func([ReleaseView], [IDL.Text], []),
+    app: IDL.Func([AppArgs], [AppView], []),
+    create_app: IDL.Func([CreateAppArgs], [AppView], []),
+    recursive_value: IDL.Func([Value], [], []),
   });
 };
 export const init = () => {

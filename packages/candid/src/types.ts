@@ -25,6 +25,7 @@ export type FieldType =
   | 'checkbox'
   | 'select'
   | 'textarea'
+  | 'recursive'
   | 'reserved'
   | 'record'
   | 'variant'
@@ -67,6 +68,6 @@ export interface ExtractFields extends FormFields {
 export type ExtractFieldsArgs = {
   label?: string;
   fieldNames: string[];
-  recursive?: boolean;
+  recursive?: number;
   optional?: boolean;
 };

@@ -1359,9 +1359,12 @@ export class VariantClass extends ConstructType<Record<string, any>> {
     fieldNames.push('variant');
     const fieldNamesConcat = fieldNames.join('.');
 
+    const options = this._fields.map(([name]) => name);
+
     return {
       component: 'fieldset',
       type: 'variant',
+      options,
       label: label ?? this.name,
       fieldNames,
       fields: this._fields.map(([name, type]) => {
@@ -1484,7 +1487,7 @@ export class VariantClass extends ConstructType<Record<string, any>> {
  */
 export class RecClass<T = any> extends ConstructType<T> {
   public extractFields({
-    label: parentName,
+    label,
     recursive,
     fieldNames,
     ...rest
@@ -1493,12 +1496,16 @@ export class RecClass<T = any> extends ConstructType<T> {
       throw Error('Recursive type uninitialized.');
     }
     fieldNames.push('recursive');
+
+    const currectRecursive = recursive ? recursive : 1;
+
     return (
-      !recursive
+      currectRecursive <= 4
         ? this._type.extractFields({
             ...rest,
+            label: 'recursive',
             fieldNames,
-            recursive: true,
+            recursive: currectRecursive + 1,
           })
         : {}
     ) as ExtractFields;
@@ -1634,19 +1641,15 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
  * @param annotations Function annotations.
  */
 export class FuncClass extends ConstructType<[PrincipalId, string]> {
-  public extractFields({
-    label: parentName,
-    fieldNames,
-    ...rest
-  }: ExtractFieldsArgs): ExtractFields[] {
-    fieldNames.push(parentName ?? this.name);
-    const fields = this.argTypes.map(arg =>
-      arg.extractFields({
+  public extractFields({ label: parentName, ...rest }: ExtractFieldsArgs): ExtractFields[] {
+    const fields = this.argTypes.map(arg => {
+      const fieldNames: string[] = [parentName ?? this.name];
+      return arg.extractFields({
         ...rest,
         label: arg.name,
         fieldNames,
-      }),
-    ) as ExtractFields[];
+      });
+    }) as ExtractFields[];
 
     return fields;
   }
