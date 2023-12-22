@@ -919,7 +919,7 @@ export class VecClass<T> extends ConstructType<T[]> {
       parentName,
       fieldNames,
       parent: 'vector',
-      fieldName: `${fieldName}_vector`,
+      fieldName: `${fieldName}.vector`,
     }) as ExtractFields;
   }
 
@@ -1052,7 +1052,7 @@ export class OptClass<T> extends ConstructType<[T] | []> {
       parent: 'optional',
       fieldNames,
       parentName,
-      fieldName: `${fieldName}_optional`,
+      fieldName: `${fieldName}.optional`,
     }) as ExtractFields;
   }
 
@@ -1376,7 +1376,7 @@ export class VariantClass extends ConstructType<Record<string, any>> {
         ...rest,
         label,
         fieldNames,
-        fieldName: `${fieldName}_${label}`,
+        fieldName: `${fieldName}.${label}`,
         parentName,
         parent: 'variant',
       }),
@@ -1507,7 +1507,7 @@ export class RecClass<T = any> extends ConstructType<T> {
             ...rest,
             parentName,
             fieldNames,
-            fieldName: `${fieldName}_recursive`,
+            fieldName: `${fieldName}.recursive`,
             recursive: true,
           })
         : {}
@@ -1606,7 +1606,7 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
       type: 'text',
       label: label ?? this.name,
       fieldNames,
-      fieldName: `${fieldName}_principal`,
+      fieldName: `${fieldName}.principal`,
       validate: validateError(this.covariant, this),
       ...rest,
     };

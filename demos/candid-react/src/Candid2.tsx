@@ -17,14 +17,9 @@ interface CandidProps {}
 const Candid2: React.FC<CandidProps> = () => {
   return (
     <div>
-      {fields.map(({ functionName, fieldNames, fields, inputs }) => {
-        console.log({ functionName, fieldNames, fields, inputs });
-        return (
-          <div key={functionName}>
-            <h1>{functionName}</h1>
-            <Form fields={fields} inputs={inputs} />
-          </div>
-        );
+      {fields.map(({ functionName, fieldNames, fields, ...rest }) => {
+        console.log({ functionName, fieldNames, fields, ...rest });
+        return <Form key={functionName} fields={fields} functionName={functionName} />;
       })}
     </div>
   );
@@ -34,33 +29,37 @@ export default Candid2;
 
 type FormValues = ServiceClassFields['inputs'];
 
-const Form = ({ fields, inputs }: { fields: ExtractFields[]; inputs: FormValues }) => {
+const Form = ({ fields, functionName }: { fields: ExtractFields[]; functionName: string }) => {
   const {
     formState: { errors },
     control,
+
     handleSubmit,
   } = useForm<FormValues>({
     shouldUseNativeValidation: true,
     mode: 'onChange',
-    values: inputs,
+    values: {},
   });
 
   return (
-    <form onSubmit={handleSubmit(data => console.log(data))}>
-      {fields.map((field, index) => (
-        <div key={index}>
-          <h2>{field.parent}</h2>
-          <h3>{field.parentName}</h3>
-          <FormField
-            control={control}
-            field={field}
-            error={errors}
-            recursiveNumber={1}
-            registerName={field.fieldName}
-          />
-        </div>
-      ))}
-      <input type="submit" />
+    <form onSubmit={handleSubmit(data => console.log(Object.values(data)))}>
+      <div>
+        <h1>{functionName}</h1>
+        {fields.map((field, index) => (
+          <div key={index}>
+            <h2>{field.parent}</h2>
+            <h3>{field.parentName}</h3>
+            <FormField
+              control={control}
+              field={field}
+              error={errors}
+              recursiveNumber={1}
+              registerName={functionName}
+            />
+          </div>
+        ))}
+        <input type="submit" />
+      </div>
     </form>
   );
 };
@@ -79,118 +78,147 @@ const FormField = ({
   onRemove?: () => void;
   error?: FieldErrors<FormValues>;
 }) => {
-  console.log(field.fieldNames[recursiveNumber], recursiveNumber);
-  if (field.fieldNames[recursiveNumber] === 'vector') {
-    return (
-      <ArrayField
-        field={field}
-        error={error?.[field.fieldName]}
-        name={field.fieldNames[recursiveNumber]}
-        recursiveNumber={recursiveNumber + 1}
-        fromVectors
-        {...rest}
-      />
-    );
+  console.log(registerName);
+  switch (field.fieldNames[recursiveNumber]) {
+    case 'vector':
+      return (
+        <ArrayField
+          field={field}
+          error={error?.[field.fieldName]}
+          recursiveNumber={recursiveNumber + 1}
+          registerName={registerName}
+          {...rest}
+        />
+      );
+    case 'optional':
+      return (
+        <OptionalField
+          field={field}
+          error={error?.[field.fieldName]}
+          recursiveNumber={recursiveNumber + 1}
+          registerName={registerName}
+          {...rest}
+        />
+      );
+    case 'record':
+    case 'variant':
+      return (
+        <fieldset>
+          <legend>{field.fieldName}</legend>
+          {field.fields?.map(field => (
+            <FormField
+              key={field.fieldName}
+              recursiveNumber={recursiveNumber + 1}
+              registerName={`${registerName}.${field.label}`}
+              field={field}
+              error={error}
+              {...rest}
+            />
+          ))}
+        </fieldset>
+      );
+    default:
+      return (
+        <Input
+          {...rest}
+          {...rest.control.register(registerName, field)}
+          type={field.type}
+          label={field.label}
+          error={error?.[field.fieldName]?.message?.toString()}
+          required={field.required}
+        />
+      );
   }
-  if (field.fieldNames[recursiveNumber] === 'optional') {
-    return (
-      <ArrayField
-        field={field}
-        error={error?.[field.fieldName]}
-        name={field.fieldNames[recursiveNumber]}
-        recursiveNumber={recursiveNumber + 1}
-        fromOptional
-        {...rest}
-      />
-    );
-  }
-  if (
-    field.fieldNames[recursiveNumber] === 'record' ||
-    field.fieldNames[recursiveNumber] === 'variant'
-  ) {
-    return (
-      <fieldset>
-        <legend>{field.fieldName}</legend>
-        {field.fields?.map(field => (
-          <FormField
-            key={field.fieldName}
-            recursiveNumber={recursiveNumber + 1}
-            registerName={`${registerName}.${field.fieldName}`}
-            field={field}
-            error={error}
-            {...rest}
-          />
-        ))}
-      </fieldset>
-    );
-  }
-
-  return (
-    <Input
-      {...rest}
-      {...rest.control.register(registerName, field)}
-      type={field.type}
-      label={field.label}
-      error={error?.[field.fieldName]?.message?.toString()}
-      required={field.required}
-    />
-  );
 };
 
 const ArrayField = ({
   control,
   field,
   error,
-  name,
-  fromOptional,
-  fromVectors,
+  registerName,
   recursiveNumber = 0,
   ...rest
 }: {
   recursiveNumber?: number;
   control: Control<FormValues, any>;
+  registerName: string;
   field: ExtractFields;
   error?: any;
-  name: string;
-  fromVectors?: boolean;
-  fromOptional?: boolean;
 }) => {
   const { fields, append, remove } = useFieldArray({
     control,
-    name: field.fieldName as never,
+    name: registerName as never,
   });
-
-  const handleAppend = () => {
-    append('');
-  };
-
-  const activeAdd = (fromOptional && fields.length === 0) || fromVectors;
-  const activeRemove = (fromOptional && fields.length > 0) || fromVectors;
 
   return (
     <div>
-      <label>{name}</label>
-      {activeAdd && (
-        <button type="button" onClick={handleAppend}>
-          +
-        </button>
-      )}
+      <label>Vector</label>
+      <button type="button" onClick={() => append('')}>
+        +
+      </button>
       {fields.map((item, index) => {
         return (
-          <div key={item.id}>
+          <div key={item.id} style={{ display: 'flex', alignItems: 'start' }}>
             <FormField
               key={index}
               field={field}
               error={error}
               control={control}
-              registerName={`${name}.[${index}]`}
+              registerName={`${registerName}.[${index}]`}
               recursiveNumber={recursiveNumber}
-              onRemove={activeRemove ? () => remove(index) : undefined}
               {...rest}
             />
+            <button type="button" onClick={() => remove(index)}>
+              x
+            </button>
           </div>
         );
       })}
+    </div>
+  );
+};
+
+const OptionalField = ({
+  control,
+  field,
+  error,
+  recursiveNumber = 0,
+  registerName,
+  ...rest
+}: {
+  recursiveNumber?: number;
+  control: Control<FormValues, any>;
+  field: ExtractFields;
+  registerName: string;
+  error?: any;
+}) => {
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: registerName as never,
+  });
+
+  return (
+    <div>
+      <label>Optional</label>
+      {fields.length > 0 && (
+        <button type="button" onClick={() => remove(0)}>
+          x
+        </button>
+      )}
+      {fields.length === 0 ? (
+        <button type="button" onClick={() => append('')}>
+          +
+        </button>
+      ) : (
+        <FormField
+          field={field}
+          error={error}
+          control={control}
+          registerName={`${registerName}.[0]`}
+          recursiveNumber={recursiveNumber}
+          {...rest}
+        />
+      )}
     </div>
   );
 };
