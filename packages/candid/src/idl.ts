@@ -1359,7 +1359,23 @@ export class VariantClass extends ConstructType<Record<string, any>> {
     fieldNames.push('variant');
     const fieldNamesConcat = fieldNames.join('.');
 
-    const options = this._fields.map(([name]) => name);
+    const { fields, options } = this._fields.reduce(
+      (acc, [label, type]) => {
+        const fieldNames: string[] = [fieldNamesConcat];
+
+        const field = type.extractFields({
+          ...rest,
+          label,
+          fieldNames,
+        }) as ExtractFields;
+
+        acc.fields.push(field);
+        acc.options.push(label);
+
+        return acc;
+      },
+      { fields: [] as ExtractFields[], options: [] as string[] },
+    );
 
     return {
       component: 'fieldset',
@@ -1367,14 +1383,7 @@ export class VariantClass extends ConstructType<Record<string, any>> {
       options,
       label: label ?? this.name,
       fieldNames,
-      fields: this._fields.map(([name, type]) => {
-        const fieldNames: string[] = [fieldNamesConcat];
-        return type.extractFields({
-          ...rest,
-          label: name,
-          fieldNames,
-        }) as ExtractFields;
-      }),
+      fields,
       ...rest,
     };
   }
@@ -1495,20 +1504,22 @@ export class RecClass<T = any> extends ConstructType<T> {
     if (!this._type) {
       throw Error('Recursive type uninitialized.');
     }
-    fieldNames.push('recursive');
 
-    const currectRecursive = recursive ? recursive : 1;
-
-    return (
-      currectRecursive <= 4
-        ? this._type.extractFields({
-            ...rest,
-            label: 'recursive',
-            fieldNames,
-            recursive: currectRecursive + 1,
-          })
-        : {}
-    ) as ExtractFields;
+    return {
+      component: 'fieldset',
+      type: 'recursive',
+      label: label ?? this.name,
+      fieldNames,
+      extract: () => {
+        return this._type?.extractFields({
+          ...rest,
+          fieldNames,
+          recursive: true,
+          label: label ?? this.name,
+        });
+      },
+      ...rest,
+    };
   }
 
   private static _counter = 0;
@@ -1745,34 +1756,6 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
   }
 }
 
-function processFields(fields: ExtractFields[], inputs: ServiceClassFields['inputs']) {
-  fields.forEach(field => {
-    if (field.fields) {
-      processFields(field.fields, inputs);
-    } else {
-      generateFieldValue(field, inputs, 1);
-    }
-  });
-}
-
-function generateFieldValue(
-  field: ExtractFields,
-  inputs: ServiceClassFields['inputs'],
-  recursiveNumber: number,
-) {
-  // switch (field.fieldNames[recursiveNumber]) {
-  //   case 'vector':
-  //     inputs[0] = [inputs[0]];
-  //   case 'optional':
-  //     return [];
-  //   case 'record':
-  //   case 'variant':
-  //     return {};
-  //   default:
-  //     return '';
-  // }
-}
-
 export class ServiceClass extends ConstructType<PrincipalId> {
   public extractFields(): ServiceClassFields[] {
     return this._fields.map(([functionName, value]) => {
@@ -1781,14 +1764,6 @@ export class ServiceClass extends ConstructType<PrincipalId> {
       const fields: ExtractFields[] = value.extractFields({
         label: functionName,
         fieldNames: [],
-      });
-
-      fields.forEach(field => {
-        if (field.fields) {
-          processFields(field.fields, inputs);
-        } else {
-          generateFieldValue(field, inputs, 0);
-        }
       });
 
       const fieldNames = Object.keys(inputs);

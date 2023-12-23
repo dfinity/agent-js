@@ -15,6 +15,9 @@ export const idlFactory = ({ IDL }) => {
     name: IDL.Text,
     description: IDL.Text,
   });
+  const SimpleRec = IDL.Rec();
+  SimpleRec.fill(IDL.Variant({ A: IDL.Text, B: SimpleRec, C: IDL.Vec(SimpleRec) }));
+
   const ReleaseView = IDL.Record({
     features: IDL.Text,
     date: IDL.Nat64,
@@ -67,62 +70,63 @@ export const idlFactory = ({ IDL }) => {
   });
 
   return IDL.Service({
-    principal: IDL.Func([IDL.Principal], [IDL.Text], ['query']),
-    number: IDL.Func([IDL.Nat8], [IDL.Text], ['query']),
-    name: IDL.Func([IDL.Text], [IDL.Text], ['query']),
-    opt_text: IDL.Func([IDL.Opt(IDL.Text)], [IDL.Text], ['query']),
-    vec_nat8: IDL.Func([IDL.Vec(IDL.Nat8)], [IDL.Text], ['query']),
-    opt_number: IDL.Func([IDL.Opt(IDL.Nat16)], [IDL.Text], ['query']),
-    opt_vec: IDL.Func([IDL.Opt(IDL.Nat16), IDL.Vec(IDL.Text)], [IDL.Text], ['query']),
-    vec_in_opt: IDL.Func([IDL.Opt(IDL.Vec(IDL.Text))], [IDL.Text], ['query']),
-    number_vec: IDL.Func([IDL.Vec(IDL.Nat8)], [IDL.Text], ['query']),
-    process_basic_types: IDL.Func([BasicTypes], [Status], ['query']),
-    handle_complex_record: IDL.Func([ComplexRecord], [Status], ['query']),
-    add_metadata: IDL.Func(
-      [IDL.Record({ newField: IDL.Nat8, otherField: IDL.Text })],
-      [IDL.Vec(IDL.Text)],
-      [],
-    ),
-    add_opt_metadata: IDL.Func(
-      [IDL.Opt(IDL.Record({ newField: IDL.Nat8, otherField: IDL.Text }))],
-      [IDL.Vec(IDL.Text)],
-      [],
-    ),
-    add_vec_metadata: IDL.Func(
-      [IDL.Opt(IDL.Vec(IDL.Record({ newField: IDL.Nat8, otherField: IDL.Opt(IDL.Text) })))],
-      [IDL.Vec(IDL.Text)],
-      [],
-    ),
-    variant: IDL.Func(
-      [
-        IDL.Text,
-        IDL.Opt(
-          IDL.Variant({
-            Int: IDL.Int,
-            Int8: IDL.Int8,
-            Int16: IDL.Int16,
-            Int32: IDL.Int32,
-            Int64: IDL.Int64,
-            Text: IDL.Text,
-            Nat: IDL.Nat,
-            Nat8: IDL.Nat8,
-            Nat16: IDL.Nat16,
-            Nat32: IDL.Nat32,
-            Nat64: IDL.Nat64,
-          }),
-        ),
-      ],
-      [IDL.Vec(IDL.Text)],
-      [],
-    ),
-    tuple_text_nat8_int16: IDL.Func(
-      [IDL.Tuple(IDL.Text, IDL.Nat8, IDL.Int16)],
-      [IDL.Vec(IDL.Text)],
-      [],
-    ),
-    receive: IDL.Func([ReleaseView], [IDL.Text], []),
-    app: IDL.Func([AppArgs], [AppView], []),
-    create_app: IDL.Func([CreateAppArgs], [AppView], []),
+    //   principal: IDL.Func([IDL.Principal], [IDL.Text], ['query']),
+    //   number: IDL.Func([IDL.Nat8], [IDL.Text], ['query']),
+    //   name: IDL.Func([IDL.Text], [IDL.Text], ['query']),
+    //   opt_text: IDL.Func([IDL.Opt(IDL.Text)], [IDL.Text], ['query']),
+    //   vec_nat8: IDL.Func([IDL.Vec(IDL.Nat8)], [IDL.Text], ['query']),
+    //   opt_number: IDL.Func([IDL.Opt(IDL.Nat16)], [IDL.Text], ['query']),
+    //   opt_vec: IDL.Func([IDL.Opt(IDL.Nat16), IDL.Vec(IDL.Text)], [IDL.Text], ['query']),
+    //   vec_in_opt: IDL.Func([IDL.Opt(IDL.Vec(IDL.Text))], [IDL.Text], ['query']),
+    //   number_vec: IDL.Func([IDL.Vec(IDL.Nat8)], [IDL.Text], ['query']),
+    //   process_basic_types: IDL.Func([BasicTypes], [Status], ['query']),
+    //   handle_complex_record: IDL.Func([ComplexRecord], [Status], ['query']),
+    //   add_metadata: IDL.Func(
+    //     [IDL.Record({ newField: IDL.Nat8, otherField: IDL.Text })],
+    //     [IDL.Vec(IDL.Text)],
+    //     [],
+    //   ),
+    //   add_opt_metadata: IDL.Func(
+    //     [IDL.Opt(IDL.Record({ newField: IDL.Nat8, otherField: IDL.Text }))],
+    //     [IDL.Vec(IDL.Text)],
+    //     [],
+    //   ),
+    //   add_vec_metadata: IDL.Func(
+    //     [IDL.Opt(IDL.Vec(IDL.Record({ newField: IDL.Nat8, otherField: IDL.Opt(IDL.Text) })))],
+    //     [IDL.Vec(IDL.Text)],
+    //     [],
+    //   ),
+    //   variant: IDL.Func(
+    //     [
+    //       IDL.Text,
+    //       IDL.Opt(
+    //         IDL.Variant({
+    //           Int: IDL.Int,
+    //           Int8: IDL.Int8,
+    //           Int16: IDL.Int16,
+    //           Int32: IDL.Int32,
+    //           Int64: IDL.Int64,
+    //           Text: IDL.Text,
+    //           Nat: IDL.Nat,
+    //           Nat8: IDL.Nat8,
+    //           Nat16: IDL.Nat16,
+    //           Nat32: IDL.Nat32,
+    //           Nat64: IDL.Nat64,
+    //         }),
+    //       ),
+    //     ],
+    //     [IDL.Vec(IDL.Text)],
+    //     [],
+    //   ),
+    //   tuple_text_nat8_int16: IDL.Func(
+    //     [IDL.Tuple(IDL.Text, IDL.Nat8, IDL.Int16)],
+    //     [IDL.Vec(IDL.Text)],
+    //     [],
+    //   ),
+    //   receive: IDL.Func([ReleaseView], [IDL.Text], []),
+    //   app: IDL.Func([AppArgs], [AppView], []),
+    // simple_recursive: IDL.Func([SimpleRec], [IDL.Text], []),
+    // create_app: IDL.Func([CreateAppArgs], [AppView], []),
     recursive_value: IDL.Func([Value], [], []),
   });
 };

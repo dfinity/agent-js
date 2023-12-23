@@ -31,11 +31,9 @@ const Candid2: React.FC<CandidProps> = () => {
         margin: 'auto',
       }}
     >
-      {fields.map(({ functionName, fieldNames, inputs, fields, ...rest }) => {
-        console.log({ functionName, fieldNames, inputs, fields, ...rest });
-        return (
-          <Form key={functionName} inputs={inputs} fields={fields} functionName={functionName} />
-        );
+      {fields.map(({ functionName, fields, ...rest }) => {
+        console.log({ functionName, fields });
+        return <Form key={functionName} fields={fields} functionName={functionName} />;
       })}
     </div>
   );
@@ -43,20 +41,10 @@ const Candid2: React.FC<CandidProps> = () => {
 
 export default Candid2;
 
-const Form = ({
-  fields,
-  inputs,
-  functionName,
-}: {
-  inputs:
-    | FieldInputs
-    | {
-        [name: string]: FieldInputs;
-      };
-  fields: ExtractFields[];
-  functionName: string;
-}) => {
+const Form = ({ fields, functionName }: { fields: ExtractFields[]; functionName: string }) => {
   const [setSubmitedData, setSubmitedDataState] = React.useState<any>(null);
+  const [extractedField, setExtractedFields] = React.useState<ExtractFields>();
+
   const {
     formState: { errors },
     control,
@@ -91,10 +79,29 @@ const Form = ({
               padding: 10,
             }}
           >
+            {field.fields === undefined && field.type === 'recursive' ? (
+              <FormField
+                control={control}
+                field={field}
+                resetField={resetField}
+                trigger={trigger}
+                error={errors[functionName as never]?.[index]}
+                registerName={`${functionName}.[${index}]`}
+              />
+            ) : (
+              <Button
+                onClick={() => {
+                  const fields = field.extract({ fieldNames: [], recursive: false, label: 'test' });
+                  console.log('called', fields);
+                  setExtractedFields(fields);
+                }}
+              >
+                Proccess
+              </Button>
+            )}
             <FormField
               control={control}
               field={field}
-              inputs={inputs}
               resetField={resetField}
               trigger={trigger}
               error={errors[functionName as never]?.[index]}
@@ -145,6 +152,8 @@ const FormField = ({
   trigger: UseFormTrigger<{}>;
   error?: any;
 }) => {
+  console.log(field.fieldNames[recursiveNumber], field);
+
   switch (field.fieldNames[recursiveNumber]) {
     case 'vector':
       return (
@@ -171,19 +180,13 @@ const FormField = ({
     case 'recursive':
       console.log('recursive', registerName, field.fields);
       return (
-        <fieldset>
-          <legend>{field.label}</legend>
-          {field.fields?.map((field, index) => (
-            <FormField
-              key={index}
-              fieldLabel={field.fieldNames[recursiveNumber]}
-              registerName={`${registerName}.${field.label}`}
-              field={field}
-              error={error?.[field.label]}
-              {...rest}
-            />
-          ))}
-        </fieldset>
+        <GenerateRecursiveFields
+          field={field}
+          registerName={registerName}
+          recursiveNumber={1}
+          error={error}
+          {...rest}
+        />
       );
     case 'record':
       return (
@@ -220,7 +223,6 @@ const FormField = ({
     case 'variant':
       return <SelectForm registerName={registerName} fields={field} error={error} {...rest} />;
     default:
-      // console.log({ registerName }, rest.inputs);
       return (
         <Input
           {...rest}
@@ -233,6 +235,43 @@ const FormField = ({
         />
       );
   }
+};
+
+const GenerateRecursiveFields = ({
+  field,
+  registerName,
+  error,
+  ...rest
+}: {
+  field: ExtractFields;
+  registerName: string;
+  resetField: UseFormResetField<{}>;
+  trigger: UseFormTrigger<{}>;
+  recursiveNumber: number;
+  control: Control<any, any>;
+  error?: any;
+}) => {
+  const [extractedField, setExtractedFields] = React.useState<ExtractFields>();
+
+  return extractedField ? (
+    <FormField
+      fieldLabel={field.label}
+      registerName={`${registerName}.${field.label}`}
+      field={field}
+      error={error?.[field.label]}
+      {...rest}
+    />
+  ) : (
+    <Button
+      onClick={() => {
+        const fields = field.extract({ fieldNames: [], recursive: false, label: 'test' });
+        console.log('called', fields);
+        setExtractedFields(fields);
+      }}
+    >
+      Proccess
+    </Button>
+  );
 };
 
 const ArrayField = ({
@@ -359,10 +398,10 @@ const SelectForm = ({
   control: Control<any, any>;
   error?: any;
 }) => {
-  const [value, setValue] = React.useState(fields.options?.[0]);
+  const [value, setValue] = React.useState(0);
+  console.log({ fields, value });
+  const field = fields.fields?.[value];
 
-  const field = fields.fields?.find(({ label }) => label === value) as ExtractFields;
-  console.log({ error });
   return (
     <div>
       <label>Variant</label>
@@ -370,24 +409,28 @@ const SelectForm = ({
         onChange={e => {
           resetField(`${registerName}.${value}` as never);
           control.unregister(registerName);
-          setValue(e.target.value);
+          setValue(Number(e.target.value));
         }}
       >
         {fields.options?.map((label, index) => (
-          <option key={index} value={label}>
+          <option key={index} value={index}>
             {label}
           </option>
         ))}
       </select>
-      <FormField
-        fieldLabel={field.label}
-        registerName={`${registerName}.${value}`}
-        field={field}
-        resetField={resetField}
-        control={control}
-        error={error?.[value as never]}
-        {...rest}
-      />
+      {field ? (
+        <FormField
+          fieldLabel={field.label}
+          registerName={`${registerName}.${value}`}
+          field={field}
+          resetField={resetField}
+          control={control}
+          error={error?.[value as never]}
+          {...rest}
+        />
+      ) : (
+        <div>Field not found</div>
+      )}
     </div>
   );
 };
