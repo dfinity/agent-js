@@ -895,14 +895,11 @@ export class VecClass<T> extends ConstructType<T[]> {
     }
   }
 
-  public extractFields({
-    label: parentName,
-    fieldNames,
-    ...rest
-  }: ExtractFieldsArgs): ExtractFields {
+  public extractFields({ label, fieldNames, ...rest }: ExtractFieldsArgs): ExtractFields {
     fieldNames.push('vector');
     return this._type.extractFields({
       ...rest,
+      label: label ?? this.name,
       fieldNames,
     }) as ExtractFields;
   }
@@ -1511,11 +1508,11 @@ export class RecClass<T = any> extends ConstructType<T> {
       label: label ?? this.name,
       fieldNames,
       extract: () => {
+        fieldNames = ['recursive'];
         return this._type?.extractFields({
           ...rest,
           fieldNames,
           recursive: true,
-          label: label ?? this.name,
         });
       },
       ...rest,
@@ -1652,9 +1649,9 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
  * @param annotations Function annotations.
  */
 export class FuncClass extends ConstructType<[PrincipalId, string]> {
-  public extractFields({ label: parentName, ...rest }: ExtractFieldsArgs): ExtractFields[] {
+  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractFields[] {
     const fields = this.argTypes.map(arg => {
-      const fieldNames: string[] = [parentName ?? this.name];
+      const fieldNames: string[] = [label ?? this.name];
       return arg.extractFields({
         ...rest,
         label: arg.name,

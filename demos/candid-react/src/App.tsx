@@ -1,6 +1,6 @@
 import './App.css';
 /* eslint-disable no-console */
-import Candid2 from './Candid2';
+import Candid from './Candid';
 import * as zod from 'zod';
 
 // Example schema
@@ -13,7 +13,7 @@ const exampleSchema = zod.object({
 function App() {
   return (
     <div className="App">
-      <Candid2 />
+      <Candid />
       {/* <RecursiveForm /> */}
       {/* <MyForm schema={exampleSchema} /> */}
       {/* <Candid methods={methods} actor={actor} /> */}
