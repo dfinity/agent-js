@@ -1,13 +1,8 @@
-import type {
-  ActorConfig,
-  ActorSubclass,
-  Agent,
-  HttpAgentOptions,
-} from '@dfinity/agent';
+import type { ActorConfig, ActorSubclass, Agent, HttpAgentOptions } from '@dfinity/agent';
 import type { IDL } from '@dfinity/candid';
 import type { Principal } from '@dfinity/principal';
 
-import { _SERVICE } from './b3_system.did';
+import { _SERVICE } from './simple.did';
 
 export declare const idlFactory: IDL.InterfaceFactory;
 export declare const canisterId: string;
@@ -47,4 +42,4 @@ export declare const createActor: (
  * Intialized Actor using default settings, ready to talk to a canister using its candid interface
  * @constructs {@link ActorSubClass}
  */
-export declare const b3_system: ActorSubclass<_SERVICE>;
+export declare const simple: ActorSubclass<_SERVICE>;

@@ -1,16 +1,15 @@
 import { Actor, HttpAgent } from '@dfinity/agent';
 
 // Imports and re-exports candid interface
-import { idlFactory } from './b3_system.did.js';
-export { idlFactory } from './b3_system.did.js';
+import { idlFactory } from './simple.did.js';
+export { idlFactory } from './simple.did.js';
 
 /* CANISTER_ID is replaced by webpack based on node environment
  * Note: canister environment variable will be standardized as
  * process.env.CANISTER_ID_<CANISTER_NAME_UPPERCASE>
  * beginning in dfx 0.15.0
  */
-export const canisterId =
-  process.env.CANISTER_ID_B3_SYSTEM || process.env.B3_SYSTEM_CANISTER_ID;
+export const canisterId = process.env.CANISTER_ID_SIMPLE || process.env.SIMPLE_CANISTER_ID;
 
 export const createActor = (canisterId, options = {}) => {
   const agent = options.agent || new HttpAgent({ ...options.agentOptions });
@@ -23,10 +22,8 @@ export const createActor = (canisterId, options = {}) => {
 
   // Fetch root key for certificate validation during development
   if (process.env.DFX_NETWORK !== 'ic') {
-    agent.fetchRootKey().catch((err) => {
-      console.warn(
-        'Unable to fetch root key. Check to ensure that your local replica is running',
-      );
+    agent.fetchRootKey().catch(err => {
+      console.warn('Unable to fetch root key. Check to ensure that your local replica is running');
       console.error(err);
     });
   }

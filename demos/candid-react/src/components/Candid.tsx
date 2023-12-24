@@ -1,6 +1,6 @@
 import { Actor } from '@dfinity/agent';
-import { createActor } from './declarations/simple';
-import Form from './components/Form';
+import { createActor } from '../declarations/simple';
+import Form from './Form';
 
 export const actor = createActor('bkyz2-fmaaa-aaaaa-qaaaq-cai', {
   agentOptions: {
