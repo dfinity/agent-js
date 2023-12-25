@@ -6,20 +6,19 @@ export interface JsonObject extends Record<string, JsonValue> {}
 
 export type JsonValue = boolean | string | number | JsonArray | JsonObject;
 
-export type FieldInputs = {
-  [name: string]: Array<string> | string;
-};
+export type ExtractedFieldComponent =
+  | 'div'
+  | 'form'
+  | 'input'
+  | 'select'
+  | 'option'
+  | 'span'
+  | 'fieldset';
 
-export type ServiceClassFields = {
-  functionName: string;
-  inputs: FieldInputs | { [name: string]: FieldInputs };
-  fieldNames: string[];
-  fields: ExtractedFields[];
-};
-
-export type FieldComponent = 'form' | 'input' | 'select' | 'option' | 'span' | 'fieldset';
-
-export type FieldType =
+export type ExtractedFieldType =
+  | 'service'
+  | 'function'
+  | 'optional'
   | 'text'
   | 'number'
   | 'checkbox'
@@ -27,6 +26,7 @@ export type FieldType =
   | 'textarea'
   | 'recursive'
   | 'reserved'
+  | 'vector'
   | 'record'
   | 'variant'
   | 'tuple'
@@ -38,7 +38,7 @@ export type FieldType =
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyValue = any;
 
-export type InputFormFields = Partial<{
+export type ExtraInputFormFields = Partial<{
   required: boolean;
   min: number | string;
   max: number | string;
@@ -47,18 +47,12 @@ export type InputFormFields = Partial<{
   valueAsNumber: boolean;
 }>;
 
-export interface ExtractedFields extends InputFormFields {
+export interface ExtractedField extends ExtraInputFormFields {
+  component: ExtractedFieldComponent;
+  type: ExtractedFieldType;
   label: string;
-  type: FieldType;
-  component: FieldComponent;
   options?: string[];
-  fields?: ExtractedFields[];
-  fieldNames: string[];
-  extract?: () => ExtractedFields;
+  fields: ExtractedField[];
+  extract?: () => ExtractedField | undefined;
   validate: (value: AnyValue) => boolean | string;
 }
-
-export type ExtractFieldsArgs = {
-  label?: string;
-  fieldNames: string[];
-};

@@ -1,7 +1,7 @@
+import React, { forwardRef } from 'react';
 import { FieldType } from '@dfinity/candid';
-import { forwardRef } from 'react';
 import { UseFormResetField, UseFormTrigger } from 'react-hook-form';
-import Button from './Button';
+import { cn } from '../utils';
 
 interface InputProps {
   label: string;
@@ -17,26 +17,18 @@ interface InputProps {
 const Input: React.FC<InputProps> = forwardRef(
   ({ label, resetField, trigger, isError, name, type, required, error, ...rest }, ref) => {
     return (
-      <div style={{ width: '100%', padding: 5 }}>
-        <label htmlFor={name}>
+      <div className="w-full p-1">
+        <label htmlFor={name} className="block">
           {label}
-          {required && <span style={{ color: 'red' }}>*</span>}
-          {error && <span style={{ color: 'red', margin: 0, fontSize: 8 }}>({error})</span>}
+          {required && <span className="text-red-500">*</span>}
+          {error && <span className="text-red-500 text-xs ml-1">({error})</span>}
         </label>
-        <div
-          style={{
-            position: 'relative',
-          }}
-        >
+        <div className="relative">
           <input
-            style={{
-              width: '100%',
-              height: 30,
-              paddingLeft: 10,
-              paddingRight: 30,
-              border: !!isError ? '1px solid red' : '1px solid black',
-              boxSizing: 'border-box',
-            }}
+            className={cn(
+              'w-full h-8 pl-2 pr-8 border rounded',
+              isError ? 'border-red-500' : 'border-gray-400',
+            )}
             id={name}
             name={name}
             type={type}
@@ -45,24 +37,15 @@ const Input: React.FC<InputProps> = forwardRef(
             {...rest}
           />
           {type !== 'checkbox' && (
-            <Button
-              style={{
-                position: 'absolute',
-                right: 0,
-                top: '40%',
-                transform: 'translateY(-50%)',
-                height: 30,
-                width: 30,
-                background: 'transparent',
-                color: 'red',
-              }}
+            <div
+              className="absolute inset-y-0 right-0 flex items-center justify-center w-8 text-red-500 pb-1 px-1 cursor-pointer"
               onClick={() => {
                 resetField(name as never);
                 trigger(name as never, { shouldFocus: true });
               }}
             >
-              x
-            </Button>
+              <span className="text-2xl leading-5 font-bold">×</span>
+            </div>
           )}
         </div>
       </div>

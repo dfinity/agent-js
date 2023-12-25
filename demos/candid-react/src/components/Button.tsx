@@ -1,36 +1,24 @@
+import React from 'react';
+import { cn } from '../utils';
+
 interface ButtonProps {
   onClick?: () => void;
   type?: 'button' | 'submit' | 'reset';
-  background?: string;
-  style?: React.CSSProperties;
+  className?: string;
   children?: React.ReactNode;
 }
 
-const Button: React.FC<ButtonProps> = ({
-  onClick,
-  style,
-  children,
-  type = 'button',
-  background = 'black',
-}) => (
+const Button: React.FC<ButtonProps> = ({ onClick, children, type = 'button', className = '' }) => (
   <button
     type={type}
-    style={{
-      padding: 5,
-      paddingBottom: 10,
-      width: '100%',
-      borderRadius: 0,
-      background,
-      color: 'white',
-      border: 'none',
-      cursor: 'pointer',
-      fontSize: 20,
-      fontFamily: 'monospace',
-      ...style,
-    }}
+    className={cn(
+      'py-1 px-2 w-full rounded bg-black text-white cursor-pointer text-lg font-mono',
+      className,
+    )}
     onClick={onClick}
   >
     {children}
   </button>
 );
+
 export default Button;

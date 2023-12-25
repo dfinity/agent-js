@@ -1,20 +1,14 @@
-import { FieldInputs, ExtractedFields } from '@dfinity/candid';
+import React from 'react';
+import { ExtractedField } from '@dfinity/candid';
 import { Control, UseFormResetField, UseFormTrigger } from 'react-hook-form';
-import ArrayField from './Array';
+import Vector from './Vector';
 import Input from './Input';
 import Optional from './Optional';
-import Select from './Select';
+import Variant from './Variant';
 import Recursive from './Recursive';
 
 interface FormFieldsProps {
-  fieldLabel?: string;
-  inputs?:
-    | FieldInputs
-    | {
-        [name: string]: FieldInputs;
-      };
-  recursiveNumber?: number;
-  field: ExtractedFields;
+  field: ExtractedField;
   registerName: string;
   control: Control<any, any>;
   onRemove?: () => void;
@@ -23,45 +17,20 @@ interface FormFieldsProps {
   error?: any;
 }
 
-const FormField: React.FC<FormFieldsProps> = ({
-  field,
-  error,
-  fieldLabel,
-  registerName,
-  recursiveNumber = 1,
-  ...rest
-}) => {
-  switch (field.fieldNames[recursiveNumber]) {
+const FormField: React.FC<FormFieldsProps> = ({ field, error, registerName, ...rest }) => {
+  console.log('field', field.type, field.fields);
+  switch (field.type) {
     case 'vector':
-      return (
-        <ArrayField
-          field={field}
-          recursiveNumber={recursiveNumber + 1}
-          registerName={registerName}
-          error={error}
-          fieldLabel={fieldLabel}
-          {...rest}
-        />
-      );
+      return <Vector field={field} registerName={registerName} error={error} {...rest} />;
     case 'optional':
-      return (
-        <Optional
-          field={field}
-          fieldLabel={field.fieldNames[recursiveNumber]}
-          recursiveNumber={recursiveNumber + 1}
-          registerName={registerName}
-          error={error}
-          {...rest}
-        />
-      );
+      return <Optional field={field} registerName={registerName} error={error} {...rest} />;
     case 'record':
       return (
-        <fieldset style={{ width: '100%', boxSizing: 'border-box' }}>
-          <legend>{field.label}</legend>
+        <fieldset className="w-full">
+          <legend className="font-semibold">{field.label}</legend>
           {field.fields?.map((field, index) => (
             <FormField
               key={index}
-              fieldLabel={field.fieldNames[recursiveNumber]}
               registerName={`${registerName}.${field.label}`}
               field={field}
               error={error?.[field.label]}
@@ -72,12 +41,11 @@ const FormField: React.FC<FormFieldsProps> = ({
       );
     case 'tuple':
       return (
-        <fieldset style={{ width: '100%', boxSizing: 'border-box' }}>
-          <legend>{field.label}</legend>
+        <fieldset className="w-full">
+          <legend className="font-semibold">{field.label}</legend>
           {field.fields?.map((field, index) => (
             <FormField
               key={index}
-              fieldLabel={field.fieldNames[recursiveNumber]}
               registerName={`${registerName}.[${index}]`}
               field={field}
               error={error?.[index]}
@@ -87,7 +55,7 @@ const FormField: React.FC<FormFieldsProps> = ({
         </fieldset>
       );
     case 'variant':
-      return <Select registerName={registerName} fields={field} error={error} {...rest} />;
+      return <Variant registerName={registerName} fields={field} error={error} {...rest} />;
     default:
       return field.type === 'recursive' && typeof field.extract === 'function' ? (
         <Recursive field={field} registerName={registerName} error={error} {...rest} />

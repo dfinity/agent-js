@@ -1,18 +1,18 @@
-import { ExtractedFields } from '@dfinity/candid';
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { ExtractedField } from '@dfinity/candid';
 import { UseFormResetField, UseFormTrigger, Control } from 'react-hook-form';
 import FormField from './FormField';
 
-interface SelectProps {
+interface VariantProps {
   registerName: string;
-  fields: ExtractedFields;
+  fields: ExtractedField;
   resetField: UseFormResetField<{}>;
   trigger: UseFormTrigger<{}>;
   control: Control<any, any>;
   error?: any;
 }
 
-const Select: React.FC<SelectProps> = ({
+const Variant: React.FC<VariantProps> = ({
   fields,
   registerName,
   control,
@@ -24,19 +24,13 @@ const Select: React.FC<SelectProps> = ({
   const field = fields.fields?.find(field => field.label === value);
 
   return (
-    <div style={{ width: '100%', boxSizing: 'border-box' }}>
-      <div
-        style={{ display: 'flex', alignItems: 'center', width: '100%', boxSizing: 'border-box' }}
-      >
-        <label htmlFor={registerName}>{fields.type}</label>
+    <div className="w-full box-border">
+      <div className="flex items-center w-full box-border">
+        <label htmlFor={registerName} className="block mr-2">
+          {fields.label}
+        </label>
         <select
-          style={{
-            width: '100%',
-            height: 30,
-            paddingLeft: 10,
-            paddingRight: 30,
-            marginLeft: 10,
-          }}
+          className="w-full h-8 pl-2 pr-8 ml-2 border rounded"
           onChange={e => {
             resetField(`${registerName}.${value}` as never);
             control.unregister(registerName);
@@ -52,7 +46,6 @@ const Select: React.FC<SelectProps> = ({
       </div>
       {field ? (
         <FormField
-          fieldLabel={field.label}
           registerName={`${registerName}.${value}`}
           field={field}
           resetField={resetField}
@@ -61,9 +54,10 @@ const Select: React.FC<SelectProps> = ({
           {...rest}
         />
       ) : (
-        <div>Field not found</div>
+        <div className="mt-2">Field not found</div>
       )}
     </div>
   );
 };
-export default Select;
+
+export default Variant;

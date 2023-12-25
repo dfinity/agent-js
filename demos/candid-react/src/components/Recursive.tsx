@@ -1,10 +1,10 @@
-import { ExtractedFields } from '@dfinity/candid';
+import { ExtractedField } from '@dfinity/candid';
 import { useState, useEffect } from 'react';
 import { UseFormResetField, UseFormTrigger, Control } from 'react-hook-form';
 import FormField from './FormField';
 
 interface RecursiveProps {
-  field: ExtractedFields;
+  field: ExtractedField;
   registerName: string;
   resetField: UseFormResetField<{}>;
   trigger: UseFormTrigger<{}>;
@@ -13,21 +13,16 @@ interface RecursiveProps {
 }
 
 const Recursive: React.FC<RecursiveProps> = ({ field, error, ...rest }) => {
-  const [extractedField, setExtractedFields] = useState<ExtractedFields>();
+  const [extractedField, setExtractedFields] = useState<ExtractedField>();
 
   useEffect(() => {
     const fields = field.extract?.();
+    console.log('fields', fields);
     setExtractedFields(fields);
   }, [field]);
 
   return extractedField ? (
-    <FormField
-      fieldLabel={field.label}
-      field={extractedField}
-      recursiveNumber={1}
-      error={error?.[field.label]}
-      {...rest}
-    />
+    <FormField field={extractedField} error={error?.[field.label]} {...rest} />
   ) : (
     <div>Loading...</div>
   );

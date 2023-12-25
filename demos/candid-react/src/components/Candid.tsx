@@ -4,12 +4,16 @@ import Form from './Form';
 
 export const actor = createActor('bkyz2-fmaaa-aaaaa-qaaaq-cai', {
   agentOptions: {
-    host: 'http://localhost:4943',
+    host: 'https://ic0.app',
+    // 'http://localhost:4943',
     verifyQuerySignatures: false,
   },
 });
 
-const fields = Actor.interfaceOf(actor as Actor).extractFields();
+export const actorInterface = Actor.interfaceOf(actor);
+
+const field = actorInterface.extractField();
+console.log('field', field);
 
 interface CandidProps {}
 
@@ -22,8 +26,8 @@ const Candid: React.FC<CandidProps> = () => {
         margin: 'auto',
       }}
     >
-      {fields.map(({ functionName, fields }) => (
-        <Form key={functionName} fields={fields} functionName={functionName} />
+      {field.fields.map(field => (
+        <Form field={field} key={field.label} functionName={field.label} />
       ))}
     </div>
   );
