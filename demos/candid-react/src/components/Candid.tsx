@@ -22,9 +22,9 @@ const Candid: React.FC<CandidProps> = () => {
         margin: 'auto',
       }}
     >
-      {fields.map(({ functionName, fields }) => {
-        return <Form key={functionName} fields={fields} functionName={functionName} />;
-      })}
+      {fields.map(({ functionName, fields }) => (
+        <Form key={functionName} fields={fields} functionName={functionName} />
+      ))}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { ExtractFields } from '@dfinity/candid';
+import { ExtractedFields } from '@dfinity/candid';
 import { useEffect } from 'react';
 import { Control, UseFormResetField, UseFormTrigger, useFieldArray } from 'react-hook-form';
 import Button from './Button';
@@ -8,7 +8,7 @@ interface ArrayFieldProps {
   recursiveNumber?: number;
   control: Control<any, any>;
   registerName: string;
-  field: ExtractFields;
+  field: ExtractedFields;
   resetField: UseFormResetField<{}>;
   trigger: UseFormTrigger<{}>;
   fieldLabel?: string;

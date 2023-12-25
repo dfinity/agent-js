@@ -17,7 +17,6 @@ export const idlFactory = ({ IDL }) => {
   });
   const SimpleRec = IDL.Rec();
   SimpleRec.fill(IDL.Variant({ A: IDL.Text, B: SimpleRec, C: IDL.Vec(SimpleRec) }));
-
   const ReleaseView = IDL.Record({
     features: IDL.Text,
     date: IDL.Nat64,

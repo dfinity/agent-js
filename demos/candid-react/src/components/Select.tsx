@@ -1,11 +1,11 @@
-import { ExtractFields } from '@dfinity/candid';
+import { ExtractedFields } from '@dfinity/candid';
 import { useState } from 'react';
 import { UseFormResetField, UseFormTrigger, Control } from 'react-hook-form';
 import FormField from './FormField';
 
 interface SelectProps {
   registerName: string;
-  fields: ExtractFields;
+  fields: ExtractedFields;
   resetField: UseFormResetField<{}>;
   trigger: UseFormTrigger<{}>;
   control: Control<any, any>;

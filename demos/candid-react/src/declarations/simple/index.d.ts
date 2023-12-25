@@ -2,7 +2,7 @@ import type { ActorConfig, ActorSubclass, Agent, HttpAgentOptions } from '@dfini
 import type { IDL } from '@dfinity/candid';
 import type { Principal } from '@dfinity/principal';
 
-import { _SERVICE } from './simple.did';
+import { _SERVICE } from './candid.did';
 
 export declare const idlFactory: IDL.InterfaceFactory;
 export declare const canisterId: string;

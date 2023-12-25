@@ -14,7 +14,7 @@ export type ServiceClassFields = {
   functionName: string;
   inputs: FieldInputs | { [name: string]: FieldInputs };
   fieldNames: string[];
-  fields: ExtractFields[];
+  fields: ExtractedFields[];
 };
 
 export type FieldComponent = 'form' | 'input' | 'select' | 'option' | 'span' | 'fieldset';
@@ -38,37 +38,27 @@ export type FieldType =
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyValue = any;
 
-export type FormFields = Partial<{
+export type InputFormFields = Partial<{
   required: boolean;
   min: number | string;
   max: number | string;
   maxLength: number;
   minLength: number;
-  validate: (value: AnyValue) => boolean | string;
-  value: AnyValue;
-  setValueAs: (value: AnyValue) => AnyValue;
-  shouldUnregister?: boolean;
-  onChange?: (event: Event) => void;
-  onBlur?: (event: Event) => void;
-  disabled: boolean;
-  deps: AnyValue | AnyValue[];
-}> & {
-  [key: string]: AnyValue;
-};
+  valueAsNumber: boolean;
+}>;
 
-export interface ExtractFields extends FormFields {
+export interface ExtractedFields extends InputFormFields {
   label: string;
   type: FieldType;
+  component: FieldComponent;
   options?: string[];
-  fields?: ExtractFields[];
+  fields?: ExtractedFields[];
   fieldNames: string[];
-  component?: FieldComponent;
+  extract?: () => ExtractedFields;
+  validate: (value: AnyValue) => boolean | string;
 }
 
 export type ExtractFieldsArgs = {
   label?: string;
-  extract?: () => ExtractFields[];
   fieldNames: string[];
-  recursive?: boolean;
-  optional?: boolean;
 };

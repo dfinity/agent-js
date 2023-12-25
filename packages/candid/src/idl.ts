@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Principal as PrincipalId } from '@dfinity/principal';
-import { ExtractFields, ExtractFieldsArgs, JsonValue, ServiceClassFields } from './types';
+import { ExtractedFields, ExtractFieldsArgs, JsonValue, ServiceClassFields } from './types';
 import { concat, PipeArrayBuffer as Pipe } from './utils/buffer';
 import { idlLabelToId } from './utils/hash';
 import {
@@ -228,7 +228,7 @@ export abstract class Type<T = any> {
   public abstract decodeValue(x: Pipe, t: Type): T;
   public abstract extractFields(
     args?: ExtractFieldsArgs,
-  ): ExtractFields | ExtractFields[] | { functionName: string; fields: ExtractFields[] }[];
+  ): ExtractedFields | ExtractedFields[] | { functionName: string; fields: ExtractedFields[] }[];
   protected abstract _buildTypeTableImpl(typeTable: TypeTable): void;
 }
 
@@ -268,7 +268,7 @@ export abstract class ConstructType<T = any> extends Type<T> {
  * Result types like `Result<Text, Empty>` should always succeed.
  */
 export class EmptyClass extends PrimitiveType<never> {
-  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractFields {
+  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractedFields {
     return {
       component: 'span',
       type: 'empty',
@@ -315,7 +315,7 @@ export class EmptyClass extends PrimitiveType<never> {
  * Unknown cannot be serialized and attempting to do so will throw an error.
  */
 export class UnknownClass extends Type {
-  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractFields {
+  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractedFields {
     return {
       component: 'span',
       type: 'unknown',
@@ -391,7 +391,7 @@ export class UnknownClass extends Type {
  * Represents an IDL Bool
  */
 export class BoolClass extends PrimitiveType<boolean> {
-  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractFields {
+  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractedFields {
     return {
       component: 'input',
       type: 'checkbox',
@@ -439,7 +439,7 @@ export class BoolClass extends PrimitiveType<boolean> {
  * Represents an IDL Null
  */
 export class NullClass extends PrimitiveType<null> {
-  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractFields {
+  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractedFields {
     return {
       component: 'span',
       type: 'null',
@@ -480,7 +480,7 @@ export class NullClass extends PrimitiveType<null> {
  * Represents an IDL Reserved
  */
 export class ReservedClass extends PrimitiveType<any> {
-  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractFields {
+  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractedFields {
     return {
       component: 'span',
       type: 'reserved',
@@ -522,7 +522,7 @@ export class ReservedClass extends PrimitiveType<any> {
  * Represents an IDL Text
  */
 export class TextClass extends PrimitiveType<string> {
-  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractFields {
+  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractedFields {
     return {
       component: 'input',
       type: 'text',
@@ -574,7 +574,7 @@ export class TextClass extends PrimitiveType<string> {
  * Represents an IDL Int
  */
 export class IntClass extends PrimitiveType<bigint> {
-  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractFields {
+  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractedFields {
     return {
       component: 'input',
       type: 'number',
@@ -623,7 +623,7 @@ export class IntClass extends PrimitiveType<bigint> {
  * Represents an IDL Nat
  */
 export class NatClass extends PrimitiveType<bigint> {
-  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractFields {
+  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractedFields {
     return {
       component: 'input',
       type: 'number',
@@ -679,7 +679,7 @@ export class FloatClass extends PrimitiveType<number> {
     }
   }
 
-  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractFields {
+  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractedFields {
     return {
       component: 'input',
       type: 'number',
@@ -744,7 +744,7 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
     super();
   }
 
-  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractFields {
+  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractedFields {
     return {
       component: 'input',
       type: 'number',
@@ -813,7 +813,7 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
     super();
   }
 
-  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractFields {
+  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractedFields {
     return {
       component: 'input',
       type: 'number',
@@ -895,13 +895,13 @@ export class VecClass<T> extends ConstructType<T[]> {
     }
   }
 
-  public extractFields({ label, fieldNames, ...rest }: ExtractFieldsArgs): ExtractFields {
+  public extractFields({ label, fieldNames, ...rest }: ExtractFieldsArgs): ExtractedFields {
     fieldNames.push('vector');
     return this._type.extractFields({
       ...rest,
       label: label ?? this.name,
       fieldNames,
-    }) as ExtractFields;
+    }) as ExtractedFields;
   }
 
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
@@ -1021,12 +1021,12 @@ export class VecClass<T> extends ConstructType<T[]> {
  * @param {Type} t
  */
 export class OptClass<T> extends ConstructType<[T] | []> {
-  public extractFields({ fieldNames, ...rest }: ExtractFieldsArgs): ExtractFields {
+  public extractFields({ fieldNames, ...rest }: ExtractFieldsArgs): ExtractedFields {
     fieldNames.push('optional');
     return this._type.extractFields({
       ...rest,
       fieldNames,
-    }) as ExtractFields;
+    }) as ExtractedFields;
   }
 
   constructor(protected _type: Type<T>) {
@@ -1102,7 +1102,7 @@ export class OptClass<T> extends ConstructType<[T] | []> {
  * @param {object} [fields] - mapping of function name to Type
  */
 export class RecordClass extends ConstructType<Record<string, any>> {
-  public extractFields({ label, fieldNames, ...rest }: ExtractFieldsArgs): ExtractFields {
+  public extractFields({ label, fieldNames, ...rest }: ExtractFieldsArgs): ExtractedFields {
     fieldNames.push('record');
     const fieldNamesConcat = fieldNames.join('.');
 
@@ -1111,13 +1111,14 @@ export class RecordClass extends ConstructType<Record<string, any>> {
       type: 'record',
       label: label ?? this.name,
       fieldNames,
+      validate: validateError(this.covariant, this),
       fields: this._fields.map(([name, type]) => {
         const fieldNames: string[] = [fieldNamesConcat];
         return type.extractFields({
           ...rest,
           label: name,
           fieldNames,
-        }) as ExtractFields;
+        }) as ExtractedFields;
       }),
       ...rest,
     };
@@ -1261,7 +1262,7 @@ export class RecordClass extends ConstructType<Record<string, any>> {
 export class TupleClass<T extends any[]> extends RecordClass {
   protected readonly _components: Type[];
 
-  public extractFields({ label, fieldNames, ...rest }: ExtractFieldsArgs): ExtractFields {
+  public extractFields({ label, fieldNames, ...rest }: ExtractFieldsArgs): ExtractedFields {
     fieldNames.push('tuple');
     const fieldNamesConcat = fieldNames.join('.');
 
@@ -1269,13 +1270,14 @@ export class TupleClass<T extends any[]> extends RecordClass {
       component: 'fieldset',
       type: 'record',
       label: label ?? this.name,
+      validate: validateError(this.covariant, this),
       fieldNames,
       fields: this._fields.map(([_, type]) => {
         const fieldNames: string[] = [fieldNamesConcat];
         return type.extractFields({
           ...rest,
           fieldNames,
-        }) as ExtractFields;
+        }) as ExtractedFields;
       }),
       ...rest,
     };
@@ -1352,7 +1354,7 @@ export class TupleClass<T extends any[]> extends RecordClass {
  * @param {object} [fields] - mapping of function name to Type
  */
 export class VariantClass extends ConstructType<Record<string, any>> {
-  public extractFields({ label, fieldNames, ...rest }: ExtractFieldsArgs): ExtractFields {
+  public extractFields({ label, fieldNames, ...rest }: ExtractFieldsArgs): ExtractedFields {
     fieldNames.push('variant');
     const fieldNamesConcat = fieldNames.join('.');
 
@@ -1364,14 +1366,14 @@ export class VariantClass extends ConstructType<Record<string, any>> {
           ...rest,
           label,
           fieldNames,
-        }) as ExtractFields;
+        }) as ExtractedFields;
 
         acc.fields.push(field);
         acc.options.push(label);
 
         return acc;
       },
-      { fields: [] as ExtractFields[], options: [] as string[] },
+      { fields: [] as ExtractedFields[], options: [] as string[] },
     );
 
     return {
@@ -1379,6 +1381,7 @@ export class VariantClass extends ConstructType<Record<string, any>> {
       type: 'variant',
       options,
       label: label ?? this.name,
+      validate: validateError(this.covariant, this),
       fieldNames,
       fields,
       ...rest,
@@ -1492,12 +1495,7 @@ export class VariantClass extends ConstructType<Record<string, any>> {
  * types.
  */
 export class RecClass<T = any> extends ConstructType<T> {
-  public extractFields({
-    label,
-    recursive,
-    fieldNames,
-    ...rest
-  }: ExtractFieldsArgs): ExtractFields {
+  public extractFields({ label, fieldNames, ...rest }: ExtractFieldsArgs): ExtractedFields {
     if (!this._type) {
       throw Error('Recursive type uninitialized.');
     }
@@ -1507,13 +1505,13 @@ export class RecClass<T = any> extends ConstructType<T> {
       type: 'recursive',
       label: label ?? this.name,
       fieldNames,
+      validate: validateError(this.covariant, this),
       extract: () => {
         fieldNames = ['recursive'];
         return this._type?.extractFields({
           ...rest,
           fieldNames,
-          recursive: true,
-        });
+        }) as ExtractedFields;
       },
       ...rest,
     };
@@ -1599,7 +1597,7 @@ function decodePrincipalId(b: Pipe): PrincipalId {
  * Represents an IDL principal reference
  */
 export class PrincipalClass extends PrimitiveType<PrincipalId> {
-  public extractFields({ label, fieldNames, ...rest }: ExtractFieldsArgs): ExtractFields {
+  public extractFields({ label, fieldNames, ...rest }: ExtractFieldsArgs): ExtractedFields {
     fieldNames.push('principal');
     return {
       component: 'input',
@@ -1649,7 +1647,7 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
  * @param annotations Function annotations.
  */
 export class FuncClass extends ConstructType<[PrincipalId, string]> {
-  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractFields[] {
+  public extractFields({ label, ...rest }: ExtractFieldsArgs): ExtractedFields[] {
     const fields = this.argTypes.map(arg => {
       const fieldNames: string[] = [label ?? this.name];
       return arg.extractFields({
@@ -1657,7 +1655,7 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
         label: arg.name,
         fieldNames,
       });
-    }) as ExtractFields[];
+    }) as ExtractedFields[];
 
     return fields;
   }
@@ -1758,7 +1756,7 @@ export class ServiceClass extends ConstructType<PrincipalId> {
     return this._fields.map(([functionName, value]) => {
       const inputs: ServiceClassFields['inputs'] = {};
 
-      const fields: ExtractFields[] = value.extractFields({
+      const fields: ExtractedFields[] = value.extractFields({
         label: functionName,
         fieldNames: [],
       });

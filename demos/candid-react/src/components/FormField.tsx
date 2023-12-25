@@ -1,4 +1,4 @@
-import { FieldInputs, ExtractFields } from '@dfinity/candid';
+import { FieldInputs, ExtractedFields } from '@dfinity/candid';
 import { Control, UseFormResetField, UseFormTrigger } from 'react-hook-form';
 import ArrayField from './Array';
 import Input from './Input';
@@ -14,7 +14,7 @@ interface FormFieldsProps {
         [name: string]: FieldInputs;
       };
   recursiveNumber?: number;
-  field: ExtractFields;
+  field: ExtractedFields;
   registerName: string;
   control: Control<any, any>;
   onRemove?: () => void;

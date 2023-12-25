@@ -1,4 +1,4 @@
-import { ExtractFields } from '@dfinity/candid';
+import { ExtractedFields } from '@dfinity/candid';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import Button from './Button';
@@ -6,7 +6,7 @@ import { actor } from './Candid';
 import FormField from './FormField';
 
 interface FormProps {
-  fields: ExtractFields[];
+  fields: ExtractedFields[];
   functionName: string;
 }
 
