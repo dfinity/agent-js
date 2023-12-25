@@ -1,4 +1,11 @@
-import { Control, FieldErrors, UseFormResetField, UseFormTrigger } from 'react-hook-form';
+import {
+  Control,
+  FieldError,
+  FieldErrors,
+  UseFormResetField,
+  UseFormSetValue,
+  UseFormTrigger,
+} from 'react-hook-form';
 import { cn } from '../utils';
 import { ExtractedField } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
@@ -7,14 +14,16 @@ interface InputProps {
   control: Control<any, any>;
   registerName: string;
   field: ExtractedField;
-  error: FieldErrors<{}>['root'];
+  error: FieldError | FieldErrors | undefined;
   trigger: UseFormTrigger<{}>;
   resetField: UseFormResetField<{}>;
+  setValue: UseFormSetValue<{}>;
 }
 
 const Input: React.FC<InputProps> = ({
   resetField,
   trigger,
+  setValue,
   registerName,
   error,
   field,
@@ -24,13 +33,18 @@ const Input: React.FC<InputProps> = ({
     if (field.type === 'principal') {
       try {
         if (x.length > 7) {
-          return field.validate(Principal.fromText(x));
+          const principal = Principal.fromText(x);
+          setValue(registerName as never, principal as never);
+
+          return field.validate(principal);
         } else {
           throw new Error('Principal is too short');
         }
       } catch (error) {
         return (error as Error).message;
       }
+    } else if (field.type === 'null') {
+      return field.validate(null);
     } else {
       return field.validate(x);
     }
@@ -38,7 +52,7 @@ const Input: React.FC<InputProps> = ({
 
   const errorMessage = error?.message?.toString();
 
-  return (
+  return field.type !== 'null' ? (
     <div className="w-full p-1">
       <label htmlFor={registerName} className="block">
         {field.label}
@@ -69,7 +83,7 @@ const Input: React.FC<InputProps> = ({
         )}
       </div>
     </div>
-  );
+  ) : null;
 };
 
 export default Input;

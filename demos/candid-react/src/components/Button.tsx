@@ -11,10 +11,7 @@ interface ButtonProps {
 const Button: React.FC<ButtonProps> = ({ onClick, children, type = 'button', className = '' }) => (
   <button
     type={type}
-    className={cn(
-      'py-1 px-2 w-full rounded bg-black text-white cursor-pointer text-lg font-mono',
-      className,
-    )}
+    className={cn('py-1 px-2 w-full rounded cursor-pointer text-lg font-mono', className)}
     onClick={onClick}
   >
     {children}

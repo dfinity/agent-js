@@ -1,6 +1,12 @@
 import React from 'react';
 import { ExtractedField } from '@dfinity/candid';
-import { Control, UseFormResetField, UseFormTrigger, useFieldArray } from 'react-hook-form';
+import {
+  Control,
+  UseFormResetField,
+  UseFormSetValue,
+  UseFormTrigger,
+  useFieldArray,
+} from 'react-hook-form';
 import Button from './Button';
 import FormField from './FormField';
 
@@ -10,6 +16,7 @@ interface VectorProps {
   field: ExtractedField;
   resetField: UseFormResetField<{}>;
   trigger: UseFormTrigger<{}>;
+  setValue: UseFormSetValue<{}>;
   error?: any;
 }
 
@@ -28,7 +35,7 @@ const Vector: React.FC<VectorProps> = ({
   return (
     <div className="w-full box-border">
       <label className="block text-lg font-medium">{field.label}</label>
-      <Button className="mb-1 mt-1" onClick={() => append('')}>
+      <Button className="mb-1 bg-gray-400 hover:bg-gray-500 mt-1" onClick={() => append('')}>
         +
       </Button>
       {fields.length > 0 && <hr className="my-2" />}

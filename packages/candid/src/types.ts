@@ -53,6 +53,7 @@ export interface ExtractedField extends ExtraInputFormFields {
   label: string;
   options?: string[];
   fields: ExtractedField[];
+  defaultValue: AnyValue;
   extract?: () => ExtractedField | undefined;
   validate: (value: AnyValue) => boolean | string;
 }

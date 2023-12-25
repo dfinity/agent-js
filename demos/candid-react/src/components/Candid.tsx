@@ -27,7 +27,12 @@ const Candid: React.FC<CandidProps> = () => {
       }}
     >
       {field.fields.map(field => (
-        <Form field={field} key={field.label} functionName={field.label} />
+        <Form
+          field={field}
+          key={field.label}
+          functionName={field.label}
+          defaultValues={field.defaultValue}
+        />
       ))}
     </div>
   );

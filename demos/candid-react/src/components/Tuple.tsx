@@ -1,5 +1,5 @@
 import { ExtractedField } from '@dfinity/candid';
-import { Control, UseFormResetField, UseFormTrigger } from 'react-hook-form';
+import { Control, UseFormResetField, UseFormSetValue, UseFormTrigger } from 'react-hook-form';
 import FormField from './FormField';
 
 interface TupleProps {
@@ -7,6 +7,7 @@ interface TupleProps {
   field: ExtractedField;
   registerName: string;
   resetField: UseFormResetField<{}>;
+  setValue: UseFormSetValue<{}>;
   trigger: UseFormTrigger<{}>;
   error?: any;
 }

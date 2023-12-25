@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ExtractedField } from '@dfinity/candid';
-import { UseFormResetField, UseFormTrigger, Control } from 'react-hook-form';
+import { UseFormResetField, UseFormTrigger, Control, UseFormSetValue } from 'react-hook-form';
 import FormField from './FormField';
 
 interface VariantProps {
@@ -8,6 +8,7 @@ interface VariantProps {
   field: ExtractedField;
   resetField: UseFormResetField<{}>;
   trigger: UseFormTrigger<{}>;
+  setValue: UseFormSetValue<{}>;
   control: Control<any, any>;
   error?: any;
 }

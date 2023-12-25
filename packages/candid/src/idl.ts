@@ -273,6 +273,7 @@ export class EmptyClass extends PrimitiveType<never> {
       validate: () => true,
       label: label ?? this.name,
       fields: [],
+      defaultValue: undefined,
     };
   }
 
@@ -320,6 +321,7 @@ export class UnknownClass extends Type {
       validate: () => true,
       label: label ?? this.name,
       fields: [],
+      defaultValue: undefined,
     };
   }
 
@@ -396,6 +398,7 @@ export class BoolClass extends PrimitiveType<boolean> {
       validate: validateError(this.covariant, this),
       label: label ?? this.name,
       fields: [],
+      defaultValue: false,
     };
   }
 
@@ -444,6 +447,7 @@ export class NullClass extends PrimitiveType<null> {
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       fields: [],
+      defaultValue: null,
     };
   }
 
@@ -485,6 +489,7 @@ export class ReservedClass extends PrimitiveType<any> {
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       fields: [],
+      defaultValue: undefined,
     };
   }
 
@@ -528,6 +533,7 @@ export class TextClass extends PrimitiveType<string> {
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       fields: [],
+      defaultValue: '',
     };
   }
 
@@ -580,6 +586,7 @@ export class IntClass extends PrimitiveType<bigint> {
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       fields: [],
+      defaultValue: undefined,
     };
   }
 
@@ -629,6 +636,7 @@ export class NatClass extends PrimitiveType<bigint> {
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       fields: [],
+      defaultValue: undefined,
     };
   }
 
@@ -685,6 +693,7 @@ export class FloatClass extends PrimitiveType<number> {
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       fields: [],
+      defaultValue: undefined,
     };
   }
 
@@ -750,6 +759,7 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       fields: [],
+      defaultValue: undefined,
     };
   }
 
@@ -819,6 +829,7 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
       required: true,
       validate: validateError(this.covariant, this),
       fields: [],
+      defaultValue: undefined,
     };
   }
 
@@ -899,6 +910,7 @@ export class VecClass<T> extends ConstructType<T[]> {
       validate: validateError(this.covariant, this),
       label: label ?? this.name,
       fields: [this._type.extractField(label)],
+      defaultValue: [],
     };
   }
 
@@ -1026,6 +1038,7 @@ export class OptClass<T> extends ConstructType<[T] | []> {
       validate: validateError(this.covariant, this),
       label: label ?? this.name,
       fields: [this._type.extractField(label)],
+      defaultValue: [],
     };
   }
 
@@ -1103,12 +1116,23 @@ export class OptClass<T> extends ConstructType<[T] | []> {
  */
 export class RecordClass extends ConstructType<Record<string, any>> {
   public extractField(label?: string): ExtractedField {
+    const { fields, defaultValue } = this._fields.reduce(
+      (acc, [key, type]) => {
+        const field = type.extractField(key);
+        acc.fields.push(field);
+        acc.defaultValue[key] = field.defaultValue;
+        return acc;
+      },
+      { fields: [] as ExtractedField[], defaultValue: {} as Record<string, any> },
+    );
+
     return {
       component: 'fieldset',
       type: 'record',
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
-      fields: this._fields.map(([name, type]) => type.extractField(name)),
+      fields,
+      defaultValue,
     };
   }
 
@@ -1251,12 +1275,23 @@ export class TupleClass<T extends any[]> extends RecordClass {
   protected readonly _components: Type[];
 
   public extractField(label?: string): ExtractedField {
+    const { fields, defaultValue } = this._fields.reduce(
+      (acc, [_, type]) => {
+        const field = type.extractField();
+        acc.fields.push(field);
+        acc.defaultValue.push(field.defaultValue);
+        return acc;
+      },
+      { fields: [] as ExtractedField[], defaultValue: [] as any[] },
+    );
+
     return {
       component: 'fieldset',
       type: 'tuple',
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
-      fields: this._fields.map(([_, type]) => type.extractField()),
+      fields,
+      defaultValue,
     };
   }
 
@@ -1332,16 +1367,21 @@ export class TupleClass<T extends any[]> extends RecordClass {
  */
 export class VariantClass extends ConstructType<Record<string, any>> {
   public extractField(label?: string): ExtractedField {
-    const { fields, options } = this._fields.reduce(
+    const { fields, defaultValue, options } = this._fields.reduce(
       (acc, [label, type]) => {
         const field = type.extractField(label) as ExtractedField;
 
         acc.fields.push(field);
         acc.options.push(label);
+        acc.defaultValue[label] = field.defaultValue;
 
         return acc;
       },
-      { fields: [] as ExtractedField[], options: [] as string[] },
+      {
+        fields: [] as ExtractedField[],
+        defaultValue: {} as Record<string, any>,
+        options: [] as string[],
+      },
     );
 
     return {
@@ -1349,6 +1389,7 @@ export class VariantClass extends ConstructType<Record<string, any>> {
       type: 'variant',
       fields,
       options,
+      defaultValue,
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
     };
@@ -1469,6 +1510,7 @@ export class RecClass<T = any> extends ConstructType<T> {
       validate: validateError(this.covariant, this),
       extract: () => this._type?.extractField(label),
       fields: [],
+      defaultValue: undefined,
     };
   }
 
@@ -1559,6 +1601,7 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       fields: [],
+      defaultValue: undefined,
     };
   }
 
@@ -1567,7 +1610,6 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
   }
 
   public covariant(x: any): x is PrincipalId {
-    console.log(x);
     if (x && x._isPrincipal) return true;
     throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
@@ -1603,12 +1645,23 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
  */
 export class FuncClass extends ConstructType<[PrincipalId, string]> {
   public extractField(label?: string): ExtractedField {
+    const { fields, defaultValue } = this.argTypes.reduce(
+      (acc, arg) => {
+        const field = arg.extractField(arg.name);
+        acc.fields.push(field);
+        acc.defaultValue.push(field.defaultValue);
+        return acc;
+      },
+      { fields: [] as ExtractedField[], defaultValue: [] as any[] },
+    );
+
     return {
       component: 'form',
       type: 'function',
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
-      fields: this.argTypes.map(arg => arg.extractField(arg.name) as ExtractedField),
+      fields,
+      defaultValue,
     };
   }
 
@@ -1705,12 +1758,23 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
 
 export class ServiceClass extends ConstructType<PrincipalId> {
   public extractField(): ExtractedField {
+    const { fields, defaultValue } = this._fields.reduce(
+      (acc, [functionName, type]) => {
+        const field = type.extractField(functionName);
+        acc.fields.push(field);
+        acc.defaultValue[functionName] = field.defaultValue;
+        return acc;
+      },
+      { fields: [] as ExtractedField[], defaultValue: {} as Record<string, any> },
+    );
+
     return {
       component: 'div',
       type: 'service',
       label: this.name,
       validate: validateError(this.covariant, this),
-      fields: this._fields.map(([functionName, value]) => value.extractField(functionName)),
+      fields,
+      defaultValue,
     };
   }
 

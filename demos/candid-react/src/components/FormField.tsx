@@ -1,6 +1,14 @@
 import React from 'react';
 import { ExtractedField } from '@dfinity/candid';
-import { Control, FieldErrors, UseFormResetField, UseFormTrigger } from 'react-hook-form';
+import {
+  Control,
+  FieldError,
+  FieldErrorsImpl,
+  Merge,
+  UseFormResetField,
+  UseFormSetValue,
+  UseFormTrigger,
+} from 'react-hook-form';
 import Vector from './Vector';
 import Input from './Input';
 import Optional from './Optional';
@@ -16,7 +24,8 @@ interface FormFieldsProps {
   onRemove?: () => void;
   resetField: UseFormResetField<{}>;
   trigger: UseFormTrigger<{}>;
-  error: FieldErrors<{}>;
+  error: any;
+  setValue: UseFormSetValue<{}>;
 }
 
 const FormField: React.FC<FormFieldsProps> = props => {

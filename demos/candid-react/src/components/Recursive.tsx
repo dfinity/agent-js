@@ -1,6 +1,6 @@
 import { ExtractedField } from '@dfinity/candid';
 import { useState, useEffect } from 'react';
-import { UseFormResetField, UseFormTrigger, Control } from 'react-hook-form';
+import { UseFormResetField, UseFormTrigger, Control, UseFormSetValue } from 'react-hook-form';
 import FormField from './FormField';
 
 interface RecursiveProps {
@@ -8,6 +8,7 @@ interface RecursiveProps {
   registerName: string;
   resetField: UseFormResetField<{}>;
   trigger: UseFormTrigger<{}>;
+  setValue: UseFormSetValue<{}>;
   control: Control<any, any>;
   error?: any;
 }
