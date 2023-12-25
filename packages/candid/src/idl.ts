@@ -1253,7 +1253,7 @@ export class TupleClass<T extends any[]> extends RecordClass {
   public extractField(label?: string): ExtractedField {
     return {
       component: 'fieldset',
-      type: 'record',
+      type: 'tuple',
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       fields: this._fields.map(([_, type]) => type.extractField()),
@@ -1567,6 +1567,7 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
   }
 
   public covariant(x: any): x is PrincipalId {
+    console.log(x);
     if (x && x._isPrincipal) return true;
     throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }

@@ -102,12 +102,12 @@ const Form: React.FC<FormProps> = ({ field, functionName }) => {
       <div className="flex items-center">
         <Button
           type="submit"
-          className="mt-2 py-2 px-4 text-lg bg-green-500 hover:bg-green-700 text-white font-bold rounded"
+          className="mt-2 py-2 px-4 text-lg bg-blue-500 hover:bg-blue-700 text-white font-bold rounded"
         >
           Verify Args
         </Button>
         <Button
-          className="mt-2 ml-2 py-2 px-4 text-lg bg-blue-500 hover:bg-blue-700 text-white font-bold rounded"
+          className="mt-2 ml-2 py-2 px-4 text-lg bg-yellow-500 hover:bg-yellow-700 text-white font-bold rounded"
           onClick={handleSubmit(onCall)}
         >
           Call

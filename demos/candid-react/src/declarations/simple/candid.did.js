@@ -1,4 +1,5 @@
 export const idlFactory = ({ IDL }) => {
+  const Enum = IDL.Variant({ A: IDL.Null, B: IDL.Null, C: IDL.Null });
   const Value = IDL.Rec();
   const Variant = IDL.Variant({
     Int: IDL.Int,
@@ -69,7 +70,7 @@ export const idlFactory = ({ IDL }) => {
   });
 
   return IDL.Service({
-    principal: IDL.Func([IDL.Principal], [IDL.Text], ['query']),
+    // principal: IDL.Func([IDL.Principal], [IDL.Text], ['query']),
     // number: IDL.Func([IDL.Nat8], [IDL.Text], ['query']),
     // name: IDL.Func([IDL.Text], [IDL.Text], ['query']),
     // opt_text: IDL.Func([IDL.Opt(IDL.Text)], [IDL.Text], ['query']),
@@ -77,6 +78,7 @@ export const idlFactory = ({ IDL }) => {
     // opt_number: IDL.Func([IDL.Opt(IDL.Nat16)], [IDL.Text], ['query']),
     // opt_and_vec: IDL.Func([IDL.Opt(IDL.Nat16), IDL.Vec(IDL.Text)], [IDL.Text], ['query']),
     // vec_in_opt: IDL.Func([IDL.Opt(IDL.Vec(IDL.Text))], [IDL.Text], ['query']),
+    enum: IDL.Func([Enum], [IDL.Text], ['query']),
     // number_vec: IDL.Func([IDL.Vec(IDL.Nat8)], [IDL.Text], ['query']),
     // process_basic_types: IDL.Func([BasicTypes], [Status], ['query']),
     // handle_complex_record: IDL.Func([ComplexRecord], [Status], ['query']),
@@ -143,7 +145,7 @@ export const idlFactory = ({ IDL }) => {
     // receive: IDL.Func([ReleaseView], [IDL.Text], []),
     // app: IDL.Func([AppArgs], [AppView], []),
     // simple_recursive: IDL.Func([SimpleRec], [IDL.Text], []),
-    // create_app: IDL.Func([CreateAppArgs], [AppView], []),
+    create_app: IDL.Func([CreateAppArgs], [AppView], []),
     // recursive_value: IDL.Func([Value], [], []),
   });
 };
