@@ -1,28 +1,14 @@
 import React, { useState } from 'react';
-import { ExtractedField } from '@dfinity/candid';
-import { UseFormResetField, UseFormTrigger, Control, UseFormSetValue } from 'react-hook-form';
-import FormField from './FormField';
+import FormField, { FormFieldsProps } from './FormField';
+import { useFormContext } from 'react-hook-form';
 
-interface VariantProps {
-  registerName: string;
-  field: ExtractedField;
-  resetField: UseFormResetField<{}>;
-  trigger: UseFormTrigger<{}>;
-  setValue: UseFormSetValue<{}>;
-  control: Control<any, any>;
-  error?: any;
-}
+interface VariantProps extends FormFieldsProps {}
 
-const Variant: React.FC<VariantProps> = ({
-  field,
-  registerName,
-  control,
-  resetField,
-  error,
-  ...rest
-}) => {
-  const [value, setValue] = useState(field.options?.[0]);
-  const selectedField = field.fields?.find(field => field.label === value);
+const Variant: React.FC<VariantProps> = ({ field, registerName, errors }) => {
+  const { unregister, resetField } = useFormContext();
+
+  const [select, setSelect] = useState(field.options?.[0]);
+  const selectedField = field.fields?.find(field => field.label === select);
 
   return (
     <div className="w-full flex-col">
@@ -32,9 +18,9 @@ const Variant: React.FC<VariantProps> = ({
       <select
         className="w-full h-8 pl-2 pr-8 border rounded border-gray-300"
         onChange={e => {
-          resetField(`${registerName}.${value}` as never);
-          control.unregister(registerName);
-          setValue(e.target.value);
+          resetField(`${registerName}.${select}` as never);
+          unregister(registerName as never);
+          setSelect(e.target.value);
         }}
       >
         {field.options?.map((label, index) => (
@@ -45,12 +31,9 @@ const Variant: React.FC<VariantProps> = ({
       </select>
       {selectedField ? (
         <FormField
-          registerName={`${registerName}.${value}`}
+          registerName={`${registerName}.${select}`}
+          errors={errors?.[select as never]}
           field={selectedField}
-          resetField={resetField}
-          control={control}
-          error={error?.[value as never]}
-          {...rest}
         />
       ) : (
         <div className="mt-2">Field not found</div>

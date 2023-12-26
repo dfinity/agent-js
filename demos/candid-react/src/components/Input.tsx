@@ -1,56 +1,21 @@
-import {
-  Control,
-  FieldError,
-  FieldErrors,
-  UseFormResetField,
-  UseFormSetValue,
-  UseFormTrigger,
-} from 'react-hook-form';
 import { cn } from '../utils';
-import { ExtractedField } from '@dfinity/candid';
-import { Principal } from '@dfinity/principal';
+import { useFormContext } from 'react-hook-form';
+import { FormFieldsProps } from './FormField';
 
-interface InputProps {
-  control: Control<any, any>;
-  registerName: string;
-  field: ExtractedField;
-  error: FieldError | FieldErrors | undefined;
-  trigger: UseFormTrigger<{}>;
-  resetField: UseFormResetField<{}>;
-  setValue: UseFormSetValue<{}>;
-}
+interface InputProps extends FormFieldsProps {}
 
-const Input: React.FC<InputProps> = ({
-  resetField,
-  trigger,
-  setValue,
-  registerName,
-  error,
-  field,
-  control,
-}) => {
+const Input: React.FC<InputProps> = ({ registerName, errors, field }) => {
+  const { register, resetField, trigger } = useFormContext();
+
   const validate = (x: any) => {
-    if (field.type === 'principal') {
-      try {
-        if (x.length > 7) {
-          const principal = Principal.fromText(x);
-          setValue(registerName as never, principal as never);
-
-          return field.validate(principal);
-        } else {
-          throw new Error('Principal is too short');
-        }
-      } catch (error) {
-        return (error as Error).message;
-      }
-    } else if (field.type === 'null') {
+    if (field.type === 'null') {
       return field.validate(null);
     } else {
       return field.validate(x);
     }
   };
 
-  const errorMessage = error?.message?.toString();
+  const errorMessage = errors?.message?.toString();
 
   return field.type !== 'null' ? (
     <div className="w-full p-1">
@@ -61,10 +26,10 @@ const Input: React.FC<InputProps> = ({
       </label>
       <div className="relative">
         <input
-          {...control.register(registerName, { ...field, validate })}
+          {...register(registerName as never, { ...field, validate })}
           className={cn(
             'w-full h-8 pl-2 pr-8 border rounded',
-            !!error ? 'border-red-500' : 'border-gray-300',
+            !!errors ? 'border-red-500' : 'border-gray-300',
           )}
           id={registerName}
           type={field.type === 'principal' ? 'text' : field.type}

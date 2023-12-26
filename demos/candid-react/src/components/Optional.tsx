@@ -1,33 +1,12 @@
-import { ExtractedField } from '@dfinity/candid';
-import {
-  Control,
-  UseFormResetField,
-  UseFormSetValue,
-  UseFormTrigger,
-  useFieldArray,
-} from 'react-hook-form';
-import FormField from './FormField';
+import { useFieldArray, useFormContext } from 'react-hook-form';
+import FormField, { FormFieldsProps } from './FormField';
 import { cn } from '../utils';
 
-interface OptionalProps {
-  control: Control<any, any>;
-  field: ExtractedField;
-  registerName: string;
-  resetField: UseFormResetField<{}>;
-  setValue: UseFormSetValue<{}>;
-  trigger: UseFormTrigger<{}>;
-  error?: any;
-}
+interface OptionalProps extends FormFieldsProps {}
 
-const Optional: React.FC<OptionalProps> = ({
-  control,
-  field,
-  error,
-  registerName,
-  resetField,
-  trigger,
-  ...rest
-}) => {
+const Optional: React.FC<OptionalProps> = ({ field, registerName, errors }) => {
+  const { control } = useFormContext();
+
   const { fields, append, remove } = useFieldArray({
     control,
     name: registerName as never,
@@ -35,21 +14,18 @@ const Optional: React.FC<OptionalProps> = ({
 
   return (
     <div className="flex flex-col">
-      <div className="flex space-x-2">
-        <label htmlFor={registerName}>{field.label}</label>
+      <div
+        className="flex space-x-2"
+        onClick={() => (fields.length === 0 ? append('') : remove(0))}
+      >
+        <label className="block text-lg font-medium">{field.label}</label>
         <div className="flex-1">
-          <input
-            className="hidden"
-            id={registerName}
-            onChange={e => (e.target.checked ? append('') : remove(0))}
-            type="checkbox"
-          />
+          <input className="hidden" type="checkbox" />
           <label
             className={cn(
               'relative inline-block w-12 h-6 rounded-full cursor-pointer transition duration-200',
               fields.length > 0 ? 'bg-green-400' : 'bg-gray-600',
             )}
-            htmlFor={registerName}
           >
             <span
               className={cn(
@@ -64,12 +40,8 @@ const Optional: React.FC<OptionalProps> = ({
         {fields.length > 0 && (
           <FormField
             field={field.fields?.[0]}
-            error={error?.[0]}
-            control={control}
             registerName={`${registerName}.[0]`}
-            resetField={resetField}
-            trigger={trigger}
-            {...rest}
+            errors={errors?.[0 as never]}
           />
         )}
       </div>

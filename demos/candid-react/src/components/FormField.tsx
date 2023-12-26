@@ -1,14 +1,5 @@
 import React from 'react';
 import { ExtractedField } from '@dfinity/candid';
-import {
-  Control,
-  FieldError,
-  FieldErrorsImpl,
-  Merge,
-  UseFormResetField,
-  UseFormSetValue,
-  UseFormTrigger,
-} from 'react-hook-form';
 import Vector from './Vector';
 import Input from './Input';
 import Optional from './Optional';
@@ -16,16 +7,13 @@ import Variant from './Variant';
 import Recursive from './Recursive';
 import Record from './Record';
 import Tuple from './Tuple';
+import { FieldError, FieldErrorsImpl, Merge } from 'react-hook-form';
+import Principal from './Principal';
 
-interface FormFieldsProps {
+export interface FormFieldsProps {
   field: ExtractedField;
   registerName: string;
-  control: Control<any, any>;
-  onRemove?: () => void;
-  resetField: UseFormResetField<{}>;
-  trigger: UseFormTrigger<{}>;
-  error: any;
-  setValue: UseFormSetValue<{}>;
+  errors: FieldError | Merge<FieldError, FieldErrorsImpl<any>> | undefined;
 }
 
 const FormField: React.FC<FormFieldsProps> = props => {
@@ -42,6 +30,8 @@ const FormField: React.FC<FormFieldsProps> = props => {
       return <Variant {...props} />;
     case 'recursive':
       return <Recursive {...props} />;
+    case 'principal':
+      return <Principal {...props} />;
     default:
       return <Input {...props} />;
   }

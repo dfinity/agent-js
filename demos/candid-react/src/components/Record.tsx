@@ -1,18 +1,8 @@
-import { ExtractedField } from '@dfinity/candid';
-import { Control, UseFormResetField, UseFormSetValue, UseFormTrigger } from 'react-hook-form';
-import FormField from './FormField';
+import FormField, { FormFieldsProps } from './FormField';
 
-interface RecordProps {
-  control: Control<any, any>;
-  field: ExtractedField;
-  registerName: string;
-  resetField: UseFormResetField<{}>;
-  setValue: UseFormSetValue<{}>;
-  trigger: UseFormTrigger<{}>;
-  error?: any;
-}
+interface RecordProps extends FormFieldsProps {}
 
-const Record: React.FC<RecordProps> = ({ field, registerName, error, ...rest }) => {
+const Record: React.FC<RecordProps> = ({ field, errors, registerName }) => {
   return (
     <div className="w-full">
       <div className="font-semibold">{field.label}</div>
@@ -21,8 +11,7 @@ const Record: React.FC<RecordProps> = ({ field, registerName, error, ...rest }) 
           key={index}
           registerName={`${registerName}.${field.label}`}
           field={field}
-          error={error?.[field.label]}
-          {...rest}
+          errors={errors?.[field.label as never]}
         />
       ))}
     </div>

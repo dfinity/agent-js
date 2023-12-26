@@ -273,7 +273,7 @@ export class EmptyClass extends PrimitiveType<never> {
       validate: () => true,
       label: label ?? this.name,
       fields: [],
-      defaultValue: undefined,
+      defaultValues: undefined,
     };
   }
 
@@ -321,7 +321,7 @@ export class UnknownClass extends Type {
       validate: () => true,
       label: label ?? this.name,
       fields: [],
-      defaultValue: undefined,
+      defaultValues: undefined,
     };
   }
 
@@ -398,7 +398,7 @@ export class BoolClass extends PrimitiveType<boolean> {
       validate: validateError(this.covariant, this),
       label: label ?? this.name,
       fields: [],
-      defaultValue: false,
+      defaultValues: false,
     };
   }
 
@@ -447,7 +447,7 @@ export class NullClass extends PrimitiveType<null> {
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       fields: [],
-      defaultValue: null,
+      defaultValues: null,
     };
   }
 
@@ -489,7 +489,7 @@ export class ReservedClass extends PrimitiveType<any> {
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       fields: [],
-      defaultValue: undefined,
+      defaultValues: undefined,
     };
   }
 
@@ -533,7 +533,7 @@ export class TextClass extends PrimitiveType<string> {
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       fields: [],
-      defaultValue: '',
+      defaultValues: '',
     };
   }
 
@@ -586,7 +586,7 @@ export class IntClass extends PrimitiveType<bigint> {
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       fields: [],
-      defaultValue: undefined,
+      defaultValues: undefined,
     };
   }
 
@@ -636,7 +636,7 @@ export class NatClass extends PrimitiveType<bigint> {
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       fields: [],
-      defaultValue: undefined,
+      defaultValues: undefined,
     };
   }
 
@@ -693,7 +693,7 @@ export class FloatClass extends PrimitiveType<number> {
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       fields: [],
-      defaultValue: undefined,
+      defaultValues: undefined,
     };
   }
 
@@ -759,7 +759,7 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       fields: [],
-      defaultValue: undefined,
+      defaultValues: undefined,
     };
   }
 
@@ -829,7 +829,7 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
       required: true,
       validate: validateError(this.covariant, this),
       fields: [],
-      defaultValue: undefined,
+      defaultValues: undefined,
     };
   }
 
@@ -910,7 +910,7 @@ export class VecClass<T> extends ConstructType<T[]> {
       validate: validateError(this.covariant, this),
       label: label ?? this.name,
       fields: [this._type.extractField(label)],
-      defaultValue: [],
+      defaultValues: [],
     };
   }
 
@@ -1038,7 +1038,7 @@ export class OptClass<T> extends ConstructType<[T] | []> {
       validate: validateError(this.covariant, this),
       label: label ?? this.name,
       fields: [this._type.extractField(label)],
-      defaultValue: [],
+      defaultValues: [],
     };
   }
 
@@ -1116,14 +1116,14 @@ export class OptClass<T> extends ConstructType<[T] | []> {
  */
 export class RecordClass extends ConstructType<Record<string, any>> {
   public extractField(label?: string): ExtractedField {
-    const { fields, defaultValue } = this._fields.reduce(
+    const { fields, defaultValues } = this._fields.reduce(
       (acc, [key, type]) => {
         const field = type.extractField(key);
         acc.fields.push(field);
-        acc.defaultValue[key] = field.defaultValue;
+        acc.defaultValues[key] = field.defaultValues;
         return acc;
       },
-      { fields: [] as ExtractedField[], defaultValue: {} as Record<string, any> },
+      { fields: [] as ExtractedField[], defaultValues: {} as Record<string, any> },
     );
 
     return {
@@ -1132,7 +1132,7 @@ export class RecordClass extends ConstructType<Record<string, any>> {
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       fields,
-      defaultValue,
+      defaultValues,
     };
   }
 
@@ -1275,14 +1275,14 @@ export class TupleClass<T extends any[]> extends RecordClass {
   protected readonly _components: Type[];
 
   public extractField(label?: string): ExtractedField {
-    const { fields, defaultValue } = this._fields.reduce(
+    const { fields, defaultValues } = this._fields.reduce(
       (acc, [_, type]) => {
         const field = type.extractField();
         acc.fields.push(field);
-        acc.defaultValue.push(field.defaultValue);
+        acc.defaultValues.push(field.defaultValues);
         return acc;
       },
-      { fields: [] as ExtractedField[], defaultValue: [] as any[] },
+      { fields: [] as ExtractedField[], defaultValues: [] as any[] },
     );
 
     return {
@@ -1291,7 +1291,7 @@ export class TupleClass<T extends any[]> extends RecordClass {
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       fields,
-      defaultValue,
+      defaultValues,
     };
   }
 
@@ -1367,19 +1367,19 @@ export class TupleClass<T extends any[]> extends RecordClass {
  */
 export class VariantClass extends ConstructType<Record<string, any>> {
   public extractField(label?: string): ExtractedField {
-    const { fields, defaultValue, options } = this._fields.reduce(
+    const { fields, defaultValues, options } = this._fields.reduce(
       (acc, [label, type]) => {
         const field = type.extractField(label) as ExtractedField;
 
         acc.fields.push(field);
         acc.options.push(label);
-        acc.defaultValue[label] = field.defaultValue;
+        acc.defaultValues[label] = field.defaultValues;
 
         return acc;
       },
       {
         fields: [] as ExtractedField[],
-        defaultValue: {} as Record<string, any>,
+        defaultValues: {} as Record<string, any>,
         options: [] as string[],
       },
     );
@@ -1389,7 +1389,7 @@ export class VariantClass extends ConstructType<Record<string, any>> {
       type: 'variant',
       fields,
       options,
-      defaultValue,
+      defaultValues,
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
     };
@@ -1510,7 +1510,7 @@ export class RecClass<T = any> extends ConstructType<T> {
       validate: validateError(this.covariant, this),
       extract: () => this._type?.extractField(label),
       fields: [],
-      defaultValue: undefined,
+      defaultValues: undefined,
     };
   }
 
@@ -1601,7 +1601,8 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       fields: [],
-      defaultValue: undefined,
+      required: true,
+      defaultValues: undefined,
     };
   }
 
@@ -1645,14 +1646,14 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
  */
 export class FuncClass extends ConstructType<[PrincipalId, string]> {
   public extractField(label?: string): ExtractedField {
-    const { fields, defaultValue } = this.argTypes.reduce(
-      (acc, arg) => {
+    const { fields, defaultValues } = this.argTypes.reduce(
+      (acc, arg, index) => {
         const field = arg.extractField(arg.name);
         acc.fields.push(field);
-        acc.defaultValue.push(field.defaultValue);
+        acc.defaultValues[`arg${index}`] = field.defaultValues;
         return acc;
       },
-      { fields: [] as ExtractedField[], defaultValue: [] as any[] },
+      { fields: [] as ExtractedField[], defaultValues: {} as any },
     );
 
     return {
@@ -1661,7 +1662,7 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
       label: label ?? this.name,
       validate: validateError(this.covariant, this),
       fields,
-      defaultValue,
+      defaultValues,
     };
   }
 
@@ -1758,14 +1759,14 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
 
 export class ServiceClass extends ConstructType<PrincipalId> {
   public extractField(): ExtractedField {
-    const { fields, defaultValue } = this._fields.reduce(
+    const { fields, defaultValues } = this._fields.reduce(
       (acc, [functionName, type]) => {
         const field = type.extractField(functionName);
         acc.fields.push(field);
-        acc.defaultValue[functionName] = field.defaultValue;
+        acc.defaultValues[functionName] = field.defaultValues;
         return acc;
       },
-      { fields: [] as ExtractedField[], defaultValue: {} as Record<string, any> },
+      { fields: [] as ExtractedField[], defaultValues: {} as Record<string, any> },
     );
 
     return {
@@ -1774,7 +1775,7 @@ export class ServiceClass extends ConstructType<PrincipalId> {
       label: this.name,
       validate: validateError(this.covariant, this),
       fields,
-      defaultValue,
+      defaultValues,
     };
   }
 

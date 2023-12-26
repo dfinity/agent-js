@@ -1,18 +1,8 @@
-import { ExtractedField } from '@dfinity/candid';
-import { Control, UseFormResetField, UseFormSetValue, UseFormTrigger } from 'react-hook-form';
-import FormField from './FormField';
+import FormField, { FormFieldsProps } from './FormField';
 
-interface TupleProps {
-  control: Control<any, any>;
-  field: ExtractedField;
-  registerName: string;
-  resetField: UseFormResetField<{}>;
-  setValue: UseFormSetValue<{}>;
-  trigger: UseFormTrigger<{}>;
-  error?: any;
-}
+interface TupleProps extends FormFieldsProps {}
 
-const Tuple: React.FC<TupleProps> = ({ field, registerName, error, ...rest }) => {
+const Tuple: React.FC<TupleProps> = ({ field, registerName, errors }) => {
   return (
     <div className="w-full">
       <div className="font-semibold">{field.label}</div>
@@ -20,9 +10,8 @@ const Tuple: React.FC<TupleProps> = ({ field, registerName, error, ...rest }) =>
         <FormField
           key={index}
           registerName={`${registerName}.[${index}]`}
+          errors={errors?.[index as never]}
           field={field}
-          error={error?.[index]}
-          {...rest}
         />
       ))}
     </div>

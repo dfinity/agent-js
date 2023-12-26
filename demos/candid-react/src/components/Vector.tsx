@@ -1,32 +1,13 @@
 import React from 'react';
-import { ExtractedField } from '@dfinity/candid';
-import {
-  Control,
-  UseFormResetField,
-  UseFormSetValue,
-  UseFormTrigger,
-  useFieldArray,
-} from 'react-hook-form';
+import { useFieldArray, useFormContext } from 'react-hook-form';
 import Button from './Button';
-import FormField from './FormField';
+import FormField, { FormFieldsProps } from './FormField';
 
-interface VectorProps {
-  control: Control<any, any>;
-  registerName: string;
-  field: ExtractedField;
-  resetField: UseFormResetField<{}>;
-  trigger: UseFormTrigger<{}>;
-  setValue: UseFormSetValue<{}>;
-  error?: any;
-}
+interface VectorProps extends FormFieldsProps {}
 
-const Vector: React.FC<VectorProps> = ({
-  control,
-  field,
-  error,
-  registerName,
-  ...rest
-}: VectorProps) => {
+const Vector: React.FC<VectorProps> = ({ field, errors, registerName }) => {
+  const { control } = useFormContext();
+
   const { fields, append, swap, remove } = useFieldArray({
     control,
     name: registerName as never,
@@ -66,10 +47,8 @@ const Vector: React.FC<VectorProps> = ({
           <div className="flex-auto">
             <FormField
               field={field.fields?.[0]}
-              error={error?.[index]}
-              control={control}
+              errors={errors?.[index as never]}
               registerName={`${registerName}.[${index}]`}
-              {...rest}
             />
           </div>
           <div
