@@ -19,7 +19,7 @@ const Input: React.FC<InputProps> = ({ registerName, errors, field }) => {
 
   return field.type !== 'null' ? (
     <div className="w-full p-1">
-      <label htmlFor={registerName} className="block">
+      <label className="block">
         {field.label}
         {field.required && <span className="text-red-500">*</span>}
         {errorMessage && <span className="text-red-500 text-xs ml-1">( {errorMessage} )</span>}
@@ -31,7 +31,6 @@ const Input: React.FC<InputProps> = ({ registerName, errors, field }) => {
             'w-full h-8 pl-2 pr-8 border rounded',
             !!errors ? 'border-red-500' : 'border-gray-300',
           )}
-          id={registerName}
           type={field.type === 'principal' ? 'text' : field.type}
           placeholder={field.type}
         />

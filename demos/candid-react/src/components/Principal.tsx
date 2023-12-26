@@ -8,7 +8,11 @@ interface PrincipalProps extends FormFieldsProps {}
 const Principal: React.FC<PrincipalProps> = ({ registerName, errors, field }) => {
   const { setValue, register, resetField, setError } = useFormContext();
 
-  const changeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const blurHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.value === '') {
+      setValue(registerName as never, '' as never);
+      return;
+    }
     const inputValue = e.target.value;
     resetField(registerName as never, { defaultValue: inputValue as never });
     const isValid = validate(inputValue);
@@ -50,7 +54,7 @@ const Principal: React.FC<PrincipalProps> = ({ registerName, errors, field }) =>
 
   return (
     <div className="w-full p-1">
-      <label htmlFor={registerName} className="block">
+      <label className="block">
         {field.label}
         {field.required && <span className="text-red-500">*</span>}
         {errorMessage && <span className="text-red-500 text-xs ml-1">( {errorMessage} )</span>}
@@ -62,10 +66,9 @@ const Principal: React.FC<PrincipalProps> = ({ registerName, errors, field }) =>
             'w-full h-8 pl-2 pr-8 border rounded',
             !!errors ? 'border-red-500' : 'border-gray-300',
           )}
-          id={registerName}
           type="text"
           placeholder={field.type}
-          onBlur={changeHandler}
+          onBlur={blurHandler}
         />
         <div
           className="absolute inset-y-0 right-0 flex items-center justify-center w-8 text-red-500 pb-1 px-1 cursor-pointer"

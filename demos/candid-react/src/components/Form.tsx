@@ -2,7 +2,7 @@ import { ExtractedField } from '@dfinity/candid';
 import { useCallback, useState } from 'react';
 import Button from './Button';
 import FormField from './FormField';
-import { actor } from './Candid';
+import { actor } from '../App';
 import { FormProvider, useForm } from 'react-hook-form';
 
 interface FormProps extends ExtractedField {}
@@ -22,7 +22,6 @@ const Form: React.FC<FormProps> = ({ label, defaultValues, fields }) => {
 
   const onSubmit = useCallback(
     (data: any) => {
-      console.log('data', data);
       setResultState(null);
       setArgState(null);
       setArgErrorState(null);

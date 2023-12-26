@@ -9,7 +9,6 @@ const Recursive: React.FC<RecursiveProps> = ({ field, errors, registerName }) =>
 
   useEffect(() => {
     const fields = field.extract?.();
-    console.log('fields', fields);
     setExtractedFields(fields);
   }, [field]);
 
