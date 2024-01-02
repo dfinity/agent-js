@@ -28,7 +28,8 @@ export type Signature = ArrayBuffer & { __signature__: void };
  */
 export interface PublicKey {
   toDer(): DerEncodedPublicKey;
-  // rawKey and derKey are optional for backwards compatibility.
+  // rawKey, toRaw, and derKey are optional for backwards compatibility.
+  toRaw?(): ArrayBuffer;
   rawKey?: ArrayBuffer;
   derKey?: DerEncodedPublicKey;
 }
