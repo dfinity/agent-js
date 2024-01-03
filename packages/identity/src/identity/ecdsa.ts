@@ -1,4 +1,4 @@
-import { DerEncodedPublicKey, Signature, SignIdentity } from '@dfinity/agent';
+import { DerEncodedPublicKey, PublicKey, Signature, SignIdentity } from '@dfinity/agent';
 
 /**
  * Options used in a {@link ECDSAKeyIdentity}
@@ -116,9 +116,9 @@ export class ECDSAKeyIdentity extends SignIdentity {
 
   /**
    * Return the public key.
-   * @returns an {@link DerCryptoKey}
+   * @returns an {@link PublicKey & DerCryptoKey}
    */
-  public getPublicKey(): DerCryptoKey {
+  public getPublicKey(): PublicKey & DerCryptoKey {
     const derKey = this._derKey;
     const key: DerCryptoKey = Object.create(this._keyPair.publicKey);
     key.toDer = function () {

@@ -10,12 +10,44 @@ import {
   wrapDER,
   fromHex,
   toHex,
+  bufFromBufLike,
 } from '@dfinity/agent';
 import { ed25519 } from '@noble/curves/ed25519';
 
+declare type KeyLike = PublicKey | DerEncodedPublicKey | ArrayBuffer | ArrayBufferView;
+
+function isObject(value: unknown) {
+  return value !== null && typeof value === 'object';
+}
+
 export class Ed25519PublicKey implements PublicKey {
-  public static from(key: PublicKey): Ed25519PublicKey {
-    return this.fromDer(key.toDer());
+  /**
+   * Construct Ed25519PublicKey from an existing PublicKey
+   * @param {unknown} maybeKey - existing PublicKey, ArrayBuffer, DerEncodedPublicKey, or hex string
+   * @returns {Ed25519PublicKey} Instance of Ed25519PublicKey
+   */
+  public static from(maybeKey: unknown): Ed25519PublicKey {
+    if (typeof maybeKey === 'string') {
+      const key = fromHex(maybeKey);
+      return this.fromRaw(key);
+    } else if (isObject(maybeKey)) {
+      const key = maybeKey as KeyLike;
+      if (isObject(key) && Object.hasOwnProperty.call(key, '__derEncodedPublicKey__')) {
+        return this.fromDer(key as DerEncodedPublicKey);
+      } else if (ArrayBuffer.isView(key)) {
+        const view = key as ArrayBufferView;
+        return this.fromRaw(bufFromBufLike(view.buffer));
+      } else if (key instanceof ArrayBuffer) {
+        return this.fromRaw(key);
+      } else if ('rawKey' in key) {
+        return this.fromRaw(key.rawKey as ArrayBuffer);
+      } else if ('derKey' in key) {
+        return this.fromDer(key.derKey as DerEncodedPublicKey);
+      } else if ('toDer' in key) {
+        return this.fromDer(key.toDer() as ArrayBuffer);
+      }
+    }
+    throw new Error('Cannot construct Ed25519PublicKey from the provided key.');
   }
 
   public static fromRaw(rawKey: ArrayBuffer): Ed25519PublicKey {
@@ -30,7 +62,9 @@ export class Ed25519PublicKey implements PublicKey {
   private static RAW_KEY_LENGTH = 32;
 
   private static derEncode(publicKey: ArrayBuffer): DerEncodedPublicKey {
-    return wrapDER(publicKey, ED25519_OID).buffer as DerEncodedPublicKey;
+    const key = wrapDER(publicKey, ED25519_OID).buffer as DerEncodedPublicKey;
+    key.__derEncodedPublicKey__ = undefined;
+    return key;
   }
 
   private static derDecode(key: DerEncodedPublicKey): ArrayBuffer {

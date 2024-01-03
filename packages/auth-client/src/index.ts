@@ -13,6 +13,7 @@ import {
   DelegationIdentity,
   Ed25519KeyIdentity,
   ECDSAKeyIdentity,
+  PartialDelegationIdentity,
 } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
 import { IdleManager, IdleManagerOptions } from './idleManager';
@@ -25,6 +26,7 @@ import {
   KEY_VECTOR,
   LocalStorage,
 } from './storage';
+import { PartialIdentity } from '@dfinity/identity/lib/cjs/identity/partial';
 
 export { IdbStorage, LocalStorage, KEY_STORAGE_DELEGATION, KEY_STORAGE_KEY } from './storage';
 export { IdbKeyVal, DBCreateOptions } from './db';
@@ -47,7 +49,7 @@ export interface AuthClientCreateOptions {
   /**
    * An identity to use as the base
    */
-  identity?: SignIdentity | ECDSAKeyIdentity;
+  identity?: SignIdentity | PartialIdentity;
   /**
    * Optional storage with get, set, and remove. Uses {@link IdbStorage} by default
    */
@@ -187,10 +189,9 @@ export class AuthClient {
   public static async create(
     options: {
       /**
-       * An {@link Identity} to use as the base.
-       *  By default, a new {@link AnonymousIdentity}
+       * An {@link SignIdentity} or {@link PartialIdentity} to authenticate via delegation.
        */
-      identity?: SignIdentity;
+      identity?: SignIdentity | PartialIdentity;
       /**
        * {@link AuthClientStorage}
        * @description Optional storage with get, set, and remove. Uses {@link IdbStorage} by default
@@ -213,7 +214,7 @@ export class AuthClient {
     const storage = options.storage ?? new IdbStorage();
     const keyType = options.keyType ?? ECDSA_KEY_LABEL;
 
-    let key: null | SignIdentity | ECDSAKeyIdentity = null;
+    let key: null | SignIdentity | PartialIdentity = null;
     if (options.identity) {
       key = options.identity;
     } else {
@@ -258,7 +259,7 @@ export class AuthClient {
       }
     }
 
-    let identity = new AnonymousIdentity();
+    let identity: SignIdentity | PartialIdentity = new AnonymousIdentity() as PartialIdentity;
     let chain: null | DelegationChain = null;
     if (key) {
       try {
@@ -279,7 +280,13 @@ export class AuthClient {
             await _deleteStorage(storage);
             key = null;
           } else {
-            identity = DelegationIdentity.fromDelegation(key, chain);
+            // If the key is a public key, then we create a PartialDelegationIdentity.
+            if ('toDer' in key) {
+              identity = PartialDelegationIdentity.fromDelegation(key, chain);
+              // otherwise, we create a DelegationIdentity.
+            } else {
+              identity = DelegationIdentity.fromDelegation(key, chain);
+            }
           }
         }
       } catch (e) {
@@ -318,8 +325,8 @@ export class AuthClient {
   }
 
   protected constructor(
-    private _identity: Identity,
-    private _key: SignIdentity,
+    private _identity: Identity | PartialIdentity,
+    private _key: SignIdentity | PartialIdentity,
     private _chain: DelegationChain | null,
     private _storage: AuthClientStorage,
     public idleManager: IdleManager | undefined,
@@ -372,7 +379,12 @@ export class AuthClient {
     }
 
     this._chain = delegationChain;
-    this._identity = DelegationIdentity.fromDelegation(key, this._chain);
+
+    if ('toDer' in key) {
+      this._identity = PartialDelegationIdentity.fromDelegation(key, this._chain);
+    } else {
+      this._identity = DelegationIdentity.fromDelegation(key, this._chain);
+    }
 
     this._idpWindow?.close();
     const idleOptions = this._createOptions?.idleOptions;
