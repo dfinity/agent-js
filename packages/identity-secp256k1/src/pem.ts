@@ -11,13 +11,15 @@ const ECHEADER = `-----BEGIN EC PRIVATE KEY`;
  */
 export function pemToSecretKey(pem: string): ArrayBuffer {
   const lines = pem.trim().split('\n');
+  const header = lines[0].trim();
+  const footer = lines[lines.length - 1].trim();
   if (lines.length < 3) {
     throw new Error('Invalid PEM format');
   }
-  if (!lines[0].startsWith(HEADER)) {
+  if (!header.startsWith(HEADER)) {
     throw new Error('Invalid PEM header');
   }
-  if (!lines[lines.length - 1].startsWith(FOOTER)) {
+  if (!footer.startsWith(FOOTER)) {
     throw new Error('Invalid PEM footer');
   }
   const base64Data = lines.slice(1, -1).join('').replace(/\r?\n/g, '');
