@@ -1,4 +1,5 @@
-import init, { bls_init, bls_verify } from '../vendor/bls/bls';
+import { bls12_381 } from '@noble/curves/bls12-381';
+import { toHex } from './buffer';
 
 export let verify: (pk: Uint8Array, sig: Uint8Array, msg: Uint8Array) => boolean;
 
@@ -14,15 +15,8 @@ export async function blsVerify(
   sig: Uint8Array,
   msg: Uint8Array,
 ): Promise<boolean> {
-  if (!verify) {
-    await init();
-    if (bls_init() !== 0) {
-      throw new Error('Cannot initialize BLS');
-    }
-    verify = (pk1, sig1, msg1) => {
-      // Reorder things from what the WASM expects (sig, m, w).
-      return bls_verify(sig1, msg1, pk1) === 0;
-    };
-  }
-  return verify(pk, sig, msg);
+  const primaryKey = typeof pk === 'string' ? pk : toHex(pk);
+  const signature = typeof sig === 'string' ? sig : toHex(sig);
+  const message = typeof msg === 'string' ? msg : toHex(msg);
+  return bls12_381.verifyShortSignature(primaryKey, signature, message);
 }
