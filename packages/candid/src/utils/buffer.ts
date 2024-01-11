@@ -50,13 +50,13 @@ export class PipeArrayBuffer {
    * @param length an optional amount of bytes to use for the length.
    */
   constructor(buffer?: ArrayBuffer, length = buffer?.byteLength || 0) {
-    this._buffer = buffer || new ArrayBuffer(0);
+    this._buffer = bufFromBufLike(buffer || new ArrayBuffer(0));
     this._view = new Uint8Array(this._buffer, 0, length);
   }
 
   get buffer(): ArrayBuffer {
     // Return a copy of the buffer.
-    return this._view.slice();
+    return bufFromBufLike(this._view.slice());
   }
 
   get byteLength(): number {
@@ -120,4 +120,33 @@ export class PipeArrayBuffer {
     this._buffer = b;
     this._view = v;
   }
+}
+
+/**
+ * Returns a true ArrayBuffer from a Uint8Array, as Uint8Array.buffer is unsafe.
+ * @param {Uint8Array} arr Uint8Array to convert
+ * @returns ArrayBuffer
+ */
+export function uint8ToBuf(arr: Uint8Array): ArrayBuffer {
+  return new DataView(arr.buffer, arr.byteOffset, arr.byteLength).buffer;
+}
+
+/**
+ * Returns a true ArrayBuffer from an ArrayBufferLike object.
+ * @param bufLike a buffer-like object
+ * @returns ArrayBuffer
+ */
+export function bufFromBufLike(
+  bufLike: ArrayBuffer | Uint8Array | DataView | ArrayBufferView | ArrayBufferLike,
+): ArrayBuffer {
+  if (bufLike instanceof Uint8Array) {
+    return uint8ToBuf(bufLike);
+  }
+  if (bufLike instanceof ArrayBuffer) {
+    return bufLike;
+  }
+  if ('buffer' in bufLike) {
+    return bufLike.buffer;
+  }
+  return new Uint8Array(bufLike);
 }

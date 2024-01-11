@@ -26,7 +26,7 @@ export function safeRead(pipe: Pipe, num: number): ArrayBuffer {
 }
 
 /**
- * @param pipe
+ * @param pipe - PipeArrayBuffer simulating buffer-pipe api
  */
 export function safeReadUint8(pipe: Pipe): number {
   const byte = pipe.readUint8();
@@ -169,8 +169,9 @@ export function writeUIntLE(value: bigint | number, byteLength: number): ArrayBu
 
 /**
  *
- * @param value
- * @param byteLength
+ * @param value - bigint or number
+ * @param byteLength - number
+ * @returns ArrayBuffer
  */
 export function writeIntLE(value: bigint | number, byteLength: number): ArrayBuffer {
   value = BigInt(value);
