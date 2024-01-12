@@ -168,8 +168,8 @@ type AuthResponse = AuthResponseSuccess | AuthResponseFailure;
 export class AuthClient {
   /**
    * Create an AuthClient to manage authentication and identity
-   * @constructs {@link AuthClient}
-   * @param {AuthClientCreateOptions} options
+   * @constructs
+   * @param {AuthClientCreateOptions} options - Options for creating an {@link AuthClient}
    * @see {@link AuthClientCreateOptions}
    * @param options.identity Optional Identity to use as the base
    * @see {@link SignIdentity}
@@ -418,7 +418,7 @@ export class AuthClient {
   /**
    * AuthClient Login -
    * Opens up a new window to authenticate with Internet Identity
-   * @param {AuthClientLoginOptions} options
+   * @param {AuthClientLoginOptions} options - Options for logging in
    * @param options.identityProvider Identity provider
    * @param options.maxTimeToLive Expiration of the authentication in nanoseconds
    * @param options.derivationOrigin Origin for Identity Provider to use while generating the delegated identity
