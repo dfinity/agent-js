@@ -1531,9 +1531,9 @@ export class ServiceClass extends ConstructType<PrincipalId> {
 }
 
 /**
- *
- * @param x
- * @returns {string}
+ * Takes an unknown value and returns a string representation of it.
+ * @param x - unknown value
+ * @returns {string} string representation of the value
  */
 function toReadableString(x: unknown): string {
   const str = JSON.stringify(x, (_key, value) =>
@@ -1547,9 +1547,9 @@ function toReadableString(x: unknown): string {
 
 /**
  * Encode a array of values
- * @param argTypes
- * @param args
- * @returns {Buffer} serialised value
+ * @param argTypes - array of Types
+ * @param args - array of values
+ * @returns {ArrayBuffer} serialised value
  */
 export function encode(argTypes: Array<Type<any>>, args: any[]): ArrayBuffer {
   if (args.length < argTypes.length) {
