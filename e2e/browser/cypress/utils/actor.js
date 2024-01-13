@@ -8,8 +8,8 @@ export { idlFactory } from '../../src/declarations/whoami/whoami.did.js';
 /**
  *
  * @param {string | import("@dfinity/principal").Principal} canisterId Canister ID of Agent
- * @param {{agentOptions?: import("@dfinity/agent").HttpAgentOptions; actorOptions?: import("@dfinity/agent").ActorConfig}} [options]
- * @return {import("@dfinity/agent").ActorSubclass<import("./whoami.did.js")._SERVICE>}
+ * @param {{agentOptions?: import("@dfinity/agent").HttpAgentOptions; actorOptions?: import("@dfinity/agent").ActorConfig}} [options] - Options for creating the actor
+ * @returns {import("@dfinity/agent").ActorSubclass<import("./whoami.did.js")._SERVICE>} - Actor
  */
 export const createActor = (canisterId, options) => {
   const agent = new HttpAgent({ ...options?.agentOptions });
