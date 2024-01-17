@@ -224,7 +224,14 @@ export class HttpAgent implements Agent {
         );
       }
       // Mainnet and local will have the api route available
-      const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', 'localhost'];
+      const knownHosts = [
+        'ic0.app',
+        'icp0.io',
+        '127.0.0.1',
+        'localhost',
+        'github.dev',
+        'gitpod.io',
+      ];
       const hostname = location?.hostname;
       let knownHost;
       if (hostname && typeof hostname === 'string') {
