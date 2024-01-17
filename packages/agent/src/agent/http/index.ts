@@ -223,7 +223,7 @@ export class HttpAgent implements Agent {
           'Could not infer host from window.location, defaulting to mainnet gateway of https://icp-api.io. Please provide a host to the HttpAgent constructor to avoid this warning.',
         );
       }
-      // Mainnet and local will have the api route available
+      // Mainnet, local, and remote environments will have the api route available
       const knownHosts = [
         'ic0.app',
         'icp0.io',
