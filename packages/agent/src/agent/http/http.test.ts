@@ -733,7 +733,7 @@ describe('default host', () => {
     expect((agent as any)._host.hostname).toBe('icp-api.io');
   });
   it('should use the existing host if the agent is used on a known hostname', () => {
-    const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', '127.0.0.1'];
+    const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', 'localhost', 'github.dev', 'gitpod.io'];
     for (const host of knownHosts) {
       delete (window as any).location;
       (window as any).location = {
@@ -745,7 +745,7 @@ describe('default host', () => {
     }
   });
   it('should correctly handle subdomains on known hosts', () => {
-    const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', '127.0.0.1'];
+    const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', 'localhost', 'github.dev', 'gitpod.io'];
     for (const host of knownHosts) {
       delete (window as any).location;
       (window as any).location = {
@@ -757,8 +757,8 @@ describe('default host', () => {
       expect((agent as any)._host.hostname).toBe(host);
     }
   });
-  it('should handle port numbers for 127.0.0.1', () => {
-    const knownHosts = ['127.0.0.1', '127.0.0.1'];
+  it('should handle port numbers for 127.0.0.1 and localhost', () => {
+    const knownHosts = ['127.0.0.1', 'localhost'];
     for (const host of knownHosts) {
       delete (window as any).location;
       // hostname is different from host when port is specified
