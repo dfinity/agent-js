@@ -5,11 +5,11 @@
     // Required for buffer-pipe
     "esModuleInterop": true,
     "lib": ["dom", "ES2020"],
-    "rootDir": "."
+    "rootDir": ".",
   },
   "files": [],
   "references": [{ "path": "packages/agent" }, { "path": "packages/identity" }],
   "include": ["packages/**/types/*"],
   "resolveJsonModule": true,
-  "exclude": ["**/src/**/*.test.ts"]
+  "exclude": ["**/src/**/*.test.ts"],
 }
