@@ -16,8 +16,8 @@
     "sourceMap": true,
     "inlineSources": true,
     "strict": true,
-    "target": "es2017"
+    "target": "es2017",
   },
   "include": ["types/*", "src/**/*", "vendor/bls"],
-  "references": []
+  "references": [],
 }
