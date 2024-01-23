@@ -767,6 +767,7 @@ describe('default host', () => {
     for (const host of remoteHosts) {
       delete (window as any).location;
       (window as any).location = {
+        host: host,
         hostname: host,
         protocol: 'https:',
       } as any;
