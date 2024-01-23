@@ -733,8 +733,15 @@ describe('default host', () => {
     expect((agent as any)._host.hostname).toBe('icp-api.io');
   });
   it('should use the existing host if the agent is used on a known hostname', () => {
-    const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', 'localhost', 'github.dev', 'gitpod.io'];
-    for (const host of knownHosts) {
+    const hosts = [
+      'ic0.app',
+      'icp0.io',
+      '127.0.0.1',
+      'localhost',
+      '000.github.dev',
+      '000.gitpod.io',
+    ];
+    for (const host of hosts) {
       delete (window as any).location;
       (window as any).location = {
         hostname: host,
@@ -745,8 +752,15 @@ describe('default host', () => {
     }
   });
   it('should correctly handle subdomains on known hosts', () => {
-    const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', 'localhost', 'github.dev', 'gitpod.io'];
-    for (const host of knownHosts) {
+    const hosts = [
+      'ic0.app',
+      'icp0.io',
+      '127.0.0.1',
+      'localhost',
+      '000.github.dev',
+      '000.gitpod.io',
+    ];
+    for (const host of hosts) {
       delete (window as any).location;
       (window as any).location = {
         host: `foo.${host}`,
