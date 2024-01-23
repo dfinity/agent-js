@@ -47,50 +47,6 @@ describe('indexeddb wrapper', () => {
     await db.set('testKey', keyPair);
     const storedKey = (await db.get('testKey')) as CryptoKeyPair;
 
-    expect(storedKey).toMatchInlineSnapshot(
-      keyPair,
-      `
-      {
-        "privateKey": {
-          "algorithm": {
-            "hash": {
-              "name": "SHA-256",
-            },
-            "modulusLength": 2048,
-            "name": "RSA-OAEP",
-            "publicExponent": {
-              "0": 1,
-              "1": 0,
-              "2": 1,
-            },
-          },
-          "extractable": true,
-          "type": "private",
-          "usages": [
-            "decrypt",
-          ],
-        },
-        "publicKey": {
-          "algorithm": {
-            "hash": {
-              "name": "SHA-256",
-            },
-            "modulusLength": 2048,
-            "name": "RSA-OAEP",
-            "publicExponent": {
-              "0": 1,
-              "1": 0,
-              "2": 1,
-            },
-          },
-          "extractable": true,
-          "type": "public",
-          "usages": [
-            "encrypt",
-          ],
-        },
-      }
-    `,
-    );
+    expect(storedKey).toMatchSnapshot();
   });
 });
