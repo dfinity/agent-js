@@ -12,7 +12,7 @@
     "moduleResolution": "node",
     "outDir": "lib/esm",
     "paths": {
-      "@dfinity/identity-secp256k1": ["src"],
+      "@dfinity/identity-secp256k1": ["src"]
     },
     "resolveJsonModule": true,
     "rootDir": "./src",
@@ -20,7 +20,7 @@
     "inlineSources": true,
     "strict": true,
     "target": "es2017",
-    "tsBuildInfoFile": "./build_info.json",
+    "tsBuildInfoFile": "./build_info.json"
   },
-  "include": ["src/**/*.ts", "types/*"],
+  "include": ["src/**/*.ts", "types/*"]
 }

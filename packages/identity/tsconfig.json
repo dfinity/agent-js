@@ -16,7 +16,7 @@
     "sourceMap": true,
     "inlineSources": true,
     "strict": true,
-    "target": "es2017",
+    "target": "es2017"
   },
   "include": [
     "types/*",
@@ -24,6 +24,6 @@
     "client-test",
     "index.d.ts",
     "../identity-secp256k1/src/secp256k1.test.ts",
-    "../identity-secp256k1/hdkey.ts",
-  ],
+    "../identity-secp256k1/hdkey.ts"
+  ]
 }

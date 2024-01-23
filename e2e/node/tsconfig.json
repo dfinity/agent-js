@@ -12,7 +12,7 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "moduleResolution": "node",
-    "forceConsistentCasingInFileNames": true,
+    "forceConsistentCasingInFileNames": true
   },
-  "references": [{ "path": "../../packages/agent" }, { "path": "../../packages/identity" }],
+  "references": [{ "path": "../../packages/agent" }, { "path": "../../packages/identity" }]
 }
