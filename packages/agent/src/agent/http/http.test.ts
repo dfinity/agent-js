@@ -733,7 +733,7 @@ describe('default host', () => {
     expect((agent as any)._host.hostname).toBe('icp-api.io');
   });
   it('should use the existing host if the agent is used on a known hostname', () => {
-    const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', 'localhost', 'github.dev', 'gitpod.io'];
+    const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', 'localhost'];
     for (const host of knownHosts) {
       delete (window as any).location;
       (window as any).location = {
@@ -745,12 +745,30 @@ describe('default host', () => {
     }
   });
   it('should correctly handle subdomains on known hosts', () => {
-    const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', 'localhost', 'github.dev', 'gitpod.io'];
+    const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', 'localhost'];
     for (const host of knownHosts) {
       delete (window as any).location;
       (window as any).location = {
         host: `foo.${host}`,
         hostname: `rrkah-fqaaa-aaaaa-aaaaq-cai.${host}`,
+        protocol: 'https:',
+      } as any;
+      const agent = new HttpAgent({ fetch: jest.fn() });
+      expect((agent as any)._host.hostname).toBe(host);
+    }
+  });
+  it('should correctly handle subdomains on remote hosts', () => {
+    const remoteHosts = [
+      '000.gitpod.io',
+      '000.github.dev',
+      '4943-dfinity-candid-6715adkgujw.ws-us107.gitpod.io',
+      'sturdy-space-rotary-phone-674vv99gxf4x9j-4943.app.github.dev',
+    ];
+    for (const host of remoteHosts) {
+      delete (window as any).location;
+      (window as any).location = {
+        host: host,
+        hostname: host,
         protocol: 'https:',
       } as any;
       const agent = new HttpAgent({ fetch: jest.fn() });
