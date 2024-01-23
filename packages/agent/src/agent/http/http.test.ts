@@ -762,7 +762,7 @@ describe('default host', () => {
       '000.gitpod.io',
       '000.github.dev',
       '4943-dfinity-candid-6715adkgujw.ws-us107.gitpod.io',
-      'sturdy-space-rotary-phone-674vv99gxf4x9j-4943.app.github.dev/',
+      'sturdy-space-rotary-phone-674vv99gxf4x9j-4943.app.github.dev',
     ];
     for (const host of remoteHosts) {
       delete (window as any).location;
