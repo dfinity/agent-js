@@ -16,8 +16,8 @@
     "sourceMap": true,
     "inlineSources": true,
     "strict": true,
-    "target": "es2017",
+    "target": "es2017"
   },
   "include": ["src/**/*", "types/**/*", "amcl-js-3.0.0.tgz"],
-  "references": [],
+  "references": []
 }
