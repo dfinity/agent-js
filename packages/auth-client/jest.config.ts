@@ -1,8 +1,9 @@
 import baseConfig from '../../jest.config.base';
+import { Crypto } from '@peculiar/webcrypto';
 const packageName = 'auth-client';
 
 module.exports = {
-  testEnvironment: 'jsdom',
+  testEnvironment: './FixJSDOMEnvironment.ts',
   ...baseConfig,
   moduleDirectories: ['node_modules'],
   modulePaths: [`<rootDir>/packages/${packageName}/src/`],
@@ -13,6 +14,8 @@ module.exports = {
   collectCoverageFrom: ['src/**/*.{ts,tsx}'],
   displayName: packageName,
   globals: {
-    window: {},
+    window: {
+      crypto: new Crypto(),
+    },
   },
 };
