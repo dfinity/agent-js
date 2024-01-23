@@ -6,9 +6,23 @@
 //
 // Note that we can use webpack configuration to make some features available to
 // Node.js in a similar way.
-import { Crypto } from '@peculiar/webcrypto';
 import 'fake-indexeddb/auto';
-global.crypto = new Crypto();
 global.TextEncoder = require('text-encoding').TextEncoder;
 global.TextDecoder = require('text-encoding').TextDecoder;
 require('whatwg-fetch');
+
+import { Crypto } from '@peculiar/webcrypto';
+const crypto = new Crypto();
+
+Object.defineProperty(globalThis, 'crypto', {
+  value: crypto,
+});
+
+Object.defineProperty(console, 'warn', {
+  value: jest.fn(),
+});
+
+Object.defineProperty(console, 'log', {
+  value: jest.fn(),
+});
+  
