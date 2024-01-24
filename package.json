@@ -129,7 +129,7 @@
         "git push --set-upstream origin release/${version}"
       ],
       "after:release": [
-        "gh pr create --base main --title 'chore: release ${version}' --body 'GitHub Release: ${releaseUrl}\nNPM release: https://www.npmjs.com/package/@dfinity/agent/v/${version}'`n[ ] Check this box to trigger CI"
+        "gh pr create --base main --title 'chore: release ${version}' --body 'GitHub Release: ${releaseUrl}\nNPM release: https://www.npmjs.com/package/@dfinity/agent/v/${version}'\n[ ] Check this box to trigger CI"
       ]
     },
     "git": {
