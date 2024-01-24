@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/agent",
-  "version": "0.21.2",
+  "version": "0.21.3",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to interact with the Internet Computer",
@@ -47,8 +47,8 @@
     "test:coverage": "jest --collectCoverage"
   },
   "peerDependencies": {
-    "@dfinity/candid": "^0.21.2",
-    "@dfinity/principal": "^0.21.2"
+    "@dfinity/candid": "^0.21.3",
+    "@dfinity/principal": "^0.21.3"
   },
   "dependencies": {
     "@noble/curves": "^1.2.0",
