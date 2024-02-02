@@ -103,7 +103,7 @@ export function hashTreeToString(tree: HashTree): string {
   }
 }
 
-interface Delegation extends Record<string, any> {
+interface Delegation extends Record<string, unknown> {
   subnet_id: ArrayBuffer;
   certificate: ArrayBuffer;
 }
@@ -152,8 +152,6 @@ export interface CreateCertificateOptions {
    */
   maxAgeInMinutes?: number;
 }
-
-type MetricsResult = number | bigint | Map<number, number | bigint> | undefined;
 
 export class Certificate {
   private readonly cert: Cert;

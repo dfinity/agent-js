@@ -15,7 +15,7 @@ import {
 import { toHex } from '../utils/buffer';
 import * as Cbor from '../cbor';
 import { decodeLeb128, decodeTime } from '../utils/leb';
-import { DerEncodedPublicKey, SignIdentity } from '..';
+import { DerEncodedPublicKey } from '..';
 
 /**
  * Represents the useful information about a subnet
@@ -57,10 +57,19 @@ export type Status =
  * @param {ArrayBuffer[]} path the path to the desired value, represented as an array of buffers
  * @param {string} decodeStrategy the strategy to use to decode the returned value
  */
-export interface CustomPath {
-  key: string;
-  path: ArrayBuffer[] | string;
-  decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'utf-8' | 'raw';
+export class CustomPath implements CustomPath {
+  public key: string;
+  public path: ArrayBuffer[] | string;
+  public decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'utf-8' | 'raw';
+  constructor(
+    key: string,
+    path: ArrayBuffer[] | string,
+    decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'utf-8' | 'raw',
+  ) {
+    this.key = key;
+    this.path = path;
+    this.decodeStrategy = decodeStrategy;
+  }
 }
 
 /**
@@ -98,7 +107,7 @@ export type CanisterStatusOptions = {
 };
 
 /**
- * Request information in the 
+ * Request information in the
  * @param {CanisterStatusOptions} options {@link CanisterStatusOptions}
  * @param {CanisterStatusOptions['canisterId']} options.canisterId {@link Principal}
  * @param {CanisterStatusOptions['agent']} options.agent {@link HttpAgent} optional authenticated agent to use to make the canister request. Useful for accessing private metadata under icp:private
@@ -132,8 +141,9 @@ export const request = async (options: {
     return (async () => {
       try {
         const response = await agent.readState(canisterId, {
-          paths: [encodedPaths[index]],
+          paths: encodedPaths,
         });
+        response; //??
         const cert = await Certificate.create({
           certificate: response.certificate,
           rootKey: agent.rootKey,
@@ -215,6 +225,8 @@ export const request = async (options: {
           }
         }
       } catch (error) {
+        error;
+        console.log(error);
         // Break on signature verification errors
         if ((error as AgentError)?.message?.includes('Invalid certificate')) {
           throw new AgentError((error as AgentError).message);
@@ -233,7 +245,12 @@ export const request = async (options: {
   });
 
   // Fetch all values separately, as each option can fail
-  await Promise.all(promises);
+  try {
+    await promises[0];
+    await Promise.all(promises);
+  } catch (error) {
+    error;
+  }
 
   return status;
 };
