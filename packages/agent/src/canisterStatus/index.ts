@@ -107,7 +107,8 @@ export type CanisterStatusOptions = {
 };
 
 /**
- * Request information in the
+ * Request information in the request_status state tree for a given canister.
+ * Can be used to request information about the canister's controllers, time, module hash, candid interface, and more.
  * @param {CanisterStatusOptions} options {@link CanisterStatusOptions}
  * @param {CanisterStatusOptions['canisterId']} options.canisterId {@link Principal}
  * @param {CanisterStatusOptions['agent']} options.agent {@link HttpAgent} optional authenticated agent to use to make the canister request. Useful for accessing private metadata under icp:private
@@ -141,9 +142,8 @@ export const request = async (options: {
     return (async () => {
       try {
         const response = await agent.readState(canisterId, {
-          paths: encodedPaths,
+          paths: [encodedPaths[index]],
         });
-        response; //??
         const cert = await Certificate.create({
           certificate: response.certificate,
           rootKey: agent.rootKey,
@@ -225,8 +225,6 @@ export const request = async (options: {
           }
         }
       } catch (error) {
-        error;
-        console.log(error);
         // Break on signature verification errors
         if ((error as AgentError)?.message?.includes('Invalid certificate')) {
           throw new AgentError((error as AgentError).message);
@@ -245,12 +243,7 @@ export const request = async (options: {
   });
 
   // Fetch all values separately, as each option can fail
-  try {
-    await promises[0];
-    await Promise.all(promises);
-  } catch (error) {
-    error;
-  }
+  await Promise.all(promises);
 
   return status;
 };
