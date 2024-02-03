@@ -127,6 +127,7 @@ describe('controllers', () => {
     [
       "hgfyw-myaaa-aaaab-qaaoa-cai",
       "b73qn-rqaaa-aaaap-aazvq-cai",
+      "5vdms-kaaaa-aaaap-aa3uq-cai",
       "aux4w-bi6yf-a3bhr-zydhx-qvf2p-ymdeg-ddvg6-gmobi-ct4dk-wf4xd-nae",
       "jhnlf-yu2dz-v7beb-c77gl-76tj7-shaqo-5qfvi-htvel-gzamb-bvzx6-yqe",
     ]
