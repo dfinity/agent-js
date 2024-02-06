@@ -18,11 +18,7 @@ Object.defineProperty(globalThis, 'crypto', {
   value: crypto,
 });
 
-Object.defineProperty(console, 'warn', {
-  value: jest.fn(),
+Object.defineProperty(global, 'console', {
+  writable: true,
+  value: { ...global.console, log: jest.fn(), warn: jest.fn(), error: jest.fn() },
 });
-
-Object.defineProperty(console, 'log', {
-  value: jest.fn(),
-});
-  
