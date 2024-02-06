@@ -4,7 +4,7 @@ import { AgentError } from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
 import { hashOfMap, requestIdOf } from '../../request_id';
-import { concat, fromHex } from '../../utils/buffer';
+import { bufFromBufLike, concat, fromHex } from '../../utils/buffer';
 import {
   Agent,
   ApiQueryResponse,
@@ -29,11 +29,13 @@ import {
 } from './types';
 import { AgentHTTPResponseError } from './errors';
 import { SubnetStatus, request } from '../../canisterStatus';
-import { CertificateVerificationError } from '../../certificate';
+import { CertificateVerificationError, HashTree, lookup_path } from '../../certificate';
 import { ed25519 } from '@noble/curves/ed25519';
 import { ExpirableMap } from '../../utils/expirableMap';
 import { Ed25519PublicKey } from '../../public_key';
 import { ObservableLog } from '../../observable';
+import { decodeTime } from '../../utils/leb';
+import { isArrayBuffer } from 'util/types';
 
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
@@ -190,6 +192,8 @@ export class HttpAgent implements Agent {
   public readonly _isAgent = true;
 
   public log: ObservableLog = new ObservableLog();
+  // The UTC time in milliseconds when the latest request was made
+  public waterMark = 0;
 
   #queryPipeline: HttpAgentRequestTransformFn[] = [];
   #updatePipeline: HttpAgentRequestTransformFn[] = [];
@@ -697,7 +701,27 @@ export class HttpAgent implements Agent {
           `  Body: ${await response.text()}\n`,
       );
     }
-    return cbor.decode(await response.arrayBuffer());
+    const decodedResponse: ReadStateResponse = cbor.decode(await response.arrayBuffer());
+
+    this.waterMark = await this.parseTimeFromResponse(decodedResponse);
+
+    return decodedResponse;
+  }
+
+  public async parseTimeFromResponse(response: ReadStateResponse): Promise<number> {
+    let tree: HashTree;
+    const decoded: { tree: HashTree } | undefined = cbor.decode(response.certificate);
+    if (decoded && 'tree' in decoded) {
+      tree = decoded.tree;
+    } else {
+      throw new Error('Could not decode time from response');
+    }
+    const timeLookup = lookup_path(['time'], tree);
+    if (!timeLookup || !isArrayBuffer(timeLookup)) {
+      throw new Error('Time was not found in the response or was not in its expected format.');
+    }
+    const date = decodeTime(bufFromBufLike(timeLookup));
+    return date.getUTCMilliseconds();
   }
 
   /**
