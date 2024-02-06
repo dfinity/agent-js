@@ -18,3 +18,14 @@ Object.defineProperty(global, 'performance', {
   writable: true,
   value: { ...global.performance },
 });
+
+Object.defineProperty(global, 'console', {
+  writable: true,
+  value: {
+    ...global.console,
+    log: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    testingLog: global.console.log,
+  },
+});

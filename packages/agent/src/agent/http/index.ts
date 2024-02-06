@@ -704,7 +704,7 @@ export class HttpAgent implements Agent {
 
       const replicaTime = status.get('time');
       if (replicaTime) {
-        this._timeDiffMsecs = Number(replicaTime as any) - Number(callTime);
+        this._timeDiffMsecs = Number(replicaTime as bigint) - Number(callTime);
       }
     } catch (error) {
       console.error('Caught exception while attempting to sync time:', error);
@@ -728,7 +728,7 @@ export class HttpAgent implements Agent {
   public async fetchRootKey(): Promise<ArrayBuffer> {
     if (!this._rootKeyFetched) {
       // Hex-encoded version of the replica root key
-      this.rootKey = ((await this.status()) as any).root_key;
+      this.rootKey = ((await this.status()) as JsonObject & { root_key: ArrayBuffer }).root_key;
       this._rootKeyFetched = true;
     }
     return this.rootKey;
