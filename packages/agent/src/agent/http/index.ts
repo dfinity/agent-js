@@ -27,13 +27,13 @@ import {
   ReadRequestType,
   SubmitRequestType,
 } from './types';
-import { AgentHTTPResponseError, AgentLog } from './errors';
+import { AgentHTTPResponseError } from './errors';
 import { SubnetStatus, request } from '../../canisterStatus';
 import { CertificateVerificationError } from '../../certificate';
 import { ed25519 } from '@noble/curves/ed25519';
 import { ExpirableMap } from '../../utils/expirableMap';
 import { Ed25519PublicKey } from '../../public_key';
-import { Observable } from '../observable';
+import { ObservableLog } from '../../observable';
 
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
@@ -189,7 +189,7 @@ export class HttpAgent implements Agent {
   private readonly _retryTimes; // Retry requests N times before erroring by default
   public readonly _isAgent = true;
 
-  public log: Observable<AgentLog> = new Observable<AgentLog>();
+  public log: ObservableLog = new ObservableLog();
 
   #queryPipeline: HttpAgentRequestTransformFn[] = [];
   #updatePipeline: HttpAgentRequestTransformFn[] = [];
@@ -226,11 +226,9 @@ export class HttpAgent implements Agent {
       const location = typeof window !== 'undefined' ? window.location : undefined;
       if (!location) {
         this._host = new URL('https://icp-api.io');
-        this.log.notify({
-          level: 'warn',
-          message:
-            'Could not infer host from window.location, defaulting to mainnet gateway of https://icp-api.io. Please provide a host to the HttpAgent constructor to avoid this warning.',
-        });
+        this.log.warn(
+          'Could not infer host from window.location, defaulting to mainnet gateway of https://icp-api.io. Please provide a host to the HttpAgent constructor to avoid this warning.',
+        );
       }
       // Mainnet, local, and remote environments will have the api route available
       const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', 'localhost'];
@@ -711,11 +709,9 @@ export class HttpAgent implements Agent {
     const callTime = Date.now();
     try {
       if (!canisterId) {
-        this.log.notify({
-          level: 'info',
-          message:
-            'Syncing time with the IC. No canisterId provided, so falling back to ryjl3-tyaaa-aaaaa-aaaba-cai',
-        });
+        this.log(
+          'Syncing time with the IC. No canisterId provided, so falling back to ryjl3-tyaaa-aaaaa-aaaba-cai',
+        );
       }
       const status = await CanisterStatus.request({
         // Fall back with canisterId of the ICP Ledger
@@ -729,11 +725,7 @@ export class HttpAgent implements Agent {
         this._timeDiffMsecs = Number(replicaTime as bigint) - Number(callTime);
       }
     } catch (error) {
-      this.log.notify({
-        level: 'error',
-        message: 'Caught exception while attempting to sync time',
-        error: error as AgentError,
-      });
+      this.log.error('Caught exception while attempting to sync time', error as AgentError);
     }
   }
 

@@ -8,14 +8,3 @@ export class AgentHTTPResponseError extends AgentError {
     Object.setPrototypeOf(this, new.target.prototype);
   }
 }
-
-export type AgentLog =
-  | {
-      message: string;
-      level: 'warn' | 'info';
-    }
-  | {
-      message: string;
-      level: 'error';
-      error: AgentError;
-    };
