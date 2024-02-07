@@ -35,7 +35,6 @@ const originalDateNowFn = global.Date.now;
 const originalWindow = global.window;
 const originalFetch = global.fetch;
 
-
 beforeEach(() => {
   global.Date.now = jest.fn(() => new Date(NANOSECONDS_PER_MILLISECONDS).getTime());
   Object.assign(global, 'window', {
@@ -46,7 +45,6 @@ beforeEach(() => {
   });
   global.fetch = originalFetch;
 });
-
 
 afterEach(() => {
   global.Date.now = originalDateNowFn;
@@ -800,7 +798,6 @@ test('retry requests that fail due to a network failure', async () => {
 
 test.todo('retry query signature validation after refreshing the subnet node keys');
 
-
 test.only('asdf', async () => {
   const foo = new HttpAgent({ host: 'https://icp-api.io' });
   jest.useFakeTimers();
@@ -816,4 +813,8 @@ test.only('asdf', async () => {
     .then(e => {
       console.log(e);
     });
+});
+test('it should log errors to console if the option is set', async () => {
+  const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: jest.fn(), logToConsole: true });
+  await agent.syncTime();
 });
