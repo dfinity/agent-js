@@ -32,6 +32,7 @@ import { CertificateVerificationError } from '../../certificate';
 import { ed25519 } from '@noble/curves/ed25519';
 import { ExpirableMap } from '../../utils/expirableMap';
 import { Ed25519PublicKey } from '../../public_key';
+import { Observable } from '../observable';
 
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
@@ -183,6 +184,8 @@ export class HttpAgent implements Agent {
   private _rootKeyFetched = false;
   private readonly _retryTimes; // Retry requests N times before erroring by default
   public readonly _isAgent = true;
+
+  public log: Observable<string> = new Observable<string>();
 
   #queryPipeline: HttpAgentRequestTransformFn[] = [];
   #updatePipeline: HttpAgentRequestTransformFn[] = [];
