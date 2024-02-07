@@ -796,3 +796,8 @@ test('retry requests that fail due to a network failure', async () => {
 });
 
 test.todo('retry query signature validation after refreshing the subnet node keys');
+
+test('it should log errors to console if the option is set', async () => {
+  const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: jest.fn(), logToConsole: true });
+  await agent.syncTime();
+});

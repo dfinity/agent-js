@@ -1,15 +1,7 @@
+import { AgentError } from '../../errors';
 import { HttpDetailsResponse } from '../api';
 
-
-export class HttpAgentError extends Error {
-  constructor(message: string, public readonly originalError?: Error) {
-    super(message);
-    this.name = this.constructor.name;
-    Object.setPrototypeOf(this, new.target.prototype);
-  }
-}
-
-export class AgentHTTPResponseError extends HttpAgentError {
+export class AgentHTTPResponseError extends AgentError {
   constructor(message: string, public readonly response: HttpDetailsResponse) {
     super(message);
     this.name = this.constructor.name;
@@ -17,9 +9,13 @@ export class AgentHTTPResponseError extends HttpAgentError {
   }
 }
 
-export type Log =
-  | HttpAgentError
+export type AgentLog =
   | {
       message: string;
-      level: 'error' | 'warn' | 'info';
+      level: 'warn' | 'info';
+    }
+  | {
+      message: string;
+      level: 'error';
+      error: AgentError;
     };
