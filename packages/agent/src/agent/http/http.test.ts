@@ -798,22 +798,6 @@ test('retry requests that fail due to a network failure', async () => {
 
 test.todo('retry query signature validation after refreshing the subnet node keys');
 
-test.only('asdf', async () => {
-  const foo = new HttpAgent({ host: 'https://icp-api.io' });
-  jest.useFakeTimers();
-  // await foo.syncTime();
-  const bar = await foo
-    .query(Principal.fromText('qg33c-4aaaa-aaaab-qaica-cai'), {
-      methodName: 'test',
-      arg: new Uint8Array().buffer,
-    })
-    .catch(e => {
-      console.log(e);
-    })
-    .then(e => {
-      console.log(e);
-    });
-});
 test('it should log errors to console if the option is set', async () => {
   const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: jest.fn(), logToConsole: true });
   await agent.syncTime();
