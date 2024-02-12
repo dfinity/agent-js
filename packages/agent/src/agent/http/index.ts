@@ -8,6 +8,7 @@ import { bufFromBufLike, concat, fromHex } from '../../utils/buffer';
 import {
   Agent,
   ApiQueryResponse,
+  NodeSignature,
   QueryFields,
   QueryResponse,
   ReadStateOptions,
@@ -254,7 +255,7 @@ export class HttpAgent implements Agent {
         );
       } else {
         this._host = new URL('https://icp-api.io');
-        console.warn(
+        this.log.warn(
           'Could not infer host from window.location, defaulting to mainnet gateway of https://icp-api.io. Please provide a host to the HttpAgent constructor to avoid this warning.',
         );
       }
@@ -428,7 +429,7 @@ export class HttpAgent implements Agent {
       response = await request();
     } catch (error) {
       if (this._retryTimes > tries) {
-        console.warn(
+        this.log.warn(
           `Caught exception while attempting to make request:\n` +
             `  ${error}\n` +
             `  Retrying request.`,
@@ -448,7 +449,7 @@ export class HttpAgent implements Agent {
       `  Body: ${responseText}\n`;
 
     if (this._retryTimes > tries) {
-      console.warn(errorMessage + `  Retrying request.`);
+      this.log.warn(errorMessage + `  Retrying request.`);
       return await this._requestAndRetry(request, tries + 1);
     }
 
@@ -541,6 +542,24 @@ export class HttpAgent implements Agent {
     };
     // Make query and fetch subnet keys in parallel
     const [query, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
+    const timestamp = query.signatures?.[0]?.timestamp;
+    if (!timestamp) {
+      throw new Error('aaaaaaaa');
+    }
+    const timeStampInMs = Number(BigInt(timestamp) / BigInt(1_000_000));
+    this.log('watermark and timestamp', {
+      waterMark: this.waterMark,
+      timestamp: timeStampInMs,
+    });
+    if (timestamp && Number(this.waterMark) > timeStampInMs) {
+      const error = new Error('Timestamp is less than the watermark');
+      this.log.error('Timestamp is less than the watermark', error, {
+        timestamp,
+        waterMark: this.waterMark,
+      });
+      throw error;
+    }
+    this.log('Query response:', query);
     // Skip verification if the user has disabled it
     if (!this.#verifyQuerySignatures) {
       return query;
@@ -549,7 +568,7 @@ export class HttpAgent implements Agent {
       return this.#verifyQueryResponse(query, subnetStatus);
     } catch (_) {
       // In case the node signatures have changed, refresh the subnet keys and try again
-      console.warn('Query response verification failed. Retrying with fresh subnet keys.');
+      this.log.warn('Query response verification failed. Retrying with fresh subnet keys.');
       this.#subnetKeys.delete(canisterId.toString());
       await this.fetchSubnetKeys(canisterId.toString());
 
@@ -703,25 +722,36 @@ export class HttpAgent implements Agent {
     }
     const decodedResponse: ReadStateResponse = cbor.decode(await response.arrayBuffer());
 
-    this.waterMark = await this.parseTimeFromResponse(decodedResponse);
+    this.log('Read state response:', decodedResponse);
+    const parsedTime = await this.parseTimeFromResponse(decodedResponse);
+    if (parsedTime > 0) {
+      this.log('Read state response time:', parsedTime);
+      this.waterMark = parsedTime;
+    }
 
     return decodedResponse;
   }
 
   public async parseTimeFromResponse(response: ReadStateResponse): Promise<number> {
     let tree: HashTree;
-    const decoded: { tree: HashTree } | undefined = cbor.decode(response.certificate);
-    if (decoded && 'tree' in decoded) {
-      tree = decoded.tree;
+    if (response.certificate) {
+      const decoded: { tree: HashTree } | undefined = cbor.decode(response.certificate);
+      if (decoded && 'tree' in decoded) {
+        tree = decoded.tree;
+      } else {
+        throw new Error('Could not decode time from response');
+      }
+      const timeLookup = lookup_path(['time'], tree);
+      if (!timeLookup || !isArrayBuffer(timeLookup)) {
+        throw new Error('Time was not found in the response or was not in its expected format.');
+      }
+      const date = decodeTime(bufFromBufLike(timeLookup));
+      this.log('Time from response:', date);
+      return Number(date);
     } else {
-      throw new Error('Could not decode time from response');
+      this.log.warn('No certificate found in response');
     }
-    const timeLookup = lookup_path(['time'], tree);
-    if (!timeLookup || !isArrayBuffer(timeLookup)) {
-      throw new Error('Time was not found in the response or was not in its expected format.');
-    }
-    const date = decodeTime(bufFromBufLike(timeLookup));
-    return date.getUTCMilliseconds();
+    return 0;
   }
 
   /**
