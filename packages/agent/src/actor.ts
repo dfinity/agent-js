@@ -16,7 +16,7 @@ import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
 import { CreateCertificateOptions } from './certificate';
 import managementCanisterIdl from './canisters/management_idl';
-import _SERVICE from './canisters/management_service';
+import _SERVICE, { canister_settings } from './canisters/management_service';
 
 export class ActorCallError extends AgentError {
   constructor(
@@ -173,11 +173,22 @@ export type ActorMethodMappedWithHttpDetails<T> = {
 /**
  * The mode used when installing a canister.
  */
-export enum CanisterInstallMode {
-  Install = 'install',
-  Reinstall = 'reinstall',
-  Upgrade = 'upgrade',
-}
+export type CanisterInstallMode =
+  | {
+      reinstall: null;
+    }
+  | {
+      upgrade:
+        | []
+        | [
+            {
+              skip_pre_upgrade: [] | [boolean];
+            },
+          ];
+    }
+  | {
+      install: null;
+    };
 
 /**
  * Internal metadata for actors. It's an enhanced version of ActorConfig with
@@ -194,6 +205,13 @@ const metadataSymbol = Symbol.for('ic-agent-metadata');
 
 export interface CreateActorClassOpts {
   httpDetails?: boolean;
+}
+
+interface CreateCanisterSettings {
+  freezing_threshold?: bigint;
+  controllers?: Array<Principal>;
+  memory_allocation?: bigint;
+  compute_allocation?: bigint;
 }
 
 /**
@@ -230,7 +248,7 @@ export class Actor {
     },
     config: ActorConfig,
   ): Promise<void> {
-    const mode = fields.mode === undefined ? CanisterInstallMode.Install : fields.mode;
+    const mode = fields.mode === undefined ? { install: null } : fields.mode;
     // Need to transform the arg into a number array.
     const arg = fields.arg ? [...new Uint8Array(fields.arg)] : [];
     // Same for module.
@@ -241,17 +259,37 @@ export class Actor {
         : config.canisterId;
 
     await getManagementCanister(config).install_code({
-      mode: { [mode]: null } as any,
+      mode,
       arg,
       wasm_module: wasmModule,
       canister_id: canisterId,
+      sender_canister_version: [],
     });
   }
 
-  public static async createCanister(config?: CallConfig): Promise<Principal> {
+  public static async createCanister(
+    config?: CallConfig,
+    settings?: CreateCanisterSettings,
+  ): Promise<Principal> {
+    function settingsToCanisterSettings(settings: CreateCanisterSettings): [canister_settings] {
+      return [
+        {
+          controllers: settings.controllers ? [settings.controllers] : [],
+          compute_allocation: settings.compute_allocation ? [settings.compute_allocation] : [],
+          freezing_threshold: settings.freezing_threshold ? [settings.freezing_threshold] : [],
+          memory_allocation: settings.memory_allocation ? [settings.memory_allocation] : [],
+        },
+      ];
+    }
+
     const { canister_id: canisterId } = await getManagementCanister(
       config || {},
-    ).provisional_create_canister_with_cycles({ amount: [], settings: [] });
+    ).provisional_create_canister_with_cycles({
+      amount: [],
+      settings: settingsToCanisterSettings(settings || {}),
+      specified_id: [],
+      sender_canister_version: [],
+    });
 
     return canisterId;
   }
@@ -472,11 +510,14 @@ export type ManagementCanisterRecord = _SERVICE;
 
 /**
  * Create a management canister actor
- * @param config
+ * @param config - a CallConfig
  */
 export function getManagementCanister(config: CallConfig): ActorSubclass<ManagementCanisterRecord> {
-  function transform(_methodName: string, args: unknown[], _callConfig: CallConfig) {
-    const first = args[0] as any;
+  function transform(
+    _methodName: string,
+    args: Record<string, unknown> & { canister_id: string }[],
+  ) {
+    const first = args[0];
     let effectiveCanisterId = Principal.fromHex('');
     if (first && typeof first === 'object' && first.canister_id) {
       effectiveCanisterId = Principal.from(first.canister_id as unknown);
