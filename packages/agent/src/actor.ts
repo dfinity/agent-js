@@ -207,6 +207,13 @@ export interface CreateActorClassOpts {
   httpDetails?: boolean;
 }
 
+interface CreateCanisterSettings {
+  freezing_threshold?: bigint;
+  controllers?: Array<Principal>;
+  memory_allocation?: bigint;
+  compute_allocation?: bigint;
+}
+
 /**
  * An actor base class. An actor is an object containing only functions that will
  * return a promise. These functions are derived from the IDL definition.
@@ -262,13 +269,24 @@ export class Actor {
 
   public static async createCanister(
     config?: CallConfig,
-    settings?: canister_settings,
+    settings?: CreateCanisterSettings,
   ): Promise<Principal> {
+    function settingsToCanisterSettings(settings: CreateCanisterSettings): [canister_settings] {
+      return [
+        {
+          controllers: settings.controllers ? [settings.controllers] : [],
+          compute_allocation: settings.compute_allocation ? [settings.compute_allocation] : [],
+          freezing_threshold: settings.freezing_threshold ? [settings.freezing_threshold] : [],
+          memory_allocation: settings.memory_allocation ? [settings.memory_allocation] : [],
+        },
+      ];
+    }
+
     const { canister_id: canisterId } = await getManagementCanister(
       config || {},
     ).provisional_create_canister_with_cycles({
       amount: [],
-      settings: settings ? [settings] : [],
+      settings: settingsToCanisterSettings(settings || {}),
       specified_id: [],
       sender_canister_version: [],
     });
