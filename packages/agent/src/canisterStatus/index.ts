@@ -52,18 +52,31 @@ export type Status =
   | null;
 
 /**
- * Interface to define a custom path. Nested paths will be represented as individual buffers, and can be created from text using {@link TextEncoder}
+ * Interface to define a custom path. Nested paths will be represented as individual buffers, and can be created from text using TextEncoder.
+ * @param {string} key the key to use to access the returned value in the canisterStatus map
+ * @param {ArrayBuffer[]} path the path to the desired value, represented as an array of buffers
+ * @param {string} decodeStrategy the strategy to use to decode the returned value
  */
-export interface CustomPath {
-  key: string;
-  path: ArrayBuffer[] | string;
-  decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'utf-8' | 'raw';
+export class CustomPath implements CustomPath {
+  public key: string;
+  public path: ArrayBuffer[] | string;
+  public decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'utf-8' | 'raw';
+  constructor(
+    key: string,
+    path: ArrayBuffer[] | string,
+    decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'utf-8' | 'raw',
+  ) {
+    this.key = key;
+    this.path = path;
+    this.decodeStrategy = decodeStrategy;
+  }
 }
 
 /**
- * Interface to request metadata from the icp:public or icp:private sections.
- * Similar to {@link CustomPath}, but accepts a simple string argument.
- * Private metadata will require the ${@link Identity} used by the ${@link HttpAgent} will need to be requested using an identity that controlls the canister.
+ * @deprecated Use {@link CustomPath} instead
+ * @param {string} key the key to use to access the returned value in the canisterStatus map
+ * @param {string} path the path to the desired value, represented as a string
+ * @param {string} decodeStrategy the strategy to use to decode the returned value
  */
 export interface MetaData {
   kind: 'metadata';
@@ -94,7 +107,8 @@ export type CanisterStatusOptions = {
 };
 
 /**
- *
+ * Request information in the request_status state tree for a given canister.
+ * Can be used to request information about the canister's controllers, time, module hash, candid interface, and more.
  * @param {CanisterStatusOptions} options {@link CanisterStatusOptions}
  * @param {CanisterStatusOptions['canisterId']} options.canisterId {@link Principal}
  * @param {CanisterStatusOptions['agent']} options.agent {@link HttpAgent} optional authenticated agent to use to make the canister request. Useful for accessing private metadata under icp:private

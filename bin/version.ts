@@ -5,6 +5,7 @@
 import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
+import prettier from 'prettier';
 import process from 'process';
 
 console.time('script duration');
@@ -52,8 +53,12 @@ workspaces.forEach(async workspace => {
     json.devDependencies = updateDeps(json.devDependencies);
   }
 
+  const formatted = prettier.format(JSON.stringify(json), {
+    parser: 'json-stringify',
+  });
+
   // Write file
-  fs.writeFileSync(packagePath, JSON.stringify(json));
+  fs.writeFileSync(packagePath, formatted);
 });
 
 function updateDeps(dependencies: Record<string, string>) {
