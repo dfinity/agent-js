@@ -1,4 +1,4 @@
-import { IdbKeyVal } from './db';
+import { DBCreateOptions, IdbKeyVal } from './db';
 
 export const KEY_STORAGE_KEY = 'identity';
 export const KEY_STORAGE_DELEGATION = 'delegation';
@@ -70,6 +70,9 @@ export class LocalStorage implements AuthClientStorage {
  * @see implements {@link AuthClientStorage}
  */
 export class IdbStorage implements AuthClientStorage {
+  constructor(private options?: DBCreateOptions) {
+  }
+
   // Initializes a KeyVal on first request
   private initializedDb: IdbKeyVal | undefined;
   get _db(): Promise<IdbKeyVal> {
@@ -78,7 +81,7 @@ export class IdbStorage implements AuthClientStorage {
         resolve(this.initializedDb);
         return;
       }
-      IdbKeyVal.create({ version: DB_VERSION }).then(db => {
+      IdbKeyVal.create(this.options).then(db => {
         this.initializedDb = db;
         resolve(db);
       });
