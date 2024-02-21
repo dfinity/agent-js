@@ -11,7 +11,9 @@
 
     <section>
       <h2>Version x.x.x</h2>
-      <ul></ul>
+      <ul>
+        <li>feat: HttpAgent tracks a watermark from the latest readState call. Queries with signatures made before the watermark will be automatically retried, and rejected if they are still behind.</li>
+      </ul>
       <h2>Version 1.0.1</h2>
       <ul>
         <li>fix: ed25519KeyIdentity was not generating unique identities when no seed was provided. This issue was introduced in v0.20.0-beta.0. If your code was affected please upgrade to >=1.0.1</li>
