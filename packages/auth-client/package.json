@@ -41,7 +41,7 @@
     "size-limit": "size-limit",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
-    "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/auth-client --excludeInternal",
+    "make:docs/reference": "typedoc src/index.ts --out ../../docs/auth-client --excludeInternal",
     "test": "jest",
     "test:coverage": "jest --collectCoverage"
   },

@@ -6,7 +6,7 @@ if (!newVersion) {
   process.exit(1);
 }
 
-const path: string = 'docs/generated/changelog.html';
+const path: string = 'docs/changelog.html';
 const pattern: string = '      <h2>Version x.x.x</h2>';
 const replacement: string = `      <h2>Version x.x.x</h2>
       <ul></ul>
