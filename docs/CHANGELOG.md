@@ -1,4 +1,3 @@
-   Changelog
 
 Agent-JS Changelog
 ==================
@@ -6,13 +5,13 @@ Agent-JS Changelog
 Version x.x.x
 -------------
 
-*   feat: adds \`fromPem\` method for \`identity-secp256k1\`
+*   feat: adds `fromPem` method for `identity-secp256k1`
 
 Version 1.0.1
 -------------
 
-*   fix: ed25519KeyIdentity was not generating unique identities when no seed was provided. This issue was introduced in v0.20.0-beta.0. If your code was affected please upgrade to >=1.0.1
-*   chore: export \`AuthClientStorage\` to aid with custom implementations
+*   fix: `Ed25519KeyIdentity` was not generating unique identities when no seed was provided. This issue was introduced in `v0.20.0-beta.0`. If your code was affected please upgrade to `>=1.0.1`
+*   chore: export `AuthClientStorage` to aid with custom implementations
 
 Version 1.0.0
 -------------
@@ -20,7 +19,7 @@ Version 1.0.0
 *   chore: npm audit fix
 *   fix: adds npm run build to publish script
 *   chore: update Management Canister interface
-*   feat: new CustomPath class, better docs, and deprecating metadata path type for CanisterStatus
+*   feat: new `CustomPath` class, better docs, and deprecating metadata path type for `CanisterStatus`
 *   chore: adding new controller to snapshot for e2e canister status
 
 Version 0.21.4
@@ -44,15 +43,15 @@ Version 0.21.1
 Version 0.21.0
 --------------
 
-*   feat: introduces Observable Log to HttpAgent. Allows subscribers to be notified of events from the agent without sending them directly to the console
+*   feat: introduces `ObservableLog` to `HttpAgent`. Allows subscribers to be notified of events from the agent without sending them directly to the console
 *   chore: exporting http errors
 *   chore: cleaning up lint warnings
 *   chore: cleans up github actions linting warnings
-*   feat: replaces \`secp256k1\` npm package with \`@noble/curves\`
-*   feat: enhances \`.from\` methods on public key classes to support unknown types, including PublicKey instances, ArrayBuffer-like objects, DER encoded public keys, and hex strings. Also introduces a new \`bufFromBufLike\` util
+*   feat: replaces `secp256k1` npm package with `@noble/curves`
+*   feat: enhances `.from` methods on public key classes to support unknown types, including PublicKey instances, ArrayBuffer-like objects, DER encoded public keys, and hex strings. Also introduces a new `bufFromBufLike` util
 *   feat: introduces partial identities from public keys for authentication flows
 *   fix: honor disableIdle flag
-*   fix: add \`github.dev\` and \`gitpod.io\` to known hosts
+*   fix: add `github.dev` and `gitpod.io` to known hosts
 
 Version 0.20.2
 --------------
@@ -68,46 +67,46 @@ Version 0.20.1
 Version 0.20.0
 --------------
 
-*   feat: uses expirable map for subnet keys in agent-js, with a timeout of 1 hour
-*   chore: cleanup for node 20 development in agent-js
-*   fix: canisterStatus returns full list of controllers
+*   feat: uses expirable map for subnet keys in `agent-js`, with a timeout of 1 hour
+*   chore: cleanup for node 20 development in `agent-js`
+*   fix: `canisterStatus` returns full list of controllers
 
 **feat!: node signature verification**  
 This feature includes additional changes in support of testing and releasing the feature:  
 *   Mainnet e2e tests for queries and calls
 *   published counter canister
-*   New HttpAgent option - verifyQuerySignatures. Defaults to true, but allows you to opt out of verification. Useful for testing against older replica versions
-*   Introducing ed25519 logic to agent for validating node signatures
-*   Standardizing around @noble/curves instead of tweetnacl in @dfinity/identity
+*   New `HttpAgent` option - `verifyQuerySignatures`. Defaults to true, but allows you to opt out of verification. Useful for testing against older replica versions
+*   Introducing `ed25519` logic to agent for validating node signatures
+*   Standardizing around `@noble/curves` instead of tweetnacl in `@dfinity/identity`
 *   new export - hashOfMap from agent, matching the naming used in the interface specification
 *   new unit tests
 *   new Verify export on ed25519 because why not
 
-*   Adds support for Uint8Arrays in Principal.from()
-*   feat: introduces ExpirableMap, a utility class that will return values up until a configured expiry
-*   chore: increases size limit for agent-js to allow for Ed25519 support for node key signature verification
-*   feat!: replaces disableNonce feature with useQueryNonces. Going forward, updates will use nonces, but queries and readstate calls will not. Queries and readsatate calls will use nonces if \`useQueryNonces\` is set to true
-*   feat: adds subnet metrics decoding to canisterStatus for \`/subnet\` path
+*   Adds support for `Uint8Arrays` in `Principal.from()`
+*   feat: introduces `ExpirableMap`, a utility class that will return values up until a configured expiry
+*   chore: increases size limit for `agent-js` to allow for `Ed25519` support for node key signature verification
+*   feat!: replaces `disableNonce` feature with `useQueryNonces`. Going forward, updates will use nonces, but queries and readstate calls will not. Queries and readsatate calls will use nonces if `useQueryNonces` is set to true
+*   feat: adds subnet metrics decoding to canisterStatus for `/subnet` path
 *   feat!: sets expiry to 1 minute less than the configured expiry, and then down to the nearest second. This matches existing behaviour, but adds the rounding
-*   chore: replaces use of localhost with 127.0.0.1 for better node 18 support. Also swaps Jest for vitest, runs mitm against mainnet, and updates some packages
+*   chore: replaces use of `localhost` with `127.0.0.1`for better node 18 support. Also swaps Jest for vitest, runs mitm against mainnet, and updates some packages
 *   feat: retry logic will catch and retry for thrown errors
-*   feat!: adds certificate logic to decode subnet and node key paths from the hashtree. Changes the interface for \`lookup\_path\` to allow returning a HashTree, but also constrains \`lookup\` response to an ArrayBuffer using a new \`lookupResultToBuffer\` export
+*   feat!: adds certificate logic to decode subnet and node key paths from the hashtree. Changes the interface for `lookup\_path` to allow returning a `HashTree`, but also constrains `lookup` response to an `ArrayBuffer` using a new `lookupResultToBuffer` export
 
 Version 0.19.3
 --------------
 
-*   fix: Principal JSON is compatible with @dfinity/utils jsonReviver helper
+*   fix: `Principal` JSON is compatible with `@dfinity/utils ``jsonReviver` helper
 *   chore: npm audit
-*   feat: Principal class serializes to JSON
+*   feat: `Principal` class serializes to JSON
 *   feat: certificate checks validate that certificate time is not more than 5 minutes ahead of or behind system time.
-*   feat: two new \`leb\` decoding utils added to @dfinity/agent/utils/leb to make it simpler to decode leb values and time from a certificate tree
+*   feat: two new `leb` decoding utils added to `@dfinity/agent/utils/leb` to make it simpler to decode leb values and time from a certificate tree
 *   chore: limit npm version to 9 in ci for compatibility with node 16
 *   Adds more helpful error message for when principal is undefined during actor creation
 
 Version 0.19.2
 --------------
 
-*   fix: subdomains on icp0.io and ic0.app were incorrectly sending requests to icp-api and encountering CSP issues
+*   fix: subdomains on `icp0.io` and `ic0.app` were incorrectly sending requests to `icp-api` and encountering CSP issues
 
 Version 0.19.1
 --------------
@@ -117,7 +116,7 @@ Version 0.19.1
 Version 0.19.0
 --------------
 
-*   feat: replaces the `js-sha256` library with \`@noble/hashes\` due to a breaking bug in Chrome
+*   feat: replaces the `js-sha256` library with `@noble/hashes` due to a breaking bug in Chrome
 *   Fix: add `@dfinity/principal` as a peerDependency to `assets` and `candid`.
 *   Feat: `HttpAgent` now uses a default address of https://icp-api.io. Users will be warned for not setting a host, but the code will default to mainnet.
 *   Feat: use webcrypto or node crypto instead of Math.random for nonce generation if available
@@ -146,7 +145,7 @@ Version 0.15.7
 Version 0.15.6
 --------------
 
-*   feat: retry failed \`read\_state\` requests
+*   feat: retry failed `read\_state` requests
 
 Version 0.15.5
 --------------
@@ -196,7 +195,7 @@ Version 0.15.0
 Version 0.14.1
 --------------
 
-*   feat: `secp256k1` now supports a \`fromSeedPhrase\` method that will reproduce the same identity across `agent-js`, `dfx`, and `quill`
+*   feat: `secp256k1` now supports a `fromSeedPhrase` method that will reproduce the same identity across `agent-js`, `dfx`, and `quill`
 *   chore: configures `unpkg` to use esmodules
 *   chore: removes unused lint shell script
 *   chore: adds `js-sha256` dependency to principal
