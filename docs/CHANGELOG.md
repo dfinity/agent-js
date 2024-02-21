@@ -4,7 +4,7 @@
 
 *   feat: adds `fromPem` method for `identity-secp256k1`
 
-## [1.0.1] - 2022-02-20
+## [1.0.1] - 2024-02-20
 
 ### Changed
 

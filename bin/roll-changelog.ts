@@ -5,13 +5,14 @@ if (!newVersion) {
   console.error('Please provide a new version as an argument.');
   process.exit(1);
 }
+const now = new Date();
+const formattedDate = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 
 const path: string = 'docs/CHANGELOG.md';
-const pattern: string = 'Version x.x.x';
-const replacement: string = `Version x.x.x
--------------
+const pattern: string = '## [Unreleased]';
+const replacement: string = `## [Unreleased]
 
-Version ${newVersion}`;
+## [${newVersion}] - ${formattedDate}`;
 
 readFile(path, 'utf8', (err, data) => {
   if (err) throw err;
