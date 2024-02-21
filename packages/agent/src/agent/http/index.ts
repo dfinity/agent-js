@@ -3,12 +3,11 @@ import { Principal } from '@dfinity/principal';
 import { AgentError } from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
-import { hashOfMap, requestIdOf } from '../../request_id';
+import { RequestId, hashOfMap, requestIdOf } from '../../request_id';
 import { bufFromBufLike, concat, fromHex } from '../../utils/buffer';
 import {
   Agent,
   ApiQueryResponse,
-  NodeSignature,
   QueryFields,
   QueryResponse,
   ReadStateOptions,
@@ -263,9 +262,8 @@ export class HttpAgent implements Agent {
     if (options.verifyQuerySignatures !== undefined) {
       this.#verifyQuerySignatures = options.verifyQuerySignatures;
     }
-    // Default is 3, only set from option if greater or equal to 0
-    this._retryTimes =
-      options.retryTimes !== undefined && options.retryTimes >= 0 ? options.retryTimes : 3;
+    // Default is 3
+    this._retryTimes = options.retryTimes ?? 3;
     // Rewrite to avoid redirects
     if (this._host.hostname.endsWith(IC0_SUB_DOMAIN)) {
       this._host.hostname = IC0_DOMAIN;
@@ -423,6 +421,86 @@ export class HttpAgent implements Agent {
     };
   }
 
+  async #requestAndRetryQuery(
+    args: {
+      canister: string;
+      transformedRequest: HttpAgentRequest;
+      body: ArrayBuffer;
+      requestId: RequestId;
+    },
+    tries = 0,
+  ): Promise<ApiQueryResponse> {
+    const { canister, transformedRequest, body, requestId } = args;
+    let response: ApiQueryResponse;
+    // Make the request and retry if it throws an error
+    try {
+      const fetchResponse = await this._fetch(
+        '' + new URL(`/api/v2/canister/${canister}/query`, this._host),
+        {
+          ...this._fetchOptions,
+          ...transformedRequest.request,
+          body,
+        },
+      );
+      const queryResponse: QueryResponse = cbor.decode(await fetchResponse.arrayBuffer());
+      response = {
+        ...queryResponse,
+        httpDetails: {
+          ok: fetchResponse.ok,
+          status: fetchResponse.status,
+          statusText: fetchResponse.statusText,
+          headers: httpHeadersTransform(fetchResponse.headers),
+        },
+        requestId,
+      };
+    } catch (error) {
+      if (tries < this._retryTimes) {
+        this.log.warn(
+          `Caught exception while attempting to make query:\n` +
+            `  ${error}\n` +
+            `  Retrying query.`,
+        );
+        return await this.#requestAndRetryQuery(args, tries + 1);
+      }
+      throw error;
+    }
+
+    const timestamp = response.signatures?.[0]?.timestamp;
+
+    if (!timestamp) {
+      throw new Error(
+        'Timestamp not found in query response. This suggests a malformed or malicious response.',
+      );
+    }
+
+    // Convert the timestamp to milliseconds
+    const timeStampInMs = Number(BigInt(timestamp) / BigInt(1_000_000));
+
+    this.log('watermark and timestamp', {
+      waterMark: this.waterMark,
+      timestamp: timeStampInMs,
+    });
+
+    // If the timestamp is less than the watermark, retry the request up to the retry limit
+    if (timestamp && Number(this.waterMark) > timeStampInMs) {
+      const error = new AgentError('Timestamp is below the watermark. Retrying query.');
+      this.log.error('Timestamp is below', error, {
+        timestamp,
+        waterMark: this.waterMark,
+      });
+      if (tries < this._retryTimes) {
+        return await this.#requestAndRetryQuery(args, tries + 1);
+      }
+      {
+        throw new AgentError(
+          `Timestamp failed to pass the watermark after retrying the configured ${this._retryTimes} times. We cannot guarantee the integrity of the response since it could be a replay attack.`,
+        );
+      }
+    }
+
+    return response;
+  }
+
   private async _requestAndRetry(request: () => Promise<Response>, tries = 0): Promise<Response> {
     let response: Response;
     try {
@@ -490,7 +568,7 @@ export class HttpAgent implements Agent {
 
       // TODO: remove this any. This can be a Signed or UnSigned request.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let transformedRequest: any = await this._transform({
+      let transformedRequest: HttpAgentRequest = await this._transform({
         request: {
           method: 'POST',
           headers: {
@@ -503,30 +581,18 @@ export class HttpAgent implements Agent {
       });
 
       // Apply transform for identity.
-      transformedRequest = await id?.transformRequest(transformedRequest);
+      transformedRequest = (await id?.transformRequest(transformedRequest)) as HttpAgentRequest;
 
       const body = cbor.encode(transformedRequest.body);
 
-      const response = await this._requestAndRetry(() =>
-        this._fetch('' + new URL(`/api/v2/canister/${canister.toText()}/query`, this._host), {
-          ...this._fetchOptions,
-          ...transformedRequest.request,
-          body,
-        }),
-      );
-
-      const queryResponse: QueryResponse = cbor.decode(await response.arrayBuffer());
-
-      return {
-        ...queryResponse,
-        httpDetails: {
-          ok: response.ok,
-          status: response.status,
-          statusText: response.statusText,
-          headers: httpHeadersTransform(response.headers),
-        },
+      const args = {
+        canister: canister.toText(),
+        transformedRequest,
+        body,
         requestId,
       };
+
+      return await this.#requestAndRetryQuery(args);
     };
 
     const getSubnetStatus = async (): Promise<SubnetStatus | void> => {
@@ -540,30 +606,17 @@ export class HttpAgent implements Agent {
       await this.fetchSubnetKeys(canisterId.toString());
       return this.#subnetKeys.get(canisterId.toString());
     };
+    // Attempt to make the query i=retryTimes times
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     // Make query and fetch subnet keys in parallel
     const [query, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
-    const timestamp = query.signatures?.[0]?.timestamp;
-    if (!timestamp) {
-      throw new Error('aaaaaaaa');
-    }
-    const timeStampInMs = Number(BigInt(timestamp) / BigInt(1_000_000));
-    this.log('watermark and timestamp', {
-      waterMark: this.waterMark,
-      timestamp: timeStampInMs,
-    });
-    if (timestamp && Number(this.waterMark) > timeStampInMs) {
-      const error = new Error('Timestamp is less than the watermark');
-      this.log.error('Timestamp is less than the watermark', error, {
-        timestamp,
-        waterMark: this.waterMark,
-      });
-      throw error;
-    }
+
     this.log('Query response:', query);
     // Skip verification if the user has disabled it
     if (!this.#verifyQuerySignatures) {
       return query;
     }
+
     try {
       return this.#verifyQueryResponse(query, subnetStatus);
     } catch (_) {
