@@ -114,6 +114,20 @@ describe('Ed25519KeyIdentity tests', () => {
 
     expect(isValid).toBe(true);
   });
+
+  it('generates random private keys', () => {
+    const key1 = Ed25519KeyIdentity.generate();
+    const key2 = Ed25519KeyIdentity.generate();
+    expect(key1.toJSON().toString()).not.toEqual(key2.toJSON().toString());
+  });
+  
+  it('should warn if the key is an Uint8Array consisting of all zeroes', () => {
+    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const baseKey = new Uint8Array(new Array(32).fill(0));
+    Ed25519KeyIdentity.generate(baseKey);
+    expect(consoleSpy).toHaveBeenCalledWith("Seed is all zeros. This is not a secure seed. Please provide a seed with sufficient entropy if this is a production environment.");
+  });
 });
 
 test('from JSON', async () => {

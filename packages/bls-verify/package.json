@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/bls-verify",
-  "version": "0.21.4",
+  "version": "1.0.1",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "bls verification strategy in JavaScript",
