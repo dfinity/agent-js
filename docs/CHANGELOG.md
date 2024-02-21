@@ -1,4 +1,3 @@
-
 Agent-JS Changelog
 ==================
 
