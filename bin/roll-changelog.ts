@@ -6,11 +6,12 @@ if (!newVersion) {
   process.exit(1);
 }
 
-const path: string = 'docs/changelog.html';
-const pattern: string = '      <h2>Version x.x.x</h2>';
-const replacement: string = `      <h2>Version x.x.x</h2>
-      <ul></ul>
-      <h2>Version ${newVersion}</h2>`;
+const path: string = 'docs/CHANGELOG.md';
+const pattern: string = 'Version x.x.x';
+const replacement: string = `Version x.x.x
+-------------
+
+Version ${newVersion}`;
 
 readFile(path, 'utf8', (err, data) => {
   if (err) throw err;
