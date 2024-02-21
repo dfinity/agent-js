@@ -1,7 +1,6 @@
 import { test, expect, vi } from 'vitest';
 import { createActor } from '../canisters/counter';
 import { Actor, HttpAgent } from '@dfinity/agent';
-import { Agent } from 'http';
 
 class FetchProxy {
   #history: Response[] = [];
@@ -9,10 +8,13 @@ class FetchProxy {
 
   async fetch(...args): Promise<Response> {
     if (this.#replyIndex) {
-      return this.#history[this.#replyIndex].clone();
+      const response = this.#history[this.#replyIndex].clone();
+      this.#history.push(response);
+      return response;
     }
 
-    const response = await global.fetch(...args);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await(global.fetch as any)(...args);
     this.#history.push(response);
     return response.clone();
   }
@@ -95,8 +97,10 @@ test('replay attack', async () => {
   // the replayed request should throw an error
   expect(fetchProxy.history).toHaveLength(6);
 
-  await expect(actor.read()).rejects.toThrow();
+  await expect(actor.read()).rejects.toThrowError(
+    'Timestamp failed to pass the watermark after retrying the configured 3 times. We cannot guarantee the integrity of the response since it could be a replay attack.',
+  );
 
-  // The agent should have made 3 additional requests
-  expect(fetchProxy.history).toHaveLength(9);
+  // The agent should should have made 4 additional requests (3 retries + 1 original request)
+  expect(fetchProxy.history).toHaveLength(10);
 }, 10_000);
