@@ -33,6 +33,8 @@ import { CertificateVerificationError, HashTree, lookup_path } from '../../certi
 import { ed25519 } from '@noble/curves/ed25519';
 import { ExpirableMap } from '../../utils/expirableMap';
 import { Ed25519PublicKey } from '../../public_key';
+import { decodeTime } from '../../utils/leb';
+import { isArrayBuffer } from 'util/types';
 import { ObservableLog } from '../../observable';
 import { decodeTime } from '../../utils/leb';
 import { isArrayBuffer } from 'util/types';
@@ -191,6 +193,8 @@ export class HttpAgent implements Agent {
   private readonly _retryTimes; // Retry requests N times before erroring by default
   public readonly _isAgent = true;
 
+  // The UTC time in milliseconds when the latest request was made
+  public waterMark = 0;
   public log: ObservableLog = new ObservableLog();
   // The UTC time in milliseconds when the latest request was made
   public waterMark = 0;

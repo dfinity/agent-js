@@ -35,7 +35,6 @@ const originalDateNowFn = global.Date.now;
 const originalWindow = global.window;
 const originalFetch = global.fetch;
 
-
 beforeEach(() => {
   global.Date.now = jest.fn(() => new Date(NANOSECONDS_PER_MILLISECONDS).getTime());
   Object.assign(global, 'window', {
