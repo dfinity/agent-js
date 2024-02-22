@@ -2,7 +2,9 @@
   "canisters": {
     "docs": {
       "type": "assets",
-      "source": ["docs/generated"]
+      "source": [
+        "docs"
+      ]
     },
     "counter": {
       "type": "motoko",
