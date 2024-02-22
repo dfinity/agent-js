@@ -36,8 +36,6 @@ import { Ed25519PublicKey } from '../../public_key';
 import { decodeTime } from '../../utils/leb';
 import { isArrayBuffer } from 'util/types';
 import { ObservableLog } from '../../observable';
-import { decodeTime } from '../../utils/leb';
-import { isArrayBuffer } from 'util/types';
 
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
@@ -196,8 +194,6 @@ export class HttpAgent implements Agent {
   // The UTC time in milliseconds when the latest request was made
   public waterMark = 0;
   public log: ObservableLog = new ObservableLog();
-  // The UTC time in milliseconds when the latest request was made
-  public waterMark = 0;
 
   #queryPipeline: HttpAgentRequestTransformFn[] = [];
   #updatePipeline: HttpAgentRequestTransformFn[] = [];
