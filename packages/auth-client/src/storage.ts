@@ -95,7 +95,7 @@ export class IdbStorage implements AuthClientStorage {
         resolve(this.initializedDb);
         return;
       }
-      IdbKeyVal.create(this.options).then(db => {
+      IdbKeyVal.create(this.#options).then(db => {
         this.initializedDb = db;
         resolve(db);
       });
