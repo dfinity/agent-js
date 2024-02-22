@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/agent",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to interact with the Internet Computer",
@@ -42,13 +42,13 @@
     "eslint:fix": "npm run lint -- --fix",
     "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' src/index.ts src/auth.ts src/request_id.ts src/request_id.test.ts",
     "lint": "npm run eslint",
-    "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/agent --excludeInternal",
+    "make:docs/reference": "typedoc src/index.ts --out ../../docs/agent --excludeInternal",
     "test": "jest",
     "test:coverage": "jest --collectCoverage"
   },
   "peerDependencies": {
-    "@dfinity/candid": "^1.0.0",
-    "@dfinity/principal": "^1.0.0"
+    "@dfinity/candid": "^1.0.1",
+    "@dfinity/principal": "^1.0.1"
   },
   "dependencies": {
     "@noble/curves": "^1.2.0",

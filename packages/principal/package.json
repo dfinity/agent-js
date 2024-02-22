@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/principal",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to work with Internet Computer principals",
@@ -40,7 +40,7 @@
     "size-limit": "size-limit",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
-    "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/principal --excludeInternal",
+    "make:docs/reference": "typedoc src/index.ts --out ../../docs/principal --excludeInternal",
     "test": "jest",
     "test:coverage": "jest --collectCoverage"
   },

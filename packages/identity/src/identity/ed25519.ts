@@ -1,3 +1,4 @@
+import { bufEquals } from '@dfinity/agent';
 import {
   DerEncodedPublicKey,
   KeyPair,
@@ -105,12 +106,25 @@ export class Ed25519PublicKey implements PublicKey {
   }
 }
 
+/**
+ * Ed25519KeyIdentity is an implementation of SignIdentity that uses Ed25519 keys. This class is used to sign and verify messages for an agent.
+ */
 export class Ed25519KeyIdentity extends SignIdentity {
-  public static generate(seed = new Uint8Array(32)): Ed25519KeyIdentity {
+  /**
+   * Generate a new Ed25519KeyIdentity.
+   * @param seed a 32-byte seed for the private key. If not provided, a random seed will be generated.
+   * @returns Ed25519KeyIdentity
+   */
+  public static generate(seed?: Uint8Array): Ed25519KeyIdentity {
+
     if (seed && seed.length !== 32) {
       throw new Error('Ed25519 Seed needs to be 32 bytes long.');
     }
     if (!seed) seed = ed25519.utils.randomPrivateKey();
+    // Check if the seed is all zeros
+    if(bufEquals(seed, new Uint8Array(new Array(32).fill(0)))) {
+      console.warn('Seed is all zeros. This is not a secure seed. Please provide a seed with sufficient entropy if this is a production environment.');
+    }
     const sk = new Uint8Array(32);
     for (let i = 0; i < 32; i++) sk[i] = new Uint8Array(seed)[i];
 

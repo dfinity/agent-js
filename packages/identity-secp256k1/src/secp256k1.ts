@@ -15,6 +15,7 @@ import hdkey from 'hdkey';
 import { mnemonicToSeedSync } from 'bip39';
 import { PublicKey, SignIdentity } from '@dfinity/agent';
 import { SECP256K1_OID, unwrapDER, wrapDER } from './der';
+import { pemToSecretKey } from './pem';
 
 declare type PublicKeyHex = string;
 declare type SecretKeyHex = string;
@@ -200,6 +201,16 @@ export class Secp256k1KeyIdentity extends SignIdentity {
     const addrnode = root.derive("m/44'/223'/0'/0/0");
 
     return Secp256k1KeyIdentity.fromSecretKey(addrnode.privateKey);
+  }
+
+  /**
+   * Utility method to create a Secp256k1KeyIdentity from a PEM-encoded key.
+   * @param pemKey - PEM-encoded key as a string
+   * @returns - Secp256k1KeyIdentity
+   */
+  public static fromPem(pemKey: string): Secp256k1KeyIdentity {
+    const secretKey = pemToSecretKey(pemKey);
+    return this.fromSecretKey(secretKey);
   }
 
   _publicKey: Secp256k1PublicKey;
