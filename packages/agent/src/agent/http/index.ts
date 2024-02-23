@@ -34,7 +34,6 @@ import { ed25519 } from '@noble/curves/ed25519';
 import { ExpirableMap } from '../../utils/expirableMap';
 import { Ed25519PublicKey } from '../../public_key';
 import { decodeTime } from '../../utils/leb';
-import { isArrayBuffer } from 'util/types';
 import { ObservableLog } from '../../observable';
 
 export * from './transforms';
@@ -795,7 +794,11 @@ export class HttpAgent implements Agent {
         throw new Error('Could not decode time from response');
       }
       const timeLookup = lookup_path(['time'], tree);
-      if (!timeLookup || !isArrayBuffer(timeLookup)) {
+      if (!timeLookup) {
+        throw new Error('Time was not found in the response or was not in its expected format.');
+      }
+
+      if (!(timeLookup instanceof ArrayBuffer) && !ArrayBuffer.isView(timeLookup)) {
         throw new Error('Time was not found in the response or was not in its expected format.');
       }
       const date = decodeTime(bufFromBufLike(timeLookup));
