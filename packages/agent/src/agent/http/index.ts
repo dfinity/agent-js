@@ -466,6 +466,11 @@ export class HttpAgent implements Agent {
 
     const timestamp = response.signatures?.[0]?.timestamp;
 
+    // Skip watermark verification if the user has set verifyQuerySignatures to false
+    if (!this.#verifyQuerySignatures) {
+      return response;
+    }
+
     if (!timestamp) {
       throw new Error(
         'Timestamp not found in query response. This suggests a malformed or malicious response.',
