@@ -31,7 +31,7 @@ describe('certified query', () => {
     expect(Principal.from(result)).toBeInstanceOf(Principal);
   }, 100_000);
   it('should verify lots of query certificates', async () => {
-    let count = 0;
+    let count = 1;
     const identities = Array.from({ length: 20 }).map(() => {
       const newIdentity = Ed25519KeyIdentity.generate(new Uint8Array(32).fill(count));
       count++;
@@ -49,9 +49,6 @@ describe('certified query', () => {
 
     expect(results).toMatchInlineSnapshot(`
       [
-        {
-          "__principal__": "535yc-uxytb-gfk7h-tny7p-vjkoe-i4krp-3qmcl-uqfgr-cpgej-yqtjq-rqe",
-        },
         {
           "__principal__": "wf3fv-4c4nr-7ks2b-xa4u7-kf3no-32glf-lf7e4-4ng4a-wwtlu-a2vnq-nae",
         },
@@ -108,6 +105,9 @@ describe('certified query', () => {
         },
         {
           "__principal__": "entn3-mas6a-37smu-vadtg-wgsno-zokif-vyphu-umase-lfwqe-dmcrk-kae",
+        },
+        {
+          "__principal__": "hy3bf-xpwhn-ru6bb-lhqol-wrjew-j2xqi-gb4gb-muivw-d6bkg-q3tp4-lqe",
         },
       ]
     `);
