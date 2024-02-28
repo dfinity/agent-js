@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/bls-verify",
-  "version": "0.20.2",
+  "version": "1.0.1",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "bls verification strategy in JavaScript",
@@ -25,8 +25,8 @@
     "ci": "npm run prettier && npm run lint && npm run test",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
-    "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/bls-verify --excludeInternal",
-    "test": "",
+    "make:docs/reference": "typedoc src/index.ts --out ../../docs/bls-verify --excludeInternal",
+    "test": "jest",
     "prettier": "prettier --check \"src/**/*.ts\"",
     "prettier:write": "npm run prettier -- --write"
   },

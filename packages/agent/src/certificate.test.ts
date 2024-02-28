@@ -269,7 +269,7 @@ test('certificate verification fails on nested delegations', async () => {
   // This is a recorded certificate from a read_state request to the II
   // subnet, with the /subnet tree included. Thus, it could be used as its
   // own delegation, according to the old interface spec definition.
-  const withSubnetSubtree = readFileSync(path.join(__dirname, '/bin/with_subnet_key.bin'));
+  const withSubnetSubtree = readFileSync(path.join(__dirname, 'bin/with_subnet_key.bin'));
   const canisterId = Principal.fromText('rdmx6-jaaaa-aaaaa-aaadq-cai');
   const subnetId = Principal.fromText(
     'uzr34-akd3s-xrdag-3ql62-ocgoh-ld2ao-tamcv-54e7j-krwgb-2gm4z-oqe',
@@ -283,10 +283,12 @@ test('certificate verification fails on nested delegations', async () => {
       subnet_id: subnetId.toUint8Array(),
       certificate: withSubnetSubtree,
     },
-  })
-  await expect(Cert.Certificate.create({
-    certificate: overlyNested,
-    rootKey: fromHex(IC_ROOT_KEY),
-    canisterId: canisterId,
-  })).rejects.toThrow('Invalid certificate: Delegation certificates cannot be nested');
+  });
+  await expect(
+    Cert.Certificate.create({
+      certificate: overlyNested,
+      rootKey: fromHex(IC_ROOT_KEY),
+      canisterId: canisterId,
+    }),
+  ).rejects.toThrow('Invalid certificate: Delegation certificates cannot be nested');
 });

@@ -15,6 +15,8 @@ export * from './utils/bls';
 export * from './utils/buffer';
 export * from './utils/random';
 export * as polling from './polling';
+import * as CanisterStatus from './canisterStatus';
+export * as CanisterStatus from './canisterStatus';
 /**
  * The CanisterStatus utility is used to request structured data directly from the IC public API. This data can be accessed using agent.readState, but CanisterStatus provides a helpful abstraction with some known paths.
  *
@@ -22,7 +24,6 @@ export * as polling from './polling';
  *
  * The primary method for this namespace is {@link CanisterStatus.request}
  */
-export * as CanisterStatus from './canisterStatus';
 
 import { Agent, HttpAgent } from './agent';
 import { IDL } from '@dfinity/candid';
@@ -37,7 +38,7 @@ export interface GlobalInternetComputer {
     /**
      * Simple advertisement of features in whoever is managing this `globalThis.ic`.
      * Use Case
-     * * Scripts that know they need an ic feature can detect using this and, if not present
+     * - Scripts that know they need an ic feature can detect using this and, if not present
      *   (e.g. old bootstrap version), they can dynamically include their own and continue
      *   operating (e.g. polyfill).
      *   This is useful when adding features to bootstrap. You can still deploy your canister to

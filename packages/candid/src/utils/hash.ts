@@ -1,7 +1,8 @@
 /**
  * Hashes a string to a number. Algorithm can be found here:
  * https://caml.inria.fr/pub/papers/garrigue-polymorphic_variants-ml98.pdf
- * @param s
+ * @param s - string to hash
+ * @returns number representing hashed string
  */
 function idlHash(s: string): number {
   const utf8encoder = new TextEncoder();

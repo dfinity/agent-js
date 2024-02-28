@@ -60,8 +60,7 @@ export type DBCreateOptions = {
  */
 export class IdbKeyVal {
   /**
-   *
-   * @param {DBCreateOptions} options {@link DbCreateOptions}
+   * @param {DBCreateOptions} options - DBCreateOptions
    * @param {DBCreateOptions['dbName']} options.dbName name for the indexeddb database
    * @default
    * @param {DBCreateOptions['storeName']} options.storeName name for the indexeddb Data Store

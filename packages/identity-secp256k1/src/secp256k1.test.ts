@@ -190,6 +190,18 @@ describe('Secp256k1KeyIdentity Tests', () => {
   });
 });
 
+test('fromPem should generate an identity', () => {
+  const pem = `-----BEGIN EC PRIVATE KEY-----
+  MHQCAQEEIGfKHuyoCCCbEXb0789MIdWiCIpZo1LaKApv95SSIaWPoAcGBSuBBAAK
+  oUQDQgAEahC99Avid7r8D6kIeLjjxJ8kwdJRy5nPrN9o18P7xHT95i0JPr5ivc9v
+  CB8vG2s97NB0re2MhqvdWgradJZ8Ow==
+  -----END EC PRIVATE KEY-----`;
+  const identity = Secp256k1KeyIdentity.fromPem(pem);
+  expect(identity.getPrincipal().toString()).toStrictEqual(
+    '42gbo-uiwfn-oq452-ql6yp-4jsqn-a6bxk-n7l4z-ni7os-yptq6-3htob-vqe',
+  );
+});
+
 describe('public key serialization from various types', () => {
   it('should serialize from an existing public key', () => {
     const baseKey = Secp256k1KeyIdentity.generate();

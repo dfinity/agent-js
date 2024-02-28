@@ -74,8 +74,8 @@ export class ECDSAKeyIdentity extends SignIdentity {
 
   /**
    * generates an identity from a public and private key. Please ensure that you are generating these keys securely and protect the user's private key
-   * @param keyPair a {@link CryptoKeyPair}
-   * @param subtleCrypto a {@link SubtleCrypto} interface in case one is not available globally
+   * @param keyPair a CryptoKeyPair
+   * @param subtleCrypto - a SubtleCrypto interface in case one is not available globally
    * @returns an {@link ECDSAKeyIdentity}
    */
   public static async fromKeyPair(
@@ -108,7 +108,7 @@ export class ECDSAKeyIdentity extends SignIdentity {
 
   /**
    * Return the internally-used key pair.
-   * @returns a {@link CryptoKeyPair}
+   * @returns a CryptoKeyPair
    */
   public getKeyPair(): CryptoKeyPair {
     return this._keyPair;

@@ -57,7 +57,7 @@ afterEach(() => {
 });
 
 test('call', async () => {
-  const mockFetch: jest.Mock = jest.fn((resource, init) => {
+  const mockFetch: jest.Mock = jest.fn(() => {
     return Promise.resolve(
       new Response(null, {
         status: 200,
@@ -100,7 +100,7 @@ test('call', async () => {
   const expectedRequestId = await requestIdOf(expectedRequest.content);
   expect(expectedRequestId).toEqual(mockPartialsRequestId);
 
-  const { calls, results } = mockFetch.mock;
+  const { calls } = mockFetch.mock;
   expect(calls.length).toBe(1);
   expect(requestId).toEqual(expectedRequestId);
   const call1 = calls[0][0];
@@ -119,7 +119,7 @@ test('queries with the same content should have the same signature', async () =>
     reply: { arg: new Uint8Array([]) },
   };
 
-  const mockFetch: jest.Mock = jest.fn((resource, init) => {
+  const mockFetch: jest.Mock = jest.fn(() => {
     const body = cbor.encode(mockResponse);
     return Promise.resolve(
       new Response(body, {
@@ -178,7 +178,7 @@ test('readState should not call transformers if request is passed', async () => 
     reply: { arg: new Uint8Array([]) },
   };
 
-  const mockFetch: jest.Mock = jest.fn((resource, init) => {
+  const mockFetch: jest.Mock = jest.fn(() => {
     const body = cbor.encode(mockResponse);
     return Promise.resolve(
       new Response(body, {
@@ -269,7 +269,7 @@ test('redirect avoid', async () => {
 });
 
 test('use anonymous principal if unspecified', async () => {
-  const mockFetch: jest.Mock = jest.fn((resource, init) => {
+  const mockFetch: jest.Mock = jest.fn(() => {
     return Promise.resolve(
       new Response(new Uint8Array([]), {
         status: 200,
@@ -315,7 +315,7 @@ test('use anonymous principal if unspecified', async () => {
   const expectedRequestId = await requestIdOf(expectedRequest.content);
   expect(expectedRequestId).toEqual(mockPartialsRequestId);
 
-  const { calls, results } = mockFetch.mock;
+  const { calls } = mockFetch.mock;
   expect(calls.length).toBe(1);
   expect(requestId).toEqual(expectedRequestId);
 
@@ -421,7 +421,7 @@ describe('replace identity', () => {
     expect(replace).not.toThrowError();
   });
   it('should use the new identity in calls', async () => {
-    const mockFetch: jest.Mock = jest.fn((resource, init) => {
+    const mockFetch: jest.Mock = jest.fn(() => {
       return Promise.resolve(
         new Response(null, {
           status: 200,
@@ -467,10 +467,6 @@ describe('makeNonce', () => {
   });
 
   describe('setBigUint64 polyfill', () => {
-    const DataViewConstructor = DataView;
-    let spyOnSetUint32: jest.SpyInstance;
-    let usePolyfill = false;
-
     beforeAll(() => {
       jest.spyOn(Math, 'random').mockImplementation(() => 0.5);
       jest
@@ -482,12 +478,6 @@ describe('makeNonce', () => {
           }
           return array;
         });
-      jest.spyOn(globalThis, 'DataView').mockImplementation(buffer => {
-        const view: DataView = new DataViewConstructor(buffer);
-        (view.setBigUint64 as any) = usePolyfill ? undefined : view.setBigUint64;
-        spyOnSetUint32 = jest.spyOn(view, 'setUint32');
-        return view;
-      });
     });
 
     afterAll(() => {
@@ -496,18 +486,17 @@ describe('makeNonce', () => {
     });
 
     it('should create same value using polyfill', () => {
+      const spyOnSetUint32 = jest.spyOn(DataView.prototype, 'setUint32').mockImplementation();
       const originalNonce = toHex(makeNonce());
       expect(spyOnSetUint32).toBeCalledTimes(4);
 
-      usePolyfill = true;
-
       const nonce = toHex(makeNonce());
-      expect(spyOnSetUint32).toBeCalledTimes(4);
+      expect(spyOnSetUint32).toBeCalledTimes(8);
 
       expect(nonce).toBe(originalNonce);
     });
     it.skip('should insert the nonce as a header in the request', async () => {
-      const mockFetch: jest.Mock = jest.fn((resource, init) => {
+      const mockFetch: jest.Mock = jest.fn(() => {
         return Promise.resolve(
           new Response(null, {
             status: 200,
@@ -636,9 +625,6 @@ test('should adjust the Expiry if the clock is more than 30 seconds behind', asy
 
   const requestBody: any = cbor.decode(mockFetch.mock.calls[0][1].body);
 
-  // Expiry should be: ingress expiry + replica time
-  const expiryInMs = requestBody.content.ingress_expiry / NANOSECONDS_PER_MILLISECONDS;
-
   expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1260000000000`);
 
   jest.resetModules();
@@ -733,7 +719,7 @@ describe('default host', () => {
     expect((agent as any)._host.hostname).toBe('icp-api.io');
   });
   it('should use the existing host if the agent is used on a known hostname', () => {
-    const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', '127.0.0.1'];
+    const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', 'localhost'];
     for (const host of knownHosts) {
       delete (window as any).location;
       (window as any).location = {
@@ -745,7 +731,7 @@ describe('default host', () => {
     }
   });
   it('should correctly handle subdomains on known hosts', () => {
-    const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', '127.0.0.1'];
+    const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', 'localhost'];
     for (const host of knownHosts) {
       delete (window as any).location;
       (window as any).location = {
@@ -757,8 +743,26 @@ describe('default host', () => {
       expect((agent as any)._host.hostname).toBe(host);
     }
   });
-  it('should handle port numbers for 127.0.0.1', () => {
-    const knownHosts = ['127.0.0.1', '127.0.0.1'];
+  it('should correctly handle subdomains on remote hosts', () => {
+    const remoteHosts = [
+      '000.gitpod.io',
+      '000.github.dev',
+      '4943-dfinity-candid-6715adkgujw.ws-us107.gitpod.io',
+      'sturdy-space-rotary-phone-674vv99gxf4x9j-4943.app.github.dev',
+    ];
+    for (const host of remoteHosts) {
+      delete (window as any).location;
+      (window as any).location = {
+        host: host,
+        hostname: host,
+        protocol: 'https:',
+      } as any;
+      const agent = new HttpAgent({ fetch: jest.fn() });
+      expect((agent as any)._host.hostname).toBe(host);
+    }
+  });
+  it('should handle port numbers for 127.0.0.1 and localhost', () => {
+    const knownHosts = ['127.0.0.1', 'localhost'];
     for (const host of knownHosts) {
       delete (window as any).location;
       // hostname is different from host when port is specified
@@ -792,3 +796,8 @@ test('retry requests that fail due to a network failure', async () => {
 });
 
 test.todo('retry query signature validation after refreshing the subnet node keys');
+
+test('it should log errors to console if the option is set', async () => {
+  const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: jest.fn(), logToConsole: true });
+  await agent.syncTime();
+});

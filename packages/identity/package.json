@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/identity",
-  "version": "0.20.2",
+  "version": "1.0.1",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to manage identity with the Internet Computer",
@@ -40,13 +40,13 @@
     "size-limit": "size-limit",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
-    "make:docs/reference": "typedoc src/index.ts --out ../../docs/generated/identity",
+    "make:docs/reference": "typedoc src/index.ts --out ../../docs/identity",
     "test": "jest",
     "test:coverage": "jest --collectCoverage"
   },
   "peerDependencies": {
-    "@dfinity/agent": "^0.20.2",
-    "@dfinity/principal": "^0.20.2",
+    "@dfinity/agent": "^1.0.1",
+    "@dfinity/principal": "^1.0.1",
     "@peculiar/webcrypto": "^1.4.0"
   },
   "dependencies": {

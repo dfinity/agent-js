@@ -26,4 +26,4 @@ jobs:
           node-version: ${{ matrix.node }}
       - run: npm install -g npm
       - run: npm install
-      - run: npm run lint --workspaces --if-present
+      - run: npm run lint --workspaces --if-present -- --max-warnings=0

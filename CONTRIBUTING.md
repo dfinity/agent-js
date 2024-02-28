@@ -30,7 +30,7 @@ additional detail if necessary
 
 This will automatically link your commit to the GitHub issue, and automatically close it when the pull request is merged.
 
-Please document your changes in the [changelog.html](./docs/generated/changelog.html) file.
+Please document your changes in the [CHANGELOG.md](./docs/CHANGELOG.md) file.
 
 ## Formatting
 
@@ -104,7 +104,7 @@ Start the process by initiating the GitHub Action Workflow `prepare-release.yml`
 The `prepare-release.yml` GitHub Actions workflow checks out the code, sets up Node.js, installs dependencies, and runs the release script via `release-it`. The process, defined in our `package.json` file, includes the following tasks:
 
 - version bump,
-- roll version in CHANGELOG.md,
+- roll version in [CHANGELOG.md](./docs/CHANGELOG.md),
 - new release branch creation,
 - git tag creation and push,
 - suitable GitHub Release summary creation based on commit history,

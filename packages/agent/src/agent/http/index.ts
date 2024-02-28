@@ -22,6 +22,7 @@ import {
   HttpAgentRequestTransformFn,
   HttpAgentSubmitRequest,
   makeNonce,
+  Nonce,
   QueryRequest,
   ReadRequestType,
   SubmitRequestType,
@@ -32,6 +33,7 @@ import { CertificateVerificationError } from '../../certificate';
 import { ed25519 } from '@noble/curves/ed25519';
 import { ExpirableMap } from '../../utils/expirableMap';
 import { Ed25519PublicKey } from '../../public_key';
+import { ObservableLog } from '../../observable';
 
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
@@ -108,7 +110,6 @@ export interface HttpAgentOptions {
   /**
    * Adds a unique {@link Nonce} with each query.
    * Enabling will prevent queries from being answered with a cached response.
-   *
    * @example
    * const agent = new HttpAgent({ useQueryNonces: true });
    * agent.addTransform(makeNonceTransform(makeNonce);
@@ -125,6 +126,10 @@ export interface HttpAgentOptions {
    * @default true
    */
   verifyQuerySignatures?: boolean;
+  /**
+   * Whether to log to the console. Defaults to false.
+   */
+  logToConsole?: boolean;
 }
 
 function getDefaultFetch(): typeof fetch {
@@ -184,6 +189,8 @@ export class HttpAgent implements Agent {
   private readonly _retryTimes; // Retry requests N times before erroring by default
   public readonly _isAgent = true;
 
+  public log: ObservableLog = new ObservableLog();
+
   #queryPipeline: HttpAgentRequestTransformFn[] = [];
   #updatePipeline: HttpAgentRequestTransformFn[] = [];
 
@@ -219,16 +226,21 @@ export class HttpAgent implements Agent {
       const location = typeof window !== 'undefined' ? window.location : undefined;
       if (!location) {
         this._host = new URL('https://icp-api.io');
-        console.warn(
+        this.log.warn(
           'Could not infer host from window.location, defaulting to mainnet gateway of https://icp-api.io. Please provide a host to the HttpAgent constructor to avoid this warning.',
         );
       }
-      // Mainnet and local will have the api route available
+      // Mainnet, local, and remote environments will have the api route available
       const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', 'localhost'];
+      const remoteHosts = ['.github.dev', '.gitpod.io'];
       const hostname = location?.hostname;
       let knownHost;
       if (hostname && typeof hostname === 'string') {
-        knownHost = knownHosts.find(host => hostname.endsWith(host));
+        if (remoteHosts.some(host => hostname.endsWith(host))) {
+          knownHost = hostname;
+        } else {
+          knownHost = knownHosts.find(host => hostname.endsWith(host));
+        }
       }
 
       if (location && knownHost) {
@@ -268,6 +280,17 @@ export class HttpAgent implements Agent {
     this.addTransform('update', makeNonceTransform(makeNonce));
     if (options.useQueryNonces) {
       this.addTransform('query', makeNonceTransform(makeNonce));
+    }
+    if (options.logToConsole) {
+      this.log.subscribe(log => {
+        if (log.level === 'error') {
+          console.error(log.message);
+        } else if (log.level === 'warn') {
+          console.warn(log.message);
+        } else {
+          console.log(log.message);
+        }
+      });
     }
   }
 
@@ -686,7 +709,7 @@ export class HttpAgent implements Agent {
     const callTime = Date.now();
     try {
       if (!canisterId) {
-        console.log(
+        this.log(
           'Syncing time with the IC. No canisterId provided, so falling back to ryjl3-tyaaa-aaaaa-aaaba-cai',
         );
       }
@@ -699,10 +722,10 @@ export class HttpAgent implements Agent {
 
       const replicaTime = status.get('time');
       if (replicaTime) {
-        this._timeDiffMsecs = Number(replicaTime as any) - Number(callTime);
+        this._timeDiffMsecs = Number(replicaTime as bigint) - Number(callTime);
       }
     } catch (error) {
-      console.error('Caught exception while attempting to sync time:', error);
+      this.log.error('Caught exception while attempting to sync time', error as AgentError);
     }
   }
 
@@ -723,7 +746,7 @@ export class HttpAgent implements Agent {
   public async fetchRootKey(): Promise<ArrayBuffer> {
     if (!this._rootKeyFetched) {
       // Hex-encoded version of the replica root key
-      this.rootKey = ((await this.status()) as any).root_key;
+      this.rootKey = ((await this.status()) as JsonObject & { root_key: ArrayBuffer }).root_key;
       this._rootKeyFetched = true;
     }
     return this.rootKey;
