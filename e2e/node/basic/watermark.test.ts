@@ -4,12 +4,13 @@ import { Actor, HttpAgent } from '@dfinity/agent';
 
 class FetchProxy {
   #history: Response[] = [];
-  #replyIndex = 0;
+  #calls = 0;
+  #replyIndex: number | null = null;
 
   async fetch(...args): Promise<Response> {
-    if (this.#replyIndex) {
+    this.#calls++;
+    if (this.#replyIndex !== null) {
       const response = this.#history[this.#replyIndex].clone();
-      this.#history.push(response);
       return response;
     }
 
@@ -23,13 +24,23 @@ class FetchProxy {
     return this.#history;
   }
 
+  get calls() {
+    return this.#calls;
+  }
+
   clearHistory() {
     this.#history = [];
+    this.#calls = 0;
+    this.#replyIndex = null;
   }
 
   replayFromHistory(index: number) {
     this.#replyIndex = index;
   }
+}
+
+function indexOfQueryResponse(history: Response[]) {
+  return history.findIndex(response => response.url.endsWith('query'));
 }
 
 test('basic', async () => {
@@ -38,13 +49,14 @@ test('basic', async () => {
 
   const actor = await createActor({
     fetch: fetchProxy.fetch.bind(fetchProxy),
+    verifyQuerySignatures: true,
   });
 
   fetchProxy.clearHistory();
   const startValue = await actor.read();
   expect(startValue).toBe(0n);
-  expect(fetchProxy.history).toHaveLength(1);
-});
+  expect(fetchProxy.calls).toBe(2);
+}, 10_000);
 
 test('replay queries only', async () => {
   const fetchProxy = new FetchProxy();
@@ -52,24 +64,29 @@ test('replay queries only', async () => {
 
   const actor = await createActor({
     fetch: fetchProxy.fetch.bind(fetchProxy),
+    verifyQuerySignatures: true,
   });
 
   fetchProxy.clearHistory();
   const startValue = await actor.read();
   expect(startValue).toBe(0n);
-  expect(fetchProxy.history).toHaveLength(1);
+  expect(fetchProxy.calls).toBe(2);
 
-  fetchProxy.replayFromHistory(0);
+  const queryResponseIndex = indexOfQueryResponse(fetchProxy.history);
+
+  fetchProxy.replayFromHistory(queryResponseIndex);
+
   const startValue2 = await actor.read();
   expect(startValue2).toBe(0n);
-  expect(fetchProxy.history).toHaveLength(2);
-});
+  expect(fetchProxy.calls).toBe(3);
+}, 10_000);
 
 test('replay attack', async () => {
   const fetchProxy = new FetchProxy();
   global.fetch;
 
   const actor = await createActor({
+    verifyQuerySignatures: true,
     fetch: fetchProxy.fetch.bind(fetchProxy),
   });
 
@@ -80,11 +97,14 @@ test('replay attack', async () => {
   fetchProxy.clearHistory();
   const startValue = await actor.read();
   expect(startValue).toBe(0n);
-  expect(fetchProxy.history).toHaveLength(1);
+
+  // 1: make query
+  // 2: fetch subnet keys
+  expect(fetchProxy.calls).toBe(2);
 
   const startValue2 = await actor.read();
   expect(startValue2).toBe(0n);
-  expect(fetchProxy.history).toHaveLength(2);
+  expect(fetchProxy.calls).toBe(3);
 
   await actor.inc();
 
@@ -93,14 +113,17 @@ test('replay attack', async () => {
   const startValue3 = await actor.read();
   expect(startValue3).toBe(1n);
 
-  fetchProxy.replayFromHistory(1);
+  const queryResponseIndex = indexOfQueryResponse(fetchProxy.history);
+
+  fetchProxy.replayFromHistory(queryResponseIndex);
+
   // the replayed request should throw an error
-  expect(fetchProxy.history).toHaveLength(6);
+  expect(fetchProxy.calls).toBe(7);
 
   await expect(actor.read()).rejects.toThrowError(
     'Timestamp failed to pass the watermark after retrying the configured 3 times. We cannot guarantee the integrity of the response since it could be a replay attack.',
   );
 
   // The agent should should have made 4 additional requests (3 retries + 1 original request)
-  expect(fetchProxy.history).toHaveLength(10);
+  expect(fetchProxy.calls).toBe(11);
 }, 10_000);

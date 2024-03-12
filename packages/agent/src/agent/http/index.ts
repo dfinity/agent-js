@@ -191,7 +191,12 @@ export class HttpAgent implements Agent {
   public readonly _isAgent = true;
 
   // The UTC time in milliseconds when the latest request was made
-  public waterMark = 0;
+  #waterMark = 0;
+
+  get waterMark(): number {
+    return this.#waterMark;
+  }
+
   public log: ObservableLog = new ObservableLog();
 
   #queryPipeline: HttpAgentRequestTransformFn[] = [];
@@ -548,6 +553,7 @@ export class HttpAgent implements Agent {
     fields: QueryFields,
     identity?: Identity | Promise<Identity>,
   ): Promise<ApiQueryResponse> {
+    this.log(`making query to canister ${canisterId} with fields:`, fields);
     const makeQuery = async () => {
       const id = await (identity !== undefined ? await identity : await this._identity);
       if (!id) {
@@ -783,7 +789,7 @@ export class HttpAgent implements Agent {
     const parsedTime = await this.parseTimeFromResponse(decodedResponse);
     if (parsedTime > 0) {
       this.log('Read state response time:', parsedTime);
-      this.waterMark = parsedTime;
+      this.#waterMark = parsedTime;
     }
 
     return decodedResponse;
@@ -808,6 +814,7 @@ export class HttpAgent implements Agent {
       }
       const date = decodeTime(bufFromBufLike(timeLookup));
       this.log('Time from response:', date);
+      this.log('Time from response in milliseconds:', Number(date));
       return Number(date);
     } else {
       this.log.warn('No certificate found in response');
