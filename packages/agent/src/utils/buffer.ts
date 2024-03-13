@@ -86,7 +86,14 @@ export function uint8ToBuf(arr: Uint8Array): ArrayBuffer {
  * @returns ArrayBuffer
  */
 export function bufFromBufLike(
-  bufLike: ArrayBuffer | Uint8Array | DataView | ArrayBufferView | ArrayBufferLike,
+  bufLike:
+    | ArrayBuffer
+    | Uint8Array
+    | DataView
+    | ArrayBufferView
+    | ArrayBufferLike
+    | [number]
+    | { buffer: ArrayBuffer },
 ): ArrayBuffer {
   if (bufLike instanceof Uint8Array) {
     return uint8ToBuf(bufLike);
@@ -94,8 +101,11 @@ export function bufFromBufLike(
   if (bufLike instanceof ArrayBuffer) {
     return bufLike;
   }
-  if ('buffer' in bufLike) {
-    return bufLike.buffer;
+  if (Array.isArray(bufLike)) {
+    return uint8ToBuf(new Uint8Array(bufLike));
   }
-  return new Uint8Array(bufLike);
+  if ('buffer' in bufLike) {
+    return bufFromBufLike(bufLike.buffer);
+  }
+  return uint8ToBuf(new Uint8Array(bufLike));
 }
