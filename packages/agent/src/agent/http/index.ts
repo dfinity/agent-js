@@ -491,7 +491,7 @@ export class HttpAgent implements Agent {
     });
 
     // If the timestamp is less than the watermark, retry the request up to the retry limit
-    if (timestamp && Number(this.waterMark) > timeStampInMs) {
+    if (Number(this.waterMark) > timeStampInMs) {
       const error = new AgentError('Timestamp is below the watermark. Retrying query.');
       this.log.error('Timestamp is below', error, {
         timestamp,
