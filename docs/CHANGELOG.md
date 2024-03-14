@@ -8,6 +8,7 @@
     * New login option: `allowPinAuthentication?: boolean;`
     * Response from II includes `authnMethod: 'passkey' | 'pin' | 'recovery';`
     * OnSuccess now optionally passes the message directly from the IDP provider
+    * Support for arbitrary login values passed to IDP through `customValues` option
 
 ### Added
 
