@@ -476,7 +476,9 @@ export class AuthClient {
      * Callback once login has completed
      */
     onSuccess?:
+      | (() => void)
       | ((message?: InternetIdentityAuthResponseSuccess) => void)
+      | (() => Promise<void>)
       | ((message?: InternetIdentityAuthResponseSuccess) => Promise<void>);
     /**
      * Callback in case authentication fails
