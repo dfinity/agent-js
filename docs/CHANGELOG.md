@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Changed
+
+* feat!: support for restricting II auth methods
+    * New login option: `allowPinAuthentication?: boolean;`
+    * Response from II includes `authnMethod: 'passkey' | 'pin' | 'recovery';`
+    * OnSuccess now optionally passes the message directly from the IDP provider
+
 ### Added
 
 * feat: adds `fromPem` method for `identity-secp256k1`
