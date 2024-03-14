@@ -97,6 +97,10 @@ export interface AuthClientLoginOptions {
    */
   maxTimeToLive?: bigint;
   /**
+   * If present, indicates whether or not the Identity Provider should allow the user to authenticate and/or register using a temporary key/PIN identity. Authenticating dapps may want to prevent users from using Temporary keys/PIN identities because Temporary keys/PIN identities are less secure than Passkeys (webauthn credentials) and because Temporary keys/PIN identities generally only live in a browser database (which may get cleared by the browser/OS).
+   */
+  allowPinAuthentication?: boolean;
+  /**
    * Origin for Identity Provider to use while generating the delegated identity. For II, the derivation origin must authorize this origin by setting a record at `<derivation-origin>/.well-known/ii-alternative-origins`.
    * @see https://github.com/dfinity/internet-identity/blob/main/docs/internet-identity-spec.adoc
    */
@@ -120,6 +124,7 @@ interface InternetIdentityAuthRequest {
   kind: 'authorize-client';
   sessionPublicKey: Uint8Array;
   maxTimeToLive?: bigint;
+  allowPinAuthentication?: boolean;
   derivationOrigin?: string;
 }
 
@@ -134,6 +139,7 @@ interface InternetIdentityAuthResponseSuccess {
     signature: Uint8Array;
   }[];
   userPublicKey: Uint8Array;
+  authnMethod: 'passkey' | 'pin' | 'recovery';
 }
 
 interface AuthReadyMessage {
@@ -151,6 +157,7 @@ interface AuthResponseSuccess {
     signature: Uint8Array;
   }[];
   userPublicKey: Uint8Array;
+  authnMethod: 'passkey' | 'pin' | 'recovery';
 }
 
 interface AuthResponseFailure {
@@ -355,7 +362,7 @@ export class AuthClient {
 
   private async _handleSuccess(
     message: InternetIdentityAuthResponseSuccess,
-    onSuccess?: () => void,
+    onSuccess?: (message?: InternetIdentityAuthResponseSuccess) => void,
   ) {
     const delegations = message.delegations.map(signedDelegation => {
       return {
@@ -404,7 +411,7 @@ export class AuthClient {
 
     // onSuccess should be the last thing to do to avoid consumers
     // interfering by navigating or refreshing the page
-    onSuccess?.();
+    onSuccess?.(message);
   }
 
   public getIdentity(): Identity {
@@ -421,6 +428,7 @@ export class AuthClient {
    * @param {AuthClientLoginOptions} options - Options for logging in
    * @param options.identityProvider Identity provider
    * @param options.maxTimeToLive Expiration of the authentication in nanoseconds
+   * @param options.allowPinAuthentication If present, indicates whether or not the Identity Provider should allow the user to authenticate and/or register using a temporary key/PIN identity. Authenticating dapps may want to prevent users from using Temporary keys/PIN identities because Temporary keys/PIN identities are less secure than Passkeys (webauthn credentials) and because Temporary keys/PIN identities generally only live in a browser database (which may get cleared by the browser/OS).
    * @param options.derivationOrigin Origin for Identity Provider to use while generating the delegated identity
    * @param options.windowOpenerFeatures Configures the opened authentication window
    * @param options.onSuccess Callback once login has completed
@@ -451,6 +459,10 @@ export class AuthClient {
      */
     maxTimeToLive?: bigint;
     /**
+     * If present, indicates whether or not the Identity Provider should allow the user to authenticate and/or register using a temporary key/PIN identity. Authenticating dapps may want to prevent users from using Temporary keys/PIN identities because Temporary keys/PIN identities are less secure than Passkeys (webauthn credentials) and because Temporary keys/PIN identities generally only live in a browser database (which may get cleared by the browser/OS).
+     */
+    allowPinAuthentication?: boolean;
+    /**
      * Auth Window feature config string
      * @example "toolbar=0,location=0,menubar=0,width=500,height=500,left=100,top=100"
      */
@@ -463,7 +475,9 @@ export class AuthClient {
     /**
      * Callback once login has completed
      */
-    onSuccess?: (() => void) | (() => Promise<void>);
+    onSuccess?:
+      | ((message?: InternetIdentityAuthResponseSuccess) => void)
+      | ((message?: InternetIdentityAuthResponseSuccess) => Promise<void>);
     /**
      * Callback in case authentication fails
      */
@@ -528,6 +542,7 @@ export class AuthClient {
             kind: 'authorize-client',
             sessionPublicKey: new Uint8Array(this._key?.getPublicKey().toDer() as ArrayBuffer),
             maxTimeToLive: options?.maxTimeToLive,
+            allowPinAuthentication: options?.allowPinAuthentication,
             derivationOrigin: options?.derivationOrigin?.toString(),
           };
           this._idpWindow?.postMessage(request, identityProviderUrl.origin);
