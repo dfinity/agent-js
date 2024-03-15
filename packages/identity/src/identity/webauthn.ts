@@ -157,6 +157,9 @@ export class WebAuthnIdentity extends SignIdentity {
     }
 
     const response = creds.response as AuthenticatorAttestationResponse;
+    if (response.attestationObject === undefined) {
+      throw new Error('Was expecting an attestation response.');
+    }
 
     // Parse the attestationObject as CBOR.
     const attObject = borc.decodeFirst(new Uint8Array(response.attestationObject));
