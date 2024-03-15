@@ -2,8 +2,11 @@
 
 ## [Unreleased]
 
-*   feat: adds `fromPem` method for `identity-secp256k1`
-*   feat: allow passing `DBCreateOptions` to `IdbStorage` constructor
+### Added
+
+* feat: adds `fromPem` method for `identity-secp256k1`
+* feat: HttpAgent tracks a watermark from the latest readState call. Queries with signatures made before the watermark will be automatically retried, and rejected if they are still behind.
+* feat: allow passing `DBCreateOptions` to `IdbStorage` constructor
 
 ## [1.0.1] - 2024-02-20
 

@@ -1,6 +1,6 @@
 import { AgentError } from './errors';
 
-export type ObserveFunction<T> = (data: T) => void;
+export type ObserveFunction<T> = (data: T, ...rest: unknown[]) => void;
 
 export class Observable<T> extends Function {
   observers: ObserveFunction<T>[];
@@ -9,12 +9,12 @@ export class Observable<T> extends Function {
     super();
     this.observers = [];
     return new Proxy(this, {
-      apply: (target, _, args) => target.#call(args[0]),
+      apply: (target, _, args) => target.#call(args[0], ...args.slice(1)),
     });
   }
 
-  #call(message: T) {
-    this.notify(message);
+  #call(message: T, ...rest: unknown[]) {
+    this.notify(message, ...rest);
   }
 
   subscribe(func: ObserveFunction<T>) {
@@ -25,8 +25,8 @@ export class Observable<T> extends Function {
     this.observers = this.observers.filter(observer => observer !== func);
   }
 
-  notify(data: T) {
-    this.observers.forEach(observer => observer(data));
+  notify(data: T, ...rest: unknown[]) {
+    this.observers.forEach(observer => observer(data, ...rest));
   }
 }
 
@@ -45,19 +45,19 @@ export class ObservableLog extends Observable<AgentLog> {
   constructor() {
     super();
     return new Proxy(this, {
-      apply: (target, _, args) => target.#call(args[0]),
+      apply: (target, _, args) => target.#call(args[0], ...args.slice(1)),
     });
   }
-  log(message: string) {
-    this.notify({ message, level: 'info' });
+  log(message: string, ...rest: unknown[]) {
+    this.notify({ message, level: 'info' }, ...rest);
   }
-  warn(message: string) {
-    this.notify({ message, level: 'warn' });
+  warn(message: string, ...rest: unknown[]) {
+    this.notify({ message, level: 'warn' }, ...rest);
   }
-  error(message: string, error: AgentError) {
-    this.notify({ message, level: 'error', error });
+  error(message: string, error: AgentError, ...rest: unknown[]) {
+    this.notify({ message, level: 'error', error }, ...rest);
   }
-  #call(message: string) {
-    this.log(message);
+  #call(message: string, ...rest: unknown[]) {
+    this.log(message, ...rest);
   }
 }

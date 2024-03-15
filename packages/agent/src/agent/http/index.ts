@@ -3,8 +3,8 @@ import { Principal } from '@dfinity/principal';
 import { AgentError } from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
-import { hashOfMap, requestIdOf } from '../../request_id';
-import { concat, fromHex } from '../../utils/buffer';
+import { RequestId, hashOfMap, requestIdOf } from '../../request_id';
+import { bufFromBufLike, concat, fromHex } from '../../utils/buffer';
 import {
   Agent,
   ApiQueryResponse,
@@ -29,10 +29,11 @@ import {
 } from './types';
 import { AgentHTTPResponseError } from './errors';
 import { SubnetStatus, request } from '../../canisterStatus';
-import { CertificateVerificationError } from '../../certificate';
+import { CertificateVerificationError, HashTree, lookup_path } from '../../certificate';
 import { ed25519 } from '@noble/curves/ed25519';
 import { ExpirableMap } from '../../utils/expirableMap';
 import { Ed25519PublicKey } from '../../public_key';
+import { decodeTime } from '../../utils/leb';
 import { ObservableLog } from '../../observable';
 
 export * from './transforms';
@@ -189,6 +190,13 @@ export class HttpAgent implements Agent {
   private readonly _retryTimes; // Retry requests N times before erroring by default
   public readonly _isAgent = true;
 
+  // The UTC time in milliseconds when the latest request was made
+  #waterMark = 0;
+
+  get waterMark(): number {
+    return this.#waterMark;
+  }
+
   public log: ObservableLog = new ObservableLog();
 
   #queryPipeline: HttpAgentRequestTransformFn[] = [];
@@ -250,7 +258,7 @@ export class HttpAgent implements Agent {
         );
       } else {
         this._host = new URL('https://icp-api.io');
-        console.warn(
+        this.log.warn(
           'Could not infer host from window.location, defaulting to mainnet gateway of https://icp-api.io. Please provide a host to the HttpAgent constructor to avoid this warning.',
         );
       }
@@ -258,9 +266,8 @@ export class HttpAgent implements Agent {
     if (options.verifyQuerySignatures !== undefined) {
       this.#verifyQuerySignatures = options.verifyQuerySignatures;
     }
-    // Default is 3, only set from option if greater or equal to 0
-    this._retryTimes =
-      options.retryTimes !== undefined && options.retryTimes >= 0 ? options.retryTimes : 3;
+    // Default is 3
+    this._retryTimes = options.retryTimes ?? 3;
     // Rewrite to avoid redirects
     if (this._host.hostname.endsWith(IC0_SUB_DOMAIN)) {
       this._host.hostname = IC0_DOMAIN;
@@ -418,13 +425,98 @@ export class HttpAgent implements Agent {
     };
   }
 
+  async #requestAndRetryQuery(
+    args: {
+      canister: string;
+      transformedRequest: HttpAgentRequest;
+      body: ArrayBuffer;
+      requestId: RequestId;
+    },
+    tries = 0,
+  ): Promise<ApiQueryResponse> {
+    const { canister, transformedRequest, body, requestId } = args;
+    let response: ApiQueryResponse;
+    // Make the request and retry if it throws an error
+    try {
+      const fetchResponse = await this._fetch(
+        '' + new URL(`/api/v2/canister/${canister}/query`, this._host),
+        {
+          ...this._fetchOptions,
+          ...transformedRequest.request,
+          body,
+        },
+      );
+      const queryResponse: QueryResponse = cbor.decode(await fetchResponse.arrayBuffer());
+      response = {
+        ...queryResponse,
+        httpDetails: {
+          ok: fetchResponse.ok,
+          status: fetchResponse.status,
+          statusText: fetchResponse.statusText,
+          headers: httpHeadersTransform(fetchResponse.headers),
+        },
+        requestId,
+      };
+    } catch (error) {
+      if (tries < this._retryTimes) {
+        this.log.warn(
+          `Caught exception while attempting to make query:\n` +
+            `  ${error}\n` +
+            `  Retrying query.`,
+        );
+        return await this.#requestAndRetryQuery(args, tries + 1);
+      }
+      throw error;
+    }
+
+    const timestamp = response.signatures?.[0]?.timestamp;
+
+    // Skip watermark verification if the user has set verifyQuerySignatures to false
+    if (!this.#verifyQuerySignatures) {
+      return response;
+    }
+
+    if (!timestamp) {
+      throw new Error(
+        'Timestamp not found in query response. This suggests a malformed or malicious response.',
+      );
+    }
+
+    // Convert the timestamp to milliseconds
+    const timeStampInMs = Number(BigInt(timestamp) / BigInt(1_000_000));
+
+    this.log('watermark and timestamp', {
+      waterMark: this.waterMark,
+      timestamp: timeStampInMs,
+    });
+
+    // If the timestamp is less than the watermark, retry the request up to the retry limit
+    if (Number(this.waterMark) > timeStampInMs) {
+      const error = new AgentError('Timestamp is below the watermark. Retrying query.');
+      this.log.error('Timestamp is below', error, {
+        timestamp,
+        waterMark: this.waterMark,
+      });
+      if (tries < this._retryTimes) {
+        return await this.#requestAndRetryQuery(args, tries + 1);
+      }
+      {
+        throw new AgentError(
+          `Timestamp failed to pass the watermark after retrying the configured ${this._retryTimes} times. We cannot guarantee the integrity of the response since it could be a replay attack.`,
+        );
+      }
+    }
+
+    return response;
+  }
+
   private async _requestAndRetry(request: () => Promise<Response>, tries = 0): Promise<Response> {
     let response: Response;
     try {
       response = await request();
     } catch (error) {
       if (this._retryTimes > tries) {
-        console.warn(
+        this.log.warn(
           `Caught exception while attempting to make request:\n` +
             `  ${error}\n` +
             `  Retrying request.`,
@@ -444,7 +536,7 @@ export class HttpAgent implements Agent {
       `  Body: ${responseText}\n`;
 
     if (this._retryTimes > tries) {
-      console.warn(errorMessage + `  Retrying request.`);
+      this.log.warn(errorMessage + `  Retrying request.`);
       return await this._requestAndRetry(request, tries + 1);
     }
 
@@ -461,6 +553,7 @@ export class HttpAgent implements Agent {
     fields: QueryFields,
     identity?: Identity | Promise<Identity>,
   ): Promise<ApiQueryResponse> {
+    this.log(`making query to canister ${canisterId} with fields:`, fields);
     const makeQuery = async () => {
       const id = await (identity !== undefined ? await identity : await this._identity);
       if (!id) {
@@ -485,7 +578,7 @@ export class HttpAgent implements Agent {
 
       // TODO: remove this any. This can be a Signed or UnSigned request.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let transformedRequest: any = await this._transform({
+      let transformedRequest: HttpAgentRequest = await this._transform({
         request: {
           method: 'POST',
           headers: {
@@ -498,30 +591,18 @@ export class HttpAgent implements Agent {
       });
 
       // Apply transform for identity.
-      transformedRequest = await id?.transformRequest(transformedRequest);
+      transformedRequest = (await id?.transformRequest(transformedRequest)) as HttpAgentRequest;
 
       const body = cbor.encode(transformedRequest.body);
 
-      const response = await this._requestAndRetry(() =>
-        this._fetch('' + new URL(`/api/v2/canister/${canister.toText()}/query`, this._host), {
-          ...this._fetchOptions,
-          ...transformedRequest.request,
-          body,
-        }),
-      );
-
-      const queryResponse: QueryResponse = cbor.decode(await response.arrayBuffer());
-
-      return {
-        ...queryResponse,
-        httpDetails: {
-          ok: response.ok,
-          status: response.status,
-          statusText: response.statusText,
-          headers: httpHeadersTransform(response.headers),
-        },
+      const args = {
+        canister: canister.toText(),
+        transformedRequest,
+        body,
         requestId,
       };
+
+      return await this.#requestAndRetryQuery(args);
     };
 
     const getSubnetStatus = async (): Promise<SubnetStatus | void> => {
@@ -535,17 +616,22 @@ export class HttpAgent implements Agent {
       await this.fetchSubnetKeys(canisterId.toString());
       return this.#subnetKeys.get(canisterId.toString());
     };
+    // Attempt to make the query i=retryTimes times
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     // Make query and fetch subnet keys in parallel
     const [query, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
+
+    this.log('Query response:', query);
     // Skip verification if the user has disabled it
     if (!this.#verifyQuerySignatures) {
       return query;
     }
+
     try {
       return this.#verifyQueryResponse(query, subnetStatus);
     } catch (_) {
       // In case the node signatures have changed, refresh the subnet keys and try again
-      console.warn('Query response verification failed. Retrying with fresh subnet keys.');
+      this.log.warn('Query response verification failed. Retrying with fresh subnet keys.');
       this.#subnetKeys.delete(canisterId.toString());
       await this.fetchSubnetKeys(canisterId.toString());
 
@@ -697,7 +783,43 @@ export class HttpAgent implements Agent {
           `  Body: ${await response.text()}\n`,
       );
     }
-    return cbor.decode(await response.arrayBuffer());
+    const decodedResponse: ReadStateResponse = cbor.decode(await response.arrayBuffer());
+
+    this.log('Read state response:', decodedResponse);
+    const parsedTime = await this.parseTimeFromResponse(decodedResponse);
+    if (parsedTime > 0) {
+      this.log('Read state response time:', parsedTime);
+      this.#waterMark = parsedTime;
+    }
+
+    return decodedResponse;
+  }
+
+  public async parseTimeFromResponse(response: ReadStateResponse): Promise<number> {
+    let tree: HashTree;
+    if (response.certificate) {
+      const decoded: { tree: HashTree } | undefined = cbor.decode(response.certificate);
+      if (decoded && 'tree' in decoded) {
+        tree = decoded.tree;
+      } else {
+        throw new Error('Could not decode time from response');
+      }
+      const timeLookup = lookup_path(['time'], tree);
+      if (!timeLookup) {
+        throw new Error('Time was not found in the response or was not in its expected format.');
+      }
+
+      if (!(timeLookup instanceof ArrayBuffer) && !ArrayBuffer.isView(timeLookup)) {
+        throw new Error('Time was not found in the response or was not in its expected format.');
+      }
+      const date = decodeTime(bufFromBufLike(timeLookup));
+      this.log('Time from response:', date);
+      this.log('Time from response in milliseconds:', Number(date));
+      return Number(date);
+    } else {
+      this.log.warn('No certificate found in response');
+    }
+    return 0;
   }
 
   /**
