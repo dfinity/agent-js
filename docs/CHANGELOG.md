@@ -6,6 +6,7 @@
 
 * feat: adds `fromPem` method for `identity-secp256k1`
 * feat: HttpAgent tracks a watermark from the latest readState call. Queries with signatures made before the watermark will be automatically retried, and rejected if they are still behind.
+* fix: remove `ArrrayBuffer` checks from `WebAuthnIdentity` to resolve issues with the Bitwarden password manager
 
 ## [1.0.1] - 2024-02-20
 
