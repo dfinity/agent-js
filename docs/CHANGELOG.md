@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.1.0] - 2024-3-18
+
 ### Added
 
 * feat: adds `fromPem` method for `identity-secp256k1`
