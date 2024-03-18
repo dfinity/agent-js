@@ -19,11 +19,11 @@
   },
   "devDependencies": {
     "@types/node": "^18.0.6",
-    "concurrently": "^7.3.0",
-    "cypress": "^13.2.0",
-    "esbuild": "^0.15.16",
-    "parcel": "^2.6.2",
-    "pm2": "^5.3.0",
+    "concurrently": "^8.2.2",
+    "cypress": "^13.7.0",
+    "esbuild": "^0.20.2",
+    "parcel": "^2.12.0",
+    "pm2": "^5.3.1",
     "size-limit": "^8.1.0"
   },
   "dependencies": {
