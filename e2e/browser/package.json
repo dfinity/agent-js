@@ -31,5 +31,8 @@
     "@dfinity/identity": "^1.1.0",
     "@dfinity/principal": "^1.1.0",
     "idb-keyval": "^6.2.0"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.6.1"
   }
 }
