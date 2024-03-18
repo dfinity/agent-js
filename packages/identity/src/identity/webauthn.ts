@@ -10,6 +10,7 @@ import {
 } from '@dfinity/agent';
 import borc from 'borc';
 import { randomBytes } from '@noble/hashes/utils';
+import { bufFromBufLike } from '@dfinity/candid';
 
 function _coseToDerEncodedBlob(cose: ArrayBuffer): DerEncodedPublicKey {
   return wrapDER(cose, DER_COSE_OID).buffer as DerEncodedPublicKey;
@@ -104,15 +105,17 @@ async function _createCredential(
         },
       },
     },
-  )) as PublicKeyCredentialWithAttachment;
+  )) as PublicKeyCredentialWithAttachment | null;
 
-  // Validate that it's the correct type at runtime, since WebAuthn does not HAVE to
-  // reply with a PublicKeyCredential.
-  if (creds.response === undefined || !(creds.rawId instanceof ArrayBuffer)) {
+  if (creds === null) {
     return null;
-  } else {
-    return creds;
   }
+
+  return {
+    ...creds,
+    // Some password managers will return a Uint8Array, so we ensure we return an ArrayBuffer.
+    rawId: bufFromBufLike(creds.rawId),
+  };
 }
 
 // See https://www.iana.org/assignments/cose/cose.xhtml#algorithms for a complete
@@ -154,7 +157,7 @@ export class WebAuthnIdentity extends SignIdentity {
     }
 
     const response = creds.response as AuthenticatorAttestationResponse;
-    if (!(response.attestationObject instanceof ArrayBuffer)) {
+    if (response.attestationObject === undefined) {
       throw new Error('Was expecting an attestation response.');
     }
 
@@ -214,24 +217,18 @@ export class WebAuthnIdentity extends SignIdentity {
     }
 
     const response = result.response as AuthenticatorAssertionResponse;
-    if (
-      response.signature instanceof ArrayBuffer &&
-      response.authenticatorData instanceof ArrayBuffer
-    ) {
-      const cbor = borc.encode(
-        new borc.Tagged(55799, {
-          authenticator_data: new Uint8Array(response.authenticatorData),
-          client_data_json: new TextDecoder().decode(response.clientDataJSON),
-          signature: new Uint8Array(response.signature),
-        }),
-      );
-      if (!cbor) {
-        throw new Error('failed to encode cbor');
-      }
-      return cbor.buffer as Signature;
-    } else {
-      throw new Error('Invalid response from WebAuthn.');
+
+    const cbor = borc.encode(
+      new borc.Tagged(55799, {
+        authenticator_data: new Uint8Array(response.authenticatorData),
+        client_data_json: new TextDecoder().decode(response.clientDataJSON),
+        signature: new Uint8Array(response.signature),
+      }),
+    );
+    if (!cbor) {
+      throw new Error('failed to encode cbor');
     }
+    return cbor.buffer as Signature;
   }
 
   /**
