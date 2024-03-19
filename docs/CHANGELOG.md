@@ -9,6 +9,8 @@
     * Response from II includes `authnMethod: 'passkey' | 'pin' | 'recovery';`
     * OnSuccess now optionally passes the message directly from the IDP provider
     * Support for arbitrary login values passed to IDP through `customValues` option
+* fix: pads date numbers in changelog automation. E.G. 2024-3-1 -> 2024-03-01
+
 * feat: allow passing `DBCreateOptions` to `IdbStorage` constructor
 
 ## [1.1.1] - 2024-03-19
