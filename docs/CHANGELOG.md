@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-## [1.1.1] - 2024-3-19
+## [1.1.1] - 2024-03-19
 
 * fix: work around `PublicKeyCredential` not being enumerable
 
