@@ -112,7 +112,12 @@ async function _createCredential(
   }
 
   return {
-    ...creds,
+    // do _not_ use ...creds here, as creds is not enumerable in all cases
+    id: creds.id,
+    response: creds.response,
+    type: creds.type,
+    authenticatorAttachment: creds.authenticatorAttachment,
+    getClientExtensionResults: creds.getClientExtensionResults,
     // Some password managers will return a Uint8Array, so we ensure we return an ArrayBuffer.
     rawId: bufFromBufLike(creds.rawId),
   };
