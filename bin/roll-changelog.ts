@@ -6,7 +6,11 @@ if (!newVersion) {
   process.exit(1);
 }
 const now = new Date();
-const formattedDate = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+const padNumber = (num: number) => num.toString().padStart(2, '0');
+
+const formattedDate = `${now.getFullYear()}-${padNumber(now.getMonth() + 1)}-${padNumber(
+  now.getDate(),
+)}`;
 
 const path: string = 'docs/CHANGELOG.md';
 const pattern: string = '## [Unreleased]';

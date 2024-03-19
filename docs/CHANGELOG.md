@@ -4,6 +4,7 @@
 
 ### Changed
 
+* fix: pads date numbers in changelog automation. E.G. 2024-3-1 -> 2024-03-01
 * feat: allow passing `DBCreateOptions` to `IdbStorage` constructor
 
 ## [1.1.1] - 2024-03-19
