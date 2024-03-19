@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+* feat: allow passing `DBCreateOptions` to `IdbStorage` constructor
+
 ## [1.1.1] - 2024-03-19
 
 * fix: work around `PublicKeyCredential` not being enumerable

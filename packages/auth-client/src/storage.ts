@@ -1,4 +1,4 @@
-import { IdbKeyVal } from './db';
+import { DBCreateOptions, IdbKeyVal } from './db';
 
 export const KEY_STORAGE_KEY = 'identity';
 export const KEY_STORAGE_DELEGATION = 'delegation';
@@ -70,6 +70,23 @@ export class LocalStorage implements AuthClientStorage {
  * @see implements {@link AuthClientStorage}
  */
 export class IdbStorage implements AuthClientStorage {
+  #options: DBCreateOptions;
+
+  /**
+   * @param options - DBCreateOptions
+   * @param options.dbName - name for the indexeddb database
+   * @param options.storeName - name for the indexeddb Data Store
+   * @param options.version - version of the database. Increment to safely upgrade
+   * @constructs an {@link IdbStorage}
+   * @example
+   * ```typescript
+   * const storage = new IdbStorage({ dbName: 'my-db', storeName: 'my-store', version: 2 });
+   * ```
+   */
+  constructor(options?: DBCreateOptions) {
+    this.#options = options ?? {};
+  }
+
   // Initializes a KeyVal on first request
   private initializedDb: IdbKeyVal | undefined;
   get _db(): Promise<IdbKeyVal> {
@@ -78,7 +95,7 @@ export class IdbStorage implements AuthClientStorage {
         resolve(this.initializedDb);
         return;
       }
-      IdbKeyVal.create({ version: DB_VERSION }).then(db => {
+      IdbKeyVal.create(this.#options).then(db => {
         this.initializedDb = db;
         resolve(db);
       });
