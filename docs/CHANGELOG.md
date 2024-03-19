@@ -9,7 +9,8 @@
     * Response from II includes `authnMethod: 'passkey' | 'pin' | 'recovery';`
     * OnSuccess now optionally passes the message directly from the IDP provider
     * Support for arbitrary login values passed to IDP through `customValues` option
-    * 
+* feat: allow passing `DBCreateOptions` to `IdbStorage` constructor
+
 ## [1.1.1] - 2024-03-19
 
 * fix: work around `PublicKeyCredential` not being enumerable
