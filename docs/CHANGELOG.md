@@ -9,6 +9,10 @@
     * Response from II includes `authnMethod: 'passkey' | 'pin' | 'recovery';`
     * OnSuccess now optionally passes the message directly from the IDP provider
     * Support for arbitrary login values passed to IDP through `customValues` option
+    * 
+## [1.1.1] - 2024-03-19
+
+* fix: work around `PublicKeyCredential` not being enumerable
 
 ## [1.1.0] - 2024-03-18
 
