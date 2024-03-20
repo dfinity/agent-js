@@ -398,6 +398,8 @@ export class HttpAgent implements Agent {
 
     const body = cbor.encode(transformedRequest.body);
 
+    this.log(`fetching "/api/v2/canister/${ecid.toText()}/call" with request:`, transformedRequest);
+
     // Run both in parallel. The fetch is quite expensive, so we have plenty of time to
     // calculate the requestId locally.
     const request = this._requestAndRetry(() =>
@@ -429,19 +431,19 @@ export class HttpAgent implements Agent {
 
   async #requestAndRetryQuery(
     args: {
-      canister: string;
+      ecid: Principal;
       transformedRequest: HttpAgentRequest;
       body: ArrayBuffer;
       requestId: RequestId;
     },
     tries = 0,
   ): Promise<ApiQueryResponse> {
-    const { canister, transformedRequest, body, requestId } = args;
+    const { ecid, transformedRequest, body, requestId } = args;
     let response: ApiQueryResponse;
     // Make the request and retry if it throws an error
     try {
       const fetchResponse = await this._fetch(
-        '' + new URL(`/api/v2/canister/${canister}/query`, this._host),
+        '' + new URL(`/api/v2/canister/${ecid.toString()}/query`, this._host),
         {
           ...this._fetchOptions,
           ...transformedRequest.request,
@@ -487,8 +489,8 @@ export class HttpAgent implements Agent {
 
     const timestamp = response.signatures?.[0]?.timestamp;
 
-    // Skip watermark verification if the user has set verifyQuerySignatures to false or if the canister is the management canister
-    if (!this.#verifyQuerySignatures ?? canister === MANAGEMENT_CANISTER_ID) {
+    // Skip watermark verification if the user has set verifyQuerySignatures to false
+    if (!this.#verifyQuerySignatures) {
       return response;
     }
 
@@ -569,7 +571,12 @@ export class HttpAgent implements Agent {
     fields: QueryFields,
     identity?: Identity | Promise<Identity>,
   ): Promise<ApiQueryResponse> {
-    this.log(`making query to canister ${canisterId} with fields:`, fields);
+    const ecid = fields.effectiveCanisterId
+      ? Principal.from(fields.effectiveCanisterId)
+      : Principal.from(canisterId);
+
+    this.log(`ecid ${ecid.toString()}`);
+    this.log(`canisterId ${canisterId.toString()}`);
     const makeQuery = async () => {
       const id = await (identity !== undefined ? await identity : await this._identity);
       if (!id) {
@@ -613,6 +620,7 @@ export class HttpAgent implements Agent {
 
       const args = {
         canister: canister.toText(),
+        ecid,
         transformedRequest,
         body,
         requestId,
@@ -622,15 +630,15 @@ export class HttpAgent implements Agent {
     };
 
     const getSubnetStatus = async (): Promise<SubnetStatus | void> => {
-      if (!this.#verifyQuerySignatures || canisterId === MANAGEMENT_CANISTER_ID) {
+      if (!this.#verifyQuerySignatures) {
         return undefined;
       }
-      const subnetStatus = this.#subnetKeys.get(canisterId.toString());
+      const subnetStatus = this.#subnetKeys.get(ecid.toString());
       if (subnetStatus) {
         return subnetStatus;
       }
-      await this.fetchSubnetKeys(canisterId.toString());
-      return this.#subnetKeys.get(canisterId.toString());
+      await this.fetchSubnetKeys(ecid.toString());
+      return this.#subnetKeys.get(ecid.toString());
     };
     // Attempt to make the query i=retryTimes times
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -639,7 +647,7 @@ export class HttpAgent implements Agent {
 
     this.log('Query response:', query);
     // Skip verification if the user has disabled it
-    if (!this.#verifyQuerySignatures || canisterId === MANAGEMENT_CANISTER_ID) {
+    if (!this.#verifyQuerySignatures) {
       return query;
     }
 
@@ -649,7 +657,7 @@ export class HttpAgent implements Agent {
       // In case the node signatures have changed, refresh the subnet keys and try again
       this.log.warn('Query response verification failed. Retrying with fresh subnet keys.');
       this.#subnetKeys.delete(canisterId.toString());
-      await this.fetchSubnetKeys(canisterId.toString());
+      await this.fetchSubnetKeys(ecid.toString());
 
       const updatedSubnetStatus = this.#subnetKeys.get(canisterId.toString());
       if (!updatedSubnetStatus) {
@@ -783,6 +791,10 @@ export class HttpAgent implements Agent {
     const transformedRequest = request ?? (await this.createReadStateRequest(fields, identity));
     const body = cbor.encode(transformedRequest.body);
 
+    this.log(
+      `fetching "/api/v2/canister/${canister}/read_state" with request:`,
+      transformedRequest,
+    );
     // TODO - https://dfinity.atlassian.net/browse/SDK-1092
     const response = await this._requestAndRetry(() =>
       this._fetch('' + new URL(`/api/v2/canister/${canister}/read_state`, this._host), {
@@ -874,6 +886,7 @@ export class HttpAgent implements Agent {
         }
       : {};
 
+    this.log(`fetching "/api/v2/status"`);
     const response = await this._requestAndRetry(() =>
       this._fetch('' + new URL(`/api/v2/status`, this._host), { headers, ...this._fetchOptions }),
     );

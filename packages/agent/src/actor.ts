@@ -431,7 +431,11 @@ function _createActorMethod(
       const cid = Principal.from(options.canisterId || actor[metadataSymbol].config.canisterId);
       const arg = IDL.encode(func.argTypes, args);
 
-      const result = await agent.query(cid, { methodName, arg });
+      const result = await agent.query(cid, {
+        methodName,
+        arg,
+        effectiveCanisterId: options.effectiveCanisterId,
+      });
 
       switch (result.status) {
         case QueryResponseStatus.Rejected:
