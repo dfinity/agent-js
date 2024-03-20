@@ -523,6 +523,9 @@ export function getManagementCanister(config: CallConfig): ActorSubclass<Managem
     _methodName: string,
     args: Record<string, unknown> & { canister_id: string }[],
   ) {
+    if (config.effectiveCanisterId) {
+      return { effectiveCanisterId: Principal.from(config.effectiveCanisterId) };
+    }
     const first = args[0];
     let effectiveCanisterId = Principal.fromHex('');
     if (first && typeof first === 'object' && first.canister_id) {
