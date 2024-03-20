@@ -2,10 +2,16 @@
 
 ## [Unreleased]
 
+### Added
+
+* feat: adds support for verified queries against management canister
+  * includes support for `fetch_canister_logs` in the actor provided by `getManagementCanister`
+
 ### Changed
 
 * fix: pads date numbers in changelog automation. E.G. 2024-3-1 -> 2024-03-01
 * feat: allow passing `DBCreateOptions` to `IdbStorage` constructor
+* updated management canister interface
 
 ## [1.1.1] - 2024-03-19
 

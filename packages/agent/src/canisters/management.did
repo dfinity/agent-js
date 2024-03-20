@@ -1,3 +1,4 @@
+// https://github.com/dfinity/interface-spec/blob/master/spec/_attachments/ic.did
 type canister_id = principal;
 type wasm_module = blob;
 
