@@ -1,4 +1,12 @@
-import { Actor, AnonymousIdentity, HttpAgent, Identity, CanisterStatus } from '@dfinity/agent';
+import {
+  Actor,
+  AnonymousIdentity,
+  HttpAgent,
+  Identity,
+  CanisterStatus,
+  MANAGEMENT_CANISTER_ID,
+  getManagementCanister,
+} from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
@@ -160,4 +168,28 @@ describe('controllers', () => {
     []
   `);
   });
+});
+
+it.only('should make requests to the management canister', async () => {
+  const canisterLogs = async ({
+    canisterId,
+    identity,
+  }: {
+    canisterId: Principal;
+    identity: Identity;
+  }) => {
+    const actor = getManagementCanister({
+      agent: new HttpAgent({ host: 'https://icp-api.io', identity }),
+    });
+
+    return await actor.fetch_canister_logs({
+      canister_id: canisterId,
+    });
+  };
+
+  const logs = await canisterLogs({
+    canisterId: Principal.from('rrkah-fqaaa-aaaaa-aaaaq-cai'),
+    identity: new AnonymousIdentity(),
+  });
+  console.log(logs);
 });

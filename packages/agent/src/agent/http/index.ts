@@ -52,11 +52,13 @@ export enum RequestStatusResponseStatus {
 const DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS = 5 * 60 * 1000;
 
 // Root public key for the IC, encoded as hex
-const IC_ROOT_KEY =
+export const IC_ROOT_KEY =
   '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100814' +
   'c0e6ec71fab583b08bd81373c255c3c371b2e84863c98a4f1e08b74235d14fb5d9c0cd546d968' +
   '5f913a0c0b2cc5341583bf4b4392e467db96d65b9bb4cb717112f8472e0d5a4d14505ffd7484' +
   'b01291091c5f87b98883463f98091a0baaae';
+
+export const MANAGEMENT_CANISTER_ID = 'aaaaa-aa';
 
 // IC0 domain info
 const IC0_DOMAIN = 'ic0.app';
@@ -446,17 +448,31 @@ export class HttpAgent implements Agent {
           body,
         },
       );
-      const queryResponse: QueryResponse = cbor.decode(await fetchResponse.arrayBuffer());
-      response = {
-        ...queryResponse,
-        httpDetails: {
-          ok: fetchResponse.ok,
-          status: fetchResponse.status,
-          statusText: fetchResponse.statusText,
-          headers: httpHeadersTransform(fetchResponse.headers),
-        },
-        requestId,
-      };
+      if (fetchResponse.status === 200) {
+        const queryResponse: QueryResponse = cbor.decode(await fetchResponse.arrayBuffer());
+        response = {
+          ...queryResponse,
+          httpDetails: {
+            ok: fetchResponse.ok,
+            status: fetchResponse.status,
+            statusText: fetchResponse.statusText,
+            headers: httpHeadersTransform(fetchResponse.headers),
+          },
+          requestId,
+        };
+      } else {
+        throw new AgentHTTPResponseError(
+          `Server returned an error:\n` +
+            `  Code: ${fetchResponse.status} (${fetchResponse.statusText})\n` +
+            `  Body: ${await fetchResponse.text()}\n`,
+          {
+            ok: fetchResponse.ok,
+            status: fetchResponse.status,
+            statusText: fetchResponse.statusText,
+            headers: httpHeadersTransform(fetchResponse.headers),
+          },
+        );
+      }
     } catch (error) {
       if (tries < this._retryTimes) {
         this.log.warn(
@@ -471,8 +487,8 @@ export class HttpAgent implements Agent {
 
     const timestamp = response.signatures?.[0]?.timestamp;
 
-    // Skip watermark verification if the user has set verifyQuerySignatures to false
-    if (!this.#verifyQuerySignatures) {
+    // Skip watermark verification if the user has set verifyQuerySignatures to false or if the canister is the management canister
+    if (!this.#verifyQuerySignatures ?? canister === MANAGEMENT_CANISTER_ID) {
       return response;
     }
 
@@ -606,7 +622,7 @@ export class HttpAgent implements Agent {
     };
 
     const getSubnetStatus = async (): Promise<SubnetStatus | void> => {
-      if (!this.#verifyQuerySignatures) {
+      if (!this.#verifyQuerySignatures || canisterId === MANAGEMENT_CANISTER_ID) {
         return undefined;
       }
       const subnetStatus = this.#subnetKeys.get(canisterId.toString());
@@ -623,7 +639,7 @@ export class HttpAgent implements Agent {
 
     this.log('Query response:', query);
     // Skip verification if the user has disabled it
-    if (!this.#verifyQuerySignatures) {
+    if (!this.#verifyQuerySignatures || canisterId === MANAGEMENT_CANISTER_ID) {
       return query;
     }
 

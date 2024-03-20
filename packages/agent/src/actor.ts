@@ -278,6 +278,8 @@ export class Actor {
           compute_allocation: settings.compute_allocation ? [settings.compute_allocation] : [],
           freezing_threshold: settings.freezing_threshold ? [settings.freezing_threshold] : [],
           memory_allocation: settings.memory_allocation ? [settings.memory_allocation] : [],
+          reserved_cycles_limit: [],
+          log_visibility: [],
         },
       ];
     }
