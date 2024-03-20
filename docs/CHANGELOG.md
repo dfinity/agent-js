@@ -6,14 +6,23 @@
 
 * feat: adds support for verified queries against management canister
   * includes support for `fetch_canister_logs` in the actor provided by `getManagementCanister`
-  * allows you to pass an `effectiveCanisterId` to the `getManagementCanister` api, which makes it possible to query bitcoin methods as well. For example:
+  * also includes support for bitcoin queries
+
+Logging
+
+```ts
+// Agent should not use an anonymous identity for this call, and should ideally be a canister controller
+const management = await getManagementCanister({ agent });
+const logs = await management.fetch_canister_logs({ canister_id: canisterId });
+```
+
+Bitcoin
 
 ```ts
 // For now, the verifyQuerySignatures option must be set to false
 const agent = await makeAgent({ host: 'https://icp-api.io', verifyQuerySignatures: false });
 const management = getManagementCanister({
-    agent,
-    effectiveCanisterId: Principal.from('mm444-5iaaa-aaaar-qaabq-cai'),
+    agent
 });
 
 const result = await management.bitcoin_get_balance_query({

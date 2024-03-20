@@ -175,7 +175,6 @@ describe('bitcoin query', async () => {
     const agent = await makeAgent({ host: 'https://icp-api.io', verifyQuerySignatures: false });
     const management = getManagementCanister({
       agent,
-      effectiveCanisterId: Principal.from('mm444-5iaaa-aaaar-qaabq-cai'),
     });
 
     const result = await management.bitcoin_get_balance_query({
