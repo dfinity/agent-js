@@ -12,8 +12,6 @@ if (Number.isNaN(port)) {
 export const makeAgent = async (options?: HttpAgentOptions) => {
   const agent = new HttpAgent({
     host: `http://127.0.0.1:${process.env.REPLICA_PORT ?? 4943}`,
-    // TODO - remove this when the dfx replica supports it
-    verifyQuerySignatures: false,
     ...options,
   });
   try {

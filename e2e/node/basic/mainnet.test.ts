@@ -171,10 +171,11 @@ describe('controllers', () => {
 
 describe('bitcoin query', async () => {
   it('should return the balance of a bitcoin address', async () => {
-    const agent = await makeAgent({ host: 'https://icp-api.io' });
+    // TODO - verify node signature for bitcoin once supported
+    const agent = await makeAgent({ host: 'https://icp-api.io', verifyQuerySignatures: false });
     const management = getManagementCanister({
       agent,
-      effectiveCanisterId: Principal.from('rrkah-fqaaa-aaaaa-aaaaq-cai'),
+      effectiveCanisterId: Principal.from('mm444-5iaaa-aaaar-qaabq-cai'),
     });
 
     const result = await management.bitcoin_get_balance_query({
@@ -182,7 +183,7 @@ describe('bitcoin query', async () => {
       network: { mainnet: null },
       min_confirmations: [6],
     });
-
+    console.log(`balance for address: ${result}`);
     expect(result).toBeGreaterThan(0n);
   });
 });
