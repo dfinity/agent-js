@@ -52,11 +52,13 @@ export enum RequestStatusResponseStatus {
 const DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS = 5 * 60 * 1000;
 
 // Root public key for the IC, encoded as hex
-const IC_ROOT_KEY =
+export const IC_ROOT_KEY =
   '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100814' +
   'c0e6ec71fab583b08bd81373c255c3c371b2e84863c98a4f1e08b74235d14fb5d9c0cd546d968' +
   '5f913a0c0b2cc5341583bf4b4392e467db96d65b9bb4cb717112f8472e0d5a4d14505ffd7484' +
   'b01291091c5f87b98883463f98091a0baaae';
+
+export const MANAGEMENT_CANISTER_ID = 'aaaaa-aa';
 
 // IC0 domain info
 const IC0_DOMAIN = 'ic0.app';
@@ -396,6 +398,8 @@ export class HttpAgent implements Agent {
 
     const body = cbor.encode(transformedRequest.body);
 
+    this.log(`fetching "/api/v2/canister/${ecid.toText()}/call" with request:`, transformedRequest);
+
     // Run both in parallel. The fetch is quite expensive, so we have plenty of time to
     // calculate the requestId locally.
     const request = this._requestAndRetry(() =>
@@ -427,36 +431,50 @@ export class HttpAgent implements Agent {
 
   async #requestAndRetryQuery(
     args: {
-      canister: string;
+      ecid: Principal;
       transformedRequest: HttpAgentRequest;
       body: ArrayBuffer;
       requestId: RequestId;
     },
     tries = 0,
   ): Promise<ApiQueryResponse> {
-    const { canister, transformedRequest, body, requestId } = args;
+    const { ecid, transformedRequest, body, requestId } = args;
     let response: ApiQueryResponse;
     // Make the request and retry if it throws an error
     try {
       const fetchResponse = await this._fetch(
-        '' + new URL(`/api/v2/canister/${canister}/query`, this._host),
+        '' + new URL(`/api/v2/canister/${ecid.toString()}/query`, this._host),
         {
           ...this._fetchOptions,
           ...transformedRequest.request,
           body,
         },
       );
-      const queryResponse: QueryResponse = cbor.decode(await fetchResponse.arrayBuffer());
-      response = {
-        ...queryResponse,
-        httpDetails: {
-          ok: fetchResponse.ok,
-          status: fetchResponse.status,
-          statusText: fetchResponse.statusText,
-          headers: httpHeadersTransform(fetchResponse.headers),
-        },
-        requestId,
-      };
+      if (fetchResponse.status === 200) {
+        const queryResponse: QueryResponse = cbor.decode(await fetchResponse.arrayBuffer());
+        response = {
+          ...queryResponse,
+          httpDetails: {
+            ok: fetchResponse.ok,
+            status: fetchResponse.status,
+            statusText: fetchResponse.statusText,
+            headers: httpHeadersTransform(fetchResponse.headers),
+          },
+          requestId,
+        };
+      } else {
+        throw new AgentHTTPResponseError(
+          `Server returned an error:\n` +
+            `  Code: ${fetchResponse.status} (${fetchResponse.statusText})\n` +
+            `  Body: ${await fetchResponse.text()}\n`,
+          {
+            ok: fetchResponse.ok,
+            status: fetchResponse.status,
+            statusText: fetchResponse.statusText,
+            headers: httpHeadersTransform(fetchResponse.headers),
+          },
+        );
+      }
     } catch (error) {
       if (tries < this._retryTimes) {
         this.log.warn(
@@ -553,7 +571,12 @@ export class HttpAgent implements Agent {
     fields: QueryFields,
     identity?: Identity | Promise<Identity>,
   ): Promise<ApiQueryResponse> {
-    this.log(`making query to canister ${canisterId} with fields:`, fields);
+    const ecid = fields.effectiveCanisterId
+      ? Principal.from(fields.effectiveCanisterId)
+      : Principal.from(canisterId);
+
+    this.log(`ecid ${ecid.toString()}`);
+    this.log(`canisterId ${canisterId.toString()}`);
     const makeQuery = async () => {
       const id = await (identity !== undefined ? await identity : await this._identity);
       if (!id) {
@@ -597,6 +620,7 @@ export class HttpAgent implements Agent {
 
       const args = {
         canister: canister.toText(),
+        ecid,
         transformedRequest,
         body,
         requestId,
@@ -609,12 +633,12 @@ export class HttpAgent implements Agent {
       if (!this.#verifyQuerySignatures) {
         return undefined;
       }
-      const subnetStatus = this.#subnetKeys.get(canisterId.toString());
+      const subnetStatus = this.#subnetKeys.get(ecid.toString());
       if (subnetStatus) {
         return subnetStatus;
       }
-      await this.fetchSubnetKeys(canisterId.toString());
-      return this.#subnetKeys.get(canisterId.toString());
+      await this.fetchSubnetKeys(ecid.toString());
+      return this.#subnetKeys.get(ecid.toString());
     };
     // Attempt to make the query i=retryTimes times
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -633,7 +657,7 @@ export class HttpAgent implements Agent {
       // In case the node signatures have changed, refresh the subnet keys and try again
       this.log.warn('Query response verification failed. Retrying with fresh subnet keys.');
       this.#subnetKeys.delete(canisterId.toString());
-      await this.fetchSubnetKeys(canisterId.toString());
+      await this.fetchSubnetKeys(ecid.toString());
 
       const updatedSubnetStatus = this.#subnetKeys.get(canisterId.toString());
       if (!updatedSubnetStatus) {
@@ -767,6 +791,10 @@ export class HttpAgent implements Agent {
     const transformedRequest = request ?? (await this.createReadStateRequest(fields, identity));
     const body = cbor.encode(transformedRequest.body);
 
+    this.log(
+      `fetching "/api/v2/canister/${canister}/read_state" with request:`,
+      transformedRequest,
+    );
     // TODO - https://dfinity.atlassian.net/browse/SDK-1092
     const response = await this._requestAndRetry(() =>
       this._fetch('' + new URL(`/api/v2/canister/${canister}/read_state`, this._host), {
@@ -858,6 +886,7 @@ export class HttpAgent implements Agent {
         }
       : {};
 
+    this.log(`fetching "/api/v2/status"`);
     const response = await this._requestAndRetry(() =>
       this._fetch('' + new URL(`/api/v2/status`, this._host), { headers, ...this._fetchOptions }),
     );
