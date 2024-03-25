@@ -122,7 +122,7 @@ function isBufferEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
   return true;
 }
 
-type VerifyFunc = (pk: Uint8Array, sig: Uint8Array, msg: Uint8Array) => Promise<boolean>;
+type VerifyFunc = (pk: Uint8Array, sig: Uint8Array, msg: Uint8Array) => Promise<boolean> | boolean;
 
 export interface CreateCertificateOptions {
   /**

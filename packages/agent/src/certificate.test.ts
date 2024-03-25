@@ -183,6 +183,7 @@ test('delegation works for canisters within the subnet range', async () => {
         certificate: fromHex(SAMPLE_CERT),
         rootKey: fromHex(IC_ROOT_KEY),
         canisterId: canisterId,
+        blsVerify: async () => true,
       }),
     ).resolves.not.toThrow();
   }
@@ -242,6 +243,7 @@ test('certificate verification fails if the time of the certificate is > 5 minut
       certificate: badCertEncoded,
       rootKey: fromHex(IC_ROOT_KEY),
       canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
+      blsVerify: async () => true,
     }),
   ).rejects.toThrow('Invalid certificate: Certificate is signed more than 5 minutes in the past');
 });
@@ -257,6 +259,7 @@ test('certificate verification fails if the time of the certificate is > 5 minut
       certificate: badCertEncoded,
       rootKey: fromHex(IC_ROOT_KEY),
       canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
+      blsVerify: async () => true,
     }),
   ).rejects.toThrow('Invalid certificate: Certificate is signed more than 5 minutes in the future');
 });

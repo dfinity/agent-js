@@ -1,5 +1,7 @@
 # @dfinity/bls-verify
 
+`**Warning** this package is deprecated`
+
 Package wrapping the @noble/bls-12-381 pure JS BLS verification implementation for use in `agent-js`. This is useful in contexts like React Native, where wasm implementations of BLS verification are not supported.
 
 Visit the [Dfinity Forum](https://forum.dfinity.org/) and [SDK Documentation](https://sdk.dfinity.org/docs/index.html) for more information and support building on the Internet Computer.
