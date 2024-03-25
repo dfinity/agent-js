@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.2.0] - 2024-03-25
+
 ### Added
 
 * feat: adds support for verified queries against management canister
