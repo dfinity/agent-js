@@ -36,6 +36,7 @@ const result = await management.bitcoin_get_balance_query({
 
 ### Changed
 
+* chore: npm audit fix
 * feat!: support for restricting II auth methods
     * New login option: `allowPinAuthentication?: boolean;`
     * Response from II includes `authnMethod: 'passkey' | 'pin' | 'recovery';`
