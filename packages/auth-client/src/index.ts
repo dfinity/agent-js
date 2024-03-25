@@ -85,6 +85,12 @@ export interface IdleOptions extends IdleManagerOptions {
 
 export * from './idleManager';
 
+export type OnSuccessFunc =
+  | (() => void | Promise<void>)
+  | ((message: InternetIdentityAuthResponseSuccess) => void | Promise<void>);
+
+export type OnErrorFunc = (error?: string) => void | Promise<void>;
+
 export interface AuthClientLoginOptions {
   /**
    * Identity provider
@@ -96,6 +102,10 @@ export interface AuthClientLoginOptions {
    * @default  BigInt(8) hours * BigInt(3_600_000_000_000) nanoseconds
    */
   maxTimeToLive?: bigint;
+  /**
+   * If present, indicates whether or not the Identity Provider should allow the user to authenticate and/or register using a temporary key/PIN identity. Authenticating dapps may want to prevent users from using Temporary keys/PIN identities because Temporary keys/PIN identities are less secure than Passkeys (webauthn credentials) and because Temporary keys/PIN identities generally only live in a browser database (which may get cleared by the browser/OS).
+   */
+  allowPinAuthentication?: boolean;
   /**
    * Origin for Identity Provider to use while generating the delegated identity. For II, the derivation origin must authorize this origin by setting a record at `<derivation-origin>/.well-known/ii-alternative-origins`.
    * @see https://github.com/dfinity/internet-identity/blob/main/docs/internet-identity-spec.adoc
@@ -109,21 +119,26 @@ export interface AuthClientLoginOptions {
   /**
    * Callback once login has completed
    */
-  onSuccess?: (() => void) | (() => Promise<void>);
+  onSuccess?: OnSuccessFunc;
   /**
    * Callback in case authentication fails
    */
-  onError?: ((error?: string) => void) | ((error?: string) => Promise<void>);
+  onError?: OnErrorFunc;
+  /**
+   * Extra values to be passed in the login request during the authorize-ready phase
+   */
+  customValues?: Record<string, unknown>;
 }
 
 interface InternetIdentityAuthRequest {
   kind: 'authorize-client';
   sessionPublicKey: Uint8Array;
   maxTimeToLive?: bigint;
+  allowPinAuthentication?: boolean;
   derivationOrigin?: string;
 }
 
-interface InternetIdentityAuthResponseSuccess {
+export interface InternetIdentityAuthResponseSuccess {
   kind: 'authorize-client-success';
   delegations: {
     delegation: {
@@ -134,6 +149,7 @@ interface InternetIdentityAuthResponseSuccess {
     signature: Uint8Array;
   }[];
   userPublicKey: Uint8Array;
+  authnMethod: 'passkey' | 'pin' | 'recovery';
 }
 
 interface AuthReadyMessage {
@@ -151,6 +167,7 @@ interface AuthResponseSuccess {
     signature: Uint8Array;
   }[];
   userPublicKey: Uint8Array;
+  authnMethod: 'passkey' | 'pin' | 'recovery';
 }
 
 interface AuthResponseFailure {
@@ -355,7 +372,7 @@ export class AuthClient {
 
   private async _handleSuccess(
     message: InternetIdentityAuthResponseSuccess,
-    onSuccess?: () => void,
+    onSuccess?: OnSuccessFunc,
   ) {
     const delegations = message.delegations.map(signedDelegation => {
       return {
@@ -404,7 +421,7 @@ export class AuthClient {
 
     // onSuccess should be the last thing to do to avoid consumers
     // interfering by navigating or refreshing the page
-    onSuccess?.();
+    onSuccess?.(message);
   }
 
   public getIdentity(): Identity {
@@ -421,6 +438,7 @@ export class AuthClient {
    * @param {AuthClientLoginOptions} options - Options for logging in
    * @param options.identityProvider Identity provider
    * @param options.maxTimeToLive Expiration of the authentication in nanoseconds
+   * @param options.allowPinAuthentication If present, indicates whether or not the Identity Provider should allow the user to authenticate and/or register using a temporary key/PIN identity. Authenticating dapps may want to prevent users from using Temporary keys/PIN identities because Temporary keys/PIN identities are less secure than Passkeys (webauthn credentials) and because Temporary keys/PIN identities generally only live in a browser database (which may get cleared by the browser/OS).
    * @param options.derivationOrigin Origin for Identity Provider to use while generating the delegated identity
    * @param options.windowOpenerFeatures Configures the opened authentication window
    * @param options.onSuccess Callback once login has completed
@@ -439,36 +457,7 @@ export class AuthClient {
    *  }
    * });
    */
-  public async login(options?: {
-    /**
-     * Identity provider
-     * @default "https://identity.ic0.app"
-     */
-    identityProvider?: string | URL;
-    /**
-     * Expiration of the authentication in nanoseconds
-     * @default  BigInt(8) hours * BigInt(3_600_000_000_000) nanoseconds
-     */
-    maxTimeToLive?: bigint;
-    /**
-     * Auth Window feature config string
-     * @example "toolbar=0,location=0,menubar=0,width=500,height=500,left=100,top=100"
-     */
-    /**
-     * Origin for Identity Provider to use while generating the delegated identity. For II, the derivation origin must authorize this origin by setting a record at `<derivation-origin>/.well-known/ii-alternative-origins`.
-     * @see https://github.com/dfinity/internet-identity/blob/main/docs/internet-identity-spec.adoc
-     */
-    derivationOrigin?: string | URL;
-    windowOpenerFeatures?: string;
-    /**
-     * Callback once login has completed
-     */
-    onSuccess?: (() => void) | (() => Promise<void>);
-    /**
-     * Callback in case authentication fails
-     */
-    onError?: ((error?: string) => void) | ((error?: string) => Promise<void>);
-  }): Promise<void> {
+  public async login(options?: AuthClientLoginOptions): Promise<void> {
     // Set default maxTimeToLive to 8 hours
     const defaultTimeToLive = /* hours */ BigInt(8) * /* nanoseconds */ BigInt(3_600_000_000_000);
 
@@ -528,7 +517,10 @@ export class AuthClient {
             kind: 'authorize-client',
             sessionPublicKey: new Uint8Array(this._key?.getPublicKey().toDer() as ArrayBuffer),
             maxTimeToLive: options?.maxTimeToLive,
+            allowPinAuthentication: options?.allowPinAuthentication,
             derivationOrigin: options?.derivationOrigin?.toString(),
+            // Pass any custom values to the IDP.
+            ...options?.customValues,
           };
           this._idpWindow?.postMessage(request, identityProviderUrl.origin);
           break;
