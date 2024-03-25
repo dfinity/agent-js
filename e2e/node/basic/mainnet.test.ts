@@ -1,4 +1,11 @@
-import { Actor, AnonymousIdentity, HttpAgent, Identity, CanisterStatus } from '@dfinity/agent';
+import {
+  Actor,
+  AnonymousIdentity,
+  HttpAgent,
+  Identity,
+  CanisterStatus,
+  getManagementCanister,
+} from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
@@ -159,5 +166,23 @@ describe('controllers', () => {
     expect((status.get('controllers') as Principal[]).map(p => p.toText())).toMatchInlineSnapshot(`
     []
   `);
+  });
+});
+
+describe('bitcoin query', async () => {
+  it('should return the balance of a bitcoin address', async () => {
+    // TODO - verify node signature for bitcoin once supported
+    const agent = await makeAgent({ host: 'https://icp-api.io', verifyQuerySignatures: false });
+    const management = getManagementCanister({
+      agent,
+    });
+
+    const result = await management.bitcoin_get_balance_query({
+      address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+      network: { mainnet: null },
+      min_confirmations: [6],
+    });
+    console.log(`balance for address: ${result}`);
+    expect(result).toBeGreaterThan(0n);
   });
 });

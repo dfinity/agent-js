@@ -88,6 +88,11 @@ export interface QueryFields {
    * A binary encoded argument. This is already encoded and will be sent as is.
    */
   arg: ArrayBuffer;
+
+  /**
+   * Overrides canister id for path to fetch. This is used for management canister calls.
+   */
+  effectiveCanisterId?: Principal;
 }
 
 /**

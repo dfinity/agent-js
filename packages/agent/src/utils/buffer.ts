@@ -93,6 +93,7 @@ export function bufFromBufLike(
     | ArrayBufferView
     | ArrayBufferLike
     | [number]
+    | number[]
     | { buffer: ArrayBuffer },
 ): ArrayBuffer {
   if (bufLike instanceof Uint8Array) {

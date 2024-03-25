@@ -278,6 +278,8 @@ export class Actor {
           compute_allocation: settings.compute_allocation ? [settings.compute_allocation] : [],
           freezing_threshold: settings.freezing_threshold ? [settings.freezing_threshold] : [],
           memory_allocation: settings.memory_allocation ? [settings.memory_allocation] : [],
+          reserved_cycles_limit: [],
+          log_visibility: [],
         },
       ];
     }
@@ -429,7 +431,11 @@ function _createActorMethod(
       const cid = Principal.from(options.canisterId || actor[metadataSymbol].config.canisterId);
       const arg = IDL.encode(func.argTypes, args);
 
-      const result = await agent.query(cid, { methodName, arg });
+      const result = await agent.query(cid, {
+        methodName,
+        arg,
+        effectiveCanisterId: options.effectiveCanisterId,
+      });
 
       switch (result.status) {
         case QueryResponseStatus.Rejected:
@@ -517,6 +523,9 @@ export function getManagementCanister(config: CallConfig): ActorSubclass<Managem
     _methodName: string,
     args: Record<string, unknown> & { canister_id: string }[],
   ) {
+    if (config.effectiveCanisterId) {
+      return { effectiveCanisterId: Principal.from(config.effectiveCanisterId) };
+    }
     const first = args[0];
     let effectiveCanisterId = Principal.fromHex('');
     if (first && typeof first === 'object' && first.canister_id) {

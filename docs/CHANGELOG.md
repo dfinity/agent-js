@@ -2,6 +2,46 @@
 
 ## [Unreleased]
 
+### Added
+
+* feat: adds support for verified queries against management canister
+  * includes support for `fetch_canister_logs` in the actor provided by `getManagementCanister`
+  * also includes support for bitcoin queries
+
+Logging
+
+```ts
+// Agent should not use an anonymous identity for this call, and should ideally be a canister controller
+const management = await getManagementCanister({ agent });
+const logs = await management.fetch_canister_logs({ canister_id: canisterId });
+```
+
+Bitcoin
+
+```ts
+// For now, the verifyQuerySignatures option must be set to false
+const agent = await makeAgent({ host: 'https://icp-api.io', verifyQuerySignatures: false });
+const management = getManagementCanister({
+    agent
+});
+
+const result = await management.bitcoin_get_balance_query({
+    address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+    network: { mainnet: null },
+    min_confirmations: [6],
+});
+```
+
+### Changed
+
+* fix: pads date numbers in changelog automation. E.G. 2024-3-1 -> 2024-03-01
+* feat: allow passing `DBCreateOptions` to `IdbStorage` constructor
+* updated management canister interface
+
+## [1.1.1] - 2024-03-19
+
+* fix: work around `PublicKeyCredential` not being enumerable
+
 ## [1.1.0] - 2024-03-18
 
 ### Added
