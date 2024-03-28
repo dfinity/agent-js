@@ -4,7 +4,7 @@
 
 ### Changed
 
-- feat: make `IdbStorage` `get` and `set` methods generic
+- feat: make `IdbStorage` `get/set` methods generic
 
 ## [1.2.0] - 2024-03-25
 
