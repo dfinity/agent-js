@@ -35,6 +35,7 @@ import { ExpirableMap } from '../../utils/expirableMap';
 import { Ed25519PublicKey } from '../../public_key';
 import { decodeTime } from '../../utils/leb';
 import { ObservableLog } from '../../observable';
+import { BackoffStrategy, delayWithStrategy, exponentialBackoff } from '../../polling/strategy';
 
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
@@ -125,6 +126,10 @@ export interface HttpAgentOptions {
    */
   retryTimes?: number;
   /**
+   * The fetch implementation to use. Defaults to the global fetch function.
+   */
+  delayStrategy?: BackoffStrategy;
+  /**
    * Whether the agent should verify signatures signed by node keys on query responses. Increases security, but adds overhead and must make a separate request to cache the node keys for the canister's subnet.
    * @default true
    */
@@ -190,6 +195,7 @@ export class HttpAgent implements Agent {
   private readonly _credentials: string | undefined;
   private _rootKeyFetched = false;
   private readonly _retryTimes; // Retry requests N times before erroring by default
+  #delayStrategy: BackoffStrategy;
   public readonly _isAgent = true;
 
   // The UTC time in milliseconds when the latest request was made
@@ -270,6 +276,8 @@ export class HttpAgent implements Agent {
     }
     // Default is 3
     this._retryTimes = options.retryTimes ?? 3;
+    // Delay strategy for retries. Default is exponential backoff
+    this.#delayStrategy = options.delayStrategy ?? exponentialBackoff;
     // Rewrite to avoid redirects
     if (this._host.hostname.endsWith(IC0_SUB_DOMAIN)) {
       this._host.hostname = IC0_DOMAIN;
@@ -439,6 +447,9 @@ export class HttpAgent implements Agent {
     tries = 0,
   ): Promise<ApiQueryResponse> {
     const { ecid, transformedRequest, body, requestId } = args;
+
+    await delayWithStrategy(tries, this.#delayStrategy);
+
     let response: ApiQueryResponse;
     // Make the request and retry if it throws an error
     try {
@@ -529,6 +540,9 @@ export class HttpAgent implements Agent {
   }
 
   private async _requestAndRetry(request: () => Promise<Response>, tries = 0): Promise<Response> {
+    // Delay the request by the exponential backoff strategy
+    await delayWithStrategy(tries, this.#delayStrategy);
+
     let response: Response;
     try {
       response = await request();
@@ -641,7 +655,6 @@ export class HttpAgent implements Agent {
       return this.#subnetKeys.get(ecid.toString());
     };
     // Attempt to make the query i=retryTimes times
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     // Make query and fetch subnet keys in parallel
     const [query, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
 

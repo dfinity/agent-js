@@ -135,3 +135,33 @@ export function chain(...strategies: PollStrategy[]): PollStrategy {
     }
   };
 }
+
+
+export type Delay = number;
+export type BackoffStrategy = (retryCount: number) => Delay;
+
+/**
+ * An exponential backoff strategy.
+ * @param iterations The number of retries that have been done.
+ */
+export function exponentialBackoff(iterations: number): Delay {
+  if (iterations === 0) {
+    return 0;
+  }
+  return 2 ** iterations * 150;
+}
+
+/**
+ * Delays the execution of the function by a certain amount of time.
+ * @param iterations The number of retries that have been done.
+ * @param delayStrategy The backoff strategy to use.
+ */
+export async function delayWithStrategy(
+  iterations = 0,
+  delayStrategy: BackoffStrategy = exponentialBackoff,
+): Promise<void> {
+  const delay = delayStrategy(iterations);
+  if (delay > 0) {
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+}

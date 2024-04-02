@@ -24,6 +24,8 @@ afterEach(() => {
   global.Date.now = originalDateNowFn;
 });
 
+
+jest.setTimeout(30000);
 describe('makeActor', () => {
   // TODO: update tests to be compatible with changes to Certificate
   it.skip('should encode calls', async () => {
@@ -133,7 +135,7 @@ describe('makeActor', () => {
 
     const expectedCallRequestId = await requestIdOf(expectedCallRequest.content);
 
-    const httpAgent = new HttpAgent({ fetch: mockFetch });
+    const httpAgent = new HttpAgent({ fetch: mockFetch, retryTimes: 0 });
 
     const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
     const reply = await actor.greet(argValue);
@@ -274,6 +276,7 @@ describe('makeActor', () => {
       fetch: mockFetch,
       host: 'http://127.0.0.1',
       verifyQuerySignatures: false,
+      retryTimes: 0,
     });
     const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
     const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
@@ -313,7 +316,7 @@ describe('makeActor', () => {
         greet: IDL.Func([IDL.Text], [IDL.Text]),
       });
     };
-    const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://127.0.0.1' });
+    const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://127.0.0.1', retryTimes: 0 });
     const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
     const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
 
@@ -328,7 +331,7 @@ describe('makeActor', () => {
     }
   });
   it('should throw a helpful error if the canisterId is not set', async () => {
-    const httpAgent = new HttpAgent({ host: 'http://127.0.0.1' });
+    const httpAgent = new HttpAgent({ host: 'http://127.0.0.1', retryTimes: 0 });
     const actorInterface = () => {
       return IDL.Service({
         greet: IDL.Func([IDL.Text], [IDL.Text]),
