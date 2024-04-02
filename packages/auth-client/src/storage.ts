@@ -102,13 +102,13 @@ export class IdbStorage implements AuthClientStorage {
     });
   }
 
-  public async get(key: string): Promise<string | null> {
+  public async get<T = string>(key: string): Promise<T | null> {
     const db = await this._db;
-    return await db.get<string>(key);
+    return await db.get<T>(key);
     // return (await db.get<string>(key)) ?? null;
   }
 
-  public async set(key: string, value: string): Promise<void> {
+  public async set<T = string>(key: string, value: T): Promise<void> {
     const db = await this._db;
     await db.set(key, value);
   }
