@@ -126,9 +126,9 @@ export interface HttpAgentOptions {
    */
   retryTimes?: number;
   /**
-   * The fetch implementation to use. Defaults to the global fetch function.
+   * The strategy to use for backoff when retrying requests
    */
-  delayStrategy?: BackoffStrategy;
+  backoffStrategy?: BackoffStrategy;
   /**
    * Whether the agent should verify signatures signed by node keys on query responses. Increases security, but adds overhead and must make a separate request to cache the node keys for the canister's subnet.
    * @default true
@@ -195,7 +195,7 @@ export class HttpAgent implements Agent {
   private readonly _credentials: string | undefined;
   private _rootKeyFetched = false;
   private readonly _retryTimes; // Retry requests N times before erroring by default
-  #delayStrategy: BackoffStrategy;
+  #backoffStrategy: BackoffStrategy;
   public readonly _isAgent = true;
 
   // The UTC time in milliseconds when the latest request was made
@@ -277,7 +277,7 @@ export class HttpAgent implements Agent {
     // Default is 3
     this._retryTimes = options.retryTimes ?? 3;
     // Delay strategy for retries. Default is exponential backoff
-    this.#delayStrategy = options.delayStrategy ?? exponentialBackoff;
+    this.#backoffStrategy = options.backoffStrategy ?? exponentialBackoff;
     // Rewrite to avoid redirects
     if (this._host.hostname.endsWith(IC0_SUB_DOMAIN)) {
       this._host.hostname = IC0_DOMAIN;
@@ -448,7 +448,7 @@ export class HttpAgent implements Agent {
   ): Promise<ApiQueryResponse> {
     const { ecid, transformedRequest, body, requestId } = args;
 
-    await delayWithStrategy(tries, this.#delayStrategy);
+    await delayWithStrategy(tries, this.#backoffStrategy);
 
     let response: ApiQueryResponse;
     // Make the request and retry if it throws an error
@@ -541,7 +541,7 @@ export class HttpAgent implements Agent {
 
   private async _requestAndRetry(request: () => Promise<Response>, tries = 0): Promise<Response> {
     // Delay the request by the exponential backoff strategy
-    await delayWithStrategy(tries, this.#delayStrategy);
+    await delayWithStrategy(tries, this.#backoffStrategy);
 
     let response: Response;
     try {
