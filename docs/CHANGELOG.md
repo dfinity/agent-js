@@ -9,6 +9,7 @@
 ### Added
 
 * new `HttpAgent` option: `backoffStrategy` - allows you to set a custom delay strategy for retries. The default is a newly exported `exponentialBackoff`, but you can pass your own function to customize the delay between retries.
+- feat: make `IdbStorage` `get/set` methods generic
 
 ## [1.2.0] - 2024-03-25
 
