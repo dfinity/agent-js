@@ -23,7 +23,7 @@ test('simulate fetching a Candid interface', async () => {
     fetch: mockFetch,
     host: 'http://127.0.0.1',
     verifyQuerySignatures: false,
-    retryTimes: 0,
+    backoffStrategy: () => async () => {},
   });
 
   const candid = await fetchCandid('ryjl3-tyaaa-aaaaa-aaaba-cai', agent);

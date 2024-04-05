@@ -35,8 +35,7 @@ import { ExpirableMap } from '../../utils/expirableMap';
 import { Ed25519PublicKey } from '../../public_key';
 import { decodeTime } from '../../utils/leb';
 import { ObservableLog } from '../../observable';
-import { BackoffStrategy, delayWithStrategy, exponentialBackoff } from '../../polling/strategy';
-
+import { BackoffStrategy, BackoffStrategyFactory, ExponentialBackoff } from '../../polling/backoff';
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
 
@@ -128,7 +127,7 @@ export interface HttpAgentOptions {
   /**
    * The strategy to use for backoff when retrying requests
    */
-  backoffStrategy?: BackoffStrategy;
+  backoffStrategy?: BackoffStrategyFactory;
   /**
    * Whether the agent should verify signatures signed by node keys on query responses. Increases security, but adds overhead and must make a separate request to cache the node keys for the canister's subnet.
    * @default true
@@ -195,7 +194,7 @@ export class HttpAgent implements Agent {
   private readonly _credentials: string | undefined;
   private _rootKeyFetched = false;
   private readonly _retryTimes; // Retry requests N times before erroring by default
-  #backoffStrategy: BackoffStrategy;
+  #backoffStrategy: BackoffStrategyFactory;
   public readonly _isAgent = true;
 
   // The UTC time in milliseconds when the latest request was made
@@ -277,7 +276,11 @@ export class HttpAgent implements Agent {
     // Default is 3
     this._retryTimes = options.retryTimes ?? 3;
     // Delay strategy for retries. Default is exponential backoff
-    this.#backoffStrategy = options.backoffStrategy ?? exponentialBackoff;
+    const defaultBackoffFactory = () =>
+      new ExponentialBackoff({
+        maxIterations: this._retryTimes,
+      });
+    this.#backoffStrategy = options.backoffStrategy ?? defaultBackoffFactory;
     // Rewrite to avoid redirects
     if (this._host.hostname.endsWith(IC0_SUB_DOMAIN)) {
       this._host.hostname = IC0_DOMAIN;
@@ -410,13 +413,16 @@ export class HttpAgent implements Agent {
 
     // Run both in parallel. The fetch is quite expensive, so we have plenty of time to
     // calculate the requestId locally.
-    const request = this._requestAndRetry(() =>
-      this._fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this._host), {
-        ...this._callOptions,
-        ...transformedRequest.request,
-        body,
-      }),
-    );
+    const backoff = this.#backoffStrategy();
+    const request = this.#requestAndRetry({
+      request: () =>
+        this._fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this._host), {
+          ...this._callOptions,
+          ...transformedRequest.request,
+          body,
+        }),
+      backoff,
+    });
 
     const [response, requestId] = await Promise.all([request, requestIdOf(submit)]);
 
@@ -443,12 +449,21 @@ export class HttpAgent implements Agent {
       transformedRequest: HttpAgentRequest;
       body: ArrayBuffer;
       requestId: RequestId;
+      backoff: BackoffStrategy;
     },
     tries = 0,
   ): Promise<ApiQueryResponse> {
-    const { ecid, transformedRequest, body, requestId } = args;
+    const { ecid, transformedRequest, body, requestId, backoff } = args;
 
-    await delayWithStrategy(tries, this.#backoffStrategy);
+    const delay = backoff.next();
+
+    if (delay === null) {
+      throw new AgentError(
+        `Timestamp failed to pass the watermark after retrying the configured ${this._retryTimes} times. We cannot guarantee the integrity of the response since it could be a replay attack.`,
+      );
+    }
+
+    await new Promise(resolve => setTimeout(resolve, delay));
 
     let response: ApiQueryResponse;
     // Make the request and retry if it throws an error
@@ -526,36 +541,40 @@ export class HttpAgent implements Agent {
         timestamp,
         waterMark: this.waterMark,
       });
-      if (tries < this._retryTimes) {
-        return await this.#requestAndRetryQuery(args, tries + 1);
-      }
-      {
-        throw new AgentError(
-          `Timestamp failed to pass the watermark after retrying the configured ${this._retryTimes} times. We cannot guarantee the integrity of the response since it could be a replay attack.`,
-        );
-      }
     }
 
     return response;
   }
 
-  private async _requestAndRetry(request: () => Promise<Response>, tries = 0): Promise<Response> {
-    // Delay the request by the exponential backoff strategy
-    await delayWithStrategy(tries, this.#backoffStrategy);
+  async #requestAndRetry(args: {
+    request: () => Promise<Response>;
+    backoff: BackoffStrategy;
+  }): Promise<Response> {
+    const { request, backoff } = args;
+    const delay = backoff.next();
+    const count = backoff.count;
+    backoff.ellapsedTimeInMsec? backoff.ellapsedTimeInMsec / 1_000: null; //?
+    count; //?
 
     let response: Response;
     try {
       response = await request();
     } catch (error) {
-      if (this._retryTimes > tries) {
-        this.log.warn(
-          `Caught exception while attempting to make request:\n` +
-            `  ${error}\n` +
-            `  Retrying request.`,
+      // Delay the request by the configured backoff strategy
+
+      if (delay === null) {
+        throw new AgentError(
+          `Timestamp failed to pass the watermark after retrying the configured ${this._retryTimes} times. We cannot guarantee the integrity of the response since it could be a replay attack.`,
         );
-        return await this._requestAndRetry(request, tries + 1);
       }
-      throw error;
+      await new Promise(resolve => setTimeout(resolve, delay));
+
+      this.log.warn(
+        `Caught exception while attempting to make request:\n` +
+          `  ${error}\n` +
+          `  Retrying request.`,
+      );
+      return await this.#requestAndRetry({ request, backoff });
     }
     if (response.ok) {
       return response;
@@ -567,17 +586,17 @@ export class HttpAgent implements Agent {
       `  Code: ${response.status} (${response.statusText})\n` +
       `  Body: ${responseText}\n`;
 
-    if (this._retryTimes > tries) {
-      this.log.warn(errorMessage + `  Retrying request.`);
-      return await this._requestAndRetry(request, tries + 1);
+    if (delay === null) {
+      throw new AgentHTTPResponseError(errorMessage, {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        headers: httpHeadersTransform(response.headers),
+      });
     }
 
-    throw new AgentHTTPResponseError(errorMessage, {
-      ok: response.ok,
-      status: response.status,
-      statusText: response.statusText,
-      headers: httpHeadersTransform(response.headers),
-    });
+    this.log.warn(errorMessage + `  Retrying request.`);
+    return await this.#requestAndRetry({ request, backoff });
   }
 
   public async query(
@@ -585,6 +604,8 @@ export class HttpAgent implements Agent {
     fields: QueryFields,
     identity?: Identity | Promise<Identity>,
   ): Promise<ApiQueryResponse> {
+    const backoff = this.#backoffStrategy();
+
     const ecid = fields.effectiveCanisterId
       ? Principal.from(fields.effectiveCanisterId)
       : Principal.from(canisterId);
@@ -638,6 +659,7 @@ export class HttpAgent implements Agent {
         transformedRequest,
         body,
         requestId,
+        backoff,
       };
 
       return await this.#requestAndRetryQuery(args);
@@ -809,13 +831,20 @@ export class HttpAgent implements Agent {
       transformedRequest,
     );
     // TODO - https://dfinity.atlassian.net/browse/SDK-1092
-    const response = await this._requestAndRetry(() =>
-      this._fetch('' + new URL(`/api/v2/canister/${canister}/read_state`, this._host), {
-        ...this._fetchOptions,
-        ...transformedRequest.request,
-        body,
-      }),
-    );
+    const backoff = this.#backoffStrategy();
+
+    const response = await this.#requestAndRetry({
+      request: () =>
+        this._fetch(
+          '' + new URL(`/api/v2/canister/${canister.toString()}/read_state`, this._host),
+          {
+            ...this._fetchOptions,
+            ...transformedRequest.request,
+            body,
+          },
+        ),
+      backoff,
+    });
 
     if (!response.ok) {
       throw new Error(
@@ -900,10 +929,12 @@ export class HttpAgent implements Agent {
       : {};
 
     this.log(`fetching "/api/v2/status"`);
-    const response = await this._requestAndRetry(() =>
-      this._fetch('' + new URL(`/api/v2/status`, this._host), { headers, ...this._fetchOptions }),
-    );
-
+    const backoff = this.#backoffStrategy();
+    const response = await this.#requestAndRetry({
+      backoff,
+      request: () =>
+        this._fetch('' + new URL(`/api/v2/status`, this._host), { headers, ...this._fetchOptions }),
+    });
     return cbor.decode(await response.arrayBuffer());
   }
 
