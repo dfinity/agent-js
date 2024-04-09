@@ -103,6 +103,7 @@ export class ExponentialBackoff {
   }
 
   public next() {
+    this.#maxIterations; //?
     if (this.ellapsedTimeInMsec >= this.#maxElapsedTime || this.#count >= this.#maxIterations) {
       return null;
     } else {

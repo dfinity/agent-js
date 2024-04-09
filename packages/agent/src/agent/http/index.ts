@@ -552,9 +552,6 @@ export class HttpAgent implements Agent {
   }): Promise<Response> {
     const { request, backoff } = args;
     const delay = backoff.next();
-    const count = backoff.count;
-    backoff.ellapsedTimeInMsec? backoff.ellapsedTimeInMsec / 1_000: null; //?
-    count; //?
 
     let response: Response;
     try {

@@ -17,7 +17,7 @@ import { AnonymousIdentity, SignIdentity, toHex } from '../..';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { AgentError } from '../../errors';
 import { AgentHTTPResponseError } from './errors';
-import { ExponentialBackoff, FixedBackoff } from '../../polling/backoff';
+import { ExponentialBackoff } from '../../polling/backoff';
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;
@@ -780,8 +780,8 @@ describe('default host', () => {
   });
 });
 
-jest.setTimeout(10000);
-test.only('retry requests that fail due to a network failure', async () => {
+test('retry requests that fail due to a network failure', async () => {
+  jest.useRealTimers();
   const mockFetch: jest.Mock = jest.fn(() => {
     throw new Error('Network failure');
   });

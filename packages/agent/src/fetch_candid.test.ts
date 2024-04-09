@@ -3,6 +3,7 @@ import { IDL } from '@dfinity/candid';
 import * as cbor from './cbor';
 
 test('simulate fetching a Candid interface', async () => {
+  jest.useRealTimers();
   const mockFetch = jest.fn().mockImplementation((/*resource, init*/) => {
     return Promise.resolve(
       new Response(
@@ -23,7 +24,11 @@ test('simulate fetching a Candid interface', async () => {
     fetch: mockFetch,
     host: 'http://127.0.0.1',
     verifyQuerySignatures: false,
-    backoffStrategy: () => async () => {},
+    backoffStrategy: () => {
+      return {
+        next: () => 0,
+      };
+    },
   });
 
   const candid = await fetchCandid('ryjl3-tyaaa-aaaaa-aaaba-cai', agent);

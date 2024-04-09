@@ -230,6 +230,7 @@ describe('makeActor', () => {
     });
   });
   it('should enrich actor interface with httpDetails', async () => {
+    jest.useRealTimers();
     const canisterDecodedReturnValue = 'Hello, World!';
     const expectedReplyArg = IDL.encode([IDL.Text], [canisterDecodedReturnValue]);
     const { Actor } = await importActor(() =>
@@ -276,6 +277,11 @@ describe('makeActor', () => {
       fetch: mockFetch,
       host: 'http://127.0.0.1',
       verifyQuerySignatures: false,
+      backoffStrategy: () => {
+        return {
+          next: () => 0,
+        };
+      },
       retryTimes: 0,
     });
     const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
