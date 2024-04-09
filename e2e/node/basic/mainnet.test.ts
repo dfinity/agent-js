@@ -31,12 +31,13 @@ const createWhoamiActor = async (identity: Identity) => {
 };
 
 describe('certified query', () => {
+  vi.useRealTimers();
   it('should verify a query certificate', async () => {
     const actor = await createWhoamiActor(new AnonymousIdentity());
 
     const result = await actor.whoami();
     expect(Principal.from(result)).toBeInstanceOf(Principal);
-  }, 100_000);
+  }, 10_000);
   it('should verify lots of query certificates', async () => {
     let count = 1;
     const identities = Array.from({ length: 20 }).map(() => {

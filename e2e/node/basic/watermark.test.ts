@@ -82,12 +82,19 @@ test('replay queries only', async () => {
 }, 10_000);
 
 test('replay attack', async () => {
+  vi.useRealTimers();
   const fetchProxy = new FetchProxy();
   global.fetch;
 
   const actor = await createActor({
     verifyQuerySignatures: true,
     fetch: fetchProxy.fetch.bind(fetchProxy),
+    retryTimes: 3,
+    backoffStrategy: () => {
+      return {
+        next: () => 0,
+      };
+    },
   });
 
   const agent = Actor.agentOf(actor) as HttpAgent;

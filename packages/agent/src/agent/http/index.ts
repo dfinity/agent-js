@@ -443,16 +443,13 @@ export class HttpAgent implements Agent {
     };
   }
 
-  async #requestAndRetryQuery(
-    args: {
-      ecid: Principal;
-      transformedRequest: HttpAgentRequest;
-      body: ArrayBuffer;
-      requestId: RequestId;
-      backoff: BackoffStrategy;
-    },
-    tries = 0,
-  ): Promise<ApiQueryResponse> {
+  async #requestAndRetryQuery(args: {
+    ecid: Principal;
+    transformedRequest: HttpAgentRequest;
+    body: ArrayBuffer;
+    requestId: RequestId;
+    backoff: BackoffStrategy;
+  }): Promise<ApiQueryResponse> {
     const { ecid, transformedRequest, body, requestId, backoff } = args;
 
     const delay = backoff.next();
@@ -463,7 +460,9 @@ export class HttpAgent implements Agent {
       );
     }
 
-    await new Promise(resolve => setTimeout(resolve, delay));
+    if (delay > 0) {
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
 
     let response: ApiQueryResponse;
     // Make the request and retry if it throws an error
@@ -502,13 +501,13 @@ export class HttpAgent implements Agent {
         );
       }
     } catch (error) {
-      if (tries < this._retryTimes) {
+      if (delay === null) {
         this.log.warn(
           `Caught exception while attempting to make query:\n` +
             `  ${error}\n` +
             `  Retrying query.`,
         );
-        return await this.#requestAndRetryQuery(args, tries + 1);
+        return await this.#requestAndRetryQuery(args);
       }
       throw error;
     }
