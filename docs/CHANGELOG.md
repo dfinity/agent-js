@@ -5,6 +5,10 @@
 ### Changed
 
 - feat: make `IdbStorage` `get/set` methods generic
+- feat!: deprecate `HttpAgent` constructor in favor of new `create` and `createSync` methods.
+  - `create` is async and returns a promise. It will sync time with the replica and fetch the root key if the host is not `https://icp-api.io`
+  - Replaces `source` option with a `from` and `fromSync` methods, similar to `Principal.from`
+
 
 ## [1.2.0] - 2024-03-25
 

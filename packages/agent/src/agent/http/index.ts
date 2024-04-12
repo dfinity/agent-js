@@ -83,10 +83,6 @@ export class IdentityInvalidError extends AgentError {
 
 // HttpAgent options that can be used at construction.
 export interface HttpAgentOptions {
-  // Another HttpAgent to inherit configuration (pipeline and fetch) of. This
-  // is only used at construction.
-  source?: HttpAgent;
-
   // A surrogate to the global fetch function. Useful for testing.
   fetch?: typeof fetch;
 
@@ -170,6 +166,53 @@ function getDefaultFetch(): typeof fetch {
   );
 }
 
+function determineHost(configuredHost: string | undefined): string {
+  let host: URL;
+  if (configuredHost !== undefined) {
+    if (!configuredHost.match(/^[a-z]+:/) && typeof window !== 'undefined') {
+      host = new URL(window.location.protocol + '//' + configuredHost);
+    } else {
+      host = new URL(configuredHost);
+    }
+  } else {
+    // Mainnet, local, and remote environments will have the api route available
+    const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', 'localhost'];
+    const remoteHosts = ['.github.dev', '.gitpod.io'];
+    const location = typeof window !== 'undefined' ? window.location : undefined;
+    const hostname = location?.hostname;
+    let knownHost;
+    if (hostname && typeof hostname === 'string') {
+      if (remoteHosts.some(host => hostname.endsWith(host))) {
+        knownHost = hostname;
+      } else {
+        knownHost = knownHosts.find(host => hostname.endsWith(host));
+      }
+    }
+
+    if (location && knownHost) {
+      // If the user is on a boundary-node provided host, we can use the same host for the agent
+      host = new URL(
+        `${location.protocol}//${knownHost}${location.port ? ':' + location.port : ''}`,
+      );
+    } else {
+      host = new URL('https://icp-api.io');
+    }
+  }
+  return host.toString();
+}
+
+interface V1HttpAgentInterface {
+  _identity: Promise<Identity> | null;
+  readonly _fetch: typeof fetch;
+  readonly _fetchOptions?: Record<string, unknown>;
+  readonly _callOptions?: Record<string, unknown>;
+
+  readonly _host: URL;
+  readonly _credentials: string | undefined;
+  readonly _retryTimes: number; // Retry requests N times before erroring by default
+  _isAgent: true;
+}
+
 // A HTTP agent allows users to interact with a client of the internet computer
 // using the available methods. It exposes an API that closely follows the
 // public view of the internet computer, and is not intended to be exposed
@@ -181,16 +224,19 @@ function getDefaultFetch(): typeof fetch {
 // allowing extensions.
 export class HttpAgent implements Agent {
   public rootKey = fromHex(IC_ROOT_KEY);
-  private _identity: Promise<Identity> | null;
-  private readonly _fetch: typeof fetch;
-  private readonly _fetchOptions?: Record<string, unknown>;
-  private readonly _callOptions?: Record<string, unknown>;
-  private _timeDiffMsecs = 0;
-  private readonly _host: URL;
-  private readonly _credentials: string | undefined;
-  private _rootKeyFetched = false;
-  private readonly _retryTimes; // Retry requests N times before erroring by default
+  #identity: Promise<Identity> | null;
+  readonly #fetch: typeof fetch;
+  readonly #fetchOptions?: Record<string, unknown>;
+  readonly #callOptions?: Record<string, unknown>;
+  #timeDiffMsecs = 0;
+  readonly host: URL;
+  readonly #credentials: string | undefined;
+  #rootKeyFetched = false;
+  readonly #retryTimes; // Retry requests N times before erroring by default
+
+  // Public signature to help with type checking.
   public readonly _isAgent = true;
+  public config: HttpAgentOptions = {};
 
   // The UTC time in milliseconds when the latest request was made
   #waterMark = 0;
@@ -209,81 +255,38 @@ export class HttpAgent implements Agent {
   });
   #verifyQuerySignatures = true;
 
+  /**
+   * @deprecated Use HttpAgent.create() instead
+   * @param options - Options for the HttpAgent
+   */
   constructor(options: HttpAgentOptions = {}) {
-    if (options.source) {
-      if (!(options.source instanceof HttpAgent)) {
-        throw new Error("An Agent's source can only be another HttpAgent");
-      }
-      this._identity = options.source._identity;
-      this._fetch = options.source._fetch;
-      this._host = options.source._host;
-      this._credentials = options.source._credentials;
-    } else {
-      this._fetch = options.fetch || getDefaultFetch() || fetch.bind(global);
-      this._fetchOptions = options.fetchOptions;
-      this._callOptions = options.callOptions;
-    }
-    if (options.host !== undefined) {
-      if (!options.host.match(/^[a-z]+:/) && typeof window !== 'undefined') {
-        this._host = new URL(window.location.protocol + '//' + options.host);
-      } else {
-        this._host = new URL(options.host);
-      }
-    } else if (options.source !== undefined) {
-      // Safe to ignore here.
-      this._host = options.source._host;
-    } else {
-      const location = typeof window !== 'undefined' ? window.location : undefined;
-      if (!location) {
-        this._host = new URL('https://icp-api.io');
-        this.log.warn(
-          'Could not infer host from window.location, defaulting to mainnet gateway of https://icp-api.io. Please provide a host to the HttpAgent constructor to avoid this warning.',
-        );
-      }
-      // Mainnet, local, and remote environments will have the api route available
-      const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', 'localhost'];
-      const remoteHosts = ['.github.dev', '.gitpod.io'];
-      const hostname = location?.hostname;
-      let knownHost;
-      if (hostname && typeof hostname === 'string') {
-        if (remoteHosts.some(host => hostname.endsWith(host))) {
-          knownHost = hostname;
-        } else {
-          knownHost = knownHosts.find(host => hostname.endsWith(host));
-        }
-      }
+    this.config = options;
+    this.#fetch = options.fetch || getDefaultFetch() || fetch.bind(global);
+    this.#fetchOptions = options.fetchOptions;
+    this.#callOptions = options.callOptions;
 
-      if (location && knownHost) {
-        // If the user is on a boundary-node provided host, we can use the same host for the agent
-        this._host = new URL(
-          `${location.protocol}//${knownHost}${location.port ? ':' + location.port : ''}`,
-        );
-      } else {
-        this._host = new URL('https://icp-api.io');
-        this.log.warn(
-          'Could not infer host from window.location, defaulting to mainnet gateway of https://icp-api.io. Please provide a host to the HttpAgent constructor to avoid this warning.',
-        );
-      }
-    }
+    const host = determineHost(options.host);
+    this.host = new URL(host);
+
     if (options.verifyQuerySignatures !== undefined) {
       this.#verifyQuerySignatures = options.verifyQuerySignatures;
     }
     // Default is 3
-    this._retryTimes = options.retryTimes ?? 3;
+    this.#retryTimes = options.retryTimes ?? 3;
     // Rewrite to avoid redirects
-    if (this._host.hostname.endsWith(IC0_SUB_DOMAIN)) {
-      this._host.hostname = IC0_DOMAIN;
-    } else if (this._host.hostname.endsWith(ICP0_SUB_DOMAIN)) {
-      this._host.hostname = ICP0_DOMAIN;
-    } else if (this._host.hostname.endsWith(ICP_API_SUB_DOMAIN)) {
-      this._host.hostname = ICP_API_DOMAIN;
+    if (this.host.hostname.endsWith(IC0_SUB_DOMAIN)) {
+      this.host.hostname = IC0_DOMAIN;
+    } else if (this.host.hostname.endsWith(ICP0_SUB_DOMAIN)) {
+      this.host.hostname = ICP0_DOMAIN;
+    } else if (this.host.hostname.endsWith(ICP_API_SUB_DOMAIN)) {
+      this.host.hostname = ICP_API_DOMAIN;
     }
 
     if (options.credentials) {
       const { name, password } = options.credentials;
-      this._credentials = `${name}${password ? ':' + password : ''}`;
+      this.#credentials = `${name}${password ? ':' + password : ''}`;
     }
-    this._identity = Promise.resolve(options.identity || new AnonymousIdentity());
+    this.#identity = Promise.resolve(options.identity || new AnonymousIdentity());
 
     // Add a nonce transform to ensure calls are unique
     this.addTransform('update', makeNonceTransform(makeNonce));
@@ -303,8 +306,45 @@ export class HttpAgent implements Agent {
     }
   }
 
+  public static createSync(options: HttpAgentOptions = {}): HttpAgent {
+    return new HttpAgent({ ...options });
+  }
+
+  public static async create(
+    options: HttpAgentOptions & { shouldFetchRootKey?: boolean } = {
+      shouldFetchRootKey: false,
+    },
+  ): Promise<HttpAgent> {
+    const agent = HttpAgent.createSync(options);
+    const initPromises: Promise<ArrayBuffer | void>[] = [agent.syncTime()];
+    if (agent.host.toString() !== 'https://icp-api.io' && options.shouldFetchRootKey) {
+      initPromises.push(agent.fetchRootKey());
+    }
+    await Promise.all(initPromises);
+    return agent;
+  }
+
+  public static async from(
+    agent: Pick<HttpAgent, 'config'> | V1HttpAgentInterface,
+  ): Promise<HttpAgent> {
+    try {
+      if ('config' in agent) {
+        return await HttpAgent.create(agent.config);
+      }
+      return await HttpAgent.create({
+        fetch: agent._fetch,
+        fetchOptions: agent._fetchOptions,
+        callOptions: agent._callOptions,
+        host: agent._host.toString(),
+        identity: agent._identity ?? undefined,
+      });
+    } catch (error) {
+      throw new AgentError('Failed to create agent from provided agent');
+    }
+  }
+
   public isLocal(): boolean {
-    const hostname = this._host.hostname;
+    const hostname = this.host.hostname;
     return hostname === '127.0.0.1' || hostname.endsWith('127.0.0.1');
   }
 
@@ -333,12 +373,12 @@ export class HttpAgent implements Agent {
   }
 
   public async getPrincipal(): Promise<Principal> {
-    if (!this._identity) {
+    if (!this.#identity) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
       );
     }
-    return (await this._identity).getPrincipal();
+    return (await this.#identity).getPrincipal();
   }
 
   public async call(
@@ -350,7 +390,7 @@ export class HttpAgent implements Agent {
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
-    const id = await (identity !== undefined ? await identity : await this._identity);
+    const id = await(identity !== undefined ? await identity : await this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -366,8 +406,8 @@ export class HttpAgent implements Agent {
     let ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
 
     // If the value is off by more than 30 seconds, reconcile system time with the network
-    if (Math.abs(this._timeDiffMsecs) > 1_000 * 30) {
-      ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS + this._timeDiffMsecs);
+    if (Math.abs(this.#timeDiffMsecs) > 1_000 * 30) {
+      ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS + this.#timeDiffMsecs);
     }
 
     const submit: CallRequest = {
@@ -386,7 +426,7 @@ export class HttpAgent implements Agent {
         method: 'POST',
         headers: {
           'Content-Type': 'application/cbor',
-          ...(this._credentials ? { Authorization: 'Basic ' + btoa(this._credentials) } : {}),
+          ...(this.#credentials ? { Authorization: 'Basic ' + btoa(this.#credentials) } : {}),
         },
       },
       endpoint: Endpoint.Call,
@@ -403,8 +443,8 @@ export class HttpAgent implements Agent {
     // Run both in parallel. The fetch is quite expensive, so we have plenty of time to
     // calculate the requestId locally.
     const request = this._requestAndRetry(() =>
-      this._fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this._host), {
-        ...this._callOptions,
+      this.#fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this.host), {
+        ...this.#callOptions,
         ...transformedRequest.request,
         body,
       }),
@@ -442,10 +482,10 @@ export class HttpAgent implements Agent {
     let response: ApiQueryResponse;
     // Make the request and retry if it throws an error
     try {
-      const fetchResponse = await this._fetch(
-        '' + new URL(`/api/v2/canister/${ecid.toString()}/query`, this._host),
+      const fetchResponse = await this.#fetch(
+        '' + new URL(`/api/v2/canister/${ecid.toString()}/query`, this.host),
         {
-          ...this._fetchOptions,
+          ...this.#fetchOptions,
           ...transformedRequest.request,
           body,
         },
@@ -476,7 +516,7 @@ export class HttpAgent implements Agent {
         );
       }
     } catch (error) {
-      if (tries < this._retryTimes) {
+      if (tries < this.#retryTimes) {
         this.log.warn(
           `Caught exception while attempting to make query:\n` +
             `  ${error}\n` +
@@ -515,12 +555,14 @@ export class HttpAgent implements Agent {
         timestamp,
         waterMark: this.waterMark,
       });
-      if (tries < this._retryTimes) {
+      if (tries < this.#retryTimes) {
         return await this.#requestAndRetryQuery(args, tries + 1);
       }
       {
         throw new AgentError(
-          `Timestamp failed to pass the watermark after retrying the configured ${this._retryTimes} times. We cannot guarantee the integrity of the response since it could be a replay attack.`,
+          `Timestamp failed to pass the watermark after retrying the configured ${
+            this.#retryTimes
+          } times. We cannot guarantee the integrity of the response since it could be a replay attack.`,
         );
       }
     }
@@ -533,7 +575,7 @@ export class HttpAgent implements Agent {
     try {
       response = await request();
     } catch (error) {
-      if (this._retryTimes > tries) {
+      if (this.#retryTimes > tries) {
         this.log.warn(
           `Caught exception while attempting to make request:\n` +
             `  ${error}\n` +
@@ -553,7 +595,7 @@ export class HttpAgent implements Agent {
       `  Code: ${response.status} (${response.statusText})\n` +
       `  Body: ${responseText}\n`;
 
-    if (this._retryTimes > tries) {
+    if (this.#retryTimes > tries) {
       this.log.warn(errorMessage + `  Retrying request.`);
       return await this._requestAndRetry(request, tries + 1);
     }
@@ -578,7 +620,7 @@ export class HttpAgent implements Agent {
     this.log(`ecid ${ecid.toString()}`);
     this.log(`canisterId ${canisterId.toString()}`);
     const makeQuery = async () => {
-      const id = await (identity !== undefined ? await identity : await this._identity);
+      const id = await(identity !== undefined ? await identity : await this.#identity);
       if (!id) {
         throw new IdentityInvalidError(
           "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -606,7 +648,7 @@ export class HttpAgent implements Agent {
           method: 'POST',
           headers: {
             'Content-Type': 'application/cbor',
-            ...(this._credentials ? { Authorization: 'Basic ' + btoa(this._credentials) } : {}),
+            ...(this.#credentials ? { Authorization: 'Basic ' + btoa(this.#credentials) } : {}),
           },
         },
         endpoint: Endpoint.Query,
@@ -748,7 +790,7 @@ export class HttpAgent implements Agent {
     identity?: Identity | Promise<Identity>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<any> {
-    const id = await (identity !== undefined ? await identity : await this._identity);
+    const id = await(identity !== undefined ? await identity : await this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -763,7 +805,7 @@ export class HttpAgent implements Agent {
         method: 'POST',
         headers: {
           'Content-Type': 'application/cbor',
-          ...(this._credentials ? { Authorization: 'Basic ' + btoa(this._credentials) } : {}),
+          ...(this.#credentials ? { Authorization: 'Basic ' + btoa(this.#credentials) } : {}),
         },
       },
       endpoint: Endpoint.ReadState,
@@ -797,8 +839,8 @@ export class HttpAgent implements Agent {
     );
     // TODO - https://dfinity.atlassian.net/browse/SDK-1092
     const response = await this._requestAndRetry(() =>
-      this._fetch('' + new URL(`/api/v2/canister/${canister}/read_state`, this._host), {
-        ...this._fetchOptions,
+      this.#fetch('' + new URL(`/api/v2/canister/${canister}/read_state`, this.host), {
+        ...this.#fetchOptions,
         ...transformedRequest.request,
         body,
       }),
@@ -872,7 +914,7 @@ export class HttpAgent implements Agent {
 
       const replicaTime = status.get('time');
       if (replicaTime) {
-        this._timeDiffMsecs = Number(replicaTime as bigint) - Number(callTime);
+        this.#timeDiffMsecs = Number(replicaTime as bigint) - Number(callTime);
       }
     } catch (error) {
       this.log.error('Caught exception while attempting to sync time', error as AgentError);
@@ -880,35 +922,35 @@ export class HttpAgent implements Agent {
   }
 
   public async status(): Promise<JsonObject> {
-    const headers: Record<string, string> = this._credentials
+    const headers: Record<string, string> = this.#credentials
       ? {
-          Authorization: 'Basic ' + btoa(this._credentials),
+          Authorization: 'Basic ' + btoa(this.#credentials),
         }
       : {};
 
     this.log(`fetching "/api/v2/status"`);
     const response = await this._requestAndRetry(() =>
-      this._fetch('' + new URL(`/api/v2/status`, this._host), { headers, ...this._fetchOptions }),
+      this.#fetch('' + new URL(`/api/v2/status`, this.host), { headers, ...this.#fetchOptions }),
     );
 
     return cbor.decode(await response.arrayBuffer());
   }
 
   public async fetchRootKey(): Promise<ArrayBuffer> {
-    if (!this._rootKeyFetched) {
+    if (!this.#rootKeyFetched) {
       // Hex-encoded version of the replica root key
       this.rootKey = ((await this.status()) as JsonObject & { root_key: ArrayBuffer }).root_key;
-      this._rootKeyFetched = true;
+      this.#rootKeyFetched = true;
     }
     return this.rootKey;
   }
 
   public invalidateIdentity(): void {
-    this._identity = null;
+    this.#identity = null;
   }
 
   public replaceIdentity(identity: Identity): void {
-    this._identity = Promise.resolve(identity);
+    this.#identity = Promise.resolve(identity);
   }
 
   public async fetchSubnetKeys(canisterId: Principal | string) {
