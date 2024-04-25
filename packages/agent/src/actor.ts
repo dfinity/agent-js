@@ -14,7 +14,7 @@ import { pollForResponse, PollStrategyFactory, strategy } from './polling';
 import { Principal } from '@dfinity/principal';
 import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
-import { CreateCertificateOptions } from './certificate';
+import { Certificate, CreateCertificateOptions } from './certificate';
 import managementCanisterIdl from './canisters/management_idl';
 import _SERVICE, { canister_settings } from './canisters/management_service';
 
@@ -102,6 +102,20 @@ export interface CallConfig {
    * The effective canister ID. This should almost always be ignored.
    */
   effectiveCanisterId?: Principal;
+
+  /**
+   * A modifier that makes a call also return a certificate for proving to other
+   * parties that a call was performed and has returned a particular result.
+   *
+   * If set to `true`, the method will return `{ result: <result as usual>, cert: ArrayBuffer }`.
+   * If set to `false` or unset, the method will return `<result as usual>`.
+   *
+   * Only works with update calls. While used with query calls, makes them
+   * return `{ result: <result as usual>, cert: <empty buf> }`.
+   *
+   * TODO: make query calls return replica signature this way
+   */
+  returnCertificate?: boolean;
 }
 
 /**
@@ -144,11 +158,22 @@ export interface ActorConfig extends CallConfig {
 export type ActorSubclass<T = Record<string, ActorMethod>> = Actor & T;
 
 /**
+ * Return type of an actor method with CallConfig passed.
+ * If `CallConfig.returnCertificate` is `true`, returns `{ cert: ArrayBuffer, result: <usual result> }`
+ * If `CallConfig.returnCertificate` is `false`, returns `<usual result>`.
+ */
+type ActorMethodWithOptionsResult<Conf extends CallConfig, Args extends unknown[], Ret> = (
+  ...args: Args
+) => Promise<Conf extends { returnCertificate: true } ? { cert: ArrayBuffer; result: Ret } : Ret>;
+
+/**
  * An actor method type, defined for each methods of the actor service.
  */
 export interface ActorMethod<Args extends unknown[] = unknown[], Ret = unknown> {
   (...args: Args): Promise<Ret>;
-  withOptions(options: CallConfig): (...args: Args) => Promise<Ret>;
+  withOptions<Conf extends CallConfig>(
+    options: Conf,
+  ): ActorMethodWithOptionsResult<Conf, Args, Ret>;
 }
 
 /**
@@ -156,7 +181,11 @@ export interface ActorMethod<Args extends unknown[] = unknown[], Ret = unknown> 
  */
 export interface ActorMethodWithHttpDetails<Args extends unknown[] = unknown[], Ret = unknown>
   extends ActorMethod {
-  (...args: Args): Promise<{ httpDetails: HttpDetailsResponse; result: Ret }>;
+  (...args: Args): Promise<{
+    httpDetails: HttpDetailsResponse;
+    result: Ret;
+    cert: Certificate | undefined;
+  }>;
 }
 
 export type FunctionWithArgsAndReturn<Args extends unknown[] = unknown[], Ret = unknown> = (
@@ -446,6 +475,12 @@ function _createActorMethod(
             ? {
                 httpDetails: result.httpDetails,
                 result: decodeReturnValue(func.retTypes, result.reply.arg),
+                cert: options.returnCertificate ? new ArrayBuffer(0) : undefined,
+              }
+            : options.returnCertificate
+            ? {
+                result: decodeReturnValue(func.retTypes, result.reply.arg),
+                cert: new ArrayBuffer(0),
               }
             : decodeReturnValue(func.retTypes, result.reply.arg);
       }
@@ -481,7 +516,15 @@ function _createActorMethod(
       }
 
       const pollStrategy = pollingStrategyFactory();
-      const responseBytes = await pollForResponse(agent, ecid, requestId, pollStrategy, blsVerify);
+      const [responseBytes, certificate] = await pollForResponse(
+        agent,
+        ecid,
+        requestId,
+        pollStrategy,
+        undefined,
+        blsVerify,
+        true,
+      );
       const shouldIncludeHttpDetails = func.annotations.includes(ACTOR_METHOD_WITH_HTTP_DETAILS);
 
       if (responseBytes !== undefined) {
@@ -489,14 +532,20 @@ function _createActorMethod(
           ? {
               httpDetails: response,
               result: decodeReturnValue(func.retTypes, responseBytes),
+              cert: options.returnCertificate ? certificate : undefined,
             }
+          : options.returnCertificate
+          ? { result: decodeReturnValue(func.retTypes, responseBytes), cert: certificate }
           : decodeReturnValue(func.retTypes, responseBytes);
       } else if (func.retTypes.length === 0) {
         return shouldIncludeHttpDetails
           ? {
               httpDetails: response,
               result: undefined,
+              cert: options.returnCertificate ? certificate : undefined,
             }
+          : options.returnCertificate
+          ? { result: undefined, cert: certificate }
           : undefined;
       } else {
         throw new Error(`Call was returned undefined, but type [${func.retTypes.join(',')}].`);
@@ -509,6 +558,7 @@ function _createActorMethod(
     (options: CallConfig) =>
     (...args: unknown[]) =>
       caller(options, ...args);
+
   return handler as ActorMethod;
 }
 

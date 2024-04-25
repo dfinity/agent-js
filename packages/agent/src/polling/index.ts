@@ -13,6 +13,10 @@ export type PollStrategy = (
 ) => Promise<void>;
 export type PollStrategyFactory = () => PollStrategy;
 
+export type PollForResponseResult<RetCert extends boolean> = RetCert extends true
+  ? [ArrayBuffer, ArrayBuffer]
+  : ArrayBuffer;
+
 /**
  * Polls the IC to check the status of the given request then
  * returns the response bytes once the request has been processed.
@@ -21,8 +25,11 @@ export type PollStrategyFactory = () => PollStrategy;
  * @param requestId The Request ID to poll status for.
  * @param strategy A polling strategy.
  * @param request Request for the readState call.
+ * @param blsVerify A blsVerify function implementation
+ * @param returnCertificate Whether or not this function should also return raw certificate alongside the result
+ * @returns `[reply, rawCertificate]` if `returnCertificate` is true or `reply`, if `returnCertificate` is false
  */
-export async function pollForResponse(
+export async function pollForResponse<RetCert extends boolean>(
   agent: Agent,
   canisterId: Principal,
   requestId: RequestId,
@@ -30,7 +37,8 @@ export async function pollForResponse(
   // eslint-disable-next-line
   request?: any,
   blsVerify?: CreateCertificateOptions['blsVerify'],
-): Promise<ArrayBuffer> {
+  returnCertificate?: RetCert,
+): Promise<PollForResponseResult<RetCert>> {
   const path = [new TextEncoder().encode('request_status'), requestId];
   const currentRequest = request ?? (await agent.createReadStateRequest?.({ paths: [path] }));
   const state = await agent.readState(canisterId, { paths: [path] }, undefined, currentRequest);
@@ -52,7 +60,11 @@ export async function pollForResponse(
 
   switch (status) {
     case RequestStatusResponseStatus.Replied: {
-      return cert.lookup([...path, 'reply'])!;
+      const reply = cert.lookup([...path, 'reply'])!;
+
+      return (
+        returnCertificate === true ? [reply, state.certificate] : reply
+      ) as PollForResponseResult<RetCert>;
     }
 
     case RequestStatusResponseStatus.Received:
@@ -60,7 +72,15 @@ export async function pollForResponse(
     case RequestStatusResponseStatus.Processing:
       // Execute the polling strategy, then retry.
       await strategy(canisterId, requestId, status);
-      return pollForResponse(agent, canisterId, requestId, strategy, currentRequest);
+      return pollForResponse(
+        agent,
+        canisterId,
+        requestId,
+        strategy,
+        currentRequest,
+        blsVerify,
+        returnCertificate,
+      );
 
     case RequestStatusResponseStatus.Rejected: {
       const rejectCode = new Uint8Array(cert.lookup([...path, 'reject_code'])!)[0];

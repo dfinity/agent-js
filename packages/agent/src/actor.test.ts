@@ -227,13 +227,81 @@ describe('makeActor', () => {
       body: cbor.encode(expectedErrorCallRequest),
     });
   });
+  it('should return the certificate, when requested', async () => {
+    const canisterDecodedReturnValue = 'Hello, World!';
+    const expectedReplyArg = IDL.encode([IDL.Text], [canisterDecodedReturnValue]);
+    const expectedCertificate = new Uint8Array([1, 3, 3, 7]).buffer;
+
+    const { Actor } = await importActor(() =>
+      jest.doMock('./polling', () => ({
+        ...pollingImport,
+        pollForResponse: jest.fn(() => [expectedReplyArg, expectedCertificate]),
+      })),
+    );
+
+    const mockFetch = jest.fn(resource => {
+      if (resource.endsWith('/call')) {
+        return Promise.resolve(
+          new Response(null, {
+            status: 202,
+            statusText: 'accepted',
+          }),
+        );
+      }
+
+      return Promise.resolve(
+        new Response(
+          cbor.encode({
+            status: 'replied',
+            reply: {
+              arg: expectedReplyArg,
+            },
+          }),
+          {
+            status: 200,
+            statusText: 'ok',
+          },
+        ),
+      );
+    });
+
+    const actorInterface = () => {
+      return IDL.Service({
+        greet: IDL.Func([IDL.Text], [IDL.Text], ['query']),
+        greet_update: IDL.Func([IDL.Text], [IDL.Text]),
+      });
+    };
+
+    const httpAgent = new HttpAgent({
+      fetch: mockFetch,
+      host: 'http://127.0.0.1',
+      verifyQuerySignatures: false,
+    });
+    const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+    const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
+
+    const { result: updateResult, cert: updateCert } = await actor.greet_update.withOptions({
+      returnCertificate: true,
+    })('test');
+
+    expect(updateResult).toEqual(canisterDecodedReturnValue);
+    expect(updateCert).toEqual(expectedCertificate);
+
+    // for queries the certificate returned is <empty-buf> currently
+    const { result: queryResult, cert: queryCert } = await actor.greet.withOptions({
+      returnCertificate: true,
+    })('test');
+
+    expect(queryResult).toBe(canisterDecodedReturnValue);
+    expect(queryCert).toEqual(new ArrayBuffer(0));
+  });
   it('should enrich actor interface with httpDetails', async () => {
     const canisterDecodedReturnValue = 'Hello, World!';
     const expectedReplyArg = IDL.encode([IDL.Text], [canisterDecodedReturnValue]);
     const { Actor } = await importActor(() =>
       jest.doMock('./polling', () => ({
         ...pollingImport,
-        pollForResponse: jest.fn(() => expectedReplyArg),
+        pollForResponse: jest.fn(() => [expectedReplyArg, new ArrayBuffer(0)]),
       })),
     );
 
