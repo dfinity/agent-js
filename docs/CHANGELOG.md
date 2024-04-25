@@ -5,6 +5,7 @@
 ### Changed
 
 - feat: make `IdbStorage` `get/set` methods generic
+- chore: add context to errors thrown when failing to decode CBOR values.
 
 ## [1.2.0] - 2024-03-25
 
