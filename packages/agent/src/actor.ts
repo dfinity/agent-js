@@ -14,7 +14,7 @@ import { pollForResponse, PollStrategyFactory, strategy } from './polling';
 import { Principal } from '@dfinity/principal';
 import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
-import { Certificate, CreateCertificateOptions } from './certificate';
+import { CreateCertificateOptions } from './certificate';
 import managementCanisterIdl from './canisters/management_idl';
 import _SERVICE, { canister_settings } from './canisters/management_service';
 
@@ -184,7 +184,7 @@ export interface ActorMethodWithHttpDetails<Args extends unknown[] = unknown[], 
   (...args: Args): Promise<{
     httpDetails: HttpDetailsResponse;
     result: Ret;
-    cert: Certificate | undefined;
+    cert: ArrayBuffer | undefined;
   }>;
 }
 
