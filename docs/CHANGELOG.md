@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- feat: make actor calls return raw certificate, if requested
+- fix: `pollForResponse` invalid parameters order in update calls 
+
 ## [1.2.1] - 2024-04-25
 
 ### Changed
