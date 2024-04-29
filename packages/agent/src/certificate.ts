@@ -21,24 +21,22 @@ export interface Cert {
   delegation?: Delegation;
 }
 
-const NodeId = {
-  Empty: 0,
-  Fork: 1,
-  Labeled: 2,
-  Leaf: 3,
-  Pruned: 4,
-};
+export enum NodeType {
+  Empty = 0,
+  Fork = 1,
+  Labeled = 2,
+  Leaf = 3,
+  Pruned = 4,
+}
 
-export type NodeIdType = typeof NodeId[keyof typeof NodeId];
-
-export { NodeId };
+export type NodeLabel = ArrayBuffer | Uint8Array;
 
 export type HashTree =
-  | [typeof NodeId.Empty]
-  | [typeof NodeId.Fork, HashTree, HashTree]
-  | [typeof NodeId.Labeled, ArrayBuffer, HashTree]
-  | [typeof NodeId.Leaf, ArrayBuffer]
-  | [typeof NodeId.Pruned, ArrayBuffer];
+  | [NodeType.Empty]
+  | [NodeType.Fork, HashTree, HashTree]
+  | [NodeType.Labeled, NodeLabel, HashTree]
+  | [NodeType.Leaf, NodeLabel]
+  | [NodeType.Pruned, NodeLabel];
 
 /**
  * Make a human readable string out of a hash tree.
@@ -60,9 +58,9 @@ export function hashTreeToString(tree: HashTree): string {
   }
 
   switch (tree[0]) {
-    case NodeId.Empty:
+    case NodeType.Empty:
       return '()';
-    case NodeId.Fork: {
+    case NodeType.Fork: {
       if (tree[1] instanceof Array && tree[2] instanceof ArrayBuffer) {
         const left = hashTreeToString(tree[1]);
         const right = hashTreeToString(tree[2]);
@@ -71,7 +69,7 @@ export function hashTreeToString(tree: HashTree): string {
         throw new Error('Invalid tree structure for fork');
       }
     }
-    case NodeId.Labeled: {
+    case NodeType.Labeled: {
       if (tree[1] instanceof ArrayBuffer && tree[2] instanceof ArrayBuffer) {
         const label = labelToString(tree[1]);
         const sub = hashTreeToString(tree[2]);
@@ -80,7 +78,7 @@ export function hashTreeToString(tree: HashTree): string {
         throw new Error('Invalid tree structure for labeled');
       }
     }
-    case NodeId.Leaf: {
+    case NodeType.Leaf: {
       if (!tree[1]) {
         throw new Error('Invalid tree structure for leaf');
       } else if (Array.isArray(tree[1])) {
@@ -88,7 +86,7 @@ export function hashTreeToString(tree: HashTree): string {
       }
       return `leaf(...${tree[1].byteLength} bytes)`;
     }
-    case NodeId.Pruned: {
+    case NodeType.Pruned: {
       if (!tree[1]) {
         throw new Error('Invalid tree structure for pruned');
       } else if (Array.isArray(tree[1])) {
@@ -108,7 +106,7 @@ interface Delegation extends Record<string, unknown> {
   certificate: ArrayBuffer;
 }
 
-function isBufferEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
+export function isBufferEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
   if (a.byteLength !== b.byteLength) {
     return false;
   }
@@ -120,6 +118,17 @@ function isBufferEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
     }
   }
   return true;
+}
+
+function isBufferGreaterThan(a: ArrayBuffer, b: ArrayBuffer): boolean {
+  const a8 = new Uint8Array(a);
+  const b8 = new Uint8Array(b);
+  for (let i = 0; i < a8.length; i++) {
+    if (a8[i] > b8[i]) {
+      return true;
+    }
+  }
+  return false;
 }
 
 type VerifyFunc = (pk: Uint8Array, sig: Uint8Array, msg: Uint8Array) => Promise<boolean> | boolean;
@@ -321,14 +330,19 @@ function extractDER(buf: ArrayBuffer): ArrayBuffer {
  * @param {ArrayBuffer | HashTree | undefined} result - the result of a lookup
  * @returns ArrayBuffer or Undefined
  */
-export function lookupResultToBuffer(
-  result: ArrayBuffer | HashTree | undefined,
-): ArrayBuffer | undefined {
-  if (result instanceof ArrayBuffer) {
-    return result;
-  } else if (result instanceof Uint8Array) {
-    return result.buffer;
+export function lookupResultToBuffer(result: LookupResult): ArrayBuffer | undefined {
+  if (result.status !== LookupStatus.Found) {
+    return undefined;
   }
+
+  if (result.value instanceof ArrayBuffer) {
+    return result.value;
+  }
+
+  if (result.value instanceof Uint8Array) {
+    return result.value.buffer;
+  }
+
   return undefined;
 }
 
@@ -337,13 +351,13 @@ export function lookupResultToBuffer(
  */
 export async function reconstruct(t: HashTree): Promise<ArrayBuffer> {
   switch (t[0]) {
-    case NodeId.Empty:
+    case NodeType.Empty:
       return hash(domain_sep('ic-hashtree-empty'));
-    case NodeId.Pruned:
+    case NodeType.Pruned:
       return t[1] as ArrayBuffer;
-    case NodeId.Leaf:
+    case NodeType.Leaf:
       return hash(concat(domain_sep('ic-hashtree-leaf'), t[1] as ArrayBuffer));
-    case NodeId.Labeled:
+    case NodeType.Labeled:
       return hash(
         concat(
           domain_sep('ic-hashtree-labeled'),
@@ -351,7 +365,7 @@ export async function reconstruct(t: HashTree): Promise<ArrayBuffer> {
           await reconstruct(t[2] as HashTree),
         ),
       );
-    case NodeId.Fork:
+    case NodeType.Fork:
       return hash(
         concat(
           domain_sep('ic-hashtree-fork'),
@@ -370,38 +384,97 @@ function domain_sep(s: string): ArrayBuffer {
   return concat(len, str);
 }
 
-/**
- * @param path
- * @param tree
- */
-export function lookup_path(
-  path: Array<ArrayBuffer | string>,
-  tree: HashTree,
-): ArrayBuffer | HashTree | undefined {
+export enum LookupStatus {
+  Unknown = 'unknown',
+  Absent = 'absent',
+  Found = 'found',
+}
+
+export interface LookupResultAbsent {
+  status: LookupStatus.Absent;
+}
+
+export interface LookupResultUnknown {
+  status: LookupStatus.Unknown;
+}
+
+export interface LookupResultFound {
+  status: LookupStatus.Found;
+  value: ArrayBuffer | HashTree;
+}
+
+export type LookupResult = LookupResultAbsent | LookupResultUnknown | LookupResultFound;
+
+enum LabelLookupStatus {
+  Less = 'less',
+  Greater = 'greater',
+}
+
+interface LookupResultGreater {
+  status: LabelLookupStatus.Greater;
+}
+
+interface LookupResultLess {
+  status: LabelLookupStatus.Less;
+}
+
+type LabelLookupResult = LookupResult | LookupResultGreater | LookupResultLess;
+
+export function lookup_path(path: Array<ArrayBuffer | string>, tree: HashTree): LookupResult {
   if (path.length === 0) {
     switch (tree[0]) {
-      case NodeId.Leaf: {
-        // should not be undefined
-        if (!tree[1]) throw new Error('Invalid tree structure for leaf');
+      case NodeType.Leaf: {
+        if (!tree[1]) {
+          throw new Error('Invalid tree structure for leaf');
+        }
+
         if (tree[1] instanceof ArrayBuffer) {
-          return tree[1];
-        } else if (tree[1] instanceof Uint8Array) {
-          return tree[1].buffer;
-        } else return tree[1];
+          return {
+            status: LookupStatus.Found,
+            value: tree[1],
+          };
+        }
+
+        if (tree[1] instanceof Uint8Array) {
+          return {
+            status: LookupStatus.Found,
+            value: tree[1].buffer,
+          };
+        }
+
+        return {
+          status: LookupStatus.Found,
+          value: tree[1],
+        };
       }
-      case NodeId.Fork: {
-        return tree;
-      }
+
       default: {
-        return tree;
+        return {
+          status: LookupStatus.Found,
+          value: tree,
+        };
       }
     }
   }
 
   const label = typeof path[0] === 'string' ? new TextEncoder().encode(path[0]) : path[0];
-  const t = find_label(label, flatten_forks(tree));
-  if (t) {
-    return lookup_path(path.slice(1), t);
+  const lookupResult = find_label(label, tree);
+
+  switch (lookupResult.status) {
+    case LookupStatus.Found: {
+      return lookup_path(path.slice(1), lookupResult.value as HashTree);
+    }
+
+    case LabelLookupStatus.Greater:
+    case LabelLookupStatus.Less: {
+      return {
+        status: LookupStatus.Absent,
+      };
+    }
+
+    default: {
+      return lookupResult;
+    }
   }
 }
 
@@ -412,26 +485,108 @@ export function lookup_path(
  */
 export function flatten_forks(t: HashTree): HashTree[] {
   switch (t[0]) {
-    case NodeId.Empty:
+    case NodeType.Empty:
       return [];
-    case NodeId.Fork:
+    case NodeType.Fork:
       return flatten_forks(t[1] as HashTree).concat(flatten_forks(t[2] as HashTree));
     default:
       return [t];
   }
 }
 
-function find_label(l: ArrayBuffer, trees: HashTree[]): HashTree | undefined {
-  if (trees.length === 0) {
-    return undefined;
-  }
-  for (const t of trees) {
-    if (t[0] === NodeId.Labeled) {
-      const p = t[1] as ArrayBuffer;
-      if (isBufferEqual(l, p)) {
-        return t[2];
+export function find_label(label: ArrayBuffer, tree: HashTree): LabelLookupResult {
+  switch (tree[0]) {
+    // if we have a labelled node, compare the node's label to the one we are
+    // looking for
+    case NodeType.Labeled:
+      // if the label we're searching for is greater than this node's label,
+      // we need to keep searching
+      if (isBufferGreaterThan(label, tree[1])) {
+        return {
+          status: LabelLookupStatus.Greater,
+        };
       }
-    }
+
+      // if the label we're searching for is equal this node's label, we can
+      // stop searching and return the found node
+      if (isBufferEqual(label, tree[1])) {
+        return {
+          status: LookupStatus.Found,
+          value: tree[2],
+        };
+      }
+
+      // if the label we're searching for is not greater than or equal to this
+      // node's label, then it's less than this node's label, and we can stop
+      // searching because we've looked too far
+      return {
+        status: LabelLookupStatus.Less,
+      };
+
+    // if we have a fork node, we need to search both sides, starting with the left
+    case NodeType.Fork:
+      // search in the left node
+      const leftLookupResult = find_label(label, tree[1]);
+
+      switch (leftLookupResult.status) {
+        // if the label we're searching for is greater than the left node lookup,
+        // we need to search the right node
+        case LabelLookupStatus.Greater: {
+          const rightLookupResult = find_label(label, tree[2]);
+
+          // if the label we're searching for is less than the right node lookup,
+          // then we can stop searching and say that the label is provably Absent
+          if (rightLookupResult.status === LabelLookupStatus.Less) {
+            return {
+              status: LookupStatus.Absent,
+            };
+          }
+
+          // if the label we're searching for is less than or equal to the right
+          // node lookup, then we let the caller handle it
+          return rightLookupResult;
+        }
+
+        // if the left node returns an uncertain result, we need to search the
+        // right node
+        case LookupStatus.Unknown: {
+          let rightLookupResult = find_label(label, tree[2]);
+
+          // if the label we're searching for is less than the right node lookup,
+          // then we also need to return an uncertain result
+          if (rightLookupResult.status === LabelLookupStatus.Less) {
+            return {
+              status: LookupStatus.Unknown,
+            };
+          }
+
+          // if the label we're searching for is less than or equal to the right
+          // node lookup, then we let the caller handle it
+          return rightLookupResult;
+        }
+
+        // if the label we're searching for is not greater than the left node
+        // lookup, or the result is not uncertain, we stop searching and return
+        // whatever the result of the left node lookup was, which can be either
+        // Found or Absent
+        default: {
+          return leftLookupResult;
+        }
+      }
+
+    // if we encounter a Pruned node, we can't know for certain if the label
+    // we're searching for is present or not
+    case NodeType.Pruned:
+      return {
+        status: LookupStatus.Unknown,
+      };
+
+    // if the current node is Empty, or a Leaf, we can stop searching because
+    // we know for sure that the label we're searching for is not present
+    default:
+      return {
+        status: LookupStatus.Absent,
+      };
   }
 }
 
@@ -449,11 +604,11 @@ export function check_canister_ranges(params: {
   const { canisterId, subnetId, tree } = params;
   const rangeLookup = lookup_path(['subnet', subnetId.toUint8Array(), 'canister_ranges'], tree);
 
-  if (!rangeLookup || !(rangeLookup instanceof ArrayBuffer)) {
+  if (rangeLookup.status !== LookupStatus.Found || !(rangeLookup.value instanceof ArrayBuffer)) {
     throw new Error(`Could not find canister ranges for subnet ${subnetId}`);
   }
 
-  const ranges_arr: Array<[Uint8Array, Uint8Array]> = cbor.decode(rangeLookup);
+  const ranges_arr: Array<[Uint8Array, Uint8Array]> = cbor.decode(rangeLookup.value);
   const ranges: Array<[Principal, Principal]> = ranges_arr.map(v => [
     Principal.fromUint8Array(v[0]),
     Principal.fromUint8Array(v[1]),

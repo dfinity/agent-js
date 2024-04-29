@@ -9,7 +9,7 @@ import {
   HashTree,
   flatten_forks,
   check_canister_ranges,
-  lookupResultToBuffer,
+  LookupStatus,
   lookup_path,
 } from '../certificate';
 import { toHex } from '../utils/buffer';
@@ -160,7 +160,7 @@ export const request = async (options: {
           } else {
             return {
               path: path,
-              data: lookupResultToBuffer(cert.lookup(encodePath(path, canisterId))),
+              data: cert.lookup(encodePath(path, canisterId)),
             };
           }
         };
@@ -290,14 +290,25 @@ export const fetchNodeKeys = (
     throw new Error('Canister not in range');
   }
 
-  const nodeTree = lookup_path(['subnet', delegation?.subnet_id as ArrayBuffer, 'node'], tree);
-  const nodeForks = flatten_forks(nodeTree as HashTree) as HashTree[];
-  nodeForks.length;
+  const subnetLookupResult = lookup_path(['subnet', delegation.subnet_id, 'node'], tree);
+  if (subnetLookupResult.status !== LookupStatus.Found) {
+    throw new Error('Node not found');
+  }
+  if (subnetLookupResult.value instanceof ArrayBuffer) {
+    throw new Error('Invalid node tree');
+  }
+
+  const nodeForks = flatten_forks(subnetLookupResult.value);
   const nodeKeys = new Map<string, DerEncodedPublicKey>();
+
   nodeForks.forEach(fork => {
-    Object.getPrototypeOf(new Uint8Array(fork[1] as ArrayBuffer));
     const node_id = Principal.from(new Uint8Array(fork[1] as ArrayBuffer)).toText();
-    const derEncodedPublicKey = lookup_path(['public_key'], fork[2] as HashTree) as ArrayBuffer;
+    const publicKeyLookupResult = lookup_path(['public_key'], fork[2] as HashTree);
+    if (publicKeyLookupResult.status !== LookupStatus.Found) {
+      throw new Error('Public key not found');
+    }
+
+    const derEncodedPublicKey = publicKeyLookupResult.value as ArrayBuffer;
     if (derEncodedPublicKey.byteLength !== 44) {
       throw new Error('Invalid public key length');
     } else {
