@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- chore: adds required `npm audit` check to PRs
+
+### Changed
+
+- chore: upgrades github actions to v4
+
 ## [1.2.1] - 2024-04-25
 
 ### Changed
