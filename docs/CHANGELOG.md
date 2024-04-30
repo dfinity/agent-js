@@ -2,13 +2,17 @@
 
 ## [Unreleased]
 
+### Changed
+
+- chore: npm audit fix
+
 ## [1.2.1] - 2024-04-25
 
 ### Changed
 
 - feat: make `IdbStorage` `get/set` methods generic
 - chore: add context to errors thrown when failing to decode CBOR values.
-- chore: replaces globle npm install with setup-node for size-limit action
+- chore: replaces global npm install with setup-node for size-limit action
 
 ## [1.2.0] - 2024-03-25
 
