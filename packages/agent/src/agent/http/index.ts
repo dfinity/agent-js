@@ -280,7 +280,7 @@ export class HttpAgent implements Agent {
       new ExponentialBackoff({
         maxIterations: this.#retryTimes,
       });
-    this.#backoffStrategy = options.backoffStrategy ?? defaultBackoffFactory;
+    this.#backoffStrategy = options.backoffStrategy || defaultBackoffFactory;
     // Rewrite to avoid redirects
     if (this._host.hostname.endsWith(IC0_SUB_DOMAIN)) {
       this._host.hostname = IC0_DOMAIN;
