@@ -780,7 +780,7 @@ describe('default host', () => {
   });
 });
 
-test.only('retry requests that fail due to a network failure', async () => {
+test('retry requests that fail due to a network failure', async () => {
   jest.useRealTimers();
   const mockFetch: jest.Mock = jest.fn(() => {
     throw new Error('Network failure');
@@ -790,10 +790,6 @@ test.only('retry requests that fail due to a network failure', async () => {
     host: HTTP_AGENT_HOST,
     fetch: mockFetch,
     retryTimes: 3,
-  });
-
-  agent.log.subscribe(log => {
-    console.log(log);
   });
 
   try {

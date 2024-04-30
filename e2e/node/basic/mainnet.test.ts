@@ -34,8 +34,6 @@ describe('certified query', () => {
   vi.useRealTimers();
   it('should verify a query certificate', async () => {
     const actor = await createWhoamiActor(new AnonymousIdentity());
-    const agent = Actor.agentOf(actor) as HttpAgent;
-    agent.log.subscribe(console.log);
     const result = await actor.whoami();
     expect(Principal.from(result)).toBeInstanceOf(Principal);
   }, 10_000);

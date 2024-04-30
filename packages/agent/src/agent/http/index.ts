@@ -461,6 +461,7 @@ export class HttpAgent implements Agent {
       delay,
     });
 
+    // If delay is null, the backoff strategy is exhausted due to a maximum number of retries, duration, or other reason
     if (delay === null) {
       throw new AgentError(
         `Timestamp failed to pass the watermark after retrying the configured ${
@@ -472,7 +473,6 @@ export class HttpAgent implements Agent {
     if (delay > 0) {
       await new Promise(resolve => setTimeout(resolve, delay));
     }
-
     let response: ApiQueryResponse;
     // Make the request and retry if it throws an error
     try {
@@ -514,7 +514,7 @@ export class HttpAgent implements Agent {
         );
       }
     } catch (error) {
-      if (tries < this.#retryTimes && delay !== null) {
+      if (tries < this.#retryTimes) {
         this.log.warn(
           `Caught exception while attempting to make query:\n` +
             `  ${error}\n` +
@@ -522,7 +522,6 @@ export class HttpAgent implements Agent {
         );
         return await this.#requestAndRetryQuery({ ...args, tries: tries + 1 });
       }
-
       throw error;
     }
 
@@ -577,6 +576,19 @@ export class HttpAgent implements Agent {
     const { request, backoff, tries } = args;
     const delay = tries === 0 ? 0 : backoff.next();
 
+    // If delay is null, the backoff strategy is exhausted due to a maximum number of retries, duration, or other reason
+    if (delay === null) {
+      throw new AgentError(
+        `Timestamp failed to pass the watermark after retrying the configured ${
+          this.#retryTimes
+        } times. We cannot guarantee the integrity of the response since it could be a replay attack.`,
+      );
+    }
+
+    if (delay > 0) {
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+
     let response: Response;
     try {
       response = await request();
@@ -590,22 +602,7 @@ export class HttpAgent implements Agent {
         // Delay the request by the configured backoff strategy
         return await this.#requestAndRetry({ request, backoff, tries: tries + 1 });
       }
-
-      if (delay === null) {
-        throw new AgentError(
-          `Timestamp failed to pass the watermark after retrying the configured ${
-            this.#retryTimes
-          } times. We cannot guarantee the integrity of the response since it could be a replay attack.`,
-        );
-      }
-      await new Promise(resolve => setTimeout(resolve, delay));
-
-      this.log.warn(
-        `Caught exception while attempting to make request:\n` +
-          `  ${error}\n` +
-          `  Retrying request.`,
-      );
-      return await this.#requestAndRetry({ request, backoff, tries: tries + 1 });
+      throw error;
     }
     if (response.ok) {
       return response;
@@ -617,16 +614,7 @@ export class HttpAgent implements Agent {
       `  Code: ${response.status} (${response.statusText})\n` +
       `  Body: ${responseText}\n`;
 
-    if (delay === null) {
-      throw new AgentHTTPResponseError(errorMessage, {
-        ok: response.ok,
-        status: response.status,
-        statusText: response.statusText,
-        headers: httpHeadersTransform(response.headers),
-      });
-    }
-
-    if (tries < this.#retryTimes && delay !== null) {
+    if (tries < this.#retryTimes) {
       return await this.#requestAndRetry({ request, backoff, tries: tries + 1 });
     }
     throw new AgentHTTPResponseError(errorMessage, {
@@ -643,7 +631,6 @@ export class HttpAgent implements Agent {
     identity?: Identity | Promise<Identity>,
   ): Promise<ApiQueryResponse> {
     const backoff = this.#backoffStrategy();
-
     const ecid = fields.effectiveCanisterId
       ? Principal.from(fields.effectiveCanisterId)
       : Principal.from(canisterId);

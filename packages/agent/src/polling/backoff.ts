@@ -103,7 +103,6 @@ export class ExponentialBackoff {
   }
 
   public next() {
-    this.#maxIterations; //?
     if (this.ellapsedTimeInMsec >= this.#maxElapsedTime || this.#count >= this.#maxIterations) {
       return null;
     } else {
@@ -112,52 +111,6 @@ export class ExponentialBackoff {
     }
   }
 }
-
-// export class FixedBackoff {
-//   #interval: number;
-//   #startTime: number;
-//   #maxElapsedTime: number;
-//   #maxIterations: number;
-//   #count = 0;
-
-//   constructor(
-//     args: BackoffStrategyArgs & { interval: number } = {
-//       maxIterations: MAX_ITERATIONS,
-//       maxElapsedTime: MAX_ELAPSED_TIME_MSEC,
-//       interval: INITIAL_INTERVAL_MSEC,
-//     },
-//   ) {
-//     const { maxIterations = 3, maxElapsedTime = MAX_ELAPSED_TIME_MSEC, interval } = args;
-//     this.#startTime = Date.now();
-//     this.#maxElapsedTime = maxElapsedTime;
-//     this.#maxIterations = maxIterations;
-//     this.#interval = interval;
-//   }
-
-//   get currentInterval() {
-//     return this.#interval;
-//   }
-
-//   get ellapsedTimeInMsecInMsec() {
-//     return Date.now() - this.#startTime;
-//   }
-
-//   get count() {
-//     return this.#count;
-//   }
-
-//   public next() {
-//     if (
-//       this.ellapsedTimeInMsecInMsec >= this.#maxElapsedTime ||
-//       this.#count >= this.#maxIterations
-//     ) {
-//       return null;
-//     }
-//     this.#count++;
-//     return this.#interval;
-//   }
-// }
-
 /**
  * Utility function to create an exponential backoff iterator.
  * @param options - for the exponential backoff
