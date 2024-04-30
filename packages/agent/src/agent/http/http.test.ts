@@ -789,7 +789,6 @@ test('retry requests that fail due to a network failure', async () => {
   const agent = new HttpAgent({
     host: HTTP_AGENT_HOST,
     fetch: mockFetch,
-    retryTimes: 3,
   });
 
   try {

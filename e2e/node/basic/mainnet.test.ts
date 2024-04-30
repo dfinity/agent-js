@@ -31,7 +31,6 @@ const createWhoamiActor = async (identity: Identity) => {
 };
 
 describe('certified query', () => {
-  vi.useRealTimers();
   it('should verify a query certificate', async () => {
     const actor = await createWhoamiActor(new AnonymousIdentity());
     const result = await actor.whoami();

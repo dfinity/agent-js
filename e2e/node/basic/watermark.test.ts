@@ -82,7 +82,6 @@ test('replay queries only', async () => {
 }, 10_000);
 
 test('replay attack', async () => {
-  vi.useRealTimers();
   const fetchProxy = new FetchProxy();
   global.fetch;
 
@@ -92,7 +91,6 @@ test('replay attack', async () => {
     backoffStrategy: () => ({
       next: () => 0,
     }),
-    retryTimes: 3,
   });
 
   const agent = Actor.agentOf(actor) as HttpAgent;
