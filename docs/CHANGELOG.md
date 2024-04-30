@@ -2,13 +2,15 @@
 
 ## [Unreleased]
 
-### Changed
-
-* fix: retry logic now includes delays with exponential backoff. Retries should no longer happen too quickly for the replica to catch up.
-
 ### Added
 
-* new `HttpAgent` option: `backoffStrategy` - allows you to set a custom delay strategy for retries. The default is a newly exported `exponentialBackoff`, but you can pass your own function to customize the delay between retries.
+- chore: adds required `npm audit` check to PRs
+- new `HttpAgent` option: `backoffStrategy` - allows you to set a custom delay strategy for retries. The default is a newly exported `exponentialBackoff`, but you can pass your own function to customize the delay between retries.
+
+### Changed
+
+- chore: upgrades github actions to v4
+- fix: retry logic now includes delays with exponential backoff matching the dfx strategy. Retries should no longer happen too quickly for the replica to catch up.
 
 ## [1.2.1] - 2024-04-25
 
