@@ -454,11 +454,12 @@ export class HttpAgent implements Agent {
   }): Promise<ApiQueryResponse> {
     const { ecid, transformedRequest, body, requestId, backoff, tries } = args;
 
-    const delay = backoff.next();
-
-    console.log('Backoff count: ', backoff.count);
-    console.log('Backoff ellapsedTime: ', backoff.ellapsedTimeInMsec);
-    console.log('Delay: ', delay);
+    const delay = tries === 0 ? 0 : backoff.next();
+    this.log(`fetching "/api/v2/canister/${ecid.toString()}/query" with tries:`, {
+      tries,
+      backoff,
+      delay,
+    });
 
     if (delay === null) {
       throw new AgentError(
@@ -574,7 +575,7 @@ export class HttpAgent implements Agent {
     tries: number;
   }): Promise<Response> {
     const { request, backoff, tries } = args;
-    const delay = backoff.next();
+    const delay = tries === 0 ? 0 : backoff.next();
 
     let response: Response;
     try {
@@ -625,8 +626,15 @@ export class HttpAgent implements Agent {
       });
     }
 
-    this.log.warn(errorMessage + `  Retrying request.`);
-    return await this.#requestAndRetry({ request, backoff, tries: tries + 1 });
+    if (tries < this.#retryTimes && delay !== null) {
+      return await this.#requestAndRetry({ request, backoff, tries: tries + 1 });
+    }
+    throw new AgentHTTPResponseError(errorMessage, {
+      ok: response.ok,
+      status: response.status,
+      statusText: response.statusText,
+      headers: httpHeadersTransform(response.headers),
+    });
   }
 
   public async query(
