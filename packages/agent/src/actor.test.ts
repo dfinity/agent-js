@@ -6,7 +6,7 @@ import { CallRequest, SubmitRequestType, UnSigned } from './agent/http/types';
 import * as cbor from './cbor';
 import { requestIdOf } from './request_id';
 import * as pollingImport from './polling';
-import { Actor, ActorConfig } from './actor';
+import { ActorConfig } from './actor';
 
 const importActor = async (mockUpdatePolling?: () => void) => {
   jest.dontMock('./polling');

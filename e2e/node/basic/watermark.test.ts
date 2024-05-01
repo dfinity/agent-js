@@ -88,6 +88,9 @@ test('replay attack', async () => {
   const actor = await createActor({
     verifyQuerySignatures: true,
     fetch: fetchProxy.fetch.bind(fetchProxy),
+    backoffStrategy: () => ({
+      next: () => 0,
+    }),
   });
 
   const agent = Actor.agentOf(actor) as HttpAgent;

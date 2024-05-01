@@ -21,6 +21,7 @@ export type PollStrategyFactory = () => PollStrategy;
  * @param requestId The Request ID to poll status for.
  * @param strategy A polling strategy.
  * @param request Request for the readState call.
+ * @param blsVerify - optional replacement function that verifies the BLS signature of a certificate.
  */
 export async function pollForResponse(
   agent: Agent,
