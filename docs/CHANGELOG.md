@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.3.0] - 2024-05-01
+
 ### Added
 
 - docs: adds instructions on how to run unit and e2e tests to the README
