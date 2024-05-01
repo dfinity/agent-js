@@ -4,6 +4,7 @@
 
 ### Added
 
+- docs: adds instructions on how to run unit and e2e tests to the README
 - chore: adds required `npm audit` check to PRs
 - new `HttpAgent` option: `backoffStrategy` - allows you to set a custom delay strategy for retries. The default is a newly exported `exponentialBackoff`, but you can pass your own function to customize the delay between retries.
 
