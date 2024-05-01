@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- fix: publish script will correctly update the `package-lock.json` file with the correct dependencies when making a new release
+
 ## [1.3.0] - 2024-05-01
 
 ### Added
