@@ -6,8 +6,11 @@ jobs:
     env:
       CI_JOB_NUMBER: 1
     steps:
-      - uses: actions/checkout@v1
-      - run: npm install -g npm
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
       # - run: npm run size-limit --workspaces --if-present
 
       # commented out until the job can be configured

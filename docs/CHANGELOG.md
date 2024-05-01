@@ -2,13 +2,27 @@
 
 ## [Unreleased]
 
-### Changed
+### Added
 
-- feat: make `IdbStorage` `get/set` methods generic
+- docs: adds instructions on how to run unit and e2e tests to the README
+- chore: adds required `npm audit` check to PRs
+- new `HttpAgent` option: `backoffStrategy` - allows you to set a custom delay strategy for retries. The default is a newly exported `exponentialBackoff`, but you can pass your own function to customize the delay between retries.
 - feat!: deprecate `HttpAgent` constructor in favor of new `create` and `createSync` methods.
   - `create` is async and returns a promise. It will sync time with the replica and fetch the root key if the host is not `https://icp-api.io`
   - Replaces `source` option with a `from` and `fromSync` methods, similar to `Principal.from`
 
+### Changed
+
+- chore: upgrades github actions to v4
+- fix: retry logic now includes delays with exponential backoff matching the dfx strategy. Retries should no longer happen too quickly for the replica to catch up.
+
+## [1.2.1] - 2024-04-25
+
+### Added
+
+- feat: make `IdbStorage` `get/set` methods generic
+- chore: add context to errors thrown when failing to decode CBOR values.
+- chore: replaces global npm install with setup-node for size-limit action
 
 ## [1.2.0] - 2024-03-25
 

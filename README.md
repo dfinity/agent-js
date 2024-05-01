@@ -14,6 +14,39 @@ This source code repository contains multiple npm packages, each under `./packag
 
 After that, you probably want to dive into a specific package in [./packages](./packages).
 
+### Running Tests
+
+Running tests is a good way to get a sense of what the features will do. We try to have full unit test coverage for all new features, although sometimes mocking network conditions can be difficult, and e2e tests may be preferable.
+
+#### Unit Tests
+
+To run the unit tests for all packages, run `npm test`. You can run tests for a specific package by running `npm test` in the package directory or by running `npm test --workspace=<package-name>` in the root directory.
+
+#### E2E Tests
+
+There are two sets of e2e tests in this repository. They are located in `e2e/browser` and `e2e/node`. The browser tests are run in a headless browser, and the node tests are run in a node environment. The node tests are faster and require less setup, but the browser tests can simulate relevant environmental conditions.
+
+> **Important Note:** the e2e tests do not run from the TypeScript source code of projects and must be compiled. You should run `npm run build` to compile the projects after your changes before running the tests.
+
+To run the e2e node tests, you can run 
+  
+```bash
+dfx start --background --clean
+npm run e2e --workspace e2e/node
+dfx stop
+```
+
+We expect you to have the replica running on port `4943`. If you are using a different port, you can set an environment variable `REPLICA_PORT` to the port number.
+
+To run the e2e browser tests, you can run
+
+```bash
+dfx start --background --clean
+npm run setup --workspace e2e/browser
+npm run e2e --workspace e2e/browser
+dfx stop
+```
+
 #### Workspaces
 
 We use `npm` to manage this repo and its packages. A few useful
