@@ -1,7 +1,7 @@
 import * as cbor from './cbor';
 import { AgentError } from './errors';
 import { hash } from './request_id';
-import { concat, fromHex, toHex } from './utils/buffer';
+import { bufEquals, concat, fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
 import * as bls from './utils/bls';
 import { decodeTime } from './utils/leb';
@@ -106,20 +106,6 @@ interface Delegation extends Record<string, unknown> {
   certificate: ArrayBuffer;
 }
 
-export function isBufferEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
-  if (a.byteLength !== b.byteLength) {
-    return false;
-  }
-  const a8 = new Uint8Array(a);
-  const b8 = new Uint8Array(b);
-  for (let i = 0; i < a8.length; i++) {
-    if (a8[i] !== b8[i]) {
-      return false;
-    }
-  }
-  return true;
-}
-
 function isBufferGreaterThan(a: ArrayBuffer, b: ArrayBuffer): boolean {
   const a8 = new Uint8Array(a);
   const b8 = new Uint8Array(b);
@@ -208,12 +194,12 @@ export class Certificate {
     this.cert = cbor.decode(new Uint8Array(certificate));
   }
 
-  public lookup(path: Array<ArrayBuffer | string>): ArrayBuffer | undefined {
+  public lookup(path: Array<ArrayBuffer | string>): LookupResult {
     // constrain the type of the result, so that empty HashTree is undefined
-    return lookupResultToBuffer(lookup_path(path, this.cert.tree));
+    return lookup_path(path, this.cert.tree);
   }
 
-  public lookup_label(label: ArrayBuffer): ArrayBuffer | HashTree | undefined {
+  public lookup_label(label: ArrayBuffer): LookupResult {
     return this.lookup([label]);
   }
 
@@ -225,7 +211,7 @@ export class Certificate {
     const msg = concat(domain_sep('ic-state-root'), rootHash);
     let sigVer = false;
 
-    const lookupTime = this.lookup(['time']);
+    const lookupTime = lookupResultToBuffer(this.lookup(['time']));
     if (!lookupTime) {
       // Should never happen - time is always present in IC certificates
       throw new CertificateVerificationError('Certificate does not contain a time');
@@ -297,7 +283,9 @@ export class Certificate {
         )}`,
       );
     }
-    const publicKeyLookup = cert.lookup(['subnet', d.subnet_id, 'public_key']);
+    const publicKeyLookup = lookupResultToBuffer(
+      cert.lookup(['subnet', d.subnet_id, 'public_key']),
+    );
     if (!publicKeyLookup) {
       throw new Error(`Could not find subnet key for subnet 0x${toHex(d.subnet_id)}`);
     }
@@ -316,7 +304,7 @@ function extractDER(buf: ArrayBuffer): ArrayBuffer {
     throw new TypeError(`BLS DER-encoded public key must be ${expectedLength} bytes long`);
   }
   const prefix = buf.slice(0, DER_PREFIX.byteLength);
-  if (!isBufferEqual(prefix, DER_PREFIX)) {
+  if (!bufEquals(prefix, DER_PREFIX)) {
     throw new TypeError(
       `BLS DER-encoded public key is invalid. Expect the following prefix: ${DER_PREFIX}, but get ${prefix}`,
     );
@@ -509,7 +497,7 @@ export function find_label(label: ArrayBuffer, tree: HashTree): LabelLookupResul
 
       // if the label we're searching for is equal this node's label, we can
       // stop searching and return the found node
-      if (isBufferEqual(label, tree[1])) {
+      if (bufEquals(label, tree[1])) {
         return {
           status: LookupStatus.Found,
           value: tree[2],

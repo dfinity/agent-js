@@ -11,6 +11,7 @@ import {
   check_canister_ranges,
   LookupStatus,
   lookup_path,
+  lookupResultToBuffer,
 } from '../certificate';
 import { toHex } from '../utils/buffer';
 import * as Cbor from '../cbor';
@@ -160,7 +161,7 @@ export const request = async (options: {
           } else {
             return {
               path: path,
-              data: cert.lookup(encodePath(path, canisterId)),
+              data: lookupResultToBuffer(cert.lookup(encodePath(path, canisterId))),
             };
           }
         };

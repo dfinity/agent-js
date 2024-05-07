@@ -5,7 +5,7 @@
  */
 import * as cbor from './cbor';
 import * as Cert from './certificate';
-import { fromHex, toHex } from './utils/buffer';
+import { bufEquals, fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
 import { decodeTime } from './utils/leb';
 import { readFileSync } from 'fs';
@@ -19,23 +19,7 @@ function pruned(str: string): ArrayBuffer {
   return fromHex(str);
 }
 
-function bufferEqualityTester(a: unknown, b: unknown): boolean | undefined {
-  if (a instanceof ArrayBuffer && b instanceof ArrayBuffer) {
-    return Cert.isBufferEqual(a, b);
-  }
-
-  if (a instanceof ArrayBuffer && b instanceof Uint8Array) {
-    return Cert.isBufferEqual(a, b.buffer);
-  }
-
-  if (a instanceof Uint8Array && b instanceof ArrayBuffer) {
-    return Cert.isBufferEqual(a.buffer, b);
-  }
-
-  return undefined;
-}
-
-(expect as any).addEqualityTesters([bufferEqualityTester]);
+(expect as any).addEqualityTesters([bufEquals]);
 
 // Root public key for the IC main net, encoded as hex
 const IC_ROOT_KEY =
