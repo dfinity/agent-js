@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- chore: updates agent error response to read "Gateway returns error" instead of "Server"`
+
 ## [1.3.0] - 2024-05-01
 
 ### Added
