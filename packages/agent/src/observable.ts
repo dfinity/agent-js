@@ -2,15 +2,11 @@ import { AgentError } from './errors';
 
 export type ObserveFunction<T> = (data: T, ...rest: unknown[]) => void;
 
-export class Observable<T> extends Function {
+export class Observable<T> {
   observers: ObserveFunction<T>[];
 
   constructor() {
-    super();
     this.observers = [];
-    return new Proxy(this, {
-      apply: (target, _, args) => target.#call(args[0], ...args.slice(1)),
-    });
   }
 
   #call(message: T, ...rest: unknown[]) {
@@ -44,9 +40,6 @@ export type AgentLog =
 export class ObservableLog extends Observable<AgentLog> {
   constructor() {
     super();
-    return new Proxy(this, {
-      apply: (target, _, args) => target.#call(args[0], ...args.slice(1)),
-    });
   }
   log(message: string, ...rest: unknown[]) {
     this.notify({ message, level: 'info' }, ...rest);
