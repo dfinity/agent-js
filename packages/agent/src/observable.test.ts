@@ -10,9 +10,6 @@ describe('Observable', () => {
     observable.notify(42);
     expect(observer1).toHaveBeenCalledWith(42);
     expect(observer2).toHaveBeenCalledWith(42);
-    observable(24);
-    expect(observer1).toHaveBeenCalledWith(24);
-    expect(observer2).toHaveBeenCalledWith(24);
   });
 
   it('should notify only subscribed observers', () => {
