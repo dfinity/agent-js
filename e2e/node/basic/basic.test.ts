@@ -1,4 +1,10 @@
-import { ActorMethod, Certificate, getManagementCanister } from '@dfinity/agent';
+import {
+  ActorMethod,
+  Certificate,
+  LookupResultFound,
+  LookupStatus,
+  getManagementCanister,
+} from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import agent from '../utils/agent';
@@ -18,14 +24,21 @@ test('read_state', async () => {
     rootKey: resolvedAgent.rootKey,
     canisterId: canisterId,
   });
-  expect(cert.lookup([new TextEncoder().encode('Time')])).toBe(undefined);
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const rawTime = cert.lookup(path)!;
+  expect(cert.lookup([new TextEncoder().encode('Time')])).toEqual({ status: LookupStatus.Unknown });
+
+  let rawTime = cert.lookup(path);
+
+  expect(rawTime.status).toEqual(LookupStatus.Found);
+  rawTime = rawTime as LookupResultFound;
+
+  expect(rawTime.value).toBeInstanceOf(ArrayBuffer);
+  rawTime.value = rawTime.value as ArrayBuffer;
+
   const decoded = IDL.decode(
     [IDL.Nat],
     new Uint8Array([
       ...new TextEncoder().encode('DIDL\x00\x01\x7d'),
-      ...(new Uint8Array(rawTime) || []),
+      ...(new Uint8Array(rawTime.value) || []),
     ]),
   )[0];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,14 +67,21 @@ test('read_state with passed request', async () => {
     rootKey: resolvedAgent.rootKey,
     canisterId: canisterId,
   });
-  expect(cert.lookup([new TextEncoder().encode('Time')])).toBe(undefined);
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const rawTime = cert.lookup(path)!;
+  expect(cert.lookup([new TextEncoder().encode('Time')])).toEqual({ status: LookupStatus.Unknown });
+
+  let rawTime = cert.lookup(path);
+
+  expect(rawTime.status).toEqual(LookupStatus.Found);
+  rawTime = rawTime as LookupResultFound;
+
+  expect(rawTime.value).toBeInstanceOf(ArrayBuffer);
+  rawTime.value = rawTime.value as ArrayBuffer;
+
   const decoded = IDL.decode(
     [IDL.Nat],
     new Uint8Array([
       ...new TextEncoder().encode('DIDL\x00\x01\x7d'),
-      ...(new Uint8Array(rawTime) || []),
+      ...(new Uint8Array(rawTime.value) || []),
     ]),
   )[0];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

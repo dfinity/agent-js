@@ -29,7 +29,12 @@ import {
 } from './types';
 import { AgentHTTPResponseError } from './errors';
 import { SubnetStatus, request } from '../../canisterStatus';
-import { CertificateVerificationError, HashTree, lookup_path } from '../../certificate';
+import {
+  CertificateVerificationError,
+  HashTree,
+  LookupStatus,
+  lookup_path,
+} from '../../certificate';
 import { ed25519 } from '@noble/curves/ed25519';
 import { ExpirableMap } from '../../utils/expirableMap';
 import { Ed25519PublicKey } from '../../public_key';
@@ -902,14 +907,14 @@ export class HttpAgent implements Agent {
         throw new Error('Could not decode time from response');
       }
       const timeLookup = lookup_path(['time'], tree);
-      if (!timeLookup) {
+      if (timeLookup.status !== LookupStatus.Found) {
         throw new Error('Time was not found in the response or was not in its expected format.');
       }
 
-      if (!(timeLookup instanceof ArrayBuffer) && !ArrayBuffer.isView(timeLookup)) {
+      if (!(timeLookup.value instanceof ArrayBuffer) && !ArrayBuffer.isView(timeLookup)) {
         throw new Error('Time was not found in the response or was not in its expected format.');
       }
-      const date = decodeTime(bufFromBufLike(timeLookup));
+      const date = decodeTime(bufFromBufLike(timeLookup.value as ArrayBuffer));
       this.log('Time from response:', date);
       this.log('Time from response in milliseconds:', Number(date));
       return Number(date);

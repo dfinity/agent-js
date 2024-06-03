@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- feat!: add support for proof of absence in Certificate lookups
+
 ### Changed
 
 - fix: publish script will correctly update the `package-lock.json` file with the correct dependencies when making a new release

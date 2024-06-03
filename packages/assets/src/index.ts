@@ -9,6 +9,7 @@ import {
   HashTree,
   lookup_path,
   lookupResultToBuffer,
+  LookupStatus,
   reconstruct,
   uint8ToBuf,
 } from '@dfinity/agent';
@@ -540,7 +541,12 @@ class Asset {
     }
 
     // Check certificate time
-    const decodedTime = lebDecode(new PipeArrayBuffer(cert.lookup(['time'])));
+    const timeLookup = cert.lookup(['time']);
+    if (timeLookup.status !== LookupStatus.Found || !(timeLookup.value instanceof ArrayBuffer)) {
+      return false;
+    }
+
+    const decodedTime = lebDecode(new PipeArrayBuffer(timeLookup.value));
     const certTime = Number(decodedTime / BigInt(1_000_000)); // Convert from nanos to millis
     const now = Date.now();
     const maxCertTimeOffset = 300_000; // 5 min
@@ -552,13 +558,13 @@ class Asset {
     const reconstructed = await reconstruct(hashTree);
     const witness = cert.lookup(['canister', canisterId.toUint8Array(), 'certified_data']);
 
-    if (!witness) {
+    if (witness.status !== LookupStatus.Found || !(witness.value instanceof ArrayBuffer)) {
       // Could not find certified data for this canister in the certificate
       return false;
     }
 
     // First validate that the Tree is as good as the certification
-    if (compare(witness, reconstructed) !== 0) {
+    if (compare(witness.value, reconstructed) !== 0) {
       // Witness != Tree passed in ic-certification
       return false;
     }
