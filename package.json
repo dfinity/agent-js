@@ -127,6 +127,11 @@
         "git pull",
         "git checkout release/${version} 2>/dev/null || git checkout -b release/${version}",
         "git merge main",
+        "npm run build",
+        "npm install",
+        "npm audit fix",
+        "git add .",
+        "git commit -m 'chore: release ${version}'",
         "git push --set-upstream origin release/${version}"
       ],
       "after:release": [

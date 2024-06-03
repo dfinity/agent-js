@@ -507,7 +507,7 @@ export class HttpAgent implements Agent {
         };
       } else {
         throw new AgentHTTPResponseError(
-          `Server returned an error:\n` +
+          `Gateway returned an error:\n` +
             `  Code: ${fetchResponse.status} (${fetchResponse.statusText})\n` +
             `  Body: ${await fetchResponse.text()}\n`,
           {
