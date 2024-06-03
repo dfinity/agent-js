@@ -110,7 +110,7 @@ export interface utxo {
   outpoint: outpoint;
 }
 export type wasm_module = Uint8Array | number[];
-export interface _SERVICE {
+export default interface _SERVICE {
   bitcoin_get_balance: ActorMethod<[get_balance_request], satoshi>;
   bitcoin_get_balance_query: ActorMethod<[get_balance_request], satoshi>;
   bitcoin_get_current_fee_percentiles: ActorMethod<

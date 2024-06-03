@@ -16,7 +16,7 @@ import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
 import { CreateCertificateOptions } from './certificate';
 import managementCanisterIdl from './canisters/management_idl';
-import _SERVICE, { canister_settings } from './canisters/management_service';
+import _SERVICE, { canister_install_mode, canister_settings } from './canisters/management_service';
 
 export class ActorCallError extends AgentError {
   constructor(
@@ -243,7 +243,7 @@ export class Actor {
   public static async install(
     fields: {
       module: ArrayBuffer;
-      mode?: CanisterInstallMode;
+      mode?: canister_install_mode;
       arg?: ArrayBuffer;
     },
     config: ActorConfig,
@@ -278,8 +278,6 @@ export class Actor {
           compute_allocation: settings.compute_allocation ? [settings.compute_allocation] : [],
           freezing_threshold: settings.freezing_threshold ? [settings.freezing_threshold] : [],
           memory_allocation: settings.memory_allocation ? [settings.memory_allocation] : [],
-          reserved_cycles_limit: [],
-          log_visibility: [],
         },
       ];
     }
