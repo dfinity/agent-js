@@ -4,6 +4,7 @@
 
 ### Changed
 
+- chore: updates agent error response to read "Gateway returns error" instead of "Server"`
 - chore: updates dfinity/conventional-pr-title-action to v4.0.0
 - chore: updates dfinity/conventional-pr-title-action to v3.2.0
 
