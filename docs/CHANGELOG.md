@@ -5,6 +5,7 @@
 ### Added
 
 - feat!: add support for proof of absence in Certificate lookups
+- feat: `update-management-idl` automation to update the management canister IDL in `@dfinity/agent`
 
 ### Changed
 
