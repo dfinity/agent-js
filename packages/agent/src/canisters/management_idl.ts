@@ -5,7 +5,7 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 
-export const idlFactory = ({ IDL }) => {
+export default ({ IDL }) => {
   const bitcoin_network = IDL.Variant({
     mainnet: IDL.Null,
     testnet: IDL.Null,
@@ -346,7 +346,4 @@ export const idlFactory = ({ IDL }) => {
     update_settings: IDL.Func([update_settings_args], [], []),
     upload_chunk: IDL.Func([upload_chunk_args], [upload_chunk_result], []),
   });
-};
-export const init = ({ IDL }) => {
-  return [];
 };

@@ -28,8 +28,11 @@ fetch(
 
     // replace first line of service
 
-    ts.replace(`export interface _SERVICE {`, `export default interface _SERVICE {`);
-    js.replace(`export const idlFactory = ({ IDL }) => {`, `export default ({ IDL }) => {`);
+    ts = ts.replace(`export interface _SERVICE {`, `export default interface _SERVICE {`);
+    js = js.replace(`export const idlFactory = ({ IDL }) => {`, `export default ({ IDL }) => {`);
+
+    // remove init function
+    js = js.split('export const init = ({ IDL }) => {')[0];
 
     ts = prefix + ts;
     js = prefix + js;
