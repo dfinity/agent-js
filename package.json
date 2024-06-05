@@ -48,7 +48,8 @@
     "typescript": "^5.2.2",
     "url": "^0.11.3",
     "webcrypto-core": "^1.7.7",
-    "yargs": "^17.7.2"
+    "yargs": "^17.7.2",
+    "zx": "^8.1.2"
   },
   "engines": {
     "node": "^12 || ^14 || ^16 || >=17",
@@ -68,7 +69,8 @@
     "prepare": "husky install",
     "prettier:check": "npx -p prettier -p pretty-quick pretty-quick --check",
     "prettier:format": "npx -p prettier -p pretty-quick pretty-quick",
-    "postversion": "npm run prettier:format"
+    "postversion": "npm run prettier:format",
+    "update-management-idl": "ts-node bin/update-management-idl.ts"
   },
   "repository": {
     "type": "git",
