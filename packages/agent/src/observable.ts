@@ -9,10 +9,6 @@ export class Observable<T> {
     this.observers = [];
   }
 
-  #call(message: T, ...rest: unknown[]) {
-    this.notify(message, ...rest);
-  }
-
   subscribe(func: ObserveFunction<T>) {
     this.observers.push(func);
   }
@@ -41,7 +37,7 @@ export class ObservableLog extends Observable<AgentLog> {
   constructor() {
     super();
   }
-  log(message: string, ...rest: unknown[]) {
+  print(message: string, ...rest: unknown[]) {
     this.notify({ message, level: 'info' }, ...rest);
   }
   warn(message: string, ...rest: unknown[]) {
@@ -49,8 +45,5 @@ export class ObservableLog extends Observable<AgentLog> {
   }
   error(message: string, error: AgentError, ...rest: unknown[]) {
     this.notify({ message, level: 'error', error }, ...rest);
-  }
-  #call(message: string, ...rest: unknown[]) {
-    this.log(message, ...rest);
   }
 }

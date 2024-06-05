@@ -5,6 +5,7 @@
 ### Changed
 
 - fix: ObservableLog no longer extends Function and class instance can no longer be called. Fixes an issue when running in a browser extension context.
+- feat!: ObservableLog's `log` method is renamed to `print` to avoind calling `log.log`.
 - chore: updates dfinity/conventional-pr-title-action to v3.2.0
 
 ## [1.3.0] - 2024-05-01
