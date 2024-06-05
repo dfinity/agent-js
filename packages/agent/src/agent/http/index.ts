@@ -414,7 +414,10 @@ export class HttpAgent implements Agent {
 
     const body = cbor.encode(transformedRequest.body);
 
-    this.log(`fetching "/api/v2/canister/${ecid.toText()}/call" with request:`, transformedRequest);
+    this.log.print(
+      `fetching "/api/v2/canister/${ecid.toText()}/call" with request:`,
+      transformedRequest,
+    );
 
     // Run both in parallel. The fetch is quite expensive, so we have plenty of time to
     // calculate the requestId locally.
@@ -460,7 +463,7 @@ export class HttpAgent implements Agent {
     const { ecid, transformedRequest, body, requestId, backoff, tries } = args;
 
     const delay = tries === 0 ? 0 : backoff.next();
-    this.log(`fetching "/api/v2/canister/${ecid.toString()}/query" with tries:`, {
+    this.log.print(`fetching "/api/v2/canister/${ecid.toString()}/query" with tries:`, {
       tries,
       backoff,
       delay,
@@ -481,7 +484,7 @@ export class HttpAgent implements Agent {
     let response: ApiQueryResponse;
     // Make the request and retry if it throws an error
     try {
-      this.log(
+      this.log.print(
         `fetching "/api/v2/canister/${ecid.toString()}/query" with request:`,
         transformedRequest,
       );
@@ -546,7 +549,7 @@ export class HttpAgent implements Agent {
     // Convert the timestamp to milliseconds
     const timeStampInMs = Number(BigInt(timestamp) / BigInt(1_000_000));
 
-    this.log('watermark and timestamp', {
+    this.log.print('watermark and timestamp', {
       waterMark: this.waterMark,
       timestamp: timeStampInMs,
     });
@@ -640,8 +643,8 @@ export class HttpAgent implements Agent {
       ? Principal.from(fields.effectiveCanisterId)
       : Principal.from(canisterId);
 
-    this.log(`ecid ${ecid.toString()}`);
-    this.log(`canisterId ${canisterId.toString()}`);
+    this.log.print(`ecid ${ecid.toString()}`);
+    this.log.print(`canisterId ${canisterId.toString()}`);
     const makeQuery = async () => {
       const id = await (identity !== undefined ? await identity : await this._identity);
       if (!id) {
@@ -711,7 +714,7 @@ export class HttpAgent implements Agent {
     // Make query and fetch subnet keys in parallel
     const [query, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
 
-    this.log('Query response:', query);
+    this.log.print('Query response:', query);
     // Skip verification if the user has disabled it
     if (!this.#verifyQuerySignatures) {
       return query;
@@ -857,7 +860,7 @@ export class HttpAgent implements Agent {
     const transformedRequest = request ?? (await this.createReadStateRequest(fields, identity));
     const body = cbor.encode(transformedRequest.body);
 
-    this.log(
+    this.log.print(
       `fetching "/api/v2/canister/${canister}/read_state" with request:`,
       transformedRequest,
     );
@@ -887,10 +890,10 @@ export class HttpAgent implements Agent {
     }
     const decodedResponse: ReadStateResponse = cbor.decode(await response.arrayBuffer());
 
-    this.log('Read state response:', decodedResponse);
+    this.log.print('Read state response:', decodedResponse);
     const parsedTime = await this.parseTimeFromResponse(decodedResponse);
     if (parsedTime > 0) {
-      this.log('Read state response time:', parsedTime);
+      this.log.print('Read state response time:', parsedTime);
       this.#waterMark = parsedTime;
     }
 
@@ -915,8 +918,8 @@ export class HttpAgent implements Agent {
         throw new Error('Time was not found in the response or was not in its expected format.');
       }
       const date = decodeTime(bufFromBufLike(timeLookup.value as ArrayBuffer));
-      this.log('Time from response:', date);
-      this.log('Time from response in milliseconds:', Number(date));
+      this.log.print('Time from response:', date);
+      this.log.print('Time from response in milliseconds:', Number(date));
       return Number(date);
     } else {
       this.log.warn('No certificate found in response');
@@ -933,7 +936,7 @@ export class HttpAgent implements Agent {
     const callTime = Date.now();
     try {
       if (!canisterId) {
-        this.log(
+        this.log.print(
           'Syncing time with the IC. No canisterId provided, so falling back to ryjl3-tyaaa-aaaaa-aaaba-cai',
         );
       }
@@ -960,7 +963,7 @@ export class HttpAgent implements Agent {
         }
       : {};
 
-    this.log(`fetching "/api/v2/status"`);
+    this.log.print(`fetching "/api/v2/status"`);
     const backoff = this.#backoffStrategy();
     const response = await this.#requestAndRetry({
       backoff,

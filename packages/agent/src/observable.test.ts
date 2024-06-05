@@ -10,9 +10,6 @@ describe('Observable', () => {
     observable.notify(42);
     expect(observer1).toHaveBeenCalledWith(42);
     expect(observer2).toHaveBeenCalledWith(42);
-    observable(24);
-    expect(observer1).toHaveBeenCalledWith(24);
-    expect(observer2).toHaveBeenCalledWith(24);
   });
 
   it('should notify only subscribed observers', () => {
@@ -45,7 +42,7 @@ describe('ObservableLog', () => {
     const observer2 = jest.fn();
     observable.subscribe(observer1);
     observable.subscribe(observer2);
-    observable.log('info');
+    observable.print('info');
     expect(observer1).toHaveBeenCalledWith({ message: 'info', level: 'info' });
     expect(observer2).toHaveBeenCalledWith({ message: 'info', level: 'info' });
     observable.warn('warning');
@@ -62,7 +59,7 @@ describe('ObservableLog', () => {
     const observer1 = jest.fn();
     const observer2 = jest.fn();
     observable.subscribe(observer1);
-    observable.log('info');
+    observable.print('info');
     expect(observer1).toHaveBeenCalledWith({ message: 'info', level: 'info' });
     expect(observer2).not.toHaveBeenCalled();
   });
@@ -74,7 +71,7 @@ describe('ObservableLog', () => {
     observable.subscribe(observer1);
     observable.subscribe(observer2);
     observable.unsubscribe(observer2);
-    observable.log('info');
+    observable.print('info');
     expect(observer1).toHaveBeenCalledWith({ message: 'info', level: 'info' });
     expect(observer2).not.toHaveBeenCalled();
   });
