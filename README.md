@@ -64,6 +64,8 @@ commands to keep in mind;
 
 The following scripts can be found in [./bin](./bin):
 
+- update-management-idl - Update the management canister IDL in @dfinity/agent
+
 Monorepo-related scripts run in this order, but are usually invoked by `npm install`:
 
 - npm-postinstall - Run with `npm run postinstall` in this monorepo package.
