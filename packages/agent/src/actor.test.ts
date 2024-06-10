@@ -351,16 +351,16 @@ test.only('callRaw', async () => {
   const agent = new HttpAgent({ fetch: global.fetch, host: 'https://icp-api.io' });
   const { Actor } = await importActor();
 
-  const actor = Actor.createActor(
+  const actor = Actor.createActorWithExtendedDetails(
     () => {
       return IDL.Service({
-        read: IDL.Func([], [IDL.Nat], ['query', 'certificate']),
+        inc_read: IDL.Func([], [IDL.Nat], []),
       });
     },
     { canisterId: Principal.fromText('tnnnb-2yaaa-aaaab-qaiiq-cai'), agent },
   );
 
-  await actor.read(); //?
+  await actor.inc_read(); //?
 
   // const result = await agent.callRaw(Principal.fromText('tnnnb-2yaaa-aaaab-qaiiq-cai'), {
   //   methodName: 'read',
