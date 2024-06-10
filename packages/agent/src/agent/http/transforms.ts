@@ -58,7 +58,7 @@ export function makeNonceTransform(nonceFn: () => Nonce = makeNonce): HttpAgentR
 
     // Nonce only needs to be inserted into the body for async calls, to prevent replay attacks.
     if (request.endpoint === Endpoint.Call) {
-      request.body.nonce = nonceFn();
+      request.body.nonce = nonceFn(); //?
     }
   };
 }

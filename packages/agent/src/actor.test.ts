@@ -348,18 +348,24 @@ jest.setTimeout(20000);
 test.only('callRaw', async () => {
   jest.useRealTimers();
   global.fetch; //?
-  const agent = new HttpAgent({ fetch: global.fetch, host: 'https://icp-api.io' });
+  const agent = new HttpAgent({
+    fetch: global.fetch,
+    host: 'https://icp-api.io',
+    useQueryNonces: true,
+  });
   const { Actor } = await importActor();
 
   const actor = Actor.createActorWithExtendedDetails(
     () => {
       return IDL.Service({
         inc_read: IDL.Func([], [IDL.Nat], []),
+        read: IDL.Func([], [IDL.Nat], ['query']),
       });
     },
     { canisterId: Principal.fromText('tnnnb-2yaaa-aaaab-qaiiq-cai'), agent },
   );
 
+  await actor.read(); //?
   await actor.inc_read(); //?
 
   // const result = await agent.callRaw(Principal.fromText('tnnnb-2yaaa-aaaab-qaiiq-cai'), {

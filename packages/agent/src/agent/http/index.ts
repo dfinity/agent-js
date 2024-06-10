@@ -41,7 +41,6 @@ import { Ed25519PublicKey } from '../../public_key';
 import { decodeTime } from '../../utils/leb';
 import { ObservableLog } from '../../observable';
 import { BackoffStrategy, BackoffStrategyFactory, ExponentialBackoff } from '../../polling/backoff';
-import { defaultStrategy, pollForResponse } from '../../polling';
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
 
@@ -410,6 +409,14 @@ export class HttpAgent implements Agent {
       body: submit,
     })) as HttpAgentSubmitRequest;
 
+    const nonce: Nonce | undefined = transformedRequest.body.nonce
+      ? toNonce(transformedRequest.body.nonce)
+      : undefined;
+
+    function toNonce(buf: ArrayBuffer): Nonce {
+      return new Uint8Array(buf) as Nonce;
+    }
+
     // Apply transform for identity.
     transformedRequest = await id.transformRequest(transformedRequest);
 
@@ -450,107 +457,9 @@ export class HttpAgent implements Agent {
         body: responseBody,
         headers: httpHeadersTransform(response.headers),
       },
-    };
-  }
-
-  public async callRaw(
-    canisterId: Principal | string,
-    options: {
-      methodName: string;
-      arg: ArrayBuffer;
-      effectiveCanisterId?: Principal | string;
-    },
-    identity?: Identity | Promise<Identity>,
-  ): Promise<SubmitResponse> {
-    const id = await (identity !== undefined ? await identity : await this._identity);
-    if (!id) {
-      throw new IdentityInvalidError(
-        "This identity has expired due this application's security policy. Please refresh your authentication.",
-      );
-    }
-    const canister = Principal.from(canisterId);
-    const ecid = options.effectiveCanisterId
-      ? Principal.from(options.effectiveCanisterId)
-      : canister;
-
-    const sender: Principal = id.getPrincipal() || Principal.anonymous();
-
-    let ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
-
-    // If the value is off by more than 30 seconds, reconcile system time with the network
-    if (Math.abs(this._timeDiffMsecs) > 1_000 * 30) {
-      ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS + this._timeDiffMsecs);
-    }
-
-    const submit: CallRequest = {
-      request_type: SubmitRequestType.Call,
-      canister_id: canister,
-      method_name: options.methodName,
-      arg: options.arg,
-      sender,
-      ingress_expiry,
-    };
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let transformedRequest: any = (await this._transform({
-      request: {
-        body: null,
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/cbor',
-          ...(this._credentials ? { Authorization: 'Basic ' + btoa(this._credentials) } : {}),
-        },
-      },
-      endpoint: Endpoint.Call,
-      body: submit,
-    })) as HttpAgentSubmitRequest;
-
-    // Apply transform for identity.
-    transformedRequest = await id.transformRequest(transformedRequest);
-
-    const body = cbor.encode(transformedRequest.body);
-
-    this.log.print(
-      `fetching "/api/v2/canister/${ecid.toText()}/call" with request:`,
-      transformedRequest,
-    );
-
-    // Run both in parallel. The fetch is quite expensive, so we have plenty of time to
-    // calculate the requestId locally.
-    const backoff = this.#backoffStrategy();
-    const request = this.#requestAndRetry({
-      request: () =>
-        this._fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this._host), {
-          ...this._callOptions,
-          ...transformedRequest.request,
-          body,
-        }),
-      backoff,
-      tries: 0,
-    });
-
-    const [response, requestId] = await Promise.all([request, requestIdOf(submit)]);
-
-    const responseBuffer = await response.arrayBuffer();
-    const responseBody = (
-      response.status === 200 && responseBuffer.byteLength > 0 ? cbor.decode(responseBuffer) : null
-    ) as SubmitResponse['response']['body'];
-
-    await new Promise(resolve => {
-      setTimeout(async () => {
-        const zargofaml = await pollForResponse(this, ecid, requestId, defaultStrategy());
-        resolve(zargofaml);
-      }, 100);
-    });
-
-    return {
-      requestId,
-      response: {
-        ok: response.ok,
-        status: response.status,
-        statusText: response.statusText,
-        body: responseBody,
-        headers: httpHeadersTransform(response.headers),
+      requestDetails: {
+        ingressExpiry: ingress_expiry,
+        nonce,
       },
     };
   }
@@ -784,8 +693,12 @@ export class HttpAgent implements Agent {
         body: request,
       });
 
+      const ingressExpiry = transformedRequest.body.ingress_expiry; //?
+
       // Apply transform for identity.
       transformedRequest = (await id?.transformRequest(transformedRequest)) as HttpAgentRequest;
+
+      transformedRequest;
 
       const body = cbor.encode(transformedRequest.body);
 
@@ -799,7 +712,10 @@ export class HttpAgent implements Agent {
         tries: 0,
       };
 
-      return await this.#requestAndRetryQuery(args);
+      return {
+        ingressExpiry,
+        query: await this.#requestAndRetryQuery(args),
+      };
     };
 
     const getSubnetStatus = async (): Promise<SubnetStatus | void> => {
@@ -815,16 +731,24 @@ export class HttpAgent implements Agent {
     };
     // Attempt to make the query i=retryTimes times
     // Make query and fetch subnet keys in parallel
-    const [query, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
+    const [queryResult, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
+    const { ingressExpiry, query } = queryResult;
 
-    this.log.print('Query response:', query);
+    const queryWithDetails = {
+      ...query,
+      requestDetails: {
+        ingressExpiry,
+      },
+    }; //?
+
+    this.log.print('Query response:', queryWithDetails);
     // Skip verification if the user has disabled it
     if (!this.#verifyQuerySignatures) {
-      return query;
+      return queryWithDetails;
     }
 
     try {
-      return this.#verifyQueryResponse(query, subnetStatus);
+      return this.#verifyQueryResponse(queryWithDetails, subnetStatus);
     } catch (_) {
       // In case the node signatures have changed, refresh the subnet keys and try again
       this.log.warn('Query response verification failed. Retrying with fresh subnet keys.');
@@ -837,7 +761,7 @@ export class HttpAgent implements Agent {
           'Invalid signature from replica signed query: no matching node key found.',
         );
       }
-      return this.#verifyQueryResponse(query, updatedSubnetStatus);
+      return this.#verifyQueryResponse(queryWithDetails, updatedSubnetStatus);
     }
   }
 

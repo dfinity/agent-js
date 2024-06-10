@@ -3,6 +3,7 @@ import { RequestId } from '../request_id';
 import { JsonObject } from '@dfinity/candid';
 import { Identity } from '../auth';
 import { HttpHeaderField } from './http/types';
+import { Expiry } from './http';
 
 /**
  * Codes used by the replica for rejecting a message.
@@ -50,6 +51,10 @@ export type ApiQueryResponse = QueryResponse & {
 
 export interface QueryResponseBase {
   status: QueryResponseStatus;
+  requestDetails?: {
+    nonce?: ArrayBuffer;
+    ingressExpiry: Expiry;
+  };
 }
 
 export type NodeSignature = {
@@ -132,6 +137,10 @@ export interface SubmitResponse {
       reject_message: string;
     } | null;
     headers: HttpHeaderField[];
+  };
+  requestDetails?: {
+    ingressExpiry: Expiry;
+    nonce?: ArrayBuffer;
   };
 }
 

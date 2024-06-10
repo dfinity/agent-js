@@ -485,6 +485,10 @@ function _createActorMethod(
         arg,
         effectiveCanisterId: options.effectiveCanisterId,
       });
+      const httpDetails = {
+        ...result.httpDetails,
+        requestDetails: result.requestDetails,
+      } as HttpDetailsResponse;
 
       switch (result.status) {
         case QueryResponseStatus.Rejected:
@@ -493,7 +497,7 @@ function _createActorMethod(
         case QueryResponseStatus.Replied:
           return func.annotations.includes(ACTOR_METHOD_WITH_HTTP_DETAILS)
             ? {
-                httpDetails: result.httpDetails,
+                httpDetails,
                 result: decodeReturnValue(func.retTypes, result.reply.arg),
               }
             : decodeReturnValue(func.retTypes, result.reply.arg);
@@ -519,7 +523,7 @@ function _createActorMethod(
       const cid = Principal.from(canisterId);
       const ecid = effectiveCanisterId !== undefined ? Principal.from(effectiveCanisterId) : cid;
       const arg = IDL.encode(func.argTypes, args);
-      const { requestId, response } = await agent.call(cid, {
+      const { requestId, response, requestDetails } = await agent.call(cid, {
         methodName,
         arg,
         effectiveCanisterId: ecid,
@@ -540,10 +544,12 @@ function _createActorMethod(
       const shouldIncludeHttpDetails = func.annotations.includes(ACTOR_METHOD_WITH_HTTP_DETAILS);
       const shouldIncludeCertificate = func.annotations.includes(ACTOR_METHOD_WITH_CERTIFICATE);
 
+      const httpDetails = { ...response, requestDetails } as HttpDetailsResponse;
+
       if (reply !== undefined) {
         if (shouldIncludeHttpDetails && shouldIncludeCertificate) {
           return {
-            httpDetails: response,
+            httpDetails,
             certificate,
             result: decodeReturnValue(func.retTypes, reply),
           };
@@ -554,7 +560,7 @@ function _createActorMethod(
           };
         } else if (shouldIncludeHttpDetails) {
           return {
-            httpDetails: response,
+            httpDetails,
             result: decodeReturnValue(func.retTypes, reply),
           };
         }
