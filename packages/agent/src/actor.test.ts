@@ -354,13 +354,13 @@ test.only('callRaw', async () => {
   const actor = Actor.createActor(
     () => {
       return IDL.Service({
-        inc_read: IDL.Func([], [IDL.Nat], []),
+        read: IDL.Func([], [IDL.Nat], ['query', 'certificate']),
       });
     },
     { canisterId: Principal.fromText('tnnnb-2yaaa-aaaab-qaiiq-cai'), agent },
   );
 
-  await actor.inc_read(); //?
+  await actor.read(); //?
 
   // const result = await agent.callRaw(Principal.fromText('tnnnb-2yaaa-aaaab-qaiiq-cai'), {
   //   methodName: 'read',
