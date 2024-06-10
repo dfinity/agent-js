@@ -10,11 +10,11 @@ import {
 } from './agent';
 import { AgentError } from './errors';
 import { IDL } from '@dfinity/candid';
-import { pollForResponse, PollStrategyFactory, strategy } from './polling';
+import { pollForCert, pollForResponse, PollStrategyFactory, strategy } from './polling';
 import { Principal } from '@dfinity/principal';
 import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
-import { CreateCertificateOptions } from './certificate';
+import { Certificate, CreateCertificateOptions } from './certificate';
 import managementCanisterIdl from './canisters/management_idl';
 import _SERVICE, { canister_install_mode, canister_settings } from './canisters/management_service';
 
@@ -348,7 +348,7 @@ export class Actor {
             func.annotations.push(ACTOR_METHOD_WITH_HTTP_DETAILS);
           }
 
-          this[methodName] = _createActorMethod(this, methodName, func, config.blsVerify);
+          this[methodName] = _createRawActorMethod(this, methodName, func, config.blsVerify);
         }
       }
     }
@@ -408,6 +408,86 @@ const DEFAULT_ACTOR_CONFIG = {
 export type ActorConstructor = new (config: ActorConfig) => ActorSubclass;
 
 export const ACTOR_METHOD_WITH_HTTP_DETAILS = 'http-details';
+
+function _createRawActorMethod(
+  actor: Actor,
+  methodName: string,
+  func: IDL.FuncClass,
+  blsVerify?: CreateCertificateOptions['blsVerify'],
+): ActorMethod {
+  if (func.annotations.includes('query') || func.annotations.includes('composite_query')) {
+    return _createActorMethod(actor, methodName, func, blsVerify);
+  }
+
+  const caller = async (options, ...args) => {
+    // First, if there's a config transformation, call it.
+    options = {
+      ...options,
+      ...actor[metadataSymbol].config.callTransform?.(methodName, args, {
+        ...actor[metadataSymbol].config,
+        ...options,
+      }),
+    };
+
+    const agent = options.agent || actor[metadataSymbol].config.agent || getDefaultAgent();
+    const { canisterId, effectiveCanisterId, pollingStrategyFactory } = {
+      ...DEFAULT_ACTOR_CONFIG,
+      ...actor[metadataSymbol].config,
+      ...options,
+    };
+    const cid = Principal.from(canisterId);
+    const ecid = effectiveCanisterId !== undefined ? Principal.from(effectiveCanisterId) : cid;
+    const arg = IDL.encode(func.argTypes, args);
+    const { requestId, response } = await agent.call(cid, {
+      methodName,
+      arg,
+      effectiveCanisterId: ecid,
+    });
+
+    if (!response.ok || response.body /* IC-1462 */) {
+      throw new UpdateCallRejectedError(cid, methodName, requestId, response);
+    }
+
+    const pollStrategy = pollingStrategyFactory();
+    const { certificate, reply } = await pollForCert(
+      agent,
+      ecid,
+      requestId,
+      pollStrategy,
+      blsVerify,
+    );
+    const shouldIncludeHttpDetails = func.annotations.includes(ACTOR_METHOD_WITH_HTTP_DETAILS);
+
+    if (reply !== undefined) {
+      let result = {
+        httpDetails: response,
+        certificate: certificate,
+        result: decodeReturnValue(func.retTypes, reply),
+      };
+      result; //?
+      return result;
+    } else if (func.retTypes.length === 0) {
+      return shouldIncludeHttpDetails
+        ? {
+            httpDetails: response,
+            result: undefined,
+          }
+        : undefined;
+    } else {
+      throw new Error(`Call was returned undefined, but type [${func.retTypes.join(',')}].`);
+    }
+  };
+
+  const handler = (...args: unknown[]) => {
+    args;
+    return caller({}, ...args);
+  };
+  handler.withOptions =
+    (options: CallConfig) =>
+    (...args: unknown[]) =>
+      caller(options, ...args);
+  return handler as ActorMethod;
+}
 
 function _createActorMethod(
   actor: Actor,
@@ -542,4 +622,10 @@ export function getManagementCanister(config: CallConfig): ActorSubclass<Managem
       queryTransform: transform,
     },
   });
+}
+
+export class AdvancedActor extends Actor {
+  constructor(metadata: ActorMetadata) {
+    super(metadata);
+  }
 }

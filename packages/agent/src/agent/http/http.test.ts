@@ -4,6 +4,7 @@ import * as cbor from '../../cbor';
 import { Expiry, httpHeadersTransform } from './transforms';
 import {
   CallRequest,
+  Endpoint,
   Envelope,
   HttpAgentRequestTransformFn,
   makeNonce,
@@ -13,7 +14,7 @@ import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 
 import { JSDOM } from 'jsdom';
-import { AnonymousIdentity, SignIdentity, toHex } from '../..';
+import { AnonymousIdentity, callRaw, SignIdentity, toHex } from '../..';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { AgentError } from '../../errors';
 import { AgentHTTPResponseError } from './errors';

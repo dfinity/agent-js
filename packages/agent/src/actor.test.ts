@@ -342,3 +342,28 @@ describe('makeActor', () => {
   });
 });
 // TODO: tests for rejected, unknown time out
+
+
+jest.setTimeout(20000);
+test.only('callRaw', async () => {
+  jest.useRealTimers();
+  global.fetch; //?
+  const agent = new HttpAgent({ fetch: global.fetch, host: 'https://icp-api.io' });
+  const { Actor } = await importActor();
+
+  const actor = Actor.createActor(
+    () => {
+      return IDL.Service({
+        inc_read: IDL.Func([], [IDL.Nat], []),
+      });
+    },
+    { canisterId: Principal.fromText('tnnnb-2yaaa-aaaab-qaiiq-cai'), agent },
+  );
+
+  await actor.inc_read(); //?
+
+  // const result = await agent.callRaw(Principal.fromText('tnnnb-2yaaa-aaaab-qaiiq-cai'), {
+  //   methodName: 'read',
+  //   arg: new Uint8Array(0),
+  // }); //?
+});

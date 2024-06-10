@@ -41,6 +41,7 @@ import { Ed25519PublicKey } from '../../public_key';
 import { decodeTime } from '../../utils/leb';
 import { ObservableLog } from '../../observable';
 import { BackoffStrategy, BackoffStrategyFactory, ExponentialBackoff } from '../../polling/backoff';
+import { defaultStrategy, pollForResponse } from '../../polling';
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
 
@@ -439,6 +440,108 @@ export class HttpAgent implements Agent {
     const responseBody = (
       response.status === 200 && responseBuffer.byteLength > 0 ? cbor.decode(responseBuffer) : null
     ) as SubmitResponse['response']['body'];
+
+    return {
+      requestId,
+      response: {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        body: responseBody,
+        headers: httpHeadersTransform(response.headers),
+      },
+    };
+  }
+
+  public async callRaw(
+    canisterId: Principal | string,
+    options: {
+      methodName: string;
+      arg: ArrayBuffer;
+      effectiveCanisterId?: Principal | string;
+    },
+    identity?: Identity | Promise<Identity>,
+  ): Promise<SubmitResponse> {
+    const id = await (identity !== undefined ? await identity : await this._identity);
+    if (!id) {
+      throw new IdentityInvalidError(
+        "This identity has expired due this application's security policy. Please refresh your authentication.",
+      );
+    }
+    const canister = Principal.from(canisterId);
+    const ecid = options.effectiveCanisterId
+      ? Principal.from(options.effectiveCanisterId)
+      : canister;
+
+    const sender: Principal = id.getPrincipal() || Principal.anonymous();
+
+    let ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
+
+    // If the value is off by more than 30 seconds, reconcile system time with the network
+    if (Math.abs(this._timeDiffMsecs) > 1_000 * 30) {
+      ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS + this._timeDiffMsecs);
+    }
+
+    const submit: CallRequest = {
+      request_type: SubmitRequestType.Call,
+      canister_id: canister,
+      method_name: options.methodName,
+      arg: options.arg,
+      sender,
+      ingress_expiry,
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let transformedRequest: any = (await this._transform({
+      request: {
+        body: null,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/cbor',
+          ...(this._credentials ? { Authorization: 'Basic ' + btoa(this._credentials) } : {}),
+        },
+      },
+      endpoint: Endpoint.Call,
+      body: submit,
+    })) as HttpAgentSubmitRequest;
+
+    // Apply transform for identity.
+    transformedRequest = await id.transformRequest(transformedRequest);
+
+    const body = cbor.encode(transformedRequest.body);
+
+    this.log.print(
+      `fetching "/api/v2/canister/${ecid.toText()}/call" with request:`,
+      transformedRequest,
+    );
+
+    // Run both in parallel. The fetch is quite expensive, so we have plenty of time to
+    // calculate the requestId locally.
+    const backoff = this.#backoffStrategy();
+    const request = this.#requestAndRetry({
+      request: () =>
+        this._fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this._host), {
+          ...this._callOptions,
+          ...transformedRequest.request,
+          body,
+        }),
+      backoff,
+      tries: 0,
+    });
+
+    const [response, requestId] = await Promise.all([request, requestIdOf(submit)]);
+
+    const responseBuffer = await response.arrayBuffer();
+    const responseBody = (
+      response.status === 200 && responseBuffer.byteLength > 0 ? cbor.decode(responseBuffer) : null
+    ) as SubmitResponse['response']['body'];
+
+    await new Promise(resolve => {
+      setTimeout(async () => {
+        const zargofaml = await pollForResponse(this, ecid, requestId, defaultStrategy());
+        resolve(zargofaml);
+      }, 100);
+    });
 
     return {
       requestId,
@@ -1023,3 +1126,4 @@ export class HttpAgent implements Agent {
     return p;
   }
 }
+
