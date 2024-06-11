@@ -2,6 +2,29 @@
 
 exports[`retry failures should succeed after multiple failures within the configured limit 1`] = `
 {
+  "requestDetails": {
+    "ingressExpiry": Expiry {
+      "_value": 1200000000000n,
+    },
+    "nonce": Uint8Array [
+      204,
+      189,
+      125,
+      194,
+      87,
+      124,
+      177,
+      53,
+      69,
+      176,
+      128,
+      137,
+      49,
+      99,
+      145,
+      118,
+    ],
+  },
   "requestId": ArrayBuffer [],
   "response": {
     "body": null,

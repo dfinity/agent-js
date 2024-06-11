@@ -534,6 +534,7 @@ function _createActorMethod(
       }
 
       const pollStrategy = pollingStrategyFactory();
+      // Contains the certificate and the reply from the boundary node
       const { certificate, reply } = await pollForResponse(
         agent,
         ecid,
@@ -545,6 +546,8 @@ function _createActorMethod(
       const shouldIncludeCertificate = func.annotations.includes(ACTOR_METHOD_WITH_CERTIFICATE);
 
       const httpDetails = { ...response, requestDetails } as HttpDetailsResponse;
+
+      reply;
 
       if (reply !== undefined) {
         if (shouldIncludeHttpDetails && shouldIncludeCertificate) {
@@ -565,6 +568,13 @@ function _createActorMethod(
           };
         }
         return decodeReturnValue(func.retTypes, reply);
+      } else if (func.retTypes.length === 0) {
+        return shouldIncludeHttpDetails
+          ? {
+              httpDetails: response,
+              result: undefined,
+            }
+          : undefined;
       } else {
         throw new Error(`Call was returned undefined, but type [${func.retTypes.join(',')}].`);
       }
