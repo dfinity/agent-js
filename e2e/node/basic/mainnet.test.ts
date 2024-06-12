@@ -1,11 +1,4 @@
-import {
-  Actor,
-  AnonymousIdentity,
-  HttpAgent,
-  Identity,
-  CanisterStatus,
-  getManagementCanister,
-} from '@dfinity/agent';
+import { Actor, AnonymousIdentity, HttpAgent, Identity, CanisterStatus } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
