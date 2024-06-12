@@ -38,6 +38,7 @@
     "os": "^0.1.2",
     "path": "^0.12.7",
     "prettier": "^2.8.8",
+    "prettier-plugin-motoko": "^0.8.4",
     "pretty-quick": "^3.1.3",
     "release-it": "^16.2.1",
     "size-limit": "^11.0.2",
