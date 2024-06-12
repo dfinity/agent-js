@@ -523,6 +523,15 @@ function _createActorMethod(
       const cid = Principal.from(canisterId);
       const ecid = effectiveCanisterId !== undefined ? Principal.from(effectiveCanisterId) : cid;
       const arg = IDL.encode(func.argTypes, args);
+
+      // serialize cid and call options to hex
+      const callOptions = {
+        canisterId: cid.toText(),
+        methodName,
+        arg: toHex(arg),
+        effectiveCanisterId: ecid.toText(),
+      }; //?
+
       const { requestId, response, requestDetails } = await agent.call(cid, {
         methodName,
         arg,

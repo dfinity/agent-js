@@ -13,10 +13,11 @@ import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 
 import { JSDOM } from 'jsdom';
-import { AnonymousIdentity, SignIdentity, toHex } from '../..';
+import { AnonymousIdentity, fromHex, SignIdentity, toHex } from '../..';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { AgentError } from '../../errors';
 import { AgentHTTPResponseError } from './errors';
+import { defaultStrategy, pollForResponse } from '../../polling';
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;
@@ -593,7 +594,7 @@ describe('retry failures', () => {
     expect(mockFetch.mock.calls.length).toBe(4);
   });
 });
-jest.useFakeTimers({ legacyFakeTimers: true });
+// jest.useFakeTimers({ legacyFakeTimers: true });
 
 test('should adjust the Expiry if the clock is more than 30 seconds behind', async () => {
   const mockFetch = jest.fn();
@@ -806,4 +807,34 @@ test.todo('retry query signature validation after refreshing the subnet node key
 test('it should log errors to console if the option is set', async () => {
   const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: jest.fn(), logToConsole: true });
   await agent.syncTime();
+});
+
+jest.setTimeout(40000);
+test.only('pure call raw forwarding', async () => {
+  jest.useRealTimers();
+  const forwardedOptions = {
+    canisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
+    methodName: 'inc_read',
+    arg: '4449444c0000',
+    effectiveCanisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
+  };
+
+  const agent = new HttpAgent({ host: 'https://icp-api.io', fetch: global.fetch });
+  const { requestId, response, requestDetails } = await agent.call(
+    Principal.fromText(forwardedOptions.canisterId),
+    {
+      methodName: forwardedOptions.methodName,
+      arg: fromHex(forwardedOptions.arg),
+      effectiveCanisterId: Principal.fromText(forwardedOptions.effectiveCanisterId),
+    },
+  );
+
+  const { certificate, reply } = await pollForResponse(
+    agent,
+    Principal.fromText(forwardedOptions.effectiveCanisterId),
+    requestId,
+    defaultStrategy(),
+  );
+  certificate; // Certificate
+  reply; // ArrayBuffer
 });
