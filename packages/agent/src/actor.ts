@@ -280,6 +280,7 @@ export class Actor {
           memory_allocation: settings.memory_allocation ? [settings.memory_allocation] : [],
           reserved_cycles_limit: [],
           log_visibility: [],
+          wasm_memory_limit: [],
         },
       ];
     }
