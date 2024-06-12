@@ -808,33 +808,3 @@ test('it should log errors to console if the option is set', async () => {
   const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: jest.fn(), logToConsole: true });
   await agent.syncTime();
 });
-
-jest.setTimeout(40000);
-test.only('pure call raw forwarding', async () => {
-  jest.useRealTimers();
-  const forwardedOptions = {
-    canisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
-    methodName: 'inc_read',
-    arg: '4449444c0000',
-    effectiveCanisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
-  };
-
-  const agent = new HttpAgent({ host: 'https://icp-api.io', fetch: global.fetch });
-  const { requestId, response, requestDetails } = await agent.call(
-    Principal.fromText(forwardedOptions.canisterId),
-    {
-      methodName: forwardedOptions.methodName,
-      arg: fromHex(forwardedOptions.arg),
-      effectiveCanisterId: Principal.fromText(forwardedOptions.effectiveCanisterId),
-    },
-  );
-
-  const { certificate, reply } = await pollForResponse(
-    agent,
-    Principal.fromText(forwardedOptions.effectiveCanisterId),
-    requestId,
-    defaultStrategy(),
-  );
-  certificate; // Certificate
-  reply; // ArrayBuffer
-});

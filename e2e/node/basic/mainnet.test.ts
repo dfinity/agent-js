@@ -5,12 +5,14 @@ import {
   Identity,
   CanisterStatus,
   getManagementCanister,
+  fromHex,
 } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
 import { describe, it, expect, vi } from 'vitest';
 import { makeAgent } from '../utils/agent';
+import { defaultStrategy, pollForResponse } from '@dfinity/agent/src/polling';
 
 const createWhoamiActor = async (identity: Identity) => {
   const canisterId = 'ivcos-eqaaa-aaaab-qablq-cai';
@@ -184,4 +186,33 @@ describe('bitcoin query', async () => {
     console.log(`balance for address: ${result}`);
     expect(result).toBeGreaterThan(0n);
   });
+});
+
+test('call forwarding', async () => {
+  jest.useRealTimers();
+  const forwardedOptions = {
+    canisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
+    methodName: 'inc_read',
+    arg: '4449444c0000',
+    effectiveCanisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
+  };
+
+  const agent = new HttpAgent({ host: 'https://icp-api.io', fetch: global.fetch });
+  const { requestId, response, requestDetails } = await agent.call(
+    Principal.fromText(forwardedOptions.canisterId),
+    {
+      methodName: forwardedOptions.methodName,
+      arg: fromHex(forwardedOptions.arg),
+      effectiveCanisterId: Principal.fromText(forwardedOptions.effectiveCanisterId),
+    },
+  );
+
+  const { certificate, reply } = await pollForResponse(
+    agent,
+    Principal.fromText(forwardedOptions.effectiveCanisterId),
+    requestId,
+    defaultStrategy(),
+  );
+  certificate; // Certificate
+  reply; // ArrayBuffer
 });
