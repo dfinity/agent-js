@@ -2,8 +2,7 @@ import { Principal } from '@dfinity/principal';
 import { RequestId } from '../request_id';
 import { JsonObject } from '@dfinity/candid';
 import { Identity } from '../auth';
-import { HttpHeaderField } from './http/types';
-import { Expiry } from './http';
+import { CallRequest, HttpHeaderField, QueryRequest } from './http/types';
 
 /**
  * Codes used by the replica for rejecting a message.
@@ -51,10 +50,7 @@ export type ApiQueryResponse = QueryResponse & {
 
 export interface QueryResponseBase {
   status: QueryResponseStatus;
-  requestDetails?: {
-    nonce?: ArrayBuffer;
-    ingressExpiry: Expiry;
-  };
+  requestDetails?: QueryRequest;
 }
 
 export type NodeSignature = {
@@ -138,10 +134,7 @@ export interface SubmitResponse {
     } | null;
     headers: HttpHeaderField[];
   };
-  requestDetails?: {
-    ingressExpiry: Expiry;
-    nonce?: ArrayBuffer;
-  };
+  requestDetails?: CallRequest;
 }
 
 /**

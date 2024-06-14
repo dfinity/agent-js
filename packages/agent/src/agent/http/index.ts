@@ -413,6 +413,8 @@ export class HttpAgent implements Agent {
       ? toNonce(transformedRequest.body.nonce)
       : undefined;
 
+    submit.nonce = nonce;
+
     function toNonce(buf: ArrayBuffer): Nonce {
       return new Uint8Array(buf) as Nonce;
     }
@@ -457,10 +459,7 @@ export class HttpAgent implements Agent {
         body: responseBody,
         headers: httpHeadersTransform(response.headers),
       },
-      requestDetails: {
-        ingressExpiry: ingress_expiry,
-        nonce,
-      },
+      requestDetails: submit,
     };
   }
 
@@ -693,8 +692,6 @@ export class HttpAgent implements Agent {
         body: request,
       });
 
-      const ingressExpiry = transformedRequest.body.ingress_expiry;
-
       // Apply transform for identity.
       transformedRequest = (await id?.transformRequest(transformedRequest)) as HttpAgentRequest;
 
@@ -711,7 +708,7 @@ export class HttpAgent implements Agent {
       };
 
       return {
-        ingressExpiry,
+        requestDetails: request,
         query: await this.#requestAndRetryQuery(args),
       };
     };
@@ -730,13 +727,11 @@ export class HttpAgent implements Agent {
     // Attempt to make the query i=retryTimes times
     // Make query and fetch subnet keys in parallel
     const [queryResult, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
-    const { ingressExpiry, query } = queryResult;
+    const { requestDetails, query } = queryResult;
 
     const queryWithDetails = {
       ...query,
-      requestDetails: {
-        ingressExpiry,
-      },
+      requestDetails,
     };
 
     this.log.print('Query response:', queryWithDetails);
