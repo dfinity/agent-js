@@ -7,6 +7,7 @@ import {
   getManagementCanister,
   fromHex,
   polling,
+  requestIdOf,
 } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
@@ -200,11 +201,16 @@ describe('call forwarding', () => {
     };
 
     const agent = new HttpAgent({ host: 'https://icp-api.io' });
-    const { requestId } = await agent.call(Principal.fromText(forwardedOptions.canisterId), {
-      methodName: forwardedOptions.methodName,
-      arg: fromHex(forwardedOptions.arg),
-      effectiveCanisterId: Principal.fromText(forwardedOptions.effectiveCanisterId),
-    });
+    const { requestId, requestDetails } = await agent.call(
+      Principal.fromText(forwardedOptions.canisterId),
+      {
+        methodName: forwardedOptions.methodName,
+        arg: fromHex(forwardedOptions.arg),
+        effectiveCanisterId: Principal.fromText(forwardedOptions.effectiveCanisterId),
+      },
+    );
+
+    expect(requestIdOf(requestDetails!)).toStrictEqual(requestId);
 
     const { certificate, reply } = await pollForResponse(
       agent,
