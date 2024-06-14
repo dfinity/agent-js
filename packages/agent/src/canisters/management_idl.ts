@@ -124,6 +124,7 @@ export default ({ IDL }) => {
     controllers: IDL.Vec(IDL.Principal),
     reserved_cycles_limit: IDL.Nat,
     log_visibility: log_visibility,
+    wasm_memory_limit: IDL.Nat,
     memory_allocation: IDL.Nat,
     compute_allocation: IDL.Nat,
   });
@@ -152,6 +153,7 @@ export default ({ IDL }) => {
     controllers: IDL.Opt(IDL.Vec(IDL.Principal)),
     reserved_cycles_limit: IDL.Opt(IDL.Nat),
     log_visibility: IDL.Opt(log_visibility),
+    wasm_memory_limit: IDL.Opt(IDL.Nat),
     memory_allocation: IDL.Opt(IDL.Nat),
     compute_allocation: IDL.Opt(IDL.Nat),
   });

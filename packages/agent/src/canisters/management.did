@@ -13,6 +13,7 @@ type canister_settings = record {
     freezing_threshold : opt nat;
     reserved_cycles_limit : opt nat;
     log_visibility : opt log_visibility;
+    wasm_memory_limit : opt nat;
 };
 
 type definite_canister_settings = record {
@@ -22,6 +23,7 @@ type definite_canister_settings = record {
     freezing_threshold : nat;
     reserved_cycles_limit : nat;
     log_visibility : log_visibility;
+    wasm_memory_limit : nat;
 };
 
 type change_origin = variant {
