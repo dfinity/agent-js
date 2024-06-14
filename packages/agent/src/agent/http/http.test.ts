@@ -13,11 +13,10 @@ import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 
 import { JSDOM } from 'jsdom';
-import { AnonymousIdentity, fromHex, SignIdentity, toHex } from '../..';
+import { AnonymousIdentity, SignIdentity, toHex } from '../..';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { AgentError } from '../../errors';
 import { AgentHTTPResponseError } from './errors';
-import { defaultStrategy, pollForResponse } from '../../polling';
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;
@@ -589,6 +588,8 @@ describe('retry failures', () => {
       methodName: 'test',
       arg: new Uint8Array().buffer,
     });
+    // Remove the request details to make the snapshot consistent
+    result.requestDetails = undefined;
     expect(result).toMatchSnapshot();
     // One try + three retries
     expect(mockFetch.mock.calls.length).toBe(4);

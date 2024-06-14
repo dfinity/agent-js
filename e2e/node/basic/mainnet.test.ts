@@ -11,7 +11,7 @@ import {
 import { IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
-import { describe, it, expect, vi, test } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { makeAgent } from '../utils/agent';
 
 const { defaultStrategy, pollForResponse } = polling;
@@ -188,6 +188,8 @@ describe('bitcoin query', async () => {
     console.log(`balance for address: ${result}`);
     expect(result).toBeGreaterThan(0n);
   });
+});
+describe('call forwarding', () => {
   it('should handle call forwarding', async () => {
     vi.useRealTimers();
     const forwardedOptions = {

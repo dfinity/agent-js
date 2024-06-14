@@ -693,12 +693,10 @@ export class HttpAgent implements Agent {
         body: request,
       });
 
-      const ingressExpiry = transformedRequest.body.ingress_expiry; //?
+      const ingressExpiry = transformedRequest.body.ingress_expiry;
 
       // Apply transform for identity.
       transformedRequest = (await id?.transformRequest(transformedRequest)) as HttpAgentRequest;
-
-      transformedRequest;
 
       const body = cbor.encode(transformedRequest.body);
 
@@ -739,7 +737,7 @@ export class HttpAgent implements Agent {
       requestDetails: {
         ingressExpiry,
       },
-    }; //?
+    };
 
     this.log.print('Query response:', queryWithDetails);
     // Skip verification if the user has disabled it

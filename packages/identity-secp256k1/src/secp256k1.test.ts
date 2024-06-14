@@ -212,8 +212,8 @@ describe('public key serialization from various types', () => {
   it('should serialize from a raw key', () => {
     const baseKey = Secp256k1KeyIdentity.generate();
     const publicKey = baseKey.getPublicKey().rawKey;
-    ArrayBuffer.isView(publicKey); //?
-    publicKey instanceof ArrayBuffer; //?
+    ArrayBuffer.isView(publicKey);
+    publicKey instanceof ArrayBuffer;
 
     const newKey = Secp256k1PublicKey.from(publicKey);
     expect(newKey).toBeDefined();
