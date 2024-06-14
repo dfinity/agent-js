@@ -4,7 +4,6 @@ import {
   HttpAgent,
   Identity,
   CanisterStatus,
-  getManagementCanister,
   fromHex,
   polling,
   requestIdOf,
@@ -173,23 +172,6 @@ describe('controllers', () => {
   });
 });
 
-describe('bitcoin query', async () => {
-  it('should return the balance of a bitcoin address', async () => {
-    // TODO - verify node signature for bitcoin once supported
-    const agent = await makeAgent({ host: 'https://icp-api.io', verifyQuerySignatures: false });
-    const management = getManagementCanister({
-      agent,
-    });
-
-    const result = await management.bitcoin_get_balance_query({
-      address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-      network: { mainnet: null },
-      min_confirmations: [6],
-    });
-    console.log(`balance for address: ${result}`);
-    expect(result).toBeGreaterThan(0n);
-  });
-});
 describe('call forwarding', () => {
   it('should handle call forwarding', async () => {
     vi.useRealTimers();
@@ -222,4 +204,3 @@ describe('call forwarding', () => {
     reply; // ArrayBuffer
   }, 15_000);
 });
-

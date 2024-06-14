@@ -313,6 +313,7 @@ Changes default stored key for `auth-client` to use ECDSAKey*   Also updates the
 
 ### Changed
 
+*   feat: strips out bitcoin query methods from management canister IDL
 *   Adds retry logic to `HttpAgent`. By default, retries three times before throwing an error, to offer a more cohesive workflow
 *   Improves and truncates error messages in Candid
 *   fixes flaky tests for syncTime
