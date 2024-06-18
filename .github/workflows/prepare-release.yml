@@ -43,5 +43,5 @@ jobs:
           git config user.name "${{ github.event.sender.login }}"
       - name: Create release Pull request & GitHub Release
         env:
-          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+          GITHUB_TOKEN: '${{ secrets.GIX_CREATE_PR_PAT }}'
         run: npm run release ${{ inputs.semverBump }}
