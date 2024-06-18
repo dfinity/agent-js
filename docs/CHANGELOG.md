@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.4.0] - 2024-06-17
+
 ### Added
 
 - feat!: add support for proof of absence in Certificate lookups
