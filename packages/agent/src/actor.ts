@@ -549,8 +549,6 @@ function _createActorMethod(
 
       const httpDetails = { ...response, requestDetails } as HttpDetailsResponse;
 
-      reply;
-
       if (reply !== undefined) {
         if (shouldIncludeHttpDetails && shouldIncludeCertificate) {
           return {

@@ -227,14 +227,15 @@ describe('makeActor', () => {
       body: cbor.encode(expectedErrorCallRequest),
     });
   });
-  // TODO: fix this test
-  it.skip('should enrich actor interface with httpDetails', async () => {
+  it('should enrich actor interface with httpDetails', async () => {
     const canisterDecodedReturnValue = 'Hello, World!';
     const expectedReplyArg = IDL.encode([IDL.Text], [canisterDecodedReturnValue]);
     const { Actor } = await importActor(() =>
       jest.doMock('./polling', () => ({
         ...pollingImport,
-        pollForResponse: jest.fn(() => expectedReplyArg),
+        pollForResponse: jest.fn(async () => {
+          return { certificate: undefined, reply: expectedReplyArg };
+        }),
       })),
     );
 
@@ -284,6 +285,7 @@ describe('makeActor', () => {
     });
 
     const reply = await actor.greet('test');
+    reply;
     const replyUpdate = await actor.greet_update('test');
     const replyWithHttpDetails = await actorWithHttpDetails.greet('test');
     const replyUpdateWithHttpDetails = await actorWithHttpDetails.greet_update('test');
@@ -291,20 +293,47 @@ describe('makeActor', () => {
     expect(reply).toEqual(canisterDecodedReturnValue);
     expect(replyUpdate).toEqual(canisterDecodedReturnValue);
     expect(replyWithHttpDetails.result).toEqual(canisterDecodedReturnValue);
-    expect(replyWithHttpDetails.httpDetails).toEqual({
-      ok: true,
-      status: 200,
-      statusText: 'ok',
-      headers: [],
-    });
+    replyWithHttpDetails.httpDetails['requestDetails']; //?
+    expect(replyWithHttpDetails.httpDetails).toMatchInlineSnapshot(`
+      {
+        "headers": [],
+        "ok": true,
+        "requestDetails": {
+          "arg": Uint8Array [
+            68,
+            73,
+            68,
+            76,
+            0,
+            1,
+            113,
+            4,
+            116,
+            101,
+            115,
+            116,
+          ],
+          "canister_id": {
+            "__principal__": "2chl6-4hpzw-vqaaa-aaaaa-c",
+          },
+          "ingress_expiry": Expiry {
+            "_value": 1200000000000n,
+          },
+          "method_name": "greet",
+          "request_type": "query",
+          "sender": {
+            "__principal__": "2vxsx-fae",
+          },
+        },
+        "status": 200,
+        "statusText": "ok",
+      }
+    `);
     expect(replyUpdateWithHttpDetails.result).toEqual(canisterDecodedReturnValue);
-    expect(replyUpdateWithHttpDetails.httpDetails).toEqual({
-      body: null,
-      ok: true,
-      status: 202,
-      statusText: 'accepted',
-      headers: [],
-    });
+
+    replyUpdateWithHttpDetails.httpDetails['requestDetails']['nonce'] = new Uint8Array(); //?
+
+    expect(replyUpdateWithHttpDetails.httpDetails).toMatchSnapshot();
   });
   it('should allow its agent to be invalidated', async () => {
     const { Actor } = await importActor();
