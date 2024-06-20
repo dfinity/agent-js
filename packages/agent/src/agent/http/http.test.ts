@@ -595,7 +595,7 @@ describe('retry failures', () => {
     expect(mockFetch.mock.calls.length).toBe(4);
   });
 });
-// jest.useFakeTimers({ legacyFakeTimers: true });
+jest.useFakeTimers({ legacyFakeTimers: true });
 
 test('should adjust the Expiry if the clock is more than 30 seconds behind', async () => {
   const mockFetch = jest.fn();
