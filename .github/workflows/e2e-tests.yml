@@ -45,6 +45,8 @@ jobs:
         name: List the state of node modules
         continue-on-error: true
         run: npm list
+      - run: npm ci
+      - run: npm run build -ws
 
       # build monorepo incl. each subpackage
       - run: npm run build --workspaces --if-present
