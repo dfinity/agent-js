@@ -46,10 +46,22 @@ jobs:
         id: setup
         run: npm run setup --workspaces --if-present
 
-      - run: npm run e2e --workspaces --if-present
-        env:
-          CI: true
-          REPLICA_PORT: 4943
+      # - run: npm run e2e --workspace e2e/node
+      #   env:
+      #     CI: true
+      #     REPLICA_PORT: 4943
+
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          install: false
+          project: ./e2e/browser
+          working-directory: e2e/browser
+          start: |
+            npm run setup --workspace e2e/browser
+            npm run e2e --workspace e2e/browser
+          wait-on: 'http://localhost:1234'
+          wait-on-timeout: 120
 
   aggregate:
     name: e2e:required
