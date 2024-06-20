@@ -35,7 +35,6 @@ export async function pollForResponse(
   certificate: Certificate;
   reply: ArrayBuffer;
 }> {
-  console.log('Polling for response');
   const path = [new TextEncoder().encode('request_status'), requestId];
   const currentRequest = request ?? (await agent.createReadStateRequest?.({ paths: [path] }));
   const state = await agent.readState(canisterId, { paths: [path] }, undefined, currentRequest);
