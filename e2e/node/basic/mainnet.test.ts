@@ -110,7 +110,7 @@ describe('certified query', () => {
         },
       ]
     `);
-  });
+  }, 30_000);
 });
 
 describe('controllers', () => {
