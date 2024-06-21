@@ -58,9 +58,9 @@ jobs:
         run: |
           dfx start --background
 
-      # - name: setup
-      #   id: setup
-      #   run: npm run setup --workspaces --if-present
+      - name: setup
+        id: setup
+        run: npm run setup --workspaces --if-present
 
       # - run: npm run e2e --workspace e2e/node
       #   env:
@@ -74,7 +74,6 @@ jobs:
           project: ./e2e/browser
           working-directory: e2e/browser
           start: |
-            npm run setup
             npm run e2e
           wait-on: 'http://localhost:1234'
           wait-on-timeout: 120
