@@ -62,12 +62,13 @@ jobs:
         id: setup
         run: npm run setup --workspaces --if-present
 
-      # - run: npm run e2e --workspace e2e/node
-      #   env:
-      #     CI: true
-      #     REPLICA_PORT: 4943
+      - name: Node.js e2e tests
+        run: npm run e2e --workspace e2e/node
+        env:
+          CI: true
+          REPLICA_PORT: 4943
 
-      - name: Cypress run
+      - name: Cypress e2e tests
         uses: cypress-io/github-action@v6
         with:
           install: false
