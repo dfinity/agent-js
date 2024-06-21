@@ -72,7 +72,6 @@ jobs:
         with:
           install: false
           project: ./e2e/browser
-          working-directory: e2e/browser
           start: |
             npm run e2e
           wait-on: 'http://localhost:1234'
