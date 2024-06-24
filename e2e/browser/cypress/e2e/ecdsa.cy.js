@@ -12,7 +12,7 @@ const setup = async () => {
       verifyQuerySignatures: false,
       identity: identity1,
       fetch: fetchPolyfill,
-      host: 'http://127.0.0.1:4943/',
+      host: 'http://localhost:4943/',
     },
   });
 
@@ -23,7 +23,7 @@ const setup = async () => {
 
 describe('ECDSAKeyIdentity tests with SubtleCrypto', () => {
   it('generates a new identity', () => {
-    cy.visit('http://127.0.0.1:1234');
+    cy.visit('http://localhost:1234');
     cy.window().then(async () => {
       const { principal1 } = await setup();
       const str = principal1.toString();
