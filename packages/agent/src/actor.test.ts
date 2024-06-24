@@ -285,7 +285,6 @@ describe('makeActor', () => {
     });
 
     const reply = await actor.greet('test');
-    reply;
     const replyUpdate = await actor.greet_update('test');
     const replyWithHttpDetails = await actorWithHttpDetails.greet('test');
     const replyUpdateWithHttpDetails = await actorWithHttpDetails.greet_update('test');
