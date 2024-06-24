@@ -1,4 +1,4 @@
-name: E2E Node Tests
+name: E2E Browser Tests
 
 on:
   pull_request:
@@ -58,11 +58,19 @@ jobs:
         run: |
           dfx start --background
 
-      - name: Node.js e2e tests
-        run: npm run e2e --workspace e2e/node
-        env:
-          CI: true
-          REPLICA_PORT: 4943
+      - name: setup
+        id: setup
+        run: npm run setup --workspaces --if-present
+
+      - name: Cypress e2e tests
+        uses: cypress-io/github-action@v6
+        with:
+          install: false
+          project: ./e2e/browser
+          start: |
+            npm run e2e --workspace e2e/browser
+          wait-on: 'http://localhost:1234'
+          wait-on-timeout: 240
 
   aggregate:
     name: e2e:required
