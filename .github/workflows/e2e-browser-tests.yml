@@ -58,19 +58,15 @@ jobs:
         run: |
           dfx start --background
 
-      - name: setup
-        id: setup
-        run: npm run setup --workspaces --if-present
-
       - name: Cypress e2e tests
         uses: cypress-io/github-action@v6
         with:
           install: false
           project: ./e2e/browser
-          start: |
-            npm run e2e --workspace e2e/browser
           wait-on: 'http://localhost:1234'
           wait-on-timeout: 240
+          build: npm run setup --workspace e2e/browser
+          start: npm run start --workspace e2e/browser          
 
   aggregate:
     name: e2e:required
