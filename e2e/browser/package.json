@@ -13,7 +13,7 @@
     "lint:fix": "npm run lint -- --fix",
     "test:coverage": "",
     "test": "",
-    "start": "vite src"
+    "start": "vite src --port 1234"
   },
   "devDependencies": {
     "@types/node": "^18.0.6",
