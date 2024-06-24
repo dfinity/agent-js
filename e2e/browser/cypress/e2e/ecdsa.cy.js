@@ -12,7 +12,7 @@ const setup = async () => {
       verifyQuerySignatures: false,
       identity: identity1,
       fetch: fetchPolyfill,
-      host: 'http://127.0.0.1:4943/',
+      host: 'http://[::1]:4943/',
     },
   });
 
@@ -47,7 +47,7 @@ describe('ECDSAKeyIdentity tests with SubtleCrypto', () => {
           verifyQuerySignatures: false,
           identity: identity2,
           fetchPolyfill,
-          host: 'http://127.0.0.1:4943/',
+          host: 'http://[::1]:4943/',
         },
       });
 
