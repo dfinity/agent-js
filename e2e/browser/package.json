@@ -20,10 +20,10 @@
   "devDependencies": {
     "@types/node": "^18.0.6",
     "concurrently": "^8.2.2",
-    "cypress": "^13.12.0",
+    "cypress": "^13.7.0",
     "esbuild": "^0.20.2",
     "parcel": "^2.12.0",
-    "pm2": "^5.4.1",
+    "pm2": "^5.3.1",
     "size-limit": "^8.1.0"
   },
   "dependencies": {
@@ -33,6 +33,6 @@
     "idb-keyval": "^6.2.0"
   },
   "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "4.18.0"
+    "@rollup/rollup-linux-x64-gnu": "4.6.1"
   }
 }

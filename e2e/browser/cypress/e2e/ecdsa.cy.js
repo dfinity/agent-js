@@ -31,7 +31,7 @@ describe('ECDSAKeyIdentity tests with SubtleCrypto', () => {
     });
   });
   it('can persist an identity in indexeddb', () => {
-    cy.visit('http://127.0.0.1:1234');
+    cy.visit('http://localhost:1234');
     cy.window().then(async () => {
       const { principal1, identity1 } = await setup();
       const str = principal1.toString();
