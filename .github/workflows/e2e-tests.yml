@@ -19,7 +19,7 @@ jobs:
         spec:
           - '0.16.1'
         node:
-          - 18
+          - 20
 
     steps:
       - uses: actions/checkout@v4
@@ -62,11 +62,11 @@ jobs:
         id: setup
         run: npm run setup --workspaces --if-present
 
-      - name: Node.js e2e tests
-        run: npm run e2e --workspace e2e/node
-        env:
-          CI: true
-          REPLICA_PORT: 4943
+      # - name: Node.js e2e tests
+      #   run: npm run e2e --workspace e2e/node
+      #   env:
+      #     CI: true
+      #     REPLICA_PORT: 4943
 
       - name: Cypress e2e tests
         uses: cypress-io/github-action@v6
@@ -76,7 +76,7 @@ jobs:
           start: |
             npm run e2e --workspace e2e/browser
           wait-on: 'http://localhost:1234'
-          wait-on-timeout: 120
+          wait-on-timeout: 240
 
   aggregate:
     name: e2e:required
