@@ -4,8 +4,7 @@
 
 ### Changed
 
-- ci: breaking out browser and noded e2e tests into separate workflows
-- ci: using cypress github action for e2e tests
+- ci: removing headless browser tests pending a rewrite
 
 ## [1.4.0] - 2024-06-17
 

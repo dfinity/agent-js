@@ -12,7 +12,6 @@
       "packages/auth-client",
       "packages/assets",
       "packages/identity-secp256k1",
-      "e2e/browser",
       "e2e/node"
     ]
   },
