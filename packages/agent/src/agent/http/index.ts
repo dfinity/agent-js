@@ -409,6 +409,16 @@ export class HttpAgent implements Agent {
       body: submit,
     })) as HttpAgentSubmitRequest;
 
+    const nonce: Nonce | undefined = transformedRequest.body.nonce
+      ? toNonce(transformedRequest.body.nonce)
+      : undefined;
+
+    submit.nonce = nonce;
+
+    function toNonce(buf: ArrayBuffer): Nonce {
+      return new Uint8Array(buf) as Nonce;
+    }
+
     // Apply transform for identity.
     transformedRequest = await id.transformRequest(transformedRequest);
 
@@ -449,6 +459,7 @@ export class HttpAgent implements Agent {
         body: responseBody,
         headers: httpHeadersTransform(response.headers),
       },
+      requestDetails: submit,
     };
   }
 
@@ -696,7 +707,10 @@ export class HttpAgent implements Agent {
         tries: 0,
       };
 
-      return await this.#requestAndRetryQuery(args);
+      return {
+        requestDetails: request,
+        query: await this.#requestAndRetryQuery(args),
+      };
     };
 
     const getSubnetStatus = async (): Promise<SubnetStatus | void> => {
@@ -712,16 +726,22 @@ export class HttpAgent implements Agent {
     };
     // Attempt to make the query i=retryTimes times
     // Make query and fetch subnet keys in parallel
-    const [query, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
+    const [queryResult, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
+    const { requestDetails, query } = queryResult;
 
-    this.log.print('Query response:', query);
+    const queryWithDetails = {
+      ...query,
+      requestDetails,
+    };
+
+    this.log.print('Query response:', queryWithDetails);
     // Skip verification if the user has disabled it
     if (!this.#verifyQuerySignatures) {
-      return query;
+      return queryWithDetails;
     }
 
     try {
-      return this.#verifyQueryResponse(query, subnetStatus);
+      return this.#verifyQueryResponse(queryWithDetails, subnetStatus);
     } catch (_) {
       // In case the node signatures have changed, refresh the subnet keys and try again
       this.log.warn('Query response verification failed. Retrying with fresh subnet keys.');
@@ -734,7 +754,7 @@ export class HttpAgent implements Agent {
           'Invalid signature from replica signed query: no matching node key found.',
         );
       }
-      return this.#verifyQueryResponse(query, updatedSubnetStatus);
+      return this.#verifyQueryResponse(queryWithDetails, updatedSubnetStatus);
     }
   }
 
@@ -1023,3 +1043,4 @@ export class HttpAgent implements Agent {
     return p;
   }
 }
+

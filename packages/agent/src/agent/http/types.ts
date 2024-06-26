@@ -65,6 +65,7 @@ export interface CallRequest extends Record<string, any> {
   arg: ArrayBuffer;
   sender: Uint8Array | Principal;
   ingress_expiry: Expiry;
+  nonce?: Nonce;
 }
 
 // The types of values allowed in the `request_type` field for submit requests.
@@ -86,6 +87,7 @@ export interface QueryRequest extends Record<string, any> {
   arg: ArrayBuffer;
   sender: Uint8Array | Principal;
   ingress_expiry: Expiry;
+  nonce?: Nonce;
 }
 
 export interface ReadStateRequest extends Record<string, any> {

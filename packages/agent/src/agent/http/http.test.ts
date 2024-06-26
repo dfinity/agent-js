@@ -588,6 +588,8 @@ describe('retry failures', () => {
       methodName: 'test',
       arg: new Uint8Array().buffer,
     });
+    // Remove the request details to make the snapshot consistent
+    result.requestDetails = undefined;
     expect(result).toMatchSnapshot();
     // One try + three retries
     expect(mockFetch.mock.calls.length).toBe(4);

@@ -2,6 +2,7 @@
 
 exports[`retry failures should succeed after multiple failures within the configured limit 1`] = `
 {
+  "requestDetails": undefined,
   "requestId": ArrayBuffer [],
   "response": {
     "body": null,

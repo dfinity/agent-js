@@ -31,7 +31,10 @@ export async function pollForResponse(
   // eslint-disable-next-line
   request?: any,
   blsVerify?: CreateCertificateOptions['blsVerify'],
-): Promise<ArrayBuffer> {
+): Promise<{
+  certificate: Certificate;
+  reply: ArrayBuffer;
+}> {
   const path = [new TextEncoder().encode('request_status'), requestId];
   const currentRequest = request ?? (await agent.createReadStateRequest?.({ paths: [path] }));
   const state = await agent.readState(canisterId, { paths: [path] }, undefined, currentRequest);
@@ -42,6 +45,7 @@ export async function pollForResponse(
     canisterId: canisterId,
     blsVerify,
   });
+
   const maybeBuf = lookupResultToBuffer(cert.lookup([...path, new TextEncoder().encode('status')]));
   let status;
   if (typeof maybeBuf === 'undefined') {
@@ -53,7 +57,10 @@ export async function pollForResponse(
 
   switch (status) {
     case RequestStatusResponseStatus.Replied: {
-      return lookupResultToBuffer(cert.lookup([...path, 'reply']))!;
+      return {
+        reply: lookupResultToBuffer(cert.lookup([...path, 'reply']))!,
+        certificate: cert,
+      };
     }
 
     case RequestStatusResponseStatus.Received:

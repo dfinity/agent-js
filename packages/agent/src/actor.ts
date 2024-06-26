@@ -14,7 +14,7 @@ import { pollForResponse, PollStrategyFactory, strategy } from './polling';
 import { Principal } from '@dfinity/principal';
 import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
-import { CreateCertificateOptions } from './certificate';
+import { Certificate, CreateCertificateOptions } from './certificate';
 import managementCanisterIdl from './canisters/management_idl';
 import _SERVICE, { canister_install_mode, canister_settings } from './canisters/management_service';
 
@@ -159,6 +159,18 @@ export interface ActorMethodWithHttpDetails<Args extends unknown[] = unknown[], 
   (...args: Args): Promise<{ httpDetails: HttpDetailsResponse; result: Ret }>;
 }
 
+/**
+ * An actor method type, defined for each methods of the actor service.
+ */
+export interface ActorMethodExtended<Args extends unknown[] = unknown[], Ret = unknown>
+  extends ActorMethod {
+  (...args: Args): Promise<{
+    certificate?: Certificate;
+    httpDetails?: HttpDetailsResponse;
+    result: Ret;
+  }>;
+}
+
 export type FunctionWithArgsAndReturn<Args extends unknown[] = unknown[], Ret = unknown> = (
   ...args: Args
 ) => Ret;
@@ -167,6 +179,13 @@ export type FunctionWithArgsAndReturn<Args extends unknown[] = unknown[], Ret = 
 export type ActorMethodMappedWithHttpDetails<T> = {
   [K in keyof T]: T[K] extends FunctionWithArgsAndReturn<infer Args, infer Ret>
     ? ActorMethodWithHttpDetails<Args, Ret>
+    : never;
+};
+
+// Update all entries of T with the extra information from ActorMethodWithInfo
+export type ActorMethodMappedExtended<T> = {
+  [K in keyof T]: T[K] extends FunctionWithArgsAndReturn<infer Args, infer Ret>
+    ? ActorMethodExtended<Args, Ret>
     : never;
 };
 
@@ -205,6 +224,7 @@ const metadataSymbol = Symbol.for('ic-agent-metadata');
 
 export interface CreateActorClassOpts {
   httpDetails?: boolean;
+  certificate?: boolean;
 }
 
 interface CreateCanisterSettings {
@@ -348,6 +368,9 @@ export class Actor {
           if (options?.httpDetails) {
             func.annotations.push(ACTOR_METHOD_WITH_HTTP_DETAILS);
           }
+          if (options?.certificate) {
+            func.annotations.push(ACTOR_METHOD_WITH_CERTIFICATE);
+          }
 
           this[methodName] = _createActorMethod(this, methodName, func, config.blsVerify);
         }
@@ -371,6 +394,12 @@ export class Actor {
     ) as unknown as ActorSubclass<T>;
   }
 
+  /**
+   * Returns an actor with methods that return the http response details along with the result
+   * @param interfaceFactory - the interface factory for the actor
+   * @param configuration - the configuration for the actor
+   * @deprecated - use createActor with actorClassOptions instead
+   */
   public static createActorWithHttpDetails<T = Record<string, ActorMethod>>(
     interfaceFactory: IDL.InterfaceFactory,
     configuration: ActorConfig,
@@ -378,6 +407,25 @@ export class Actor {
     return new (this.createActorClass(interfaceFactory, { httpDetails: true }))(
       configuration,
     ) as unknown as ActorSubclass<ActorMethodMappedWithHttpDetails<T>>;
+  }
+
+  /**
+   * Returns an actor with methods that return the http response details along with the result
+   * @param interfaceFactory - the interface factory for the actor
+   * @param configuration - the configuration for the actor
+   * @param actorClassOptions - options for the actor class extended details to return with the result
+   */
+  public static createActorWithExtendedDetails<T = Record<string, ActorMethod>>(
+    interfaceFactory: IDL.InterfaceFactory,
+    configuration: ActorConfig,
+    actorClassOptions: CreateActorClassOpts = {
+      httpDetails: true,
+      certificate: true,
+    },
+  ): ActorSubclass<ActorMethodMappedExtended<T>> {
+    return new (this.createActorClass(interfaceFactory, actorClassOptions))(
+      configuration,
+    ) as unknown as ActorSubclass<ActorMethodMappedExtended<T>>;
   }
 
   private [metadataSymbol]: ActorMetadata;
@@ -409,6 +457,7 @@ const DEFAULT_ACTOR_CONFIG = {
 export type ActorConstructor = new (config: ActorConfig) => ActorSubclass;
 
 export const ACTOR_METHOD_WITH_HTTP_DETAILS = 'http-details';
+export const ACTOR_METHOD_WITH_CERTIFICATE = 'certificate';
 
 function _createActorMethod(
   actor: Actor,
@@ -437,6 +486,10 @@ function _createActorMethod(
         arg,
         effectiveCanisterId: options.effectiveCanisterId,
       });
+      const httpDetails = {
+        ...result.httpDetails,
+        requestDetails: result.requestDetails,
+      } as HttpDetailsResponse;
 
       switch (result.status) {
         case QueryResponseStatus.Rejected:
@@ -445,7 +498,7 @@ function _createActorMethod(
         case QueryResponseStatus.Replied:
           return func.annotations.includes(ACTOR_METHOD_WITH_HTTP_DETAILS)
             ? {
-                httpDetails: result.httpDetails,
+                httpDetails,
                 result: decodeReturnValue(func.retTypes, result.reply.arg),
               }
             : decodeReturnValue(func.retTypes, result.reply.arg);
@@ -471,7 +524,8 @@ function _createActorMethod(
       const cid = Principal.from(canisterId);
       const ecid = effectiveCanisterId !== undefined ? Principal.from(effectiveCanisterId) : cid;
       const arg = IDL.encode(func.argTypes, args);
-      const { requestId, response } = await agent.call(cid, {
+
+      const { requestId, response, requestDetails } = await agent.call(cid, {
         methodName,
         arg,
         effectiveCanisterId: ecid,
@@ -482,16 +536,38 @@ function _createActorMethod(
       }
 
       const pollStrategy = pollingStrategyFactory();
-      const responseBytes = await pollForResponse(agent, ecid, requestId, pollStrategy, blsVerify);
+      // Contains the certificate and the reply from the boundary node
+      const { certificate, reply } = await pollForResponse(
+        agent,
+        ecid,
+        requestId,
+        pollStrategy,
+        blsVerify,
+      );
       const shouldIncludeHttpDetails = func.annotations.includes(ACTOR_METHOD_WITH_HTTP_DETAILS);
+      const shouldIncludeCertificate = func.annotations.includes(ACTOR_METHOD_WITH_CERTIFICATE);
 
-      if (responseBytes !== undefined) {
-        return shouldIncludeHttpDetails
-          ? {
-              httpDetails: response,
-              result: decodeReturnValue(func.retTypes, responseBytes),
-            }
-          : decodeReturnValue(func.retTypes, responseBytes);
+      const httpDetails = { ...response, requestDetails } as HttpDetailsResponse;
+
+      if (reply !== undefined) {
+        if (shouldIncludeHttpDetails && shouldIncludeCertificate) {
+          return {
+            httpDetails,
+            certificate,
+            result: decodeReturnValue(func.retTypes, reply),
+          };
+        } else if (shouldIncludeCertificate) {
+          return {
+            certificate,
+            result: decodeReturnValue(func.retTypes, reply),
+          };
+        } else if (shouldIncludeHttpDetails) {
+          return {
+            httpDetails,
+            result: decodeReturnValue(func.retTypes, reply),
+          };
+        }
+        return decodeReturnValue(func.retTypes, reply);
       } else if (func.retTypes.length === 0) {
         return shouldIncludeHttpDetails
           ? {
@@ -543,4 +619,10 @@ export function getManagementCanister(config: CallConfig): ActorSubclass<Managem
       queryTransform: transform,
     },
   });
+}
+
+export class AdvancedActor extends Actor {
+  constructor(metadata: ActorMetadata) {
+    super(metadata);
+  }
 }
