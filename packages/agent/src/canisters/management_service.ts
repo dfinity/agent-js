@@ -1,10 +1,10 @@
-/**
+/*
  * This file is generated from the candid for asset management.
- * didc version: 0.3.6
+ * didc version: 0.4.0
  */
-
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
+
 import type { Principal } from '@dfinity/principal';
 import type { ActorMethod } from '@dfinity/agent';
 import type { IDL } from '@dfinity/candid';
@@ -15,12 +15,6 @@ export interface bitcoin_get_balance_args {
   address: bitcoin_address;
   min_confirmations: [] | [number];
 }
-export interface bitcoin_get_balance_query_args {
-  network: bitcoin_network;
-  address: bitcoin_address;
-  min_confirmations: [] | [number];
-}
-export type bitcoin_get_balance_query_result = satoshi;
 export type bitcoin_get_balance_result = satoshi;
 export interface bitcoin_get_current_fee_percentiles_args {
   network: bitcoin_network;
@@ -30,17 +24,6 @@ export interface bitcoin_get_utxos_args {
   network: bitcoin_network;
   filter: [] | [{ page: Uint8Array | number[] } | { min_confirmations: number }];
   address: bitcoin_address;
-}
-export interface bitcoin_get_utxos_query_args {
-  network: bitcoin_network;
-  filter: [] | [{ page: Uint8Array | number[] } | { min_confirmations: number }];
-  address: bitcoin_address;
-}
-export interface bitcoin_get_utxos_query_result {
-  next_page: [] | [Uint8Array | number[]];
-  tip_height: number;
-  tip_block_hash: block_hash;
-  utxos: Array<utxo>;
 }
 export interface bitcoin_get_utxos_result {
   next_page: [] | [Uint8Array | number[]];
@@ -65,6 +48,19 @@ export interface canister_info_result {
   recent_changes: Array<change>;
   total_num_changes: bigint;
 }
+export type canister_install_mode =
+  | { reinstall: null }
+  | {
+      upgrade:
+        | []
+        | [
+            {
+              wasm_memory_persistence: [] | [{ keep: null } | { replace: null }];
+              skip_pre_upgrade: [] | [boolean];
+            },
+          ];
+    }
+  | { install: null };
 export interface canister_log_record {
   idx: bigint;
   timestamp_nanos: bigint;
@@ -75,6 +71,7 @@ export interface canister_settings {
   controllers: [] | [Array<Principal>];
   reserved_cycles_limit: [] | [bigint];
   log_visibility: [] | [log_visibility];
+  wasm_memory_limit: [] | [bigint];
   memory_allocation: [] | [bigint];
   compute_allocation: [] | [bigint];
 }
@@ -86,6 +83,12 @@ export interface canister_status_result {
   memory_size: bigint;
   cycles: bigint;
   settings: definite_canister_settings;
+  query_stats: {
+    response_payload_bytes_total: bigint;
+    num_instructions_total: bigint;
+    num_calls_total: bigint;
+    request_payload_bytes_total: bigint;
+  };
   idle_cycles_burned_per_day: bigint;
   module_hash: [] | [Uint8Array | number[]];
   reserved_cycles: bigint;
@@ -116,7 +119,9 @@ export type change_origin =
         canister_id: Principal;
       };
     };
-export type chunk_hash = Uint8Array | number[];
+export interface chunk_hash {
+  hash: Uint8Array | number[];
+}
 export interface clear_chunk_store_args {
   canister_id: canister_id;
 }
@@ -132,6 +137,7 @@ export interface definite_canister_settings {
   controllers: Array<Principal>;
   reserved_cycles_limit: bigint;
   log_visibility: log_visibility;
+  wasm_memory_limit: bigint;
   memory_allocation: bigint;
   compute_allocation: bigint;
 }
@@ -177,22 +183,16 @@ export interface http_request_result {
 export interface install_chunked_code_args {
   arg: Uint8Array | number[];
   wasm_module_hash: Uint8Array | number[];
-  mode:
-    | { reinstall: null }
-    | { upgrade: [] | [{ skip_pre_upgrade: [] | [boolean] }] }
-    | { install: null };
+  mode: canister_install_mode;
   chunk_hashes_list: Array<chunk_hash>;
   target_canister: canister_id;
+  store_canister: [] | [canister_id];
   sender_canister_version: [] | [bigint];
-  storage_canister: [] | [canister_id];
 }
 export interface install_code_args {
   arg: Uint8Array | number[];
   wasm_module: wasm_module;
-  mode:
-    | { reinstall: null }
-    | { upgrade: [] | [{ skip_pre_upgrade: [] | [boolean] }] }
-    | { install: null };
+  mode: canister_install_mode;
   canister_id: canister_id;
   sender_canister_version: [] | [bigint];
 }
@@ -201,7 +201,7 @@ export type millisatoshi_per_byte = bigint;
 export interface node_metrics {
   num_block_failures_total: bigint;
   node_id: Principal;
-  num_blocks_total: bigint;
+  num_blocks_proposed_total: bigint;
 }
 export interface node_metrics_history_args {
   start_at_timestamp_nanos: bigint;
@@ -270,19 +270,11 @@ export interface utxo {
 export type wasm_module = Uint8Array | number[];
 export default interface _SERVICE {
   bitcoin_get_balance: ActorMethod<[bitcoin_get_balance_args], bitcoin_get_balance_result>;
-  bitcoin_get_balance_query: ActorMethod<
-    [bitcoin_get_balance_query_args],
-    bitcoin_get_balance_query_result
-  >;
   bitcoin_get_current_fee_percentiles: ActorMethod<
     [bitcoin_get_current_fee_percentiles_args],
     bitcoin_get_current_fee_percentiles_result
   >;
   bitcoin_get_utxos: ActorMethod<[bitcoin_get_utxos_args], bitcoin_get_utxos_result>;
-  bitcoin_get_utxos_query: ActorMethod<
-    [bitcoin_get_utxos_query_args],
-    bitcoin_get_utxos_query_result
-  >;
   bitcoin_send_transaction: ActorMethod<[bitcoin_send_transaction_args], undefined>;
   canister_info: ActorMethod<[canister_info_args], canister_info_result>;
   canister_status: ActorMethod<[canister_status_args], canister_status_result>;

@@ -1,10 +1,10 @@
-/**
+/*
  * This file is generated from the candid for asset management.
- * didc version: 0.3.6
+ * didc version: 0.4.0
  */
-
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
+
 export default ({ IDL }) => {
   const bitcoin_network = IDL.Variant({
     mainnet: IDL.Null,
@@ -18,12 +18,6 @@ export default ({ IDL }) => {
   });
   const satoshi = IDL.Nat64;
   const bitcoin_get_balance_result = satoshi;
-  const bitcoin_get_balance_query_args = IDL.Record({
-    network: bitcoin_network,
-    address: bitcoin_address,
-    min_confirmations: IDL.Opt(IDL.Nat32),
-  });
-  const bitcoin_get_balance_query_result = satoshi;
   const bitcoin_get_current_fee_percentiles_args = IDL.Record({
     network: bitcoin_network,
   });
@@ -50,22 +44,6 @@ export default ({ IDL }) => {
     outpoint: outpoint,
   });
   const bitcoin_get_utxos_result = IDL.Record({
-    next_page: IDL.Opt(IDL.Vec(IDL.Nat8)),
-    tip_height: IDL.Nat32,
-    tip_block_hash: block_hash,
-    utxos: IDL.Vec(utxo),
-  });
-  const bitcoin_get_utxos_query_args = IDL.Record({
-    network: bitcoin_network,
-    filter: IDL.Opt(
-      IDL.Variant({
-        page: IDL.Vec(IDL.Nat8),
-        min_confirmations: IDL.Nat32,
-      }),
-    ),
-    address: bitcoin_address,
-  });
-  const bitcoin_get_utxos_query_result = IDL.Record({
     next_page: IDL.Opt(IDL.Vec(IDL.Nat8)),
     tip_height: IDL.Nat32,
     tip_block_hash: block_hash,
@@ -124,6 +102,7 @@ export default ({ IDL }) => {
     controllers: IDL.Vec(IDL.Principal),
     reserved_cycles_limit: IDL.Nat,
     log_visibility: log_visibility,
+    wasm_memory_limit: IDL.Nat,
     memory_allocation: IDL.Nat,
     compute_allocation: IDL.Nat,
   });
@@ -136,6 +115,12 @@ export default ({ IDL }) => {
     memory_size: IDL.Nat,
     cycles: IDL.Nat,
     settings: definite_canister_settings,
+    query_stats: IDL.Record({
+      response_payload_bytes_total: IDL.Nat,
+      num_instructions_total: IDL.Nat,
+      num_calls_total: IDL.Nat,
+      request_payload_bytes_total: IDL.Nat,
+    }),
     idle_cycles_burned_per_day: IDL.Nat,
     module_hash: IDL.Opt(IDL.Vec(IDL.Nat8)),
     reserved_cycles: IDL.Nat,
@@ -146,6 +131,7 @@ export default ({ IDL }) => {
     controllers: IDL.Opt(IDL.Vec(IDL.Principal)),
     reserved_cycles_limit: IDL.Opt(IDL.Nat),
     log_visibility: IDL.Opt(log_visibility),
+    wasm_memory_limit: IDL.Opt(IDL.Nat),
     memory_allocation: IDL.Opt(IDL.Nat),
     compute_allocation: IDL.Opt(IDL.Nat),
   });
@@ -207,29 +193,31 @@ export default ({ IDL }) => {
     ),
     headers: IDL.Vec(http_header),
   });
-  const chunk_hash = IDL.Vec(IDL.Nat8);
+  const canister_install_mode = IDL.Variant({
+    reinstall: IDL.Null,
+    upgrade: IDL.Opt(
+      IDL.Record({
+        wasm_memory_persistence: IDL.Opt(IDL.Variant({ keep: IDL.Null, replace: IDL.Null })),
+        skip_pre_upgrade: IDL.Opt(IDL.Bool),
+      }),
+    ),
+    install: IDL.Null,
+  });
+  const chunk_hash = IDL.Record({ hash: IDL.Vec(IDL.Nat8) });
   const install_chunked_code_args = IDL.Record({
     arg: IDL.Vec(IDL.Nat8),
     wasm_module_hash: IDL.Vec(IDL.Nat8),
-    mode: IDL.Variant({
-      reinstall: IDL.Null,
-      upgrade: IDL.Opt(IDL.Record({ skip_pre_upgrade: IDL.Opt(IDL.Bool) })),
-      install: IDL.Null,
-    }),
+    mode: canister_install_mode,
     chunk_hashes_list: IDL.Vec(chunk_hash),
     target_canister: canister_id,
+    store_canister: IDL.Opt(canister_id),
     sender_canister_version: IDL.Opt(IDL.Nat64),
-    storage_canister: IDL.Opt(canister_id),
   });
   const wasm_module = IDL.Vec(IDL.Nat8);
   const install_code_args = IDL.Record({
     arg: IDL.Vec(IDL.Nat8),
     wasm_module: wasm_module,
-    mode: IDL.Variant({
-      reinstall: IDL.Null,
-      upgrade: IDL.Opt(IDL.Record({ skip_pre_upgrade: IDL.Opt(IDL.Bool) })),
-      install: IDL.Null,
-    }),
+    mode: canister_install_mode,
     canister_id: canister_id,
     sender_canister_version: IDL.Opt(IDL.Nat64),
   });
@@ -240,7 +228,7 @@ export default ({ IDL }) => {
   const node_metrics = IDL.Record({
     num_block_failures_total: IDL.Nat64,
     node_id: IDL.Principal,
-    num_blocks_total: IDL.Nat64,
+    num_blocks_proposed_total: IDL.Nat64,
   });
   const node_metrics_history_result = IDL.Vec(
     IDL.Record({
@@ -290,22 +278,12 @@ export default ({ IDL }) => {
   const upload_chunk_result = chunk_hash;
   return IDL.Service({
     bitcoin_get_balance: IDL.Func([bitcoin_get_balance_args], [bitcoin_get_balance_result], []),
-    bitcoin_get_balance_query: IDL.Func(
-      [bitcoin_get_balance_query_args],
-      [bitcoin_get_balance_query_result],
-      ['query'],
-    ),
     bitcoin_get_current_fee_percentiles: IDL.Func(
       [bitcoin_get_current_fee_percentiles_args],
       [bitcoin_get_current_fee_percentiles_result],
       [],
     ),
     bitcoin_get_utxos: IDL.Func([bitcoin_get_utxos_args], [bitcoin_get_utxos_result], []),
-    bitcoin_get_utxos_query: IDL.Func(
-      [bitcoin_get_utxos_query_args],
-      [bitcoin_get_utxos_query_result],
-      ['query'],
-    ),
     bitcoin_send_transaction: IDL.Func([bitcoin_send_transaction_args], [], []),
     canister_info: IDL.Func([canister_info_args], [canister_info_result], []),
     canister_status: IDL.Func([canister_status_args], [canister_status_result], []),

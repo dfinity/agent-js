@@ -38,6 +38,8 @@ dfx stop
 
 We expect you to have the replica running on port `4943`. If you are using a different port, you can set an environment variable `REPLICA_PORT` to the port number.
 
+> Note: browser tests have been temporarily removed pending a rewrite
+
 To run the e2e browser tests, you can run
 
 ```bash
@@ -63,6 +65,8 @@ commands to keep in mind;
 ### bin/\* scripts
 
 The following scripts can be found in [./bin](./bin):
+
+- update-management-idl - Update the management canister IDL in @dfinity/agent
 
 Monorepo-related scripts run in this order, but are usually invoked by `npm install`:
 

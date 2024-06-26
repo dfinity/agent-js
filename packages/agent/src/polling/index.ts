@@ -1,6 +1,6 @@
 import { Principal } from '@dfinity/principal';
 import { Agent, RequestStatusResponseStatus } from '../agent';
-import { Certificate, CreateCertificateOptions } from '../certificate';
+import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from '../certificate';
 import { RequestId } from '../request_id';
 import { toHex } from '../utils/buffer';
 
@@ -31,7 +31,10 @@ export async function pollForResponse(
   // eslint-disable-next-line
   request?: any,
   blsVerify?: CreateCertificateOptions['blsVerify'],
-): Promise<ArrayBuffer> {
+): Promise<{
+  certificate: Certificate;
+  reply: ArrayBuffer;
+}> {
   const path = [new TextEncoder().encode('request_status'), requestId];
   const currentRequest = request ?? (await agent.createReadStateRequest?.({ paths: [path] }));
   const state = await agent.readState(canisterId, { paths: [path] }, undefined, currentRequest);
@@ -42,7 +45,8 @@ export async function pollForResponse(
     canisterId: canisterId,
     blsVerify,
   });
-  const maybeBuf = cert.lookup([...path, new TextEncoder().encode('status')]);
+
+  const maybeBuf = lookupResultToBuffer(cert.lookup([...path, new TextEncoder().encode('status')]));
   let status;
   if (typeof maybeBuf === 'undefined') {
     // Missing requestId means we need to wait
@@ -53,7 +57,10 @@ export async function pollForResponse(
 
   switch (status) {
     case RequestStatusResponseStatus.Replied: {
-      return cert.lookup([...path, 'reply'])!;
+      return {
+        reply: lookupResultToBuffer(cert.lookup([...path, 'reply']))!,
+        certificate: cert,
+      };
     }
 
     case RequestStatusResponseStatus.Received:
@@ -64,8 +71,12 @@ export async function pollForResponse(
       return pollForResponse(agent, canisterId, requestId, strategy, currentRequest);
 
     case RequestStatusResponseStatus.Rejected: {
-      const rejectCode = new Uint8Array(cert.lookup([...path, 'reject_code'])!)[0];
-      const rejectMessage = new TextDecoder().decode(cert.lookup([...path, 'reject_message'])!);
+      const rejectCode = new Uint8Array(
+        lookupResultToBuffer(cert.lookup([...path, 'reject_code']))!,
+      )[0];
+      const rejectMessage = new TextDecoder().decode(
+        lookupResultToBuffer(cert.lookup([...path, 'reject_message']))!,
+      );
       throw new Error(
         `Call was rejected:\n` +
           `  Request ID: ${toHex(requestId)}\n` +

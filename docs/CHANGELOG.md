@@ -2,6 +2,29 @@
 
 ## [Unreleased]
 
+### Changed
+
+- ci: removing headless browser tests pending a rewrite
+
+## [1.4.0] - 2024-06-17
+
+### Added
+
+- feat!: add support for proof of absence in Certificate lookups
+- feat: `update-management-idl` automation to update the management canister IDL in `@dfinity/agent`
+
+### Changed
+
+- fix: ObservableLog no longer extends Function and class instance can no longer be called. Fixes an issue when running in a browser extension context.
+- feat!: ObservableLog's `log` method is renamed to `print` to avoind calling `log.log`.
+- chore: update management canister interface with latest bitcoin features
+- fix: publish script will correctly update the `package-lock.json` file with the correct dependencies when making a new release
+- chore: updates agent error response to read "Gateway returns error" instead of "Server"`
+- chore: updates dfinity/conventional-pr-title-action to v4.0.0
+- chore: updates dfinity/conventional-pr-title-action to v3.2.0
+
+## [1.3.0] - 2024-05-01
+
 ### Added
 
 - docs: adds instructions on how to run unit and e2e tests to the README
@@ -299,6 +322,7 @@ Changes default stored key for `auth-client` to use ECDSAKey*   Also updates the
 
 ### Changed
 
+*   feat: strips out bitcoin query methods from management canister IDL
 *   Adds retry logic to `HttpAgent`. By default, retries three times before throwing an error, to offer a more cohesive workflow
 *   Improves and truncates error messages in Candid
 *   fixes flaky tests for syncTime
