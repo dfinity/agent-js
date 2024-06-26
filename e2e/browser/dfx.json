@@ -1,8 +1,0 @@
-{
-  "canisters": {
-    "whoami": {
-      "type": "motoko",
-      "main": "src/whoami/main.mo"
-    }
-  }
-}

@@ -38,6 +38,8 @@ dfx stop
 
 We expect you to have the replica running on port `4943`. If you are using a different port, you can set an environment variable `REPLICA_PORT` to the port number.
 
+> Note: browser tests have been temporarily removed pending a rewrite
+
 To run the e2e browser tests, you can run
 
 ```bash
