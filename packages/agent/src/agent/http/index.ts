@@ -266,10 +266,9 @@ export class HttpAgent implements Agent {
   #verifyQuerySignatures = true;
 
   /**
-   * @deprecated Use HttpAgent.create() instead
    * @param options - Options for the HttpAgent
    */
-  constructor(options: HttpAgentOptions = {}) {
+  protected constructor(options: HttpAgentOptions = {}) {
     this.config = options;
     this.#fetch = options.fetch || getDefaultFetch() || fetch.bind(global);
     this.#fetchOptions = options.fetchOptions;
@@ -323,7 +322,7 @@ export class HttpAgent implements Agent {
   }
 
   public static createSync(options: HttpAgentOptions = {}): HttpAgent {
-    return new HttpAgent({ ...options });
+    return new this({ ...options });
   }
 
   public static async create(
@@ -929,14 +928,11 @@ export class HttpAgent implements Agent {
 
     const response = await this.#requestAndRetry({
       request: () =>
-        this.#fetch(
-          '' + new URL(`/api/v2/canister/${canister.toString()}/read_state`, this.host),
-          {
-            ...this.#fetchOptions,
-            ...transformedRequest.request,
-            body,
-          },
-        ),
+        this.#fetch('' + new URL(`/api/v2/canister/${canister.toString()}/read_state`, this.host), {
+          ...this.#fetchOptions,
+          ...transformedRequest.request,
+          body,
+        }),
       backoff,
       tries: 0,
     });
