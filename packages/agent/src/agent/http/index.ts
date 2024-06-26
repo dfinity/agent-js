@@ -267,8 +267,9 @@ export class HttpAgent implements Agent {
 
   /**
    * @param options - Options for the HttpAgent
+   * @deprecated Use `HttpAgent.create` or `HttpAgent.createSync` instead
    */
-  protected constructor(options: HttpAgentOptions = {}) {
+  constructor(options: HttpAgentOptions = {}) {
     this.config = options;
     this.#fetch = options.fetch || getDefaultFetch() || fetch.bind(global);
     this.#fetchOptions = options.fetchOptions;
@@ -405,7 +406,7 @@ export class HttpAgent implements Agent {
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
-    const id = await(identity !== undefined ? await identity : await this.#identity);
+    const id = await (identity !== undefined ? await identity : await this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -696,7 +697,7 @@ export class HttpAgent implements Agent {
     this.log.print(`ecid ${ecid.toString()}`);
     this.log.print(`canisterId ${canisterId.toString()}`);
     const makeQuery = async () => {
-      const id = await(identity !== undefined ? await identity : await this.#identity);
+      const id = await (identity !== undefined ? await identity : await this.#identity);
       if (!id) {
         throw new IdentityInvalidError(
           "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -876,7 +877,7 @@ export class HttpAgent implements Agent {
     identity?: Identity | Promise<Identity>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<any> {
-    const id = await(identity !== undefined ? await identity : await this.#identity);
+    const id = await (identity !== undefined ? await identity : await this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
