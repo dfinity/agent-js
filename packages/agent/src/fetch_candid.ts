@@ -14,10 +14,7 @@ import { Actor, ActorSubclass } from './actor';
 export async function fetchCandid(canisterId: string, agent?: HttpAgent): Promise<string> {
   if (!agent) {
     // Create an anonymous `HttpAgent` (adapted from Candid UI)
-    agent = new HttpAgent();
-    if (agent.isLocal()) {
-      agent.fetchRootKey();
-    }
+    agent = await HttpAgent.create();
   }
 
   // Attempt to use canister metadata

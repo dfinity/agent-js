@@ -228,7 +228,7 @@ test('readState should not call transformers if request is passed', async () => 
 test('redirect avoid', async () => {
   function checkUrl(base: string, result: string) {
     const httpAgent = new HttpAgent({ host: base });
-    expect(httpAgent['_host'].hostname).toBe(result);
+    expect(httpAgent.host.hostname).toBe(result);
   }
 
   checkUrl('https://ic0.app', 'ic0.app');
@@ -714,12 +714,12 @@ test('should fetch with given call options and fetch options', async () => {
 describe('default host', () => {
   it('should use a default host of icp-api.io', () => {
     const agent = new HttpAgent({ fetch: jest.fn() });
-    expect((agent as any)._host.hostname).toBe('icp-api.io');
+    expect((agent as any).host.hostname).toBe('icp-api.io');
   });
   it('should use a default of icp-api.io if location is not available', () => {
     delete (global as any).window;
     const agent = new HttpAgent({ fetch: jest.fn() });
-    expect((agent as any)._host.hostname).toBe('icp-api.io');
+    expect((agent as any).host.hostname).toBe('icp-api.io');
   });
   it('should use the existing host if the agent is used on a known hostname', () => {
     const knownHosts = ['ic0.app', 'icp0.io', '127.0.0.1', 'localhost'];
@@ -729,8 +729,8 @@ describe('default host', () => {
         hostname: host,
         protocol: 'https:',
       } as any;
-      const agent = new HttpAgent({ fetch: jest.fn(), host });
-      expect((agent as any)._host.hostname).toBe(host);
+      const agent = HttpAgent.createSync({ fetch: jest.fn(), host });
+      expect((agent as any).host.hostname).toBe(host);
     }
   });
   it('should correctly handle subdomains on known hosts', () => {
@@ -743,10 +743,10 @@ describe('default host', () => {
         protocol: 'https:',
       } as any;
       const agent = new HttpAgent({ fetch: jest.fn() });
-      expect((agent as any)._host.hostname).toBe(host);
+      expect(agent.host.hostname).toBe(host);
     }
   });
-  it('should correctly handle subdomains on remote hosts', () => {
+  it('should correctly handle subdomains on remote hosts', async () => {
     const remoteHosts = [
       '000.gitpod.io',
       '000.github.dev',
@@ -760,11 +760,11 @@ describe('default host', () => {
         hostname: host,
         protocol: 'https:',
       } as any;
-      const agent = new HttpAgent({ fetch: jest.fn() });
-      expect((agent as any)._host.hostname).toBe(host);
+      const agent = await HttpAgent.createSync({ fetch: jest.fn() });
+      expect(agent.host.toString()).toBe(`https://${host}/`);
     }
   });
-  it('should handle port numbers for 127.0.0.1 and localhost', () => {
+  it('should handle port numbers for 127.0.0.1 and localhost', async () => {
     const knownHosts = ['127.0.0.1', 'localhost'];
     for (const host of knownHosts) {
       delete (window as any).location;
@@ -775,8 +775,8 @@ describe('default host', () => {
         protocol: 'http:',
         port: '4943',
       } as any;
-      const agent = new HttpAgent({ fetch: jest.fn() });
-      expect((agent as any)._host.hostname).toBe(host);
+      const agent = await HttpAgent.createSync({ fetch: jest.fn() });
+      expect(agent.host.toString()).toBe(`http://${host}:4943/`);
     }
   });
 });
