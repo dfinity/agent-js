@@ -7,6 +7,7 @@ import * as cbor from './cbor';
 import { requestIdOf } from './request_id';
 import * as pollingImport from './polling';
 import { ActorConfig } from './actor';
+import { HttpAgent as HttpAgent1 } from 'agent1';
 
 const importActor = async (mockUpdatePolling?: () => void) => {
   jest.dontMock('./polling');
@@ -369,6 +370,22 @@ describe('makeActor', () => {
       'Canister ID is required, but received undefined instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.',
     );
   });
+});
+
+test.only("Legacy Agent interface should be accepted by Actor's createActor", async () => {
+  const { Actor } = await importActor();
+  const actorInterface = () => {
+    return IDL.Service({
+      greet: IDL.Func([IDL.Text], [IDL.Text]),
+    });
+  };
+
+  const actor = Actor.createActor(actorInterface, {
+    canisterId: Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c'),
+    agent: new HttpAgent1() as unknown as HttpAgent,
+  });
+
+  await actor.greet('test'); //?
 });
 // TODO: tests for rejected, unknown time out
 

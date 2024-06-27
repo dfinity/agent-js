@@ -64,6 +64,7 @@
     "@types/jest": "^29.5.5",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
+    "agent1": "npm:@dfinity/agent@^1.4.0",
     "esbuild": "^0.15.16",
     "eslint": "^8.19.0",
     "isomorphic-fetch": "^3.0.0",
