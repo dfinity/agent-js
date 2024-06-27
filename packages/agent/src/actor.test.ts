@@ -8,6 +8,7 @@ import { requestIdOf } from './request_id';
 import * as pollingImport from './polling';
 import { ActorConfig } from './actor';
 import { HttpAgent as HttpAgent1 } from 'agent1';
+HttpAgent1; //?
 
 const importActor = async (mockUpdatePolling?: () => void) => {
   jest.dontMock('./polling');
@@ -372,17 +373,19 @@ describe('makeActor', () => {
   });
 });
 
+jest.setTimeout(20000);
+
 test.only("Legacy Agent interface should be accepted by Actor's createActor", async () => {
   const { Actor } = await importActor();
   const actorInterface = () => {
     return IDL.Service({
-      greet: IDL.Func([IDL.Text], [IDL.Text]),
+      greet: IDL.Func([IDL.Text], [IDL.Text], ['query']),
     });
   };
 
   const actor = Actor.createActor(actorInterface, {
     canisterId: Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c'),
-    agent: new HttpAgent1() as unknown as HttpAgent,
+    agent: new HttpAgent1({ host: 'https://icp-api.io' }) as unknown as HttpAgent,
   });
 
   await actor.greet('test'); //?
