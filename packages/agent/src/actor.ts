@@ -531,6 +531,10 @@ function _createActorMethod(
         effectiveCanisterId: ecid,
       });
 
+      requestId;
+      response;
+      requestDetails;
+
       if (!response.ok || response.body /* IC-1462 */) {
         throw new UpdateCallRejectedError(cid, methodName, requestId, response);
       }
@@ -544,6 +548,7 @@ function _createActorMethod(
         pollStrategy,
         blsVerify,
       );
+      reply;
       const shouldIncludeHttpDetails = func.annotations.includes(ACTOR_METHOD_WITH_HTTP_DETAILS);
       const shouldIncludeCertificate = func.annotations.includes(ACTOR_METHOD_WITH_CERTIFICATE);
 
