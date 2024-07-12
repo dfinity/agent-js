@@ -6,6 +6,10 @@
 
 - ci: removing headless browser tests pending a rewrite
 
+### Added
+
+- test: adding test for backwards compatibility with actor for v1 agents
+
 ## [1.4.0] - 2024-06-17
 
 ### Added
