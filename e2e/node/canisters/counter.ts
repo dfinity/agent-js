@@ -1,4 +1,4 @@
-import { Actor, ActorSubclass, HttpAgentOptions } from '@dfinity/agent';
+import { Actor, ActorSubclass, HttpAgentOptions, Agent } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { readFileSync } from 'fs';
@@ -47,20 +47,22 @@ export default async function (): Promise<{
   return cache;
 }
 
-export const createActor = async (options?: HttpAgentOptions) => {
+export const createActor = async (options?: HttpAgentOptions, agent?: Agent) => {
   const module = readFileSync(path.join(__dirname, 'counter.wasm'));
-  const agent = await makeAgent({
-    ...options,
-  });
+  const effectiveAgent = agent
+    ? agent
+    : await makeAgent({
+        ...options,
+      });
   try {
     if (!options?.host?.includes('icp-api')) {
-      await agent.fetchRootKey();
+      await effectiveAgent.fetchRootKey();
     }
   } catch (_) {
     //
   }
 
-  const canisterId = await Actor.createCanister({ agent });
-  await Actor.install({ module }, { canisterId, agent });
-  return Actor.createActor(idl, { canisterId, agent }) as ActorSubclass<_SERVICE>;
+  const canisterId = await Actor.createCanister({ agent: effectiveAgent });
+  await Actor.install({ module }, { canisterId, agent: effectiveAgent });
+  return Actor.createActor(idl, { canisterId, agent: effectiveAgent }) as ActorSubclass<_SERVICE>;
 };

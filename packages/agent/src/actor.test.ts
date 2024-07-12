@@ -370,6 +370,5 @@ describe('makeActor', () => {
     );
   });
 });
-// TODO: tests for rejected, unknown time out
 
 jest.setTimeout(20000);
