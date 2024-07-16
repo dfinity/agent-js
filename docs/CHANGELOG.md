@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [2.0.0] - 2024-07-16
+
 ### Changed
 
 - ci: removing headless browser tests pending a rewrite
