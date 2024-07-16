@@ -809,3 +809,23 @@ test('it should log errors to console if the option is set', async () => {
   const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: jest.fn(), logToConsole: true });
   await agent.syncTime();
 });
+
+
+test.only('it should allow for configuring a max age in minutes for the ingress expiry', async () => {
+  const mockFetch = jest.fn();
+
+  const agent = await HttpAgent.create({
+    host: HTTP_AGENT_HOST,
+    fetch: mockFetch,
+    ingressExpiryInMinutes: 5,
+  });
+
+  await agent.syncTime();
+
+  await agent.call(Principal.managementCanister(), {
+    methodName: 'test',
+    arg: new Uint8Array().buffer,
+  });
+
+  const requestBody: any = cbor.decode(mockFetch.mock.calls[0][1].body);
+});
