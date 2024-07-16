@@ -5,10 +5,15 @@
 ### Changed
 
 - ci: removing headless browser tests pending a rewrite
+- ci: changing token for creating release
 
 ### Added
 
 - test: adding test for backwards compatibility with actor for v1 agents
+- feat!: deprecate `HttpAgent` constructor in favor of new `create` and `createSync` methods.
+  - `create` is async and returns a promise. It will sync time with the replica and fetch the root key if the host is not `https://icp-api.io`
+  - Replaces `source` option with a `from` and `fromSync` methods, similar to `Principal.from`
+
 
 ## [1.4.0] - 2024-06-17
 
@@ -34,9 +39,6 @@
 - docs: adds instructions on how to run unit and e2e tests to the README
 - chore: adds required `npm audit` check to PRs
 - new `HttpAgent` option: `backoffStrategy` - allows you to set a custom delay strategy for retries. The default is a newly exported `exponentialBackoff`, but you can pass your own function to customize the delay between retries.
-- feat!: deprecate `HttpAgent` constructor in favor of new `create` and `createSync` methods.
-  - `create` is async and returns a promise. It will sync time with the replica and fetch the root key if the host is not `https://icp-api.io`
-  - Replaces `source` option with a `from` and `fromSync` methods, similar to `Principal.from`
 
 ### Changed
 
