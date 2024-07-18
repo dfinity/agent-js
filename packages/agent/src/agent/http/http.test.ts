@@ -809,3 +809,14 @@ test('it should log errors to console if the option is set', async () => {
   const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: jest.fn(), logToConsole: true });
   await agent.syncTime();
 });
+
+
+test('it should fail when setting an expiry in the past', async () => {
+  expect(() =>
+    HttpAgent.createSync({
+      host: 'https://icp-api.io',
+      ingressExpiryInMinutes: -1,
+      fetch: jest.fn(),
+    }),
+  ).toThrow(`Ingress expiry time must be greater than 0`);
+});

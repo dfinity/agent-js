@@ -292,7 +292,7 @@ describe('makeActor', () => {
     expect(reply).toEqual(canisterDecodedReturnValue);
     expect(replyUpdate).toEqual(canisterDecodedReturnValue);
     expect(replyWithHttpDetails.result).toEqual(canisterDecodedReturnValue);
-    replyWithHttpDetails.httpDetails['requestDetails']; //?
+    replyWithHttpDetails.httpDetails['requestDetails'];
     expect(replyWithHttpDetails.httpDetails).toMatchInlineSnapshot(`
       {
         "headers": [],
@@ -330,7 +330,7 @@ describe('makeActor', () => {
     `);
     expect(replyUpdateWithHttpDetails.result).toEqual(canisterDecodedReturnValue);
 
-    replyUpdateWithHttpDetails.httpDetails['requestDetails']['nonce'] = new Uint8Array(); //?
+    replyUpdateWithHttpDetails.httpDetails['requestDetails']['nonce'] = new Uint8Array();
 
     expect(replyUpdateWithHttpDetails.httpDetails).toMatchSnapshot();
   });

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- feat: allow for setting HttpAgent ingress expiry using `ingressExpiryInMinutes` option
+
 ## [2.0.0] - 2024-07-16
 
 ### Changed
