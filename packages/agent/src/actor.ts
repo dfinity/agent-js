@@ -533,9 +533,9 @@ function _createActorMethod(
       let reply: ArrayBuffer | undefined;
       let certificate: Certificate | undefined;
       if (response.body && response.body.certificate) {
-        response.body.certificate; //?
+        const cert = response.body.certificate;
         certificate = await Certificate.create({
-          certificate: bufFromBufLike(response.body.certificate),
+          certificate: bufFromBufLike(cert),
           rootKey: agent.rootKey as ArrayBuffer,
           canisterId: Principal.from(canisterId),
           blsVerify,
@@ -549,14 +549,9 @@ function _createActorMethod(
 
         const pollStrategy = pollingStrategyFactory();
         // Contains the certificate and the reply from the boundary node
-        const { certificate, reply } = await pollForResponse(
-          agent,
-          ecid,
-          requestId,
-          pollStrategy,
-          blsVerify,
-        );
-        reply;
+        const response = await pollForResponse(agent, ecid, requestId, pollStrategy, blsVerify);
+        certificate = response.certificate;
+        reply = response.reply;
       }
       const shouldIncludeHttpDetails = func.annotations.includes(ACTOR_METHOD_WITH_HTTP_DETAILS);
       const shouldIncludeCertificate = func.annotations.includes(ACTOR_METHOD_WITH_CERTIFICATE);
