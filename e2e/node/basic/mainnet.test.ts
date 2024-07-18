@@ -142,7 +142,7 @@ describe('call forwarding', () => {
 });
 
 // TODO: change Expiry logic rounding to make <= 1 minute expiry work
-test.skip('it should succeed when setting an expiry in the near future', async () => {
+test('it should succeed when setting an expiry in the near future', async () => {
   ``;
   const agent = await HttpAgent.create({
     host: 'https://icp-api.io',
@@ -157,7 +157,7 @@ test.skip('it should succeed when setting an expiry in the near future', async (
       arg: fromHex('4449444c0000'),
       effectiveCanisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
     }),
-  ).rejects.toThrowError(`Specified ingress_expiry not within expected range`);
+  ).resolves.toBeDefined();
 });
 
 test('it should succeed when setting an expiry in the future', async () => {
