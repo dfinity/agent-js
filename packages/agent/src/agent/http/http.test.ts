@@ -811,21 +811,12 @@ test('it should log errors to console if the option is set', async () => {
 });
 
 
-test.only('it should allow for configuring a max age in minutes for the ingress expiry', async () => {
-  const mockFetch = jest.fn();
-
-  const agent = await HttpAgent.create({
-    host: HTTP_AGENT_HOST,
-    fetch: mockFetch,
-    ingressExpiryInMinutes: 5,
-  });
-
-  await agent.syncTime();
-
-  await agent.call(Principal.managementCanister(), {
-    methodName: 'test',
-    arg: new Uint8Array().buffer,
-  });
-
-  const requestBody: any = cbor.decode(mockFetch.mock.calls[0][1].body);
+test('it should fail when setting an expiry in the past', async () => {
+  expect(() =>
+    HttpAgent.createSync({
+      host: 'https://icp-api.io',
+      ingressExpiryInMinutes: -1,
+      fetch: jest.fn(),
+    }),
+  ).toThrow(`Ingress expiry time must be greater than 0`);
 });

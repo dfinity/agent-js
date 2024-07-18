@@ -315,6 +315,11 @@ export class HttpAgent implements Agent {
         `The maximum ingress expiry time is 5 minutes. Provided ingress expiry time is ${options.ingressExpiryInMinutes} minutes.`,
       );
     }
+    if (options.ingressExpiryInMinutes && options.ingressExpiryInMinutes <= 0) {
+      throw new AgentError(
+        `Ingress expiry time must be greater than 0. Provided ingress expiry time is ${options.ingressExpiryInMinutes} minutes.`,
+      );
+    }
 
     this.#maxIngressExpiryInMinutes = options.ingressExpiryInMinutes || 5;
 
