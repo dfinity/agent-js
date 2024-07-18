@@ -9,12 +9,12 @@ import {
   SubmitResponse,
 } from './agent';
 import { AgentError } from './errors';
-import { IDL } from '@dfinity/candid';
+import { bufFromBufLike, IDL } from '@dfinity/candid';
 import { pollForResponse, PollStrategyFactory, strategy } from './polling';
 import { Principal } from '@dfinity/principal';
 import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
-import { Certificate, CreateCertificateOptions } from './certificate';
+import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from './certificate';
 import managementCanisterIdl from './canisters/management_idl';
 import _SERVICE, { canister_install_mode, canister_settings } from './canisters/management_service';
 
@@ -530,25 +530,34 @@ function _createActorMethod(
         arg,
         effectiveCanisterId: ecid,
       });
+      let reply: ArrayBuffer | undefined;
+      let certificate: Certificate | undefined;
+      if (response.body && response.body.certificate) {
+        response.body.certificate; //?
+        certificate = await Certificate.create({
+          certificate: bufFromBufLike(response.body.certificate),
+          rootKey: agent.rootKey as ArrayBuffer,
+          canisterId: Principal.from(canisterId),
+          blsVerify,
+        });
+        const path = [new TextEncoder().encode('request_status'), requestId];
+        reply = lookupResultToBuffer(certificate.lookup([...path, 'reply']));
+      } else {
+        // if (!response.ok || response.body /* IC-1462 */) {
+        //   throw new UpdateCallRejectedError(cid, methodName, requestId, response);
+        // }
 
-      requestId;
-      response;
-      requestDetails;
-
-      if (!response.ok || response.body /* IC-1462 */) {
-        throw new UpdateCallRejectedError(cid, methodName, requestId, response);
+        const pollStrategy = pollingStrategyFactory();
+        // Contains the certificate and the reply from the boundary node
+        const { certificate, reply } = await pollForResponse(
+          agent,
+          ecid,
+          requestId,
+          pollStrategy,
+          blsVerify,
+        );
+        reply;
       }
-
-      const pollStrategy = pollingStrategyFactory();
-      // Contains the certificate and the reply from the boundary node
-      const { certificate, reply } = await pollForResponse(
-        agent,
-        ecid,
-        requestId,
-        pollStrategy,
-        blsVerify,
-      );
-      reply;
       const shouldIncludeHttpDetails = func.annotations.includes(ACTOR_METHOD_WITH_HTTP_DETAILS);
       const shouldIncludeCertificate = func.annotations.includes(ACTOR_METHOD_WITH_CERTIFICATE);
 

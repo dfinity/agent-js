@@ -6,7 +6,7 @@ import { CallRequest, SubmitRequestType, UnSigned } from './agent/http/types';
 import * as cbor from './cbor';
 import { requestIdOf } from './request_id';
 import * as pollingImport from './polling';
-import { ActorConfig } from './actor';
+import { Actor, ActorConfig } from './actor';
 
 const importActor = async (mockUpdatePolling?: () => void) => {
   jest.dontMock('./polling');
@@ -372,3 +372,21 @@ describe('makeActor', () => {
 });
 
 jest.setTimeout(20000);
+
+test('v3 call', async () => {
+  jest.useRealTimers();
+  const agent = await HttpAgent.create({
+    host: 'http://localhost:4943',
+  });
+
+  const idlFactory = ({ IDL }) => {
+    return IDL.Service({
+      inc_read: IDL.Func([], [IDL.Nat], []),
+    });
+  };
+  const actor = Actor.createActor(idlFactory, {
+    canisterId: Principal.fromText('bkyz2-fmaaa-aaaaa-qaaaq-cai'),
+    agent,
+  });
+  await actor.inc_read(); //?
+});

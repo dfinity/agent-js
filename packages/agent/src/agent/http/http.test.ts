@@ -13,7 +13,7 @@ import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 
 import { JSDOM } from 'jsdom';
-import { AnonymousIdentity, SignIdentity, toHex } from '../..';
+import { Actor, AnonymousIdentity, SignIdentity, toHex } from '../..';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { AgentError } from '../../errors';
 import { AgentHTTPResponseError } from './errors';
@@ -809,3 +809,4 @@ test('it should log errors to console if the option is set', async () => {
   const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: jest.fn(), logToConsole: true });
   await agent.syncTime();
 });
+
