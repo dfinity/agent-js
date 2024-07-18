@@ -407,7 +407,7 @@ export class HttpAgent implements Agent {
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
-    const id = await (identity !== undefined ? await identity : await this.#identity);
+    const id = await(identity !== undefined ? await identity : await this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -465,6 +465,18 @@ export class HttpAgent implements Agent {
 
     const body = cbor.encode(transformedRequest.body);
 
+    // Attempt v3 sync call
+    const requestSync = this.#requestAndRetry({
+      request: () =>
+        this.#fetch('' + new URL(`/api/v3/canister/${ecid.toText()}/call`, this.host), {
+          ...this.#callOptions,
+          ...transformedRequest.request,
+          body,
+        }),
+      backoff: this.#backoffStrategy(),
+      tries: 0,
+    });
+
     this.log.print(
       `fetching "/api/v2/canister/${ecid.toText()}/call" with request:`,
       transformedRequest,
@@ -473,18 +485,18 @@ export class HttpAgent implements Agent {
     // Run both in parallel. The fetch is quite expensive, so we have plenty of time to
     // calculate the requestId locally.
     const backoff = this.#backoffStrategy();
-    const request = this.#requestAndRetry({
-      request: () =>
-        this.#fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this.host), {
-          ...this.#callOptions,
-          ...transformedRequest.request,
-          body,
-        }),
-      backoff,
-      tries: 0,
-    });
+    // const request = this.#requestAndRetry({
+    //   request: () =>
+    //     this.#fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this.host), {
+    //       ...this.#callOptions,
+    //       ...transformedRequest.request,
+    //       body,
+    //     }),
+    //   backoff,
+    //   tries: 0,
+    // });
 
-    const [response, requestId] = await Promise.all([request, requestIdOf(submit)]);
+    const [response, requestId] = await Promise.all([requestSync, requestIdOf(submit)]);
 
     const responseBuffer = await response.arrayBuffer();
     const responseBody = (
