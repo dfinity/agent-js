@@ -118,7 +118,7 @@ test('replay attack', async () => {
   fetchProxy.replayFromHistory(queryResponseIndex);
 
   // the replayed request should throw an error
-  expect(fetchProxy.calls).toBe(7);
+  expect(fetchProxy.calls).toBe(5);
 
   await expect(actor.read()).rejects.toThrowError(
     'Timestamp failed to pass the watermark after retrying the configured 3 times. We cannot guarantee the integrity of the response since it could be a replay attack.',

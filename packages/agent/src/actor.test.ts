@@ -375,6 +375,7 @@ jest.setTimeout(20000);
 test('v3 call', async () => {
   jest.useRealTimers();
   const agent = await HttpAgent.create({
+    shouldFetchRootKey: true,
     host: 'http://localhost:4943',
   });
 
