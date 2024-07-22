@@ -329,7 +329,7 @@ describe('makeActor', () => {
     `);
     expect(replyUpdateWithHttpDetails.result).toEqual(canisterDecodedReturnValue);
 
-    replyUpdateWithHttpDetails.httpDetails['requestDetails']['nonce'] = new Uint8Array(); //?
+    replyUpdateWithHttpDetails.httpDetails['requestDetails']['nonce'] = new Uint8Array();
 
     expect(replyUpdateWithHttpDetails.httpDetails).toMatchSnapshot();
   });
@@ -381,6 +381,7 @@ test('v3 call', async () => {
 
   const idlFactory = ({ IDL }) => {
     return IDL.Service({
+      write: IDL.Func([IDL.Nat], [], []),
       inc_read: IDL.Func([], [IDL.Nat], []),
     });
   };
@@ -388,5 +389,7 @@ test('v3 call', async () => {
     canisterId: Principal.fromText('bkyz2-fmaaa-aaaaa-qaaaq-cai'),
     agent,
   });
-  await actor.inc_read(); //?
+  await actor.write(0n);
+  const result = await actor.inc_read();
+  expect(result).toBe(1n);
 });

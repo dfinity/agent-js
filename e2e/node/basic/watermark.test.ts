@@ -114,6 +114,7 @@ test('replay attack', async () => {
   expect(startValue3).toBe(1n);
 
   const queryResponseIndex = indexOfQueryResponse(fetchProxy.history);
+  console.log(queryResponseIndex);
 
   fetchProxy.replayFromHistory(queryResponseIndex);
 
@@ -125,5 +126,5 @@ test('replay attack', async () => {
   );
 
   // The agent should should have made 4 additional requests (3 retries + 1 original request)
-  expect(fetchProxy.calls).toBe(11);
+  expect(fetchProxy.calls).toBe(9);
 }, 10_000);

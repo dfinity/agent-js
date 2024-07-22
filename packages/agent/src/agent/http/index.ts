@@ -464,7 +464,7 @@ export class HttpAgent implements Agent {
     transformedRequest = await id.transformRequest(transformedRequest);
 
     const body = cbor.encode(transformedRequest.body);
-
+    const backoff = this.#backoffStrategy();
     // Attempt v3 sync call
     const requestSync = this.#requestAndRetry({
       request: () =>
@@ -473,18 +473,17 @@ export class HttpAgent implements Agent {
           ...transformedRequest.request,
           body,
         }),
-      backoff: this.#backoffStrategy(),
+      backoff,
       tries: 0,
     });
 
     this.log.print(
-      `fetching "/api/v2/canister/${ecid.toText()}/call" with request:`,
+      `fetching "/api/v3/canister/${ecid.toText()}/call" with request:`,
       transformedRequest,
     );
 
     // Run both in parallel. The fetch is quite expensive, so we have plenty of time to
     // calculate the requestId locally.
-    const backoff = this.#backoffStrategy();
     // const request = this.#requestAndRetry({
     //   request: () =>
     //     this.#fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this.host), {
@@ -502,6 +501,12 @@ export class HttpAgent implements Agent {
     const responseBody = (
       response.status === 200 && responseBuffer.byteLength > 0 ? cbor.decode(responseBuffer) : null
     ) as SubmitResponse['response']['body'];
+
+    // Update the watermark with the latest time from consensus
+    if (responseBody?.certificate) {
+      const time = await this.parseTimeFromResponse({ certificate: responseBody.certificate });
+      this.#waterMark = time;
+    }
 
     return {
       requestId,
@@ -970,7 +975,7 @@ export class HttpAgent implements Agent {
     return decodedResponse;
   }
 
-  public async parseTimeFromResponse(response: ReadStateResponse): Promise<number> {
+  public async parseTimeFromResponse(response: { certificate: ArrayBuffer }): Promise<number> {
     let tree: HashTree;
     if (response.certificate) {
       const decoded: { tree: HashTree } | undefined = cbor.decode(response.certificate);
