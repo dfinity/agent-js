@@ -1,81 +1,12 @@
 import { Buffer } from 'buffer/';
-import {
-  Agent,
-  getDefaultAgent,
-  HttpDetailsResponse,
-  QueryResponseRejected,
-  QueryResponseStatus,
-  ReplicaRejectCode,
-  SubmitResponse,
-} from './agent';
-import { AgentError } from './errors';
+import { Agent, getDefaultAgent, HttpDetailsResponse, QueryResponseStatus } from './agent';
+import { AgentError, QueryCallRejectedError, UpdateCallRejectedError } from './errors';
 import { IDL } from '@dfinity/candid';
 import { pollForResponse, PollStrategyFactory, strategy } from './polling';
 import { Principal } from '@dfinity/principal';
-import { RequestId } from './request_id';
-import { toHex } from './utils/buffer';
 import { Certificate, CreateCertificateOptions } from './certificate';
 import managementCanisterIdl from './canisters/management_idl';
 import _SERVICE, { canister_install_mode, canister_settings } from './canisters/management_service';
-
-export class ActorCallError extends AgentError {
-  constructor(
-    public readonly canisterId: Principal,
-    public readonly methodName: string,
-    public readonly type: 'query' | 'update',
-    public readonly props: Record<string, string>,
-  ) {
-    super(
-      [
-        `Call failed:`,
-        `  Canister: ${canisterId.toText()}`,
-        `  Method: ${methodName} (${type})`,
-        ...Object.getOwnPropertyNames(props).map(n => `  "${n}": ${JSON.stringify(props[n])}`),
-      ].join('\n'),
-    );
-  }
-}
-
-export class QueryCallRejectedError extends ActorCallError {
-  constructor(
-    canisterId: Principal,
-    methodName: string,
-    public readonly result: QueryResponseRejected,
-  ) {
-    super(canisterId, methodName, 'query', {
-      Status: result.status,
-      Code: ReplicaRejectCode[result.reject_code] ?? `Unknown Code "${result.reject_code}"`,
-      Message: result.reject_message,
-    });
-  }
-}
-
-export class UpdateCallRejectedError extends ActorCallError {
-  constructor(
-    canisterId: Principal,
-    methodName: string,
-    public readonly requestId: RequestId,
-    public readonly response: SubmitResponse['response'],
-  ) {
-    super(canisterId, methodName, 'update', {
-      'Request ID': toHex(requestId),
-      ...(response.body
-        ? {
-            ...(response.body.error_code
-              ? {
-                  'Error code': response.body.error_code,
-                }
-              : {}),
-            'Reject code': String(response.body.reject_code),
-            'Reject message': response.body.reject_message,
-          }
-        : {
-            'HTTP status code': response.status.toString(),
-            'HTTP status text': response.statusText,
-          }),
-    });
-  }
-}
 
 /**
  * Configuration to make calls to the Replica.

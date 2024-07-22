@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## Added
+
+- feat: improved assertion options for agent errors using `prototype`, `name`, and `instanceof`
+
 ## [2.0.0] - 2024-07-16
 
 ### Changed
