@@ -371,25 +371,3 @@ describe('makeActor', () => {
 });
 
 jest.setTimeout(20000);
-
-test('v3 call', async () => {
-  jest.useRealTimers();
-  const agent = await HttpAgent.create({
-    shouldFetchRootKey: true,
-    host: 'http://localhost:4943',
-  });
-
-  const idlFactory = ({ IDL }) => {
-    return IDL.Service({
-      write: IDL.Func([IDL.Nat], [], []),
-      inc_read: IDL.Func([], [IDL.Nat], []),
-    });
-  };
-  const actor = Actor.createActor(idlFactory, {
-    canisterId: Principal.fromText('bkyz2-fmaaa-aaaaa-qaaaq-cai'),
-    agent,
-  });
-  await actor.write(0n);
-  const result = await actor.inc_read();
-  expect(result).toBe(1n);
-});
