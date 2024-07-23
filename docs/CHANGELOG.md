@@ -6,6 +6,8 @@
 
 ### Changed
 
+- fix: passing `request` correctly during pollForResponse `Processing` status
+  - credit: [Senior Joinu](https://forum.dfinity.org/t/timestamp-failed-to-pass-the-watermark-after-retrying-the-configured-3-times/29180/11?)
 - ci: removing headless browser tests pending a rewrite
 - ci: changing token for creating release
 

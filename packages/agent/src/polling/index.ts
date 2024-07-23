@@ -68,7 +68,7 @@ export async function pollForResponse(
     case RequestStatusResponseStatus.Processing:
       // Execute the polling strategy, then retry.
       await strategy(canisterId, requestId, status);
-      return pollForResponse(agent, canisterId, requestId, strategy, currentRequest);
+      return pollForResponse(agent, canisterId, requestId, strategy, currentRequest, blsVerify);
 
     case RequestStatusResponseStatus.Rejected: {
       const rejectCode = new Uint8Array(
