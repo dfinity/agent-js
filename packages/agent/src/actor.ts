@@ -541,12 +541,24 @@ function _createActorMethod(
           blsVerify,
         });
         const path = [new TextEncoder().encode('request_status'), requestId];
-        reply = lookupResultToBuffer(certificate.lookup([...path, 'reply']));
-      } else {
-        // if (!response.ok || response.body /* IC-1462 */) {
-        //   throw new UpdateCallRejectedError(cid, methodName, requestId, response);
-        // }
+        const status = new TextDecoder().decode(
+          lookupResultToBuffer(certificate.lookup([...path, 'status'])),
+        );
 
+        switch (status) {
+          case 'replied':
+            reply = lookupResultToBuffer(certificate.lookup([...path, 'reply']));
+            break;
+          case 'rejected':
+            throw new UpdateCallRejectedError(cid, methodName, requestId, response);
+          case 'accepted':
+            // The certificate is not yet ready, so we need to poll for the response
+            break;
+          case 'default':
+            throw new ActorCallError(cid, methodName, 'update', { requestId: toHex(requestId) });
+        }
+      }
+      if (reply === undefined) {
         const pollStrategy = pollingStrategyFactory();
         // Contains the certificate and the reply from the boundary node
         const response = await pollForResponse(agent, ecid, requestId, pollStrategy, blsVerify);
