@@ -1,0 +1,26 @@
+{
+  "canisters": {
+    "browser_backend": {
+      "main": "src/browser_backend/main.mo",
+      "type": "motoko"
+    },
+    "browser_frontend": {
+      "dependencies": [
+        "browser_backend"
+      ],
+      "source": [
+        "src/browser_frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "browser_frontend"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
