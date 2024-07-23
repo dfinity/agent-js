@@ -406,7 +406,7 @@ export class HttpAgent implements Agent {
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
-    const id = await (identity !== undefined ? await identity : await this.#identity);
+    const id = await(identity !== undefined ? await identity : await this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -463,18 +463,11 @@ export class HttpAgent implements Agent {
     transformedRequest = await id.transformRequest(transformedRequest);
 
     const body = cbor.encode(transformedRequest.body);
-
-    this.log.print(
-      `fetching "/api/v2/canister/${ecid.toText()}/call" with request:`,
-      transformedRequest,
-    );
-
-    // Run both in parallel. The fetch is quite expensive, so we have plenty of time to
-    // calculate the requestId locally.
     const backoff = this.#backoffStrategy();
-    const request = this.#requestAndRetry({
+    // Attempt v3 sync call
+    const requestSync = this.#requestAndRetry({
       request: () =>
-        this.#fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this.host), {
+        this.#fetch('' + new URL(`/api/v3/canister/${ecid.toText()}/call`, this.host), {
           ...this.#callOptions,
           ...transformedRequest.request,
           body,
@@ -483,12 +476,36 @@ export class HttpAgent implements Agent {
       tries: 0,
     });
 
-    const [response, requestId] = await Promise.all([request, requestIdOf(submit)]);
+    this.log.print(
+      `fetching "/api/v3/canister/${ecid.toText()}/call" with request:`,
+      transformedRequest,
+    );
+
+    // Run both in parallel. The fetch is quite expensive, so we have plenty of time to
+    // calculate the requestId locally.
+    // const request = this.#requestAndRetry({
+    //   request: () =>
+    //     this.#fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this.host), {
+    //       ...this.#callOptions,
+    //       ...transformedRequest.request,
+    //       body,
+    //     }),
+    //   backoff,
+    //   tries: 0,
+    // });
+
+    const [response, requestId] = await Promise.all([requestSync, requestIdOf(submit)]);
 
     const responseBuffer = await response.arrayBuffer();
     const responseBody = (
       response.status === 200 && responseBuffer.byteLength > 0 ? cbor.decode(responseBuffer) : null
     ) as SubmitResponse['response']['body'];
+
+    // Update the watermark with the latest time from consensus
+    if (responseBody?.certificate) {
+      const time = await this.parseTimeFromResponse({ certificate: responseBody.certificate });
+      this.#waterMark = time;
+    }
 
     return {
       requestId,
@@ -957,7 +974,7 @@ export class HttpAgent implements Agent {
     return decodedResponse;
   }
 
-  public async parseTimeFromResponse(response: ReadStateResponse): Promise<number> {
+  public async parseTimeFromResponse(response: { certificate: ArrayBuffer }): Promise<number> {
     let tree: HashTree;
     if (response.certificate) {
       const decoded: { tree: HashTree } | undefined = cbor.decode(response.certificate);
