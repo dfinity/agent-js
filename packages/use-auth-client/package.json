@@ -6,13 +6,18 @@
   "module": "./lib/esm/index.js",
   "unpkg": "./lib/esm/index",
   "scripts": {
+    "build": "tsc -b && tsc -p tsconfig-cjs.json",
     "test": "vitest"
   },
   "keywords": [],
   "author": "Kai Peacock",
   "license": "ISC",
   "dependencies": {
+    "@dfinity/agent": "^2.0.0",
     "@dfinity/auth-client": "^2.0.0",
+    "@dfinity/candid": "^2.0.0",
+    "@dfinity/identity": "^2.0.0",
+    "@dfinity/principal": "^2.0.0",
     "react": ">16.8"
   },
   "devDependencies": {

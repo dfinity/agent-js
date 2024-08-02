@@ -55,6 +55,8 @@ export function useAuthClient(options?: UseAuthClientOptions) {
         authClient.login({
           ...options?.loginOptions,
           onSuccess: (successResponse?: InternetIdentityAuthResponseSuccess) => {
+            setIsAuthenticated(true);
+            setIdentity(authClient.getIdentity());
             if (successResponse !== undefined) {
               callback?.(successResponse);
             } else {
