@@ -3,10 +3,16 @@ import { idlFactory, canisterId } from 'declarations/auth-demo-backend';
 import { useAuthClient } from '../../../../../src/index';
 import IILogo from './IILogo.svg';
 
+/**
+ * 
+ * @returns app
+ */
 function App() {
   const identityProvider =
+    // eslint-disable-next-line no-undef
     process.env.DFX_NETWORK === 'local'
-      ? `http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.localhost:4943`
+      ? // eslint-disable-next-line no-undef
+        `http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.localhost:4943`
       : 'https://identity.ic0.app';
 
   const { isAuthenticated, login, logout, actor } = useAuthClient({

@@ -5,18 +5,20 @@ import { describe, it } from '@jest/globals';
 
 describe('useAuthClient', () => {
   it('should return an authClient object with the expected properties', async () => {
-    function Component() {
-      const { authClient, identity, isAuthenticated, login, logout } = useAuthClient();
+    interface Props {
+      children: React.ReactNode;
+    }
+    const Component: React.FC<Props> = () => {
+      const { isAuthenticated, login, logout } = useAuthClient();
       return (
         <div>
-          <div>authClient: {authClient}</div>
-          <div>identity: {identity}</div>
           <div data-testid="isAuthenticated">{String(isAuthenticated)}</div>
           <button onClick={login}>Login</button>
           <button onClick={logout}>Logout</button>
         </div>
       );
-    }
+    };
+    // disable typescript
     render(<Component />);
 
     const isAuthenticated = screen.getByTestId('isAuthenticated');
