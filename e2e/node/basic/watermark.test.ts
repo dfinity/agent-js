@@ -45,7 +45,6 @@ function indexOfQueryResponse(history: Response[]) {
 
 test('basic', async () => {
   const fetchProxy = new FetchProxy();
-  global.fetch;
 
   const actor = await createActor({
     fetch: fetchProxy.fetch.bind(fetchProxy),
@@ -60,7 +59,6 @@ test('basic', async () => {
 
 test('replay queries only', async () => {
   const fetchProxy = new FetchProxy();
-  global.fetch;
 
   const actor = await createActor({
     fetch: fetchProxy.fetch.bind(fetchProxy),
@@ -83,7 +81,6 @@ test('replay queries only', async () => {
 
 test('replay attack', async () => {
   const fetchProxy = new FetchProxy();
-  global.fetch;
 
   const actor = await createActor({
     verifyQuerySignatures: true,

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-interface */
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 /* eslint-disable jsdoc/require-jsdoc */
 export interface JsonArray extends Array<JsonValue> {}
 

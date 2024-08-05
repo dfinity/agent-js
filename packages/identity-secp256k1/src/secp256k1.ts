@@ -7,13 +7,14 @@ import {
   bufFromBufLike,
   fromHex,
   toHex,
+  PublicKey,
+  SignIdentity,
 } from '@dfinity/agent';
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { sha256 } from '@noble/hashes/sha256';
 import { randomBytes } from '@noble/hashes/utils';
-import hdkey from 'hdkey';
-import { mnemonicToSeedSync } from 'bip39';
-import { PublicKey, SignIdentity } from '@dfinity/agent';
+import * as bip39 from '@scure/bip39';
+import { HDKey } from '@scure/bip32';
 import { SECP256K1_OID, unwrapDER, wrapDER } from './der';
 import { pemToSecretKey } from './pem';
 
@@ -109,7 +110,7 @@ export class Secp256k1KeyIdentity extends SignIdentity {
    * This method throws an error in case the seed is not 32 bytes long or invalid
    * for use as a private key.
    * @param {Uint8Array} seed the optional seed
-   * @returns {Secp256k1KeyIdentity}
+   * @returns {Secp256k1KeyIdentity} Secp256k1KeyIdentity
    */
   public static generate(seed?: Uint8Array): Secp256k1KeyIdentity {
     if (seed && seed.byteLength !== 32) {
@@ -158,9 +159,9 @@ export class Secp256k1KeyIdentity extends SignIdentity {
 
   /**
    * generates an identity from a public and private key. Please ensure that you are generating these keys securely and protect the user's private key
-   * @param {ArrayBuffer} publicKey
-   * @param {ArrayBuffer} privateKey
-   * @returns {Secp256k1KeyIdentity}
+   * @param {ArrayBuffer} publicKey - ArrayBuffer
+   * @param {ArrayBuffer} privateKey - ArrayBuffer
+   * @returns {Secp256k1KeyIdentity} Secp256k1KeyIdentity
    */
   public static fromKeyPair(publicKey: ArrayBuffer, privateKey: ArrayBuffer): Secp256k1KeyIdentity {
     return new Secp256k1KeyIdentity(Secp256k1PublicKey.fromRaw(publicKey), privateKey);
@@ -168,8 +169,8 @@ export class Secp256k1KeyIdentity extends SignIdentity {
 
   /**
    * generates an identity from an existing secret key, and is the correct method to generate an identity from a seed phrase. Please ensure you protect the user's private key.
-   * @param {ArrayBuffer} secretKey
-   * @returns {Secp256k1KeyIdentity}
+   * @param {ArrayBuffer} secretKey - ArrayBuffer
+   * @returns {Secp256k1KeyIdentity} - Secp256k1KeyIdentity
    */
   public static fromSecretKey(secretKey: ArrayBuffer): Secp256k1KeyIdentity {
     const publicKey = secp256k1.getPublicKey(new Uint8Array(secretKey), false);
@@ -196,11 +197,15 @@ export class Secp256k1KeyIdentity extends SignIdentity {
       );
     }
 
-    const seed = mnemonicToSeedSync(phrase, password);
-    const root = hdkey.fromMasterSeed(seed);
+    const seed = bip39.mnemonicToSeedSync(phrase, password);
+    const root = HDKey.fromMasterSeed(seed);
     const addrnode = root.derive("m/44'/223'/0'/0/0");
 
-    return Secp256k1KeyIdentity.fromSecretKey(addrnode.privateKey);
+    if (!addrnode.privateKey) {
+      throw new Error('Failed to derive private key from seed phrase');
+    }
+
+    return Secp256k1KeyIdentity.fromSecretKey(bufFromBufLike(addrnode.privateKey));
   }
 
   /**
@@ -222,7 +227,7 @@ export class Secp256k1KeyIdentity extends SignIdentity {
 
   /**
    * Serialize this key to JSON-serializable object.
-   * @returns {JsonableSecp256k1Identity}
+   * @returns {JsonableSecp256k1Identity} JsonableSecp256k1Identity
    */
   public toJSON(): JsonableSecp256k1Identity {
     return [toHex(this._publicKey.toRaw()), toHex(this._privateKey)];
@@ -230,7 +235,7 @@ export class Secp256k1KeyIdentity extends SignIdentity {
 
   /**
    * Return a copy of the key pair.
-   * @returns {KeyPair}
+   * @returns {KeyPair} KeyPair
    */
   public getKeyPair(): KeyPair {
     return {
@@ -241,7 +246,7 @@ export class Secp256k1KeyIdentity extends SignIdentity {
 
   /**
    * Return the public key.
-   * @returns {Required<PublicKey>}
+   * @returns {Required<PublicKey>} Required<PublicKey>
    */
   public getPublicKey(): Required<PublicKey> {
     return this._publicKey;

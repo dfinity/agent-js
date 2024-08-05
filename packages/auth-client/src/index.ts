@@ -269,7 +269,7 @@ export class AuthClient {
             // This is a legacy identity, which is a serialized Ed25519KeyIdentity.
             key = Ed25519KeyIdentity.fromJSON(maybeIdentityStorage);
           }
-        } catch (e) {
+        } catch {
           // Ignore this, this means that the localStorage value isn't a valid Ed25519KeyIdentity or ECDSAKeyIdentity
           // serialization.
         }
@@ -566,7 +566,7 @@ export class AuthClient {
     if (options.returnTo) {
       try {
         window.history.pushState({}, '', options.returnTo);
-      } catch (e) {
+      } catch {
         window.location.href = options.returnTo;
       }
     }

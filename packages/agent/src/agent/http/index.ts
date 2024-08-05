@@ -222,15 +222,16 @@ interface V1HttpAgentInterface {
   _isAgent: true;
 }
 
-// A HTTP agent allows users to interact with a client of the internet computer
-// using the available methods. It exposes an API that closely follows the
-// public view of the internet computer, and is not intended to be exposed
-// directly to the majority of users due to its low-level interface.
-//
-// There is a pipeline to apply transformations to the request before sending
-// it to the client. This is to decouple signature, nonce generation and
-// other computations so that this class can stay as simple as possible while
-// allowing extensions.
+/** 
+ * A HTTP agent allows users to interact with a client of the internet computer
+using the available methods. It exposes an API that closely follows the
+public view of the internet computer, and is not intended to be exposed
+directly to the majority of users due to its low-level interface.
+ * There is a pipeline to apply transformations to the request before sending
+it to the client. This is to decouple signature, nonce generation and
+other computations so that this class can stay as simple as possible while
+allowing extensions.
+ */
 export class HttpAgent implements Agent {
   public rootKey = fromHex(IC_ROOT_KEY);
   #identity: Promise<Identity> | null;
@@ -354,7 +355,7 @@ export class HttpAgent implements Agent {
         host: agent._host.toString(),
         identity: agent._identity ?? undefined,
       });
-    } catch (error) {
+    } catch {
       throw new AgentError('Failed to create agent from provided agent');
     }
   }
@@ -782,7 +783,7 @@ export class HttpAgent implements Agent {
 
     try {
       return this.#verifyQueryResponse(queryWithDetails, subnetStatus);
-    } catch (_) {
+    } catch {
       // In case the node signatures have changed, refresh the subnet keys and try again
       this.log.warn('Query response verification failed. Retrying with fresh subnet keys.');
       this.#subnetKeys.delete(canisterId.toString());

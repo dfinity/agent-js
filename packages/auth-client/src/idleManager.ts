@@ -88,7 +88,7 @@ export class IdleManager {
       document.addEventListener(name, _resetTimer, true);
     });
 
-    // eslint-disable-next-line @typescript-eslint/ban-types
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
     const debounce = (func: Function, wait: number) => {
       let timeout: number | undefined;
       return (...args: unknown[]) => {
