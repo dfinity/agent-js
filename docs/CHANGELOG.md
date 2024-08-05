@@ -2,15 +2,21 @@
 
 ## [Unreleased]
 
+### Added
+
+- feat: management canister interface updates for schnorr signatures
+
+### Changed
+- feat: replaces hdkey and bip32 implementations with `@scure/bip39` and `@scure/bip32` due to vulnerability and lack of maintenance for `elliptic`
+- chore: bumps dev dependency versions to remove warnings
+- chore: addresses eslint errors uncovered by bumping eslint version
+
 ## [2.0.0] - 2024-07-16
 
 ### Changed
 
 - ci: removing headless browser tests pending a rewrite
 - ci: changing token for creating release
-- feat: replaces hdkey and bip32 implementations with `@scure/bip39` and `@scure/bip32` due to vulnerability and lack of maintenance for `elliptic`
-- chore: bumps dev dependency versions to remove warnings
-- chore: addresses eslint errors uncovered by bumping eslint version
 
 ### Added
 
