@@ -9,7 +9,7 @@
 
 import { Crypto } from '@peculiar/webcrypto';
 global.crypto = new Crypto();
-global.TextEncoder = require('text-encoding').TextEncoder;
-global.TextDecoder = require('text-encoding').TextDecoder;
-global.MessageChannel = require('worker_threads').MessageChannel;
-require('whatwg-fetch');
+import { TextEncoder } from 'text-encoding';
+global.TextEncoder = TextEncoder;
+import { TextDecoder } from 'text-encoding';
+global.TextDecoder = TextDecoder;

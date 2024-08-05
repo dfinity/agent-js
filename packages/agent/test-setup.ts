@@ -14,7 +14,8 @@ global.TextEncoder = TextEncoder;
 import { TextDecoder } from 'text-encoding';
 global.TextDecoder = TextDecoder;
 
-global.fetch = require('isomorphic-fetch');
+import fetch from 'isomorphic-fetch';
+global.fetch = fetch;
 Object.defineProperty(global, 'performance', {
   writable: true,
   value: { ...global.performance },

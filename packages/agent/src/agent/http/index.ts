@@ -355,7 +355,7 @@ export class HttpAgent implements Agent {
         host: agent._host.toString(),
         identity: agent._identity ?? undefined,
       });
-    } catch (error) {
+    } catch {
       throw new AgentError('Failed to create agent from provided agent');
     }
   }
@@ -783,7 +783,7 @@ export class HttpAgent implements Agent {
 
     try {
       return this.#verifyQueryResponse(queryWithDetails, subnetStatus);
-    } catch (_) {
+    } catch {
       // In case the node signatures have changed, refresh the subnet keys and try again
       this.log.warn('Query response verification failed. Retrying with fresh subnet keys.');
       this.#subnetKeys.delete(canisterId.toString());

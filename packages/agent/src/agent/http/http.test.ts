@@ -561,7 +561,7 @@ describe('retry failures', () => {
           arg: new Uint8Array().buffer,
         }),
       ).rejects.toThrow();
-    } catch (error) {
+    } catch {
       // One try + three retries
       expect(mockFetch.mock.calls.length).toBe(4);
     }
@@ -797,7 +797,7 @@ test('retry requests that fail due to a network failure', async () => {
       methodName: 'test',
       arg: new Uint8Array().buffer,
     });
-  } catch (error) {
+  } catch {
     // One try + three retries
     expect(mockFetch.mock.calls.length).toBe(4);
   }

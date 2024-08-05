@@ -138,7 +138,6 @@ export class ECDSAKeyIdentity extends SignIdentity {
       name: 'ECDSA',
       hash: { name: 'SHA-256' },
     };
-    this._keyPair.privateKey;
     const signature = await this._subtleCrypto.sign(params, this._keyPair.privateKey, challenge);
 
     return signature as Signature;
