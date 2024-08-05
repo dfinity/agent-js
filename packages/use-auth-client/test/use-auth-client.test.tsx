@@ -6,7 +6,7 @@ import { describe, it } from '@jest/globals';
 describe('useAuthClient', () => {
   it('should return an authClient object with the expected properties', async () => {
     interface Props {
-      children: React.ReactNode;
+      children?: React.ReactNode;
     }
     const Component: React.FC<Props> = () => {
       const { isAuthenticated, login, logout } = useAuthClient();
@@ -21,7 +21,10 @@ describe('useAuthClient', () => {
     // disable typescript
     render(<Component />);
 
-    const isAuthenticated = screen.getByTestId('isAuthenticated');
-    expect(isAuthenticated).toHaveTextContent('false');
+    (
+      expect(screen.getByTestId('isAuthenticated')) as unknown as {
+        toHaveTextContent: (str: string) => boolean;
+      }
+    ).toHaveTextContent('false');
   });
 });
