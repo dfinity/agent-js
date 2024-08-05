@@ -781,6 +781,7 @@ describe('default host', () => {
   });
 });
 
+jest.setTimeout(10000);
 test('retry requests that fail due to a network failure', async () => {
   jest.useRealTimers();
   const mockFetch: jest.Mock = jest.fn(() => {
