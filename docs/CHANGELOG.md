@@ -8,6 +8,7 @@
 
 - ci: removing headless browser tests pending a rewrite
 - ci: changing token for creating release
+- chore: npm audit for elliptic
 
 ### Added
 
