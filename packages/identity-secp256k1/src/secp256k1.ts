@@ -7,13 +7,14 @@ import {
   bufFromBufLike,
   fromHex,
   toHex,
+  PublicKey,
+  SignIdentity,
 } from '@dfinity/agent';
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { sha256 } from '@noble/hashes/sha256';
 import { randomBytes } from '@noble/hashes/utils';
-import hdkey from 'hdkey';
-import { mnemonicToSeedSync } from 'bip39';
-import { PublicKey, SignIdentity } from '@dfinity/agent';
+import * as bip39 from '@scure/bip39';
+import { HDKey } from '@scure/bip32';
 import { SECP256K1_OID, unwrapDER, wrapDER } from './der';
 import { pemToSecretKey } from './pem';
 
@@ -196,11 +197,15 @@ export class Secp256k1KeyIdentity extends SignIdentity {
       );
     }
 
-    const seed = mnemonicToSeedSync(phrase, password);
-    const root = hdkey.fromMasterSeed(seed);
+    const seed = bip39.mnemonicToSeedSync(phrase, password);
+    const root = HDKey.fromMasterSeed(seed);
     const addrnode = root.derive("m/44'/223'/0'/0/0");
 
-    return Secp256k1KeyIdentity.fromSecretKey(addrnode.privateKey);
+    if (!addrnode.privateKey) {
+      throw new Error('Failed to derive private key from seed phrase');
+    }
+
+    return Secp256k1KeyIdentity.fromSecretKey(bufFromBufLike(addrnode.privateKey));
   }
 
   /**

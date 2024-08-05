@@ -8,7 +8,7 @@
 
 - ci: removing headless browser tests pending a rewrite
 - ci: changing token for creating release
-- chore: npm audit for elliptic
+- feat: replaces hdkey and bip32 implementations with `@scrue/bip39` and `@scrue/bip39` due to vulnerability and lack of maintenance for `elliptic`
 
 ### Added
 
