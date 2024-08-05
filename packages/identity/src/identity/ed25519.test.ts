@@ -154,9 +154,6 @@ describe('public key serialization from various types', () => {
   it('should serialize from a raw key', () => {
     const baseKey = Ed25519KeyIdentity.generate();
     const publicKey = baseKey.getPublicKey().rawKey;
-    ArrayBuffer.isView(publicKey);
-    publicKey instanceof ArrayBuffer;
-
     const newKey = Ed25519PublicKey.from(publicKey);
     expect(newKey).toBeDefined();
   });

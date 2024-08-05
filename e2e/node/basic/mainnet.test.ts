@@ -21,7 +21,8 @@ const createWhoamiActor = async (identity: Identity) => {
   const idlFactory = () => {
     return IDL.Service({
       whoami: IDL.Func([], [IDL.Principal], ['query']),
-    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }) as unknown as any;
   };
   vi.useFakeTimers();
   new Date(Date.now());
@@ -136,7 +137,7 @@ describe('call forwarding', () => {
       requestId,
       defaultStrategy(),
     );
-    certificate; // Certificate
-    reply; // ArrayBuffer
+    expect(certificate).toBeTruthy();
+    expect(reply).toBeTruthy();
   }, 15_000);
 });

@@ -270,6 +270,7 @@ export class AssetManager {
 }
 
 // Required since the sha256 type is not exported
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const hasher = sha256.create();
 type SHA256TYPE = typeof hasher;
 
