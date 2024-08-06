@@ -120,6 +120,7 @@ dist
 docs/agent
 docs/assets
 docs/auth-client
+docs/use-auth-client
 docs/authentication
 docs/identity
 docs/identity-secp256k1

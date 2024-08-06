@@ -6,6 +6,7 @@
 
 - feat: management canister interface updates for schnorr signatures
 - feat: ensure that identity-secp256k1 seed phrase must produce a 64 byte seed
+- docs: documentation and metadata for use-auth-client
 
 ### Changed
 - feat: replaces hdkey and bip32 implementations with `@scure/bip39` and `@scure/bip32` due to vulnerability and lack of maintenance for `elliptic`
