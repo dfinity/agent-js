@@ -115,8 +115,8 @@ export function useAuthClient(options?: UseAuthClientOptions) {
               callback?.(successResponse);
             } else {
               (callback as () => void)?.();
-              resolve(successResponse);
             }
+            resolve(successResponse);
           },
           onError: error => {
             errorCb?.(error);
