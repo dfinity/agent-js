@@ -5,6 +5,7 @@
 ### Added
 
 - feat: management canister interface updates for schnorr signatures
+- docs: documentation and metadata for use-auth-client
 
 ### Changed
 - feat: replaces hdkey and bip32 implementations with `@scure/bip39` and `@scure/bip32` due to vulnerability and lack of maintenance for `elliptic`
