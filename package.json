@@ -12,11 +12,13 @@
       "packages/auth-client",
       "packages/assets",
       "packages/identity-secp256k1",
+      "packages/use-auth-client",
       "e2e/node"
     ]
   },
   "devDependencies": {
     "@jest/types": "^29.6.3",
+    "@rollup/wasm-node": "^4.20.0",
     "@size-limit/esbuild": "^11.0.2",
     "@size-limit/preset-small-lib": "^9.0.0",
     "@types/jest": "^29.5.5",
@@ -153,6 +155,11 @@
       "release": true,
       "draft": true,
       "autoGenerate": true
+    }
+  },
+  "overrides": {
+    "vite": {
+      "rollup": "npm:@rollup/wasm-node"
     }
   }
 }

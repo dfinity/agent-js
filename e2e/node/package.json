@@ -41,5 +41,13 @@
     "ts-node": "^10.8.2",
     "typescript": "^5.2.2",
     "vitest": "^0.34.6"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.6.1"
+  },
+  "overrides": {
+    "vite": {
+      "rollup": "npm:@rollup/wasm-node"
+    }
   }
 }
