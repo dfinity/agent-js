@@ -5,6 +5,7 @@
 ### Added
 
 - feat: management canister interface updates for schnorr signatures
+- feat: ensure that identity-secp256k1 seed phrase must produce a 64 byte seed
 - docs: documentation and metadata for use-auth-client
 
 ### Changed

@@ -198,6 +198,10 @@ export class Secp256k1KeyIdentity extends SignIdentity {
     }
 
     const seed = bip39.mnemonicToSeedSync(phrase, password);
+    // Ensure the seed is 64 bytes long
+    if (seed.byteLength !== 64) {
+      throw new Error('Derived seed must be 64 bytes long.');
+    }
     const root = HDKey.fromMasterSeed(seed);
     const addrnode = root.derive("m/44'/223'/0'/0/0");
 
