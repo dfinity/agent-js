@@ -45,6 +45,10 @@ type change_details = variant {
     mode : variant { install; reinstall; upgrade };
     module_hash : blob;
   };
+  load_snapshot : record {
+    canister_version : nat64;
+    taken_at_timestamp : nat64;
+  };
   controllers_change : record {
     controllers : vec principal;
   };
@@ -74,11 +78,6 @@ type http_request_result = record {
 
 type ecdsa_curve = variant {
   secp256k1;
-};
-
-type schnorr_algorithm = variant {
-  bip340secp256k1;
-  ed25519;
 };
 
 type satoshi = nat64;
@@ -286,27 +285,6 @@ type sign_with_ecdsa_result = record {
   signature : blob;
 };
 
-type schnorr_public_key_args = record {
-  canister_id : opt canister_id;
-  derivation_path : vec blob;
-  key_id : record { algorithm : schnorr_algorithm; name : text };
-};
-
-type schnorr_public_key_result = record {
-  public_key : blob;
-  chain_code : blob;
-};
-
-type sign_with_schnorr_args = record {
-  message : blob;
-  derivation_path : vec blob;
-  key_id : record { algorithm : schnorr_algorithm; name : text };
-};
-
-type sign_with_schnorr_result = record {
-  signature : blob;
-};
-
 type node_metrics_history_args = record {
   subnet_id : principal;
   start_at_timestamp_nanos : nat64;
@@ -342,6 +320,38 @@ type upload_chunk_result = chunk_hash;
 type bitcoin_get_balance_result = satoshi;
 
 type bitcoin_get_current_fee_percentiles_result = vec millisatoshi_per_byte;
+
+type snapshot_id = blob;
+
+type snapshot = record {
+  id : snapshot_id;
+  taken_at_timestamp : nat64;
+  total_size : nat64;
+};
+
+type take_canister_snapshot_args = record {
+  canister_id : canister_id;
+  replace_snapshot : opt snapshot_id;
+};
+
+type take_canister_snapshot_result = snapshot;
+
+type load_canister_snapshot_args = record {
+  canister_id : canister_id;
+  snapshot_id : snapshot_id;
+  sender_canister_version : opt nat64;
+};
+
+type list_canister_snapshots_args = record {
+  canister_id : canister_id;
+};
+
+type list_canister_snapshots_result = vec snapshot;
+
+type delete_canister_snapshot_args = record {
+  canister_id : canister_id;
+  snapshot_id : snapshot_id;
+};
 
 type fetch_canister_logs_args = record {
   canister_id : canister_id;
@@ -379,10 +389,6 @@ service ic : {
   ecdsa_public_key : (ecdsa_public_key_args) -> (ecdsa_public_key_result);
   sign_with_ecdsa : (sign_with_ecdsa_args) -> (sign_with_ecdsa_result);
 
-  // Threshold Schnorr signature
-  schnorr_public_key : (schnorr_public_key_args) -> (schnorr_public_key_result);
-  sign_with_schnorr : (sign_with_schnorr_args) -> (sign_with_schnorr_result);
-
   // bitcoin interface
   bitcoin_get_balance : (bitcoin_get_balance_args) -> (bitcoin_get_balance_result);
 
@@ -397,6 +403,12 @@ service ic : {
   // provisional interfaces for the pre-ledger world
   provisional_create_canister_with_cycles : (provisional_create_canister_with_cycles_args) -> (provisional_create_canister_with_cycles_result);
   provisional_top_up_canister : (provisional_top_up_canister_args) -> ();
+
+  // Canister snapshots
+  take_canister_snapshot : (take_canister_snapshot_args) -> (take_canister_snapshot_result);
+  load_canister_snapshot : (load_canister_snapshot_args) -> ();
+  list_canister_snapshots : (list_canister_snapshots_args) -> (list_canister_snapshots_result);
+  delete_canister_snapshot : (delete_canister_snapshot_args) -> ();
 
   // canister logging
   fetch_canister_logs : (fetch_canister_logs_args) -> (fetch_canister_logs_result) query;
