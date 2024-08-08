@@ -12,6 +12,7 @@ import {
   type ActorConfig,
   HttpAgent,
   Actor,
+  ActorSubclass,
 } from '@dfinity/agent';
 import type { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
@@ -39,6 +40,7 @@ export interface CreateActorOptions {
  * Options for the useAuthClient hook
  */
 export type UseAuthClientOptions = {
+  createSync?: boolean;
   /**
    * Options passed during the creation of the auth client
    */
@@ -50,7 +52,7 @@ export type UseAuthClientOptions = {
   /**
    * Options to create an actor using the auth client identity
    */
-  actorOptions?: CreateActorOptions;
+  actorOptions?: CreateActorOptions | Record<string, CreateActorOptions>;
 };
 
 /**
@@ -63,7 +65,8 @@ export type UseAuthClientOptions = {
 export function useAuthClient(options?: UseAuthClientOptions) {
   const [authClient, setAuthClient] = React.useState<AuthClient | null>(null);
   const [identity, setIdentity] = React.useState<Identity | null>(null);
-  const [actor, setActor] = React.useState<Actor | null>(null);
+  const [actor, setActor] = React.useState<ActorSubclass | null>();
+  const [actors, setActors] = React.useState<Record<string, ActorSubclass>>({});
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean>(false);
 
   // load the auth client on mount
@@ -87,12 +90,33 @@ export function useAuthClient(options?: UseAuthClientOptions) {
 
   React.useEffect(() => {
     if (identity && options?.actorOptions) {
-      createActor({
-        ...options.actorOptions,
-        agentOptions: { ...options?.actorOptions?.agentOptions, identity },
-      }).then(actor => {
-        setActor(actor);
-      });
+      // if the options is for a single actor, it will have a canisterId
+      if ('canisterId' in options.actorOptions) {
+        const createActorOptions = options.actorOptions as CreateActorOptions;
+        createActor({
+          ...createActorOptions,
+          agentOptions: { ...createActorOptions?.agentOptions, identity },
+        }).then(actor => {
+          // set the actor service
+
+          setActor(actor);
+        });
+      } else {
+        // if the options is for multiple actors, it will have a key value pair of an identifier and CreateActorOptions
+        const actorOptions = options.actorOptions as Record<string, CreateActorOptions>;
+        const actorPromises = Object.entries(actorOptions).map(
+          async ([canisterId, createActorOptions]) => {
+            const actor = await createActor({
+              ...createActorOptions,
+              agentOptions: { ...createActorOptions?.agentOptions, identity },
+            });
+            return [canisterId, actor];
+          },
+        );
+        Promise.all(actorPromises).then(actors => {
+          setActors(Object.fromEntries(actors));
+        });
+      }
     }
   }, [identity]);
 
@@ -132,12 +156,32 @@ export function useAuthClient(options?: UseAuthClientOptions) {
       setIsAuthenticated(false);
       setIdentity(null);
       await authClient.logout();
-      setActor(await createActor(options?.actorOptions));
+      if (options?.actorOptions) {
+        if ('canisterId' in options.actorOptions) {
+          setActor(await createActor(options.actorOptions as CreateActorOptions));
+        } else {
+          const actorOptions = options.actorOptions as Record<string, CreateActorOptions>;
+          const actorPromises = Object.entries(actorOptions).map(
+            async ([canisterId, createActorOptions]) => {
+              // Initialize with anonymous identity
+              const actor = await createActor(createActorOptions);
+              return [canisterId, actor];
+            },
+          );
+          Promise.all(actorPromises).then(actors => {
+            setActors(Object.fromEntries(actors));
+          });
+        }
+      } else {
+        setActor(null);
+        setActors({});
+      }
     }
   }
 
   return {
     actor,
+    actors,
     authClient,
     identity,
     isAuthenticated,
@@ -147,6 +191,7 @@ export function useAuthClient(options?: UseAuthClientOptions) {
 }
 
 const createActor = async (options: CreateActorOptions) => {
+  options;
   const agent = options.agent || (await HttpAgent.create({ ...options.agentOptions }));
 
   if (options.agent && options.agentOptions) {

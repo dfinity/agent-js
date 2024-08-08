@@ -1,0 +1,13 @@
+{
+  "canisters": {
+    "ivcos-eqaaa-aaaab-qablq-cai": {
+      "name": "whoami",
+      "wasm_hash": "a5af74d01aec228c5a717dfb43f773917e1a9138e512431aafcd225ad0001a8b",
+      "wasm_hash_download": "88f0162fa446ad32e08e7ee513a85a82f145d16a9ebb6d2adfa9bc5ff5605f74",
+      "init_guide": "null",
+      "init_arg": null,
+      "candid_args": "()",
+      "gzip": false
+    }
+  }
+}

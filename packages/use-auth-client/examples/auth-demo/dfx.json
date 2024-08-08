@@ -14,6 +14,10 @@
       "type": "assets",
       "workspace": "auth-demo-frontend"
     },
+    "whoami": {
+      "type": "pull",
+      "id": "ivcos-eqaaa-aaaab-qablq-cai"
+    },
     "internet_identity": {
       "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
       "frontend": {},
