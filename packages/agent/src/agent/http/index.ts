@@ -404,10 +404,12 @@ export class HttpAgent implements Agent {
       methodName: string;
       arg: ArrayBuffer;
       effectiveCanisterId?: Principal | string;
+      callSync?: boolean;
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
-    const id = await(identity !== undefined ? await identity : await this.#identity);
+    const callSync = options.callSync ?? true;
+    const id = await (identity !== undefined ? await identity : await this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -465,60 +467,77 @@ export class HttpAgent implements Agent {
 
     const body = cbor.encode(transformedRequest.body);
     const backoff = this.#backoffStrategy();
-    // Attempt v3 sync call
-    const requestSync = this.#requestAndRetry({
-      request: () =>
+    try {
+      // Attempt v3 sync call
+      const requestSync = () =>
         this.#fetch('' + new URL(`/api/v3/canister/${ecid.toText()}/call`, this.host), {
           ...this.#callOptions,
           ...transformedRequest.request,
           body,
-        }),
-      backoff,
-      tries: 0,
-    });
+        });
 
-    this.log.print(
-      `fetching "/api/v3/canister/${ecid.toText()}/call" with request:`,
-      transformedRequest,
-    );
+      const requestAsync = () =>
+        this.#fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this.host), {
+          ...this.#callOptions,
+          ...transformedRequest.request,
+          body,
+        });
 
-    // Run both in parallel. The fetch is quite expensive, so we have plenty of time to
-    // calculate the requestId locally.
-    // const request = this.#requestAndRetry({
-    //   request: () =>
-    //     this.#fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this.host), {
-    //       ...this.#callOptions,
-    //       ...transformedRequest.request,
-    //       body,
-    //     }),
-    //   backoff,
-    //   tries: 0,
-    // });
+      this.log.print(
+        `fetching "/api/v3/canister/${ecid.toText()}/call" with request:`,
+        transformedRequest,
+      );
 
-    const [response, requestId] = await Promise.all([requestSync, requestIdOf(submit)]);
+      const request = this.#requestAndRetry({
+        request: callSync ? requestSync : requestAsync,
+        backoff,
+        tries: 0,
+      });
 
-    const responseBuffer = await response.arrayBuffer();
-    const responseBody = (
-      response.status === 200 && responseBuffer.byteLength > 0 ? cbor.decode(responseBuffer) : null
-    ) as SubmitResponse['response']['body'];
+      const [response, requestId] = await Promise.all([request, requestIdOf(submit)]);
 
-    // Update the watermark with the latest time from consensus
-    if (responseBody?.certificate) {
-      const time = await this.parseTimeFromResponse({ certificate: responseBody.certificate });
-      this.#waterMark = time;
+      const responseBuffer = await response.arrayBuffer();
+      const responseBody = (
+        response.status === 200 && responseBuffer.byteLength > 0
+          ? cbor.decode(responseBuffer)
+          : null
+      ) as SubmitResponse['response']['body'];
+
+      // Update the watermark with the latest time from consensus
+      if (responseBody?.certificate) {
+        const time = await this.parseTimeFromResponse({ certificate: responseBody.certificate });
+        this.#waterMark = time;
+      }
+
+      return {
+        requestId,
+        response: {
+          ok: response.ok,
+          status: response.status,
+          statusText: response.statusText,
+          body: responseBody,
+          headers: httpHeadersTransform(response.headers),
+        },
+        requestDetails: submit,
+      };
+    } catch (error) {
+      // If the error is due to the v3 api not being supported, fall back to v2
+      if ((error as AgentError).message.includes('v3 api not supported.')) {
+        this.log.warn('v3 api not supported. Fall back to v2');
+        return this.call(
+          canisterId,
+          {
+            ...options,
+            // disable v3 api
+            callSync: false,
+          },
+          identity,
+        );
+      }
+
+      this.log.error('Error while making call:', error as Error);
+      throw error;
     }
-
-    return {
-      requestId,
-      response: {
-        ok: response.ok,
-        status: response.status,
-        statusText: response.statusText,
-        body: responseBody,
-        headers: httpHeadersTransform(response.headers),
-      },
-      requestDetails: submit,
-    };
   }
 
   async #requestAndRetryQuery(args: {
@@ -691,9 +710,15 @@ export class HttpAgent implements Agent {
       `  Code: ${response.status} (${response.statusText})\n` +
       `  Body: ${responseText}\n`;
 
-    if (tries < this.#retryTimes) {
-      return await this.#requestAndRetry({ request, backoff, tries: tries + 1 });
+    if (response.status === 404 && response.url.includes('api/v3')) {
+      throw new AgentHTTPResponseError('v3 api not supported. Fall back to v2', {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        headers: httpHeadersTransform(response.headers),
+      });
     }
+
     throw new AgentHTTPResponseError(errorMessage, {
       ok: response.ok,
       status: response.status,
@@ -944,35 +969,42 @@ export class HttpAgent implements Agent {
     );
     // TODO - https://dfinity.atlassian.net/browse/SDK-1092
     const backoff = this.#backoffStrategy();
+    try {
+      const response = await this.#requestAndRetry({
+        request: () =>
+          this.#fetch(
+            '' + new URL(`/api/v2/canister/${canister.toString()}/read_state`, this.host),
+            {
+              ...this.#fetchOptions,
+              ...transformedRequest.request,
+              body,
+            },
+          ),
+        backoff,
+        tries: 0,
+      });
 
-    const response = await this.#requestAndRetry({
-      request: () =>
-        this.#fetch('' + new URL(`/api/v2/canister/${canister.toString()}/read_state`, this.host), {
-          ...this.#fetchOptions,
-          ...transformedRequest.request,
-          body,
-        }),
-      backoff,
-      tries: 0,
-    });
+      if (!response.ok) {
+        throw new Error(
+          `Server returned an error:\n` +
+            `  Code: ${response.status} (${response.statusText})\n` +
+            `  Body: ${await response.text()}\n`,
+        );
+      }
+      const decodedResponse: ReadStateResponse = cbor.decode(await response.arrayBuffer());
 
-    if (!response.ok) {
-      throw new Error(
-        `Server returned an error:\n` +
-          `  Code: ${response.status} (${response.statusText})\n` +
-          `  Body: ${await response.text()}\n`,
-      );
+      this.log.print('Read state response:', decodedResponse);
+      const parsedTime = await this.parseTimeFromResponse(decodedResponse);
+      if (parsedTime > 0) {
+        this.log.print('Read state response time:', parsedTime);
+        this.#waterMark = parsedTime;
+      }
+
+      return decodedResponse;
+    } catch (error) {
+      this.log.error('Caught exception while attempting to read state', error as AgentError);
+      throw error;
     }
-    const decodedResponse: ReadStateResponse = cbor.decode(await response.arrayBuffer());
-
-    this.log.print('Read state response:', decodedResponse);
-    const parsedTime = await this.parseTimeFromResponse(decodedResponse);
-    if (parsedTime > 0) {
-      this.log.print('Read state response time:', parsedTime);
-      this.#waterMark = parsedTime;
-    }
-
-    return decodedResponse;
   }
 
   public async parseTimeFromResponse(response: { certificate: ArrayBuffer }): Promise<number> {
