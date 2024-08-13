@@ -469,24 +469,30 @@ export class HttpAgent implements Agent {
     const backoff = this.#backoffStrategy();
     try {
       // Attempt v3 sync call
-      const requestSync = () =>
-        this.#fetch('' + new URL(`/api/v3/canister/${ecid.toText()}/call`, this.host), {
+      const requestSync = () => {
+        this.log.print(
+          `fetching "/api/v3/canister/${ecid.toText()}/call" with request:`,
+          transformedRequest,
+        );
+        return this.#fetch('' + new URL(`/api/v3/canister/${ecid.toText()}/call`, this.host), {
           ...this.#callOptions,
           ...transformedRequest.request,
           body,
         });
+      };
 
-      const requestAsync = () =>
-        this.#fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this.host), {
+      const requestAsync = () => {
+        this.log.print(
+          `fetching "/api/v2/canister/${ecid.toText()}/call" with request:`,
+          transformedRequest,
+        );
+        return this.#fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this.host), {
           ...this.#callOptions,
           ...transformedRequest.request,
           body,
         });
+      };
 
-      this.log.print(
-        `fetching "/api/v3/canister/${ecid.toText()}/call" with request:`,
-        transformedRequest,
-      );
 
       const request = this.#requestAndRetry({
         request: callSync ? requestSync : requestAsync,
