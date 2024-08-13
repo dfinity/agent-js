@@ -1,5 +1,5 @@
 import { Actor, HttpAgent } from '@dfinity/agent';
-import counterCanister, { createActor, idl } from '../canisters/counter';
+import counterCanister, { idl } from '../canisters/counter';
 import { it, expect, describe, vi } from 'vitest';
 
 describe('counter', () => {
