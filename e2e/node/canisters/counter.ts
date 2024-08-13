@@ -11,7 +11,7 @@ let cache: {
   actor: any;
 } | null = null;
 
-const idl = ({ IDL }) => {
+export const idl = ({ IDL }) => {
   return IDL.Service({
     inc: IDL.Func([], [], []),
     inc_read: IDL.Func([], [IDL.Nat], []),
@@ -62,6 +62,7 @@ export const createActor = async (options?: HttpAgentOptions, agent?: Agent) => 
   }
 
   const canisterId = await Actor.createCanister({ agent: effectiveAgent });
+  console.log('Installing canister with ID:', canisterId.toText());
   await Actor.install({ module }, { canisterId, agent: effectiveAgent });
   return Actor.createActor(idl, { canisterId, agent: effectiveAgent }) as ActorSubclass<_SERVICE>;
 };
