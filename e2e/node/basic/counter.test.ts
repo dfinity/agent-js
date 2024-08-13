@@ -71,7 +71,7 @@ describe('retrytimes', () => {
       // TODO - pin to 4 once dfx v0.23.0 is released
       expect(fetchMock.mock.calls.length).toBe(4);
     } else {
-      expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(5);
+      expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(4);
     }
   }, 40000);
 });

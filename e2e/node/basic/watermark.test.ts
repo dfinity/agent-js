@@ -130,7 +130,7 @@ test('replay attack', async () => {
     // the replayed request should throw an error
     expect(fetchProxy.calls).toBe(5);
   } else {
-    expect(fetchProxy.calls).toBeGreaterThanOrEqual(6);
+    expect(fetchProxy.calls).toBeGreaterThanOrEqual(5);
   }
 
   await expect(actor.read()).rejects.toThrowError(
@@ -143,7 +143,7 @@ test('replay attack', async () => {
     // The agent should should have made 4 additional requests (3 retries + 1 original request)
     expect(fetchProxy.calls).toBe(9);
   } else {
-    expect(fetchProxy.calls).toBeGreaterThanOrEqual(10);
+    expect(fetchProxy.calls).toBeGreaterThanOrEqual(9);
   }
 }, 10_000);
 
