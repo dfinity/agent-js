@@ -124,7 +124,7 @@ test('replay attack', async () => {
       fetchProxy.history.map(response => {
         return [response.url];
       }),
-    ) === -1;
+    ) !== -1;
   if (usingV2) {
     // TODO - pin to 5 once dfx v0.23.0 is released
     // the replayed request should throw an error
