@@ -79,7 +79,7 @@ test('replay queries only', async () => {
   expect(fetchProxy.calls).toBe(3);
 }, 10_000);
 
-test.only('replay attack', async () => {
+test('replay attack', async () => {
   const fetchProxy = new FetchProxy();
 
   const actor = await createActor({
