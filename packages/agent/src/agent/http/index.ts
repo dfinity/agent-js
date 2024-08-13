@@ -718,8 +718,6 @@ export class HttpAgent implements Agent {
         headers: httpHeadersTransform(response.headers),
       });
     }
-    tries; //?
-    this.#retryTimes; //?
     if (tries < this.#retryTimes) {
       return await this.#requestAndRetry({ request, backoff, tries: tries + 1 });
     }
@@ -1088,7 +1086,7 @@ export class HttpAgent implements Agent {
 
   public async fetchRootKey(): Promise<ArrayBuffer> {
     if (!this.#rootKeyFetched) {
-      const status = await this.status(); //?
+      const status = await this.status();
       // Hex-encoded version of the replica root key
       this.rootKey = (status as JsonObject & { root_key: ArrayBuffer }).root_key;
       this.#rootKeyFetched = true;
