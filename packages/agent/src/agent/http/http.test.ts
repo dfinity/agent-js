@@ -13,10 +13,11 @@ import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 
 import { JSDOM } from 'jsdom';
-import { AnonymousIdentity, SignIdentity, toHex } from '../..';
+import { Actor, AnonymousIdentity, SignIdentity, toHex } from '../..';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { AgentError } from '../../errors';
 import { AgentHTTPResponseError } from './errors';
+import { IDL } from '@dfinity/candid';
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;
@@ -809,4 +810,28 @@ test.todo('retry query signature validation after refreshing the subnet node key
 test('it should log errors to console if the option is set', async () => {
   const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: jest.fn(), logToConsole: true });
   await agent.syncTime();
+});
+jest.setTimeout(5000);
+test.only('it should sync time with the replica', async () => {
+  const canisterId = 'ivcos-eqaaa-aaaab-qablq-cai';
+  const idlFactory = () => {
+    return IDL.Service({
+      whoami: IDL.Func([], [IDL.Principal], ['query']),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }) as unknown as any;
+  };
+  jest.useFakeTimers();
+
+  // set date to long ago
+  jest.setSystemTime(new Date('2021-01-01T00:00:00Z'));
+
+  const agent = await HttpAgent.create({ host: 'https://icp-api.io' });
+
+  const actor = Actor.createActor(idlFactory, {
+    agent,
+    canisterId,
+  });
+
+  const result = await actor.whoami();
+  expect(Principal.from(result)).toBeInstanceOf(Principal);
 });

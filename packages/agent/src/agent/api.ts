@@ -119,6 +119,7 @@ export interface CallOptions {
 
 export interface ReadStateResponse {
   certificate: ArrayBuffer;
+  replicaTime?: Date;
 }
 
 export interface SubmitResponse {

@@ -41,6 +41,7 @@ import { Ed25519PublicKey } from '../../public_key';
 import { decodeTime } from '../../utils/leb';
 import { ObservableLog } from '../../observable';
 import { BackoffStrategy, BackoffStrategyFactory, ExponentialBackoff } from '../../polling/backoff';
+import { calculateReplicaTime } from './calculateReplicaTime';
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
 
@@ -238,7 +239,7 @@ export class HttpAgent implements Agent {
   readonly #fetch: typeof fetch;
   readonly #fetchOptions?: Record<string, unknown>;
   readonly #callOptions?: Record<string, unknown>;
-  #timeDiffMsecs = 0;
+  replicaTime = new Date(Date.now());
   readonly host: URL;
   readonly #credentials: string | undefined;
   #rootKeyFetched = false;
@@ -423,8 +424,9 @@ export class HttpAgent implements Agent {
     let ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
 
     // If the value is off by more than 30 seconds, reconcile system time with the network
-    if (Math.abs(this.#timeDiffMsecs) > 1_000 * 30) {
-      ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS + this.#timeDiffMsecs);
+    const timeDiffMsecs = this.replicaTime && this.replicaTime.getTime() - Date.now();
+    if (Math.abs(timeDiffMsecs) > 1_000 * 30) {
+      ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS + timeDiffMsecs);
     }
 
     const submit: CallRequest = {
@@ -669,6 +671,13 @@ export class HttpAgent implements Agent {
     }
 
     const responseText = await response.clone().text();
+
+    response;
+
+    if (response.status === 400 && responseText.includes('ingress_expiry')) {
+      throw new AgentError(responseText);
+    }
+
     const errorMessage =
       `Server returned an error:\n` +
       `  Code: ${response.status} (${response.statusText})\n` +
@@ -684,6 +693,8 @@ export class HttpAgent implements Agent {
       headers: httpHeadersTransform(response.headers),
     });
   }
+
+  #errorTimes = 0;
 
   public async query(
     canisterId: Principal | string,
@@ -708,13 +719,21 @@ export class HttpAgent implements Agent {
       const canister = Principal.from(canisterId);
       const sender = id?.getPrincipal() || Principal.anonymous();
 
+      let ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
+
+      // If the value is off by more than 30 seconds, reconcile system time with the network
+      const timeDiffMsecs = this.replicaTime && this.replicaTime.getTime() - Date.now();
+      if (Math.abs(timeDiffMsecs) > 1_000 * 30) {
+        ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS + timeDiffMsecs);
+      }
+
       const request: QueryRequest = {
         request_type: ReadRequestType.Query,
         canister_id: canister,
         method_name: fields.methodName,
         arg: fields.arg,
         sender,
-        ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+        ingress_expiry,
       };
 
       const requestId = await requestIdOf(request);
@@ -767,7 +786,8 @@ export class HttpAgent implements Agent {
     };
     // Attempt to make the query i=retryTimes times
     // Make query and fetch subnet keys in parallel
-    const [queryResult, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
+    // const [queryResult, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
+    const [queryResult] = await Promise.all([makeQuery()]);
     const { requestDetails, query } = queryResult;
 
     const queryWithDetails = {
@@ -782,6 +802,8 @@ export class HttpAgent implements Agent {
     }
 
     try {
+      this.replicaTime; //?
+      return queryWithDetails;
       return this.#verifyQueryResponse(queryWithDetails, subnetStatus);
     } catch {
       // In case the node signatures have changed, refresh the subnet keys and try again
@@ -888,7 +910,18 @@ export class HttpAgent implements Agent {
 
     // TODO: remove this any. This can be a Signed or UnSigned request.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const transformedRequest: any = await this._transform({
+
+    let ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
+
+    // If the value is off by more than 30 seconds, reconcile system time with the network
+    const timeDiffMsecs = this.replicaTime && this.replicaTime.getTime() - Date.now();
+    if (Math.abs(timeDiffMsecs) > 1_000 * 30) {
+      ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS + timeDiffMsecs);
+
+      ingress_expiry; //?
+    }
+
+    const transformedRequest = await this._transform({
       request: {
         method: 'POST',
         headers: {
@@ -901,7 +934,7 @@ export class HttpAgent implements Agent {
         request_type: ReadRequestType.ReadState,
         paths: fields.paths,
         sender,
-        ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+        ingress_expiry,
       },
     });
 
@@ -914,9 +947,11 @@ export class HttpAgent implements Agent {
     fields: ReadStateOptions,
     identity?: Identity | Promise<Identity>,
     // eslint-disable-next-line
-    request?: any,
+    request?: Request,
   ): Promise<ReadStateResponse> {
     const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
+
+    this.replicaTime; //?
 
     const transformedRequest = request ?? (await this.createReadStateRequest(fields, identity));
     const body = cbor.encode(transformedRequest.body);
@@ -928,34 +963,52 @@ export class HttpAgent implements Agent {
     // TODO - https://dfinity.atlassian.net/browse/SDK-1092
     const backoff = this.#backoffStrategy();
 
-    const response = await this.#requestAndRetry({
-      request: () =>
-        this.#fetch('' + new URL(`/api/v2/canister/${canister.toString()}/read_state`, this.host), {
-          ...this.#fetchOptions,
-          ...transformedRequest.request,
-          body,
-        }),
-      backoff,
-      tries: 0,
-    });
+    try {
+      const response = await this.#requestAndRetry({
+        request: () =>
+          this.#fetch(
+            '' + new URL(`/api/v2/canister/${canister.toString()}/read_state`, this.host),
+            {
+              ...this.#fetchOptions,
+              ...transformedRequest.request,
+              body,
+            },
+          ),
+        backoff,
+        tries: 0,
+      });
 
-    if (!response.ok) {
-      throw new Error(
-        `Server returned an error:\n` +
-          `  Code: ${response.status} (${response.statusText})\n` +
-          `  Body: ${await response.text()}\n`,
-      );
+      if (!response.ok) {
+        throw new Error(
+          `Server returned an error:\n` +
+            `  Code: ${response.status} (${response.statusText})\n` +
+            `  Body: ${await response.text()}\n`,
+        );
+      }
+      const decodedResponse: ReadStateResponse = cbor.decode(await response.arrayBuffer());
+
+      this.log.print('Read state response:', decodedResponse);
+      const parsedTime = await this.parseTimeFromResponse(decodedResponse);
+      if (parsedTime > 0) {
+        this.log.print('Read state response time:', parsedTime);
+        this.#waterMark = parsedTime;
+      }
+      return decodedResponse;
+    } catch (error) {
+      this.#errorTimes++; //?
+      const message = (error as AgentError).message ?? '';
+      message;
+      if (message?.includes('ingress_expiry')) {
+        {
+          const replicaTime = calculateReplicaTime(message); //?
+          if (replicaTime) {
+            this.replicaTime = replicaTime;
+          }
+          return await this.readState(canisterId, fields, identity);
+        }
+      }
+      throw error;
     }
-    const decodedResponse: ReadStateResponse = cbor.decode(await response.arrayBuffer());
-
-    this.log.print('Read state response:', decodedResponse);
-    const parsedTime = await this.parseTimeFromResponse(decodedResponse);
-    if (parsedTime > 0) {
-      this.log.print('Read state response time:', parsedTime);
-      this.#waterMark = parsedTime;
-    }
-
-    return decodedResponse;
   }
 
   public async parseTimeFromResponse(response: ReadStateResponse): Promise<number> {
@@ -1007,7 +1060,7 @@ export class HttpAgent implements Agent {
 
       const replicaTime = status.get('time');
       if (replicaTime) {
-        this.#timeDiffMsecs = Number(replicaTime as bigint) - Number(callTime);
+        this.replicaTime = new Date(Number(replicaTime as bigint));
       }
     } catch (error) {
       this.log.error('Caught exception while attempting to sync time', error as AgentError);
