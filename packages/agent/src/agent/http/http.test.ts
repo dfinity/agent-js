@@ -793,6 +793,8 @@ test('retry requests that fail due to a network failure', async () => {
     fetch: mockFetch,
   });
 
+  agent.rootKey = new Uint8Array(32);
+
   try {
     await agent.call(Principal.managementCanister(), {
       methodName: 'test',
