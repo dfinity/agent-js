@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Added
+
+- feat: management canister interface updates for schnorr signatures
+- feat: ensure that identity-secp256k1 seed phrase must produce a 64 byte seed
+- docs: documentation and metadata for use-auth-client
+- feat: adds optional `rootKey` to `HttpAgentOptions` to allow for a custom root key to be used for verifying signatures from other networks
+
+### Changed
+- feat: replaces hdkey and bip32 implementations with `@scure/bip39` and `@scure/bip32` due to vulnerability and lack of maintenance for `elliptic`
+- chore: bumps dev dependency versions to remove warnings
+- chore: addresses eslint errors uncovered by bumping eslint version
+
 ## [2.0.0] - 2024-07-16
 
 ### Changed

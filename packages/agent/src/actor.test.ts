@@ -38,14 +38,14 @@ describe('makeActor', () => {
 
     const mockFetch: jest.Mock = jest
       .fn()
-      .mockImplementationOnce((/*resource, init*/) => {
+      .mockImplementationOnce(() => {
         return Promise.resolve(
           new Response(null, {
             status: 202,
           }),
         );
       })
-      .mockImplementationOnce((resource, init) => {
+      .mockImplementationOnce(() => {
         const body = cbor.encode({ status: 'received' });
         return Promise.resolve(
           new Response(body, {
@@ -53,7 +53,7 @@ describe('makeActor', () => {
           }),
         );
       })
-      .mockImplementationOnce((resource, init) => {
+      .mockImplementationOnce(() => {
         const body = cbor.encode({ status: 'processing' });
         return Promise.resolve(
           new Response(body, {
@@ -61,7 +61,7 @@ describe('makeActor', () => {
           }),
         );
       })
-      .mockImplementationOnce((resource, init) => {
+      .mockImplementationOnce(() => {
         const body = cbor.encode({
           status: 'replied',
           reply: {
@@ -74,7 +74,7 @@ describe('makeActor', () => {
           }),
         );
       })
-      .mockImplementationOnce((resource, init) => {
+      .mockImplementationOnce(() => {
         // IC-1462 update call error
         const body = cbor.encode(<SubmitResponse['response']['body']>{
           error_code: 'IC0503',
@@ -292,7 +292,6 @@ describe('makeActor', () => {
     expect(reply).toEqual(canisterDecodedReturnValue);
     expect(replyUpdate).toEqual(canisterDecodedReturnValue);
     expect(replyWithHttpDetails.result).toEqual(canisterDecodedReturnValue);
-    replyWithHttpDetails.httpDetails['requestDetails']; //?
     expect(replyWithHttpDetails.httpDetails).toMatchInlineSnapshot(`
       {
         "headers": [],
@@ -364,7 +363,7 @@ describe('makeActor', () => {
       });
     };
     const { Actor } = await importActor();
-    const config = { agent: httpAgent } as any as ActorConfig;
+    const config = { agent: httpAgent } as unknown as ActorConfig;
     expect(() => Actor.createActor(actorInterface, config)).toThrowError(
       'Canister ID is required, but received undefined instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.',
     );

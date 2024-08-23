@@ -18,7 +18,6 @@ const _openDbStore = async (
   }
   return await openDB(dbName, version, {
     upgrade: database => {
-      database.objectStoreNames;
       if (database.objectStoreNames.contains(storeName)) {
         database.clear(storeName);
       }

@@ -561,7 +561,7 @@ describe('retry failures', () => {
           arg: new Uint8Array().buffer,
         }),
       ).rejects.toThrow();
-    } catch (error) {
+    } catch {
       // One try + three retries
       expect(mockFetch.mock.calls.length).toBe(4);
     }
@@ -781,6 +781,7 @@ describe('default host', () => {
   });
 });
 
+jest.setTimeout(10000);
 test('retry requests that fail due to a network failure', async () => {
   jest.useRealTimers();
   const mockFetch: jest.Mock = jest.fn(() => {
@@ -792,12 +793,14 @@ test('retry requests that fail due to a network failure', async () => {
     fetch: mockFetch,
   });
 
+  agent.rootKey = new Uint8Array(32);
+
   try {
     await agent.call(Principal.managementCanister(), {
       methodName: 'test',
       arg: new Uint8Array().buffer,
     });
-  } catch (error) {
+  } catch {
     // One try + three retries
     expect(mockFetch.mock.calls.length).toBe(4);
   }
