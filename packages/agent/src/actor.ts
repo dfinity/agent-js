@@ -554,9 +554,6 @@ function _createActorMethod(
             break;
           case 'rejected':
             throw new UpdateCallRejectedError(cid, methodName, requestId, response);
-          case 'accepted':
-            // The certificate is not yet ready, so we need to poll for the response
-            break;
           case 'default':
             throw new ActorCallError(cid, methodName, 'update', { requestId: toHex(requestId) });
         }
