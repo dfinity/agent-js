@@ -558,7 +558,8 @@ function _createActorMethod(
             throw new ActorCallError(cid, methodName, 'update', { requestId: toHex(requestId) });
         }
       }
-      if (reply === undefined) {
+      // Fall back to polling if we recieve an Accepted response code
+      if (response.status === 202) {
         const pollStrategy = pollingStrategyFactory();
         // Contains the certificate and the reply from the boundary node
         const response = await pollForResponse(agent, ecid, requestId, pollStrategy, blsVerify);
@@ -569,7 +570,6 @@ function _createActorMethod(
       const shouldIncludeCertificate = func.annotations.includes(ACTOR_METHOD_WITH_CERTIFICATE);
 
       const httpDetails = { ...response, requestDetails } as HttpDetailsResponse;
-
       if (reply !== undefined) {
         if (shouldIncludeHttpDetails && shouldIncludeCertificate) {
           return {
