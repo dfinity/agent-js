@@ -138,6 +138,11 @@ export interface HttpAgentOptions {
    * Whether to log to the console. Defaults to false.
    */
   logToConsole?: boolean;
+
+  /**
+   * Alternate root key to use for verifying certificates. If not provided, the default IC root key will be used.
+   */
+  rootKey?: ArrayBuffer;
 }
 
 function getDefaultFetch(): typeof fetch {
@@ -233,7 +238,7 @@ other computations so that this class can stay as simple as possible while
 allowing extensions.
  */
 export class HttpAgent implements Agent {
-  public rootKey = fromHex(IC_ROOT_KEY);
+  public rootKey: ArrayBuffer;
   #identity: Promise<Identity> | null;
   readonly #fetch: typeof fetch;
   readonly #fetchOptions?: Record<string, unknown>;
@@ -275,6 +280,7 @@ export class HttpAgent implements Agent {
     this.#fetch = options.fetch || getDefaultFetch() || fetch.bind(global);
     this.#fetchOptions = options.fetchOptions;
     this.#callOptions = options.callOptions;
+    this.rootKey = options.rootKey ? options.rootKey : fromHex(IC_ROOT_KEY);
 
     const host = determineHost(options.host);
     this.host = new URL(host);
