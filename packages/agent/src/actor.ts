@@ -9,12 +9,12 @@ import {
   SubmitResponse,
 } from './agent';
 import { AgentError } from './errors';
-import { IDL } from '@dfinity/candid';
+import { bufFromBufLike, IDL } from '@dfinity/candid';
 import { pollForResponse, PollStrategyFactory, strategy } from './polling';
 import { Principal } from '@dfinity/principal';
 import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
-import { Certificate, CreateCertificateOptions } from './certificate';
+import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from './certificate';
 import managementCanisterIdl from './canisters/management_idl';
 import _SERVICE, { canister_install_mode, canister_settings } from './canisters/management_service';
 
@@ -525,35 +525,49 @@ function _createActorMethod(
       const ecid = effectiveCanisterId !== undefined ? Principal.from(effectiveCanisterId) : cid;
       const arg = IDL.encode(func.argTypes, args);
 
+      if (agent.rootKey == null)
+        throw new AgentError('Agent root key not initialized before making call');
+
       const { requestId, response, requestDetails } = await agent.call(cid, {
         methodName,
         arg,
         effectiveCanisterId: ecid,
       });
+      let reply: ArrayBuffer | undefined;
+      let certificate: Certificate | undefined;
+      if (response.body && response.body.certificate) {
+        const cert = response.body.certificate;
+        certificate = await Certificate.create({
+          certificate: bufFromBufLike(cert),
+          rootKey: agent.rootKey,
+          canisterId: Principal.from(canisterId),
+          blsVerify,
+        });
+        const path = [new TextEncoder().encode('request_status'), requestId];
+        const status = new TextDecoder().decode(
+          lookupResultToBuffer(certificate.lookup([...path, 'status'])),
+        );
 
-      requestId;
-      response;
-      requestDetails;
-
-      if (!response.ok || response.body /* IC-1462 */) {
-        throw new UpdateCallRejectedError(cid, methodName, requestId, response);
+        switch (status) {
+          case 'replied':
+            reply = lookupResultToBuffer(certificate.lookup([...path, 'reply']));
+            break;
+          case 'rejected':
+            throw new UpdateCallRejectedError(cid, methodName, requestId, response);
+        }
       }
-
-      const pollStrategy = pollingStrategyFactory();
-      // Contains the certificate and the reply from the boundary node
-      const { certificate, reply } = await pollForResponse(
-        agent,
-        ecid,
-        requestId,
-        pollStrategy,
-        blsVerify,
-      );
-      reply;
+      // Fall back to polling if we recieve an Accepted response code
+      if (response.status === 202) {
+        const pollStrategy = pollingStrategyFactory();
+        // Contains the certificate and the reply from the boundary node
+        const response = await pollForResponse(agent, ecid, requestId, pollStrategy, blsVerify);
+        certificate = response.certificate;
+        reply = response.reply;
+      }
       const shouldIncludeHttpDetails = func.annotations.includes(ACTOR_METHOD_WITH_HTTP_DETAILS);
       const shouldIncludeCertificate = func.annotations.includes(ACTOR_METHOD_WITH_CERTIFICATE);
 
       const httpDetails = { ...response, requestDetails } as HttpDetailsResponse;
-
       if (reply !== undefined) {
         if (shouldIncludeHttpDetails && shouldIncludeCertificate) {
           return {

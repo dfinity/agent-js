@@ -1,4 +1,5 @@
-import counterCanister, { createActor } from '../canisters/counter';
+import { Actor, HttpAgent } from '@dfinity/agent';
+import counterCanister, { idl } from '../canisters/counter';
 import { it, expect, describe, vi } from 'vitest';
 
 describe('counter', () => {
@@ -37,26 +38,49 @@ describe('counter', () => {
 describe('retrytimes', () => {
   it('should retry after a failure', async () => {
     let count = 0;
+    const { canisterId } = await counterCanister();
     const fetchMock = vi.fn(function (...args) {
-      if (count <= 1) {
-        count += 1;
+      count += 1;
+      // let the first 3 requests pass, then throw an error on the call
+      if (count === 3) {
         return new Response('Test error - ignore', {
           status: 500,
           statusText: 'Internal Server Error',
         });
       }
+
       // eslint-disable-next-line prefer-spread
-      return fetch.apply(
-        null,
-        args as [input: string | Request, init?: RequestInit | CMRequestInit | undefined],
-      );
+      return fetch.apply(null, args as [input: string | Request, init?: RequestInit | undefined]);
     });
 
-    const counter = await createActor({ fetch: fetchMock as typeof fetch, retryTimes: 3 });
-    try {
-      expect(await counter.greet('counter')).toEqual('Hello, counter!');
-    } catch (error) {
-      console.error(error);
+    const counter = await Actor.createActor(idl, {
+      canisterId,
+      agent: await HttpAgent.create({
+        fetch: fetchMock as typeof fetch,
+        retryTimes: 3,
+        host: 'http://localhost:4943',
+        shouldFetchRootKey: true,
+      }),
+    });
+
+    const result = await counter.greet('counter');
+    expect(result).toEqual('Hello, counter!');
+
+    // The number of calls should be 4 or more, depending on whether the test environment is using v3 or v2
+    if (findV2inCalls(fetchMock.mock.calls as [string, Request][]) === -1) {
+      // TODO - pin to 4 once dfx v0.23.0 is released
+      expect(fetchMock.mock.calls.length).toBe(4);
+    } else {
+      expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(4);
     }
   }, 40000);
 });
+
+const findV2inCalls = (calls: [string, Request][]) => {
+  for (let i = 0; i < calls.length; i++) {
+    if (calls[i][0].includes('v2')) {
+      return i;
+    }
+  }
+  return -1;
+};

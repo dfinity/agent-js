@@ -141,3 +141,21 @@ describe('call forwarding', () => {
     expect(reply).toBeTruthy();
   }, 15_000);
 });
+
+
+test('it should allow you to set an incorrect root key', async () => {
+  const agent = HttpAgent.createSync({
+    rootKey: new Uint8Array(31),
+  });
+  const idlFactory = ({ IDL }) =>
+    IDL.Service({
+      whoami: IDL.Func([], [IDL.Principal], ['query']),
+    });
+
+  const actor = Actor.createActor(idlFactory, {
+    agent,
+    canisterId: Principal.fromText('rrkah-fqaaa-aaaaa-aaaaq-cai'),
+  });
+
+  expect(actor.whoami).rejects.toThrowError(`Invalid certificate:`);
+});
