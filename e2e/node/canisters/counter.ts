@@ -11,7 +11,7 @@ let cache: {
   actor: any;
 } | null = null;
 
-const idl = ({ IDL }) => {
+export const idl = ({ IDL }) => {
   return IDL.Service({
     inc: IDL.Func([], [], []),
     inc_read: IDL.Func([], [IDL.Nat], []),

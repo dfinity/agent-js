@@ -4,6 +4,11 @@
 
 ### Added
 
+- feat: sync_call support in HttpAgent and Actor
+  - Skips polling if the sync call succeeds and provides a certificate
+  - Falls back to v2 api if the v3 endpoint 404's
+  - Adds certificate to SubmitResponse endpoint
+  - adds callSync option to `HttpAgent.call`, which defaults to `true`
 - feat: management canister interface updates for schnorr signatures
 - feat: ensure that identity-secp256k1 seed phrase must produce a 64 byte seed
 - docs: documentation and metadata for use-auth-client

@@ -131,6 +131,8 @@ export interface SubmitResponse {
       error_code?: string;
       reject_code: number;
       reject_message: string;
+      // Available in a v3 call response
+      certificate?: ArrayBuffer;
     } | null;
     headers: HttpHeaderField[];
   };

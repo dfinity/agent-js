@@ -13,7 +13,7 @@ import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 
 import { JSDOM } from 'jsdom';
-import { AnonymousIdentity, SignIdentity, toHex } from '../..';
+import { Actor, AnonymousIdentity, SignIdentity, toHex } from '../..';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { AgentError } from '../../errors';
 import { AgentHTTPResponseError } from './errors';
@@ -106,7 +106,7 @@ test('call', async () => {
   expect(requestId).toEqual(expectedRequestId);
   const call1 = calls[0][0];
   const call2 = calls[0][1];
-  expect(call1).toBe(`http://127.0.0.1/api/v2/canister/${canisterId.toText()}/call`);
+  expect(call1).toBe(`http://127.0.0.1/api/v3/canister/${canisterId.toText()}/call`);
   expect(call2.method).toEqual('POST');
   expect(call2.body).toEqual(cbor.encode(expectedRequest));
   expect(call2.headers['Content-Type']).toEqual('application/cbor');
@@ -320,7 +320,7 @@ test('use anonymous principal if unspecified', async () => {
   expect(calls.length).toBe(1);
   expect(requestId).toEqual(expectedRequestId);
 
-  expect(calls[0][0]).toBe(`http://127.0.0.1/api/v2/canister/${canisterId.toText()}/call`);
+  expect(calls[0][0]).toBe(`http://127.0.0.1/api/v3/canister/${canisterId.toText()}/call`);
   const call2 = calls[0][1];
   expect(call2.method).toEqual('POST');
   expect(call2.body).toEqual(cbor.encode(expectedRequest));
@@ -812,3 +812,4 @@ test('it should log errors to console if the option is set', async () => {
   const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: jest.fn(), logToConsole: true });
   await agent.syncTime();
 });
+
