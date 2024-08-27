@@ -86,31 +86,62 @@ export class IdentityInvalidError extends AgentError {
   }
 }
 
-// HttpAgent options that can be used at construction.
+/**
+ * HttpAgent options that can be used at construction.
+ */ 
 export interface HttpAgentOptions {
-  // A surrogate to the global fetch function. Useful for testing.
-  fetch?: typeof fetch;
-
-  // Additional options to pass along to fetch. Will not override fields that
-  // the agent already needs to set
-  // Should follow the RequestInit interface, but we intentially support non-standard fields
-  fetchOptions?: Record<string, unknown>;
-
-  // Additional options to pass along to fetch for the call API.
+  /**
+   * The strategy to use for backoff when retrying requests
+   */
+  backoffStrategy?: BackoffStrategyFactory;
+  /**
+   * Additional options to pass along to fetch during update calls. Will not override fields that the agent already needs to set
+   * Should follow the RequestInit interface, but we intentially support non-standard fields
+   */
   callOptions?: Record<string, unknown>;
 
-  // The host to use for the client. By default, uses the same host as
-  // the current page.
-  host?: string;
-
-  // The principal used to send messages. This cannot be empty at the request
-  // time (will throw).
-  identity?: Identity | Promise<Identity>;
-
+  /**
+   * @deprecated not used in any known cases
+   *
+   * TODO - remove in 3.0.0
+   */
   credentials?: {
     name: string;
     password?: string;
   };
+  /**
+   * A surrogate to the global fetch function. Useful for testing or situations where global fetch isn't available.
+   */
+  fetch?: typeof fetch;
+
+  /**
+   * Additional options to pass along to fetch during query calls. Will not override fields that the agent already needs to set
+   * Should follow the RequestInit interface, but we intentially support non-standard fields
+   */
+  fetchOptions?: Record<string, unknown>;
+
+  /**
+   * The host to use for the client. By default, uses the same host as the current page
+   */
+  host?: string;
+
+  /**
+   * The principal used to send messages. This cannot be empty at the request time (will throw).
+   */
+  identity?: Identity | Promise<Identity>;
+  /**
+   * Whether to log to the console. Defaults to false.
+   */
+  logToConsole?: boolean;
+  /**
+   * Number of times to retry requests before throwing an error
+   * @default 3
+   */
+  retryTimes?: number;
+  /**
+   * Alternate root key to use for verifying certificates. If not provided, the default IC root key will be used.
+   */
+  rootKey?: ArrayBuffer;
   /**
    * Adds a unique {@link Nonce} with each query.
    * Enabling will prevent queries from being answered with a cached response.
@@ -121,28 +152,10 @@ export interface HttpAgentOptions {
    */
   useQueryNonces?: boolean;
   /**
-   * Number of times to retry requests before throwing an error
-   * @default 3
-   */
-  retryTimes?: number;
-  /**
-   * The strategy to use for backoff when retrying requests
-   */
-  backoffStrategy?: BackoffStrategyFactory;
-  /**
    * Whether the agent should verify signatures signed by node keys on query responses. Increases security, but adds overhead and must make a separate request to cache the node keys for the canister's subnet.
    * @default true
    */
   verifyQuerySignatures?: boolean;
-  /**
-   * Whether to log to the console. Defaults to false.
-   */
-  logToConsole?: boolean;
-
-  /**
-   * Alternate root key to use for verifying certificates. If not provided, the default IC root key will be used.
-   */
-  rootKey?: ArrayBuffer;
 }
 
 function getDefaultFetch(): typeof fetch {
