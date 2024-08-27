@@ -554,8 +554,6 @@ function _createActorMethod(
             break;
           case 'rejected':
             throw new UpdateCallRejectedError(cid, methodName, requestId, response);
-          case 'default':
-            throw new ActorCallError(cid, methodName, 'update', { requestId: toHex(requestId) });
         }
       }
       // Fall back to polling if we recieve an Accepted response code
