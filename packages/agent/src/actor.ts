@@ -99,20 +99,28 @@ export interface CallConfig {
   canisterId?: string | Principal;
 
   /**
+   * Options to be passed during the creation of a Certificate. Excludes `certificate` and `canisterId` which are managed by the actor.
+   */
+  createCertificateOptions?: ActorCertificateOptions;
+
+  /**
    * The effective canister ID. This should almost always be ignored.
    */
   effectiveCanisterId?: Principal;
 }
 
 /**
+ * Options to be passed during the creation of a Certificate. Excludes `certificate` and `canisterId` which are managed by the actor.
+ */
+export type ActorCertificateOptions = Omit<
+  Partial<CreateCertificateOptions>,
+  'certificate' | 'canisterId'
+>;
+
+/**
  * Configuration that can be passed to customize the Actor behaviour.
  */
 export interface ActorConfig extends CallConfig {
-  /**
-   * The Canister ID of this Actor. This is required for an Actor.
-   */
-  canisterId: string | Principal;
-
   /**
    * An override function for update calls' CallConfig. This will be called on every calls.
    */
@@ -121,6 +129,11 @@ export interface ActorConfig extends CallConfig {
     args: unknown[],
     callConfig: CallConfig,
   ): Partial<CallConfig> | void;
+
+  /**
+   * The Canister ID of this Actor. This is required for an Actor.
+   */
+  canisterId: string | Principal;
 
   /**
    * An override function for query calls' CallConfig. This will be called on every query.
@@ -133,6 +146,7 @@ export interface ActorConfig extends CallConfig {
 
   /**
    * Polyfill for BLS Certificate verification in case wasm is not supported
+   * @deprecated use createCertificateOptions
    */
   blsVerify?: CreateCertificateOptions['blsVerify'];
 }
@@ -372,7 +386,13 @@ export class Actor {
             func.annotations.push(ACTOR_METHOD_WITH_CERTIFICATE);
           }
 
-          this[methodName] = _createActorMethod(this, methodName, func, config.blsVerify);
+          this[methodName] = _createActorMethod(
+            this,
+            methodName,
+            func,
+            config.createCertificateOptions,
+            config.blsVerify,
+          );
         }
       }
     }
@@ -463,6 +483,7 @@ function _createActorMethod(
   actor: Actor,
   methodName: string,
   func: IDL.FuncClass,
+  createCertificateOptions?: ActorCertificateOptions,
   blsVerify?: CreateCertificateOptions['blsVerify'],
 ): ActorMethod {
   let caller: (options: CallConfig, ...args: unknown[]) => Promise<unknown>;
@@ -516,6 +537,7 @@ function _createActorMethod(
       };
 
       const agent = options.agent || actor[metadataSymbol].config.agent || getDefaultAgent();
+
       const { canisterId, effectiveCanisterId, pollingStrategyFactory } = {
         ...DEFAULT_ACTOR_CONFIG,
         ...actor[metadataSymbol].config,
@@ -538,10 +560,13 @@ function _createActorMethod(
       if (response.body && response.body.certificate) {
         const cert = response.body.certificate;
         certificate = await Certificate.create({
-          certificate: bufFromBufLike(cert),
           rootKey: agent.rootKey,
-          canisterId: Principal.from(canisterId),
           blsVerify,
+          // Allow override of `blsVerify` and `rootKey`
+          ...options.createCertificateOptions,
+          // Use derived certificate and canisterId
+          certificate: bufFromBufLike(cert),
+          canisterId: Principal.from(canisterId),
         });
         const path = [new TextEncoder().encode('request_status'), requestId];
         const status = new TextDecoder().decode(
@@ -560,7 +585,13 @@ function _createActorMethod(
       if (response.status === 202) {
         const pollStrategy = pollingStrategyFactory();
         // Contains the certificate and the reply from the boundary node
-        const response = await pollForResponse(agent, ecid, requestId, pollStrategy, blsVerify);
+        const response = await pollForResponse({
+          agent,
+          canisterId: ecid,
+          requestId,
+          strategy: pollStrategy,
+          createCertificateOptions,
+        });
         certificate = response.certificate;
         reply = response.reply;
       }

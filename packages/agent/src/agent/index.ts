@@ -10,6 +10,10 @@ declare const window: GlobalInternetComputer;
 declare const global: GlobalInternetComputer;
 declare const self: GlobalInternetComputer;
 
+/**
+ * 
+ * @returns An ICP agent, if one is available in the global scope.
+ */
 export function getDefaultAgent(): Agent {
   const agent =
     typeof window === 'undefined'
@@ -17,8 +21,8 @@ export function getDefaultAgent(): Agent {
         ? typeof self === 'undefined'
           ? undefined
           : self.ic.agent
-        : global.ic.agent
-      : window.ic.agent;
+        : global?.ic?.agent
+      : window?.ic?.agent;
 
   if (!agent) {
     throw new Error('No Agent could be found.');

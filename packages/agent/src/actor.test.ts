@@ -368,6 +368,26 @@ describe('makeActor', () => {
       'Canister ID is required, but received undefined instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.',
     );
   });
+  
+  it.only('should allow for passing createCertificateOptions', async () => {
+    const idlFactory = ({ IDL }) =>
+      IDL.Service({
+        greet: IDL.Func([], [IDL.Text]),
+      });
+    const actor = Actor.createActor(idlFactory, {
+      canisterId: Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c'),
+      agent: HttpAgent.createSync({
+        retryTimes: 0,
+        // Deliberately using a non-standard port to ensure the request fails
+        host: 'http://localhost:1111',
+      }),
+      createCertificateOptions: {
+        maxAgeInMinutes: 2,
+      },
+    });
+
+    expect(actor.greet).rejects.toThrowErrorMatchingInlineSnapshot();
+  });
 });
 
 jest.setTimeout(20000);
