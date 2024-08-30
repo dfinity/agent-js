@@ -8,7 +8,7 @@ import {
   ReplicaRejectCode,
   SubmitResponse,
 } from './agent';
-import { AgentError } from './errors';
+import { ActorError, AgentError } from './errors';
 import { bufFromBufLike, IDL } from '@dfinity/candid';
 import { pollForResponse, PollStrategyFactory, strategy } from './polling';
 import { Principal } from '@dfinity/principal';
@@ -350,6 +350,31 @@ export class Actor {
     return this.createActor(interfaceFactory, { ...config, canisterId });
   }
 
+  public static validateActorConfig(config: Partial<ActorConfig>): void {
+    if (!config.canisterId) {
+      throw new AgentError('Canister ID is required');
+    }
+    try {
+      Principal.from(config.canisterId);
+    } catch (error) {
+      throw new ActorError(`Could not parse provided canister ID: ${config.canisterId}. 
+      Error: ${error}`);
+    }
+
+    if (config.createCertificateOptions) {
+      const maxAgeInMinutes = config.createCertificateOptions.maxAgeInMinutes;
+      if (config.createCertificateOptions.maxAgeInMinutes !== undefined) {
+        if (typeof maxAgeInMinutes !== 'number' || maxAgeInMinutes < 0) {
+          throw new AgentError('maxAgeInMinutes must be a positive number');
+        }
+
+        if (maxAgeInMinutes > 5) {
+          throw new AgentError('maxAgeInMinutes must be less than 5');
+        }
+      }
+    }
+  }
+
   public static createActorClass(
     interfaceFactory: IDL.InterfaceFactory,
     options?: CreateActorClassOpts,
@@ -360,10 +385,22 @@ export class Actor {
       [x: string]: ActorMethod;
 
       constructor(config: ActorConfig) {
+        Actor.validateActorConfig(config);
+        if (config.blsVerify) {
+          // TODO: Remove this warning in the next major version
+          console.warn(
+            'The blsVerify option is deprecated. Please use createCertificateOptions instead.',
+          );
+          config.createCertificateOptions = {
+            ...config.createCertificateOptions,
+            blsVerify: config.blsVerify,
+          };
+        }
         if (!config.canisterId)
           throw new AgentError(
             `Canister ID is required, but received ${typeof config.canisterId} instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.`,
           );
+
         const canisterId =
           typeof config.canisterId === 'string'
             ? Principal.fromText(config.canisterId)
@@ -391,7 +428,6 @@ export class Actor {
             methodName,
             func,
             config.createCertificateOptions,
-            config.blsVerify,
           );
         }
       }
@@ -484,7 +520,6 @@ function _createActorMethod(
   methodName: string,
   func: IDL.FuncClass,
   createCertificateOptions?: ActorCertificateOptions,
-  blsVerify?: CreateCertificateOptions['blsVerify'],
 ): ActorMethod {
   let caller: (options: CallConfig, ...args: unknown[]) => Promise<unknown>;
   if (func.annotations.includes('query') || func.annotations.includes('composite_query')) {
@@ -555,13 +590,13 @@ function _createActorMethod(
         arg,
         effectiveCanisterId: ecid,
       });
+
       let reply: ArrayBuffer | undefined;
       let certificate: Certificate | undefined;
       if (response.body && response.body.certificate) {
         const cert = response.body.certificate;
         certificate = await Certificate.create({
           rootKey: agent.rootKey,
-          blsVerify,
           // Allow override of `blsVerify` and `rootKey`
           ...options.createCertificateOptions,
           // Use derived certificate and canisterId

@@ -131,12 +131,12 @@ describe('call forwarding', () => {
 
     expect(requestIdOf(requestDetails!)).toStrictEqual(requestId);
 
-    const { certificate, reply } = await pollForResponse(
+    const { certificate, reply } = await pollForResponse({
       agent,
-      Principal.fromText(forwardedOptions.effectiveCanisterId),
+      canisterId: Principal.fromText(forwardedOptions.effectiveCanisterId),
       requestId,
-      defaultStrategy(),
-    );
+      strategy: defaultStrategy(),
+    });
     expect(certificate).toBeTruthy();
     expect(reply).toBeTruthy();
   }, 15_000);

@@ -6,6 +6,8 @@ import { Principal } from '@dfinity/principal';
 import * as bls from './utils/bls';
 import { decodeTime } from './utils/leb';
 
+const MAX_AGE_IN_MINUTES_CAP = 5;
+
 /**
  * A certificate may fail verification with respect to the provided public key
  */
@@ -163,10 +165,39 @@ export class Certificate {
    * @throws {CertificateVerificationError}
    */
   public static async create(options: CreateCertificateOptions): Promise<Certificate> {
+    Certificate.validateOptions(options);
     const cert = Certificate.createUnverified(options);
 
     await cert.verify();
     return cert;
+  }
+
+  /**
+   * Utility function to validate the options for creating a certificate
+   * @param {CreateCertificateOptions} options - the fields required to create and verify an ICP certificate
+   * @throws {CertificateVerificationError} if any of the required fields are missing or invalid
+   */
+  public static validateOptions(options: CreateCertificateOptions): void {
+    if (!options.certificate) {
+      throw new CertificateVerificationError('Certificate is missing');
+    }
+    if (!options.rootKey) {
+      throw new CertificateVerificationError('Root key is missing');
+    }
+    if (!options.canisterId) {
+      throw new CertificateVerificationError('Canister ID is missing');
+    }
+    if (options.maxAgeInMinutes !== undefined && options.maxAgeInMinutes < 0) {
+      throw new CertificateVerificationError('maxAgeInMinutes must be a non-negative number');
+    }
+    if (options.maxAgeInMinutes !== undefined && !Number.isInteger(options.maxAgeInMinutes)) {
+      throw new CertificateVerificationError('maxAgeInMinutes must be an integer');
+    }
+    if (options.maxAgeInMinutes !== undefined && options.maxAgeInMinutes > MAX_AGE_IN_MINUTES_CAP) {
+      throw new CertificateVerificationError(
+        `maxAgeInMinutes must be less than or equal to ${MAX_AGE_IN_MINUTES_CAP}`,
+      );
+    }
   }
 
   private static createUnverified(options: CreateCertificateOptions): Certificate {

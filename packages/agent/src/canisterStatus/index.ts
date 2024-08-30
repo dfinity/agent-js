@@ -145,6 +145,7 @@ export const request = async (options: {
         const response = await agent.readState(canisterId, {
           paths: [encodedPaths[index]],
         });
+        response;
         const cert = await Certificate.create({
           certificate: response.certificate,
           rootKey: agent.rootKey,

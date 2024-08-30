@@ -1,6 +1,8 @@
 import {
+  Actor,
   ActorMethod,
   Certificate,
+  HttpAgent,
   LookupResultFound,
   LookupStatus,
   getManagementCanister,
@@ -8,7 +10,7 @@ import {
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import agent from '../utils/agent';
-import { test, expect } from 'vitest';
+import { test, describe, it, expect, vi } from 'vitest';
 
 test('read_state', async () => {
   const resolvedAgent = await agent;
@@ -123,5 +125,29 @@ test('withOptions', async () => {
     settings: [],
     specified_id: [],
     sender_canister_version: [],
+  });
+});
+
+describe('certificate options', () => {
+  it('should allow you to customize certificate options', async () => {
+    const idlFactory = ({ IDL }) => {
+      return IDL.Service({
+        greet: IDL.Func([IDL.Text], [IDL.Text], []),
+      });
+    };
+    vi.useRealTimers();
+    const actor = Actor.createActor(idlFactory, {
+      canisterId: Principal.fromText('tnnnb-2yaaa-aaaab-qaiiq-cai'),
+      agent: HttpAgent.createSync({
+        retryTimes: 0,
+        // Deliberately using a non-standard port to ensure the request fails
+      }),
+      createCertificateOptions: {
+        maxAgeInMinutes: 2,
+      },
+    });
+
+    const foo = await actor.greet('test'); //?
+    expect(foo).toMatchInlineSnapshot('"Hello, test!"');
   });
 });

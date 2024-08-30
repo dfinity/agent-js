@@ -12,6 +12,7 @@ test('simulate fetching a Candid interface', async () => {
           reply: {
             arg: IDL.encode([IDL.Text], ['service {}']),
           },
+          certificate: new ArrayBuffer(0),
         }),
         {
           status: 200,

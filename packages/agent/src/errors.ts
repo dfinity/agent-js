@@ -10,3 +10,12 @@ export class AgentError extends Error {
     Object.setPrototypeOf(this, AgentError.prototype);
   }
 }
+/**
+ * An error that originates in the Actor. 
+ */
+export class ActorError extends Error {
+  constructor(public readonly message: string) {
+    super(message);
+    Object.setPrototypeOf(this, ActorError.prototype);
+  }
+}
