@@ -16,7 +16,7 @@ import { JSDOM } from 'jsdom';
 import { Actor, AnonymousIdentity, SignIdentity, toHex } from '../..';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { AgentError } from '../../errors';
-import { AgentHTTPResponseError } from './errors';
+import { AgentHTTPResponseError, ReplicaTimeError } from './errors';
 import { IDL } from '@dfinity/candid';
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
@@ -812,7 +812,7 @@ test('it should log errors to console if the option is set', async () => {
   await agent.syncTime();
 });
 jest.setTimeout(5000);
-test.only('it should sync time with the replica', async () => {
+test('it should sync time with the replica for a query', async () => {
   const canisterId = 'ivcos-eqaaa-aaaab-qablq-cai';
   const idlFactory = () => {
     return IDL.Service({
@@ -820,10 +820,13 @@ test.only('it should sync time with the replica', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }) as unknown as any;
   };
-  jest.useFakeTimers();
+  jest.useRealTimers();
 
   // set date to long ago
-  jest.setSystemTime(new Date('2021-01-01T00:00:00Z'));
+  jest.spyOn(Date, 'now').mockImplementation(() => {
+    return new Date('2021-01-01T00:00:00Z').getTime();
+  });
+  // jest.setSystemTime(new Date('2021-01-01T00:00:00Z'));
 
   const agent = await HttpAgent.create({ host: 'https://icp-api.io' });
 
@@ -831,7 +834,57 @@ test.only('it should sync time with the replica', async () => {
     agent,
     canisterId,
   });
-
+  try {
+    // should throw an error
+    await actor.whoami();
+  } catch (err) {
+    // handle the replica time error
+    if (err.name === 'ReplicaTimeError') {
+      const error = err as ReplicaTimeError;
+      // use the replica time to sync the agent
+      error.agent.replicaTime = error.replicaTime;
+    }
+  }
+  // retry the call
   const result = await actor.whoami();
   expect(Principal.from(result)).toBeInstanceOf(Principal);
+});
+test.only('it should sync time with the replica for an update', async () => {
+  const canisterId = 'ivcos-eqaaa-aaaab-qablq-cai';
+  const idlFactory = () => {
+    return IDL.Service({
+      whoami: IDL.Func([], [IDL.Principal], []),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }) as unknown as any;
+  };
+  jest.useRealTimers();
+
+  // set date to long ago
+  jest.spyOn(Date, 'now').mockImplementation(() => {
+    return new Date('2021-01-01T00:00:00Z').getTime();
+  });
+  // jest.setSystemTime(new Date('2021-01-01T00:00:00Z'));
+
+  const agent = await HttpAgent.create({ host: 'https://icp-api.io' });
+
+  const actor = Actor.createActor(idlFactory, {
+    agent,
+    canisterId,
+  });
+  try {
+    // should throw an error
+    await actor.whoami();
+  } catch (err) {
+    // handle the replica time error
+    if (err.name === 'ReplicaTimeError') {
+      const error = err as ReplicaTimeError;
+      error;
+      // use the replica time to sync the agent
+      error.agent.replicaTime = error.replicaTime;
+      error.agent.replicaTime; //?
+      const result = await actor.whoami();
+      expect(Principal.from(result)).toBeInstanceOf(Principal);
+    }
+  }
+  // retry the call
 });

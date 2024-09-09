@@ -137,6 +137,7 @@ export const request = async (options: {
   const encodedPaths = uniquePaths.map(path => {
     return encodePath(path, canisterId);
   });
+
   const status = new Map<string | Path, Status>();
 
   try {
@@ -240,7 +241,7 @@ export const request = async (options: {
     //   status.set(path, null);
     // }
     console.group();
-    console.warn(`Expected to find result for path ${path}, but instead found nothing.`);
+    // console.warn(`Expected to find result for path ${path}, but instead found nothing.`);
     console.warn(error);
     console.groupEnd();
   }
