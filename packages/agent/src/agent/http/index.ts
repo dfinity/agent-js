@@ -143,6 +143,11 @@ export interface HttpAgentOptions {
    * Provide an expected replica time. This can be used to set the baseline for the time to use when making requests against the replica.
    */
   replicaTime?: Date;
+
+  /**
+   * Alternate root key to use for verifying certificates. If not provided, the default IC root key will be used.
+   */
+  rootKey?: ArrayBuffer;
 }
 
 function getDefaultFetch(): typeof fetch {
@@ -238,7 +243,7 @@ other computations so that this class can stay as simple as possible while
 allowing extensions.
  */
 export class HttpAgent implements Agent {
-  public rootKey = fromHex(IC_ROOT_KEY);
+  public rootKey: ArrayBuffer;
   #identity: Promise<Identity> | null;
   readonly #fetch: typeof fetch;
   readonly #fetchOptions?: Record<string, unknown>;
@@ -293,6 +298,7 @@ export class HttpAgent implements Agent {
     this.#fetch = options.fetch || getDefaultFetch() || fetch.bind(global);
     this.#fetchOptions = options.fetchOptions;
     this.#callOptions = options.callOptions;
+    this.rootKey = options.rootKey ? options.rootKey : fromHex(IC_ROOT_KEY);
 
     const host = determineHost(options.host);
     this.host = new URL(host);
@@ -422,9 +428,11 @@ export class HttpAgent implements Agent {
       methodName: string;
       arg: ArrayBuffer;
       effectiveCanisterId?: Principal | string;
+      callSync?: boolean;
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
+    const callSync = options.callSync ?? true;
     const id = await (identity !== undefined ? await identity : await this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
@@ -484,44 +492,84 @@ export class HttpAgent implements Agent {
     transformedRequest = await id.transformRequest(transformedRequest);
 
     const body = cbor.encode(transformedRequest.body);
-
-    this.log.print(
-      `fetching "/api/v2/canister/${ecid.toText()}/call" with request:`,
-      transformedRequest,
-    );
-
-    // Run both in parallel. The fetch is quite expensive, so we have plenty of time to
-    // calculate the requestId locally.
     const backoff = this.#backoffStrategy();
-    const request = this.#requestAndRetry({
-      request: () =>
-        this.#fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this.host), {
+    try {
+      // Attempt v3 sync call
+      const requestSync = () => {
+        this.log.print(
+          `fetching "/api/v3/canister/${ecid.toText()}/call" with request:`,
+          transformedRequest,
+        );
+        return this.#fetch('' + new URL(`/api/v3/canister/${ecid.toText()}/call`, this.host), {
           ...this.#callOptions,
           ...transformedRequest.request,
           body,
-        }),
-      backoff,
-      tries: 0,
-    });
+        });
+      };
 
-    const [response, requestId] = await Promise.all([request, requestIdOf(submit)]);
+      const requestAsync = () => {
+        this.log.print(
+          `fetching "/api/v2/canister/${ecid.toText()}/call" with request:`,
+          transformedRequest,
+        );
+        return this.#fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this.host), {
+          ...this.#callOptions,
+          ...transformedRequest.request,
+          body,
+        });
+      };
 
-    const responseBuffer = await response.arrayBuffer();
-    const responseBody = (
-      response.status === 200 && responseBuffer.byteLength > 0 ? cbor.decode(responseBuffer) : null
-    ) as SubmitResponse['response']['body'];
 
-    return {
-      requestId,
-      response: {
-        ok: response.ok,
-        status: response.status,
-        statusText: response.statusText,
-        body: responseBody,
-        headers: httpHeadersTransform(response.headers),
-      },
-      requestDetails: submit,
-    };
+      const request = this.#requestAndRetry({
+        request: callSync ? requestSync : requestAsync,
+        backoff,
+        tries: 0,
+      });
+
+      const [response, requestId] = await Promise.all([request, requestIdOf(submit)]);
+
+      const responseBuffer = await response.arrayBuffer();
+      const responseBody = (
+        response.status === 200 && responseBuffer.byteLength > 0
+          ? cbor.decode(responseBuffer)
+          : null
+      ) as SubmitResponse['response']['body'];
+
+      // Update the watermark with the latest time from consensus
+      if (responseBody?.certificate) {
+        const time = await this.parseTimeFromResponse({ certificate: responseBody.certificate });
+        this.#waterMark = time;
+      }
+
+      return {
+        requestId,
+        response: {
+          ok: response.ok,
+          status: response.status,
+          statusText: response.statusText,
+          body: responseBody,
+          headers: httpHeadersTransform(response.headers),
+        },
+        requestDetails: submit,
+      };
+    } catch (error) {
+      // If the error is due to the v3 api not being supported, fall back to v2
+      if ((error as AgentError).message.includes('v3 api not supported.')) {
+        this.log.warn('v3 api not supported. Fall back to v2');
+        return this.call(
+          canisterId,
+          {
+            ...options,
+            // disable v3 api
+            callSync: false,
+          },
+          identity,
+        );
+      }
+
+      this.log.error('Error while making call:', error as Error);
+      throw error;
+    }
   }
 
   async #requestAndRetryQuery(args: {
@@ -700,9 +748,18 @@ export class HttpAgent implements Agent {
       `  Code: ${response.status} (${response.statusText})\n` +
       `  Body: ${responseText}\n`;
 
+    if (response.status === 404 && response.url.includes('api/v3')) {
+      throw new AgentHTTPResponseError('v3 api not supported. Fall back to v2', {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        headers: httpHeadersTransform(response.headers),
+      });
+    }
     if (tries < this.#retryTimes) {
       return await this.#requestAndRetry({ request, backoff, tries: tries + 1 });
     }
+
     throw new AgentHTTPResponseError(errorMessage, {
       ok: response.ok,
       status: response.status,
@@ -1012,6 +1069,7 @@ export class HttpAgent implements Agent {
     throw new AgentError('Failed to read state');
   }
 
+
   #handleReplicaTimeError = (error: AgentError): void => {
     const message = error.message;
     if (message?.includes('ingress_expiry')) {
@@ -1097,8 +1155,9 @@ export class HttpAgent implements Agent {
 
   public async fetchRootKey(): Promise<ArrayBuffer> {
     if (!this.#rootKeyFetched) {
+      const status = await this.status();
       // Hex-encoded version of the replica root key
-      this.rootKey = ((await this.status()) as JsonObject & { root_key: ArrayBuffer }).root_key;
+      this.rootKey = (status as JsonObject & { root_key: ArrayBuffer }).root_key;
       this.#rootKeyFetched = true;
     }
     return this.rootKey;

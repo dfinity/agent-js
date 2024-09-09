@@ -5,6 +5,7 @@ import { RequestId } from '../request_id';
 import { toHex } from '../utils/buffer';
 
 export * as strategy from './strategy';
+import { defaultStrategy } from './strategy';
 export { defaultStrategy } from './strategy';
 export type PollStrategy = (
   canisterId: Principal,
@@ -27,7 +28,7 @@ export async function pollForResponse(
   agent: Agent,
   canisterId: Principal,
   requestId: RequestId,
-  strategy: PollStrategy,
+  strategy: PollStrategy = defaultStrategy(),
   // eslint-disable-next-line
   request?: any,
   blsVerify?: CreateCertificateOptions['blsVerify'],
@@ -75,7 +76,7 @@ export async function pollForResponse(
     case RequestStatusResponseStatus.Processing:
       // Execute the polling strategy, then retry.
       await strategy(canisterId, requestId, status);
-      return pollForResponse(agent, canisterId, requestId, strategy, currentRequest);
+      return pollForResponse(agent, canisterId, requestId, strategy, currentRequest, blsVerify);
 
     case RequestStatusResponseStatus.Rejected: {
       const rejectCode = new Uint8Array(

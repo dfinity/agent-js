@@ -135,7 +135,7 @@ export interface CreateCertificateOptions {
    */
   canisterId: Principal;
   /**
-   * BLS Verification strategy. Default strategy uses wasm for performance, but that may not be available in all contexts.
+   * BLS Verification strategy. Default strategy uses bls12_381 from @noble/curves
    */
   blsVerify?: VerifyFunc;
 

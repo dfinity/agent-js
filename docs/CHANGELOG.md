@@ -4,9 +4,20 @@
 
 ### Added
 
+- feat: sync_call support in HttpAgent and Actor
+  - Skips polling if the sync call succeeds and provides a certificate
+  - Falls back to v2 api if the v3 endpoint 404's
+  - Adds certificate to SubmitResponse endpoint
+  - adds callSync option to `HttpAgent.call`, which defaults to `true`
 - feat: management canister interface updates for schnorr signatures
 - feat: ensure that identity-secp256k1 seed phrase must produce a 64 byte seed
 - docs: documentation and metadata for use-auth-client
+- feat: adds optional `rootKey` to `HttpAgentOptions` to allow for a custom root key to be used for verifying signatures from other networks
+- chore: npm audit bumping micromatch
+- feat: exports polling utilities from `@dfinity/agent` for use in other packages
+  - `pollForResponse` now uses the default strategy by default
+  - Updated the `bls-verify` jsdoc comment to accurately reflect that the default strategy now uses @noble/curves
+- docs: clarifies meaning of `effectiveCanisterId` in `CallOptions`
 
 ### Changed
 - feat: replaces hdkey and bip32 implementations with `@scure/bip39` and `@scure/bip32` due to vulnerability and lack of maintenance for `elliptic`
@@ -17,6 +28,8 @@
 
 ### Changed
 
+- fix: passing `request` correctly during pollForResponse `Processing` status
+  - credit: [Senior Joinu](https://forum.dfinity.org/t/timestamp-failed-to-pass-the-watermark-after-retrying-the-configured-3-times/29180/11?)
 - ci: removing headless browser tests pending a rewrite
 - ci: changing token for creating release
 

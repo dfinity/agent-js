@@ -14,9 +14,9 @@ test("Legacy Agent interface should be accepted by Actor's createActor", async (
   );
 
   // Verify that update calls work
-  await actor.write(8n); //?
+  await actor.write(8n);
   // Verify that query calls work
-  const count = await actor.read(); //?
+  const count = await actor.read();
   expect(count).toBe(8n);
 }, 15_000);
 // TODO: tests for rejected, unknown time out

@@ -6,7 +6,7 @@ import { CallRequest, SubmitRequestType, UnSigned } from './agent/http/types';
 import * as cbor from './cbor';
 import { requestIdOf } from './request_id';
 import * as pollingImport from './polling';
-import { ActorConfig } from './actor';
+import { Actor, ActorConfig } from './actor';
 
 const importActor = async (mockUpdatePolling?: () => void) => {
   jest.dontMock('./polling');
@@ -329,7 +329,7 @@ describe('makeActor', () => {
     `);
     expect(replyUpdateWithHttpDetails.result).toEqual(canisterDecodedReturnValue);
 
-    replyUpdateWithHttpDetails.httpDetails['requestDetails']['nonce'] = new Uint8Array(); //?
+    replyUpdateWithHttpDetails.httpDetails['requestDetails']['nonce'] = new Uint8Array();
 
     expect(replyUpdateWithHttpDetails.httpDetails).toMatchSnapshot();
   });
