@@ -137,107 +137,114 @@ export const request = async (options: {
   const encodedPaths = uniquePaths.map(path => {
     return encodePath(path, canisterId);
   });
-
   const status = new Map<string | Path, Status>();
 
-  try {
-    const response = await agent.readState(canisterId, {
-      paths: encodedPaths,
-    });
+  const promises = uniquePaths.map((path, index) => {
+    return (async () => {
+      try {
+        const response = await agent.readState(canisterId, {
+          paths: [encodedPaths[index]],
+        });
+        const cert = await Certificate.create({
+          certificate: response.certificate,
+          rootKey: agent.rootKey,
+          canisterId: canisterId,
+        });
 
-    const cert = await Certificate.create({
-      certificate: response.certificate,
-      rootKey: agent.rootKey,
-      canisterId: canisterId,
-      certTime: agent.replicaTime,
-    });
-
-    const lookup = (cert: Certificate, path: Path) => {
-      if (path === 'subnet') {
-        const data = fetchNodeKeys(response.certificate, canisterId, agent.rootKey);
-        return {
-          path: path,
-          data,
+        const lookup = (cert: Certificate, path: Path) => {
+          if (path === 'subnet') {
+            const data = fetchNodeKeys(response.certificate, canisterId, agent.rootKey);
+            return {
+              path: path,
+              data,
+            };
+          } else {
+            return {
+              path: path,
+              data: lookupResultToBuffer(cert.lookup(encodePath(path, canisterId))),
+            };
+          }
         };
-      } else {
-        return {
-          path: path,
-          data: lookupResultToBuffer(cert.lookup(encodePath(path, canisterId))),
-        };
-      }
-    };
 
-    // must pass in the rootKey if we have no delegation
-    uniquePaths.forEach(unique => {
-      const { path, data } = lookup(cert, unique);
-      if (!data) {
-        // Typically, the cert lookup will throw
-        console.warn(`Expected to find result for path ${path}, but instead found nothing.`);
-        if (typeof path === 'string') {
-          status.set(path, null);
+        // must pass in the rootKey if we have no delegation
+        const { path, data } = lookup(cert, uniquePaths[index]);
+        if (!data) {
+          // Typically, the cert lookup will throw
+          console.warn(`Expected to find result for path ${path}, but instead found nothing.`);
+          if (typeof path === 'string') {
+            status.set(path, null);
+          } else {
+            status.set(path.key, null);
+          }
         } else {
-          status.set(path.key, null);
-        }
-      } else {
-        switch (path) {
-          case 'time': {
-            status.set(path, decodeTime(data));
-            break;
-          }
-          case 'controllers': {
-            status.set(path, decodeControllers(data));
-            break;
-          }
-          case 'module_hash': {
-            status.set(path, decodeHex(data));
-            break;
-          }
-          case 'subnet': {
-            status.set(path, data);
-            break;
-          }
-          case 'candid': {
-            status.set(path, new TextDecoder().decode(data));
-            break;
-          }
-          default: {
-            // Check for CustomPath signature
-            if (typeof path !== 'string' && 'key' in path && 'path' in path) {
-              switch (path.decodeStrategy) {
-                case 'raw':
-                  status.set(path.key, data);
-                  break;
-                case 'leb128': {
-                  status.set(path.key, decodeLeb128(data));
-                  break;
-                }
-                case 'cbor': {
-                  status.set(path.key, decodeCbor(data));
-                  break;
-                }
-                case 'hex': {
-                  status.set(path.key, decodeHex(data));
-                  break;
-                }
-                case 'utf-8': {
-                  status.set(path.key, decodeUtf8(data));
+          switch (path) {
+            case 'time': {
+              status.set(path, decodeTime(data));
+              break;
+            }
+            case 'controllers': {
+              status.set(path, decodeControllers(data));
+              break;
+            }
+            case 'module_hash': {
+              status.set(path, decodeHex(data));
+              break;
+            }
+            case 'subnet': {
+              status.set(path, data);
+              break;
+            }
+            case 'candid': {
+              status.set(path, new TextDecoder().decode(data));
+              break;
+            }
+            default: {
+              // Check for CustomPath signature
+              if (typeof path !== 'string' && 'key' in path && 'path' in path) {
+                switch (path.decodeStrategy) {
+                  case 'raw':
+                    status.set(path.key, data);
+                    break;
+                  case 'leb128': {
+                    status.set(path.key, decodeLeb128(data));
+                    break;
+                  }
+                  case 'cbor': {
+                    status.set(path.key, decodeCbor(data));
+                    break;
+                  }
+                  case 'hex': {
+                    status.set(path.key, decodeHex(data));
+                    break;
+                  }
+                  case 'utf-8': {
+                    status.set(path.key, decodeUtf8(data));
+                  }
                 }
               }
             }
           }
         }
+      } catch (error) {
+        // Break on signature verification errors
+        if ((error as AgentError)?.message?.includes('Invalid certificate')) {
+          throw new AgentError((error as AgentError).message);
+        }
+        if (typeof path !== 'string' && 'key' in path && 'path' in path) {
+          status.set(path.key, null);
+        } else {
+          status.set(path, null);
+        }
+        console.group();
+        console.warn(`Expected to find result for path ${path}, but instead found nothing.`);
+        console.warn(error);
+        console.groupEnd();
       }
-    });
-  } catch (error) {
-    // Break on signature verification errors
-    if ((error as AgentError)?.message?.includes('Invalid certificate')) {
-      throw new AgentError((error as AgentError).message);
-    }
-    console.group();
-    // console.warn(`Expected to find result for path ${path}, but instead found nothing.`);
-    console.warn(error);
-    console.groupEnd();
-  }
+    })();
+  });
+
+  // Fetch all values separately, as each option can fail
+  await Promise.all(promises);
 
   return status;
 };
