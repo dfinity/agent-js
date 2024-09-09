@@ -270,7 +270,6 @@ export class HttpAgent implements Agent {
   }
 
   set replicaTime(replicaTime: Date) {
-    replicaTime;
     this.#initialClientTime = new Date(Date.now());
     this.#initialReplicaTime = replicaTime;
   }
@@ -448,7 +447,6 @@ export class HttpAgent implements Agent {
 
     let ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
 
-    this.replicaTime; //?
     // If the value is off by more than 30 seconds, reconcile system time with the network
     const timeDiffMsecs = this.replicaTime && this.replicaTime.getTime() - Date.now();
     if (Math.abs(timeDiffMsecs) > 1_000 * 30) {
@@ -518,7 +516,6 @@ export class HttpAgent implements Agent {
           body,
         });
       };
-
 
       const request = this.#requestAndRetry({
         request: callSync ? requestSync : requestAsync,
@@ -642,6 +639,7 @@ export class HttpAgent implements Agent {
         );
       }
     } catch (error) {
+      this.log.error('Caught exception while attempting to read state', error as AgentError);
       this.#handleReplicaTimeError(error as AgentError);
       if (tries < this.#retryTimes) {
         this.log.warn(
@@ -768,8 +766,6 @@ export class HttpAgent implements Agent {
     });
   }
 
-  #errorTimes = 0;
-
   public async query(
     canisterId: Principal | string,
     fields: QueryFields,
@@ -860,8 +856,7 @@ export class HttpAgent implements Agent {
     };
     // Attempt to make the query i=retryTimes times
     // Make query and fetch subnet keys in parallel
-    // const [queryResult, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
-    const [queryResult] = await Promise.all([makeQuery()]);
+    const [queryResult, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
     const { requestDetails, query } = queryResult;
 
     const queryWithDetails = {
@@ -876,7 +871,7 @@ export class HttpAgent implements Agent {
     }
 
     try {
-      return this.#verifyQueryResponse(queryWithDetails, await getSubnetStatus());
+      return this.#verifyQueryResponse(queryWithDetails, subnetStatus);
     } catch {
       // In case the node signatures have changed, refresh the subnet keys and try again
       this.log.warn('Query response verification failed. Retrying with fresh subnet keys.');
@@ -980,9 +975,6 @@ export class HttpAgent implements Agent {
     }
     const sender = id?.getPrincipal() || Principal.anonymous();
 
-    // TODO: remove this any. This can be a Signed or UnSigned request.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-
     let ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
 
     // If the value is off by more than 30 seconds, reconcile system time with the network
@@ -1063,12 +1055,10 @@ export class HttpAgent implements Agent {
       }
       return decodedResponse;
     } catch (error) {
-      this.#errorTimes++;
       this.#handleReplicaTimeError(error as AgentError);
     }
     throw new AgentError('Failed to read state');
   }
-
 
   #handleReplicaTimeError = (error: AgentError): void => {
     const message = error.message;

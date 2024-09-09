@@ -17,13 +17,10 @@ export class Expiry {
   private readonly _value: bigint;
 
   constructor(deltaInMSec: number) {
-    deltaInMSec;
     // Use bigint because it can overflow the maximum number allowed in a double float.
     const raw_value =
       BigInt(Math.floor(Date.now() + deltaInMSec - REPLICA_PERMITTED_DRIFT_MILLISECONDS)) *
       NANOSECONDS_PER_MILLISECONDS;
-
-    new Date(Number(raw_value / NANOSECONDS_PER_MILLISECONDS)); //?
 
     // round down to the nearest second
     const ingress_as_seconds = raw_value / BigInt(1_000_000_000);
@@ -31,7 +28,7 @@ export class Expiry {
     // round down to nearest minute
     const ingress_as_minutes = ingress_as_seconds / BigInt(60);
 
-    const rounded_down_nanos = ingress_as_minutes * BigInt(60) * BigInt(1_000_000_000); //?
+    const rounded_down_nanos = ingress_as_minutes * BigInt(60) * BigInt(1_000_000_000);
 
     this._value = rounded_down_nanos;
   }
