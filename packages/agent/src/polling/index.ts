@@ -1,5 +1,5 @@
 import { Principal } from '@dfinity/principal';
-import { Agent, RequestStatusResponseStatus } from '../agent';
+import { Agent, HttpAgent, RequestStatusResponseStatus } from '../agent';
 import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from '../certificate';
 import { RequestId } from '../request_id';
 import { toHex } from '../utils/buffer';
@@ -39,10 +39,17 @@ export async function pollForResponse(
   const currentRequest = request ?? (await agent.createReadStateRequest?.({ paths: [path] }));
   const state = await agent.readState(canisterId, { paths: [path] }, undefined, currentRequest);
   if (agent.rootKey == null) throw new Error('Agent root key not initialized before polling');
+
+  // if agent has replicaTime, otherwise omit
+  const certTime = (agent as HttpAgent)?.replicaTime
+    ? (agent as HttpAgent)?.replicaTime
+    : undefined;
+
   const cert = await Certificate.create({
     certificate: state.certificate,
     rootKey: agent.rootKey,
     canisterId: canisterId,
+    certTime: certTime,
     blsVerify,
   });
 

@@ -170,7 +170,6 @@ export class Certificate {
    */
   public static async create(options: CreateCertificateOptions): Promise<Certificate> {
     const cert = Certificate.createUnverified(options);
-
     await cert.verify();
     return cert;
   }
@@ -272,6 +271,7 @@ export class Certificate {
       rootKey: this._rootKey,
       canisterId: this._canisterId,
       blsVerify: this._blsVerify,
+      certTime: this.#certTime,
       // Do not check max age for delegation certificates
       maxAgeInMinutes: Infinity,
     });

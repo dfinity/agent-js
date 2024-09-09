@@ -145,8 +145,6 @@ export const request = async (options: {
       paths: encodedPaths,
     });
 
-    agent.replicaTime; //?
-
     const cert = await Certificate.create({
       certificate: response.certificate,
       rootKey: agent.rootKey,
@@ -235,11 +233,6 @@ export const request = async (options: {
     if ((error as AgentError)?.message?.includes('Invalid certificate')) {
       throw new AgentError((error as AgentError).message);
     }
-    // if (typeof path !== 'string' && 'key' in path && 'path' in path) {
-    //   status.set(path.key, null);
-    // } else {
-    //   status.set(path, null);
-    // }
     console.group();
     // console.warn(`Expected to find result for path ${path}, but instead found nothing.`);
     console.warn(error);

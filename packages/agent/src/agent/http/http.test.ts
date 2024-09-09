@@ -828,7 +828,7 @@ test('it should sync time with the replica for a query', async () => {
   });
   // jest.setSystemTime(new Date('2021-01-01T00:00:00Z'));
 
-  const agent = await HttpAgent.create({ host: 'https://icp-api.io' });
+  const agent = await HttpAgent.create({ host: 'https://icp-api.io', fetch: globalThis.fetch });
 
   const actor = Actor.createActor(idlFactory, {
     agent,
@@ -849,7 +849,7 @@ test('it should sync time with the replica for a query', async () => {
   const result = await actor.whoami();
   expect(Principal.from(result)).toBeInstanceOf(Principal);
 });
-test.only('it should sync time with the replica for an update', async () => {
+test('it should sync time with the replica for an update', async () => {
   const canisterId = 'ivcos-eqaaa-aaaab-qablq-cai';
   const idlFactory = () => {
     return IDL.Service({
@@ -865,7 +865,7 @@ test.only('it should sync time with the replica for an update', async () => {
   });
   // jest.setSystemTime(new Date('2021-01-01T00:00:00Z'));
 
-  const agent = await HttpAgent.create({ host: 'https://icp-api.io' });
+  const agent = await HttpAgent.create({ host: 'https://icp-api.io', fetch: globalThis.fetch });
 
   const actor = Actor.createActor(idlFactory, {
     agent,
@@ -878,13 +878,11 @@ test.only('it should sync time with the replica for an update', async () => {
     // handle the replica time error
     if (err.name === 'ReplicaTimeError') {
       const error = err as ReplicaTimeError;
-      error;
       // use the replica time to sync the agent
       error.agent.replicaTime = error.replicaTime;
-      error.agent.replicaTime; //?
+      // retry the call
       const result = await actor.whoami();
       expect(Principal.from(result)).toBeInstanceOf(Principal);
     }
   }
-  // retry the call
 });
