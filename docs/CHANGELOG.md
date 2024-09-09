@@ -15,6 +15,7 @@
 - docs: documentation and metadata for use-auth-client
 - feat: adds optional `rootKey` to `HttpAgentOptions` to allow for a custom root key to be used for verifying signatures from other networks
 - chore: npm audit bumping micromatch
+- docs: clarifies meaning of `effectiveCanisterId` in `CallOptions`
 
 ### Changed
 - feat: replaces hdkey and bip32 implementations with `@scure/bip39` and `@scure/bip32` due to vulnerability and lack of maintenance for `elliptic`
