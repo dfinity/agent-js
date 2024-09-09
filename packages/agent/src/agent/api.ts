@@ -111,8 +111,8 @@ export interface CallOptions {
   arg: ArrayBuffer;
 
   /**
-   * An effective canister ID, used for routing. This should only be mentioned if
-   * it's different from the canister ID.
+   * An effective canister ID, used for routing. Usually the canister ID, except for management canister calls.
+   * @see https://internetcomputer.org/docs/current/references/ic-interface-spec/#http-effective-canister-id
    */
   effectiveCanisterId: Principal | string;
 }

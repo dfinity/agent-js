@@ -17,6 +17,7 @@
 - feat: exports polling utilities from `@dfinity/agent` for use in other packages
   - `pollForResponse` now uses the default strategy by default
   - Updated the `bls-verify` jsdoc comment to accurately reflect that the default strategy now uses @noble/curves
+- docs: clarifies meaning of `effectiveCanisterId` in `CallOptions`
 
 ### Changed
 - feat: replaces hdkey and bip32 implementations with `@scure/bip39` and `@scure/bip32` due to vulnerability and lack of maintenance for `elliptic`
