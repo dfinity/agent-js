@@ -4,6 +4,7 @@
 
 ### Added
 
+- feat: allow creation of multiple Actors in `useAuthClient` by passing a record to `actorOptions` with the actor name as the key, and `CreateActorOptions` as the value
 - feat: sync_call support in HttpAgent and Actor
   - Skips polling if the sync call succeeds and provides a certificate
   - Falls back to v2 api if the v3 endpoint 404's
