@@ -7,6 +7,7 @@ import {
   fromHex,
   polling,
   requestIdOf,
+  ReplicaTimeError,
 } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
@@ -21,7 +22,7 @@ const createWhoamiActor = async (identity: Identity) => {
   const idlFactory = () => {
     return IDL.Service({
       whoami: IDL.Func([], [IDL.Principal], ['query']),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }) as unknown as any;
   };
   vi.useFakeTimers();
@@ -142,7 +143,6 @@ describe('call forwarding', () => {
   }, 15_000);
 });
 
-
 test('it should allow you to set an incorrect root key', async () => {
   const agent = HttpAgent.createSync({
     rootKey: new Uint8Array(31),
@@ -158,4 +158,80 @@ test('it should allow you to set an incorrect root key', async () => {
   });
 
   expect(actor.whoami).rejects.toThrowError(`Invalid certificate:`);
+});
+
+test('it should throw an error when the clock is out of sync during a query', async () => {
+  const canisterId = 'ivcos-eqaaa-aaaab-qablq-cai';
+  const idlFactory = () => {
+    return IDL.Service({
+      whoami: IDL.Func([], [IDL.Principal], ['query']),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }) as unknown as any;
+  };
+  vi.useRealTimers();
+
+  // set date to long ago
+  vi.spyOn(Date, 'now').mockImplementation(() => {
+    return new Date('2021-01-01T00:00:00Z').getTime();
+  });
+  // vi.setSystemTime(new Date('2021-01-01T00:00:00Z'));
+
+  const agent = await HttpAgent.create({ host: 'https://icp-api.io', fetch: globalThis.fetch });
+
+  const actor = Actor.createActor(idlFactory, {
+    agent,
+    canisterId,
+  });
+  try {
+    // should throw an error
+    await actor.whoami();
+  } catch (err) {
+    // handle the replica time error
+    if (err.name === 'ReplicaTimeError') {
+      const error = err as ReplicaTimeError;
+      // use the replica time to sync the agent
+      error.agent.replicaTime = error.replicaTime;
+    }
+  }
+  // retry the call
+  const result = await actor.whoami();
+  expect(Principal.from(result)).toBeInstanceOf(Principal);
+});
+
+test('it should throw an error when the clock is out of sync during an update', async () => {
+  const canisterId = 'ivcos-eqaaa-aaaab-qablq-cai';
+  const idlFactory = () => {
+    return IDL.Service({
+      whoami: IDL.Func([], [IDL.Principal], []),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }) as unknown as any;
+  };
+  vi.useRealTimers();
+
+  // set date to long ago
+  vi.spyOn(Date, 'now').mockImplementation(() => {
+    return new Date('2021-01-01T00:00:00Z').getTime();
+  });
+  // vi.setSystemTime(new Date('2021-01-01T00:00:00Z'));
+
+  const agent = await HttpAgent.create({ host: 'https://icp-api.io', fetch: globalThis.fetch });
+
+  const actor = Actor.createActor(idlFactory, {
+    agent,
+    canisterId,
+  });
+  try {
+    // should throw an error
+    await actor.whoami();
+  } catch (err) {
+    // handle the replica time error
+    if (err.name === 'ReplicaTimeError') {
+      const error = err as ReplicaTimeError;
+      // use the replica time to sync the agent
+      error.agent.replicaTime = error.replicaTime;
+      // retry the call
+      const result = await actor.whoami();
+      expect(Principal.from(result)).toBeInstanceOf(Principal);
+    }
+  }
 });

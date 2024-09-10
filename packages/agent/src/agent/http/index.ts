@@ -1100,6 +1100,7 @@ export class HttpAgent implements Agent {
   /**
    * Allows agent to sync its time with the network. Can be called during intialization or mid-lifecycle if the device's clock has drifted away from the network time. This is necessary to set the Expiry for a request
    * @param {Principal} canisterId - Pass a canister ID if you need to sync the time with a particular replica. Uses the management canister by default
+   * @throws {ReplicaTimeError} - this method is not guaranteed to work if the device's clock is off by more than 30 seconds. In such cases, the agent will throw an error.
    */
   public async syncTime(canisterId?: Principal): Promise<void> {
     const CanisterStatus = await import('../../canisterStatus');
