@@ -149,7 +149,7 @@ export interface CreateCertificateOptions {
 }
 
 export class Certificate {
-  private readonly cert: Cert;
+  public cert: Cert;
 
   /**
    * Create a new instance of a certificate, automatically verifying it. Throws a
