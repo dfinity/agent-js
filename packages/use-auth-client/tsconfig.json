@@ -8,6 +8,8 @@
     "moduleResolution": "node",
     "lib": ["es5", "es2015", "dom"],
     "jsx": "react",
+    "rootDir": "./src",
+    "baseUrl": "./",
     "declaration": true,
     "outDir": "lib/esm"
   },

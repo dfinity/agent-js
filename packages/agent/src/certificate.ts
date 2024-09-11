@@ -154,7 +154,7 @@ export interface CreateCertificateOptions {
 }
 
 export class Certificate {
-  private readonly cert: Cert;
+  public cert: Cert;
   #certTime?: Date;
 
   /**
