@@ -4,6 +4,8 @@
 
 ### Added
 
+- feat: expose inner certificate in `Certificate` for inspection or use in raw calls. `Certificate.cert` is now a public property
+- feat: allow creation of multiple Actors in `useAuthClient` by passing a record to `actorOptions` with the actor name as the key, and `CreateActorOptions` as the value
 - feat: sync_call support in HttpAgent and Actor
   - Skips polling if the sync call succeeds and provides a certificate
   - Falls back to v2 api if the v3 endpoint 404's
@@ -14,6 +16,9 @@
 - docs: documentation and metadata for use-auth-client
 - feat: adds optional `rootKey` to `HttpAgentOptions` to allow for a custom root key to be used for verifying signatures from other networks
 - chore: npm audit bumping micromatch
+- feat: exports polling utilities from `@dfinity/agent` for use in other packages
+  - `pollForResponse` now uses the default strategy by default
+  - Updated the `bls-verify` jsdoc comment to accurately reflect that the default strategy now uses @noble/curves
 - docs: clarifies meaning of `effectiveCanisterId` in `CallOptions`
 
 ### Changed
