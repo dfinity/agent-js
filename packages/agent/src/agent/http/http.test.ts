@@ -16,7 +16,8 @@ import { JSDOM } from 'jsdom';
 import { Actor, AnonymousIdentity, SignIdentity, toHex } from '../..';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { AgentError } from '../../errors';
-import { AgentHTTPResponseError } from './errors';
+import { AgentHTTPResponseError, ReplicaTimeError } from './errors';
+import { IDL } from '@dfinity/candid';
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;
@@ -813,3 +814,4 @@ test('it should log errors to console if the option is set', async () => {
   await agent.syncTime();
 });
 
+jest.setTimeout(5000);

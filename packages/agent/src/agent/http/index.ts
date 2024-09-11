@@ -27,7 +27,7 @@ import {
   ReadRequestType,
   SubmitRequestType,
 } from './types';
-import { AgentHTTPResponseError } from './errors';
+import { AgentHTTPResponseError, ReplicaTimeError } from './errors';
 import { SubnetStatus, request } from '../../canisterStatus';
 import {
   CertificateVerificationError,
@@ -41,6 +41,7 @@ import { Ed25519PublicKey } from '../../public_key';
 import { decodeTime } from '../../utils/leb';
 import { ObservableLog } from '../../observable';
 import { BackoffStrategy, BackoffStrategyFactory, ExponentialBackoff } from '../../polling/backoff';
+import { calculateReplicaTime } from './calculateReplicaTime';
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
 
@@ -138,6 +139,10 @@ export interface HttpAgentOptions {
    * Whether to log to the console. Defaults to false.
    */
   logToConsole?: boolean;
+  /**
+   * Provide an expected replica time. This can be used to set the baseline for the time to use when making requests against the replica.
+   */
+  replicaTime?: Date;
 
   /**
    * Alternate root key to use for verifying certificates. If not provided, the default IC root key will be used.
@@ -243,7 +248,6 @@ export class HttpAgent implements Agent {
   readonly #fetch: typeof fetch;
   readonly #fetchOptions?: Record<string, unknown>;
   readonly #callOptions?: Record<string, unknown>;
-  #timeDiffMsecs = 0;
   readonly host: URL;
   readonly #credentials: string | undefined;
   #rootKeyFetched = false;
@@ -256,6 +260,19 @@ export class HttpAgent implements Agent {
 
   // The UTC time in milliseconds when the latest request was made
   #waterMark = 0;
+
+  // Manage the time offset between the client and the replica
+  #initialClientTime: Date = new Date(Date.now());
+  #initialReplicaTime: Date = new Date(Date.now());
+  get replicaTime(): Date {
+    const offset = Date.now() - this.#initialClientTime.getTime();
+    return new Date(this.#initialReplicaTime.getTime() + offset);
+  }
+
+  set replicaTime(replicaTime: Date) {
+    this.#initialClientTime = new Date(Date.now());
+    this.#initialReplicaTime = replicaTime;
+  }
 
   get waterMark(): number {
     return this.#waterMark;
@@ -431,8 +448,9 @@ export class HttpAgent implements Agent {
     let ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
 
     // If the value is off by more than 30 seconds, reconcile system time with the network
-    if (Math.abs(this.#timeDiffMsecs) > 1_000 * 30) {
-      ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS + this.#timeDiffMsecs);
+    const timeDiffMsecs = this.replicaTime && this.replicaTime.getTime() - Date.now();
+    if (Math.abs(timeDiffMsecs) > 1_000 * 30) {
+      ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS + timeDiffMsecs);
     }
 
     const submit: CallRequest = {
@@ -498,7 +516,6 @@ export class HttpAgent implements Agent {
           body,
         });
       };
-
 
       const request = this.#requestAndRetry({
         request: callSync ? requestSync : requestAsync,
@@ -622,6 +639,8 @@ export class HttpAgent implements Agent {
         );
       }
     } catch (error) {
+      this.log.error('Caught exception while attempting to read state', error as AgentError);
+      this.#handleReplicaTimeError(error as AgentError);
       if (tries < this.#retryTimes) {
         this.log.warn(
           `Caught exception while attempting to make query:\n` +
@@ -717,6 +736,11 @@ export class HttpAgent implements Agent {
     }
 
     const responseText = await response.clone().text();
+
+    if (response.status === 400 && responseText.includes('ingress_expiry')) {
+      this.#handleReplicaTimeError(new AgentError(responseText));
+    }
+
     const errorMessage =
       `Server returned an error:\n` +
       `  Code: ${response.status} (${response.statusText})\n` +
@@ -765,13 +789,21 @@ export class HttpAgent implements Agent {
       const canister = Principal.from(canisterId);
       const sender = id?.getPrincipal() || Principal.anonymous();
 
+      let ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
+
+      // If the value is off by more than 30 seconds, reconcile system time with the network
+      const timeDiffMsecs = this.replicaTime && this.replicaTime.getTime() - Date.now();
+      if (Math.abs(timeDiffMsecs) > 1_000 * 30) {
+        ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS + timeDiffMsecs);
+      }
+
       const request: QueryRequest = {
         request_type: ReadRequestType.Query,
         canister_id: canister,
         method_name: fields.methodName,
         arg: fields.arg,
         sender,
-        ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+        ingress_expiry,
       };
 
       const requestId = await requestIdOf(request);
@@ -943,9 +975,15 @@ export class HttpAgent implements Agent {
     }
     const sender = id?.getPrincipal() || Principal.anonymous();
 
-    // TODO: remove this any. This can be a Signed or UnSigned request.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const transformedRequest: any = await this._transform({
+    let ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
+
+    // If the value is off by more than 30 seconds, reconcile system time with the network
+    const timeDiffMsecs = this.replicaTime && this.replicaTime.getTime() - Date.now();
+    if (Math.abs(timeDiffMsecs) > 1_000 * 30) {
+      ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS + timeDiffMsecs);
+    }
+
+    const transformedRequest = await this._transform({
       request: {
         method: 'POST',
         headers: {
@@ -958,7 +996,7 @@ export class HttpAgent implements Agent {
         request_type: ReadRequestType.ReadState,
         paths: fields.paths,
         sender,
-        ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+        ingress_expiry,
       },
     });
 
@@ -971,7 +1009,7 @@ export class HttpAgent implements Agent {
     fields: ReadStateOptions,
     identity?: Identity | Promise<Identity>,
     // eslint-disable-next-line
-    request?: any,
+    request?: Request,
   ): Promise<ReadStateResponse> {
     const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
 
@@ -984,6 +1022,7 @@ export class HttpAgent implements Agent {
     );
     // TODO - https://dfinity.atlassian.net/browse/SDK-1092
     const backoff = this.#backoffStrategy();
+
     try {
       const response = await this.#requestAndRetry({
         request: () =>
@@ -1014,15 +1053,24 @@ export class HttpAgent implements Agent {
         this.log.print('Read state response time:', parsedTime);
         this.#waterMark = parsedTime;
       }
-
       return decodedResponse;
     } catch (error) {
-      this.log.error('Caught exception while attempting to read state', error as AgentError);
-      throw error;
+      this.#handleReplicaTimeError(error as AgentError);
     }
+    throw new AgentError('Failed to read state');
   }
 
-  public async parseTimeFromResponse(response: { certificate: ArrayBuffer }): Promise<number> {
+  #handleReplicaTimeError = (error: AgentError): void => {
+    const message = error.message;
+    if (message?.includes('ingress_expiry')) {
+      {
+        const replicaTime = calculateReplicaTime(message);
+        throw new ReplicaTimeError(message, replicaTime, this);
+      }
+    }
+  };
+
+  public async parseTimeFromResponse(response: ReadStateResponse): Promise<number> {
     let tree: HashTree;
     if (response.certificate) {
       const decoded: { tree: HashTree } | undefined = cbor.decode(response.certificate);
@@ -1052,10 +1100,10 @@ export class HttpAgent implements Agent {
   /**
    * Allows agent to sync its time with the network. Can be called during intialization or mid-lifecycle if the device's clock has drifted away from the network time. This is necessary to set the Expiry for a request
    * @param {Principal} canisterId - Pass a canister ID if you need to sync the time with a particular replica. Uses the management canister by default
+   * @throws {ReplicaTimeError} - this method is not guaranteed to work if the device's clock is off by more than 30 seconds. In such cases, the agent will throw an error.
    */
   public async syncTime(canisterId?: Principal): Promise<void> {
     const CanisterStatus = await import('../../canisterStatus');
-    const callTime = Date.now();
     try {
       if (!canisterId) {
         this.log.print(
@@ -1071,7 +1119,7 @@ export class HttpAgent implements Agent {
 
       const replicaTime = status.get('time');
       if (replicaTime) {
-        this.#timeDiffMsecs = Number(replicaTime as bigint) - Number(callTime);
+        this.replicaTime = new Date(Number(replicaTime as bigint));
       }
     } catch (error) {
       this.log.error('Caught exception while attempting to sync time', error as AgentError);

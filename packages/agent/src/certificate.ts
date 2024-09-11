@@ -40,7 +40,7 @@ export type HashTree =
 
 /**
  * Make a human readable string out of a hash tree.
- * @param tree
+ * @param tree - the tree to stringify
  */
 export function hashTreeToString(tree: HashTree): string {
   const indent = (s: string) =>
@@ -52,7 +52,7 @@ export function hashTreeToString(tree: HashTree): string {
     const decoder = new TextDecoder(undefined, { fatal: true });
     try {
       return JSON.stringify(decoder.decode(label));
-    } catch (e) {
+    } catch {
       return `data(...${label.byteLength} bytes)`;
     }
   }
@@ -146,10 +146,16 @@ export interface CreateCertificateOptions {
    * older than the specified age, it will fail verification.
    */
   maxAgeInMinutes?: number;
+
+  /**
+   * For comparing the time of the certificate to an expected date instead of the result of Date.now.
+   */
+  certTime?: Date;
 }
 
 export class Certificate {
   public cert: Cert;
+  #certTime?: Date;
 
   /**
    * Create a new instance of a certificate, automatically verifying it. Throws a
@@ -164,7 +170,6 @@ export class Certificate {
    */
   public static async create(options: CreateCertificateOptions): Promise<Certificate> {
     const cert = Certificate.createUnverified(options);
-
     await cert.verify();
     return cert;
   }
@@ -180,6 +185,7 @@ export class Certificate {
       options.canisterId,
       blsVerify,
       options.maxAgeInMinutes,
+      options.certTime,
     );
   }
 
@@ -190,8 +196,10 @@ export class Certificate {
     private _blsVerify: VerifyFunc,
     // Default to 5 minutes
     private _maxAgeInMinutes: number = 5,
+    certTime?: Date,
   ) {
     this.cert = cbor.decode(new Uint8Array(certificate));
+    this.#certTime = certTime;
   }
 
   public lookup(path: Array<ArrayBuffer | string>): LookupResult {
@@ -220,8 +228,10 @@ export class Certificate {
     const FIVE_MINUTES_IN_MSEC = 5 * 60 * 1000;
     const MAX_AGE_IN_MSEC = this._maxAgeInMinutes * 60 * 1000;
     const now = Date.now();
-    const earliestCertificateTime = now - MAX_AGE_IN_MSEC;
-    const fiveMinutesFromNow = now + FIVE_MINUTES_IN_MSEC;
+    // Use a provided time in case `Date.now()` is inaccurate
+    const compareTime = this.#certTime || new Date(now);
+    const earliestCertificateTime = compareTime.getTime() - MAX_AGE_IN_MSEC;
+    const fiveMinutesFromNow = compareTime.getTime() + FIVE_MINUTES_IN_MSEC;
 
     const certTime = decodeTime(lookupTime);
 
@@ -230,20 +240,20 @@ export class Certificate {
         `Certificate is signed more than ${this._maxAgeInMinutes} minutes in the past. Certificate time: ` +
           certTime.toISOString() +
           ' Current time: ' +
-          new Date(now).toISOString(),
+          compareTime.toISOString(),
       );
     } else if (certTime.getTime() > fiveMinutesFromNow) {
       throw new CertificateVerificationError(
         'Certificate is signed more than 5 minutes in the future. Certificate time: ' +
           certTime.toISOString() +
           ' Current time: ' +
-          new Date(now).toISOString(),
+          compareTime.toISOString(),
       );
     }
 
     try {
       sigVer = await this._blsVerify(new Uint8Array(key), new Uint8Array(sig), new Uint8Array(msg));
-    } catch (err) {
+    } catch {
       sigVer = false;
     }
     if (!sigVer) {
@@ -261,6 +271,7 @@ export class Certificate {
       rootKey: this._rootKey,
       canisterId: this._canisterId,
       blsVerify: this._blsVerify,
+      certTime: this.#certTime,
       // Do not check max age for delegation certificates
       maxAgeInMinutes: Infinity,
     });
@@ -335,7 +346,7 @@ export function lookupResultToBuffer(result: LookupResult): ArrayBuffer | undefi
 }
 
 /**
- * @param t
+ * @param t - the tree to reconstruct
  */
 export async function reconstruct(t: HashTree): Promise<ArrayBuffer> {
   switch (t[0]) {
@@ -408,6 +419,12 @@ interface LookupResultLess {
 
 type LabelLookupResult = LookupResult | LookupResultGreater | LookupResultLess;
 
+/**
+ * Lookup a path in a tree
+ * @param path - the path to look up
+ * @param tree - the tree to search
+ * @returns LookupResult
+ */
 export function lookup_path(path: Array<ArrayBuffer | string>, tree: HashTree): LookupResult {
   if (path.length === 0) {
     switch (tree[0]) {
@@ -482,6 +499,12 @@ export function flatten_forks(t: HashTree): HashTree[] {
   }
 }
 
+/**
+ * Find a label in a tree
+ * @param label - the label to find
+ * @param tree - the tree to search
+ * @returns LabelLookupResult
+ */
 export function find_label(label: ArrayBuffer, tree: HashTree): LabelLookupResult {
   switch (tree[0]) {
     // if we have a labelled node, compare the node's label to the one we are
@@ -514,6 +537,7 @@ export function find_label(label: ArrayBuffer, tree: HashTree): LabelLookupResul
     // if we have a fork node, we need to search both sides, starting with the left
     case NodeType.Fork:
       // search in the left node
+      // eslint-disable-next-line no-case-declarations
       const leftLookupResult = find_label(label, tree[1]);
 
       switch (leftLookupResult.status) {
@@ -538,7 +562,7 @@ export function find_label(label: ArrayBuffer, tree: HashTree): LabelLookupResul
         // if the left node returns an uncertain result, we need to search the
         // right node
         case LookupStatus.Unknown: {
-          let rightLookupResult = find_label(label, tree[2]);
+          const rightLookupResult = find_label(label, tree[2]);
 
           // if the label we're searching for is less than the right node lookup,
           // then we also need to return an uncertain result
@@ -580,9 +604,11 @@ export function find_label(label: ArrayBuffer, tree: HashTree): LabelLookupResul
 
 /**
  * Check if a canister falls within a range of canisters
- * @param canisterId Principal
- * @param ranges [Principal, Principal][]
- * @returns
+ * @param params - the parameters to check
+ * @param params.canisterId Principal
+ * @param params.subnetId Principal
+ * @param params.tree HashTree
+ * @returns boolean
  */
 export function check_canister_ranges(params: {
   canisterId: Principal;
