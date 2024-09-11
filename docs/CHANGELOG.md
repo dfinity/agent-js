@@ -4,6 +4,7 @@
 
 ### Added
 
+- feat: expose inner certificate in `Certificate` for inspection or use in raw calls. `Certificate.cert` is now a public property
 - feat: allow creation of multiple Actors in `useAuthClient` by passing a record to `actorOptions` with the actor name as the key, and `CreateActorOptions` as the value
 - feat: sync_call support in HttpAgent and Actor
   - Skips polling if the sync call succeeds and provides a certificate
