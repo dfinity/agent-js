@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [2.1.0] - 2024-09-12
+
 ### Added
 
 - chore: awaits prettier formatting in release automation
