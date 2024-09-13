@@ -2,7 +2,11 @@
 
 ## [Unreleased]
 
-## [2.1.1] - 2024-09-13 
+## [2.1.1] - 2024-09-13
+
+### Added
+
+- fix: support for headers during upload with `@dfinity/assets`
 
 ## [2.1.0] - 2024-09-12
 
