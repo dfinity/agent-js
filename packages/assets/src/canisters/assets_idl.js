@@ -5,6 +5,7 @@ export const idlFactory = ({ IDL }) => {
   const CreateAssetArguments = IDL.Record({
     key: Key,
     content_type: IDL.Text,
+    headers: IDL.Opt(IDL.Vec(HeaderField)),
   });
   const UnsetAssetContentArguments = IDL.Record({
     key: Key,
