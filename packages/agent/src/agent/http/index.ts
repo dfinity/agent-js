@@ -232,7 +232,7 @@ interface V1HttpAgentInterface {
   _isAgent: true;
 }
 
-/** 
+/**
  * A HTTP agent allows users to interact with a client of the internet computer
 using the available methods. It exposes an API that closely follows the
 public view of the internet computer, and is not intended to be exposed
@@ -1103,14 +1103,13 @@ export class HttpAgent implements Agent {
    * @throws {ReplicaTimeError} - this method is not guaranteed to work if the device's clock is off by more than 30 seconds. In such cases, the agent will throw an error.
    */
   public async syncTime(canisterId?: Principal): Promise<void> {
-    const CanisterStatus = await import('../../canisterStatus');
     try {
       if (!canisterId) {
         this.log.print(
           'Syncing time with the IC. No canisterId provided, so falling back to ryjl3-tyaaa-aaaaa-aaaba-cai',
         );
       }
-      const status = await CanisterStatus.request({
+      const status = await request({
         // Fall back with canisterId of the ICP Ledger
         canisterId: canisterId ?? Principal.from('ryjl3-tyaaa-aaaaa-aaaba-cai'),
         agent: this,
