@@ -564,6 +564,16 @@ export class HttpAgent implements Agent {
         );
       }
 
+      if ((error as ReplicaTimeError).message.includes('ingress_expiry')) {
+        this.log.warn('Agent time out of sync. Updating and retrying...');
+        this.replicaTime = (error as ReplicaTimeError).replicaTime;
+        return this.call(
+          canisterId,
+          options,
+          identity,
+        );
+      }
+
       this.log.error('Error while making call:', error as Error);
       throw error;
     }
