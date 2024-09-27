@@ -623,13 +623,14 @@ test('should adjust the Expiry if the clock is more than 30 seconds behind', asy
     .call(Principal.managementCanister(), {
       methodName: 'test',
       arg: new Uint8Array().buffer,
+      systemTimeOverride: agent.replicaTime.getTime(),
     })
     // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
     .catch(function (_) {});
 
   const requestBody: any = cbor.decode(mockFetch.mock.calls[0][1].body);
 
-  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1260000000000`);
+  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1320000000000`);
 
   jest.resetModules();
 });
@@ -660,13 +661,14 @@ test('should adjust the Expiry if the clock is more than 30 seconds ahead', asyn
     .call(Principal.managementCanister(), {
       methodName: 'test',
       arg: new Uint8Array().buffer,
+      systemTimeOverride: agent.replicaTime.getTime(),
     })
     // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
     .catch(function (_) {});
 
   const requestBody: any = cbor.decode(mockFetch.mock.calls[0][1].body);
 
-  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1200000000000`);
+  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1260000000000`);
 
   jest.resetModules();
 });
