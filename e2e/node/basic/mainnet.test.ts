@@ -229,6 +229,7 @@ test('it should throw an error when the clock is out of sync during an update', 
       const error = err as ReplicaTimeError;
       // use the replica time to sync the agent
       error.agent.replicaTime = error.replicaTime;
+      error.agent.overrideSystemTime = true;
       // retry the call
       const result = await actor.whoami();
       expect(Principal.from(result)).toBeInstanceOf(Principal);

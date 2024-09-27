@@ -618,12 +618,12 @@ test('should adjust the Expiry if the clock is more than 30 seconds behind', asy
   const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
 
   await agent.syncTime();
+  agent.overrideSystemTime = true;
 
   await agent
     .call(Principal.managementCanister(), {
       methodName: 'test',
       arg: new Uint8Array().buffer,
-      systemTimeOverride: agent.replicaTime.getTime(),
     })
     // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
     .catch(function (_) {});
@@ -656,12 +656,12 @@ test('should adjust the Expiry if the clock is more than 30 seconds ahead', asyn
   const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
 
   await agent.syncTime();
+  agent.overrideSystemTime = true;
 
   await agent
     .call(Principal.managementCanister(), {
       methodName: 'test',
       arg: new Uint8Array().buffer,
-      systemTimeOverride: agent.replicaTime.getTime(),
     })
     // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
     .catch(function (_) {});

@@ -264,6 +264,7 @@ export class HttpAgent implements Agent {
   // Manage the time offset between the client and the replica
   #initialClientTime: Date = new Date(Date.now());
   #initialReplicaTime: Date = new Date(Date.now());
+  public overrideSystemTime: boolean = false;
   get replicaTime(): Date {
     const offset = Date.now() - this.#initialClientTime.getTime();
     return new Date(this.#initialReplicaTime.getTime() + offset);
@@ -428,7 +429,6 @@ export class HttpAgent implements Agent {
       arg: ArrayBuffer;
       effectiveCanisterId?: Principal | string;
       callSync?: boolean;
-      systemTimeOverride?: number,
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
@@ -446,7 +446,10 @@ export class HttpAgent implements Agent {
 
     const sender: Principal = id.getPrincipal() || Principal.anonymous();
 
-    const ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS, options.systemTimeOverride);
+    const ingress_expiry = new Expiry(
+      DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS,
+      this.overrideSystemTime ? this.replicaTime.getTime() : Date.now()
+    );
 
     const submit: CallRequest = {
       request_type: SubmitRequestType.Call,
@@ -784,13 +787,10 @@ export class HttpAgent implements Agent {
       const canister = Principal.from(canisterId);
       const sender = id?.getPrincipal() || Principal.anonymous();
 
-      let ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
-
-      // If the value is off by more than 30 seconds, reconcile system time with the network
-      const timeDiffMsecs = this.replicaTime && this.replicaTime.getTime() - Date.now();
-      if (Math.abs(timeDiffMsecs) > 1_000 * 30) {
-        ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS + timeDiffMsecs);
-      }
+      const ingress_expiry = new Expiry(
+        DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS,
+        this.overrideSystemTime ? this.replicaTime.getTime() : Date.now()
+      );
 
       const request: QueryRequest = {
         request_type: ReadRequestType.Query,
