@@ -232,7 +232,7 @@ interface V1HttpAgentInterface {
   _isAgent: true;
 }
 
-/** 
+/**
  * A HTTP agent allows users to interact with a client of the internet computer
 using the available methods. It exposes an API that closely follows the
 public view of the internet computer, and is not intended to be exposed
@@ -428,13 +428,12 @@ export class HttpAgent implements Agent {
       arg: ArrayBuffer;
       effectiveCanisterId?: Principal | string;
       callSync?: boolean;
-      tries?: number;
-      systemTime?: number
+      systemTimeOverride?: number,
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
     const callSync = options.callSync ?? true;
-    const id = await (identity !== undefined ? await identity : await this.#identity);
+    const id = await (identity !== undefined ? identity : this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -447,7 +446,7 @@ export class HttpAgent implements Agent {
 
     const sender: Principal = id.getPrincipal() || Principal.anonymous();
 
-    const ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS, options.systemTime);
+    const ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS, options.systemTimeOverride);
 
     const submit: CallRequest = {
       request_type: SubmitRequestType.Call,
@@ -555,22 +554,6 @@ export class HttpAgent implements Agent {
             ...options,
             // disable v3 api
             callSync: false,
-          },
-          identity,
-        );
-      }
-
-      // If the error is due to the ingress expiry being misconfigured,
-      // sync this instance's replica time using the value provided in
-      // the error response and retry
-      if ((error as ReplicaTimeError).message.includes('ingress_expiry') && (options.tries ?? 1) < this.#retryTimes) {
-        this.log.warn('Agent time out of sync. Updating and retrying...');
-        return this.call(
-          canisterId,
-          {
-            ...options,
-            tries: (options.tries ?? 1) + 1,
-            systemTime: (error as ReplicaTimeError).replicaTime.getTime(),
           },
           identity,
         );
