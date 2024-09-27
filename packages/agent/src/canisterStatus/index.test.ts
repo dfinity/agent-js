@@ -63,6 +63,7 @@ const getRealStatus = async () => {
   const agent = new HttpAgent({ host: 'http://127.0.0.1:4943', fetch, identity });
   await agent.fetchRootKey();
   const canisterBuffer = new DataView(testPrincipal.toUint8Array().buffer).buffer;
+  canisterBuffer;
   const response = await agent.readState(
     testPrincipal,
     // Note: subnet is not currently working due to a bug
