@@ -564,6 +564,9 @@ export class HttpAgent implements Agent {
         );
       }
 
+      // If the error is due to the ingress expiry being misconfigured,
+      // sync this instance's replica time using the value provided in
+      // the error response and retry
       if ((error as ReplicaTimeError).message.includes('ingress_expiry')) {
         this.log.warn('Agent time out of sync. Updating and retrying...');
         this.replicaTime = (error as ReplicaTimeError).replicaTime;
