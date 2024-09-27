@@ -428,6 +428,8 @@ export class HttpAgent implements Agent {
       arg: ArrayBuffer;
       effectiveCanisterId?: Principal | string;
       callSync?: boolean;
+      tries?: number;
+      systemTime?: number
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
@@ -445,13 +447,7 @@ export class HttpAgent implements Agent {
 
     const sender: Principal = id.getPrincipal() || Principal.anonymous();
 
-    let ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
-
-    // If the value is off by more than 30 seconds, reconcile system time with the network
-    const timeDiffMsecs = this.replicaTime && this.replicaTime.getTime() - Date.now();
-    if (Math.abs(timeDiffMsecs) > 1_000 * 30) {
-      ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS + timeDiffMsecs);
-    }
+    const ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS, options.systemTime);
 
     const submit: CallRequest = {
       request_type: SubmitRequestType.Call,
@@ -567,12 +563,15 @@ export class HttpAgent implements Agent {
       // If the error is due to the ingress expiry being misconfigured,
       // sync this instance's replica time using the value provided in
       // the error response and retry
-      if ((error as ReplicaTimeError).message.includes('ingress_expiry')) {
+      if ((error as ReplicaTimeError).message.includes('ingress_expiry') && (options.tries ?? 1) < this.#retryTimes) {
         this.log.warn('Agent time out of sync. Updating and retrying...');
-        this.replicaTime = (error as ReplicaTimeError).replicaTime;
         return this.call(
           canisterId,
-          options,
+          {
+            ...options,
+            tries: (options.tries ?? 1) + 1,
+            systemTime: (error as ReplicaTimeError).replicaTime.getTime(),
+          },
           identity,
         );
       }

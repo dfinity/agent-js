@@ -540,8 +540,6 @@ function _createActorMethod(
         ? (agent as HttpAgent).replicaTime
         : undefined;
 
-      certTime;
-
       if (response.body && response.body.certificate) {
         const cert = response.body.certificate;
         certificate = await Certificate.create({
