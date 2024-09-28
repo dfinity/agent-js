@@ -68,7 +68,7 @@
   },
   "overrides": {
     "vite": {
-      "rollup": "npm:@rollup/wasm-node"
+      "rollup": "^4.22.5"
     }
   }
 }
