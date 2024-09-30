@@ -7,7 +7,6 @@ import {
   compare,
   getDefaultAgent,
   HashTree,
-  HttpAgent,
   lookup_path,
   lookupResultToBuffer,
   LookupStatus,
@@ -537,15 +536,10 @@ class Asset {
       return false;
     }
 
-    const replicaTime = (agent as HttpAgent).replicaTime
-      ? (agent as HttpAgent).replicaTime
-      : undefined;
-
     const cert = await Certificate.create({
       certificate: new Uint8Array(certificate),
       rootKey: agent.rootKey,
       canisterId,
-      certTime: replicaTime,
     }).catch(() => Promise.resolve());
 
     if (!cert) {

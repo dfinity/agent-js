@@ -145,12 +145,10 @@ export const request = async (options: {
         const response = await agent.readState(canisterId, {
           paths: [encodedPaths[index]],
         });
-        const certTime = agent.replicaTime ? agent.replicaTime : undefined;
         const cert = await Certificate.create({
           certificate: response.certificate,
           rootKey: agent.rootKey,
           canisterId: canisterId,
-          certTime,
         });
 
         const lookup = (cert: Certificate, path: Path) => {

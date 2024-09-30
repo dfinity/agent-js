@@ -2,7 +2,6 @@ import { Buffer } from 'buffer/';
 import {
   Agent,
   getDefaultAgent,
-  HttpAgent,
   HttpDetailsResponse,
   QueryResponseRejected,
   QueryResponseStatus,
@@ -536,19 +535,13 @@ function _createActorMethod(
       });
       let reply: ArrayBuffer | undefined;
       let certificate: Certificate | undefined;
-      const certTime = (agent as HttpAgent).replicaTime
-        ? (agent as HttpAgent).replicaTime
-        : undefined;
-
-      certTime;
-
       if (response.body && response.body.certificate) {
         const cert = response.body.certificate;
         certificate = await Certificate.create({
           certificate: bufFromBufLike(cert),
           rootKey: agent.rootKey,
           canisterId: Principal.from(canisterId),
-          certTime,
+          blsVerify,
         });
         const path = [new TextEncoder().encode('request_status'), requestId];
         const status = new TextDecoder().decode(
