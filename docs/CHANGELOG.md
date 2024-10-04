@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- feat: new `callAndPoll` function for an agent to call a canister and poll for the response
+
 ## [2.1.2] - 2024-09-30
 - fix: revert https://github.com/dfinity/agent-js/pull/923 allow option to set agent replica time
 

@@ -11,6 +11,7 @@ export * from './der';
 export * from './fetch_candid';
 export * from './public_key';
 export * from './request_id';
+export * from './utils/callAndPoll';
 export * from './utils/bls';
 export * from './utils/buffer';
 export * from './utils/random';
