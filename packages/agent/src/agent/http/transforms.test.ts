@@ -5,7 +5,7 @@ test('it should round down to the nearest minute', () => {
   // 2021-04-26T17:47:11.314Z - high precision
   jest.setSystemTime(new Date(1619459231314));
 
-  const expiry = new Expiry(5 * 60 * 1000);
+  const expiry = new Expiry(3 * 60 * 1000);
   expect(expiry['_value']).toEqual(BigInt(1619459460000000000));
 
   const expiry_as_date_string = new Date(
