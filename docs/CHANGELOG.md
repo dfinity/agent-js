@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ## [2.1.2] - 2024-09-30
+- Decrease the ingress_expiry to 3 min
 - fix: revert https://github.com/dfinity/agent-js/pull/923 allow option to set agent replica time
 
 ## [2.1.1] - 2024-09-13
