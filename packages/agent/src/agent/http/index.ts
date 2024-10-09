@@ -776,7 +776,6 @@ export class HttpAgent implements Agent {
 
       const requestId = await requestIdOf(request);
 
-      // TODO: remove this any. This can be a Signed or UnSigned request.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let transformedRequest: HttpAgentRequest = await this._transform({
         request: {
@@ -943,7 +942,6 @@ export class HttpAgent implements Agent {
     }
     const sender = id?.getPrincipal() || Principal.anonymous();
 
-    // TODO: remove this any. This can be a Signed or UnSigned request.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const transformedRequest = await this._transform({
       request: {
