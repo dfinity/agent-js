@@ -1,5 +1,5 @@
 import { Principal } from '@dfinity/principal';
-import { Agent, RequestStatusResponseStatus } from '../agent';
+import { Agent, Expiry, RequestStatusResponseStatus } from '../agent';
 import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from '../certificate';
 import { RequestId } from '../request_id';
 import { toHex } from '../utils/buffer';
@@ -13,6 +13,9 @@ export type PollStrategy = (
   status: RequestStatusResponseStatus,
 ) => Promise<void>;
 export type PollStrategyFactory = () => PollStrategy;
+
+// Default delta for ingress expiry is 5 minutes.
+const DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS = 5 * 60 * 1000;
 
 /**
  * Polls the IC to check the status of the given request then
@@ -38,6 +41,10 @@ export async function pollForResponse(
 }> {
   const path = [new TextEncoder().encode('request_status'), requestId];
   const currentRequest = request ?? (await agent.createReadStateRequest?.({ paths: [path] }));
+
+  // Use a fresh expiry for the readState call.
+  currentRequest.body.content.ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
+
   const state = await agent.readState(canisterId, { paths: [path] }, undefined, currentRequest);
   if (agent.rootKey == null) throw new Error('Agent root key not initialized before polling');
   const cert = await Certificate.create({

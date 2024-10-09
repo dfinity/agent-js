@@ -776,7 +776,6 @@ export class HttpAgent implements Agent {
 
       const requestId = await requestIdOf(request);
 
-      // TODO: remove this any. This can be a Signed or UnSigned request.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let transformedRequest: HttpAgentRequest = await this._transform({
         request: {
@@ -943,9 +942,8 @@ export class HttpAgent implements Agent {
     }
     const sender = id?.getPrincipal() || Principal.anonymous();
 
-    // TODO: remove this any. This can be a Signed or UnSigned request.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const transformedRequest: any = await this._transform({
+    const transformedRequest = await this._transform({
       request: {
         method: 'POST',
         headers: {
@@ -976,7 +974,14 @@ export class HttpAgent implements Agent {
     const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
 
     const transformedRequest = request ?? (await this.createReadStateRequest(fields, identity));
-    const body = cbor.encode(transformedRequest.body);
+
+    // With read_state, we should always use a fresh expiry, even beyond the point where the initial request would have expired
+    const bodyWithAdjustedExpiry = {
+      ...transformedRequest.body,
+      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+    };
+
+    const body = cbor.encode(bodyWithAdjustedExpiry);
 
     this.log.print(
       `fetching "/api/v2/canister/${canister}/read_state" with request:`,
