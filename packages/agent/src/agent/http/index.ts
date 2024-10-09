@@ -945,7 +945,7 @@ export class HttpAgent implements Agent {
 
     // TODO: remove this any. This can be a Signed or UnSigned request.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const transformedRequest: any = await this._transform({
+    const transformedRequest = await this._transform({
       request: {
         method: 'POST',
         headers: {
