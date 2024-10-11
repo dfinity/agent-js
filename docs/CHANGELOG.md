@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ## [2.1.2] - 2024-09-30
+- Decrease the ingress_expiry to 3 min
 - fix: revert https://github.com/dfinity/agent-js/pull/923 allow option to set agent replica time
 - fix: handle v3 traps correctly, pulling the reject_code and message from the certificate in the error response like v2.
 Example trap error message:
