@@ -13,6 +13,7 @@ import {
   ReadStateOptions,
   ReadStateResponse,
   SubmitResponse,
+  v3ResponseBody,
 } from '../api';
 import { Expiry, httpHeadersTransform, makeNonceTransform } from './transforms';
 import {
@@ -414,8 +415,9 @@ export class HttpAgent implements Agent {
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
+    // TODO - restore this value
     const callSync = options.callSync ?? true;
-    const id = await (identity !== undefined ? await identity : await this.#identity);
+    const id = await(identity !== undefined ? await identity : await this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -499,7 +501,6 @@ export class HttpAgent implements Agent {
         });
       };
 
-
       const request = this.#requestAndRetry({
         request: callSync ? requestSync : requestAsync,
         backoff,
@@ -516,8 +517,10 @@ export class HttpAgent implements Agent {
       ) as SubmitResponse['response']['body'];
 
       // Update the watermark with the latest time from consensus
-      if (responseBody?.certificate) {
-        const time = await this.parseTimeFromResponse({ certificate: responseBody.certificate });
+      if (responseBody && 'certificate' in (responseBody as v3ResponseBody)) {
+        const time = await this.parseTimeFromResponse({
+          certificate: (responseBody as v3ResponseBody).certificate,
+        });
         this.#waterMark = time;
       }
 

@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { ActorMethod, Actor } from '@dfinity/agent';
+import { ActorMethod, Actor, HttpAgent } from '@dfinity/agent';
+import util from 'util';
+import exec from 'child_process';
+const execAsync = util.promisify(exec.exec);
+
+const { stdout } = await execAsync('dfx canister id trap');
 
 export const idlFactory = ({ IDL }) => {
   return IDL.Service({
@@ -15,9 +20,30 @@ export interface _SERVICE {
 
 describe('trap', () => {
   it('should trap', async () => {
-    const actor = createActor<_SERVICE>(idlFactory, canisterId);
-    const result = await actor.Throw();
-
-    expect(result).toBeUndefined();
+    const canisterId = stdout.trim();
+    const agent = await HttpAgent.create({
+      host: 'http://localhost:4943',
+      shouldFetchRootKey: true,
+    });
+    const actor = Actor.createActor<_SERVICE>(idlFactory, { canisterId, agent });
+    try {
+      await actor.Throw();
+    } catch (error) {
+      console.log(error);
+      expect(error.reject_message).toBe('foo');
+    }
+  });
+  it('should trap', async () => {
+    const canisterId = stdout.trim();
+    const agent = await HttpAgent.create({
+      host: 'http://localhost:4943',
+      shouldFetchRootKey: true,
+    });
+    const actor = Actor.createActor<_SERVICE>(idlFactory, { canisterId, agent });
+    try {
+      await actor.test();
+    } catch (error) {
+      expect(error.reject_message).toContain('Canister called `ic0.trap` with message: trapping');
+    }
   });
 });
