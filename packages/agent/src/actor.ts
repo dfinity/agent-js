@@ -556,7 +556,7 @@ function _createActorMethod(
             throw new UpdateCallRejectedError(cid, methodName, requestId, response);
         }
       }
-      // Fall back to polling if we recieve an Accepted response code
+      // Fall back to polling if we receive an Accepted response code
       if (response.status === 202) {
         const pollStrategy = pollingStrategyFactory();
         // Contains the certificate and the reply from the boundary node
