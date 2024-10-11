@@ -8,6 +8,18 @@
 
 ## [2.1.2] - 2024-09-30
 - fix: revert https://github.com/dfinity/agent-js/pull/923 allow option to set agent replica time
+- fix: handle v3 traps correctly, pulling the reject_code and message from the certificate in the error response like v2.
+Example trap error message:
+```txt
+AgentError: Call failed:
+  Canister: hbrpn-74aaa-aaaaa-qaaxq-cai
+  Method: Throw (update)
+  "Request ID": "ae107dfd7c9be168a8ebc122d904900a95e3f15312111d9e0c08f136573c5f13"
+  "Error code": "IC0406"
+  "Reject code": "4"
+  "Reject message": "foo"
+```
+- feat: the `UpdateCallRejected` error now exposes  `reject_code: ReplicaRejectCode`, `reject_message: string`, and `error_code?: string` properties directly on the error object.
 
 ## [2.1.1] - 2024-09-13
 

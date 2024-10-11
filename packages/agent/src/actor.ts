@@ -7,6 +7,7 @@ import {
   QueryResponseStatus,
   ReplicaRejectCode,
   SubmitResponse,
+  v3ResponseBody,
 } from './agent';
 import { AgentError } from './errors';
 import { bufFromBufLike, IDL } from '@dfinity/candid';
@@ -56,18 +57,21 @@ export class UpdateCallRejectedError extends ActorCallError {
     methodName: string,
     public readonly requestId: RequestId,
     public readonly response: SubmitResponse['response'],
+    public readonly reject_code: ReplicaRejectCode,
+    public readonly reject_message: string,
+    public readonly error_code?: string,
   ) {
     super(canisterId, methodName, 'update', {
       'Request ID': toHex(requestId),
       ...(response.body
         ? {
-            ...(response.body.error_code
+            ...(error_code
               ? {
-                  'Error code': response.body.error_code,
+                  'Error code': error_code,
                 }
               : {}),
-            'Reject code': String(response.body.reject_code),
-            'Reject message': response.body.reject_message,
+            'Reject code': String(reject_code),
+            'Reject message': reject_message,
           }
         : {
             'HTTP status code': response.status.toString(),
@@ -535,8 +539,8 @@ function _createActorMethod(
       });
       let reply: ArrayBuffer | undefined;
       let certificate: Certificate | undefined;
-      if (response.body && response.body.certificate) {
-        const cert = response.body.certificate;
+      if (response.body && (response.body as v3ResponseBody).certificate) {
+        const cert = (response.body as v3ResponseBody).certificate;
         certificate = await Certificate.create({
           certificate: bufFromBufLike(cert),
           rootKey: agent.rootKey,
@@ -552,11 +556,33 @@ function _createActorMethod(
           case 'replied':
             reply = lookupResultToBuffer(certificate.lookup([...path, 'reply']));
             break;
-          case 'rejected':
-            throw new UpdateCallRejectedError(cid, methodName, requestId, response);
+          case 'rejected': {
+            // Find rejection details in the certificate
+            const rejectCode = new Uint8Array(
+              lookupResultToBuffer(certificate.lookup([...path, 'reject_code']))!,
+            )[0];
+            const rejectMessage = new TextDecoder().decode(
+              lookupResultToBuffer(certificate.lookup([...path, 'reject_message']))!,
+            );
+            const error_code_buf = lookupResultToBuffer(
+              certificate.lookup([...path, 'error_code']),
+            );
+            const error_code = error_code_buf
+              ? new TextDecoder().decode(error_code_buf)
+              : undefined;
+            throw new UpdateCallRejectedError(
+              cid,
+              methodName,
+              requestId,
+              response,
+              rejectCode,
+              rejectMessage,
+              error_code,
+            );
+          }
         }
       }
-      // Fall back to polling if we recieve an Accepted response code
+      // Fall back to polling if we receive an Accepted response code
       if (response.status === 202) {
         const pollStrategy = pollingStrategyFactory();
         // Contains the certificate and the reply from the boundary node

@@ -121,19 +121,23 @@ export interface ReadStateResponse {
   certificate: ArrayBuffer;
 }
 
+export interface v2ResponseBody {
+  error_code?: string;
+  reject_code: number;
+  reject_message: string;
+}
+
+export interface v3ResponseBody {
+  certificate: ArrayBuffer;
+}
+
 export interface SubmitResponse {
   requestId: RequestId;
   response: {
     ok: boolean;
     status: number;
     statusText: string;
-    body: {
-      error_code?: string;
-      reject_code: number;
-      reject_message: string;
-      // Available in a v3 call response
-      certificate?: ArrayBuffer;
-    } | null;
+    body: v2ResponseBody | v3ResponseBody | null;
     headers: HttpHeaderField[];
   };
   requestDetails?: CallRequest;
