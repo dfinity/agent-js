@@ -41,6 +41,7 @@ import { Ed25519PublicKey } from '../../public_key';
 import { decodeTime } from '../../utils/leb';
 import { ObservableLog } from '../../observable';
 import { BackoffStrategy, BackoffStrategyFactory, ExponentialBackoff } from '../../polling/backoff';
+import { DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS } from '../../constants';
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
 
@@ -52,9 +53,6 @@ export enum RequestStatusResponseStatus {
   Unknown = 'unknown',
   Done = 'done',
 }
-
-// Default delta for ingress expiry is 5 minutes.
-const DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS = 5 * 60 * 1000;
 
 // Root public key for the IC, encoded as hex
 export const IC_ROOT_KEY =

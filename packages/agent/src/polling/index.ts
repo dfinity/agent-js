@@ -6,6 +6,7 @@ import { toHex } from '../utils/buffer';
 
 export * as strategy from './strategy';
 import { defaultStrategy } from './strategy';
+import { DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS } from '../constants';
 export { defaultStrategy } from './strategy';
 export type PollStrategy = (
   canisterId: Principal,
@@ -13,9 +14,6 @@ export type PollStrategy = (
   status: RequestStatusResponseStatus,
 ) => Promise<void>;
 export type PollStrategyFactory = () => PollStrategy;
-
-// Default delta for ingress expiry is 5 minutes.
-const DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS = 5 * 60 * 1000;
 
 /**
  * Polls the IC to check the status of the given request then
