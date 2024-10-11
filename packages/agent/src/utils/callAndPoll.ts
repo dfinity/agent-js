@@ -1,5 +1,5 @@
 import { Principal } from '@dfinity/principal';
-import { Agent, Certificate, bufFromBufLike, polling } from '..';
+import { Agent, Certificate, bufFromBufLike, polling, v3ResponseBody } from '..';
 import { AgentError } from '../errors';
 
 /**
@@ -31,8 +31,8 @@ export async function callAndPoll(options: {
   });
 
   let certificate: Certificate;
-  if (response.body && response.body.certificate) {
-    const cert = response.body.certificate;
+  if (response.body && (response.body as v3ResponseBody).certificate) {
+    const cert = (response.body as v3ResponseBody).certificate;
     // Create certificate to validate the responses
     certificate = await Certificate.create({
       certificate: bufFromBufLike(cert),
