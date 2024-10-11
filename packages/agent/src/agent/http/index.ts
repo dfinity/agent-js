@@ -758,7 +758,7 @@ export class HttpAgent implements Agent {
     this.log.print(`ecid ${ecid.toString()}`);
     this.log.print(`canisterId ${canisterId.toString()}`);
     const makeQuery = async () => {
-      const id = await (identity !== undefined ? await identity : await this.#identity);
+      const id = await(identity !== undefined ? identity : this.#identity);
       if (!id) {
         throw new IdentityInvalidError(
           "This identity has expired due this application's security policy. Please refresh your authentication.",
