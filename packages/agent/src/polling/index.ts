@@ -1,11 +1,12 @@
 import { Principal } from '@dfinity/principal';
-import { Agent, RequestStatusResponseStatus } from '../agent';
+import { Agent, Expiry, RequestStatusResponseStatus } from '../agent';
 import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from '../certificate';
 import { RequestId } from '../request_id';
 import { toHex } from '../utils/buffer';
 
 export * as strategy from './strategy';
 import { defaultStrategy } from './strategy';
+import { DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS } from '../constants';
 export { defaultStrategy } from './strategy';
 export type PollStrategy = (
   canisterId: Principal,
@@ -38,6 +39,10 @@ export async function pollForResponse(
 }> {
   const path = [new TextEncoder().encode('request_status'), requestId];
   const currentRequest = request ?? (await agent.createReadStateRequest?.({ paths: [path] }));
+
+  // Use a fresh expiry for the readState call.
+  currentRequest.body.content.ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
+
   const state = await agent.readState(canisterId, { paths: [path] }, undefined, currentRequest);
   if (agent.rootKey == null) throw new Error('Agent root key not initialized before polling');
   const cert = await Certificate.create({
