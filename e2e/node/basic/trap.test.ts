@@ -4,14 +4,7 @@ import util from 'util';
 import exec from 'child_process';
 const execAsync = util.promisify(exec.exec);
 
-// eslint-disable-next-line prefer-const
-let stdout;
-try {
-  ({ stdout } = await execAsync('dfx canister id trap'));
-} catch {
-  await execAsync('dfx deploy trap');
-  ({ stdout } = await execAsync('dfx canister id trap'));
-}
+const { stdout } = await execAsync('dfx canister id trap');
 
 export const idlFactory = ({ IDL }) => {
   return IDL.Service({
