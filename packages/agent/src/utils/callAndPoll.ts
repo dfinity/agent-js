@@ -1,6 +1,7 @@
 import { Principal } from '@dfinity/principal';
 import { Agent, Certificate, bufFromBufLike, polling, v3ResponseBody } from '..';
-import { AgentError } from '../errors';
+import { AgentCallError, AgentError } from '../errors';
+import { isArrayBuffer } from 'util/types';
 
 /**
  * Call a canister using the v3 api and either return the response or fall back to polling
@@ -30,25 +31,50 @@ export async function callAndPoll(options: {
     effectiveCanisterId: cid,
   });
 
-  let certificate: Certificate;
-  if (response.body && (response.body as v3ResponseBody).certificate) {
-    const cert = (response.body as v3ResponseBody).certificate;
-    // Create certificate to validate the responses
-    certificate = await Certificate.create({
-      certificate: bufFromBufLike(cert),
-      rootKey: agent.rootKey,
-      canisterId: Principal.from(canisterId),
-    });
-  } else {
-    throw new AgentError('unexpected call error: no certificate in response');
+  if (response.status === 200) {
+    if ('body' in response) {
+      // Ensure the response body is a v3 response
+      assertV3ResponseBody(response.body);
+
+      const cert = response.body.certificate;
+      // Create certificate to validate the responses
+      const certificate = await Certificate.create({
+        certificate: bufFromBufLike(cert),
+        rootKey: agent.rootKey,
+        canisterId: Principal.from(canisterId),
+      });
+      return certificate.rawCert;
+    } else {
+      throw new AgentCallError(
+        'unexpected call error: no certificate in response',
+        response,
+        requestId,
+      );
+    }
   }
   // Fall back to polling if we recieve an Accepted response code
-  if (response.status === 202) {
+  else if (response.status === 202) {
     const pollStrategy = defaultStrategy();
     // Contains the certificate and the reply from the boundary node
     const response = await polling.pollForResponse(agent, cid, requestId, pollStrategy);
-    certificate = response.certificate;
+    return response.certificate.rawCert;
+  } else {
+    console.error('The network returned a response but the result could not be determined.', {
+      response,
+      requestId,
+    });
+    throw new AgentError('unexpected call error: no certificate in response');
   }
+}
 
-  return certificate.rawCert;
+function assertV3ResponseBody(body: unknown): asserts body is v3ResponseBody {
+  if (!body || typeof body !== 'object') {
+    throw new AgentError('unexpected call error: no body in response');
+  }
+  if (!('certificate' in body)) {
+    throw new AgentError('unexpected call error: no certificate in response');
+  }
+  if (!isArrayBuffer(body['certificate'])) {
+    throw new AgentError('unexpected call error: certificate is not an ArrayBuffer');
+  }
 }
