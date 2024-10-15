@@ -412,12 +412,13 @@ export class HttpAgent implements Agent {
       arg: ArrayBuffer;
       effectiveCanisterId?: Principal | string;
       callSync?: boolean;
+      ingressExpiry?: Expiry;
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
     // TODO - restore this value
     const callSync = options.callSync ?? true;
-    const id = await(identity !== undefined ? await identity : await this.#identity);
+    const id = await (identity !== undefined ? await identity : await this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -430,11 +431,16 @@ export class HttpAgent implements Agent {
 
     const sender: Principal = id.getPrincipal() || Principal.anonymous();
 
-    let ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
+    let ingress_expiry: Expiry;
 
-    // If the value is off by more than 30 seconds, reconcile system time with the network
-    if (Math.abs(this.#timeDiffMsecs) > 1_000 * 30) {
+    // use a provided ingress expiry if it is defined
+    if (options.ingressExpiry) {
+      ingress_expiry = options.ingressExpiry;
+    } else if (Math.abs(this.#timeDiffMsecs) > 1_000 * 30) {
+      // If the value is off by more than 30 seconds, reconcile system time with the network
       ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS + this.#timeDiffMsecs);
+    } else {
+      ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
     }
 
     const submit: CallRequest = {
@@ -758,7 +764,7 @@ export class HttpAgent implements Agent {
     this.log.print(`ecid ${ecid.toString()}`);
     this.log.print(`canisterId ${canisterId.toString()}`);
     const makeQuery = async () => {
-      const id = await(identity !== undefined ? identity : this.#identity);
+      const id = await (identity !== undefined ? identity : this.#identity);
       if (!id) {
         throw new IdentityInvalidError(
           "This identity has expired due this application's security policy. Please refresh your authentication.",

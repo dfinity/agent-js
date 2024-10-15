@@ -57,6 +57,16 @@ export interface HttpAgentRequestTransformFn {
   priority?: number;
 }
 
+export interface ContentMap {
+  request_type: 'call' | 'query' | 'read_state';
+  canister_id: Principal;
+  method_name: string;
+  arg: ArrayBuffer;
+  sender: Uint8Array | Principal;
+  ingress_expiry: Expiry;
+  nonce?: Nonce;
+}
+
 // The fields in a "call" submit request.
 export interface CallRequest extends Record<string, any> {
   request_type: SubmitRequestType.Call;

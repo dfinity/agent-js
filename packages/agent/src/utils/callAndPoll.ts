@@ -1,5 +1,13 @@
 import { Principal } from '@dfinity/principal';
-import { Agent, Certificate, bufFromBufLike, polling, v3ResponseBody } from '..';
+import {
+  Agent,
+  Certificate,
+  ContentMap,
+  Expiry,
+  bufFromBufLike,
+  polling,
+  v3ResponseBody,
+} from '..';
 import { AgentCallError, AgentError } from '../errors';
 import { isArrayBuffer } from 'util/types';
 
@@ -17,7 +25,11 @@ export async function callAndPoll(options: {
   methodName: string;
   agent: Agent;
   arg: ArrayBuffer;
-}): Promise<ArrayBuffer> {
+  ingressExpiry?: Expiry;
+}): Promise<{
+  certificate: ArrayBuffer;
+  contentMap: ContentMap;
+}> {
   const { canisterId, methodName, agent, arg } = options;
   const cid = Principal.from(options.canisterId);
 
@@ -25,11 +37,21 @@ export async function callAndPoll(options: {
 
   if (agent.rootKey == null) throw new Error('Agent root key not initialized before making call');
 
+  const ingress_expiry = options.ingressExpiry ?? new Expiry(DEFAULT);
+
   const { requestId, response } = await agent.call(cid, {
     methodName,
     arg,
     effectiveCanisterId: cid,
   });
+  const contentMap: ContentMap = {
+    canister_id: Principal.from(canisterId),
+    request_type: 'call',
+    method_name: methodName,
+    arg,
+    sender: await agent.getPrincipal(),
+    ingress_expiry,
+  };
 
   if (response.status === 200) {
     if ('body' in response) {
@@ -43,6 +65,7 @@ export async function callAndPoll(options: {
         rootKey: agent.rootKey,
         canisterId: Principal.from(canisterId),
       });
+
       return certificate.rawCert;
     } else {
       throw new AgentCallError(
