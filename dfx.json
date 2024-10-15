@@ -9,6 +9,10 @@
     "counter": {
       "type": "motoko",
       "main": "e2e/node/canisters/counter.mo"
+    },
+    "trap": {
+      "type": "motoko",
+      "main": "e2e/node/canisters/trap.mo"
     }
   }
 }
