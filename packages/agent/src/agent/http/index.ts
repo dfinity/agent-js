@@ -522,6 +522,7 @@ export class HttpAgent implements Agent {
 
       // Update the watermark with the latest time from consensus
       if (responseBody && 'certificate' in (responseBody as v3ResponseBody)) {
+        responseBody['certificate'] = bufFromBufLike(responseBody['certificate']);
         const time = await this.parseTimeFromResponse({
           certificate: (responseBody as v3ResponseBody).certificate,
         });
