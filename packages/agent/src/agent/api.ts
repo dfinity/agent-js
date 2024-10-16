@@ -3,6 +3,7 @@ import { RequestId } from '../request_id';
 import { JsonObject } from '@dfinity/candid';
 import { Identity } from '../auth';
 import { CallRequest, HttpHeaderField, QueryRequest } from './http/types';
+import { Expiry } from './http';
 
 /**
  * Codes used by the replica for rejecting a message.
@@ -115,6 +116,11 @@ export interface CallOptions {
    * @see https://internetcomputer.org/docs/current/references/ic-interface-spec/#http-effective-canister-id
    */
   effectiveCanisterId: Principal | string;
+
+  /**
+   * The expiry for the ingress message. Defaults to 4 minutes, rounded down to the nearest minute.
+   */
+  ingressExpiry?: Expiry;
 }
 
 export interface ReadStateResponse {

@@ -1,7 +1,7 @@
 import * as cbor from './cbor';
 import { AgentError } from './errors';
 import { hash } from './request_id';
-import { bufEquals, concat, fromHex, toHex } from './utils/buffer';
+import { bufEquals, bufFromBufLike, concat, fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
 import * as bls from './utils/bls';
 import { decodeTime } from './utils/leb';
@@ -150,6 +150,7 @@ export interface CreateCertificateOptions {
 
 export class Certificate {
   public cert: Cert;
+  public readonly rawCert: ArrayBuffer;
 
   /**
    * Create a new instance of a certificate, automatically verifying it. Throws a
@@ -191,6 +192,7 @@ export class Certificate {
     // Default to 5 minutes
     private _maxAgeInMinutes: number = 5,
   ) {
+    this.rawCert = bufFromBufLike(certificate);
     this.cert = cbor.decode(new Uint8Array(certificate));
   }
 
