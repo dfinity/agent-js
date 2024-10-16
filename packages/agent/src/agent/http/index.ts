@@ -15,7 +15,7 @@ import {
   SubmitResponse,
   v3ResponseBody,
 } from '../api';
-import { Expiry, httpHeadersTransform, makeNonceTransform } from './transforms';
+import { Expiry, httpHeadersTransform } from './transforms';
 import {
   CallRequest,
   Endpoint,
@@ -310,11 +310,6 @@ export class HttpAgent implements Agent {
     }
     this.#identity = Promise.resolve(options.identity || new AnonymousIdentity());
 
-    // Add a nonce transform to ensure calls are unique
-    this.addTransform('update', makeNonceTransform(makeNonce));
-    if (options.useQueryNonces) {
-      this.addTransform('query', makeNonceTransform(makeNonce));
-    }
     if (options.logToConsole) {
       this.log.subscribe(log => {
         if (log.level === 'error') {
@@ -410,6 +405,7 @@ export class HttpAgent implements Agent {
       arg: ArrayBuffer;
       effectiveCanisterId?: Principal | string;
       callSync?: boolean;
+      nonce?: Nonce;
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
@@ -458,15 +454,9 @@ export class HttpAgent implements Agent {
       body: submit,
     })) as HttpAgentSubmitRequest;
 
-    const nonce: Nonce | undefined = transformedRequest.body.nonce
-      ? toNonce(transformedRequest.body.nonce)
-      : undefined;
+    const nonce: Nonce = options.nonce ?? makeNonce();
 
     submit.nonce = nonce;
-
-    function toNonce(buf: ArrayBuffer): Nonce {
-      return new Uint8Array(buf) as Nonce;
-    }
 
     // Apply transform for identity.
     transformedRequest = await id.transformRequest(transformedRequest);
@@ -789,6 +779,13 @@ export class HttpAgent implements Agent {
         endpoint: Endpoint.Query,
         body: request,
       });
+
+      // Insert nonce if provided or generate a new one if useQueryNonces is enabled
+      let nonce: Nonce | undefined = fields.nonce;
+      if (this.config.useQueryNonces === true || nonce === undefined) {
+        nonce = makeNonce();
+      }
+      request.nonce = nonce;
 
       // Apply transform for identity.
       transformedRequest = (await id?.transformRequest(transformedRequest)) as HttpAgentRequest;

@@ -6,7 +6,8 @@ import { CallRequest, SubmitRequestType, UnSigned } from './agent/http/types';
 import * as cbor from './cbor';
 import { requestIdOf } from './request_id';
 import * as pollingImport from './polling';
-import { Actor, ActorConfig } from './actor';
+import { ActorConfig } from './actor';
+import assert from 'assert';
 
 const importActor = async (mockUpdatePolling?: () => void) => {
   jest.dontMock('./polling');
@@ -279,10 +280,16 @@ describe('makeActor', () => {
     });
     const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
     const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
-    const actorWithHttpDetails = Actor.createActorWithHttpDetails(actorInterface, {
-      canisterId,
-      agent: httpAgent,
-    });
+    const actorWithHttpDetails = Actor.createActorWithExtendedDetails(
+      actorInterface,
+      {
+        canisterId,
+        agent: httpAgent,
+      },
+      {
+        httpDetails: true,
+      },
+    );
 
     const reply = await actor.greet('test');
     const replyUpdate = await actor.greet_update('test');
@@ -292,6 +299,10 @@ describe('makeActor', () => {
     expect(reply).toEqual(canisterDecodedReturnValue);
     expect(replyUpdate).toEqual(canisterDecodedReturnValue);
     expect(replyWithHttpDetails.result).toEqual(canisterDecodedReturnValue);
+
+    assert(replyWithHttpDetails.httpDetails);
+    replyWithHttpDetails.httpDetails['requestDetails']['nonce'] = new Uint8Array();
+
     expect(replyWithHttpDetails.httpDetails).toMatchInlineSnapshot(`
       {
         "headers": [],
@@ -318,6 +329,7 @@ describe('makeActor', () => {
             "_value": 1200000000000n,
           },
           "method_name": "greet",
+          "nonce": Uint8Array [],
           "request_type": "query",
           "sender": {
             "__principal__": "2vxsx-fae",
@@ -329,6 +341,7 @@ describe('makeActor', () => {
     `);
     expect(replyUpdateWithHttpDetails.result).toEqual(canisterDecodedReturnValue);
 
+    assert(replyUpdateWithHttpDetails.httpDetails);
     replyUpdateWithHttpDetails.httpDetails['requestDetails']['nonce'] = new Uint8Array();
 
     expect(replyUpdateWithHttpDetails.httpDetails).toMatchSnapshot();
