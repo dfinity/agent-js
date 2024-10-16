@@ -2,7 +2,7 @@ import { Principal } from '@dfinity/principal';
 import { RequestId } from '../request_id';
 import { JsonObject } from '@dfinity/candid';
 import { Identity } from '../auth';
-import { CallRequest, HttpHeaderField, QueryRequest } from './http/types';
+import { CallRequest, HttpHeaderField, Nonce, QueryRequest } from './http/types';
 
 /**
  * Codes used by the replica for rejecting a message.
@@ -94,6 +94,11 @@ export interface QueryFields {
    * Overrides canister id for path to fetch. This is used for management canister calls.
    */
   effectiveCanisterId?: Principal;
+
+  /**
+   * Optional nonce to use for the query. Can be used to avoid caching. By default, the agent will not use a nonce for queries.
+   */
+  nonce?: Nonce;
 }
 
 /**
@@ -115,6 +120,11 @@ export interface CallOptions {
    * @see https://internetcomputer.org/docs/current/references/ic-interface-spec/#http-effective-canister-id
    */
   effectiveCanisterId: Principal | string;
+
+  /**
+   * Optional nonce to use for the update. Can be used to avoid caching. By default, the agent will generate a nonce for updates automatically.
+   */
+  nonce?: Nonce;
 }
 
 export interface ReadStateResponse {

@@ -119,5 +119,14 @@ export function makeNonce(): Nonce {
   view.setUint32(8, rand3);
   view.setUint32(12, rand4);
 
-  return buffer as Nonce;
+  const nonce = new Uint8Array(buffer);
+  // add __nonce__ to the buffer to make it a Nonce
+  Object.defineProperty(nonce, '__nonce__', {
+    value: undefined,
+    writable: false,
+    enumerable: false,
+    configurable: false,
+  });
+
+  return nonce as Nonce;
 }

@@ -13,7 +13,7 @@ import { Principal } from '@dfinity/principal';
 import { requestIdOf } from '../../request_id';
 
 import { JSDOM } from 'jsdom';
-import { Actor, AnonymousIdentity, SignIdentity, toHex } from '../..';
+import { AnonymousIdentity, SignIdentity, toHex } from '../..';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { AgentError } from '../../errors';
 import { AgentHTTPResponseError } from './errors';
@@ -159,8 +159,8 @@ test('queries with the same content should have the same signature', async () =>
   const response1 = await httpAgent.readState(canisterIdent, { paths });
   const response2 = await httpAgent.readState(canisterIdent, { paths });
 
-  const response3 = await httpAgent.query(canisterIdent, { arg, methodName });
-  const response4 = await httpAgent.query(canisterIdent, { methodName, arg });
+  const response3 = await httpAgent.query(canisterIdent, { arg, methodName, nonce });
+  const response4 = await httpAgent.query(canisterIdent, { methodName, arg, nonce });
 
   const { calls } = mockFetch.mock;
   expect(calls.length).toBe(4);
