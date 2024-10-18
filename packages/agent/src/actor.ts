@@ -1,4 +1,4 @@
-import { Buffer } from 'buffer/';
+import { Buffer } from "buffer/";
 import {
   Agent,
   getDefaultAgent,
@@ -6,18 +6,19 @@ import {
   QueryResponseRejected,
   QueryResponseStatus,
   ReplicaRejectCode,
-  SubmitResponse, v2ResponseBody,
+  SubmitResponse,
+  v2ResponseBody,
   v3ResponseBody,
 } from "./agent";
-import { AgentError } from './errors';
-import { bufFromBufLike, IDL } from '@dfinity/candid';
-import { pollForResponse, PollStrategyFactory, strategy } from './polling';
-import { Principal } from '@dfinity/principal';
-import { RequestId } from './request_id';
-import { toHex } from './utils/buffer';
-import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from './certificate';
-import managementCanisterIdl from './canisters/management_idl';
-import _SERVICE, { canister_install_mode, canister_settings } from './canisters/management_service';
+import { AgentError } from "./errors";
+import { bufFromBufLike, IDL } from "@dfinity/candid";
+import { pollForResponse, PollStrategyFactory, strategy } from "./polling";
+import { Principal } from "@dfinity/principal";
+import { RequestId } from "./request_id";
+import { toHex } from "./utils/buffer";
+import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from "./certificate";
+import managementCanisterIdl from "./canisters/management_idl";
+import _SERVICE, { canister_install_mode, canister_settings } from "./canisters/management_service";
 
 export class ActorCallError extends AgentError {
   constructor(
@@ -581,10 +582,8 @@ function _createActorMethod(
             );
           }
         }
-      }
-
-      // handle v2 response errors by throwing an UpdateCallRejectedError object
-      if (!response.ok || response.body /* IC-1462 */) {
+      } else if (!response.ok || response.body /* IC-1462 */) {
+        // handle v2 response errors by throwing an UpdateCallRejectedError object
         const { reject_code, reject_message, error_code } = response.body as v2ResponseBody;
         throw new UpdateCallRejectedError(cid,
           methodName,
