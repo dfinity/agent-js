@@ -272,19 +272,17 @@ export class Certificate {
 
     await cert.verify();
 
-    if (this._canisterId.toString() !== MANAGEMENT_CANISTER_ID) {
-      const canisterInRange = check_canister_ranges({
-        canisterId: this._canisterId,
-        subnetId: Principal.fromUint8Array(new Uint8Array(d.subnet_id)),
-        tree: cert.cert.tree,
-      });
-      if (!canisterInRange) {
-        throw new CertificateVerificationError(
-          `Canister ${this._canisterId} not in range of delegations for subnet 0x${toHex(
-            d.subnet_id,
-          )}`,
-        );
-      }
+    const canisterInRange = check_canister_ranges({
+      canisterId: this._canisterId,
+      subnetId: Principal.fromUint8Array(new Uint8Array(d.subnet_id)),
+      tree: cert.cert.tree,
+    });
+    if (!canisterInRange) {
+      throw new CertificateVerificationError(
+        `Canister ${this._canisterId} not in range of delegations for subnet 0x${toHex(
+          d.subnet_id,
+        )}`,
+      );
     }
     const publicKeyLookup = lookupResultToBuffer(
       cert.lookup(['subnet', d.subnet_id, 'public_key']),

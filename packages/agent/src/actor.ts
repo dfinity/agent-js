@@ -6,9 +6,9 @@ import {
   QueryResponseRejected,
   QueryResponseStatus,
   ReplicaRejectCode,
-  SubmitResponse,
+  SubmitResponse, v2ResponseBody,
   v3ResponseBody,
-} from './agent';
+} from "./agent";
 import { AgentError } from './errors';
 import { bufFromBufLike, IDL } from '@dfinity/candid';
 import { pollForResponse, PollStrategyFactory, strategy } from './polling';
@@ -582,6 +582,19 @@ function _createActorMethod(
           }
         }
       }
+
+      // handle v2 response errors by throwing an UpdateCallRejectedError object
+      if (!response.ok || response.body /* IC-1462 */) {
+        const { reject_code, reject_message, error_code } = response.body as v2ResponseBody;
+        throw new UpdateCallRejectedError(cid,
+          methodName,
+          requestId,
+          response,
+          reject_code,
+          reject_message,
+          error_code)
+      }
+
       // Fall back to polling if we receive an Accepted response code
       if (response.status === 202) {
         const pollStrategy = pollingStrategyFactory();
