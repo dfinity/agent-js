@@ -121,7 +121,7 @@ export interface ReadStateResponse {
   certificate: ArrayBuffer;
 }
 
-export interface v2ResponseBody {
+export interface SubmitErrorBody {
   error_code?: string;
   reject_code: number;
   reject_message: string;
@@ -131,13 +131,39 @@ export interface v3ResponseBody {
   certificate: ArrayBuffer;
 }
 
-export interface SubmitResponse {
+export type SubmitResponse = SubmitResponseSuccess | SubmitResponseError | SubmitResponsePending;
+
+export interface SubmitResponseSuccess {
+  requestId: RequestId;
+  response: {
+    ok: true;
+    status: 200;
+    statusText: string;
+    body: v3ResponseBody;
+    headers: HttpHeaderField[];
+  };
+  requestDetails?: CallRequest;
+}
+
+export interface SubmitResponsePending {
+  requestId: RequestId;
+  response: {
+    ok: true;
+    status: 202;
+    statusText: string;
+    body: null;
+    headers: HttpHeaderField[];
+  };
+  requestDetails?: CallRequest;
+}
+
+export interface SubmitResponseError {
   requestId: RequestId;
   response: {
     ok: boolean;
     status: number;
     statusText: string;
-    body: v2ResponseBody | v3ResponseBody | null;
+    body: SubmitErrorBody;
     headers: HttpHeaderField[];
   };
   requestDetails?: CallRequest;

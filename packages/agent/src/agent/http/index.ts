@@ -12,7 +12,11 @@ import {
   QueryResponse,
   ReadStateOptions,
   ReadStateResponse,
+  SubmitErrorBody,
   SubmitResponse,
+  SubmitResponseError,
+  SubmitResponsePending,
+  SubmitResponseSuccess,
   v3ResponseBody,
 } from '../api';
 import { Expiry, httpHeadersTransform, makeNonceTransform } from './transforms';
@@ -415,7 +419,7 @@ export class HttpAgent implements Agent {
   ): Promise<SubmitResponse> {
     // TODO - restore this value
     const callSync = options.callSync ?? true;
-    const id = await(identity !== undefined ? await identity : await this.#identity);
+    const id = await (identity !== undefined ? await identity : await this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -508,31 +512,57 @@ export class HttpAgent implements Agent {
       const [response, requestId] = await Promise.all([request, requestIdOf(submit)]);
 
       const responseBuffer = await response.arrayBuffer();
-      const responseBody = (
+      const responseBody: v3ResponseBody | SubmitErrorBody | null =
         response.status === 200 && responseBuffer.byteLength > 0
           ? cbor.decode(responseBuffer)
-          : null
-      ) as SubmitResponse['response']['body'];
+          : null;
 
-      // Update the watermark with the latest time from consensus
-      if (responseBody && 'certificate' in (responseBody as v3ResponseBody)) {
+      if (responseBody && 'reject_message' in (responseBody as SubmitErrorBody)) {
+        assertCallError(responseBody);
+        return {
+          requestId,
+          response: {
+            ok: response.ok,
+            status: response.status,
+            statusText: response.statusText,
+            body: responseBody,
+            headers: httpHeadersTransform(response.headers),
+          },
+          requestDetails: submit,
+        } as SubmitResponseError;
+      } else if (responseBody && 'certificate' in (responseBody as v3ResponseBody)) {
+        assertV3Response(responseBody);
+        // Update the watermark with the latest time from consensus
         const time = await this.parseTimeFromResponse({
           certificate: (responseBody as v3ResponseBody).certificate,
         });
         this.#waterMark = time;
-      }
 
-      return {
-        requestId,
-        response: {
-          ok: response.ok,
-          status: response.status,
-          statusText: response.statusText,
-          body: responseBody,
-          headers: httpHeadersTransform(response.headers),
-        },
-        requestDetails: submit,
-      };
+        return {
+          requestId,
+          response: {
+            ok: response.ok,
+            status: response.status,
+            statusText: response.statusText,
+            body: responseBody,
+            headers: httpHeadersTransform(response.headers),
+          },
+          requestDetails: submit,
+        } as SubmitResponseSuccess;
+      } else {
+        assertCallPending(response);
+        return {
+          requestId,
+          response: {
+            ok: response.ok,
+            status: response.status,
+            statusText: response.statusText,
+            body: responseBody,
+            headers: httpHeadersTransform(response.headers),
+          },
+          requestDetails: submit,
+        } as SubmitResponsePending;
+      }
     } catch (error) {
       // If the error is due to the v3 api not being supported, fall back to v2
       if ((error as AgentError).message.includes('v3 api not supported.')) {
@@ -756,7 +786,7 @@ export class HttpAgent implements Agent {
     this.log.print(`ecid ${ecid.toString()}`);
     this.log.print(`canisterId ${canisterId.toString()}`);
     const makeQuery = async () => {
-      const id = await(identity !== undefined ? identity : this.#identity);
+      const id = await (identity !== undefined ? identity : this.#identity);
       if (!id) {
         throw new IdentityInvalidError(
           "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -1153,3 +1183,74 @@ export class HttpAgent implements Agent {
   }
 }
 
+/**
+ * Assertion function to validate the response body of a v3 response
+ * @param body - the response body to validate
+ */
+export function assertV3Response(body: unknown): asserts body is v3ResponseBody {
+  if (body === undefined) {
+    throw new AgentError('Response body is undefined');
+  }
+  if (body === null) {
+    throw new AgentError('Response body is null');
+  }
+  if (typeof body !== 'object') {
+    throw new AgentError('Response body is not an object');
+  }
+  if (!('certificate' in body)) {
+    throw new AgentError('Response body does not contain a certificate');
+  }
+  if (!(body as v3ResponseBody).certificate) {
+    throw new AgentError('Response body certificate is empty');
+  }
+}
+
+/**
+ * Assertion function to validate the response body of call error
+ * @param body - the response body to validate
+ */
+export function assertCallError(body: unknown): asserts body is SubmitErrorBody {
+  if (body === undefined) {
+    throw new AgentError('Response body is undefined');
+  }
+  if (body === null) {
+    throw new AgentError('Response body is null');
+  }
+  if (typeof body !== 'object') {
+    throw new AgentError('Response body is not an object');
+  }
+  if (!('reject_code' in body)) {
+    throw new AgentError('Response body does not contain a reject code');
+  }
+  if (!('reject_message' in body)) {
+    throw new AgentError('Response body does not contain a reject message');
+  }
+}
+
+/**
+ * Assertion function to validate the response body of a call pending
+ * @param response - the response to validate
+ */
+export function assertCallPending(response: unknown): asserts response is SubmitResponsePending {
+  if (response === undefined) {
+    throw new AgentError('Response response is undefined');
+  }
+  if (response === null) {
+    throw new AgentError('Response response is null');
+  }
+  if (typeof response !== 'object') {
+    throw new AgentError('Response response is not an object');
+  }
+  if (!('status' in response)) {
+    throw new AgentError('Response response does not contain a status');
+  }
+  if (response.status !== 202) {
+    throw new AgentError('Response status is not 202');
+  }
+  if (!('body' in response)) {
+    throw new AgentError('Response response does not contain a body');
+  }
+  if (response.body !== null) {
+    throw new AgentError('Response body is not null');
+  }
+}

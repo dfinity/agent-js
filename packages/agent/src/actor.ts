@@ -1,14 +1,14 @@
 import { Buffer } from 'buffer/';
 import {
   Agent,
+  assertCallError,
+  assertV3Response,
   getDefaultAgent,
   HttpDetailsResponse,
   QueryResponseRejected,
   QueryResponseStatus,
   ReplicaRejectCode,
   SubmitResponse,
-  v2ResponseBody,
-  v3ResponseBody,
 } from './agent';
 import { AgentError } from './errors';
 import { bufFromBufLike, IDL } from '@dfinity/candid';
@@ -540,8 +540,28 @@ function _createActorMethod(
       });
       let reply: ArrayBuffer | undefined;
       let certificate: Certificate | undefined;
-      if (response.body && (response.body as v3ResponseBody).certificate) {
-        const cert = (response.body as v3ResponseBody).certificate;
+      const body = response.body;
+      // If the response status is 200, it will either be a v3 success or an error.
+      if (response.status === 200) {
+        // If reject_message is present in the body, an uncertified error was returned from the call.
+        if (body && 'reject_message' in body) {
+          assertCallError(body);
+          const { reject_code, reject_message, error_code } = response.body;
+          throw new UpdateCallRejectedError(
+            cid,
+            methodName,
+            requestId,
+            response,
+            reject_code,
+            reject_message,
+            error_code,
+          );
+        }
+
+        // Otherwise, we can assume it's a v3 response.
+        assertV3Response(body);
+
+        const cert = body.certificate;
         certificate = await Certificate.create({
           certificate: bufFromBufLike(cert),
           rootKey: agent.rootKey,
@@ -582,32 +602,45 @@ function _createActorMethod(
             );
           }
         }
-      } else if (!response.ok || response.body /* IC-1462 */) {
-        // handle v2 response errors by throwing an UpdateCallRejectedError object
-        const { reject_code, reject_message, error_code } = response.body as v2ResponseBody;
-        throw new UpdateCallRejectedError(
-          cid,
-          methodName,
-          requestId,
-          response,
-          reject_code,
-          reject_message,
-          error_code,
-        );
       }
-
       // Fall back to polling if we receive an Accepted response code
-      if (response.status === 202) {
+      else if (response.status === 202) {
         const pollStrategy = pollingStrategyFactory();
         // Contains the certificate and the reply from the boundary node
         const response = await pollForResponse(agent, ecid, requestId, pollStrategy, blsVerify);
         certificate = response.certificate;
         reply = response.reply;
+      } else {
+        if (response.status >= 400 && response.status < 500) {
+          throw new AgentError(`Client error with code ${response.status}: ${response.statusText}. Retrying this request will likely fail.
+            
+            Request ID: ${toHex(requestId)}
+            Canister ID: ${cid.toText()}
+            Method: ${methodName}
+            Request Details: ${JSON.stringify(requestDetails)}
+            Response: ${JSON.stringify(response)}`);
+        } else if (response.status >= 500 && response.status < 600) {
+          throw new AgentError(`Server error with code ${response.status}: ${response.statusText}. It is possible that retrying this request may succeed.
+            
+            Request ID: ${toHex(requestId)}
+            Canister ID: ${cid.toText()}
+            Method: ${methodName}
+            Request Details: ${JSON.stringify(requestDetails)}
+            Response: ${JSON.stringify(response)}`);
+        } else {
+          throw new AgentError(`Unexpected error with code ${response.status}: ${response.statusText}.
+            
+            Request ID: ${toHex(requestId)}
+            Canister ID: ${cid.toText()}
+            Method: ${methodName}
+            Request Details: ${JSON.stringify(requestDetails)}
+            Response: ${JSON.stringify(response)}`);
+        }
       }
       const shouldIncludeHttpDetails = func.annotations.includes(ACTOR_METHOD_WITH_HTTP_DETAILS);
       const shouldIncludeCertificate = func.annotations.includes(ACTOR_METHOD_WITH_CERTIFICATE);
 
-      const httpDetails = { ...response, requestDetails } as HttpDetailsResponse;
+      const httpDetails = { ...response, requestDetails };
       if (reply !== undefined) {
         if (shouldIncludeHttpDetails && shouldIncludeCertificate) {
           return {

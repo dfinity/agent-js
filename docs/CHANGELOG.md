@@ -5,6 +5,7 @@
 ## Changed
 
 - fix: recalculates body to use a fresh `Expiry` when polling for `read_state` requests. This prevents the request from exceeding the `maximum_ingress_expiry` when the replica is slow to respond.
+feat!: changes types from v3 responses to match the expected types from the interface specification. Now expects `type SubmitResponse` to be  `SubmitResponseSuccess | SubmitResponseError | SubmitResponsePending`.
 
 ## [2.1.2] - 2024-09-30
 - fix: revert https://github.com/dfinity/agent-js/pull/923 allow option to set agent replica time

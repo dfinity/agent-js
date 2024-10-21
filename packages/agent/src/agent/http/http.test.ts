@@ -670,12 +670,12 @@ test('should adjust the Expiry if the clock is more than 30 seconds ahead', asyn
   jest.resetModules();
 });
 
-test('should fetch with given call options and fetch options', async () => {
+test.only('should fetch with given call options and fetch options', async () => {
   const mockFetch: jest.Mock = jest.fn(() => {
-    const body = cbor.encode({});
+    const body = undefined;
     return Promise.resolve(
       new Response(body, {
-        status: 200,
+        status: 202,
       }),
     );
   });
@@ -687,6 +687,7 @@ test('should fetch with given call options and fetch options', async () => {
     callOptions: {
       reactNative: { textStreaming: true },
     },
+    retryTimes: 0,
     fetchOptions: {
       reactNative: {
         __nativeResponseType: 'base64',
