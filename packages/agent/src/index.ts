@@ -29,6 +29,7 @@ import { Agent, HttpAgent } from './agent';
 import { IDL } from '@dfinity/candid';
 
 export * as Cbor from './cbor';
+export * from './polling';
 
 export interface GlobalInternetComputer {
   ic: {

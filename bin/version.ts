@@ -53,7 +53,7 @@ workspaces.forEach(async workspace => {
     json.devDependencies = updateDeps(json.devDependencies);
   }
 
-  const formatted = prettier.format(JSON.stringify(json), {
+  const formatted = await prettier.format(JSON.stringify(json), {
     parser: 'json-stringify',
   });
 

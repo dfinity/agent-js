@@ -13,6 +13,7 @@ export type ClearArguments = Record<string, never>;
 export interface CreateAssetArguments {
   key: Key;
   content_type: string;
+  headers: [] | [Array<HeaderField>];
 }
 
 export interface DeleteAssetArguments {

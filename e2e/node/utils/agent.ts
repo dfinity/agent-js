@@ -16,7 +16,7 @@ export const makeAgent = async (options?: HttpAgentOptions) => {
   });
   try {
     await agent.fetchRootKey();
-  } catch (_) {
+  } catch {
     //
   }
   return agent;

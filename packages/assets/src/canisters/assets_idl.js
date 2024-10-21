@@ -2,9 +2,11 @@ export const idlFactory = ({ IDL }) => {
   const ClearArguments = IDL.Record({});
   const BatchId = IDL.Nat;
   const Key = IDL.Text;
+  const HeaderField = IDL.Tuple(IDL.Text, IDL.Text);  
   const CreateAssetArguments = IDL.Record({
     key: Key,
     content_type: IDL.Text,
+    headers: IDL.Opt(IDL.Vec(HeaderField)),
   });
   const UnsetAssetContentArguments = IDL.Record({
     key: Key,
@@ -25,7 +27,6 @@ export const idlFactory = ({ IDL }) => {
     SetAssetContent: SetAssetContentArguments,
     Clear: ClearArguments,
   });
-  const HeaderField = IDL.Tuple(IDL.Text, IDL.Text);
   const HttpRequest = IDL.Record({
     url: IDL.Text,
     method: IDL.Text,

@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Actor, SignIdentity } from '@dfinity/agent';
-import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import {
   DelegationChain,
@@ -28,7 +27,7 @@ function createSecpIdentity(seed: number): SignIdentity {
 async function createIdentityActor(
   seed: number,
   canisterId: Principal,
-  idl: IDL.InterfaceFactory,
+  idl,
 ): Promise<any> {
   const identity = createIdentity(seed);
   const agent1 = await makeAgent({ identity });
@@ -40,7 +39,7 @@ async function createIdentityActor(
 
 async function createSecp256k1IdentityActor(
   canisterId: Principal,
-  idl: IDL.InterfaceFactory,
+  idl,
   seed?: number,
 ): Promise<any> {
   let seed1: Uint8Array | undefined;
@@ -59,10 +58,9 @@ async function createSecp256k1IdentityActor(
 
 async function createEcdsaIdentityActor(
   canisterId: Principal,
-  idl: IDL.InterfaceFactory,
+  idl,
   identity?: SignIdentity,
 ): Promise<any> {
-  global.crypto;
   let effectiveIdentity: SignIdentity;
   if (identity) {
     effectiveIdentity = identity;
@@ -80,7 +78,7 @@ async function createEcdsaIdentityActor(
 
 async function installIdentityCanister(): Promise<{
   canisterId: Principal;
-  idl: IDL.InterfaceFactory;
+  idl;
 }> {
   const { canisterId, idl } = await identityCanister();
   return {
