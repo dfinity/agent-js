@@ -1,11 +1,11 @@
-import * as cbor from "./cbor";
-import { AgentError } from "./errors";
-import { hash } from "./request_id";
-import { bufEquals, concat, fromHex, toHex } from "./utils/buffer";
-import { Principal } from "@dfinity/principal";
-import * as bls from "./utils/bls";
-import { decodeTime } from "./utils/leb";
-import { MANAGEMENT_CANISTER_ID } from "./agent";
+import * as cbor from './cbor';
+import { AgentError } from './errors';
+import { hash } from './request_id';
+import { bufEquals, concat, fromHex, toHex } from './utils/buffer';
+import { Principal } from '@dfinity/principal';
+import * as bls from './utils/bls';
+import { decodeTime } from './utils/leb';
+import { MANAGEMENT_CANISTER_ID } from './agent';
 
 /**
  * A certificate may fail verification with respect to the provided public key
