@@ -2,12 +2,11 @@
 
 ## [Unreleased]
 
-## Changed
+### Added
 
-- fix: recalculates body to use a fresh `Expiry` when polling for `read_state` requests. This prevents the request from exceeding the `maximum_ingress_expiry` when the replica is slow to respond.
+### Changed
 
-## [2.1.2] - 2024-09-30
-- fix: revert https://github.com/dfinity/agent-js/pull/923 allow option to set agent replica time
+- test: automatically deploys trap canister if it doesn't exist yet during e2e
 - fix: handle v3 traps correctly, pulling the reject_code and message from the certificate in the error response like v2.
 Example trap error message:
 ```txt
@@ -20,6 +19,10 @@ AgentError: Call failed:
   "Reject message": "foo"
 ```
 - feat: the `UpdateCallRejected` error now exposes  `reject_code: ReplicaRejectCode`, `reject_message: string`, and `error_code?: string` properties directly on the error object.
+- fix: recalculates body to use a fresh `Expiry` when polling for `read_state` requests. This prevents the request from exceeding the `maximum_ingress_expiry` when the replica is slow to respond.
+
+## [2.1.2] - 2024-09-30
+- fix: revert https://github.com/dfinity/agent-js/pull/923 allow option to set agent replica time
 
 ## [2.1.1] - 2024-09-13
 
