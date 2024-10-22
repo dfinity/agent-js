@@ -582,7 +582,7 @@ function _createActorMethod(
             );
           }
         }
-      } else if (!response.ok || response.body /* IC-1462 */) {
+      } else if (response.body && 'reject_message' in response.body) {
         // handle v2 response errors by throwing an UpdateCallRejectedError object
         const { reject_code, reject_message, error_code } = response.body as v2ResponseBody;
         throw new UpdateCallRejectedError(
