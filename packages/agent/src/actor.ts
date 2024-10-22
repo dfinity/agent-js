@@ -7,6 +7,7 @@ import {
   QueryResponseStatus,
   ReplicaRejectCode,
   SubmitResponse,
+  v2ResponseBody,
   v3ResponseBody,
 } from './agent';
 import { AgentError } from './errors';
@@ -581,7 +582,20 @@ function _createActorMethod(
             );
           }
         }
+      } else if (response.body && 'reject_message' in response.body) {
+        // handle v2 response errors by throwing an UpdateCallRejectedError object
+        const { reject_code, reject_message, error_code } = response.body as v2ResponseBody;
+        throw new UpdateCallRejectedError(
+          cid,
+          methodName,
+          requestId,
+          response,
+          reject_code,
+          reject_message,
+          error_code,
+        );
       }
+
       // Fall back to polling if we receive an Accepted response code
       if (response.status === 202) {
         const pollStrategy = pollingStrategyFactory();
