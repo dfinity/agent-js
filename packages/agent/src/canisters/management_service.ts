@@ -10,12 +10,24 @@ import type { ActorMethod } from '@dfinity/agent';
 import type { IDL } from '@dfinity/candid';
 
 export type bitcoin_address = string;
+export type bitcoin_block_hash = Uint8Array | number[];
+export type bitcoin_block_header = Uint8Array | number[];
+export type bitcoin_block_height = number;
 export interface bitcoin_get_balance_args {
   network: bitcoin_network;
   address: bitcoin_address;
   min_confirmations: [] | [number];
 }
 export type bitcoin_get_balance_result = satoshi;
+export interface bitcoin_get_block_headers_args {
+  start_height: bitcoin_block_height;
+  end_height: [] | [bitcoin_block_height];
+  network: bitcoin_network;
+}
+export interface bitcoin_get_block_headers_result {
+  tip_height: bitcoin_block_height;
+  block_headers: Array<bitcoin_block_header>;
+}
 export interface bitcoin_get_current_fee_percentiles_args {
   network: bitcoin_network;
 }
@@ -27,8 +39,8 @@ export interface bitcoin_get_utxos_args {
 }
 export interface bitcoin_get_utxos_result {
   next_page: [] | [Uint8Array | number[]];
-  tip_height: number;
-  tip_block_hash: block_hash;
+  tip_height: bitcoin_block_height;
+  tip_block_hash: bitcoin_block_hash;
   utxos: Array<utxo>;
 }
 export type bitcoin_network = { mainnet: null } | { testnet: null };
@@ -36,7 +48,6 @@ export interface bitcoin_send_transaction_args {
   transaction: Uint8Array | number[];
   network: bitcoin_network;
 }
-export type block_hash = Uint8Array | number[];
 export type canister_id = Principal;
 export interface canister_info_args {
   canister_id: canister_id;
@@ -109,6 +120,13 @@ export type change_details =
         module_hash: Uint8Array | number[];
       };
     }
+  | {
+      load_snapshot: {
+        canister_version: bigint;
+        taken_at_timestamp: bigint;
+        snapshot_id: snapshot_id;
+      };
+    }
   | { controllers_change: { controllers: Array<Principal> } }
   | { code_uninstall: null };
 export type change_origin =
@@ -143,6 +161,10 @@ export interface definite_canister_settings {
 }
 export interface delete_canister_args {
   canister_id: canister_id;
+}
+export interface delete_canister_snapshot_args {
+  canister_id: canister_id;
+  snapshot_id: snapshot_id;
 }
 export interface deposit_cycles_args {
   canister_id: canister_id;
@@ -195,6 +217,15 @@ export interface install_code_args {
   mode: canister_install_mode;
   canister_id: canister_id;
   sender_canister_version: [] | [bigint];
+}
+export interface list_canister_snapshots_args {
+  canister_id: canister_id;
+}
+export type list_canister_snapshots_result = Array<snapshot>;
+export interface load_canister_snapshot_args {
+  canister_id: canister_id;
+  sender_canister_version: [] | [bigint];
+  snapshot_id: snapshot_id;
 }
 export type log_visibility = { controllers: null } | { public: null };
 export type millisatoshi_per_byte = bigint;
@@ -256,6 +287,12 @@ export interface sign_with_schnorr_args {
 export interface sign_with_schnorr_result {
   signature: Uint8Array | number[];
 }
+export interface snapshot {
+  id: snapshot_id;
+  total_size: bigint;
+  taken_at_timestamp: bigint;
+}
+export type snapshot_id = Uint8Array | number[];
 export interface start_canister_args {
   canister_id: canister_id;
 }
@@ -266,6 +303,11 @@ export interface stored_chunks_args {
   canister_id: canister_id;
 }
 export type stored_chunks_result = Array<chunk_hash>;
+export interface take_canister_snapshot_args {
+  replace_snapshot: [] | [snapshot_id];
+  canister_id: canister_id;
+}
+export type take_canister_snapshot_result = snapshot;
 export interface uninstall_code_args {
   canister_id: canister_id;
   sender_canister_version: [] | [bigint];
@@ -288,6 +330,10 @@ export interface utxo {
 export type wasm_module = Uint8Array | number[];
 export default interface _SERVICE {
   bitcoin_get_balance: ActorMethod<[bitcoin_get_balance_args], bitcoin_get_balance_result>;
+  bitcoin_get_block_headers: ActorMethod<
+    [bitcoin_get_block_headers_args],
+    bitcoin_get_block_headers_result
+  >;
   bitcoin_get_current_fee_percentiles: ActorMethod<
     [bitcoin_get_current_fee_percentiles_args],
     bitcoin_get_current_fee_percentiles_result
@@ -299,12 +345,18 @@ export default interface _SERVICE {
   clear_chunk_store: ActorMethod<[clear_chunk_store_args], undefined>;
   create_canister: ActorMethod<[create_canister_args], create_canister_result>;
   delete_canister: ActorMethod<[delete_canister_args], undefined>;
+  delete_canister_snapshot: ActorMethod<[delete_canister_snapshot_args], undefined>;
   deposit_cycles: ActorMethod<[deposit_cycles_args], undefined>;
   ecdsa_public_key: ActorMethod<[ecdsa_public_key_args], ecdsa_public_key_result>;
   fetch_canister_logs: ActorMethod<[fetch_canister_logs_args], fetch_canister_logs_result>;
   http_request: ActorMethod<[http_request_args], http_request_result>;
   install_chunked_code: ActorMethod<[install_chunked_code_args], undefined>;
   install_code: ActorMethod<[install_code_args], undefined>;
+  list_canister_snapshots: ActorMethod<
+    [list_canister_snapshots_args],
+    list_canister_snapshots_result
+  >;
+  load_canister_snapshot: ActorMethod<[load_canister_snapshot_args], undefined>;
   node_metrics_history: ActorMethod<[node_metrics_history_args], node_metrics_history_result>;
   provisional_create_canister_with_cycles: ActorMethod<
     [provisional_create_canister_with_cycles_args],
@@ -318,6 +370,7 @@ export default interface _SERVICE {
   start_canister: ActorMethod<[start_canister_args], undefined>;
   stop_canister: ActorMethod<[stop_canister_args], undefined>;
   stored_chunks: ActorMethod<[stored_chunks_args], stored_chunks_result>;
+  take_canister_snapshot: ActorMethod<[take_canister_snapshot_args], take_canister_snapshot_result>;
   uninstall_code: ActorMethod<[uninstall_code_args], undefined>;
   update_settings: ActorMethod<[update_settings_args], undefined>;
   upload_chunk: ActorMethod<[upload_chunk_args], upload_chunk_result>;
