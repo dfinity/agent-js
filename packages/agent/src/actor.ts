@@ -153,6 +153,7 @@ export type ActorSubclass<T = Record<string, ActorMethod>> = Actor & T;
  */
 export interface ActorMethod<Args extends unknown[] = unknown[], Ret = unknown> {
   (...args: Args): Promise<Ret>;
+
   withOptions(options: CallConfig): (...args: Args) => Promise<Ret>;
 }
 

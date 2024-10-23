@@ -572,7 +572,7 @@ export class HttpAgent implements Agent {
         );
       }
 
-      this.log.error('Error while making call:', error as Error);
+      this.log.error('Error while making call:', error as AgentError);
       throw error;
     }
   }
