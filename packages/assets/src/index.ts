@@ -60,6 +60,11 @@ export interface StoreConfig {
    */
   contentType?: string;
   /**
+   * Custom headers to be sent with the asset
+   * @default []
+   */
+  headers?: Array<[string, string]>;
+  /**
    * Content encoding
    * @default 'identity'
    */
@@ -270,6 +275,7 @@ export class AssetManager {
 }
 
 // Required since the sha256 type is not exported
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const hasher = sha256.create();
 type SHA256TYPE = typeof hasher;
 
@@ -328,9 +334,10 @@ class AssetManagerBatch {
         }),
       );
       await readable.close();
+      const headers: [] | [[string,string][]] = config?.headers ? [config.headers] : [];
       return [
         {
-          CreateAsset: { key, content_type: config?.contentType ?? readable.contentType },
+          CreateAsset: { key, content_type: config?.contentType ?? readable.contentType, headers },
         },
         {
           SetAssetContent: {

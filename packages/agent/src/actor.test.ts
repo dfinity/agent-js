@@ -7,6 +7,7 @@ import * as cbor from './cbor';
 import { requestIdOf } from './request_id';
 import * as pollingImport from './polling';
 import { ActorConfig } from './actor';
+import { UpdateCallRejectedError } from './errors';
 
 const importActor = async (mockUpdatePolling?: () => void) => {
   jest.dontMock('./polling');
@@ -27,7 +28,7 @@ afterEach(() => {
 describe('makeActor', () => {
   // TODO: update tests to be compatible with changes to Certificate
   it.skip('should encode calls', async () => {
-    const { Actor, UpdateCallRejectedError } = await importActor();
+    const { Actor } = await importActor();
     const actorInterface = () => {
       return IDL.Service({
         greet: IDL.Func([IDL.Text], [IDL.Text]),
@@ -38,14 +39,14 @@ describe('makeActor', () => {
 
     const mockFetch: jest.Mock = jest
       .fn()
-      .mockImplementationOnce((/*resource, init*/) => {
+      .mockImplementationOnce(() => {
         return Promise.resolve(
           new Response(null, {
             status: 202,
           }),
         );
       })
-      .mockImplementationOnce((resource, init) => {
+      .mockImplementationOnce(() => {
         const body = cbor.encode({ status: 'received' });
         return Promise.resolve(
           new Response(body, {
@@ -53,7 +54,7 @@ describe('makeActor', () => {
           }),
         );
       })
-      .mockImplementationOnce((resource, init) => {
+      .mockImplementationOnce(() => {
         const body = cbor.encode({ status: 'processing' });
         return Promise.resolve(
           new Response(body, {
@@ -61,7 +62,7 @@ describe('makeActor', () => {
           }),
         );
       })
-      .mockImplementationOnce((resource, init) => {
+      .mockImplementationOnce(() => {
         const body = cbor.encode({
           status: 'replied',
           reply: {
@@ -74,7 +75,7 @@ describe('makeActor', () => {
           }),
         );
       })
-      .mockImplementationOnce((resource, init) => {
+      .mockImplementationOnce(() => {
         // IC-1462 update call error
         const body = cbor.encode(<SubmitResponse['response']['body']>{
           error_code: 'IC0503',
@@ -292,7 +293,6 @@ describe('makeActor', () => {
     expect(reply).toEqual(canisterDecodedReturnValue);
     expect(replyUpdate).toEqual(canisterDecodedReturnValue);
     expect(replyWithHttpDetails.result).toEqual(canisterDecodedReturnValue);
-    replyWithHttpDetails.httpDetails['requestDetails']; //?
     expect(replyWithHttpDetails.httpDetails).toMatchInlineSnapshot(`
       {
         "headers": [],
@@ -330,7 +330,7 @@ describe('makeActor', () => {
     `);
     expect(replyUpdateWithHttpDetails.result).toEqual(canisterDecodedReturnValue);
 
-    replyUpdateWithHttpDetails.httpDetails['requestDetails']['nonce'] = new Uint8Array(); //?
+    replyUpdateWithHttpDetails.httpDetails['requestDetails']['nonce'] = new Uint8Array();
 
     expect(replyUpdateWithHttpDetails.httpDetails).toMatchSnapshot();
   });
@@ -364,7 +364,7 @@ describe('makeActor', () => {
       });
     };
     const { Actor } = await importActor();
-    const config = { agent: httpAgent } as any as ActorConfig;
+    const config = { agent: httpAgent } as unknown as ActorConfig;
     expect(() => Actor.createActor(actorInterface, config)).toThrowError(
       'Canister ID is required, but received undefined instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.',
     );

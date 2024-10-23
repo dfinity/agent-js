@@ -13,6 +13,7 @@ import {
   ReadStateOptions,
   ReadStateResponse,
   SubmitResponse,
+  v3ResponseBody,
 } from '../api';
 import { Expiry, httpHeadersTransform, makeNonceTransform } from './transforms';
 import {
@@ -41,6 +42,7 @@ import { Ed25519PublicKey } from '../../public_key';
 import { decodeTime } from '../../utils/leb';
 import { ObservableLog } from '../../observable';
 import { BackoffStrategy, BackoffStrategyFactory, ExponentialBackoff } from '../../polling/backoff';
+import { DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS } from '../../constants';
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
 
@@ -53,8 +55,7 @@ export enum RequestStatusResponseStatus {
   Done = 'done',
 }
 
-// Default delta for ingress expiry is 5 minutes.
-const DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS = 5 * 60 * 1000;
+const MINUTE_TO_MSECS = 60 * 1000;
 
 // Root public key for the IC, encoded as hex
 export const IC_ROOT_KEY =
@@ -107,6 +108,12 @@ export interface HttpAgentOptions {
   // time (will throw).
   identity?: Identity | Promise<Identity>;
 
+  /**
+   * The maximum time a request can be delayed before being rejected.
+   * @default 5 minutes
+   */
+  ingressExpiryInMinutes?: number;
+
   credentials?: {
     name: string;
     password?: string;
@@ -138,6 +145,11 @@ export interface HttpAgentOptions {
    * Whether to log to the console. Defaults to false.
    */
   logToConsole?: boolean;
+
+  /**
+   * Alternate root key to use for verifying certificates. If not provided, the default IC root key will be used.
+   */
+  rootKey?: ArrayBuffer;
 }
 
 function getDefaultFetch(): typeof fetch {
@@ -222,17 +234,18 @@ interface V1HttpAgentInterface {
   _isAgent: true;
 }
 
-// A HTTP agent allows users to interact with a client of the internet computer
-// using the available methods. It exposes an API that closely follows the
-// public view of the internet computer, and is not intended to be exposed
-// directly to the majority of users due to its low-level interface.
-//
-// There is a pipeline to apply transformations to the request before sending
-// it to the client. This is to decouple signature, nonce generation and
-// other computations so that this class can stay as simple as possible while
-// allowing extensions.
+/** 
+ * A HTTP agent allows users to interact with a client of the internet computer
+using the available methods. It exposes an API that closely follows the
+public view of the internet computer, and is not intended to be exposed
+directly to the majority of users due to its low-level interface.
+ * There is a pipeline to apply transformations to the request before sending
+it to the client. This is to decouple signature, nonce generation and
+other computations so that this class can stay as simple as possible while
+allowing extensions.
+ */
 export class HttpAgent implements Agent {
-  public rootKey = fromHex(IC_ROOT_KEY);
+  public rootKey: ArrayBuffer;
   #identity: Promise<Identity> | null;
   readonly #fetch: typeof fetch;
   readonly #fetchOptions?: Record<string, unknown>;
@@ -243,6 +256,7 @@ export class HttpAgent implements Agent {
   #rootKeyFetched = false;
   readonly #retryTimes; // Retry requests N times before erroring by default
   #backoffStrategy: BackoffStrategyFactory;
+  readonly #maxIngressExpiryInMinutes: number;
 
   // Public signature to help with type checking.
   public readonly _isAgent = true;
@@ -274,6 +288,7 @@ export class HttpAgent implements Agent {
     this.#fetch = options.fetch || getDefaultFetch() || fetch.bind(global);
     this.#fetchOptions = options.fetchOptions;
     this.#callOptions = options.callOptions;
+    this.rootKey = options.rootKey ? options.rootKey : fromHex(IC_ROOT_KEY);
 
     const host = determineHost(options.host);
     this.host = new URL(host);
@@ -303,6 +318,19 @@ export class HttpAgent implements Agent {
       this.#credentials = `${name}${password ? ':' + password : ''}`;
     }
     this.#identity = Promise.resolve(options.identity || new AnonymousIdentity());
+
+    if (options.ingressExpiryInMinutes && options.ingressExpiryInMinutes > 5) {
+      throw new AgentError(
+        `The maximum ingress expiry time is 5 minutes. Provided ingress expiry time is ${options.ingressExpiryInMinutes} minutes.`,
+      );
+    }
+    if (options.ingressExpiryInMinutes && options.ingressExpiryInMinutes <= 0) {
+      throw new AgentError(
+        `Ingress expiry time must be greater than 0. Provided ingress expiry time is ${options.ingressExpiryInMinutes} minutes.`,
+      );
+    }
+
+    this.#maxIngressExpiryInMinutes = options.ingressExpiryInMinutes || 5;
 
     // Add a nonce transform to ensure calls are unique
     this.addTransform('update', makeNonceTransform(makeNonce));
@@ -354,7 +382,7 @@ export class HttpAgent implements Agent {
         host: agent._host.toString(),
         identity: agent._identity ?? undefined,
       });
-    } catch (error) {
+    } catch {
       throw new AgentError('Failed to create agent from provided agent');
     }
   }
@@ -403,10 +431,13 @@ export class HttpAgent implements Agent {
       methodName: string;
       arg: ArrayBuffer;
       effectiveCanisterId?: Principal | string;
+      callSync?: boolean;
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
-    const id = await (identity !== undefined ? await identity : await this.#identity);
+    // TODO - restore this value
+    const callSync = options.callSync ?? true;
+    const id = await(identity !== undefined ? await identity : await this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -419,11 +450,13 @@ export class HttpAgent implements Agent {
 
     const sender: Principal = id.getPrincipal() || Principal.anonymous();
 
-    let ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
+    let ingress_expiry = new Expiry(this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS);
 
     // If the value is off by more than 30 seconds, reconcile system time with the network
     if (Math.abs(this.#timeDiffMsecs) > 1_000 * 30) {
-      ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS + this.#timeDiffMsecs);
+      ingress_expiry = new Expiry(
+        this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS + this.#timeDiffMsecs,
+      );
     }
 
     const submit: CallRequest = {
@@ -463,44 +496,85 @@ export class HttpAgent implements Agent {
     transformedRequest = await id.transformRequest(transformedRequest);
 
     const body = cbor.encode(transformedRequest.body);
-
-    this.log.print(
-      `fetching "/api/v2/canister/${ecid.toText()}/call" with request:`,
-      transformedRequest,
-    );
-
-    // Run both in parallel. The fetch is quite expensive, so we have plenty of time to
-    // calculate the requestId locally.
     const backoff = this.#backoffStrategy();
-    const request = this.#requestAndRetry({
-      request: () =>
-        this.#fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this.host), {
+    try {
+      // Attempt v3 sync call
+      const requestSync = () => {
+        this.log.print(
+          `fetching "/api/v3/canister/${ecid.toText()}/call" with request:`,
+          transformedRequest,
+        );
+        return this.#fetch('' + new URL(`/api/v3/canister/${ecid.toText()}/call`, this.host), {
           ...this.#callOptions,
           ...transformedRequest.request,
           body,
-        }),
-      backoff,
-      tries: 0,
-    });
+        });
+      };
 
-    const [response, requestId] = await Promise.all([request, requestIdOf(submit)]);
+      const requestAsync = () => {
+        this.log.print(
+          `fetching "/api/v2/canister/${ecid.toText()}/call" with request:`,
+          transformedRequest,
+        );
+        return this.#fetch('' + new URL(`/api/v2/canister/${ecid.toText()}/call`, this.host), {
+          ...this.#callOptions,
+          ...transformedRequest.request,
+          body,
+        });
+      };
 
-    const responseBuffer = await response.arrayBuffer();
-    const responseBody = (
-      response.status === 200 && responseBuffer.byteLength > 0 ? cbor.decode(responseBuffer) : null
-    ) as SubmitResponse['response']['body'];
+      const request = this.#requestAndRetry({
+        request: callSync ? requestSync : requestAsync,
+        backoff,
+        tries: 0,
+      });
 
-    return {
-      requestId,
-      response: {
-        ok: response.ok,
-        status: response.status,
-        statusText: response.statusText,
-        body: responseBody,
-        headers: httpHeadersTransform(response.headers),
-      },
-      requestDetails: submit,
-    };
+      const [response, requestId] = await Promise.all([request, requestIdOf(submit)]);
+
+      const responseBuffer = await response.arrayBuffer();
+      const responseBody = (
+        response.status === 200 && responseBuffer.byteLength > 0
+          ? cbor.decode(responseBuffer)
+          : null
+      ) as SubmitResponse['response']['body'];
+
+      // Update the watermark with the latest time from consensus
+      if (responseBody && 'certificate' in (responseBody as v3ResponseBody)) {
+        const time = await this.parseTimeFromResponse({
+          certificate: (responseBody as v3ResponseBody).certificate,
+        });
+        this.#waterMark = time;
+      }
+
+      return {
+        requestId,
+        response: {
+          ok: response.ok,
+          status: response.status,
+          statusText: response.statusText,
+          body: responseBody,
+          headers: httpHeadersTransform(response.headers),
+        },
+        requestDetails: submit,
+      };
+    } catch (error) {
+      // If the error is due to the v3 api not being supported, fall back to v2
+      if ((error as AgentError).message.includes('v3 api not supported.')) {
+        this.log.warn('v3 api not supported. Fall back to v2');
+        return this.call(
+          canisterId,
+          {
+            ...options,
+            // disable v3 api
+            callSync: false,
+          },
+          identity,
+        );
+      }
+
+      this.log.error('Error while making call:', error as AgentError);
+      throw error;
+    }
   }
 
   async #requestAndRetryQuery(args: {
@@ -673,9 +747,18 @@ export class HttpAgent implements Agent {
       `  Code: ${response.status} (${response.statusText})\n` +
       `  Body: ${responseText}\n`;
 
+    if (response.status === 404 && response.url.includes('api/v3')) {
+      throw new AgentHTTPResponseError('v3 api not supported. Fall back to v2', {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        headers: httpHeadersTransform(response.headers),
+      });
+    }
     if (tries < this.#retryTimes) {
       return await this.#requestAndRetry({ request, backoff, tries: tries + 1 });
     }
+
     throw new AgentHTTPResponseError(errorMessage, {
       ok: response.ok,
       status: response.status,
@@ -697,7 +780,7 @@ export class HttpAgent implements Agent {
     this.log.print(`ecid ${ecid.toString()}`);
     this.log.print(`canisterId ${canisterId.toString()}`);
     const makeQuery = async () => {
-      const id = await (identity !== undefined ? await identity : await this.#identity);
+      const id = await(identity !== undefined ? identity : this.#identity);
       if (!id) {
         throw new IdentityInvalidError(
           "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -713,12 +796,11 @@ export class HttpAgent implements Agent {
         method_name: fields.methodName,
         arg: fields.arg,
         sender,
-        ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+        ingress_expiry: new Expiry(this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS),
       };
 
       const requestId = await requestIdOf(request);
 
-      // TODO: remove this any. This can be a Signed or UnSigned request.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let transformedRequest: HttpAgentRequest = await this._transform({
         request: {
@@ -782,7 +864,7 @@ export class HttpAgent implements Agent {
 
     try {
       return this.#verifyQueryResponse(queryWithDetails, subnetStatus);
-    } catch (_) {
+    } catch {
       // In case the node signatures have changed, refresh the subnet keys and try again
       this.log.warn('Query response verification failed. Retrying with fresh subnet keys.');
       this.#subnetKeys.delete(canisterId.toString());
@@ -885,9 +967,8 @@ export class HttpAgent implements Agent {
     }
     const sender = id?.getPrincipal() || Principal.anonymous();
 
-    // TODO: remove this any. This can be a Signed or UnSigned request.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const transformedRequest: any = await this._transform({
+    const transformedRequest = await this._transform({
       request: {
         method: 'POST',
         headers: {
@@ -900,7 +981,7 @@ export class HttpAgent implements Agent {
         request_type: ReadRequestType.ReadState,
         paths: fields.paths,
         sender,
-        ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+        ingress_expiry: new Expiry(this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS),
       },
     });
 
@@ -918,7 +999,14 @@ export class HttpAgent implements Agent {
     const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
 
     const transformedRequest = request ?? (await this.createReadStateRequest(fields, identity));
-    const body = cbor.encode(transformedRequest.body);
+
+    // With read_state, we should always use a fresh expiry, even beyond the point where the initial request would have expired
+    const bodyWithAdjustedExpiry = {
+      ...transformedRequest.body,
+      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+    };
+
+    const body = cbor.encode(bodyWithAdjustedExpiry);
 
     this.log.print(
       `fetching "/api/v2/canister/${canister}/read_state" with request:`,
@@ -926,38 +1014,45 @@ export class HttpAgent implements Agent {
     );
     // TODO - https://dfinity.atlassian.net/browse/SDK-1092
     const backoff = this.#backoffStrategy();
+    try {
+      const response = await this.#requestAndRetry({
+        request: () =>
+          this.#fetch(
+            '' + new URL(`/api/v2/canister/${canister.toString()}/read_state`, this.host),
+            {
+              ...this.#fetchOptions,
+              ...transformedRequest.request,
+              body,
+            },
+          ),
+        backoff,
+        tries: 0,
+      });
 
-    const response = await this.#requestAndRetry({
-      request: () =>
-        this.#fetch('' + new URL(`/api/v2/canister/${canister.toString()}/read_state`, this.host), {
-          ...this.#fetchOptions,
-          ...transformedRequest.request,
-          body,
-        }),
-      backoff,
-      tries: 0,
-    });
+      if (!response.ok) {
+        throw new Error(
+          `Server returned an error:\n` +
+            `  Code: ${response.status} (${response.statusText})\n` +
+            `  Body: ${await response.text()}\n`,
+        );
+      }
+      const decodedResponse: ReadStateResponse = cbor.decode(await response.arrayBuffer());
 
-    if (!response.ok) {
-      throw new Error(
-        `Server returned an error:\n` +
-          `  Code: ${response.status} (${response.statusText})\n` +
-          `  Body: ${await response.text()}\n`,
-      );
+      this.log.print('Read state response:', decodedResponse);
+      const parsedTime = await this.parseTimeFromResponse(decodedResponse);
+      if (parsedTime > 0) {
+        this.log.print('Read state response time:', parsedTime);
+        this.#waterMark = parsedTime;
+      }
+
+      return decodedResponse;
+    } catch (error) {
+      this.log.error('Caught exception while attempting to read state', error as AgentError);
+      throw error;
     }
-    const decodedResponse: ReadStateResponse = cbor.decode(await response.arrayBuffer());
-
-    this.log.print('Read state response:', decodedResponse);
-    const parsedTime = await this.parseTimeFromResponse(decodedResponse);
-    if (parsedTime > 0) {
-      this.log.print('Read state response time:', parsedTime);
-      this.#waterMark = parsedTime;
-    }
-
-    return decodedResponse;
   }
 
-  public async parseTimeFromResponse(response: ReadStateResponse): Promise<number> {
+  public async parseTimeFromResponse(response: { certificate: ArrayBuffer }): Promise<number> {
     let tree: HashTree;
     if (response.certificate) {
       const decoded: { tree: HashTree } | undefined = cbor.decode(response.certificate);
@@ -1033,8 +1128,9 @@ export class HttpAgent implements Agent {
 
   public async fetchRootKey(): Promise<ArrayBuffer> {
     if (!this.#rootKeyFetched) {
+      const status = await this.status();
       // Hex-encoded version of the replica root key
-      this.rootKey = ((await this.status()) as JsonObject & { root_key: ArrayBuffer }).root_key;
+      this.rootKey = (status as JsonObject & { root_key: ArrayBuffer }).root_key;
       this.#rootKeyFetched = true;
     }
     return this.rootKey;
