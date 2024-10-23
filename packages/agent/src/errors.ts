@@ -1,12 +1,16 @@
 import { Principal } from '@dfinity/principal';
-import { QueryResponseRejected, ReplicaRejectCode, SubmitResponse } from './agent/api';
+import {
+  QueryResponseRejected,
+  ReplicaRejectCode,
+  SubmitResponse,
+  v2ResponseBody,
+} from './agent/api';
 import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
 
 /**
  * An error that happens in the Agent. This is the root of all errors and should be used
  * everywhere in the Agent code (this package).
- *
  * @todo https://github.com/dfinity/agent-js/issues/420
  */
 export class AgentError extends Error {
@@ -72,13 +76,13 @@ export class UpdateCallRejectedError extends ActorCallError {
       'Request ID': toHex(requestId),
       ...(response.body
         ? {
-            ...(response.body.error_code
+            ...((response.body as v2ResponseBody).error_code
               ? {
-                  'Error code': response.body.error_code,
+                  'Error code': (response.body as v2ResponseBody).error_code,
                 }
               : {}),
-            'Reject code': String(response.body.reject_code),
-            'Reject message': response.body.reject_message,
+            'Reject code': String((response.body as v2ResponseBody).reject_code),
+            'Reject message': (response.body as v2ResponseBody).reject_message,
           }
         : {
             'HTTP status code': response.status.toString(),
