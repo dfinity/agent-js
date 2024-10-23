@@ -3,7 +3,7 @@ import path from 'path';
 
 const main = async () => {
   const res = await fetch(
-    'https://raw.githubusercontent.com/dfinity/interface-spec/a95de7ba72d180f878875ddcc3af88e23d01dd62/spec/_attachments/ic.did',
+    'https://raw.githubusercontent.com/dfinity/interface-spec/master/spec/_attachments/ic.did',
   );
   res.text().then(async text => {
     const root = path.resolve(__dirname, '..');
