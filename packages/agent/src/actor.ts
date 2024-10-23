@@ -24,7 +24,7 @@ export class ActorCallError extends AgentError {
   constructor(
     public readonly canisterId: Principal,
     public readonly methodName: string,
-    public readonly type: "query" | "update",
+    public readonly type: 'query' | 'update',
     public readonly props: Record<string, string>,
   ) {
     super(
@@ -33,7 +33,7 @@ export class ActorCallError extends AgentError {
         `  Canister: ${canisterId.toText()}`,
         `  Method: ${methodName} (${type})`,
         ...Object.getOwnPropertyNames(props).map(n => `  "${n}": ${JSON.stringify(props[n])}`),
-      ].join("\n"),
+      ].join('\n'),
     );
   }
 }
@@ -44,7 +44,7 @@ export class QueryCallRejectedError extends ActorCallError {
     methodName: string,
     public readonly result: QueryResponseRejected,
   ) {
-    super(canisterId, methodName, "query", {
+    super(canisterId, methodName, 'query', {
       Status: result.status,
       Code: ReplicaRejectCode[result.reject_code] ?? `Unknown Code "${result.reject_code}"`,
       Message: result.reject_message,
@@ -57,27 +57,27 @@ export class UpdateCallRejectedError extends ActorCallError {
     canisterId: Principal,
     methodName: string,
     public readonly requestId: RequestId,
-    public readonly response: SubmitResponse["response"],
+    public readonly response: SubmitResponse['response'],
     public readonly reject_code: ReplicaRejectCode,
     public readonly reject_message: string,
     public readonly error_code?: string,
   ) {
-    super(canisterId, methodName, "update", {
-      "Request ID": toHex(requestId),
+    super(canisterId, methodName, 'update', {
+      'Request ID': toHex(requestId),
       ...(response.body
         ? {
-          ...(error_code
-            ? {
-              "Error code": error_code,
-            }
-            : {}),
-          "Reject code": String(reject_code),
-          "Reject message": reject_message,
-        }
+            ...(error_code
+              ? {
+                  'Error code': error_code,
+                }
+              : {}),
+            'Reject code': String(reject_code),
+            'Reject message': reject_message,
+          }
         : {
-          "HTTP status code": response.status.toString(),
-          "HTTP status text": response.statusText,
-        }),
+            'HTTP status code': response.status.toString(),
+            'HTTP status text': response.statusText,
+          }),
     });
   }
 }
@@ -139,7 +139,7 @@ export interface ActorConfig extends CallConfig {
   /**
    * Polyfill for BLS Certificate verification in case wasm is not supported
    */
-  blsVerify?: CreateCertificateOptions["blsVerify"];
+  blsVerify?: CreateCertificateOptions['blsVerify'];
 }
 
 // TODO: move this to proper typing when Candid support TypeScript.
@@ -200,20 +200,20 @@ export type ActorMethodMappedExtended<T> = {
  */
 export type CanisterInstallMode =
   | {
-  reinstall: null;
-}
+      reinstall: null;
+    }
   | {
-  upgrade:
-    | []
-    | [
-    {
-      skip_pre_upgrade: [] | [boolean];
-    },
-  ];
-}
+      upgrade:
+        | []
+        | [
+            {
+              skip_pre_upgrade: [] | [boolean];
+            },
+          ];
+    }
   | {
-  install: null;
-};
+      install: null;
+    };
 
 /**
  * Internal metadata for actors. It's an enhanced version of ActorConfig with
@@ -226,7 +226,7 @@ interface ActorMetadata {
   config: ActorConfig;
 }
 
-const metadataSymbol = Symbol.for("ic-agent-metadata");
+const metadataSymbol = Symbol.for('ic-agent-metadata');
 
 export interface CreateActorClassOpts {
   httpDetails?: boolean;
@@ -280,7 +280,7 @@ export class Actor {
     // Same for module.
     const wasmModule = [...new Uint8Array(fields.module)];
     const canisterId =
-      typeof config.canisterId === "string"
+      typeof config.canisterId === 'string'
         ? Principal.fromText(config.canisterId)
         : config.canisterId;
 
@@ -357,7 +357,7 @@ export class Actor {
             `Canister ID is required, but received ${typeof config.canisterId} instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.`,
           );
         const canisterId =
-          typeof config.canisterId === "string"
+          typeof config.canisterId === 'string'
             ? Principal.fromText(config.canisterId)
             : config.canisterId;
 
@@ -462,17 +462,17 @@ const DEFAULT_ACTOR_CONFIG = {
 
 export type ActorConstructor = new (config: ActorConfig) => ActorSubclass;
 
-export const ACTOR_METHOD_WITH_HTTP_DETAILS = "http-details";
-export const ACTOR_METHOD_WITH_CERTIFICATE = "certificate";
+export const ACTOR_METHOD_WITH_HTTP_DETAILS = 'http-details';
+export const ACTOR_METHOD_WITH_CERTIFICATE = 'certificate';
 
 function _createActorMethod(
   actor: Actor,
   methodName: string,
   func: IDL.FuncClass,
-  blsVerify?: CreateCertificateOptions["blsVerify"],
+  blsVerify?: CreateCertificateOptions['blsVerify'],
 ): ActorMethod {
   let caller: (options: CallConfig, ...args: unknown[]) => Promise<unknown>;
-  if (func.annotations.includes("query") || func.annotations.includes("composite_query")) {
+  if (func.annotations.includes('query') || func.annotations.includes('composite_query')) {
     caller = async (options, ...args) => {
       // First, if there's a config transformation, call it.
       options = {
@@ -504,9 +504,9 @@ function _createActorMethod(
         case QueryResponseStatus.Replied:
           return func.annotations.includes(ACTOR_METHOD_WITH_HTTP_DETAILS)
             ? {
-              httpDetails,
-              result: decodeReturnValue(func.retTypes, result.reply.arg),
-            }
+                httpDetails,
+                result: decodeReturnValue(func.retTypes, result.reply.arg),
+              }
             : decodeReturnValue(func.retTypes, result.reply.arg);
       }
     };
@@ -631,12 +631,12 @@ function _createActorMethod(
       } else if (func.retTypes.length === 0) {
         return shouldIncludeHttpDetails
           ? {
-            httpDetails: response,
-            result: undefined,
-          }
+              httpDetails: response,
+              result: undefined,
+            }
           : undefined;
       } else {
-        throw new Error(`Call was returned undefined, but type [${func.retTypes.join(",")}].`);
+        throw new Error(`Call was returned undefined, but type [${func.retTypes.join(',')}].`);
       }
     };
   }
@@ -644,8 +644,8 @@ function _createActorMethod(
   const handler = (...args: unknown[]) => caller({}, ...args);
   handler.withOptions =
     (options: CallConfig) =>
-      (...args: unknown[]) =>
-        caller(options, ...args);
+    (...args: unknown[]) =>
+      caller(options, ...args);
   return handler as ActorMethod;
 }
 
@@ -664,8 +664,8 @@ export function getManagementCanister(config: CallConfig): ActorSubclass<Managem
       return { effectiveCanisterId: Principal.from(config.effectiveCanisterId) };
     }
     const first = args[0];
-    let effectiveCanisterId = Principal.fromHex("");
-    if (first && typeof first === "object" && first.canister_id) {
+    let effectiveCanisterId = Principal.fromHex('');
+    if (first && typeof first === 'object' && first.canister_id) {
       effectiveCanisterId = Principal.from(first.canister_id as unknown);
     }
     return { effectiveCanisterId };
@@ -673,7 +673,7 @@ export function getManagementCanister(config: CallConfig): ActorSubclass<Managem
 
   return Actor.createActor<ManagementCanisterRecord>(managementCanisterIdl, {
     ...config,
-    canisterId: Principal.fromHex(""),
+    canisterId: Principal.fromHex(''),
     ...{
       callTransform: transform,
       queryTransform: transform,
