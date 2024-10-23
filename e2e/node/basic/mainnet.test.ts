@@ -142,6 +142,49 @@ describe('call forwarding', () => {
   }, 15_000);
 });
 
+// TODO: change Expiry logic rounding to make <= 1 minute expiry work
+test('it should succeed when setting an expiry in the near future', async () => {
+  const agent = await HttpAgent.create({
+    host: 'https://icp-api.io',
+    ingressExpiryInMinutes: 1,
+  });
+
+  await agent.syncTime();
+
+  expect(
+    agent.call('tnnnb-2yaaa-aaaab-qaiiq-cai', {
+      methodName: 'inc_read',
+      arg: fromHex('4449444c0000'),
+      effectiveCanisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
+    }),
+  ).resolves.toBeDefined();
+});
+
+test('it should succeed when setting an expiry in the future', async () => {
+  const agent = await HttpAgent.create({
+    host: 'https://icp-api.io',
+    ingressExpiryInMinutes: 5,
+  });
+
+  await agent.syncTime();
+
+  expect(
+    agent.call('tnnnb-2yaaa-aaaab-qaiiq-cai', {
+      methodName: 'inc_read',
+      arg: fromHex('4449444c0000'),
+      effectiveCanisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
+    }),
+  ).resolves.toBeDefined();
+});
+
+test('it should fail when setting an expiry in the far future', async () => {
+  expect(
+    HttpAgent.create({
+      host: 'https://icp-api.io',
+      ingressExpiryInMinutes: 100,
+    }),
+  ).rejects.toThrowError(`The maximum ingress expiry time is 5 minutes`);
+});
 
 test('it should allow you to set an incorrect root key', async () => {
   const agent = HttpAgent.createSync({

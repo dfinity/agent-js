@@ -4,6 +4,8 @@
 
 ### Added
 
+- feat: allow for setting HttpAgent ingress expiry using `ingressExpiryInMinutes` option
+
 ### Changed
 
 - test: automatically deploys trap canister if it doesn't exist yet during e2e
