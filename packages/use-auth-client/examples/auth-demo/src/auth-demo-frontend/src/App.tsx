@@ -1,10 +1,28 @@
-import { useState } from 'react';
-import { idlFactory, canisterId } from 'declarations/auth-demo-backend';
+import { FormEvent, useState } from 'react';
+import {
+  idlFactory as helloFactory,
+  canisterId as helloId,
+} from '../../declarations/auth-demo-backend';
+import { _SERVICE as HELLO_SERVICE } from '../../declarations/auth-demo-backend/auth-demo-backend.did';
+import {
+  idlFactory as whoamiFactory,
+  canisterId as whoamiId,
+} from '../../declarations/auth-demo-backend';
+import { _SERVICE as WHOAMI_SERVICE } from '../../declarations/auth-demo-backend/auth-demo-backend.did';
 import { useAuthClient } from '../../../../../src/index';
+import type { ActorSubclass } from '@dfinity/agent';
 import IILogo from './IILogo.svg';
 
+export interface ProcessEnv {
+  [key: string]: string | undefined;
+}
+
+declare var process: {
+  env: ProcessEnv;
+};
+
 /**
- * 
+ *
  * @returns app
  */
 function App() {
@@ -15,23 +33,34 @@ function App() {
         `http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.localhost:4943`
       : 'https://identity.ic0.app';
 
-  const { isAuthenticated, login, logout, actor } = useAuthClient({
+  const { isAuthenticated, login, logout, actors } = useAuthClient({
     loginOptions: {
       identityProvider,
     },
     actorOptions: {
-      canisterId,
-      idlFactory,
+      whoami_canister: {
+        canisterId: whoamiId,
+        idlFactory: whoamiFactory,
+      },
+      greet_canister: {
+        canisterId: helloId,
+        idlFactory: helloFactory,
+      },
     },
   });
+
+  const { whoami_canister, greet_canister } = actors as unknown as {
+    whoami_canister: ActorSubclass<WHOAMI_SERVICE>;
+    greet_canister: ActorSubclass<HELLO_SERVICE>;
+  };
 
   const [greeting, setGreeting] = useState('');
   const [whoamiText, setWhoamiText] = useState('');
 
-  function handleSubmit(event) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const name = event.target.elements.name.value;
-    actor.greet(name).then(greeting => {
+    const name = (event.target as HTMLFormElement).querySelector('input')?.value || '';
+    greet_canister.greet(name).then(greeting => {
       setGreeting(greeting);
     });
     return false;
@@ -61,8 +90,8 @@ function App() {
         <p>{isAuthenticated ? 'You are logged in' : 'You are not logged in'}</p>
         <button
           onClick={async () => {
-            const whoami = await actor.whoami();
-            setWhoamiText(whoami);
+            const whoami = await whoami_canister.whoami();
+            setWhoamiText(whoami.toString());
           }}
         >
           Whoami

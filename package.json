@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/agent-monorepo",
-  "version": "2.0.0",
+  "version": "2.1.2",
   "private": true,
   "description": "Use an Agent to interact with the Internet Computer from your JavaScript program.",
   "workspaces": {
@@ -18,7 +18,6 @@
   },
   "devDependencies": {
     "@jest/types": "^29.6.3",
-    "@rollup/wasm-node": "^4.20.0",
     "@size-limit/esbuild": "^11.0.2",
     "@size-limit/preset-small-lib": "^9.0.0",
     "@types/jest": "^29.5.5",
@@ -159,7 +158,7 @@
   },
   "overrides": {
     "vite": {
-      "rollup": "npm:@rollup/wasm-node"
+      "rollup": "^4.22.5"
     }
   }
 }

@@ -36,6 +36,28 @@ const App = () => {
 }
 ```
 
+## Multiple Actors
+
+If you have multiple actors, you can pass a record of `actorOptions` to the `useAuthClient` hook. The keys of the record will be the names of the actors, and the values will be the `actorOptions` for that actor. It will look something like this: 
+
+```ts
+const { isAuthenticated, login, logout, actors } = useAuthClient({
+  actors: {
+    actor1: {
+      canisterId: canisterId1,
+      idlFactory: idlFactory1,
+    },
+    actor2: {
+      canisterId: canisterId2,
+      idlFactory: idlFactory2,
+    },
+  },
+});
+
+const { actor1, actor2 } = actors;
+
+```
+
 There is a live demo at https://5ibdo-haaaa-aaaab-qajia-cai.icp0.io/ 
 
 Additional generated documentaion is available at https://agent-js.icp.xyz/use-auth-client/index.html

@@ -7,6 +7,7 @@ import * as cbor from './cbor';
 import { requestIdOf } from './request_id';
 import * as pollingImport from './polling';
 import { ActorConfig } from './actor';
+import { UpdateCallRejectedError } from './errors';
 
 const importActor = async (mockUpdatePolling?: () => void) => {
   jest.dontMock('./polling');
@@ -27,7 +28,7 @@ afterEach(() => {
 describe('makeActor', () => {
   // TODO: update tests to be compatible with changes to Certificate
   it.skip('should encode calls', async () => {
-    const { Actor, UpdateCallRejectedError } = await importActor();
+    const { Actor } = await importActor();
     const actorInterface = () => {
       return IDL.Service({
         greet: IDL.Func([IDL.Text], [IDL.Text]),
@@ -329,7 +330,7 @@ describe('makeActor', () => {
     `);
     expect(replyUpdateWithHttpDetails.result).toEqual(canisterDecodedReturnValue);
 
-    replyUpdateWithHttpDetails.httpDetails['requestDetails']['nonce'] = new Uint8Array(); //?
+    replyUpdateWithHttpDetails.httpDetails['requestDetails']['nonce'] = new Uint8Array();
 
     expect(replyUpdateWithHttpDetails.httpDetails).toMatchSnapshot();
   });

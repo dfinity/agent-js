@@ -4,9 +4,57 @@
 
 ### Added
 
+- feat: allow for setting HttpAgent ingress expiry using `ingressExpiryInMinutes` option
+
+- feat: improved assertion options for agent errors using `prototype`, `name`, and `instanceof`
+
+### Changed
+
+- test: automatically deploys trap canister if it doesn't exist yet during e2e
+- fix: handle v3 traps correctly, pulling the reject_code and message from the certificate in the error response like v2.
+Example trap error message:
+```txt
+AgentError: Call failed:
+  Canister: hbrpn-74aaa-aaaaa-qaaxq-cai
+  Method: Throw (update)
+  "Request ID": "ae107dfd7c9be168a8ebc122d904900a95e3f15312111d9e0c08f136573c5f13"
+  "Error code": "IC0406"
+  "Reject code": "4"
+  "Reject message": "foo"
+```
+- feat: the `UpdateCallRejected` error now exposes  `reject_code: ReplicaRejectCode`, `reject_message: string`, and `error_code?: string` properties directly on the error object.
+- fix: recalculates body to use a fresh `Expiry` when polling for `read_state` requests. This prevents the request from exceeding the `maximum_ingress_expiry` when the replica is slow to respond.
+
+## [2.1.2] - 2024-09-30
+- fix: revert https://github.com/dfinity/agent-js/pull/923 allow option to set agent replica time
+
+## [2.1.1] - 2024-09-13
+
+### Added
+
+- fix: support for headers during upload with `@dfinity/assets`
+
+## [2.1.0] - 2024-09-12
+
+### Added
+
+- chore: awaits prettier formatting in release automation
+- feat: expose inner certificate in `Certificate` for inspection or use in raw calls. `Certificate.cert` is now a public property
+- feat: allow creation of multiple Actors in `useAuthClient` by passing a record to `actorOptions` with the actor name as the key, and `CreateActorOptions` as the value
+- feat: sync_call support in HttpAgent and Actor
+  - Skips polling if the sync call succeeds and provides a certificate
+  - Falls back to v2 api if the v3 endpoint 404's
+  - Adds certificate to SubmitResponse endpoint
+  - adds callSync option to `HttpAgent.call`, which defaults to `true`
 - feat: management canister interface updates for schnorr signatures
 - feat: ensure that identity-secp256k1 seed phrase must produce a 64 byte seed
 - docs: documentation and metadata for use-auth-client
+- feat: adds optional `rootKey` to `HttpAgentOptions` to allow for a custom root key to be used for verifying signatures from other networks
+- chore: npm audit bumping micromatch
+- feat: exports polling utilities from `@dfinity/agent` for use in other packages
+  - `pollForResponse` now uses the default strategy by default
+  - Updated the `bls-verify` jsdoc comment to accurately reflect that the default strategy now uses @noble/curves
+- docs: clarifies meaning of `effectiveCanisterId` in `CallOptions`
 
 ### Changed
 
@@ -19,6 +67,8 @@
 
 ### Changed
 
+- fix: passing `request` correctly during pollForResponse `Processing` status
+  - credit: [Senior Joinu](https://forum.dfinity.org/t/timestamp-failed-to-pass-the-watermark-after-retrying-the-configured-3-times/29180/11?)
 - ci: removing headless browser tests pending a rewrite
 - ci: changing token for creating release
 

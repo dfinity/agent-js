@@ -1,3 +1,4 @@
+import { AgentError } from './errors';
 import { Observable, ObservableLog } from './observable';
 
 describe('Observable', () => {
@@ -48,7 +49,7 @@ describe('ObservableLog', () => {
     observable.warn('warning');
     expect(observer1).toHaveBeenCalledWith({ message: 'warning', level: 'warn' });
     expect(observer2).toHaveBeenCalledWith({ message: 'warning', level: 'warn' });
-    const error = new Error('error');
+    const error = new AgentError('error');
     observable.error('error', error);
     expect(observer1).toHaveBeenCalledWith({ message: 'error', level: 'error', error });
     expect(observer2).toHaveBeenCalledWith({ message: 'error', level: 'error', error });
