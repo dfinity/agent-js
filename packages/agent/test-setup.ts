@@ -7,13 +7,15 @@
 // Note that we can use webpack configuration to make some features available to
 // Node.js in a similar way.
 
-global.crypto = require('@trust/webcrypto');
+import { Crypto } from '@peculiar/webcrypto';
+global.crypto = new Crypto();
 import { TextEncoder } from 'text-encoding';
 global.TextEncoder = TextEncoder;
 import { TextDecoder } from 'text-encoding';
 global.TextDecoder = TextDecoder;
 
-global.fetch = require('isomorphic-fetch');
+import fetch from 'isomorphic-fetch';
+global.fetch = fetch;
 Object.defineProperty(global, 'performance', {
   writable: true,
   value: { ...global.performance },

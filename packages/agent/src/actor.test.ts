@@ -39,7 +39,7 @@ describe('makeActor', () => {
 
     const mockFetch: jest.Mock = jest
       .fn()
-      .mockImplementationOnce((/*resource, init*/) => {
+      .mockImplementationOnce(() => {
         return Promise.resolve(
           new Response(null, {
             status: 202,
@@ -293,7 +293,6 @@ describe('makeActor', () => {
     expect(reply).toEqual(canisterDecodedReturnValue);
     expect(replyUpdate).toEqual(canisterDecodedReturnValue);
     expect(replyWithHttpDetails.result).toEqual(canisterDecodedReturnValue);
-    replyWithHttpDetails.httpDetails['requestDetails'];
     expect(replyWithHttpDetails.httpDetails).toMatchInlineSnapshot(`
       {
         "headers": [],

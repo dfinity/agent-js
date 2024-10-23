@@ -244,4 +244,17 @@ describe('public key serialization from various types', () => {
     const shouldFailHex = () => Secp256k1PublicKey.from('not a hex string');
     expect(shouldFailHex).toThrow('Invalid hexadecimal string');
   });
+
+  it('should throw an error serializing a too short seed phrase', () => {
+    const shouldFail = () => Secp256k1KeyIdentity.fromSeedPhrase('one two three');
+    expect(shouldFail).toThrow('Invalid mnemonic');
+  });
+
+  it('should throw an error serializing a too long seed phrase', () => {
+    const shouldFail = () =>
+      Secp256k1KeyIdentity.fromSeedPhrase(
+        'one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen',
+      );
+    expect(shouldFail).toThrow('Invalid mnemonic');
+  });
 });

@@ -1,5 +1,4 @@
 import { Actor, ActorSubclass, HttpAgentOptions, Agent } from '@dfinity/agent';
-import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { readFileSync } from 'fs';
 import path from 'path';
@@ -12,7 +11,7 @@ let cache: {
   actor: any;
 } | null = null;
 
-const idl: IDL.InterfaceFactory = ({ IDL }) => {
+export const idl = ({ IDL }) => {
   return IDL.Service({
     inc: IDL.Func([], [], []),
     inc_read: IDL.Func([], [IDL.Nat], []),
@@ -58,7 +57,7 @@ export const createActor = async (options?: HttpAgentOptions, agent?: Agent) => 
     if (!options?.host?.includes('icp-api')) {
       await effectiveAgent.fetchRootKey();
     }
-  } catch (_) {
+  } catch {
     //
   }
 

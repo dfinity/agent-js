@@ -45,7 +45,6 @@ function indexOfQueryResponse(history: Response[]) {
 
 test('basic', async () => {
   const fetchProxy = new FetchProxy();
-  global.fetch;
 
   const actor = await createActor({
     fetch: fetchProxy.fetch.bind(fetchProxy),
@@ -60,7 +59,6 @@ test('basic', async () => {
 
 test('replay queries only', async () => {
   const fetchProxy = new FetchProxy();
-  global.fetch;
 
   const actor = await createActor({
     fetch: fetchProxy.fetch.bind(fetchProxy),
@@ -83,7 +81,6 @@ test('replay queries only', async () => {
 
 test('replay attack', async () => {
   const fetchProxy = new FetchProxy();
-  global.fetch;
 
   const actor = await createActor({
     verifyQuerySignatures: true,
@@ -117,16 +114,44 @@ test('replay attack', async () => {
   expect(startValue3).toBe(1n);
 
   const queryResponseIndex = indexOfQueryResponse(fetchProxy.history);
+  console.log(queryResponseIndex);
 
   fetchProxy.replayFromHistory(queryResponseIndex);
 
-  // the replayed request should throw an error
-  expect(fetchProxy.calls).toBe(7);
+  // The number of calls should be 4 or more, depending on whether the test environment is using v3 or v2
+  const usingV2 =
+    findV2inCalls(
+      fetchProxy.history.map(response => {
+        return [response.url];
+      }),
+    ) !== -1;
+  if (usingV2) {
+    // TODO - pin to 5 once dfx v0.23.0 is released
+    // the replayed request should throw an error
+    expect(fetchProxy.calls).toBe(5);
+  } else {
+    expect(fetchProxy.calls).toBeGreaterThanOrEqual(5);
+  }
 
   await expect(actor.read()).rejects.toThrowError(
     'Timestamp failed to pass the watermark after retrying the configured 3 times. We cannot guarantee the integrity of the response since it could be a replay attack.',
   );
 
-  // The agent should should have made 4 additional requests (3 retries + 1 original request)
-  expect(fetchProxy.calls).toBe(11);
+  // TODO - pin to 9 once dfx v0.23.0 is released
+  if (usingV2) {
+    // the replayed request should throw an error
+    // The agent should should have made 4 additional requests (3 retries + 1 original request)
+    expect(fetchProxy.calls).toBe(9);
+  } else {
+    expect(fetchProxy.calls).toBeGreaterThanOrEqual(9);
+  }
 }, 10_000);
+
+const findV2inCalls = (calls: [string][]) => {
+  for (let i = 0; i < calls.length; i++) {
+    if (calls[i][0].includes('v2')) {
+      return i;
+    }
+  }
+  return -1;
+};

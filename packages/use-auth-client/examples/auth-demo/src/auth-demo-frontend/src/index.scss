@@ -1,0 +1,88 @@
+body {
+  font-family: sans-serif;
+  font-size: 1.5rem;
+}
+
+img {
+  max-width: 50vw;
+  max-height: 25vw;
+  display: block;
+  margin: auto;
+}
+
+form {
+  display: flex;
+  justify-content: center;
+  gap: 0.5em;
+  flex-flow: row wrap;
+  max-width: 40vw;
+  margin: auto;
+  align-items: baseline;
+}
+
+button[type="submit"] {
+  padding: 5px 20px;
+  margin: 10px auto;
+  float: right;
+}
+
+#greeting, #whoami {
+  margin: 10px auto;
+  padding: 10px 60px;
+  border: 1px solid #222;
+}
+
+#greeting:empty {
+  display: none;
+}
+
+
+#login-section{
+
+button {
+  box-sizing: border-box;
+  display: flex;
+  background: white;
+  width: fit-content;
+  cursor: pointer;
+  border-radius: 0.375rem;
+  border: 1px solid rgb(209, 211, 213);
+  transition-duration: .15s;
+  transition-property: all;
+  transition-timing-function: cubic-bezier(.4,0,.2,1);
+  padding-bottom: 0.5rem;
+  padding-top: 0.5rem;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  align-items: center;
+  font-family: ui-sans-serif, system-ui;
+  font-size: 14px;
+  box-shadow: none;
+  border-image: none;
+}
+#login {
+  max-width: 400px;
+  display: flex;
+  gap: 1rem;
+}
+button:hover, button:focus {
+  background: rgb(244, 250, 255);
+  border: 1px solid rgb(89, 147, 252);
+}
+button:active, button:target {
+  background: rgb(245, 245, 245);
+}
+span#logo {
+  display: flex;
+  justify-items: center;
+  align-items: center;
+}
+span#label {
+  width: 100%;
+}
+img, svg {
+  min-width: 24px;
+  max-width: 36px;
+  height: 24px;
+}
+}

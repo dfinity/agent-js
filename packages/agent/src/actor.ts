@@ -1,12 +1,86 @@
 import { Buffer } from 'buffer/';
-import { Agent, getDefaultAgent, HttpDetailsResponse, QueryResponseStatus } from './agent';
-import { AgentError, QueryCallRejectedError, UpdateCallRejectedError } from './errors';
-import { IDL } from '@dfinity/candid';
+import {
+  Agent,
+  getDefaultAgent,
+  HttpDetailsResponse,
+  QueryResponseRejected,
+  QueryResponseStatus,
+  ReplicaRejectCode,
+  SubmitResponse,
+  v2ResponseBody,
+  v3ResponseBody,
+} from './agent';
+import { AgentError } from './errors';
+import { bufFromBufLike, IDL } from '@dfinity/candid';
 import { pollForResponse, PollStrategyFactory, strategy } from './polling';
 import { Principal } from '@dfinity/principal';
-import { Certificate, CreateCertificateOptions } from './certificate';
+import { RequestId } from './request_id';
+import { toHex } from './utils/buffer';
+import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from './certificate';
 import managementCanisterIdl from './canisters/management_idl';
 import _SERVICE, { canister_install_mode, canister_settings } from './canisters/management_service';
+
+export class ActorCallError extends AgentError {
+  constructor(
+    public readonly canisterId: Principal,
+    public readonly methodName: string,
+    public readonly type: "query" | "update",
+    public readonly props: Record<string, string>,
+  ) {
+    super(
+      [
+        `Call failed:`,
+        `  Canister: ${canisterId.toText()}`,
+        `  Method: ${methodName} (${type})`,
+        ...Object.getOwnPropertyNames(props).map(n => `  "${n}": ${JSON.stringify(props[n])}`),
+      ].join("\n"),
+    );
+  }
+}
+
+export class QueryCallRejectedError extends ActorCallError {
+  constructor(
+    canisterId: Principal,
+    methodName: string,
+    public readonly result: QueryResponseRejected,
+  ) {
+    super(canisterId, methodName, "query", {
+      Status: result.status,
+      Code: ReplicaRejectCode[result.reject_code] ?? `Unknown Code "${result.reject_code}"`,
+      Message: result.reject_message,
+    });
+  }
+}
+
+export class UpdateCallRejectedError extends ActorCallError {
+  constructor(
+    canisterId: Principal,
+    methodName: string,
+    public readonly requestId: RequestId,
+    public readonly response: SubmitResponse["response"],
+    public readonly reject_code: ReplicaRejectCode,
+    public readonly reject_message: string,
+    public readonly error_code?: string,
+  ) {
+    super(canisterId, methodName, "update", {
+      "Request ID": toHex(requestId),
+      ...(response.body
+        ? {
+          ...(error_code
+            ? {
+              "Error code": error_code,
+            }
+            : {}),
+          "Reject code": String(reject_code),
+          "Reject message": reject_message,
+        }
+        : {
+          "HTTP status code": response.status.toString(),
+          "HTTP status text": response.statusText,
+        }),
+    });
+  }
+}
 
 /**
  * Configuration to make calls to the Replica.
@@ -65,7 +139,7 @@ export interface ActorConfig extends CallConfig {
   /**
    * Polyfill for BLS Certificate verification in case wasm is not supported
    */
-  blsVerify?: CreateCertificateOptions['blsVerify'];
+  blsVerify?: CreateCertificateOptions["blsVerify"];
 }
 
 // TODO: move this to proper typing when Candid support TypeScript.
@@ -79,6 +153,7 @@ export type ActorSubclass<T = Record<string, ActorMethod>> = Actor & T;
  */
 export interface ActorMethod<Args extends unknown[] = unknown[], Ret = unknown> {
   (...args: Args): Promise<Ret>;
+
   withOptions(options: CallConfig): (...args: Args) => Promise<Ret>;
 }
 
@@ -125,20 +200,20 @@ export type ActorMethodMappedExtended<T> = {
  */
 export type CanisterInstallMode =
   | {
-      reinstall: null;
-    }
+  reinstall: null;
+}
   | {
-      upgrade:
-        | []
-        | [
-            {
-              skip_pre_upgrade: [] | [boolean];
-            },
-          ];
-    }
+  upgrade:
+    | []
+    | [
+    {
+      skip_pre_upgrade: [] | [boolean];
+    },
+  ];
+}
   | {
-      install: null;
-    };
+  install: null;
+};
 
 /**
  * Internal metadata for actors. It's an enhanced version of ActorConfig with
@@ -151,7 +226,7 @@ interface ActorMetadata {
   config: ActorConfig;
 }
 
-const metadataSymbol = Symbol.for('ic-agent-metadata');
+const metadataSymbol = Symbol.for("ic-agent-metadata");
 
 export interface CreateActorClassOpts {
   httpDetails?: boolean;
@@ -205,7 +280,7 @@ export class Actor {
     // Same for module.
     const wasmModule = [...new Uint8Array(fields.module)];
     const canisterId =
-      typeof config.canisterId === 'string'
+      typeof config.canisterId === "string"
         ? Principal.fromText(config.canisterId)
         : config.canisterId;
 
@@ -282,7 +357,7 @@ export class Actor {
             `Canister ID is required, but received ${typeof config.canisterId} instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.`,
           );
         const canisterId =
-          typeof config.canisterId === 'string'
+          typeof config.canisterId === "string"
             ? Principal.fromText(config.canisterId)
             : config.canisterId;
 
@@ -387,17 +462,17 @@ const DEFAULT_ACTOR_CONFIG = {
 
 export type ActorConstructor = new (config: ActorConfig) => ActorSubclass;
 
-export const ACTOR_METHOD_WITH_HTTP_DETAILS = 'http-details';
-export const ACTOR_METHOD_WITH_CERTIFICATE = 'certificate';
+export const ACTOR_METHOD_WITH_HTTP_DETAILS = "http-details";
+export const ACTOR_METHOD_WITH_CERTIFICATE = "certificate";
 
 function _createActorMethod(
   actor: Actor,
   methodName: string,
   func: IDL.FuncClass,
-  blsVerify?: CreateCertificateOptions['blsVerify'],
+  blsVerify?: CreateCertificateOptions["blsVerify"],
 ): ActorMethod {
   let caller: (options: CallConfig, ...args: unknown[]) => Promise<unknown>;
-  if (func.annotations.includes('query') || func.annotations.includes('composite_query')) {
+  if (func.annotations.includes("query") || func.annotations.includes("composite_query")) {
     caller = async (options, ...args) => {
       // First, if there's a config transformation, call it.
       options = {
@@ -429,9 +504,9 @@ function _createActorMethod(
         case QueryResponseStatus.Replied:
           return func.annotations.includes(ACTOR_METHOD_WITH_HTTP_DETAILS)
             ? {
-                httpDetails,
-                result: decodeReturnValue(func.retTypes, result.reply.arg),
-              }
+              httpDetails,
+              result: decodeReturnValue(func.retTypes, result.reply.arg),
+            }
             : decodeReturnValue(func.retTypes, result.reply.arg);
       }
     };
@@ -456,35 +531,84 @@ function _createActorMethod(
       const ecid = effectiveCanisterId !== undefined ? Principal.from(effectiveCanisterId) : cid;
       const arg = IDL.encode(func.argTypes, args);
 
+      if (agent.rootKey == null)
+        throw new AgentError('Agent root key not initialized before making call');
+
       const { requestId, response, requestDetails } = await agent.call(cid, {
         methodName,
         arg,
         effectiveCanisterId: ecid,
       });
+      let reply: ArrayBuffer | undefined;
+      let certificate: Certificate | undefined;
+      if (response.body && (response.body as v3ResponseBody).certificate) {
+        const cert = (response.body as v3ResponseBody).certificate;
+        certificate = await Certificate.create({
+          certificate: bufFromBufLike(cert),
+          rootKey: agent.rootKey,
+          canisterId: Principal.from(canisterId),
+          blsVerify,
+        });
+        const path = [new TextEncoder().encode('request_status'), requestId];
+        const status = new TextDecoder().decode(
+          lookupResultToBuffer(certificate.lookup([...path, 'status'])),
+        );
 
-      requestId;
-      response;
-      requestDetails;
-
-      if (!response.ok || response.body /* IC-1462 */) {
-        throw new UpdateCallRejectedError(cid, methodName, requestId, response);
+        switch (status) {
+          case 'replied':
+            reply = lookupResultToBuffer(certificate.lookup([...path, 'reply']));
+            break;
+          case 'rejected': {
+            // Find rejection details in the certificate
+            const rejectCode = new Uint8Array(
+              lookupResultToBuffer(certificate.lookup([...path, 'reject_code']))!,
+            )[0];
+            const rejectMessage = new TextDecoder().decode(
+              lookupResultToBuffer(certificate.lookup([...path, 'reject_message']))!,
+            );
+            const error_code_buf = lookupResultToBuffer(
+              certificate.lookup([...path, 'error_code']),
+            );
+            const error_code = error_code_buf
+              ? new TextDecoder().decode(error_code_buf)
+              : undefined;
+            throw new UpdateCallRejectedError(
+              cid,
+              methodName,
+              requestId,
+              response,
+              rejectCode,
+              rejectMessage,
+              error_code,
+            );
+          }
+        }
+      } else if (response.body && 'reject_message' in response.body) {
+        // handle v2 response errors by throwing an UpdateCallRejectedError object
+        const { reject_code, reject_message, error_code } = response.body as v2ResponseBody;
+        throw new UpdateCallRejectedError(
+          cid,
+          methodName,
+          requestId,
+          response,
+          reject_code,
+          reject_message,
+          error_code,
+        );
       }
 
-      const pollStrategy = pollingStrategyFactory();
-      // Contains the certificate and the reply from the boundary node
-      const { certificate, reply } = await pollForResponse(
-        agent,
-        ecid,
-        requestId,
-        pollStrategy,
-        blsVerify,
-      );
-      reply;
+      // Fall back to polling if we receive an Accepted response code
+      if (response.status === 202) {
+        const pollStrategy = pollingStrategyFactory();
+        // Contains the certificate and the reply from the boundary node
+        const response = await pollForResponse(agent, ecid, requestId, pollStrategy, blsVerify);
+        certificate = response.certificate;
+        reply = response.reply;
+      }
       const shouldIncludeHttpDetails = func.annotations.includes(ACTOR_METHOD_WITH_HTTP_DETAILS);
       const shouldIncludeCertificate = func.annotations.includes(ACTOR_METHOD_WITH_CERTIFICATE);
 
       const httpDetails = { ...response, requestDetails } as HttpDetailsResponse;
-
       if (reply !== undefined) {
         if (shouldIncludeHttpDetails && shouldIncludeCertificate) {
           return {
@@ -507,12 +631,12 @@ function _createActorMethod(
       } else if (func.retTypes.length === 0) {
         return shouldIncludeHttpDetails
           ? {
-              httpDetails: response,
-              result: undefined,
-            }
+            httpDetails: response,
+            result: undefined,
+          }
           : undefined;
       } else {
-        throw new Error(`Call was returned undefined, but type [${func.retTypes.join(',')}].`);
+        throw new Error(`Call was returned undefined, but type [${func.retTypes.join(",")}].`);
       }
     };
   }
@@ -520,8 +644,8 @@ function _createActorMethod(
   const handler = (...args: unknown[]) => caller({}, ...args);
   handler.withOptions =
     (options: CallConfig) =>
-    (...args: unknown[]) =>
-      caller(options, ...args);
+      (...args: unknown[]) =>
+        caller(options, ...args);
   return handler as ActorMethod;
 }
 
@@ -540,8 +664,8 @@ export function getManagementCanister(config: CallConfig): ActorSubclass<Managem
       return { effectiveCanisterId: Principal.from(config.effectiveCanisterId) };
     }
     const first = args[0];
-    let effectiveCanisterId = Principal.fromHex('');
-    if (first && typeof first === 'object' && first.canister_id) {
+    let effectiveCanisterId = Principal.fromHex("");
+    if (first && typeof first === "object" && first.canister_id) {
       effectiveCanisterId = Principal.from(first.canister_id as unknown);
     }
     return { effectiveCanisterId };
@@ -549,7 +673,7 @@ export function getManagementCanister(config: CallConfig): ActorSubclass<Managem
 
   return Actor.createActor<ManagementCanisterRecord>(managementCanisterIdl, {
     ...config,
-    canisterId: Principal.fromHex(''),
+    canisterId: Principal.fromHex(""),
     ...{
       callTransform: transform,
       queryTransform: transform,

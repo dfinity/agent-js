@@ -5,6 +5,7 @@ import { bufEquals, concat, fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
 import * as bls from './utils/bls';
 import { decodeTime } from './utils/leb';
+import { MANAGEMENT_CANISTER_ID } from './agent';
 
 /**
  * A certificate may fail verification with respect to the provided public key
@@ -135,7 +136,7 @@ export interface CreateCertificateOptions {
    */
   canisterId: Principal;
   /**
-   * BLS Verification strategy. Default strategy uses wasm for performance, but that may not be available in all contexts.
+   * BLS Verification strategy. Default strategy uses bls12_381 from @noble/curves
    */
   blsVerify?: VerifyFunc;
 
@@ -149,7 +150,7 @@ export interface CreateCertificateOptions {
 }
 
 export class Certificate {
-  private readonly cert: Cert;
+  public cert: Cert;
 
   /**
    * Create a new instance of a certificate, automatically verifying it. Throws a
@@ -271,17 +272,19 @@ export class Certificate {
 
     await cert.verify();
 
-    const canisterInRange = check_canister_ranges({
-      canisterId: this._canisterId,
-      subnetId: Principal.fromUint8Array(new Uint8Array(d.subnet_id)),
-      tree: cert.cert.tree,
-    });
-    if (!canisterInRange) {
-      throw new CertificateVerificationError(
-        `Canister ${this._canisterId} not in range of delegations for subnet 0x${toHex(
-          d.subnet_id,
-        )}`,
-      );
+    if (this._canisterId.toString() !== MANAGEMENT_CANISTER_ID) {
+      const canisterInRange = check_canister_ranges({
+        canisterId: this._canisterId,
+        subnetId: Principal.fromUint8Array(new Uint8Array(d.subnet_id)),
+        tree: cert.cert.tree,
+      });
+      if (!canisterInRange) {
+        throw new CertificateVerificationError(
+          `Canister ${this._canisterId} not in range of delegations for subnet 0x${toHex(
+            d.subnet_id,
+          )}`,
+        );
+      }
     }
     const publicKeyLookup = lookupResultToBuffer(
       cert.lookup(['subnet', d.subnet_id, 'public_key']),
