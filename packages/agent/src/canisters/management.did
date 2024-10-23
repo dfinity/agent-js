@@ -1,5 +1,6 @@
 type canister_id = principal;
 type wasm_module = blob;
+type snapshot_id = blob;
 
 type log_visibility = variant {
   controllers;
@@ -47,6 +48,7 @@ type change_details = variant {
   };
   load_snapshot : record {
     canister_version : nat64;
+    snapshot_id : snapshot_id;
     taken_at_timestamp : nat64;
   };
   controllers_change : record {
@@ -76,13 +78,13 @@ type http_request_result = record {
   body : blob;
 };
 
+type ecdsa_curve = variant {
+  secp256k1;
+};
+
 type schnorr_algorithm = variant {
   bip340secp256k1;
   ed25519;
-};
-
-type ecdsa_curve = variant {
-  secp256k1;
 };
 
 type satoshi = nat64;
@@ -94,7 +96,13 @@ type bitcoin_network = variant {
 
 type bitcoin_address = text;
 
-type block_hash = blob;
+type bitcoin_block_hash = blob;
+
+type bitcoin_block_header = blob;
+
+type millisatoshi_per_byte = nat64;
+
+type bitcoin_block_height = nat32;
 
 type outpoint = record {
   txid : blob;
@@ -116,14 +124,10 @@ type bitcoin_get_utxos_args = record {
   };
 };
 
-type bitcoin_get_current_fee_percentiles_args = record {
-  network : bitcoin_network;
-};
-
 type bitcoin_get_utxos_result = record {
   utxos : vec utxo;
-  tip_block_hash : block_hash;
-  tip_height : nat32;
+  tip_block_hash : bitcoin_block_hash;
+  tip_height : bitcoin_block_height;
   next_page : opt blob;
 };
 
@@ -133,12 +137,29 @@ type bitcoin_get_balance_args = record {
   min_confirmations : opt nat32;
 };
 
+type bitcoin_get_balance_result = satoshi;
+
+type bitcoin_get_current_fee_percentiles_args = record {
+  network : bitcoin_network;
+};
+
+type bitcoin_get_current_fee_percentiles_result = vec millisatoshi_per_byte;
+
 type bitcoin_send_transaction_args = record {
   transaction : blob;
   network : bitcoin_network;
 };
 
-type millisatoshi_per_byte = nat64;
+type bitcoin_get_block_headers_args = record {
+  start_height : bitcoin_block_height;
+  end_height : opt bitcoin_block_height;
+  network : bitcoin_network;
+};
+
+type bitcoin_get_block_headers_result = record {
+  tip_height : bitcoin_block_height;
+  block_headers : vec bitcoin_block_header;
+};
 
 type node_metrics = record {
   node_id : principal;
@@ -343,12 +364,6 @@ type stored_chunks_result = vec chunk_hash;
 
 type upload_chunk_result = chunk_hash;
 
-type bitcoin_get_balance_result = satoshi;
-
-type bitcoin_get_current_fee_percentiles_result = vec millisatoshi_per_byte;
-
-type snapshot_id = blob;
-
 type snapshot = record {
   id : snapshot_id;
   taken_at_timestamp : nat64;
@@ -421,11 +436,10 @@ service ic : {
 
   // bitcoin interface
   bitcoin_get_balance : (bitcoin_get_balance_args) -> (bitcoin_get_balance_result);
-
   bitcoin_get_utxos : (bitcoin_get_utxos_args) -> (bitcoin_get_utxos_result);
-
   bitcoin_send_transaction : (bitcoin_send_transaction_args) -> ();
   bitcoin_get_current_fee_percentiles : (bitcoin_get_current_fee_percentiles_args) -> (bitcoin_get_current_fee_percentiles_result);
+  bitcoin_get_block_headers : (bitcoin_get_block_headers_args) -> (bitcoin_get_block_headers_result);
 
   // metrics interface
   node_metrics_history : (node_metrics_history_args) -> (node_metrics_history_result);

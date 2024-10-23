@@ -10,12 +10,24 @@ import type { ActorMethod } from '@dfinity/agent';
 import type { IDL } from '@dfinity/candid';
 
 export type bitcoin_address = string;
+export type bitcoin_block_hash = Uint8Array | number[];
+export type bitcoin_block_header = Uint8Array | number[];
+export type bitcoin_block_height = number;
 export interface bitcoin_get_balance_args {
   network: bitcoin_network;
   address: bitcoin_address;
   min_confirmations: [] | [number];
 }
 export type bitcoin_get_balance_result = satoshi;
+export interface bitcoin_get_block_headers_args {
+  start_height: bitcoin_block_height;
+  end_height: [] | [bitcoin_block_height];
+  network: bitcoin_network;
+}
+export interface bitcoin_get_block_headers_result {
+  tip_height: bitcoin_block_height;
+  block_headers: Array<bitcoin_block_header>;
+}
 export interface bitcoin_get_current_fee_percentiles_args {
   network: bitcoin_network;
 }
@@ -27,8 +39,8 @@ export interface bitcoin_get_utxos_args {
 }
 export interface bitcoin_get_utxos_result {
   next_page: [] | [Uint8Array | number[]];
-  tip_height: number;
-  tip_block_hash: block_hash;
+  tip_height: bitcoin_block_height;
+  tip_block_hash: bitcoin_block_hash;
   utxos: Array<utxo>;
 }
 export type bitcoin_network = { mainnet: null } | { testnet: null };
@@ -36,7 +48,6 @@ export interface bitcoin_send_transaction_args {
   transaction: Uint8Array | number[];
   network: bitcoin_network;
 }
-export type block_hash = Uint8Array | number[];
 export type canister_id = Principal;
 export interface canister_info_args {
   canister_id: canister_id;
@@ -113,6 +124,7 @@ export type change_details =
       load_snapshot: {
         canister_version: bigint;
         taken_at_timestamp: bigint;
+        snapshot_id: snapshot_id;
       };
     }
   | { controllers_change: { controllers: Array<Principal> } }
@@ -264,13 +276,13 @@ export interface sign_with_ecdsa_args {
   derivation_path: Array<Uint8Array | number[]>;
   message_hash: Uint8Array | number[];
 }
+export interface sign_with_ecdsa_result {
+  signature: Uint8Array | number[];
+}
 export interface sign_with_schnorr_args {
   key_id: { algorithm: schnorr_algorithm; name: string };
   derivation_path: Array<Uint8Array | number[]>;
   message: Uint8Array | number[];
-}
-export interface sign_with_ecdsa_result {
-  signature: Uint8Array | number[];
 }
 export interface sign_with_schnorr_result {
   signature: Uint8Array | number[];
@@ -318,6 +330,10 @@ export interface utxo {
 export type wasm_module = Uint8Array | number[];
 export default interface _SERVICE {
   bitcoin_get_balance: ActorMethod<[bitcoin_get_balance_args], bitcoin_get_balance_result>;
+  bitcoin_get_block_headers: ActorMethod<
+    [bitcoin_get_block_headers_args],
+    bitcoin_get_block_headers_result
+  >;
   bitcoin_get_current_fee_percentiles: ActorMethod<
     [bitcoin_get_current_fee_percentiles_args],
     bitcoin_get_current_fee_percentiles_result

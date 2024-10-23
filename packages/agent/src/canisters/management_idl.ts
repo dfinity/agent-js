@@ -18,6 +18,17 @@ export default ({ IDL }) => {
   });
   const satoshi = IDL.Nat64;
   const bitcoin_get_balance_result = satoshi;
+  const bitcoin_block_height = IDL.Nat32;
+  const bitcoin_get_block_headers_args = IDL.Record({
+    start_height: bitcoin_block_height,
+    end_height: IDL.Opt(bitcoin_block_height),
+    network: bitcoin_network,
+  });
+  const bitcoin_block_header = IDL.Vec(IDL.Nat8);
+  const bitcoin_get_block_headers_result = IDL.Record({
+    tip_height: bitcoin_block_height,
+    block_headers: IDL.Vec(bitcoin_block_header),
+  });
   const bitcoin_get_current_fee_percentiles_args = IDL.Record({
     network: bitcoin_network,
   });
@@ -33,7 +44,7 @@ export default ({ IDL }) => {
     ),
     address: bitcoin_address,
   });
-  const block_hash = IDL.Vec(IDL.Nat8);
+  const bitcoin_block_hash = IDL.Vec(IDL.Nat8);
   const outpoint = IDL.Record({
     txid: IDL.Vec(IDL.Nat8),
     vout: IDL.Nat32,
@@ -45,8 +56,8 @@ export default ({ IDL }) => {
   });
   const bitcoin_get_utxos_result = IDL.Record({
     next_page: IDL.Opt(IDL.Vec(IDL.Nat8)),
-    tip_height: IDL.Nat32,
-    tip_block_hash: block_hash,
+    tip_height: bitcoin_block_height,
+    tip_block_hash: bitcoin_block_hash,
     utxos: IDL.Vec(utxo),
   });
   const bitcoin_send_transaction_args = IDL.Record({
@@ -65,6 +76,7 @@ export default ({ IDL }) => {
       canister_id: IDL.Principal,
     }),
   });
+  const snapshot_id = IDL.Vec(IDL.Nat8);
   const change_details = IDL.Variant({
     creation: IDL.Record({ controllers: IDL.Vec(IDL.Principal) }),
     code_deployment: IDL.Record({
@@ -78,6 +90,7 @@ export default ({ IDL }) => {
     load_snapshot: IDL.Record({
       canister_version: IDL.Nat64,
       taken_at_timestamp: IDL.Nat64,
+      snapshot_id: snapshot_id,
     }),
     controllers_change: IDL.Record({
       controllers: IDL.Vec(IDL.Principal),
@@ -145,7 +158,6 @@ export default ({ IDL }) => {
   });
   const create_canister_result = IDL.Record({ canister_id: canister_id });
   const delete_canister_args = IDL.Record({ canister_id: canister_id });
-  const snapshot_id = IDL.Vec(IDL.Nat8);
   const delete_canister_snapshot_args = IDL.Record({
     canister_id: canister_id,
     snapshot_id: snapshot_id,
@@ -333,6 +345,11 @@ export default ({ IDL }) => {
   const upload_chunk_result = chunk_hash;
   return IDL.Service({
     bitcoin_get_balance: IDL.Func([bitcoin_get_balance_args], [bitcoin_get_balance_result], []),
+    bitcoin_get_block_headers: IDL.Func(
+      [bitcoin_get_block_headers_args],
+      [bitcoin_get_block_headers_result],
+      [],
+    ),
     bitcoin_get_current_fee_percentiles: IDL.Func(
       [bitcoin_get_current_fee_percentiles_args],
       [bitcoin_get_current_fee_percentiles_result],
