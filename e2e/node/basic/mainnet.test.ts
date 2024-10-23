@@ -144,7 +144,6 @@ describe('call forwarding', () => {
 
 // TODO: change Expiry logic rounding to make <= 1 minute expiry work
 test('it should succeed when setting an expiry in the near future', async () => {
-  ``;
   const agent = await HttpAgent.create({
     host: 'https://icp-api.io',
     ingressExpiryInMinutes: 1,
@@ -162,7 +161,6 @@ test('it should succeed when setting an expiry in the near future', async () => 
 });
 
 test('it should succeed when setting an expiry in the future', async () => {
-  ``;
   const agent = await HttpAgent.create({
     host: 'https://icp-api.io',
     ingressExpiryInMinutes: 5,
@@ -186,6 +184,7 @@ test('it should fail when setting an expiry in the far future', async () => {
       ingressExpiryInMinutes: 100,
     }),
   ).rejects.toThrowError(`The maximum ingress expiry time is 5 minutes`);
+});
 
 test('it should allow you to set an incorrect root key', async () => {
   const agent = HttpAgent.createSync({
