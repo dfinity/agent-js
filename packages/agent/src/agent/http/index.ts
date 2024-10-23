@@ -55,6 +55,8 @@ export enum RequestStatusResponseStatus {
   Done = 'done',
 }
 
+const MINUTE_TO_MSECS = 60 * 1000;
+
 // Root public key for the IC, encoded as hex
 export const IC_ROOT_KEY =
   '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100814' +
@@ -105,6 +107,12 @@ export interface HttpAgentOptions {
   // The principal used to send messages. This cannot be empty at the request
   // time (will throw).
   identity?: Identity | Promise<Identity>;
+
+  /**
+   * The maximum time a request can be delayed before being rejected.
+   * @default 5 minutes
+   */
+  ingressExpiryInMinutes?: number;
 
   credentials?: {
     name: string;
@@ -248,6 +256,7 @@ export class HttpAgent implements Agent {
   #rootKeyFetched = false;
   readonly #retryTimes; // Retry requests N times before erroring by default
   #backoffStrategy: BackoffStrategyFactory;
+  readonly #maxIngressExpiryInMinutes: number;
 
   // Public signature to help with type checking.
   public readonly _isAgent = true;
@@ -309,6 +318,19 @@ export class HttpAgent implements Agent {
       this.#credentials = `${name}${password ? ':' + password : ''}`;
     }
     this.#identity = Promise.resolve(options.identity || new AnonymousIdentity());
+
+    if (options.ingressExpiryInMinutes && options.ingressExpiryInMinutes > 5) {
+      throw new AgentError(
+        `The maximum ingress expiry time is 5 minutes. Provided ingress expiry time is ${options.ingressExpiryInMinutes} minutes.`,
+      );
+    }
+    if (options.ingressExpiryInMinutes && options.ingressExpiryInMinutes <= 0) {
+      throw new AgentError(
+        `Ingress expiry time must be greater than 0. Provided ingress expiry time is ${options.ingressExpiryInMinutes} minutes.`,
+      );
+    }
+
+    this.#maxIngressExpiryInMinutes = options.ingressExpiryInMinutes || 5;
 
     // Add a nonce transform to ensure calls are unique
     this.addTransform('update', makeNonceTransform(makeNonce));
@@ -428,11 +450,13 @@ export class HttpAgent implements Agent {
 
     const sender: Principal = id.getPrincipal() || Principal.anonymous();
 
-    let ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
+    let ingress_expiry = new Expiry(this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS);
 
     // If the value is off by more than 30 seconds, reconcile system time with the network
     if (Math.abs(this.#timeDiffMsecs) > 1_000 * 30) {
-      ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS + this.#timeDiffMsecs);
+      ingress_expiry = new Expiry(
+        this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS + this.#timeDiffMsecs,
+      );
     }
 
     const submit: CallRequest = {
@@ -772,7 +796,7 @@ export class HttpAgent implements Agent {
         method_name: fields.methodName,
         arg: fields.arg,
         sender,
-        ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+        ingress_expiry: new Expiry(this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS),
       };
 
       const requestId = await requestIdOf(request);
@@ -957,7 +981,7 @@ export class HttpAgent implements Agent {
         request_type: ReadRequestType.ReadState,
         paths: fields.paths,
         sender,
-        ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
+        ingress_expiry: new Expiry(this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS),
       },
     });
 

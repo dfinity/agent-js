@@ -820,6 +820,16 @@ test('it should log errors to console if the option is set', async () => {
   await agent.syncTime();
 });
 
+test('it should fail when setting an expiry in the past', async () => {
+  expect(() =>
+    HttpAgent.createSync({
+      host: 'https://icp-api.io',
+      ingressExpiryInMinutes: -1,
+      fetch: jest.fn(),
+    }),
+  ).toThrow(`Ingress expiry time must be greater than 0`);
+});
+
 test('it should handle calls against the ic-management canister that are rejected', async () => {
   const identity = new AnonymousIdentity();
   identity.getPrincipal().toString();

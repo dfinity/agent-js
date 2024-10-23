@@ -4,6 +4,8 @@
 
 ### Added
 
+- feat: allow for setting HttpAgent ingress expiry using `ingressExpiryInMinutes` option
+
 - feat: improved assertion options for agent errors using `prototype`, `name`, and `instanceof`
 
 ### Changed
