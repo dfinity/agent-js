@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [2.1.3] - 2024-10-23
+
 ### Added
 
 - feat: allow for setting HttpAgent ingress expiry using `ingressExpiryInMinutes` option
@@ -57,6 +59,8 @@ AgentError: Call failed:
 - docs: clarifies meaning of `effectiveCanisterId` in `CallOptions`
 
 ### Changed
+
+- feat: adds management canister support for canister snapshots
 - feat: replaces hdkey and bip32 implementations with `@scure/bip39` and `@scure/bip32` due to vulnerability and lack of maintenance for `elliptic`
 - chore: bumps dev dependency versions to remove warnings
 - chore: addresses eslint errors uncovered by bumping eslint version
@@ -239,8 +243,8 @@ const result = await management.bitcoin_get_balance_query({
 ### Added
 
 *   feat: uses expirable map for subnet keys in `agent-js`, with a timeout of 1 hour
-*   **feat!: node signature verification**  
-This feature includes additional changes in support of testing and releasing the feature:  
+*   **feat!: node signature verification**
+This feature includes additional changes in support of testing and releasing the feature:
     *   Mainnet e2e tests for queries and calls
     *   published counter canister
     *   New `HttpAgent` option - `verifyQuerySignatures`. Defaults to true, but allows you to opt out of verification. Useful for testing against older replica versions
@@ -372,7 +376,7 @@ Changes default stored key for `auth-client` to use ECDSAKey*   Also updates the
 
 *   _Breaking change:_ Moves `Secp256k1KeyIdentity` to its own package. `@dfinity/identity-secp256k1`
 *   _Breaking change:_ Deprecates `@dfinity/authentication`. If you relied on the `isDelegationValid` check, it has been moved to `@dfinity/identity`
-    
+
 *   Deprecates `@dfinity/identity-ledgerhq`. Use `@zondax/ledger-icp` instead.
 *   chore: links assets docs in index
 *   chore: sets up new size-limit job for packages, in preparation for CI
@@ -465,9 +469,9 @@ Changes default stored key for `auth-client` to use ECDSAKey*   Also updates the
 ### Changed
 
 *   Adds a default callback to the `IdleManager` that will refresh the page after clearing the storage
-*   Adds a new utility method, `canisterStatus`, to `agent-js`. Canister status now allows you to query paths from the canister certificate with a simple interface, using the API from the[interface specification](https://internetcomputer.org/docs/current/references/ic-interface-spec#state-tree-canister-information)  
+*   Adds a new utility method, `canisterStatus`, to `agent-js`. Canister status now allows you to query paths from the canister certificate with a simple interface, using the API from the[interface specification](https://internetcomputer.org/docs/current/references/ic-interface-spec#state-tree-canister-information)
     Comes with nicely configured options for
-    
+
     `time`, `controllers`, `subnet`, `module_hash`, `candid`. Additionally, has a utility for reading custom MetaData set using [ic-wasm](https://github.com/dfinity/ic-wasm), as well as generic custom paths in the format of ArrayBuffers.
 *   updates to package.json files for metadata in npm
 
@@ -487,9 +491,9 @@ Changes default stored key for `auth-client` to use ECDSAKey*   Also updates the
 *   Versioning tool now sets patch version to 0 for minor version updates, or patch and minor versions to 0 for major version updates
 *   Removes jest-expect-message, which was making test error messages less useful
 *   `HttpAgent` now generates a nonce to ensure that calls are unique by default. If you want to opt out or provide your own nonce logic, you can now pass an option of `disableNonce: true`during the agent initialization.
-    
+
     If you are currently using `agent.addTransform(makeNonceTransform())` , please note that you should remove that logic, or add the `disableNonce` option to your agent when upgrading.
-    
+
 
 ## [0.10.3]
 
@@ -504,13 +508,13 @@ Changes default stored key for `auth-client` to use ECDSAKey*   Also updates the
 ### Changed
 
 *   Security enhancement - adds a rewrite for urls to subdomains of
-    
+
     `\*.ic0.app/api`
-    
+
     to
-    
+
     `ic0.app/api`
-    
+
 *   Improves error messages for when `HttpAgent` cannot infer `fetch` implementation
 
 ## [0.10.1]
