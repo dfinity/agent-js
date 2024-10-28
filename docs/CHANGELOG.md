@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- chore: Removes warning that users found unhelpful, when a message originates from other sources than the identity provider in `AuthClient` during authentication. 
+
 ## [2.1.3] - 2024-10-23
 
 ### Added
