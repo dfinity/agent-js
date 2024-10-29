@@ -10,14 +10,14 @@ Additional API Documentation can be found [here](https://agent-js.icp.xyz/candid
 
 ## Installation
 
-Using Principal:
+Using Candid:
 
 ```
-npm i --save @dfinity/principal
+npm i --save @dfinity/candid
 ```
 
 ### In the browser:
 
 ```
-import { Principal } from "@dfinity/principal";
+import { Candid } from "@dfinity/candid";
 ```
