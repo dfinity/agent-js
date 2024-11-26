@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- feat: Add support for effective target canister ID in management canister calls.
+
 ### Changed
 
 - chore: Removes warning that users found unhelpful, when a message originates from other sources than the identity provider in `AuthClient` during authentication. 
