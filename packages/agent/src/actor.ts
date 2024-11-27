@@ -657,7 +657,7 @@ export type ManagementCanisterRecord = _SERVICE;
  */
 export function getManagementCanister(config: CallConfig): ActorSubclass<ManagementCanisterRecord> {
   function transform(
-    _methodName: string,
+    methodName: string,
     args: Record<string, unknown> & { canister_id: string; target_canister?: unknown }[],
   ) {
     if (config.effectiveCanisterId) {
@@ -665,11 +665,11 @@ export function getManagementCanister(config: CallConfig): ActorSubclass<Managem
     }
     const first = args[0];
     let effectiveCanisterId = Principal.fromHex('');
+    if (first && typeof first === 'object' && first.target_canister && methodName === "install_chunked_code") {
+      effectiveCanisterId = Principal.from(first.target_canister);
+    }
     if (first && typeof first === 'object' && first.canister_id) {
       effectiveCanisterId = Principal.from(first.canister_id as unknown);
-    }
-    if (first && typeof first === 'object' && first.target_canister) {
-      effectiveCanisterId = Principal.from(first.target_canister);
     }
     return { effectiveCanisterId };
   }
