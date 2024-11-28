@@ -70,7 +70,7 @@ test('requestIdOf', async () => {
     arg: new Uint8Array([68, 73, 68, 76, 0, 253, 42]),
   };
 
-  const requestId = await requestIdOf(request);
+  const requestId = requestIdOf(request);
 
   expect(toHex(requestId)).toEqual(
     '8781291c347db32a9d8c10eb62b710fce5a93be676474c42babc74c51858f94b',
@@ -90,7 +90,7 @@ test.skip('requestIdOf for sender_delegation signature', async () => {
       new Uint8Array([0, 0, 0, 0, 0, 32, 0, 43, 1, 1]),
     ],
   };
-  const delegation1ActualHashBytes = await requestIdOf(delegation1);
+  const delegation1ActualHashBytes = requestIdOf(delegation1);
   expect(toHex(delegation1ActualHashBytes)).toEqual(expectedHashBytes);
 
   // Note: this uses `bigint` and blobs, which the rest of this lib uses too.
@@ -101,7 +101,7 @@ test.skip('requestIdOf for sender_delegation signature', async () => {
     targets: delegation1.targets.map(t => t),
     expiration: BigInt(delegation1.expiration.toString()),
   };
-  const delegation2ActualHashBytes = await requestIdOf(delegation2);
+  const delegation2ActualHashBytes = requestIdOf(delegation2);
   expect(toHex(delegation2ActualHashBytes)).toEqual(toHex(delegation1ActualHashBytes));
 
   // This one uses Principals as targets
@@ -109,7 +109,7 @@ test.skip('requestIdOf for sender_delegation signature', async () => {
     ...delegation1,
     targets: delegation1.targets.map(t => Principal.fromText(t.toString())),
   };
-  const delegation3ActualHashBytes = await requestIdOf(delegation3);
+  const delegation3ActualHashBytes = requestIdOf(delegation3);
   expect(toHex(delegation3ActualHashBytes)).toEqual(toHex(delegation1ActualHashBytes));
 });
 

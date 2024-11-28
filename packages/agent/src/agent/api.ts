@@ -160,11 +160,7 @@ export interface Agent {
    * `readState` uses this internally.
    * Useful to avoid signing the same request multiple times.
    */
-  createReadStateRequest?(
-    options: ReadStateOptions,
-    identity?: Identity,
-    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-  ): Promise<any>;
+  createReadStateRequest?(options: ReadStateOptions, identity?: Identity): Promise<unknown>;
 
   /**
    * Send a read state query to the replica. This includes a list of paths to return,
@@ -179,8 +175,7 @@ export interface Agent {
     effectiveCanisterId: Principal | string,
     options: ReadStateOptions,
     identity?: Identity,
-    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-    request?: any,
+    request?: unknown,
   ): Promise<ReadStateResponse>;
 
   call(canisterId: Principal | string, fields: CallOptions): Promise<SubmitResponse>;

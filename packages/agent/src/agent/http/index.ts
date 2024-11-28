@@ -437,7 +437,7 @@ export class HttpAgent implements Agent {
   ): Promise<SubmitResponse> {
     // TODO - restore this value
     const callSync = options.callSync ?? true;
-    const id = await(identity !== undefined ? await identity : await this.#identity);
+    const id = await (identity !== undefined ? await identity : await this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -468,8 +468,7 @@ export class HttpAgent implements Agent {
       ingress_expiry,
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let transformedRequest: any = (await this._transform({
+    let transformedRequest = (await this._transform({
       request: {
         body: null,
         method: 'POST',
@@ -528,9 +527,9 @@ export class HttpAgent implements Agent {
         backoff,
         tries: 0,
       });
+      const requestId = requestIdOf(submit);
 
-      const [response, requestId] = await Promise.all([request, requestIdOf(submit)]);
-
+      const response = await request;
       const responseBuffer = await response.arrayBuffer();
       const responseBody = (
         response.status === 200 && responseBuffer.byteLength > 0
@@ -780,7 +779,7 @@ export class HttpAgent implements Agent {
     this.log.print(`ecid ${ecid.toString()}`);
     this.log.print(`canisterId ${canisterId.toString()}`);
     const makeQuery = async () => {
-      const id = await(identity !== undefined ? identity : this.#identity);
+      const id = await (identity !== undefined ? identity : this.#identity);
       if (!id) {
         throw new IdentityInvalidError(
           "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -799,7 +798,7 @@ export class HttpAgent implements Agent {
         ingress_expiry: new Expiry(this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS),
       };
 
-      const requestId = await requestIdOf(request);
+      const requestId = requestIdOf(request);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let transformedRequest: HttpAgentRequest = await this._transform({
@@ -1176,4 +1175,3 @@ export class HttpAgent implements Agent {
     return p;
   }
 }
-

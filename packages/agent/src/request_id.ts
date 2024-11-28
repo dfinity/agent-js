@@ -74,8 +74,7 @@ const hashString = (value: string): ArrayBuffer => {
  * https://sdk.dfinity.org/docs/interface-spec/index.html#hash-of-map
  * @param request - ic-ref request to hash into RequestId
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function requestIdOf(request: Record<string, any>): RequestId {
+export function requestIdOf(request: Record<string, unknown>): RequestId {
   return hashOfMap(request) as RequestId;
 }
 
