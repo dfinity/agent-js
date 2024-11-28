@@ -88,7 +88,7 @@ export abstract class SignIdentity implements Identity {
    */
   public async transformRequest(request: HttpAgentRequest): Promise<unknown> {
     const { body, ...fields } = request;
-    const requestId = await requestIdOf(body);
+    const requestId = requestIdOf(body);
     return {
       ...fields,
       body: {

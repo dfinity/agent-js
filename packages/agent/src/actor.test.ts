@@ -132,7 +132,7 @@ describe('makeActor', () => {
       },
     } as UnSigned<CallRequest>;
 
-    const expectedCallRequestId = await requestIdOf(expectedCallRequest.content);
+    const expectedCallRequestId = requestIdOf(expectedCallRequest.content);
 
     const httpAgent = new HttpAgent({ fetch: mockFetch });
 
