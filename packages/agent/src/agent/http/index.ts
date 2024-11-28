@@ -492,7 +492,7 @@ export class HttpAgent implements Agent {
     }
 
     // Apply transform for identity.
-    transformedRequest = await id.transformRequest(transformedRequest);
+    transformedRequest = (await id.transformRequest(transformedRequest)) as HttpAgentSubmitRequest;
 
     const body = cbor.encode(transformedRequest.body);
     const backoff = this.#backoffStrategy();

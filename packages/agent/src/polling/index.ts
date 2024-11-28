@@ -23,6 +23,18 @@ interface SignedReadStateRequestWithExpiry {
 }
 
 /**
+ * Check if an object has a property
+ * @param value the object that might have the property
+ * @param property the key of property we're looking for
+ */
+function hasProperty<O extends object, P extends string>(
+  value: O,
+  property: P,
+): value is O & Record<P, unknown> {
+  return Object.prototype.hasOwnProperty.call(value, property);
+}
+
+/**
  * Check if value is a signed read state request with expiry
  * @param value to check
  */
@@ -32,15 +44,15 @@ function isSignedReadStateRequestWithExpiry(
   return (
     value !== null &&
     typeof value === 'object' &&
-    'body' in value &&
+    hasProperty(value, 'body') &&
     value.body !== null &&
     typeof value.body === 'object' &&
-    'content' in value.body &&
+    hasProperty(value.body, 'content') &&
     value.body.content !== null &&
     typeof value.body.content === 'object' &&
-    'request_type' in value.body.content &&
+    hasProperty(value.body.content, 'request_type') &&
     value.body.content.request_type === ReadRequestType.ReadState &&
-    'ingress_expiry' in value.body.content &&
+    hasProperty(value.body.content, 'ingress_expiry') &&
     value.body.content.ingress_expiry instanceof Expiry
   );
 }
