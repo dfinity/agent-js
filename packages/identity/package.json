@@ -46,8 +46,7 @@
   },
   "peerDependencies": {
     "@dfinity/agent": "^2.1.3",
-    "@dfinity/principal": "^2.1.3",
-    "@peculiar/webcrypto": "^1.4.0"
+    "@dfinity/principal": "^2.1.3"
   },
   "dependencies": {
     "@noble/curves": "^1.2.0",
@@ -55,6 +54,7 @@
     "borc": "^2.1.1"
   },
   "devDependencies": {
+    "@peculiar/webcrypto": "^1.4.0",
     "@types/jest": "^29.5.5",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
