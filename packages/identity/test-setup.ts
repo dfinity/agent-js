@@ -8,7 +8,7 @@
 // Node.js in a similar way.
 
 import { Crypto } from '@peculiar/webcrypto';
-global.crypto = new Crypto();
+global.crypto = new Crypto() as globalThis.Crypto;
 global.TextEncoder = require('text-encoding').TextEncoder;
 global.TextDecoder = require('text-encoding').TextDecoder;
 global.MessageChannel = require('worker_threads').MessageChannel;
