@@ -53,7 +53,12 @@ function isSignedReadStateRequestWithExpiry(
     hasProperty(value.body.content, 'request_type') &&
     value.body.content.request_type === ReadRequestType.ReadState &&
     hasProperty(value.body.content, 'ingress_expiry') &&
-    value.body.content.ingress_expiry instanceof Expiry
+    typeof value.body.content.ingress_expiry === 'object' &&
+    value.body.content.ingress_expiry !== null &&
+    hasProperty(value.body.content.ingress_expiry, 'toCBOR') &&
+    typeof value.body.content.ingress_expiry.toCBOR === 'function' &&
+    hasProperty(value.body.content.ingress_expiry, 'toHash') &&
+    typeof value.body.content.ingress_expiry.toHash === 'function'
   );
 }
 
