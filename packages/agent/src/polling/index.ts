@@ -7,6 +7,7 @@ import { toHex } from '../utils/buffer';
 export * as strategy from './strategy';
 import { defaultStrategy } from './strategy';
 import { DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS } from '../constants';
+import { ReadRequestType, ReadStateRequest } from '../agent/http/types';
 export { defaultStrategy } from './strategy';
 export type PollStrategy = (
   canisterId: Principal,
@@ -15,6 +16,52 @@ export type PollStrategy = (
 ) => Promise<void>;
 export type PollStrategyFactory = () => PollStrategy;
 
+interface SignedReadStateRequestWithExpiry {
+  body: {
+    content: Pick<ReadStateRequest, 'request_type' | 'ingress_expiry'>;
+  };
+}
+
+/**
+ * Check if an object has a property
+ * @param value the object that might have the property
+ * @param property the key of property we're looking for
+ */
+function hasProperty<O extends object, P extends string>(
+  value: O,
+  property: P,
+): value is O & Record<P, unknown> {
+  return Object.prototype.hasOwnProperty.call(value, property);
+}
+
+/**
+ * Check if value is a signed read state request with expiry
+ * @param value to check
+ */
+function isSignedReadStateRequestWithExpiry(
+  value: unknown,
+): value is SignedReadStateRequestWithExpiry {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    hasProperty(value, 'body') &&
+    value.body !== null &&
+    typeof value.body === 'object' &&
+    hasProperty(value.body, 'content') &&
+    value.body.content !== null &&
+    typeof value.body.content === 'object' &&
+    hasProperty(value.body.content, 'request_type') &&
+    value.body.content.request_type === ReadRequestType.ReadState &&
+    hasProperty(value.body.content, 'ingress_expiry') &&
+    typeof value.body.content.ingress_expiry === 'object' &&
+    value.body.content.ingress_expiry !== null &&
+    hasProperty(value.body.content.ingress_expiry, 'toCBOR') &&
+    typeof value.body.content.ingress_expiry.toCBOR === 'function' &&
+    hasProperty(value.body.content.ingress_expiry, 'toHash') &&
+    typeof value.body.content.ingress_expiry.toHash === 'function'
+  );
+}
+
 /**
  * Polls the IC to check the status of the given request then
  * returns the response bytes once the request has been processed.
@@ -22,7 +69,7 @@ export type PollStrategyFactory = () => PollStrategy;
  * @param canisterId The effective canister ID.
  * @param requestId The Request ID to poll status for.
  * @param strategy A polling strategy.
- * @param request Request for the readState call.
+ * @param request Request for the repeated readState call.
  * @param blsVerify - optional replacement function that verifies the BLS signature of a certificate.
  */
 export async function pollForResponse(
@@ -30,8 +77,7 @@ export async function pollForResponse(
   canisterId: Principal,
   requestId: RequestId,
   strategy: PollStrategy = defaultStrategy(),
-  // eslint-disable-next-line
-  request?: any,
+  request?: unknown,
   blsVerify?: CreateCertificateOptions['blsVerify'],
 ): Promise<{
   certificate: Certificate;
@@ -40,8 +86,10 @@ export async function pollForResponse(
   const path = [new TextEncoder().encode('request_status'), requestId];
   const currentRequest = request ?? (await agent.createReadStateRequest?.({ paths: [path] }));
 
-  // Use a fresh expiry for the readState call.
-  currentRequest.body.content.ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
+  // Use a fresh expiry for the repeated readState call
+  if (request && isSignedReadStateRequestWithExpiry(currentRequest)) {
+    currentRequest.body.content.ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
+  }
 
   const state = await agent.readState(canisterId, { paths: [path] }, undefined, currentRequest);
   if (agent.rootKey == null) throw new Error('Agent root key not initialized before polling');
