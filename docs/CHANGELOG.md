@@ -4,6 +4,7 @@
 
 ### Added
 
+- chore: pins nanoid dev dependency version to override warning
 - feat: Add support for effective target canister ID in management canister calls.
 
 ### Changed
