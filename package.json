@@ -157,8 +157,6 @@
     }
   },
   "overrides": {
-    "vite": {
-      "rollup": "^4.22.5"
-    }
+      "nanoid": "^5.0.9"
   }
 }
