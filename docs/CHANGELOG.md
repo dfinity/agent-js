@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [2.2.0] - 2024-12-12
+
 ### Added
 
 - fix: `target_canister` is used only for `install_chunked_code` of management canister, complying with internet computer specification
