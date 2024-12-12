@@ -2,14 +2,16 @@
 
 ## [Unreleased]
 
+## [2.2.0] - 2024-12-12
+
 ### Added
 
 - fix: `target_canister` is used only for `install_chunked_code` of management canister, complying with internet computer specification
-- chore: pins nanoid dev dependency version to override warning
 - feat: Add support for effective target canister ID in management canister calls.
 
 ### Changed
 
+- chore: pins nanoid dev dependency version to override warning
 - chore: Removes warning that users found unhelpful, when a message originates from other sources than the identity provider in `AuthClient` during authentication. 
 - chore: fixes typo in DelegationIdentity jsdoc comment
 - chore: Removes warning that users found unhelpful, when a message originates from other sources than the identity provider in `AuthClient` during authentication.
