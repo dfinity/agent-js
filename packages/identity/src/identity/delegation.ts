@@ -110,7 +110,7 @@ async function _createSingleDelegation(
   // a user gesture if you await an async call thats not fetch, xhr, or setTimeout.
   const challenge = new Uint8Array([
     ...domainSeparator,
-    ...new Uint8Array(requestIdOf(delegation)),
+    ...new Uint8Array(requestIdOf({ ...delegation })),
   ]);
   const signature = await from.sign(challenge);
 

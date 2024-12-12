@@ -18,8 +18,8 @@
   },
   "devDependencies": {
     "@jest/types": "^29.6.3",
-    "@size-limit/esbuild": "^11.0.2",
-    "@size-limit/preset-small-lib": "^9.0.0",
+    "@size-limit/esbuild": "^11.1.6",
+    "@size-limit/preset-small-lib": "^11.1.6",
     "@types/jest": "^29.5.5",
     "@types/node": "^20.8.6",
     "@typescript-eslint/eslint-plugin": "^8.0.1",
@@ -40,7 +40,7 @@
     "prettier-plugin-motoko": "^0.8.4",
     "pretty-quick": "^4.0.0",
     "release-it": "^16.2.1",
-    "size-limit": "^11.0.2",
+    "size-limit": "^11.1.6",
     "size-limit-node-esbuild": "^0.3.0",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.1",
@@ -157,8 +157,6 @@
     }
   },
   "overrides": {
-    "vite": {
-      "rollup": "^4.22.5"
-    }
+      "nanoid": "^5.0.9"
   }
 }
