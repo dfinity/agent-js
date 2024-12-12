@@ -4,6 +4,7 @@
 
 ### Added
 
+- fix: `target_canister` is used only for `install_chunked_code` of management canister, complying with internet computer specification
 - chore: pins nanoid dev dependency version to override warning
 - feat: Add support for effective target canister ID in management canister calls.
 
