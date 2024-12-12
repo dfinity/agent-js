@@ -266,7 +266,7 @@ export class DelegationChain {
 export class DelegationIdentity extends SignIdentity {
   /**
    * Create a delegation without having access to delegateKey.
-   * @param key The key used to sign the reqyests.
+   * @param key The key used to sign the requests.
    * @param delegation A delegation object created using `createDelegation`.
    */
   public static fromDelegation(
