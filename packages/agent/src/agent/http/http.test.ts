@@ -101,13 +101,13 @@ test('call', async () => {
     ingress_expiry: new Expiry(300000),
   };
 
-  const mockPartialsRequestId = await requestIdOf(mockPartialRequest);
+  const mockPartialsRequestId = requestIdOf(mockPartialRequest);
 
   const expectedRequest = {
     content: mockPartialRequest,
   };
 
-  const expectedRequestId = await requestIdOf(expectedRequest.content);
+  const expectedRequestId = requestIdOf(expectedRequest.content);
   expect(expectedRequestId).toEqual(mockPartialsRequestId);
 
   const { calls } = mockFetch.mock;
@@ -152,7 +152,7 @@ test('queries with the same content should have the same signature', async () =>
   const methodName = 'greet';
   const arg = new Uint8Array([]);
 
-  const requestId = await requestIdOf({
+  const requestId = requestIdOf({
     request_type: SubmitRequestType.Call,
     nonce,
     canister_id: Principal.fromText(canisterIdent).toString(),
@@ -215,7 +215,7 @@ test('readState should not call transformers if request is passed', async () => 
   const methodName = 'greet';
   const arg = new Uint8Array([]);
 
-  const requestId = await requestIdOf({
+  const requestId = requestIdOf({
     request_type: SubmitRequestType.Call,
     nonce,
     canister_id: Principal.fromText(canisterIdent).toString(),
@@ -316,13 +316,13 @@ test('use anonymous principal if unspecified', async () => {
     ingress_expiry: new Expiry(300000),
   };
 
-  const mockPartialsRequestId = await requestIdOf(mockPartialRequest);
+  const mockPartialsRequestId = requestIdOf(mockPartialRequest);
 
   const expectedRequest: Envelope<CallRequest> = {
     content: mockPartialRequest,
   };
 
-  const expectedRequestId = await requestIdOf(expectedRequest.content);
+  const expectedRequestId = requestIdOf(expectedRequest.content);
   expect(expectedRequestId).toEqual(mockPartialsRequestId);
 
   const { calls } = mockFetch.mock;
