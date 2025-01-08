@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- chore: bumps .nvmrc
+
 ## [2.2.0] - 2024-12-12
 
 ### Added
