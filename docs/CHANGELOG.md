@@ -4,7 +4,7 @@
 
 ### Changed
 
-- chore: bumps .nvmrc
+- chore: bumps .nvmrc and nodejs version in CI to 22
 
 ## [2.2.0] - 2024-12-12
 
