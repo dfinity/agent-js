@@ -147,7 +147,12 @@ export interface SubmitResponse {
  * An Agent able to make calls and queries to a Replica.
  */
 export interface Agent {
-  readonly rootKey: ArrayBuffer | null;
+  /**
+   * Returns the root key of the network. This is used to verify the authenticity of
+   * responses from the network.
+   */
+  getRootKey(): Promise<ArrayBuffer>;
+
   /**
    * Returns the principal ID associated with this agent (by default). It only shows
    * the principal of the default identity in the agent, which is the principal used

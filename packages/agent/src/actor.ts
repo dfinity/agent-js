@@ -531,9 +531,6 @@ function _createActorMethod(
       const ecid = effectiveCanisterId !== undefined ? Principal.from(effectiveCanisterId) : cid;
       const arg = IDL.encode(func.argTypes, args);
 
-      if (agent.rootKey == null)
-        throw new AgentError('Agent root key not initialized before making call');
-
       const { requestId, response, requestDetails } = await agent.call(cid, {
         methodName,
         arg,
@@ -545,7 +542,7 @@ function _createActorMethod(
         const cert = (response.body as v3ResponseBody).certificate;
         certificate = await Certificate.create({
           certificate: bufFromBufLike(cert),
-          rootKey: agent.rootKey,
+          rootKey: await agent.getRootKey(),
           canisterId: Principal.from(canisterId),
           blsVerify,
         });

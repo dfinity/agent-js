@@ -150,6 +150,14 @@ export interface HttpAgentOptions {
    * Alternate root key to use for verifying certificates. If not provided, the default IC root key will be used.
    */
   rootKey?: ArrayBuffer;
+
+  /**
+   * Whether the agent should fetch the root key from the network. Defaults to false.
+   *
+   * WARNING!!! Do not enable this in production environments,
+   * as it can be used as an attack vector by malicious nodes.
+   */
+  shouldFetchRootKey?: boolean;
 }
 
 function getDefaultFetch(): typeof fetch {
@@ -245,7 +253,6 @@ other computations so that this class can stay as simple as possible while
 allowing extensions.
  */
 export class HttpAgent implements Agent {
-  public rootKey: ArrayBuffer;
   #identity: Promise<Identity> | null;
   readonly #fetch: typeof fetch;
   readonly #fetchOptions?: Record<string, unknown>;
@@ -253,10 +260,13 @@ export class HttpAgent implements Agent {
   #timeDiffMsecs = 0;
   readonly host: URL;
   readonly #credentials: string | undefined;
-  #rootKeyFetched = false;
   readonly #retryTimes; // Retry requests N times before erroring by default
   #backoffStrategy: BackoffStrategyFactory;
   readonly #maxIngressExpiryInMinutes: number;
+
+  #rootKey: ArrayBuffer;
+  readonly #shouldFetchRootKey: boolean;
+  #fetchRootKeyPromise: Promise<ArrayBuffer> | null = null;
 
   // Public signature to help with type checking.
   public readonly _isAgent = true;
@@ -288,7 +298,11 @@ export class HttpAgent implements Agent {
     this.#fetch = options.fetch || getDefaultFetch() || fetch.bind(global);
     this.#fetchOptions = options.fetchOptions;
     this.#callOptions = options.callOptions;
-    this.rootKey = options.rootKey ? options.rootKey : fromHex(IC_ROOT_KEY);
+
+    this.#rootKey = options.rootKey ?? fromHex(IC_ROOT_KEY);
+    this.#shouldFetchRootKey = options.shouldFetchRootKey ?? false;
+    // kick off the fetchRootKey process asynchronously, if needed
+    (async () => await this.fetchRootKey())();
 
     const host = determineHost(options.host);
     this.host = new URL(host);
@@ -354,16 +368,9 @@ export class HttpAgent implements Agent {
     return new this({ ...options });
   }
 
-  public static async create(
-    options: HttpAgentOptions & { shouldFetchRootKey?: boolean } = {
-      shouldFetchRootKey: false,
-    },
-  ): Promise<HttpAgent> {
+  public static async create(options: HttpAgentOptions = {}): Promise<HttpAgent> {
     const agent = HttpAgent.createSync(options);
     const initPromises: Promise<ArrayBuffer | void>[] = [agent.syncTime()];
-    if (agent.host.toString() !== 'https://icp-api.io' && options.shouldFetchRootKey) {
-      initPromises.push(agent.fetchRootKey());
-    }
     await Promise.all(initPromises);
     return agent;
   }
@@ -437,7 +444,7 @@ export class HttpAgent implements Agent {
   ): Promise<SubmitResponse> {
     // TODO - restore this value
     const callSync = options.callSync ?? true;
-    const id = await (identity !== undefined ? await identity : await this.#identity);
+    const id = identity !== undefined ? await identity : await this.#identity;
     if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -1125,14 +1132,27 @@ export class HttpAgent implements Agent {
     return cbor.decode(await response.arrayBuffer());
   }
 
+  async getRootKey(): Promise<ArrayBuffer> {
+    return this.fetchRootKey();
+  }
+
   public async fetchRootKey(): Promise<ArrayBuffer> {
-    if (!this.#rootKeyFetched) {
-      const status = await this.status();
-      // Hex-encoded version of the replica root key
-      this.rootKey = (status as JsonObject & { root_key: ArrayBuffer }).root_key;
-      this.#rootKeyFetched = true;
+    if (!this.#shouldFetchRootKey) {
+      return this.#rootKey;
     }
-    return this.rootKey;
+
+    if (this.#fetchRootKeyPromise === null) {
+      this.#fetchRootKeyPromise = this.#fetchRootKey();
+    }
+
+    return await this.#fetchRootKeyPromise;
+  }
+
+  async #fetchRootKey(): Promise<ArrayBuffer> {
+    const status = await this.status();
+    // Hex-encoded version of the replica root key
+    this.#rootKey = (status as JsonObject & { root_key: ArrayBuffer }).root_key;
+    return this.#rootKey;
   }
 
   public invalidateIdentity(): void {

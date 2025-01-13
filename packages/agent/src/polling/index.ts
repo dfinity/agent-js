@@ -92,10 +92,9 @@ export async function pollForResponse(
   }
 
   const state = await agent.readState(canisterId, { paths: [path] }, undefined, currentRequest);
-  if (agent.rootKey == null) throw new Error('Agent root key not initialized before polling');
   const cert = await Certificate.create({
     certificate: state.certificate,
-    rootKey: agent.rootKey,
+    rootKey: await agent.getRootKey(),
     canisterId: canisterId,
     blsVerify,
   });

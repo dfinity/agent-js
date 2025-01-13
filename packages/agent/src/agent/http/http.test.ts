@@ -800,9 +800,8 @@ test('retry requests that fail due to a network failure', async () => {
   const agent = new HttpAgent({
     host: HTTP_AGENT_HOST,
     fetch: mockFetch,
+    rootKey: new Uint8Array(32),
   });
-
-  agent.rootKey = new Uint8Array(32);
 
   try {
     await agent.call(Principal.managementCanister(), {
