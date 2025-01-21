@@ -18,6 +18,14 @@ After that, you probably want to dive into a specific package in [./packages](./
 
 Running tests is a good way to get a sense of what the features will do. We try to have full unit test coverage for all new features, although sometimes mocking network conditions can be difficult, and e2e tests may be preferable.
 
+Before running tests, you need to compile the packages.
+
+```bash
+npm run build
+```
+
+This command will compile the packages and generate the output under `lib` directory in each package.
+
 #### Unit Tests
 
 To run the unit tests for all packages, run `npm test`. You can run tests for a specific package by running `npm test` in the package directory or by running `npm test --workspace=<package-name>` in the root directory.
