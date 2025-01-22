@@ -5,6 +5,7 @@ type snapshot_id = blob;
 type log_visibility = variant {
   controllers;
   public;
+  allowed_viewers : vec principal;
 };
 
 type canister_settings = record {
@@ -322,10 +323,17 @@ type schnorr_public_key_result = record {
   chain_code : blob;
 };
 
+type schnorr_aux = variant {
+  bip341 : record {
+    merkle_root_hash : blob;
+  };
+};
+
 type sign_with_schnorr_args = record {
   message : blob;
   derivation_path : vec blob;
   key_id : record { algorithm : schnorr_algorithm; name : text };
+  aux : opt schnorr_aux;
 };
 
 type sign_with_schnorr_result = record {
@@ -340,6 +348,14 @@ type node_metrics_history_args = record {
 type node_metrics_history_result = vec record {
   timestamp_nanos : nat64;
   node_metrics : vec node_metrics;
+};
+
+type subnet_info_args = record {
+  subnet_id : principal;
+};
+
+type subnet_info_result = record {
+  replica_version : text;
 };
 
 type provisional_create_canister_with_cycles_args = record {
@@ -443,6 +459,9 @@ service ic : {
 
   // metrics interface
   node_metrics_history : (node_metrics_history_args) -> (node_metrics_history_result);
+
+  // subnet info
+  subnet_info : (subnet_info_args) -> (subnet_info_result);
 
   // provisional interfaces for the pre-ledger world
   provisional_create_canister_with_cycles : (provisional_create_canister_with_cycles_args) -> (provisional_create_canister_with_cycles_result);
