@@ -113,6 +113,7 @@ export default ({ IDL }) => {
   const log_visibility = IDL.Variant({
     controllers: IDL.Null,
     public: IDL.Null,
+    allowed_viewers: IDL.Vec(IDL.Principal),
   });
   const definite_canister_settings = IDL.Record({
     freezing_threshold: IDL.Nat,
@@ -309,7 +310,11 @@ export default ({ IDL }) => {
   const sign_with_ecdsa_result = IDL.Record({
     signature: IDL.Vec(IDL.Nat8),
   });
+  const schnorr_aux = IDL.Variant({
+    bip341: IDL.Record({ merkle_root_hash: IDL.Vec(IDL.Nat8) }),
+  });
   const sign_with_schnorr_args = IDL.Record({
+    aux: IDL.Opt(schnorr_aux),
     key_id: IDL.Record({
       algorithm: schnorr_algorithm,
       name: IDL.Text,
@@ -324,6 +329,8 @@ export default ({ IDL }) => {
   const stop_canister_args = IDL.Record({ canister_id: canister_id });
   const stored_chunks_args = IDL.Record({ canister_id: canister_id });
   const stored_chunks_result = IDL.Vec(chunk_hash);
+  const subnet_info_args = IDL.Record({ subnet_id: IDL.Principal });
+  const subnet_info_result = IDL.Record({ replica_version: IDL.Text });
   const take_canister_snapshot_args = IDL.Record({
     replace_snapshot: IDL.Opt(snapshot_id),
     canister_id: canister_id,
@@ -393,6 +400,7 @@ export default ({ IDL }) => {
     start_canister: IDL.Func([start_canister_args], [], []),
     stop_canister: IDL.Func([stop_canister_args], [], []),
     stored_chunks: IDL.Func([stored_chunks_args], [stored_chunks_result], []),
+    subnet_info: IDL.Func([subnet_info_args], [subnet_info_result], []),
     take_canister_snapshot: IDL.Func(
       [take_canister_snapshot_args],
       [take_canister_snapshot_result],
