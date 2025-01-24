@@ -264,9 +264,24 @@ export class HttpAgent implements Agent {
   #backoffStrategy: BackoffStrategyFactory;
   readonly #maxIngressExpiryInMinutes: number;
 
-  #rootKey: ArrayBuffer;
-  readonly #shouldFetchRootKey: boolean;
+  public get rootKey(): ArrayBuffer {
+    if (this.#rootKey === null) {
+      throw new AgentError('rootKey is not yet initialized');
+    }
+    return this.#rootKey;
+  }
+
+  public set rootKey(key: ArrayBuffer | string) {
+    if (typeof key === 'string') {
+      this.#rootKey = fromHex(key);
+    } else {
+      this.#rootKey = key;
+    }
+  }
+
+  #rootKey: ArrayBuffer | null = null;
   #fetchRootKeyPromise: Promise<ArrayBuffer> | null = null;
+  readonly #shouldFetchRootKey: boolean = false;
 
   // Public signature to help with type checking.
   public readonly _isAgent = true;
@@ -299,10 +314,14 @@ export class HttpAgent implements Agent {
     this.#fetchOptions = options.fetchOptions;
     this.#callOptions = options.callOptions;
 
-    this.#rootKey = options.rootKey ?? fromHex(IC_ROOT_KEY);
+    if (options.shouldFetchRootKey === true) {
+      this.#shouldFetchRootKey = false;
+      (async () => await this.fetchRootKey())();
+    } else {
+      this.#rootKey = options.rootKey ?? fromHex(IC_ROOT_KEY);
+    }
     this.#shouldFetchRootKey = options.shouldFetchRootKey ?? false;
     // kick off the fetchRootKey process asynchronously, if needed
-    (async () => await this.fetchRootKey())();
 
     const host = determineHost(options.host);
     this.host = new URL(host);
@@ -371,6 +390,9 @@ export class HttpAgent implements Agent {
   public static async create(options: HttpAgentOptions = {}): Promise<HttpAgent> {
     const agent = HttpAgent.createSync(options);
     const initPromises: Promise<ArrayBuffer | void>[] = [agent.syncTime()];
+    if (agent.host.toString() !== 'https://icp-api.io' && options.shouldFetchRootKey) {
+      initPromises.push(agent.fetchRootKey());
+    }
     await Promise.all(initPromises);
     return agent;
   }
@@ -1132,13 +1154,14 @@ export class HttpAgent implements Agent {
     return cbor.decode(await response.arrayBuffer());
   }
 
-  async getRootKey(): Promise<ArrayBuffer> {
-    return this.fetchRootKey();
+  public async getRootKey(): Promise<ArrayBuffer> {
+    if (this.#rootKey) return this.#rootKey;
+    return await this.fetchRootKey();
   }
 
   public async fetchRootKey(): Promise<ArrayBuffer> {
     if (!this.#shouldFetchRootKey) {
-      return this.#rootKey;
+      return this.rootKey;
     }
 
     if (this.#fetchRootKeyPromise === null) {
@@ -1152,7 +1175,7 @@ export class HttpAgent implements Agent {
     const status = await this.status();
     // Hex-encoded version of the replica root key
     this.#rootKey = (status as JsonObject & { root_key: ArrayBuffer }).root_key;
-    return this.#rootKey;
+    return this.rootKey;
   }
 
   public invalidateIdentity(): void {

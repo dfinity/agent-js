@@ -147,11 +147,13 @@ export interface SubmitResponse {
  * An Agent able to make calls and queries to a Replica.
  */
 export interface Agent {
+  readonly rootKey: ArrayBuffer | null;
   /**
    * Returns the root key of the network. This is used to verify the authenticity of
    * responses from the network.
+   * TODO: make required when upgrading to v3. See https://dfinity.atlassian.net/browse/SDK-1949
    */
-  getRootKey(): Promise<ArrayBuffer>;
+  getRootKey?(): Promise<ArrayBuffer>;
 
   /**
    * Returns the principal ID associated with this agent (by default). It only shows
