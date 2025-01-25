@@ -145,6 +145,9 @@ export const request = async (options: {
         const response = await agent.readState(canisterId, {
           paths: [encodedPaths[index]],
         });
+        if (agent.rootKey == null) {
+          throw new Error('Agent is missing root key');
+        }
         const cert = await Certificate.create({
           certificate: response.certificate,
           rootKey: agent.rootKey,
@@ -153,6 +156,9 @@ export const request = async (options: {
 
         const lookup = (cert: Certificate, path: Path) => {
           if (path === 'subnet') {
+            if (agent.rootKey == null) {
+              throw new Error('Agent is missing root key');
+            }
             const data = fetchNodeKeys(response.certificate, canisterId, agent.rootKey);
             return {
               path: path,

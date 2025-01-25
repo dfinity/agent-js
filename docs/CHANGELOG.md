@@ -2,9 +2,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- shouldFetchRootKey option added to `HttpAgent` constructor
+
 ### Changed
 
 - chore: bumps .nvmrc and nodejs version in CI to 22
+- HttpAgent now awaits fetching rootkey before making network calls if `shouldFetchRootKey` is set
 
 ## [2.2.0] - 2024-12-12
 

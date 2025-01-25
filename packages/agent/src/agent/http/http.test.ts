@@ -940,6 +940,79 @@ test('it should handle calls against the ic-management canister that succeed', a
   expect(status).toMatchSnapshot();
 });
 
+describe('await fetching root keys before making a call to the network.', () => {
+  const mockResponse = {
+    headers: [
+      ['access-control-allow-origin', '*'],
+      ['content-length', '317'],
+      ['content-type', 'application/cbor'],
+      ['date', 'Sat, 25 Jan 2025 00:48:00 GMT'],
+    ],
+    ok: true,
+    status: 200,
+    statusText: 'OK',
+    body: 'd9d9f7a66e69635f6170695f76657273696f6e66302e31382e3068726f6f745f6b65795885308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100a05a4707525774767f395a97ea9cd670ebf8694c4649421cdec91d86fa16beee0250e1ef64ec3b1eecb2ece53235ae0e0433592804c8947359694912cd743e5cba7d9bf705f875da3b36d12ec7eb94fb437bd31c255d2a6d65b964e0430f93686c696d706c5f76657273696f6e65302e392e3069696d706c5f68617368784064653637663631313363383031616332613738646366373962343137653030636534336136623363613663616134636661623963623665353338383136643534757265706c6963615f6865616c74685f737461747573676865616c746879706365727469666965645f6865696768741a0003f560',
+    now: 1737766080180,
+  };
+  jest.useFakeTimers();
+  // Mock the fetch implementation, resolving a pre-calculated response
+  const mockFetch: jest.Mock = jest.fn(() => {
+    return Promise.resolve({
+      ...mockResponse,
+      body: fromHex(mockResponse.body),
+      arrayBuffer: async () => fromHex(mockResponse.body),
+    });
+  });
+  it('should allow fetchRootKey to be awaited after using the constructor', async () => {
+    const agent = new HttpAgent({
+      shouldFetchRootKey: true,
+      host: 'http://localhost:4943',
+      fetch: mockFetch,
+    });
+    expect(agent.rootKey).toBe(null);
+    await agent.fetchRootKey();
+    expect(ArrayBuffer.isView(agent.rootKey)).toBe(true);
+  });
+  it('should allow fetchRootKey to be awaited after using createSync', async () => {
+    const agent = HttpAgent.createSync({
+      shouldFetchRootKey: true,
+      host: 'http://localhost:4943',
+      fetch: mockFetch,
+    });
+    expect(agent.rootKey).toBe(null);
+    await agent.fetchRootKey();
+    expect(ArrayBuffer.isView(agent.rootKey)).toBe(true);
+  });
+  it('it should automatically fetch root key if using create', async () => {
+    const agent = await HttpAgent.create({
+      shouldFetchRootKey: true,
+      host: 'http://localhost:4943',
+      fetch: mockFetch,
+    });
+    expect(ArrayBuffer.isView(agent.rootKey)).toBe(true);
+  });
+
+  it('it should automatically fetch root key during async calls if one was not set during initialization', async () => {
+    const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+
+    const agent = new HttpAgent({
+      fetch: mockFetch,
+      host: 'http://localhost:4943',
+      shouldFetchRootKey: true,
+    });
+    expect(agent.rootKey).toBe(null);
+
+    const methodName = 'greet';
+    const arg = new Uint8Array([]);
+
+    await agent.call(canisterId, {
+      methodName,
+      arg,
+    });
+    expect(agent.rootKey).toBeTruthy();
+  });
+});
+
 describe('transform', () => {
   const identity = new AnonymousIdentity();
 
