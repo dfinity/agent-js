@@ -250,7 +250,7 @@ other computations so that this class can stay as simple as possible while
 allowing extensions.
  */
 export class HttpAgent implements Agent {
-  public rootKey: ArrayBuffer | null = null;
+  public rootKey: ArrayBuffer | null;
   #rootKeyPromise: Promise<ArrayBuffer> | null = null;
   #shouldFetchRootKey: boolean = false;
   #identity: Promise<Identity> | null;
@@ -295,7 +295,15 @@ export class HttpAgent implements Agent {
     this.#fetchOptions = options.fetchOptions;
     this.#callOptions = options.callOptions;
     this.#shouldFetchRootKey = options.shouldFetchRootKey ?? false;
-    this.rootKey = options.rootKey ?? null;
+
+    // Use provided root key, otherwise fall back to IC_ROOT_KEY for mainnet or null if the key needs to be fetched
+    if (options.rootKey) {
+      this.rootKey = options.rootKey;
+    } else if (this.#shouldFetchRootKey) {
+      this.rootKey = null;
+    } else {
+      this.rootKey = fromHex(IC_ROOT_KEY);
+    }
 
     const host = determineHost(options.host);
     this.host = new URL(host);
@@ -1149,7 +1157,6 @@ export class HttpAgent implements Agent {
     // Hex-encoded version of the replica root key
     const rootKey = (status as JsonObject & { root_key: ArrayBuffer }).root_key;
     this.rootKey = rootKey;
-    rootKey;
 
     return rootKey;
   }

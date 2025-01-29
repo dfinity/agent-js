@@ -576,6 +576,13 @@ describe('retry failures', () => {
     }
   });
   it('should succeed after multiple failures within the configured limit', async () => {
+    jest.useFakeTimers();
+    jest.spyOn(global, 'setTimeout').mockImplementation(callback => {
+      if (typeof callback === 'function') {
+        callback();
+      }
+      return { hasRef: () => false } as NodeJS.Timeout;
+    });
     let calls = 0;
     const mockFetch: jest.Mock = jest.fn(() => {
       if (calls === 3) {
@@ -661,7 +668,6 @@ test('should adjust the Expiry if the clock is more than 30 seconds ahead', asyn
   const { HttpAgent } = await import('../index');
 
   const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
-
   await agent.syncTime();
 
   await agent
@@ -792,9 +798,15 @@ describe('default host', () => {
 
 jest.setTimeout(10000);
 test('retry requests that fail due to a network failure', async () => {
-  jest.useRealTimers();
+  jest.useFakeTimers();
   const mockFetch: jest.Mock = jest.fn(() => {
     throw new Error('Network failure');
+  });
+  jest.spyOn(global, 'setTimeout').mockImplementation(callback => {
+    if (typeof callback === 'function') {
+      callback();
+    }
+    return { hasRef: () => false } as NodeJS.Timeout;
   });
 
   const agent = new HttpAgent({
