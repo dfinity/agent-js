@@ -10,6 +10,7 @@
 
 - chore: bumps .nvmrc and nodejs version in CI to 22
 - HttpAgent now awaits fetching rootkey before making network calls if `shouldFetchRootKey` is set
+- chore: npm audit fixes
 
 ## [2.2.0] - 2024-12-12
 
