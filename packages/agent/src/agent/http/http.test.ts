@@ -22,6 +22,7 @@ import {
   type ActorSubclass,
   SignIdentity,
   toHex,
+  Signature,
 } from '../..';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { AgentError } from '../../errors';
@@ -1046,6 +1047,67 @@ describe('transform', () => {
         effectiveCanisterId: canister_id,
       }),
     );
+  });
+});
+
+describe('error logs for bad signature', () => {
+  it.only('should do', async () => {
+    const badSignatureResponse = {
+      headers: [
+        ['access-control-allow-origin', '*'],
+        ['content-length', '197'],
+        ['content-type', 'text/plain; charset=utf-8'],
+        ['date', 'Thu, 30 Jan 2025 00:40:24 GMT'],
+      ],
+      ok: false,
+      status: 400,
+      statusText: 'Bad Request',
+      body: '496e76616c6964207369676e61747572653a20496e76616c6964206261736963207369676e61747572653a204d616c666f726d65642045643235353139207369676e61747572653a205b303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030305d206572726f723a2027496e636f7272656374207369676e6174757265206c656e6774683a2065787065637465642036342c20676f742033322e27',
+      now: 1738197429445,
+    };
+
+    // const mockFetch: jest.Mock = jest.fn(() => {
+    //   return Promise.resolve(new Response{
+    //     ...badSignatureResponse,
+    //     body: fromHex(badSignatureResponse.body),
+    //     arrayBuffer: async () => fromHex(badSignatureResponse.body),
+    //   });
+    // });
+
+    jest.useRealTimers();
+    // jest.setSystemTime(badSignatureResponse.now);
+    const identity = Ed25519KeyIdentity.generate() as unknown as SignIdentity;
+    identity.sign = async () => {
+      return new ArrayBuffer(64) as Signature;
+    };
+    const agent = HttpAgent.createSync({
+      identity,
+      fetch: fetch,
+      host: 'http://localhost:4943',
+    });
+    const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+
+    const methodName = 'greet';
+    const arg = new Uint8Array([]);
+
+    jest.spyOn(Date, 'now').mockImplementation(() => {
+      return 1738198613686;
+    });
+    const logs = [];
+    agent.log.subscribe(e => {
+      e;
+      if (e.error.message.includes('Invalid signature')) {
+        logs.push(e);
+      }
+    });
+
+    try {
+      const { response } = await agent.call(canisterId, {
+        methodName,
+        arg,
+      });
+    } catch (e) {}
+    logs;
   });
 });
 
