@@ -1,13 +1,14 @@
 import { JsonObject } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { AgentError } from '../../errors';
-import { AnonymousIdentity, Identity } from '../../auth';
+import { AnonymousIdentity, Identity, Signature } from '../../auth';
 import * as cbor from '../../cbor';
 import { RequestId, hashOfMap, requestIdOf } from '../../request_id';
-import { bufFromBufLike, concat, fromHex } from '../../utils/buffer';
+import { bufFromBufLike, concat, fromHex, toHex } from '../../utils/buffer';
 import {
   Agent,
   ApiQueryResponse,
+  HttpDetailsResponse,
   QueryFields,
   QueryResponse,
   ReadStateOptions,
@@ -28,7 +29,7 @@ import {
   ReadRequestType,
   SubmitRequestType,
 } from './types';
-import { AgentHTTPResponseError } from './errors';
+import { AgentCallError, AgentHTTPResponseError } from './errors';
 import { SubnetStatus, request } from '../../canisterStatus';
 import {
   CertificateVerificationError,
@@ -496,6 +497,7 @@ export class HttpAgent implements Agent {
 
     const body = cbor.encode(transformedRequest.body);
     const backoff = this.#backoffStrategy();
+    const requestId = requestIdOf(submit);
     try {
       // Attempt v3 sync call
       const requestSync = () => {
@@ -527,7 +529,6 @@ export class HttpAgent implements Agent {
         backoff,
         tries: 0,
       });
-      const requestId = requestIdOf(submit);
 
       const response = await request;
       const responseBuffer = await response.arrayBuffer();
@@ -570,8 +571,14 @@ export class HttpAgent implements Agent {
           identity,
         );
       }
-
-      this.log.error('Error while making call:', error as AgentError);
+      const callError = new AgentCallError(
+        'Encountered an error while making call:',
+        error as HttpDetailsResponse,
+        toHex(requestId),
+        toHex(transformedRequest.body.sender_pubkey),
+        toHex(transformedRequest.body.sender_sig),
+      );
+      this.log.error('Error while making call:', callError);
       throw error;
     }
   }

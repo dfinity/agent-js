@@ -6,6 +6,8 @@
 
 - chore: bumps .nvmrc and nodejs version in CI to 22
 - chore: npm audit fixes
+- feat: enhanced details in agent call errors
+  - error now includes hex encoded response, requestId, sender_pubkey, and sender_sig in addition to message for improved debugging process
 
 ## [2.2.0] - 2024-12-12
 
