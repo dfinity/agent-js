@@ -1146,19 +1146,27 @@ export class HttpAgent implements Agent {
   }
 
   public async fetchRootKey(): Promise<ArrayBuffer> {
-    // Wait for already pending promise
+    let result: ArrayBuffer;
+    // Wait for already pending promise to avoid duplicate calls
     if (this.#rootKeyPromise) {
-      const result = await this.#rootKeyPromise;
-      this.#rootKeyPromise = null;
-      this.rootKey = result;
-      return result;
+      result = await this.#rootKeyPromise;
+    } else {
+      // construct promise
+      this.#rootKeyPromise = new Promise<ArrayBuffer>((resolve, reject) => {
+        this.status()
+          .then(value => {
+            // Hex-encoded version of the replica root key
+            const rootKey = (value as JsonObject & { root_key: ArrayBuffer }).root_key;
+            this.rootKey = rootKey;
+            resolve(rootKey);
+          })
+          .catch(reject);
+      });
+      result = await this.#rootKeyPromise;
     }
-    const status = await this.status();
-    // Hex-encoded version of the replica root key
-    const rootKey = (status as JsonObject & { root_key: ArrayBuffer }).root_key;
-    this.rootKey = rootKey;
-
-    return rootKey;
+    // clear rootkey promise and return result
+    this.#rootKeyPromise = null;
+    return result;
   }
 
   async #rootKeyGuard(): Promise<void> {
