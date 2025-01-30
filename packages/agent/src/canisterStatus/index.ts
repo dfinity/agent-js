@@ -147,13 +147,13 @@ export const request = async (options: {
         });
         const cert = await Certificate.create({
           certificate: response.certificate,
-          rootKey: agent.rootKey,
+          rootKey: await agent.getRootKey(),
           canisterId: canisterId,
         });
 
-        const lookup = (cert: Certificate, path: Path) => {
+        const lookup = async (cert: Certificate, path: Path) => {
           if (path === 'subnet') {
-            const data = fetchNodeKeys(response.certificate, canisterId, agent.rootKey);
+            const data = fetchNodeKeys(response.certificate, canisterId, await agent.getRootKey());
             return {
               path: path,
               data,
@@ -167,7 +167,7 @@ export const request = async (options: {
         };
 
         // must pass in the rootKey if we have no delegation
-        const { path, data } = lookup(cert, uniquePaths[index]);
+        const { path, data } = await lookup(cert, uniquePaths[index]);
         if (!data) {
           // Typically, the cert lookup will throw
           console.warn(`Expected to find result for path ${path}, but instead found nothing.`);

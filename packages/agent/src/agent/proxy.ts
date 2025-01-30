@@ -158,7 +158,8 @@ export class ProxyStubAgent {
 export class ProxyAgent implements Agent {
   private _nextId = 0;
   private _pendingCalls = new Map<number, [(resolve: any) => void, (reject: any) => void]>();
-  public rootKey = null;
+
+  #fetchRootKeyPromise: Promise<ArrayBuffer> | null = null;
 
   constructor(private _backend: (msg: ProxyMessage) => void) {}
 
@@ -241,10 +242,20 @@ export class ProxyAgent implements Agent {
     });
   }
 
+  async getRootKey(): Promise<ArrayBuffer> {
+    return this.fetchRootKey();
+  }
+
   public async fetchRootKey(): Promise<ArrayBuffer> {
+    if (this.#fetchRootKeyPromise === null) {
+      this.#fetchRootKeyPromise = this.#fetchRootKey();
+    }
+
+    return await this.#fetchRootKeyPromise;
+  }
+
+  async #fetchRootKey(): Promise<ArrayBuffer> {
     // Hex-encoded version of the replica root key
-    const rootKey = ((await this.status()) as any).root_key;
-    this.rootKey = rootKey;
-    return rootKey;
+    return ((await this.status()) as any).root_key;
   }
 }
