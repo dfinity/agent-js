@@ -26,7 +26,7 @@ import {
 } from '../..';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { AgentError } from '../../errors';
-import { AgentHTTPResponseError } from './errors';
+import { AgentCallError, AgentHTTPResponseError } from './errors';
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;
@@ -552,7 +552,7 @@ describe('retry failures', () => {
         methodName: 'test',
         arg: new Uint8Array().buffer,
       });
-    await expect(performCall).rejects.toThrow(AgentHTTPResponseError);
+    await expect(performCall).rejects.toThrow(AgentCallError);
     expect(mockFetch.mock.calls.length).toBe(1);
   });
   it('should throw errors after 3 retries by default', async () => {
@@ -1051,32 +1051,44 @@ describe('transform', () => {
 });
 
 describe('error logs for bad signature', () => {
-  it('should do', async () => {
+  it('should throw call errors if provided an invalid signature', async () => {
     const badSignatureResponse = {
       headers: [
         ['access-control-allow-origin', '*'],
         ['content-length', '332'],
         ['content-type', 'text/plain; charset=utf-8'],
-        ['date', 'Thu, 30 Jan 2025 23:41:01 GMT'],
+        ['date', 'Fri, 31 Jan 2025 18:53:47 GMT'],
       ],
       ok: false,
       status: 400,
       statusText: 'Bad Request',
-      body: '496e76616c6964207369676e61747572653a20496e76616c6964206261736963207369676e61747572653a2045643235353139207369676e617475726520636f756c64206e6f742062652076657269666965643a207075626c6963206b657920653537323832306533663762613263393537623134643462373665306363376136303434663265323530666535613130323734383733356363323235336434312c207369676e61747572652030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030302c206572726f723a2041207369676e61747572652077617320696e76616c6964',
-      now: 1738280418227,
+      body: '496e76616c6964207369676e61747572653a20496e76616c6964206261736963207369676e61747572653a2045643235353139207369676e617475726520636f756c64206e6f742062652076657269666965643a207075626c6963206b657920336236613237626363656236613432643632613361386430326136663064373336353332313537373164653234336136336163303438613138623539646132392c207369676e61747572652030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030302c206572726f723a2041207369676e61747572652077617320696e76616c6964',
+      now: 1738349617614,
     };
 
     const mockFetch: jest.Mock = jest.fn(() => {
-      return Promise.resolve(
-        new Response({
-          ...badSignatureResponse,
-          arrayBuffer: async () => fromHex(badSignatureResponse.body),
-        } as unknown as BodyInit),
-      );
+      return Promise.resolve({
+        ...badSignatureResponse,
+        body: fromHex(badSignatureResponse.body),
+        arrayBuffer: async () => fromHex(badSignatureResponse.body),
+        clone: () => {
+          return {
+            ...badSignatureResponse,
+            body: fromHex(badSignatureResponse.body),
+            arrayBuffer: async () => fromHex(badSignatureResponse.body),
+            text: async () =>
+              'Invalid signature: Invalid basic signature: Ed25519 signature could not be verified: public key 3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29, signature 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, error: A signature was invalid\n',
+          };
+        },
+      });
     });
 
-    jest.useFakeTimers();
-    jest.setSystemTime(badSignatureResponse.now);
+    jest.useRealTimers();
+    // jest.setSystemTime(badSignatureResponse.now);
+
+    jest.spyOn(Date, 'now').mockImplementation(() => 1738362489290);
+    global.clearTimeout = jest.fn();
+
     const identity = Ed25519KeyIdentity.generate(new Uint8Array(32)) as unknown as SignIdentity;
     identity.sign = async () => {
       return new ArrayBuffer(64) as Signature;
@@ -1084,6 +1096,7 @@ describe('error logs for bad signature', () => {
     const agent = HttpAgent.createSync({
       identity,
       fetch: mockFetch,
+      retryTimes: 0,
       host: 'http://localhost:4943',
     });
     // Important - override nonce when making request to ensure reproducible result
@@ -1111,10 +1124,11 @@ describe('error logs for bad signature', () => {
         methodName,
         arg,
       });
-    } catch {
-      // ignore
+    } catch (e) {
+      expect(e instanceof AgentCallError).toBe(true);
     }
     expect(JSON.stringify(logs[0])).toMatchSnapshot();
+    expect(logs[0].error instanceof AgentCallError).toBe(true);
   });
 });
 

@@ -19,9 +19,10 @@ export class AgentCallError extends AgentError {
     public readonly requestId: string,
     public readonly sender_pubkey: string,
     public readonly sender_sig: string,
+    public readonly ingress_expiry: string,
   ) {
     super(message);
-    this.name = this.constructor.name;
+    this.name = 'AgentCallError';
     Object.setPrototypeOf(this, new.target.prototype);
   }
 }

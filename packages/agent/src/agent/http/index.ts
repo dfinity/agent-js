@@ -577,9 +577,13 @@ export class HttpAgent implements Agent {
         toHex(requestId),
         toHex(transformedRequest.body.sender_pubkey),
         toHex(transformedRequest.body.sender_sig),
+        String(transformedRequest.body.content.ingress_expiry['_value']),
       );
-      this.log.error('Error while making call:', callError);
-      throw error;
+      this.log.error(
+        `Error while making call: ${(error as Error).message ?? String(error)}`,
+        callError,
+      );
+      throw callError;
     }
   }
 
