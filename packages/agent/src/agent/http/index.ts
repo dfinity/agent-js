@@ -1,7 +1,7 @@
 import { JsonObject } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { AgentError } from '../../errors';
-import { AnonymousIdentity, Identity, Signature } from '../../auth';
+import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
 import { RequestId, hashOfMap, requestIdOf } from '../../request_id';
 import { bufFromBufLike, concat, fromHex, toHex } from '../../utils/buffer';

@@ -1075,9 +1075,9 @@ describe('error logs for bad signature', () => {
       );
     });
 
-    jest.useRealTimers();
-    // jest.setSystemTime(badSignatureResponse.now);
-    const identity = Ed25519KeyIdentity.generate() as unknown as SignIdentity;
+    jest.useFakeTimers();
+    jest.setSystemTime(badSignatureResponse.now);
+    const identity = Ed25519KeyIdentity.generate(new Uint8Array(32)) as unknown as SignIdentity;
     identity.sign = async () => {
       return new ArrayBuffer(64) as Signature;
     };
@@ -1086,14 +1086,15 @@ describe('error logs for bad signature', () => {
       fetch: mockFetch,
       host: 'http://localhost:4943',
     });
+    // Important - override nonce when making request to ensure reproducible result
+    agent.addTransform('update', async args => {
+      args.body.nonce = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
+      return args;
+    });
     const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
 
     const methodName = 'greet';
     const arg = new Uint8Array([]);
-
-    jest.spyOn(Date, 'now').mockImplementation(() => {
-      return 1738280418227;
-    });
     const logs: {
       message: string;
       level: 'error';

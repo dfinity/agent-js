@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`error logs for bad signature should do 1`] = `"{"message":"Error while making call:","level":"error","error":{"name":"AgentError","response":{},"requestId":"ab85c18a1bbca648f5a1e4b47b5b6829edae78cac384f8a52c8a8cf56a593532","sender_pubkey":"302a300506032b6570032100805206462aad05469a783b3f9f3d2e7a7e56a514f119dd75fe45681c0c4849df","sender_sig":"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"}}"`;
+exports[`error logs for bad signature should do 1`] = `"{"message":"Error while making call:","level":"error","error":{"name":"AgentError","response":{},"requestId":"803cec3065e120bab99d241c6b3f3439e5601acd10ba491e1d06fdbd39ae2fd3","sender_pubkey":"302a300506032b65700321003b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29","sender_sig":"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"}}"`;
 
 exports[`it should handle calls against the ic-management canister that succeed 1`] = `
 {

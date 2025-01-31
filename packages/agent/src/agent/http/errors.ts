@@ -1,7 +1,5 @@
-import { RequestId } from 'src/request_id';
 import { AgentError } from '../../errors';
 import { HttpDetailsResponse } from '../api';
-import { PublicKey, Signature } from 'src/auth';
 
 export class AgentHTTPResponseError extends AgentError {
   constructor(
