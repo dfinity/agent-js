@@ -151,6 +151,11 @@ export interface HttpAgentOptions {
    * Alternate root key to use for verifying certificates. If not provided, the default IC root key will be used.
    */
   rootKey?: ArrayBuffer;
+
+  /**
+   * Whether or not the root key should be automatically fetched during construction.
+   */
+  shouldFetchRootKey?: boolean;
 }
 
 function getDefaultFetch(): typeof fetch {
@@ -246,7 +251,9 @@ other computations so that this class can stay as simple as possible while
 allowing extensions.
  */
 export class HttpAgent implements Agent {
-  public rootKey: ArrayBuffer;
+  public rootKey: ArrayBuffer | null;
+  #rootKeyPromise: Promise<ArrayBuffer> | null = null;
+  #shouldFetchRootKey: boolean = false;
   #identity: Promise<Identity> | null;
   readonly #fetch: typeof fetch;
   readonly #fetchOptions?: Record<string, unknown>;
@@ -254,7 +261,6 @@ export class HttpAgent implements Agent {
   #timeDiffMsecs = 0;
   readonly host: URL;
   readonly #credentials: string | undefined;
-  #rootKeyFetched = false;
   readonly #retryTimes; // Retry requests N times before erroring by default
   #backoffStrategy: BackoffStrategyFactory;
   readonly #maxIngressExpiryInMinutes: number;
@@ -289,7 +295,16 @@ export class HttpAgent implements Agent {
     this.#fetch = options.fetch || getDefaultFetch() || fetch.bind(global);
     this.#fetchOptions = options.fetchOptions;
     this.#callOptions = options.callOptions;
-    this.rootKey = options.rootKey ? options.rootKey : fromHex(IC_ROOT_KEY);
+    this.#shouldFetchRootKey = options.shouldFetchRootKey ?? false;
+
+    // Use provided root key, otherwise fall back to IC_ROOT_KEY for mainnet or null if the key needs to be fetched
+    if (options.rootKey) {
+      this.rootKey = options.rootKey;
+    } else if (this.#shouldFetchRootKey) {
+      this.rootKey = null;
+    } else {
+      this.rootKey = fromHex(IC_ROOT_KEY);
+    }
 
     const host = determineHost(options.host);
     this.host = new URL(host);
@@ -356,7 +371,7 @@ export class HttpAgent implements Agent {
   }
 
   public static async create(
-    options: HttpAgentOptions & { shouldFetchRootKey?: boolean } = {
+    options: HttpAgentOptions = {
       shouldFetchRootKey: false,
     },
   ): Promise<HttpAgent> {
@@ -436,6 +451,7 @@ export class HttpAgent implements Agent {
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
+    await this.#rootKeyGuard();
     // TODO - restore this value
     const callSync = options.callSync ?? true;
     const id = await (identity !== undefined ? await identity : await this.#identity);
@@ -782,6 +798,7 @@ export class HttpAgent implements Agent {
     fields: QueryFields,
     identity?: Identity | Promise<Identity>,
   ): Promise<ApiQueryResponse> {
+    await this.#rootKeyGuard();
     const backoff = this.#backoffStrategy();
     const ecid = fields.effectiveCanisterId
       ? Principal.from(fields.effectiveCanisterId)
@@ -969,6 +986,7 @@ export class HttpAgent implements Agent {
     identity?: Identity | Promise<Identity>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<any> {
+    await this.#rootKeyGuard();
     const id = await (identity !== undefined ? await identity : await this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
@@ -1006,6 +1024,7 @@ export class HttpAgent implements Agent {
     // eslint-disable-next-line
     request?: any,
   ): Promise<ReadStateResponse> {
+    await this.#rootKeyGuard();
     const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
 
     const transformedRequest = request ?? (await this.createReadStateRequest(fields, identity));
@@ -1094,6 +1113,7 @@ export class HttpAgent implements Agent {
    * @param {Principal} canisterId - Pass a canister ID if you need to sync the time with a particular replica. Uses the management canister by default
    */
   public async syncTime(canisterId?: Principal): Promise<void> {
+    await this.#rootKeyGuard();
     const CanisterStatus = await import('../../canisterStatus');
     const callTime = Date.now();
     try {
@@ -1137,13 +1157,39 @@ export class HttpAgent implements Agent {
   }
 
   public async fetchRootKey(): Promise<ArrayBuffer> {
-    if (!this.#rootKeyFetched) {
-      const status = await this.status();
-      // Hex-encoded version of the replica root key
-      this.rootKey = (status as JsonObject & { root_key: ArrayBuffer }).root_key;
-      this.#rootKeyFetched = true;
+    let result: ArrayBuffer;
+    // Wait for already pending promise to avoid duplicate calls
+    if (this.#rootKeyPromise) {
+      result = await this.#rootKeyPromise;
+    } else {
+      // construct promise
+      this.#rootKeyPromise = new Promise<ArrayBuffer>((resolve, reject) => {
+        this.status()
+          .then(value => {
+            // Hex-encoded version of the replica root key
+            const rootKey = (value as JsonObject & { root_key: ArrayBuffer }).root_key;
+            this.rootKey = rootKey;
+            resolve(rootKey);
+          })
+          .catch(reject);
+      });
+      result = await this.#rootKeyPromise;
     }
-    return this.rootKey;
+    // clear rootkey promise and return result
+    this.#rootKeyPromise = null;
+    return result;
+  }
+
+  async #rootKeyGuard(): Promise<void> {
+    if (this.rootKey) {
+      return;
+    } else if (this.rootKey === null && this.#shouldFetchRootKey) {
+      await this.fetchRootKey();
+    } else {
+      throw new AgentError(
+        `Invalid root key detected. The root key for this agent is ${this.rootKey} and the shouldFetchRootKey value is set to ${this.#shouldFetchRootKey}. The root key should only be unknown if you are in local development. Otherwise you should avoid fetching and use the default IC Root Key or the known root key of your environment.`,
+      );
+    }
   }
 
   public invalidateIdentity(): void {
@@ -1155,6 +1201,7 @@ export class HttpAgent implements Agent {
   }
 
   public async fetchSubnetKeys(canisterId: Principal | string) {
+    await this.#rootKeyGuard();
     const effectiveCanisterId: Principal = Principal.from(canisterId);
     const response = await request({
       canisterId: effectiveCanisterId,
