@@ -17,9 +17,9 @@ export class AgentCallError extends AgentError {
     message: string,
     public readonly response: HttpDetailsResponse,
     public readonly requestId: string,
-    public readonly sender_pubkey: string,
-    public readonly sender_sig: string,
-    public readonly ingress_expiry: string,
+    public readonly senderPubkey: string,
+    public readonly senderSig: string,
+    public readonly ingressExpiry: string,
   ) {
     super(message);
     this.name = 'AgentCallError';
