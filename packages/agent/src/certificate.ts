@@ -147,10 +147,16 @@ export interface CreateCertificateOptions {
    * older than the specified age, it will fail verification.
    */
   maxAgeInMinutes?: number;
+
+  /**
+   * Overrides the maxAgeInMinutes setting and skips comparing the client's time against the certificate. Used for scenarios where the machine's clock is known to be out of sync, or for inspecting expired certificates.
+   */
+  disableTimeVerification?: boolean;
 }
 
 export class Certificate {
   public cert: Cert;
+  #disableTimeVerification: boolean = false;
 
   /**
    * Create a new instance of a certificate, automatically verifying it. Throws a
@@ -181,6 +187,7 @@ export class Certificate {
       options.canisterId,
       blsVerify,
       options.maxAgeInMinutes,
+      options.disableTimeVerification,
     );
   }
 
@@ -191,7 +198,9 @@ export class Certificate {
     private _blsVerify: VerifyFunc,
     // Default to 5 minutes
     private _maxAgeInMinutes: number = 5,
+    disableTimeVerification: boolean = false,
   ) {
+    this.#disableTimeVerification = disableTimeVerification;
     this.cert = cbor.decode(new Uint8Array(certificate));
   }
 
@@ -218,28 +227,31 @@ export class Certificate {
       throw new CertificateVerificationError('Certificate does not contain a time');
     }
 
-    const FIVE_MINUTES_IN_MSEC = 5 * 60 * 1000;
-    const MAX_AGE_IN_MSEC = this._maxAgeInMinutes * 60 * 1000;
-    const now = Date.now();
-    const earliestCertificateTime = now - MAX_AGE_IN_MSEC;
-    const fiveMinutesFromNow = now + FIVE_MINUTES_IN_MSEC;
+    // Certificate time verification checks
+    if (!this.#disableTimeVerification) {
+      const FIVE_MINUTES_IN_MSEC = 5 * 60 * 1000;
+      const MAX_AGE_IN_MSEC = this._maxAgeInMinutes * 60 * 1000;
+      const now = Date.now();
+      const earliestCertificateTime = now - MAX_AGE_IN_MSEC;
+      const fiveMinutesFromNow = now + FIVE_MINUTES_IN_MSEC;
 
-    const certTime = decodeTime(lookupTime);
+      const certTime = decodeTime(lookupTime);
 
-    if (certTime.getTime() < earliestCertificateTime) {
-      throw new CertificateVerificationError(
-        `Certificate is signed more than ${this._maxAgeInMinutes} minutes in the past. Certificate time: ` +
-          certTime.toISOString() +
-          ' Current time: ' +
-          new Date(now).toISOString(),
-      );
-    } else if (certTime.getTime() > fiveMinutesFromNow) {
-      throw new CertificateVerificationError(
-        'Certificate is signed more than 5 minutes in the future. Certificate time: ' +
-          certTime.toISOString() +
-          ' Current time: ' +
-          new Date(now).toISOString(),
-      );
+      if (certTime.getTime() < earliestCertificateTime) {
+        throw new CertificateVerificationError(
+          `Certificate is signed more than ${this._maxAgeInMinutes} minutes in the past. Certificate time: ` +
+            certTime.toISOString() +
+            ' Current time: ' +
+            new Date(now).toISOString(),
+        );
+      } else if (certTime.getTime() > fiveMinutesFromNow) {
+        throw new CertificateVerificationError(
+          'Certificate is signed more than 5 minutes in the future. Certificate time: ' +
+            certTime.toISOString() +
+            ' Current time: ' +
+            new Date(now).toISOString(),
+        );
+      }
     }
 
     try {
