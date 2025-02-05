@@ -13,6 +13,7 @@ import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
 import { describe, it, expect, vi, test } from 'vitest';
 import { makeAgent } from '../utils/agent';
+import { AgentLog } from '@dfinity/agent/src/observable';
 
 const { defaultStrategy, pollForResponse } = polling;
 
@@ -21,7 +22,7 @@ const createWhoamiActor = async (identity: Identity) => {
   const idlFactory = () => {
     return IDL.Service({
       whoami: IDL.Func([], [IDL.Principal], ['query']),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }) as unknown as any;
   };
   vi.useFakeTimers();
@@ -201,4 +202,26 @@ test('it should allow you to set an incorrect root key', async () => {
   });
 
   expect(actor.whoami).rejects.toThrowError(`Invalid certificate:`);
+});
+
+test('should allow you to sync time when the system time is over 5 minutes apart from the replica time', async () => {
+  vi.useRealTimers();
+  vi.spyOn(Date, 'now').mockImplementation(() => 0);
+  new Date(Date.now()); //?
+  global.clearTimeout = vi.fn();
+  const agent = new HttpAgent({ fetch: fetch });
+  const logs: AgentLog[] = [];
+  agent.log.subscribe(log => logs.push(log));
+  await agent.syncTime();
+  await agent
+    .call(Principal.managementCanister(), {
+      methodName: 'test',
+      arg: new Uint8Array().buffer,
+    })
+    // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
+    .catch(function (_) {});
+
+  expect(logs[1].level).toBe('info');
+  expect(logs[1].message.startsWith('Syncing time: offset of')).toBe(true);
+  console.log(logs[1]);
 });

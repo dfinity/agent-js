@@ -152,6 +152,7 @@ export const request = async (options: {
           certificate: response.certificate,
           rootKey: agent.rootKey,
           canisterId: canisterId,
+          disableTimeVerification: true,
         });
 
         const lookup = (cert: Certificate, path: Path) => {

@@ -1122,16 +1122,28 @@ export class HttpAgent implements Agent {
           'Syncing time with the IC. No canisterId provided, so falling back to ryjl3-tyaaa-aaaaa-aaaba-cai',
         );
       }
+
+      const anonymousAgent = HttpAgent.createSync({
+        identity: new AnonymousIdentity(),
+        host: this.host.toString(),
+        fetch: this.#fetch,
+        retryTimes: 0,
+      });
+
       const status = await CanisterStatus.request({
         // Fall back with canisterId of the ICP Ledger
         canisterId: canisterId ?? Principal.from('ryjl3-tyaaa-aaaaa-aaaba-cai'),
-        agent: this,
+        agent: anonymousAgent,
         paths: ['time'],
       });
 
       const replicaTime = status.get('time');
       if (replicaTime) {
         this.#timeDiffMsecs = Number(replicaTime as bigint) - Number(callTime);
+        this.log.notify({
+          message: `Syncing time: offset of ${this.#timeDiffMsecs}`,
+          level: 'info',
+        });
       }
     } catch (error) {
       this.log.error('Caught exception while attempting to sync time', error as AgentError);
