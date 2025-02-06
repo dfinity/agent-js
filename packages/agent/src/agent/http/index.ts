@@ -4,7 +4,7 @@ import { AgentError } from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
 import { RequestId, hashOfMap, requestIdOf } from '../../request_id';
-import { bufFromBufLike, concat, fromHex, toHex } from '../../utils/buffer';
+import { bufEquals, bufFromBufLike, concat, fromHex, toHex } from '../../utils/buffer';
 import {
   Agent,
   ApiQueryResponse,
@@ -29,7 +29,12 @@ import {
   ReadRequestType,
   SubmitRequestType,
 } from './types';
-import { AgentCallError, AgentHTTPResponseError, AgentQueryError } from './errors';
+import {
+  AgentCallError,
+  AgentHTTPResponseError,
+  AgentQueryError,
+  AgentReadStateError,
+} from './errors';
 import { SubnetStatus, request } from '../../canisterStatus';
 import {
   CertificateVerificationError,
@@ -912,13 +917,17 @@ export class HttpAgent implements Agent {
         return this.#verifyQueryResponse(queryWithDetails, updatedSubnetStatus);
       }
     } catch (error) {
-      throw new AgentQueryError(
+      const queryError = new AgentQueryError(
         'Encountered an error while making a query:',
         error as HttpDetailsResponse,
         String(requestId),
         toHex(transformedRequest?.body?.sender_pubkey),
         toHex(transformedRequest?.body?.sender_sig),
         String(transformedRequest?.body?.content.ingress_expiry['_value']),
+      );
+      this.log.error(
+        `Error while making call: ${(error as Error).message ?? String(error)}`,
+        queryError,
       );
     }
   }
@@ -1040,6 +1049,20 @@ export class HttpAgent implements Agent {
     // eslint-disable-next-line
     request?: any,
   ): Promise<ReadStateResponse> {
+    function getRequestId(fields: ReadStateOptions): RequestId {
+      for (const path of fields.paths) {
+        const [pathName, value] = path;
+        const request_status = new TextEncoder().encode('request_status');
+        if (bufEquals(pathName, request_status)) {
+          return value as RequestId;
+        }
+      }
+      throw new AgentError(
+        `Incorrectly formed read state request: fields doesn't include request_status path`,
+      );
+    }
+    const requestId = getRequestId(fields);
+
     await this.#rootKeyGuard();
     const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
 
@@ -1092,8 +1115,19 @@ export class HttpAgent implements Agent {
 
       return decodedResponse;
     } catch (error) {
-      this.log.error('Caught exception while attempting to read state', error as AgentError);
-      throw error;
+      const readStateError = new AgentReadStateError(
+        'Encountered an error while making a query:',
+        error as HttpDetailsResponse,
+        String(requestId),
+        toHex(transformedRequest?.body?.sender_pubkey),
+        toHex(transformedRequest?.body?.sender_sig),
+        String(transformedRequest?.body?.content.ingress_expiry['_value']),
+      );
+      this.log.error(
+        `Caught exception while attempting to read state: ${(error as Error).message ?? String(error)}`,
+        readStateError,
+        error as AgentError,
+      );
     }
   }
 
