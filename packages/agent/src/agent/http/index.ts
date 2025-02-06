@@ -1046,7 +1046,7 @@ export class HttpAgent implements Agent {
     // eslint-disable-next-line
     request?: any,
   ): Promise<ReadStateResponse> {
-    function getRequestId(fields: ReadStateOptions): RequestId {
+    function getRequestId(fields: ReadStateOptions): RequestId | undefined {
       for (const path of fields.paths) {
         const [pathName, value] = path;
         const request_status = new TextEncoder().encode('request_status');
@@ -1054,9 +1054,6 @@ export class HttpAgent implements Agent {
           return value as RequestId;
         }
       }
-      throw new AgentError(
-        `Incorrectly formed read state request: fields doesn't include request_status path`,
-      );
     }
     const requestId = getRequestId(fields);
 
