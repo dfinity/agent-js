@@ -1,6 +1,6 @@
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
-import { HttpAgent, Nonce, SubmitResponse } from './agent';
+import { AgentCallError, HttpAgent, HttpDetailsResponse, Nonce, SubmitResponse } from './agent';
 import { Expiry } from './agent/http/transforms';
 import { CallRequest, SubmitRequestType, UnSigned } from './agent/http/types';
 import * as cbor from './cbor';
@@ -369,6 +369,36 @@ describe('makeActor', () => {
       'Canister ID is required, but received undefined instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.',
     );
   });
+});
+
+test('it should preserve errors from call', async () => {
+  const httpAgent = {
+    call: () => {
+      throw new AgentCallError(
+        'test error',
+        {} as unknown as HttpDetailsResponse,
+        'request id',
+        'pubkey',
+        'senderSig',
+        'ingressExpiry',
+      );
+    },
+  };
+  const actorInterface = () => {
+    return IDL.Service({
+      greet: IDL.Func([IDL.Text], [IDL.Text]),
+    });
+  };
+  const { Actor } = await importActor();
+  const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+  const config = { agent: httpAgent, canisterId } as unknown as ActorConfig;
+  const testActor = await Actor.createActor(actorInterface, config);
+  try {
+    await testActor.greet('foo'); //?
+  } catch (error) {
+    expect(error.message).toBe('test error');
+    expect(error instanceof AgentCallError).toBe(true);
+  }
 });
 
 jest.setTimeout(20000);
