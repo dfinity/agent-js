@@ -4,12 +4,6 @@ exports[`error logs for bad signature should throw call errors if provided an in
 
 exports[`error logs for bad signature should throw query errors for bad signature 1`] = `"{"message":"Error while making call: fetchResponse.text is not a function","level":"error","error":{"name":"AgentQueryError","response":{},"requestId":"[object ArrayBuffer]","senderPubkey":"302a300506032b65700321003b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29","senderSig":"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000","ingressExpiry":"1738362720000000000"}}"`;
 
-exports[`error logs for bad signature should throw query errors for bad signature 2`] = `"{"message":"Error while making call: fetchResponse.text is not a function","level":"error","error":{"name":"AgentQueryError","response":{},"requestId":"[object ArrayBuffer]","senderPubkey":"302a300506032b65700321003b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29","senderSig":"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000","ingressExpiry":"1738362720000000000"}}"`;
-
-exports[`error logs for bad signature should throw re errors for bad signature 1`] = `"{"message":"Error while making call: fetchResponse.text is not a function","level":"error","error":{"name":"AgentQueryError","response":{},"requestId":"[object ArrayBuffer]","senderPubkey":"302a300506032b65700321003b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29","senderSig":"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000","ingressExpiry":"1738362720000000000"}}"`;
-
-exports[`error logs for bad signature should throw read_state errors for bad signature 1`] = `"{"message":"Error while making call: fetchResponse.text is not a function","level":"error","error":{"name":"AgentQueryError","response":{},"requestId":"[object ArrayBuffer]","senderPubkey":"302a300506032b65700321003b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29","senderSig":"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000","ingressExpiry":"1738362720000000000"}}"`;
-
 exports[`it should handle calls against the ic-management canister that succeed 1`] = `
 {
   "cycles": 3092219247033n,
