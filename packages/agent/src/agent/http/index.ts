@@ -929,6 +929,7 @@ export class HttpAgent implements Agent {
         `Error while making call: ${(error as Error).message ?? String(error)}`,
         queryError,
       );
+      throw queryError;
     }
   }
 
@@ -1128,6 +1129,7 @@ export class HttpAgent implements Agent {
         readStateError,
         error as AgentError,
       );
+      throw readStateError;
     }
   }
 

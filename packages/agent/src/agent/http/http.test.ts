@@ -413,8 +413,9 @@ describe('invalidate identity', () => {
     }
     // Test readState
     try {
+      const path = new TextEncoder().encode('request_status');
       await agent.readState(canisterId, {
-        paths: [[new ArrayBuffer(16)]],
+        paths: [[path]],
       });
     } catch (error) {
       expect((error as Error).message).toBe(expectedError);
