@@ -593,18 +593,16 @@ export class HttpAgent implements Agent {
           identity,
         );
       }
+      const message = `Error while making call: ${(error as Error).message ?? String(error)}`;
       const callError = new AgentCallError(
-        'Encountered an error while making call:',
+        message,
         error as HttpDetailsResponse,
         toHex(requestId),
         toHex(transformedRequest.body.sender_pubkey),
         toHex(transformedRequest.body.sender_sig),
         String(transformedRequest.body.content.ingress_expiry['_value']),
       );
-      this.log.error(
-        `Error while making call: ${(error as Error).message ?? String(error)}`,
-        callError,
-      );
+      this.log.error(message, callError);
       throw callError;
     }
   }
@@ -917,18 +915,16 @@ export class HttpAgent implements Agent {
         return this.#verifyQueryResponse(queryWithDetails, updatedSubnetStatus);
       }
     } catch (error) {
+      const message = `Error while making call: ${(error as Error).message ?? String(error)}`;
       const queryError = new AgentQueryError(
-        'Encountered an error while making a query:',
+        message,
         error as HttpDetailsResponse,
         String(requestId),
         toHex(transformedRequest?.body?.sender_pubkey),
         toHex(transformedRequest?.body?.sender_sig),
         String(transformedRequest?.body?.content.ingress_expiry['_value']),
       );
-      this.log.error(
-        `Error while making call: ${(error as Error).message ?? String(error)}`,
-        queryError,
-      );
+      this.log.error(message, queryError);
       throw queryError;
     }
   }
@@ -1116,19 +1112,16 @@ export class HttpAgent implements Agent {
 
       return decodedResponse;
     } catch (error) {
+      const message = `Caught exception while attempting to read state: ${(error as Error).message ?? String(error)}`;
       const readStateError = new AgentReadStateError(
-        'Encountered an error while making a query:',
+        message,
         error as HttpDetailsResponse,
         String(requestId),
         toHex(transformedRequest?.body?.sender_pubkey),
         toHex(transformedRequest?.body?.sender_sig),
         String(transformedRequest?.body?.content.ingress_expiry['_value']),
       );
-      this.log.error(
-        `Caught exception while attempting to read state: ${(error as Error).message ?? String(error)}`,
-        readStateError,
-        error as AgentError,
-      );
+      this.log.error(message, readStateError);
       throw readStateError;
     }
   }
