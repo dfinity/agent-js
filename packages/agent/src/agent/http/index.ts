@@ -29,7 +29,7 @@ import {
   ReadRequestType,
   SubmitRequestType,
 } from './types';
-import { AgentCallError, AgentHTTPResponseError } from './errors';
+import { AgentCallError, AgentHTTPResponseError, AgentQueryError } from './errors';
 import { SubnetStatus, request } from '../../canisterStatus';
 import {
   CertificateVerificationError,
@@ -45,6 +45,7 @@ import { ObservableLog } from '../../observable';
 import { BackoffStrategy, BackoffStrategyFactory, ExponentialBackoff } from '../../polling/backoff';
 import { DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS } from '../../constants';
 export * from './transforms';
+export * from './errors';
 export { Nonce, makeNonce } from './types';
 
 export enum RequestStatusResponseStatus {
@@ -806,56 +807,58 @@ export class HttpAgent implements Agent {
 
     this.log.print(`ecid ${ecid.toString()}`);
     this.log.print(`canisterId ${canisterId.toString()}`);
-    const makeQuery = async () => {
-      const id = await (identity !== undefined ? identity : this.#identity);
-      if (!id) {
-        throw new IdentityInvalidError(
-          "This identity has expired due this application's security policy. Please refresh your authentication.",
-        );
-      }
 
-      const canister = Principal.from(canisterId);
-      const sender = id?.getPrincipal() || Principal.anonymous();
+    let transformedRequest: HttpAgentRequest | undefined = undefined;
+    let queryResult;
+    const id = await (identity !== undefined ? identity : this.#identity);
+    if (!id) {
+      throw new IdentityInvalidError(
+        "This identity has expired due this application's security policy. Please refresh your authentication.",
+      );
+    }
 
-      const request: QueryRequest = {
-        request_type: ReadRequestType.Query,
-        canister_id: canister,
-        method_name: fields.methodName,
-        arg: fields.arg,
-        sender,
-        ingress_expiry: new Expiry(this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS),
-      };
+    const canister = Principal.from(canisterId);
+    const sender = id?.getPrincipal() || Principal.anonymous();
 
-      const requestId = requestIdOf(request);
+    const request: QueryRequest = {
+      request_type: ReadRequestType.Query,
+      canister_id: canister,
+      method_name: fields.methodName,
+      arg: fields.arg,
+      sender,
+      ingress_expiry: new Expiry(this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS),
+    };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let transformedRequest: HttpAgentRequest = await this._transform({
-        request: {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/cbor',
-            ...(this.#credentials ? { Authorization: 'Basic ' + btoa(this.#credentials) } : {}),
-          },
+    const requestId = requestIdOf(request);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    transformedRequest = await this._transform({
+      request: {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/cbor',
+          ...(this.#credentials ? { Authorization: 'Basic ' + btoa(this.#credentials) } : {}),
         },
-        endpoint: Endpoint.Query,
-        body: request,
-      });
+      },
+      endpoint: Endpoint.Query,
+      body: request,
+    });
 
-      // Apply transform for identity.
-      transformedRequest = (await id?.transformRequest(transformedRequest)) as HttpAgentRequest;
+    // Apply transform for identity.
+    transformedRequest = (await id?.transformRequest(transformedRequest)) as HttpAgentRequest;
 
-      const body = cbor.encode(transformedRequest.body);
+    const body = cbor.encode(transformedRequest.body);
 
-      const args = {
-        canister: canister.toText(),
-        ecid,
-        transformedRequest,
-        body,
-        requestId,
-        backoff,
-        tries: 0,
-      };
-
+    const args = {
+      canister: canister.toText(),
+      ecid,
+      transformedRequest,
+      body,
+      requestId,
+      backoff,
+      tries: 0,
+    };
+    const makeQuery = async () => {
       return {
         requestDetails: request,
         query: await this.#requestAndRetryQuery(args),
@@ -875,35 +878,48 @@ export class HttpAgent implements Agent {
     };
     // Attempt to make the query i=retryTimes times
     // Make query and fetch subnet keys in parallel
-    const [queryResult, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
-    const { requestDetails, query } = queryResult;
-
-    const queryWithDetails = {
-      ...query,
-      requestDetails,
-    };
-
-    this.log.print('Query response:', queryWithDetails);
-    // Skip verification if the user has disabled it
-    if (!this.#verifyQuerySignatures) {
-      return queryWithDetails;
-    }
 
     try {
-      return this.#verifyQueryResponse(queryWithDetails, subnetStatus);
-    } catch {
-      // In case the node signatures have changed, refresh the subnet keys and try again
-      this.log.warn('Query response verification failed. Retrying with fresh subnet keys.');
-      this.#subnetKeys.delete(canisterId.toString());
-      await this.fetchSubnetKeys(ecid.toString());
+      const [_queryResult, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
+      queryResult = _queryResult;
+      const { requestDetails, query } = queryResult;
 
-      const updatedSubnetStatus = this.#subnetKeys.get(canisterId.toString());
-      if (!updatedSubnetStatus) {
-        throw new CertificateVerificationError(
-          'Invalid signature from replica signed query: no matching node key found.',
-        );
+      const queryWithDetails = {
+        ...query,
+        requestDetails,
+      };
+
+      this.log.print('Query response:', queryWithDetails);
+      // Skip verification if the user has disabled it
+      if (!this.#verifyQuerySignatures) {
+        return queryWithDetails;
       }
-      return this.#verifyQueryResponse(queryWithDetails, updatedSubnetStatus);
+
+      try {
+        return this.#verifyQueryResponse(queryWithDetails, subnetStatus);
+      } catch {
+        // In case the node signatures have changed, refresh the subnet keys and try again
+        this.log.warn('Query response verification failed. Retrying with fresh subnet keys.');
+        this.#subnetKeys.delete(canisterId.toString());
+        await this.fetchSubnetKeys(ecid.toString());
+
+        const updatedSubnetStatus = this.#subnetKeys.get(canisterId.toString());
+        if (!updatedSubnetStatus) {
+          throw new CertificateVerificationError(
+            'Invalid signature from replica signed query: no matching node key found.',
+          );
+        }
+        return this.#verifyQueryResponse(queryWithDetails, updatedSubnetStatus);
+      }
+    } catch (error) {
+      throw new AgentQueryError(
+        'Encountered an error while making a query:',
+        error as HttpDetailsResponse,
+        String(requestId),
+        toHex(transformedRequest?.body?.sender_pubkey),
+        toHex(transformedRequest?.body?.sender_sig),
+        String(transformedRequest?.body?.content.ingress_expiry['_value']),
+      );
     }
   }
 
