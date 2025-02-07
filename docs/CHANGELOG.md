@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [2.3.0] - 2025-02-07
+
 ### Added
 
 - shouldFetchRootKey option added to `HttpAgent` constructor
