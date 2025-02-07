@@ -9,7 +9,6 @@
 - shouldFetchRootKey option added to `HttpAgent` constructor
 - ci: adds BOT_APPROVED_FILES config
 
-
 ### Changed
 
 - feat: HttpAgent uses anonymous identity to make syncTime call, which can allow readState calls to work beyond 5 minutes
