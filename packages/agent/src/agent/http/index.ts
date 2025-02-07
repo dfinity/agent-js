@@ -1029,13 +1029,7 @@ export class HttpAgent implements Agent {
 
     const transformedRequest = request ?? (await this.createReadStateRequest(fields, identity));
 
-    // With read_state, we should always use a fresh expiry, even beyond the point where the initial request would have expired
-    const bodyWithAdjustedExpiry = {
-      ...transformedRequest.body,
-      ingress_expiry: new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS),
-    };
-
-    const body = cbor.encode(bodyWithAdjustedExpiry);
+    const body = cbor.encode(transformedRequest.body);
 
     this.log.print(
       `fetching "/api/v2/canister/${canister}/read_state" with request:`,

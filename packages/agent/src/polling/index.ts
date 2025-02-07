@@ -86,11 +86,6 @@ export async function pollForResponse(
   const path = [new TextEncoder().encode('request_status'), requestId];
   const currentRequest = request ?? (await agent.createReadStateRequest?.({ paths: [path] }));
 
-  // Use a fresh expiry for the repeated readState call
-  if (request && isSignedReadStateRequestWithExpiry(currentRequest)) {
-    currentRequest.body.content.ingress_expiry = new Expiry(DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS);
-  }
-
   const state = await agent.readState(canisterId, { paths: [path] }, undefined, currentRequest);
   if (agent.rootKey == null) throw new Error('Agent root key not initialized before polling');
   const cert = await Certificate.create({

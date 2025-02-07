@@ -8,6 +8,7 @@
 
 ### Changed
 
+- fix: reverts read_state polling expiry changes due to mismatched signature introduced in 2.1.3. Polling will re-use the original request as before, up to the point where the request expires
 - feat: HttpAgent uses anonymous identity to make syncTime call, which can allow readState calls to work beyond 5 minutes
 - chore: bumps .nvmrc and nodejs version in CI to 22
 - HttpAgent now awaits fetching rootkey before making network calls if `shouldFetchRootKey` is set
