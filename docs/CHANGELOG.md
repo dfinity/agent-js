@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [2.2.1] - 2025-02-07
+
+### Changed
+
+- fix: reverts read_state polling expiry changes due to mismatched signature introduced in 2.1.3. Polling will re-use the original request as before, up to the point where the request expires
+
 ## [2.2.0] - 2024-12-12
 
 ### Added
