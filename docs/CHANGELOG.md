@@ -5,6 +5,7 @@
 ### Added
 
 - shouldFetchRootKey option added to `HttpAgent` constructor
+- ci: adds BOT_APPROVED_FILES config
 
 ### Changed
 
