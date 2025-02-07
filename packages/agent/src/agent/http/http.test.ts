@@ -10,7 +10,7 @@ import {
   SubmitRequestType,
 } from './types';
 import { Principal } from '@dfinity/principal';
-import { requestIdOf } from '../../request_id';
+import { RequestId, requestIdOf } from '../../request_id';
 
 import { JSDOM } from 'jsdom';
 import {
@@ -26,7 +26,12 @@ import {
 } from '../..';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { AgentError } from '../../errors';
-import { AgentCallError, AgentHTTPResponseError } from './errors';
+import {
+  AgentCallError,
+  AgentHTTPResponseError,
+  AgentQueryError,
+  AgentReadStateError,
+} from './errors';
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;
@@ -413,8 +418,9 @@ describe('invalidate identity', () => {
     }
     // Test readState
     try {
+      const path = new TextEncoder().encode('request_status');
       await agent.readState(canisterId, {
-        paths: [[new ArrayBuffer(16)]],
+        paths: [[path]],
       });
     } catch (error) {
       expect((error as Error).message).toBe(expectedError);
@@ -1136,38 +1142,33 @@ describe('transform', () => {
 });
 
 describe('error logs for bad signature', () => {
-  it('should throw call errors if provided an invalid signature', async () => {
-    const badSignatureResponse = {
-      headers: [
-        ['access-control-allow-origin', '*'],
-        ['content-length', '332'],
-        ['content-type', 'text/plain; charset=utf-8'],
-        ['date', 'Fri, 31 Jan 2025 18:53:47 GMT'],
-      ],
-      ok: false,
-      status: 400,
-      statusText: 'Bad Request',
-      body: '496e76616c6964207369676e61747572653a20496e76616c6964206261736963207369676e61747572653a2045643235353139207369676e617475726520636f756c64206e6f742062652076657269666965643a207075626c6963206b657920336236613237626363656236613432643632613361386430326136663064373336353332313537373164653234336136336163303438613138623539646132392c207369676e61747572652030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030302c206572726f723a2041207369676e61747572652077617320696e76616c6964',
-      now: 1738349617614,
-    };
-
-    const mockFetch: jest.Mock = jest.fn(() => {
-      return Promise.resolve({
-        ...badSignatureResponse,
-        body: fromHex(badSignatureResponse.body),
-        arrayBuffer: async () => fromHex(badSignatureResponse.body),
-        clone: () => {
-          return {
-            ...badSignatureResponse,
-            body: fromHex(badSignatureResponse.body),
-            arrayBuffer: async () => fromHex(badSignatureResponse.body),
-            text: async () =>
-              'Invalid signature: Invalid basic signature: Ed25519 signature could not be verified: public key 3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29, signature 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, error: A signature was invalid\n',
-          };
-        },
-      });
+  const badSignatureResponse = {
+    headers: [
+      ['access-control-allow-origin', '*'],
+      ['content-length', '332'],
+      ['content-type', 'text/plain; charset=utf-8'],
+      ['date', 'Fri, 31 Jan 2025 18:53:47 GMT'],
+    ],
+    ok: false,
+    status: 400,
+    statusText: 'Bad Request',
+    body: '496e76616c6964207369676e61747572653a20496e76616c6964206261736963207369676e61747572653a2045643235353139207369676e617475726520636f756c64206e6f742062652076657269666965643a207075626c6963206b657920336236613237626363656236613432643632613361386430326136663064373336353332313537373164653234336136336163303438613138623539646132392c207369676e61747572652030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030302c206572726f723a2041207369676e61747572652077617320696e76616c6964',
+    now: 1738349617614,
+  };
+  const mockFetch: jest.Mock = jest.fn(() => {
+    return Promise.resolve({
+      ...badSignatureResponse,
+      body: fromHex(badSignatureResponse.body),
+      clone: () => {
+        return {
+          ...badSignatureResponse,
+          text: async () =>
+            'Invalid signature: Invalid basic signature: Ed25519 signature could not be verified: public key 3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29, signature 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, error: A signature was invalid\n',
+        };
+      },
     });
-
+  });
+  it('should throw call errors if provided an invalid signature', async () => {
     jest.useRealTimers();
     // jest.setSystemTime(badSignatureResponse.now);
 
@@ -1214,6 +1215,112 @@ describe('error logs for bad signature', () => {
     }
     expect(JSON.stringify(logs[0])).toMatchSnapshot();
     expect(logs[0].error instanceof AgentCallError).toBe(true);
+  });
+  it('should throw query errors for bad signature', async () => {
+    jest.spyOn(Date, 'now').mockImplementation(() => 1738362489290);
+    global.clearTimeout = jest.fn();
+
+    const identity = Ed25519KeyIdentity.generate(new Uint8Array(32)) as unknown as SignIdentity;
+    identity.sign = async () => {
+      return new ArrayBuffer(64) as Signature;
+    };
+    const agent = HttpAgent.createSync({
+      identity,
+      fetch: mockFetch,
+      retryTimes: 0,
+      host: 'http://localhost:4943',
+    });
+    const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+
+    const methodName = 'greet';
+    const arg = new Uint8Array([]);
+    const logs: {
+      message: string;
+      level: 'error';
+      error: AgentError;
+    }[] = [];
+    agent.log.subscribe(e => {
+      if (e.level === 'error') {
+        logs.push(e);
+      }
+    });
+
+    try {
+      await agent.query(canisterId, {
+        methodName,
+        arg,
+      });
+    } catch (e) {
+      expect(e instanceof AgentQueryError).toBe(true);
+    }
+    expect(JSON.stringify(logs[0])).toMatchSnapshot();
+    expect(logs[0].error instanceof AgentQueryError).toBe(true);
+  });
+
+  it('should throw read_state errors for bad signature', async () => {
+    const clonedReadStateResponse = {
+      headers: [
+        ['access-control-allow-origin', '*'],
+        ['content-length', '332'],
+        ['content-type', 'text/plain; charset=utf-8'],
+        ['date', 'Thu, 06 Feb 2025 22:21:52 GMT'],
+      ],
+      ok: false,
+      status: 400,
+      statusText: 'Bad Request',
+      body: '496e76616c6964207369676e61747572653a20496e76616c6964206261736963207369676e61747572653a2045643235353139207369676e617475726520636f756c64206e6f742062652076657269666965643a207075626c6963206b657920336236613237626363656236613432643632613361386430326136663064373336353332313537373164653234336136336163303438613138623539646132392c207369676e61747572652030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030302c206572726f723a2041207369676e61747572652077617320696e76616c6964',
+      now: 1738880304205,
+    };
+
+    const mockFetch: jest.Mock = jest.fn(() => {
+      return Promise.resolve({
+        ...clonedReadStateResponse,
+        clone: () => {
+          return {
+            ...badSignatureResponse,
+            body: fromHex(badSignatureResponse.body),
+            text: async () =>
+              'Invalid signature: Invalid basic signature: Ed25519 signature could not be verified: public key 3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29, signature 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, error: A signature was invalid\n',
+          };
+        },
+      });
+    });
+
+    const identity = Ed25519KeyIdentity.generate(new Uint8Array(32)) as unknown as SignIdentity;
+
+    identity.sign = async () => {
+      return new ArrayBuffer(64) as Signature;
+    };
+    const agent = HttpAgent.createSync({
+      identity,
+      fetch: mockFetch,
+      retryTimes: 0,
+      host: 'http://localhost:4943',
+    });
+
+    const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+    jest.useRealTimers();
+
+    jest.spyOn(Date, 'now').mockImplementation(() => 1738880304205);
+
+    const logs: {
+      message: string;
+      level: 'error';
+      error: AgentError;
+    }[] = [];
+    agent.log.subscribe(e => {
+      if (e.level === 'error') {
+        logs.push(e);
+      }
+    });
+
+    try {
+      const requestId = new ArrayBuffer(32) as RequestId;
+      const path = new TextEncoder().encode('request_status');
+      await agent.readState(canisterId, { paths: [[path, requestId]] });
+    } catch (e) {
+      expect(e instanceof AgentReadStateError).toBe(true);
+    }
   });
 });
 
