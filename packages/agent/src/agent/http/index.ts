@@ -4,10 +4,11 @@ import { AgentError } from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
 import { RequestId, hashOfMap, requestIdOf } from '../../request_id';
-import { bufFromBufLike, concat, fromHex } from '../../utils/buffer';
+import { bufEquals, bufFromBufLike, concat, fromHex, toHex } from '../../utils/buffer';
 import {
   Agent,
   ApiQueryResponse,
+  HttpDetailsResponse,
   QueryFields,
   QueryResponse,
   ReadStateOptions,
@@ -28,7 +29,12 @@ import {
   ReadRequestType,
   SubmitRequestType,
 } from './types';
-import { AgentHTTPResponseError } from './errors';
+import {
+  AgentCallError,
+  AgentHTTPResponseError,
+  AgentQueryError,
+  AgentReadStateError,
+} from './errors';
 import { SubnetStatus, request } from '../../canisterStatus';
 import {
   CertificateVerificationError,
@@ -44,6 +50,7 @@ import { ObservableLog } from '../../observable';
 import { BackoffStrategy, BackoffStrategyFactory, ExponentialBackoff } from '../../polling/backoff';
 import { DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS } from '../../constants';
 export * from './transforms';
+export * from './errors';
 export { Nonce, makeNonce } from './types';
 
 export enum RequestStatusResponseStatus {
@@ -150,6 +157,11 @@ export interface HttpAgentOptions {
    * Alternate root key to use for verifying certificates. If not provided, the default IC root key will be used.
    */
   rootKey?: ArrayBuffer;
+
+  /**
+   * Whether or not the root key should be automatically fetched during construction.
+   */
+  shouldFetchRootKey?: boolean;
 }
 
 function getDefaultFetch(): typeof fetch {
@@ -245,7 +257,9 @@ other computations so that this class can stay as simple as possible while
 allowing extensions.
  */
 export class HttpAgent implements Agent {
-  public rootKey: ArrayBuffer;
+  public rootKey: ArrayBuffer | null;
+  #rootKeyPromise: Promise<ArrayBuffer> | null = null;
+  #shouldFetchRootKey: boolean = false;
   #identity: Promise<Identity> | null;
   readonly #fetch: typeof fetch;
   readonly #fetchOptions?: Record<string, unknown>;
@@ -253,7 +267,6 @@ export class HttpAgent implements Agent {
   #timeDiffMsecs = 0;
   readonly host: URL;
   readonly #credentials: string | undefined;
-  #rootKeyFetched = false;
   readonly #retryTimes; // Retry requests N times before erroring by default
   #backoffStrategy: BackoffStrategyFactory;
   readonly #maxIngressExpiryInMinutes: number;
@@ -288,7 +301,16 @@ export class HttpAgent implements Agent {
     this.#fetch = options.fetch || getDefaultFetch() || fetch.bind(global);
     this.#fetchOptions = options.fetchOptions;
     this.#callOptions = options.callOptions;
-    this.rootKey = options.rootKey ? options.rootKey : fromHex(IC_ROOT_KEY);
+    this.#shouldFetchRootKey = options.shouldFetchRootKey ?? false;
+
+    // Use provided root key, otherwise fall back to IC_ROOT_KEY for mainnet or null if the key needs to be fetched
+    if (options.rootKey) {
+      this.rootKey = options.rootKey;
+    } else if (this.#shouldFetchRootKey) {
+      this.rootKey = null;
+    } else {
+      this.rootKey = fromHex(IC_ROOT_KEY);
+    }
 
     const host = determineHost(options.host);
     this.host = new URL(host);
@@ -355,7 +377,7 @@ export class HttpAgent implements Agent {
   }
 
   public static async create(
-    options: HttpAgentOptions & { shouldFetchRootKey?: boolean } = {
+    options: HttpAgentOptions = {
       shouldFetchRootKey: false,
     },
   ): Promise<HttpAgent> {
@@ -435,6 +457,7 @@ export class HttpAgent implements Agent {
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
+    await this.#rootKeyGuard();
     // TODO - restore this value
     const callSync = options.callSync ?? true;
     const id = await (identity !== undefined ? await identity : await this.#identity);
@@ -496,6 +519,7 @@ export class HttpAgent implements Agent {
 
     const body = cbor.encode(transformedRequest.body);
     const backoff = this.#backoffStrategy();
+    const requestId = requestIdOf(submit);
     try {
       // Attempt v3 sync call
       const requestSync = () => {
@@ -527,7 +551,6 @@ export class HttpAgent implements Agent {
         backoff,
         tries: 0,
       });
-      const requestId = requestIdOf(submit);
 
       const response = await request;
       const responseBuffer = await response.arrayBuffer();
@@ -570,9 +593,17 @@ export class HttpAgent implements Agent {
           identity,
         );
       }
-
-      this.log.error('Error while making call:', error as AgentError);
-      throw error;
+      const message = `Error while making call: ${(error as Error).message ?? String(error)}`;
+      const callError = new AgentCallError(
+        message,
+        error as HttpDetailsResponse,
+        toHex(requestId),
+        toHex(transformedRequest.body.sender_pubkey),
+        toHex(transformedRequest.body.sender_sig),
+        String(transformedRequest.body.content.ingress_expiry['_value']),
+      );
+      this.log.error(message, callError);
+      throw callError;
     }
   }
 
@@ -771,6 +802,7 @@ export class HttpAgent implements Agent {
     fields: QueryFields,
     identity?: Identity | Promise<Identity>,
   ): Promise<ApiQueryResponse> {
+    await this.#rootKeyGuard();
     const backoff = this.#backoffStrategy();
     const ecid = fields.effectiveCanisterId
       ? Principal.from(fields.effectiveCanisterId)
@@ -778,56 +810,58 @@ export class HttpAgent implements Agent {
 
     this.log.print(`ecid ${ecid.toString()}`);
     this.log.print(`canisterId ${canisterId.toString()}`);
-    const makeQuery = async () => {
-      const id = await (identity !== undefined ? identity : this.#identity);
-      if (!id) {
-        throw new IdentityInvalidError(
-          "This identity has expired due this application's security policy. Please refresh your authentication.",
-        );
-      }
 
-      const canister = Principal.from(canisterId);
-      const sender = id?.getPrincipal() || Principal.anonymous();
+    let transformedRequest: HttpAgentRequest | undefined = undefined;
+    let queryResult;
+    const id = await (identity !== undefined ? identity : this.#identity);
+    if (!id) {
+      throw new IdentityInvalidError(
+        "This identity has expired due this application's security policy. Please refresh your authentication.",
+      );
+    }
 
-      const request: QueryRequest = {
-        request_type: ReadRequestType.Query,
-        canister_id: canister,
-        method_name: fields.methodName,
-        arg: fields.arg,
-        sender,
-        ingress_expiry: new Expiry(this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS),
-      };
+    const canister = Principal.from(canisterId);
+    const sender = id?.getPrincipal() || Principal.anonymous();
 
-      const requestId = requestIdOf(request);
+    const request: QueryRequest = {
+      request_type: ReadRequestType.Query,
+      canister_id: canister,
+      method_name: fields.methodName,
+      arg: fields.arg,
+      sender,
+      ingress_expiry: new Expiry(this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS),
+    };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let transformedRequest: HttpAgentRequest = await this._transform({
-        request: {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/cbor',
-            ...(this.#credentials ? { Authorization: 'Basic ' + btoa(this.#credentials) } : {}),
-          },
+    const requestId = requestIdOf(request);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    transformedRequest = await this._transform({
+      request: {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/cbor',
+          ...(this.#credentials ? { Authorization: 'Basic ' + btoa(this.#credentials) } : {}),
         },
-        endpoint: Endpoint.Query,
-        body: request,
-      });
+      },
+      endpoint: Endpoint.Query,
+      body: request,
+    });
 
-      // Apply transform for identity.
-      transformedRequest = (await id?.transformRequest(transformedRequest)) as HttpAgentRequest;
+    // Apply transform for identity.
+    transformedRequest = (await id?.transformRequest(transformedRequest)) as HttpAgentRequest;
 
-      const body = cbor.encode(transformedRequest.body);
+    const body = cbor.encode(transformedRequest.body);
 
-      const args = {
-        canister: canister.toText(),
-        ecid,
-        transformedRequest,
-        body,
-        requestId,
-        backoff,
-        tries: 0,
-      };
-
+    const args = {
+      canister: canister.toText(),
+      ecid,
+      transformedRequest,
+      body,
+      requestId,
+      backoff,
+      tries: 0,
+    };
+    const makeQuery = async () => {
       return {
         requestDetails: request,
         query: await this.#requestAndRetryQuery(args),
@@ -847,35 +881,51 @@ export class HttpAgent implements Agent {
     };
     // Attempt to make the query i=retryTimes times
     // Make query and fetch subnet keys in parallel
-    const [queryResult, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
-    const { requestDetails, query } = queryResult;
-
-    const queryWithDetails = {
-      ...query,
-      requestDetails,
-    };
-
-    this.log.print('Query response:', queryWithDetails);
-    // Skip verification if the user has disabled it
-    if (!this.#verifyQuerySignatures) {
-      return queryWithDetails;
-    }
 
     try {
-      return this.#verifyQueryResponse(queryWithDetails, subnetStatus);
-    } catch {
-      // In case the node signatures have changed, refresh the subnet keys and try again
-      this.log.warn('Query response verification failed. Retrying with fresh subnet keys.');
-      this.#subnetKeys.delete(canisterId.toString());
-      await this.fetchSubnetKeys(ecid.toString());
+      const [_queryResult, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
+      queryResult = _queryResult;
+      const { requestDetails, query } = queryResult;
 
-      const updatedSubnetStatus = this.#subnetKeys.get(canisterId.toString());
-      if (!updatedSubnetStatus) {
-        throw new CertificateVerificationError(
-          'Invalid signature from replica signed query: no matching node key found.',
-        );
+      const queryWithDetails = {
+        ...query,
+        requestDetails,
+      };
+
+      this.log.print('Query response:', queryWithDetails);
+      // Skip verification if the user has disabled it
+      if (!this.#verifyQuerySignatures) {
+        return queryWithDetails;
       }
-      return this.#verifyQueryResponse(queryWithDetails, updatedSubnetStatus);
+
+      try {
+        return this.#verifyQueryResponse(queryWithDetails, subnetStatus);
+      } catch {
+        // In case the node signatures have changed, refresh the subnet keys and try again
+        this.log.warn('Query response verification failed. Retrying with fresh subnet keys.');
+        this.#subnetKeys.delete(canisterId.toString());
+        await this.fetchSubnetKeys(ecid.toString());
+
+        const updatedSubnetStatus = this.#subnetKeys.get(canisterId.toString());
+        if (!updatedSubnetStatus) {
+          throw new CertificateVerificationError(
+            'Invalid signature from replica signed query: no matching node key found.',
+          );
+        }
+        return this.#verifyQueryResponse(queryWithDetails, updatedSubnetStatus);
+      }
+    } catch (error) {
+      const message = `Error while making call: ${(error as Error).message ?? String(error)}`;
+      const queryError = new AgentQueryError(
+        message,
+        error as HttpDetailsResponse,
+        String(requestId),
+        toHex(transformedRequest?.body?.sender_pubkey),
+        toHex(transformedRequest?.body?.sender_sig),
+        String(transformedRequest?.body?.content.ingress_expiry['_value']),
+      );
+      this.log.error(message, queryError);
+      throw queryError;
     }
   }
 
@@ -958,6 +1008,7 @@ export class HttpAgent implements Agent {
     identity?: Identity | Promise<Identity>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<any> {
+    await this.#rootKeyGuard();
     const id = await (identity !== undefined ? await identity : await this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
@@ -995,6 +1046,18 @@ export class HttpAgent implements Agent {
     // eslint-disable-next-line
     request?: any,
   ): Promise<ReadStateResponse> {
+    function getRequestId(fields: ReadStateOptions): RequestId | undefined {
+      for (const path of fields.paths) {
+        const [pathName, value] = path;
+        const request_status = new TextEncoder().encode('request_status');
+        if (bufEquals(pathName, request_status)) {
+          return value as RequestId;
+        }
+      }
+    }
+    const requestId = getRequestId(fields);
+
+    await this.#rootKeyGuard();
     const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
 
     const transformedRequest = request ?? (await this.createReadStateRequest(fields, identity));
@@ -1040,8 +1103,17 @@ export class HttpAgent implements Agent {
 
       return decodedResponse;
     } catch (error) {
-      this.log.error('Caught exception while attempting to read state', error as AgentError);
-      throw error;
+      const message = `Caught exception while attempting to read state: ${(error as Error).message ?? String(error)}`;
+      const readStateError = new AgentReadStateError(
+        message,
+        error as HttpDetailsResponse,
+        String(requestId),
+        toHex(transformedRequest?.body?.sender_pubkey),
+        toHex(transformedRequest?.body?.sender_sig),
+        String(transformedRequest?.body?.content.ingress_expiry['_value']),
+      );
+      this.log.error(message, readStateError);
+      throw readStateError;
     }
   }
 
@@ -1077,6 +1149,7 @@ export class HttpAgent implements Agent {
    * @param {Principal} canisterId - Pass a canister ID if you need to sync the time with a particular replica. Uses the management canister by default
    */
   public async syncTime(canisterId?: Principal): Promise<void> {
+    await this.#rootKeyGuard();
     const CanisterStatus = await import('../../canisterStatus');
     const callTime = Date.now();
     try {
@@ -1085,16 +1158,28 @@ export class HttpAgent implements Agent {
           'Syncing time with the IC. No canisterId provided, so falling back to ryjl3-tyaaa-aaaaa-aaaba-cai',
         );
       }
+
+      const anonymousAgent = HttpAgent.createSync({
+        identity: new AnonymousIdentity(),
+        host: this.host.toString(),
+        fetch: this.#fetch,
+        retryTimes: 0,
+      });
+
       const status = await CanisterStatus.request({
         // Fall back with canisterId of the ICP Ledger
         canisterId: canisterId ?? Principal.from('ryjl3-tyaaa-aaaaa-aaaba-cai'),
-        agent: this,
+        agent: anonymousAgent,
         paths: ['time'],
       });
 
       const replicaTime = status.get('time');
       if (replicaTime) {
         this.#timeDiffMsecs = Number(replicaTime as bigint) - Number(callTime);
+        this.log.notify({
+          message: `Syncing time: offset of ${this.#timeDiffMsecs}`,
+          level: 'info',
+        });
       }
     } catch (error) {
       this.log.error('Caught exception while attempting to sync time', error as AgentError);
@@ -1120,13 +1205,39 @@ export class HttpAgent implements Agent {
   }
 
   public async fetchRootKey(): Promise<ArrayBuffer> {
-    if (!this.#rootKeyFetched) {
-      const status = await this.status();
-      // Hex-encoded version of the replica root key
-      this.rootKey = (status as JsonObject & { root_key: ArrayBuffer }).root_key;
-      this.#rootKeyFetched = true;
+    let result: ArrayBuffer;
+    // Wait for already pending promise to avoid duplicate calls
+    if (this.#rootKeyPromise) {
+      result = await this.#rootKeyPromise;
+    } else {
+      // construct promise
+      this.#rootKeyPromise = new Promise<ArrayBuffer>((resolve, reject) => {
+        this.status()
+          .then(value => {
+            // Hex-encoded version of the replica root key
+            const rootKey = (value as JsonObject & { root_key: ArrayBuffer }).root_key;
+            this.rootKey = rootKey;
+            resolve(rootKey);
+          })
+          .catch(reject);
+      });
+      result = await this.#rootKeyPromise;
     }
-    return this.rootKey;
+    // clear rootkey promise and return result
+    this.#rootKeyPromise = null;
+    return result;
+  }
+
+  async #rootKeyGuard(): Promise<void> {
+    if (this.rootKey) {
+      return;
+    } else if (this.rootKey === null && this.#shouldFetchRootKey) {
+      await this.fetchRootKey();
+    } else {
+      throw new AgentError(
+        `Invalid root key detected. The root key for this agent is ${this.rootKey} and the shouldFetchRootKey value is set to ${this.#shouldFetchRootKey}. The root key should only be unknown if you are in local development. Otherwise you should avoid fetching and use the default IC Root Key or the known root key of your environment.`,
+      );
+    }
   }
 
   public invalidateIdentity(): void {
@@ -1138,6 +1249,7 @@ export class HttpAgent implements Agent {
   }
 
   public async fetchSubnetKeys(canisterId: Principal | string) {
+    await this.#rootKeyGuard();
     const effectiveCanisterId: Principal = Principal.from(canisterId);
     const response = await request({
       canisterId: effectiveCanisterId,

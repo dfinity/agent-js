@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/identity",
-  "version": "2.2.1",
+  "version": "2.3.0",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to manage identity with the Internet Computer",
@@ -45,8 +45,8 @@
     "test:coverage": "jest --collectCoverage"
   },
   "peerDependencies": {
-    "@dfinity/agent": "^2.2.1",
-    "@dfinity/principal": "^2.2.1"
+    "@dfinity/agent": "^2.3.0",
+    "@dfinity/principal": "^2.3.0"
   },
   "dependencies": {
     "@noble/curves": "^1.2.0",

@@ -9,6 +9,7 @@ export * from './canisters/asset';
 export * from './certificate';
 export * from './der';
 export * from './fetch_candid';
+export * from './observable';
 export * from './public_key';
 export * from './request_id';
 export * from './utils/bls';

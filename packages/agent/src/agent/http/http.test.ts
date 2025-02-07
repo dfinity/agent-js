@@ -10,7 +10,7 @@ import {
   SubmitRequestType,
 } from './types';
 import { Principal } from '@dfinity/principal';
-import { requestIdOf } from '../../request_id';
+import { RequestId, requestIdOf } from '../../request_id';
 
 import { JSDOM } from 'jsdom';
 import {
@@ -22,10 +22,16 @@ import {
   type ActorSubclass,
   SignIdentity,
   toHex,
+  Signature,
 } from '../..';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { AgentError } from '../../errors';
-import { AgentHTTPResponseError } from './errors';
+import {
+  AgentCallError,
+  AgentHTTPResponseError,
+  AgentQueryError,
+  AgentReadStateError,
+} from './errors';
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;
@@ -412,8 +418,9 @@ describe('invalidate identity', () => {
     }
     // Test readState
     try {
+      const path = new TextEncoder().encode('request_status');
       await agent.readState(canisterId, {
-        paths: [[new ArrayBuffer(16)]],
+        paths: [[path]],
       });
     } catch (error) {
       expect((error as Error).message).toBe(expectedError);
@@ -551,7 +558,7 @@ describe('retry failures', () => {
         methodName: 'test',
         arg: new Uint8Array().buffer,
       });
-    await expect(performCall).rejects.toThrow(AgentHTTPResponseError);
+    await expect(performCall).rejects.toThrow(AgentCallError);
     expect(mockFetch.mock.calls.length).toBe(1);
   });
   it('should throw errors after 3 retries by default', async () => {
@@ -576,6 +583,13 @@ describe('retry failures', () => {
     }
   });
   it('should succeed after multiple failures within the configured limit', async () => {
+    jest.useFakeTimers();
+    jest.spyOn(global, 'setTimeout').mockImplementation(callback => {
+      if (typeof callback === 'function') {
+        callback();
+      }
+      return { hasRef: () => false } as NodeJS.Timeout;
+    });
     let calls = 0;
     const mockFetch: jest.Mock = jest.fn(() => {
       if (calls === 3) {
@@ -661,7 +675,6 @@ test('should adjust the Expiry if the clock is more than 30 seconds ahead', asyn
   const { HttpAgent } = await import('../index');
 
   const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
-
   await agent.syncTime();
 
   await agent
@@ -792,9 +805,15 @@ describe('default host', () => {
 
 jest.setTimeout(10000);
 test('retry requests that fail due to a network failure', async () => {
-  jest.useRealTimers();
+  jest.useFakeTimers();
   const mockFetch: jest.Mock = jest.fn(() => {
     throw new Error('Network failure');
+  });
+  jest.spyOn(global, 'setTimeout').mockImplementation(callback => {
+    if (typeof callback === 'function') {
+      callback();
+    }
+    return { hasRef: () => false } as NodeJS.Timeout;
   });
 
   const agent = new HttpAgent({
@@ -940,6 +959,79 @@ test('it should handle calls against the ic-management canister that succeed', a
   expect(status).toMatchSnapshot();
 });
 
+describe('await fetching root keys before making a call to the network.', () => {
+  const mockResponse = {
+    headers: [
+      ['access-control-allow-origin', '*'],
+      ['content-length', '317'],
+      ['content-type', 'application/cbor'],
+      ['date', 'Sat, 25 Jan 2025 00:48:00 GMT'],
+    ],
+    ok: true,
+    status: 200,
+    statusText: 'OK',
+    body: 'd9d9f7a66e69635f6170695f76657273696f6e66302e31382e3068726f6f745f6b65795885308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100a05a4707525774767f395a97ea9cd670ebf8694c4649421cdec91d86fa16beee0250e1ef64ec3b1eecb2ece53235ae0e0433592804c8947359694912cd743e5cba7d9bf705f875da3b36d12ec7eb94fb437bd31c255d2a6d65b964e0430f93686c696d706c5f76657273696f6e65302e392e3069696d706c5f68617368784064653637663631313363383031616332613738646366373962343137653030636534336136623363613663616134636661623963623665353338383136643534757265706c6963615f6865616c74685f737461747573676865616c746879706365727469666965645f6865696768741a0003f560',
+    now: 1737766080180,
+  };
+  jest.useFakeTimers();
+  // Mock the fetch implementation, resolving a pre-calculated response
+  const mockFetch: jest.Mock = jest.fn(() => {
+    return Promise.resolve({
+      ...mockResponse,
+      body: fromHex(mockResponse.body),
+      arrayBuffer: async () => fromHex(mockResponse.body),
+    });
+  });
+  it('should allow fetchRootKey to be awaited after using the constructor', async () => {
+    const agent = new HttpAgent({
+      shouldFetchRootKey: true,
+      host: 'http://localhost:4943',
+      fetch: mockFetch,
+    });
+    expect(agent.rootKey).toBe(null);
+    await agent.fetchRootKey();
+    expect(ArrayBuffer.isView(agent.rootKey)).toBe(true);
+  });
+  it('should allow fetchRootKey to be awaited after using createSync', async () => {
+    const agent = HttpAgent.createSync({
+      shouldFetchRootKey: true,
+      host: 'http://localhost:4943',
+      fetch: mockFetch,
+    });
+    expect(agent.rootKey).toBe(null);
+    await agent.fetchRootKey();
+    expect(ArrayBuffer.isView(agent.rootKey)).toBe(true);
+  });
+  it('it should automatically fetch root key if using create', async () => {
+    const agent = await HttpAgent.create({
+      shouldFetchRootKey: true,
+      host: 'http://localhost:4943',
+      fetch: mockFetch,
+    });
+    expect(ArrayBuffer.isView(agent.rootKey)).toBe(true);
+  });
+
+  it('it should automatically fetch root key during async calls if one was not set during initialization', async () => {
+    const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+
+    const agent = new HttpAgent({
+      fetch: mockFetch,
+      host: 'http://localhost:4943',
+      shouldFetchRootKey: true,
+    });
+    expect(agent.rootKey).toBe(null);
+
+    const methodName = 'greet';
+    const arg = new Uint8Array([]);
+
+    await agent.call(canisterId, {
+      methodName,
+      arg,
+    });
+    expect(agent.rootKey).toBeTruthy();
+  });
+});
+
 describe('transform', () => {
   const identity = new AnonymousIdentity();
 
@@ -1046,6 +1138,189 @@ describe('transform', () => {
         effectiveCanisterId: canister_id,
       }),
     );
+  });
+});
+
+describe('error logs for bad signature', () => {
+  const badSignatureResponse = {
+    headers: [
+      ['access-control-allow-origin', '*'],
+      ['content-length', '332'],
+      ['content-type', 'text/plain; charset=utf-8'],
+      ['date', 'Fri, 31 Jan 2025 18:53:47 GMT'],
+    ],
+    ok: false,
+    status: 400,
+    statusText: 'Bad Request',
+    body: '496e76616c6964207369676e61747572653a20496e76616c6964206261736963207369676e61747572653a2045643235353139207369676e617475726520636f756c64206e6f742062652076657269666965643a207075626c6963206b657920336236613237626363656236613432643632613361386430326136663064373336353332313537373164653234336136336163303438613138623539646132392c207369676e61747572652030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030302c206572726f723a2041207369676e61747572652077617320696e76616c6964',
+    now: 1738349617614,
+  };
+  const mockFetch: jest.Mock = jest.fn(() => {
+    return Promise.resolve({
+      ...badSignatureResponse,
+      body: fromHex(badSignatureResponse.body),
+      clone: () => {
+        return {
+          ...badSignatureResponse,
+          text: async () =>
+            'Invalid signature: Invalid basic signature: Ed25519 signature could not be verified: public key 3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29, signature 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, error: A signature was invalid\n',
+        };
+      },
+    });
+  });
+  it('should throw call errors if provided an invalid signature', async () => {
+    jest.useRealTimers();
+    // jest.setSystemTime(badSignatureResponse.now);
+
+    jest.spyOn(Date, 'now').mockImplementation(() => 1738362489290);
+    global.clearTimeout = jest.fn();
+
+    const identity = Ed25519KeyIdentity.generate(new Uint8Array(32)) as unknown as SignIdentity;
+    identity.sign = async () => {
+      return new ArrayBuffer(64) as Signature;
+    };
+    const agent = HttpAgent.createSync({
+      identity,
+      fetch: mockFetch,
+      retryTimes: 0,
+      host: 'http://localhost:4943',
+    });
+    // Important - override nonce when making request to ensure reproducible result
+    agent.addTransform('update', async args => {
+      args.body.nonce = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
+      return args;
+    });
+    const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+
+    const methodName = 'greet';
+    const arg = new Uint8Array([]);
+    const logs: {
+      message: string;
+      level: 'error';
+      error: AgentError;
+    }[] = [];
+    agent.log.subscribe(e => {
+      if (e.level === 'error') {
+        logs.push(e);
+      }
+    });
+
+    try {
+      await agent.call(canisterId, {
+        methodName,
+        arg,
+      });
+    } catch (e) {
+      expect(e instanceof AgentCallError).toBe(true);
+    }
+    expect(JSON.stringify(logs[0])).toMatchSnapshot();
+    expect(logs[0].error instanceof AgentCallError).toBe(true);
+  });
+  it('should throw query errors for bad signature', async () => {
+    jest.spyOn(Date, 'now').mockImplementation(() => 1738362489290);
+    global.clearTimeout = jest.fn();
+
+    const identity = Ed25519KeyIdentity.generate(new Uint8Array(32)) as unknown as SignIdentity;
+    identity.sign = async () => {
+      return new ArrayBuffer(64) as Signature;
+    };
+    const agent = HttpAgent.createSync({
+      identity,
+      fetch: mockFetch,
+      retryTimes: 0,
+      host: 'http://localhost:4943',
+    });
+    const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+
+    const methodName = 'greet';
+    const arg = new Uint8Array([]);
+    const logs: {
+      message: string;
+      level: 'error';
+      error: AgentError;
+    }[] = [];
+    agent.log.subscribe(e => {
+      if (e.level === 'error') {
+        logs.push(e);
+      }
+    });
+
+    try {
+      await agent.query(canisterId, {
+        methodName,
+        arg,
+      });
+    } catch (e) {
+      expect(e instanceof AgentQueryError).toBe(true);
+    }
+    expect(JSON.stringify(logs[0])).toMatchSnapshot();
+    expect(logs[0].error instanceof AgentQueryError).toBe(true);
+  });
+
+  it('should throw read_state errors for bad signature', async () => {
+    const clonedReadStateResponse = {
+      headers: [
+        ['access-control-allow-origin', '*'],
+        ['content-length', '332'],
+        ['content-type', 'text/plain; charset=utf-8'],
+        ['date', 'Thu, 06 Feb 2025 22:21:52 GMT'],
+      ],
+      ok: false,
+      status: 400,
+      statusText: 'Bad Request',
+      body: '496e76616c6964207369676e61747572653a20496e76616c6964206261736963207369676e61747572653a2045643235353139207369676e617475726520636f756c64206e6f742062652076657269666965643a207075626c6963206b657920336236613237626363656236613432643632613361386430326136663064373336353332313537373164653234336136336163303438613138623539646132392c207369676e61747572652030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030302c206572726f723a2041207369676e61747572652077617320696e76616c6964',
+      now: 1738880304205,
+    };
+
+    const mockFetch: jest.Mock = jest.fn(() => {
+      return Promise.resolve({
+        ...clonedReadStateResponse,
+        clone: () => {
+          return {
+            ...badSignatureResponse,
+            body: fromHex(badSignatureResponse.body),
+            text: async () =>
+              'Invalid signature: Invalid basic signature: Ed25519 signature could not be verified: public key 3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29, signature 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, error: A signature was invalid\n',
+          };
+        },
+      });
+    });
+
+    const identity = Ed25519KeyIdentity.generate(new Uint8Array(32)) as unknown as SignIdentity;
+
+    identity.sign = async () => {
+      return new ArrayBuffer(64) as Signature;
+    };
+    const agent = HttpAgent.createSync({
+      identity,
+      fetch: mockFetch,
+      retryTimes: 0,
+      host: 'http://localhost:4943',
+    });
+
+    const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+    jest.useRealTimers();
+
+    jest.spyOn(Date, 'now').mockImplementation(() => 1738880304205);
+
+    const logs: {
+      message: string;
+      level: 'error';
+      error: AgentError;
+    }[] = [];
+    agent.log.subscribe(e => {
+      if (e.level === 'error') {
+        logs.push(e);
+      }
+    });
+
+    try {
+      const requestId = new ArrayBuffer(32) as RequestId;
+      const path = new TextEncoder().encode('request_status');
+      await agent.readState(canisterId, { paths: [[path, requestId]] });
+    } catch (e) {
+      expect(e instanceof AgentReadStateError).toBe(true);
+    }
   });
 });
 
