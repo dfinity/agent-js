@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- test: added e2e test for CanisterStatus requesting a subnet path, as a reference for getting the subnet id of a given canister id
+
 ## [2.3.0] - 2025-02-07
 
 ### Added

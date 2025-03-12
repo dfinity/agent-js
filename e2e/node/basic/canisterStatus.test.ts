@@ -44,4 +44,21 @@ describe('canister status', () => {
 
     expect(shouldThrow).rejects.toThrow();
   });
+  it('should fetch the subnet id of a given canister', async () => {
+    const counterObj = await (await counter)();
+    const agent = await makeAgent();
+    await agent.fetchRootKey();
+    const statusMap = await CanisterStatus.request({
+      canisterId: Principal.from(counterObj.canisterId),
+      agent,
+      paths: ['subnet'],
+    });
+
+    const subnet = statusMap.get('subnet') as CanisterStatus.SubnetStatus;
+
+    expect(subnet).toBeDefined();
+
+    const principal = Principal.fromText(subnet.subnetId);
+    expect(principal).toBeDefined();
+  });
 });

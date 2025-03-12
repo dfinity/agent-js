@@ -63,7 +63,7 @@
     "@types/jest": "^29.5.5",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
-    "esbuild": "^0.15.16",
+    "esbuild": "^0.25.1",
     "eslint": "^8.19.0",
     "isomorphic-fetch": "^3.0.0",
     "jest": "^29.7.0",

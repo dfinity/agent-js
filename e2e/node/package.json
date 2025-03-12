@@ -32,7 +32,7 @@
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
     "agent1": "npm:@dfinity/agent@^1.4.0",
-    "esbuild": "^0.15.16",
+    "esbuild": "^0.25.1",
     "isomorphic-fetch": "^3.0.0",
     "locus": "^2.0.4",
     "node-webcrypto-p11": "^2.5.0",
@@ -40,7 +40,7 @@
     "text-encoding": "^0.7.0",
     "ts-node": "^10.8.2",
     "typescript": "^5.2.2",
-    "vitest": "^0.34.6"
+    "vitest": "^3.0.8"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "4.6.1"
