@@ -740,6 +740,29 @@ test('IDL opt edge cases', () => {
     {a: []},
     '4449444c016c0161700100',
     // Motoko: {a = (): Any} : {a : Any}
-    'opt expect type reserved on wire',
+    'opt expected type reserved on wire',
   );
+  testDecode(
+    IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null }))}),
+    {a: [{x: null}]},
+    `4449444c026c0161016b02787f797f010000`,
+    // Motoko: {a = #x } : {a : {#x;#y}}
+    'opt expected type non-opt on wire',
+  );
+  /*
+  testDecode(
+    IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null }))}),
+    {a: [{x: null}]},
+    `4449444c026c0161016b03787f797f7a7f010000`,
+    // Motoko: {a = #x } : {a : {#x;#y;#z}}
+    'opt expected, wire type non-opt, extended, with expected tag',
+  );
+  testDecode(
+    IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null }))}),
+    {a: []},
+    `4449444c026c0161016b03787f797f7a7f010002`,
+    // Motoko: {a = #z } : {a : {#x;#y;#z}}
+    'opt expected, wire type non-opt, extended, with unexpected tag - defaulting',
+  );
+  */
 });
