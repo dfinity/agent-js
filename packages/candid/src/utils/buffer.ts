@@ -42,15 +42,16 @@ export class PipeArrayBuffer {
    * Save a checkpoint of the reading view (for backtracking)
    */
   public save() : Uint8Array {
-     return this._view;
-  };
+     return this._view
+  }
 
   /**
    * Restore a checkpoint of the reading view (for backtracking)
+   * @param checkPoint a previously saved checkpoint
    */
   public restore(checkPoint: Uint8Array) {
-     this._view = checkPoint;
-  };
+     this._view = checkPoint
+  }
 
   /**
    * The actual buffer containing the bytes.
