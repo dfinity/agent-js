@@ -717,12 +717,12 @@ test('IDL opt variant decoding', () => {
     IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null }))}),
     {a: [{ x: null }]},
     '4449444c036c0161016e026b03787f797f7a7f01000100', // Motoko: {a = ?#x} : {a : ?{#x;#y;#z}}
-    'extended variant under opt existing',
+    'extended variant under opt expected tag',
   );
   testDecode(
     IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null }))}),
     {a: []},
     '4449444c036c0161016e026b03787f797f7a7f01000102', // Motoko: {a = ?#z} : {a : ?{#x;#y;#z}}
-    'extended variant under opt new - defaulting',
+    'extended variant under opt unexpected tag - defaulting',
   );
 });
