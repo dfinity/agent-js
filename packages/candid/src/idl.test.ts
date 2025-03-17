@@ -749,7 +749,6 @@ test('IDL opt edge cases', () => {
     // Motoko: {a = #x } : {a : {#x;#y}}
     'opt expected type non-opt on wire',
   );
-  /*
   testDecode(
     IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null }))}),
     {a: [{x: null}]},
@@ -764,5 +763,4 @@ test('IDL opt edge cases', () => {
     // Motoko: {a = #z } : {a : {#x;#y;#z}}
     'opt expected, wire type non-opt, extended, with unexpected tag - defaulting',
   );
-  */
 });

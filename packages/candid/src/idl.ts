@@ -950,13 +950,13 @@ export class OptClass<T> extends ConstructType<[T] | []> {
       // try constituent type
       const checkpoint = b.save();
       try {
-        const v = this._type.decodeValue(b, wireType)
+        const v = this._type.decodeValue(b, t)
         return [v];
       } catch (e : any) {
         // decoding failed, but this is opt, so return "null", i.e. []
         b.restore(checkpoint);
         // skip value at wire type (to advance b)
-        const skipped = wireType.decodeValue(b, wireType)
+        const skipped = wireType.decodeValue(b, t)
         // return "null"
         return [];
       }
