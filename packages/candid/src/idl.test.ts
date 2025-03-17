@@ -698,3 +698,31 @@ test('should decode matching optional fields if wire type contains additional fi
     b: ['123'],
   });
 });
+
+
+test('IDL opt variant decoding', () => {
+  testDecode(
+    IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null, z: IDL.Null }))}),
+    {a: [{ x: null }]},
+    '4449444c036c0161016e026b03787f797f7a7f01000100', // Motoko: {a = ?#x} : {a : ?{#x;#y;#z}}
+    'same variant under opt x',
+  );
+  testDecode(
+    IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null, z: IDL.Null }))}),
+    {a: [{ z: null}]},
+    '4449444c036c0161016e026b03787f797f7a7f01000102', // Motoko: {a = ?#z} : {a : ?{#x;#y;#z}}
+    'same variant under opt z',
+  );
+  testDecode(
+    IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null }))}),
+    {a: [{ x: null }]},
+    '4449444c036c0161016e026b03787f797f7a7f01000100', // Motoko: {a = ?#x} : {a : ?{#x;#y;#z}}
+    'extended variant under opt existing',
+  );
+  testDecode(
+    IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null }))}),
+    {a: []},
+    '4449444c036c0161016e026b03787f797f7a7f01000102', // Motoko: {a = ?#z} : {a : ?{#x;#y;#z}}
+    'extended variant under opt new - defaulting',
+  );
+});

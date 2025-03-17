@@ -928,8 +928,9 @@ export class OptClass<T> extends ConstructType<[T] | []> {
           return [v];
         } catch (e : any) {
           b.restore(checkpoint);
-          // skip value at wire typ (to advance b)
+          // skip value at wire type (to advance b)
           let v = opt._type.decodeValue(b, opt._type)
+	  // retun none
           return [];
         };
       default:
