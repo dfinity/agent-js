@@ -922,7 +922,16 @@ export class OptClass<T> extends ConstructType<[T] | []> {
       case 0:
         return [];
       case 1:
-        return [this._type.decodeValue(b, opt._type)];
+        let checkpoint = b.save();
+        try {
+          let v = this._type.decodeValue(b, opt._type)
+          return [v];
+        } catch (e : any) {
+          b.restore(checkpoint);
+          // skip value at wire typ (to advance b)
+          let v = opt._type.decodeValue(b, opt._type)
+          return [];
+        };
       default:
         throw new Error('Not an option value');
     }
