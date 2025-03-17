@@ -726,3 +726,20 @@ test('IDL opt variant decoding', () => {
     'extended variant under opt unexpected tag - defaulting',
   );
 });
+
+test('IDL opt edge cases', () => {
+  testDecode(
+    IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null }))}),
+    {a: []},
+    '4449444c016c01617f0100',
+     // Motoko: {a = null} : {a : null}
+    'opt expected type null on wire',
+  );
+  testDecode(
+    IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null }))}),
+    {a: []},
+    '4449444c016c0161700100',
+    // Motoko: {a = (): Any} : {a : Any}
+    'opt expect type reserved on wire',
+  );
+});
