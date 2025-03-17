@@ -914,27 +914,51 @@ export class OptClass<T> extends ConstructType<[T] | []> {
   }
 
   public decodeValue(b: Pipe, t: Type): [T] | [] {
-    const opt = this.checkType(t);
-    if (!(opt instanceof OptClass)) {
-      throw new Error('Not an option type');
-    }
-    switch (safeReadUint8(b)) {
-      case 0:
-        return [];
-      case 1:
-        let checkpoint = b.save();
-        try {
-          let v = this._type.decodeValue(b, opt._type)
-          return [v];
-        } catch (e : any) {
-          b.restore(checkpoint);
-          // skip value at wire type (to advance b)
-          let v = opt._type.decodeValue(b, opt._type)
-	  // retun none
-          return [];
-        };
-      default:
-        throw new Error('Not an option value');
+    if (t instanceof NullClass) {
+      return [];
+    };
+    if (t instanceof ReservedClass) {
+      return [];
+    };
+    const wireType = this.checkType(t);
+    if (wireType instanceof OptClass) {
+      switch (safeReadUint8(b)) {
+	case 0:
+	  return [];
+	case 1:
+	  let checkpoint = b.save();
+	  try {
+	    let v = this._type.decodeValue(b, wireType._type)
+	    return [v];
+	  } catch (e : any) {
+	    b.restore(checkpoint);
+	    // skip value at wire type (to advance b)
+	    let skipped = wireType._type.decodeValue(b, wireType._type)
+	    // retun none
+	    return [];
+	  };
+	default:
+	  throw new Error('Not an option value');
+      }
+    } else if (this._type instanceof NullClass || this._type instanceof OptClass || this._type instanceof ReservedClass) {
+      // this check corresponds to `not (null <: <t>)` in the spec
+      // skip value at wire type (to advance b) and return "null", i.e. []
+      let skipped = wireType.decodeValue(b, wireType);
+      return [];
+    } else {
+      // try constituent type
+      let checkpoint = b.save();
+      try {
+	let v = this._type.decodeValue(b, wireType)
+	return [v];
+      } catch (e : any) {
+	// decoding failed, but this is opt, so return "null", i.e. []
+	b.restore(checkpoint);
+	// skip value at wire type (to advance b)
+	let skipped = wireType.decodeValue(b, wireType)
+	// return "null"
+	return [];
+      };
     }
   }
 
