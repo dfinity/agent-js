@@ -215,6 +215,7 @@ export abstract class Type<T = any> {
   public abstract encodeType(typeTable: TypeTable): ArrayBuffer;
 
   public abstract checkType(t: Type): Type;
+
   public abstract decodeValue(x: Pipe, t: Type): T;
 
   protected abstract _buildTypeTableImpl(typeTable: TypeTable): void;
@@ -227,6 +228,7 @@ export abstract class PrimitiveType<T = any> extends Type<T> {
     }
     return t;
   }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public _buildTypeTableImpl(typeTable: TypeTable): void {
     // No type table encoding for Primitive types.
@@ -920,7 +922,9 @@ export class OptClass<T> extends ConstructType<[T] | []> {
     if (t instanceof ReservedClass) {
       return []
     }
-    const wireType = this.checkType(t);
+
+    const wireType = (t instanceof RecClass) ? t.getType() : t;
+
     if (wireType instanceof OptClass) {
       switch (safeReadUint8(b)) {
         case 0:
