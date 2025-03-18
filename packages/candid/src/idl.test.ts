@@ -768,13 +768,12 @@ describe('IDL opt edge cases', () => {
     // Motoko: {a = #x } : {a : {#x;#y;#z}}
     'opt expected, wire type non-opt, extended, with expected tag - defaulting',
   )});
-  //FIXME
   it('should handle the option when the wire typ is an non-optioned wider variant with unexpected tag, defaulting', () => {
   testDecode(
     IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null }))}),
     {a: []},
-    `4449444c016c01617d010001`,
-    // Motoko: {a = 1} : {a : Nat}
+    `4449444c026c0161016b03787f797f7a7f010002`,
+    // Motoko: {a = #z} : {a : {#x;#y;#z}}
     'opt expected, wire type non-opt, other type - defaulting',
   )});
   it('should handle the option when the expected type is opt null, wire type is non-opt', () => {
