@@ -941,7 +941,7 @@ export class OptClass<T> extends ConstructType<[T] | []> {
           // Save the current state of the Pipe `b` to allow rollback in case of an error
           const checkpoint = b.save();
           try {
-	    // Attempt to decode a value using the `_type` of the current instance
+            // Attempt to decode a value using the `_type` of the current instance
             const v = this._type.decodeValue(b, wireType._type);
             return [v];
           } catch (e : any) {
