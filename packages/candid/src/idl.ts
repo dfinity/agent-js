@@ -922,15 +922,19 @@ export class OptClass<T> extends ConstructType<[T] | []> {
       case 0:
         return [];
       case 1: {
+        // Save the current state of the Pipe `b` to allow rollback in case of an error
         const checkpoint = b.save();
         try {
-          const v = this._type.decodeValue(b, opt._type)
+          // Attempt to decode a value using the `_type` of the current instance
+          const v = this._type.decodeValue(b, opt._type);
+          // If decoding succeeds, return the value wrapped in an array
           return [v];
-        } catch (e : any) {
+        } catch (e: any) {
+          // If an error occurs during decoding, restore the Pipe `b` to its previous state
           b.restore(checkpoint);
-          // skip value at wire type (to advance b)
-          const v = opt._type.decodeValue(b, opt._type)
-          // retun none
+          // Skip the value at the current wire type to advance the Pipe `b` position
+          opt._type.decodeValue(b, opt._type);
+          // Return an empty array to indicate a `none` value
           return [];
         }
       }
