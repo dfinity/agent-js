@@ -776,4 +776,28 @@ describe('IDL opt edge cases', () => {
     // Motoko: {a = 1} : {a : Nat}
     'opt expected, wire type non-opt, other type - defaulting',
   )});
+  it('should handle the option when the expected type in opt null, wire type is non-opt', () => {
+  testDecode(
+    IDL.Record({a: IDL.Opt(IDL.Variant({ a: IDL.Opt(IDL.Null) }))}),
+    {a: []},
+    `4449444c016c01617d010001`,
+    // Motoko: {a = 1} : {a : Nat }
+    'opt expected, wire type non-opt, other type - defaulting',
+  )});
+  it('should handle the option when the expected type in opt opt Nat, wire type is non-opt', () => {
+  testDecode(
+    IDL.Record({a: IDL.Opt(IDL.Variant({ a: IDL.Opt(IDL.Opt(IDL.Nat)) }))}),
+    {a: []},
+    `4449444c016c01617d010001`,
+    // Motoko: {a = 1} : {a : Nat }
+    'opt expected, wire type non-opt, other type - defaulting',
+  )});
+  it('should handle the option when the expected type in opt reserved, wire type is non-opt', () => {
+  testDecode(
+    IDL.Record({a: IDL.Opt(IDL.Reserved)}),
+    {a: []},
+    `4449444c016c01617d010001`,
+    // Motoko: {a = 1} : {a : Nat }
+    'opt expected, wire type non-opt, other type - defaulting',
+  )});
 });
