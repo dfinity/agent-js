@@ -923,7 +923,14 @@ export class OptClass<T> extends ConstructType<[T] | []> {
       return []
     }
 
-    const wireType = (t instanceof RecClass) ? t.getType() : t;
+    let wireType = t;
+    // unfold wireType, if needed
+    if (t instanceof RecClass) {
+      const ty = t.getType();
+      if (typeof ty === 'undefined') {
+        throw new Error('type mismatch with uninitialized type');
+      } else wireType = ty;
+    }
 
     if (wireType instanceof OptClass) {
       switch (safeReadUint8(b)) {
