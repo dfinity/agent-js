@@ -735,40 +735,45 @@ describe('IDL opt variant decoding', () => {
   });
 });
 
-test('IDL opt edge cases', () => {
+describe('IDL opt edge cases', () => {
+  it('should handle the option when the wire type is null type', () => {
   testDecode(
     IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null }))}),
     {a: []},
     '4449444c016c01617f0100',
      // Motoko: {a = null} : {a : null}
     'opt expected type null on wire',
-  );
+  )});
+  it('should handle the option when the wire type is reserved', () => {
   testDecode(
     IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null }))}),
     {a: []},
     '4449444c016c0161700100',
     // Motoko: {a = (): Any} : {a : Any}
     'opt expected type reserved on wire',
-  );
+  )});
+  it('should handle the option when the wire typ is non-optioned', () => {
   testDecode(
     IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null }))}),
     {a: [{x: null}]},
     `4449444c026c0161016b02787f797f010000`,
     // Motoko: {a = #x } : {a : {#x;#y}}
     'opt expected type non-opt on wire',
-  );
+  )});
+  it('should handle the option when the wire typ is an non-optioned wider variant with expected tag', () => {
   testDecode(
     IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null }))}),
     {a: [{x: null}]},
     `4449444c026c0161016b03787f797f7a7f010000`,
     // Motoko: {a = #x } : {a : {#x;#y;#z}}
     'opt expected, wire type non-opt, extended, with expected tag',
-  );
+  )});
+  it('should handle the option when the wire typ is an non-optioned wider variant with unexpected tag, defaulting', () => {
   testDecode(
     IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null }))}),
     {a: []},
     `4449444c016c01617d010001`,
     // Motoko: {a = 1} : {a : Nat}
     'opt expected, wire type non-opt, other type - defaulting',
-  );
+  )});
 });
