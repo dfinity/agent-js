@@ -701,7 +701,7 @@ test('should decode matching optional fields if wire type contains additional fi
 
 
 describe('IDL opt variant decoding', () => {
-  it('should handle the first of three variants', () => {
+  it('should handle matching expected and wire type variants', () => {
     testDecode(
       IDL.Record({ a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null, z: IDL.Null })) }),
       { a: [{ x: null }] },
@@ -709,7 +709,7 @@ describe('IDL opt variant decoding', () => {
       'same variant under opt x',
     );
   });
-  it('should handle the third of three variants', () => {
+  it('should handle matching expected and wire type variants', () => {
     testDecode(
       IDL.Record({ a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null, z: IDL.Null })) }),
       { a: [{ z: null }] },
@@ -717,7 +717,7 @@ describe('IDL opt variant decoding', () => {
       'same variant under opt z',
     );
   });
-  it('should handle the first of two variants', () => {
+  it('should handle wider variant with expected tag', () => {
     testDecode(
       IDL.Record({ a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })) }),
       { a: [{ x: null }] },
@@ -725,7 +725,7 @@ describe('IDL opt variant decoding', () => {
       'extended variant under opt expected tag',
     );
   });
-  it('should handle the option when the option is empty', () => {
+  it('should handle wider variant with unexpected tag', () => {
     testDecode(
       IDL.Record({ a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })) }),
       { a: [] },
