@@ -921,8 +921,23 @@ export class OptClass<T> extends ConstructType<[T] | []> {
     switch (safeReadUint8(b)) {
       case 0:
         return [];
-      case 1:
-        return [this._type.decodeValue(b, opt._type)];
+      case 1: {
+        // Save the current state of the Pipe `b` to allow rollback in case of an error
+        const checkpoint = b.save();
+        try {
+          // Attempt to decode a value using the `_type` of the current instance
+          const v = this._type.decodeValue(b, opt._type);
+          // If decoding succeeds, return the value wrapped in an array
+          return [v];
+        } catch (e: any) {
+          // If an error occurs during decoding, restore the Pipe `b` to its previous state
+          b.restore(checkpoint);
+          // Skip the value at the current wire type to advance the Pipe `b` position
+          opt._type.decodeValue(b, opt._type);
+          // Return an empty array to indicate a `none` value
+          return [];
+        }
+      }
       default:
         throw new Error('Not an option value');
     }
