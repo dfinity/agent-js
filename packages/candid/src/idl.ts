@@ -956,12 +956,15 @@ export class OptClass<T> extends ConstructType<[T] | []> {
         default:
           throw new Error('Not an option value');
       }
-    } else if (this._type instanceof NullClass || this._type instanceof OptClass || this._type instanceof ReservedClass) {
+    } else if
       // this check corresponds to `not (null <: <t>)` in the spec
+      (this._type instanceof NullClass || this._type instanceof OptClass || this._type instanceof ReservedClass) {
+      // null <: <t> :
       // skip value at wire type (to advance b) and return "null", i.e. []
       const skipped = wireType.decodeValue(b, wireType);
       return [];
     } else {
+      // not (null <: t) :
       // try constituent type
       const checkpoint = b.save();
       try {
