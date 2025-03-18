@@ -766,7 +766,7 @@ describe('IDL opt edge cases', () => {
     {a: [{x: null}]},
     `4449444c026c0161016b03787f797f7a7f010000`,
     // Motoko: {a = #x } : {a : {#x;#y;#z}}
-    'opt expected, wire type non-opt, extended, with expected tag - defaulting',
+    'opt expected, wire type non-opt, extended, with expected tag',
   )});
   it('should handle the option when the wire typ is an non-optioned wider variant with unexpected tag, defaulting', () => {
   testDecode(
@@ -774,7 +774,7 @@ describe('IDL opt edge cases', () => {
     {a: []},
     `4449444c026c0161016b03787f797f7a7f010002`,
     // Motoko: {a = #z} : {a : {#x;#y;#z}}
-    'opt expected, wire type non-opt, other type - defaulting',
+    'opt expected, wire type non-opt, extended, with unexpected tag, defaulting',
   )});
   it('should handle the option when the expected type is opt null, wire type is non-opt', () => {
   testDecode(
@@ -804,7 +804,9 @@ describe('IDL opt edge cases', () => {
 
 
 
-/* */
+/* The following suites are similar to the previous two but require more decoding of a Text value following the optional value.
+   Tests decoding resumed correctly after any skip
+*/
 
 describe('IDL opt variant decoding (embedded)', () => {
   it('should handle matching expected and wire type variants', () => {
@@ -880,7 +882,7 @@ describe('IDL opt edge cases (embedded)', () => {
     {a: [], b: "abc"},
     `4449444c026c02610162716b03787f797f7a7f01000203616263`,
     // Motoko: {a = #z; b = "abc"} : {a : Nat; b : Text}
-    'opt expected, wire type non-opt, extened, with unexpected tag - defaulting',
+    'opt expected, wire type non-opt, extended, with unexpected tag - defaulting',
   )});
   it('should handle the option when the expected type is opt null, wire type is non-opt', () => {
   testDecode(
