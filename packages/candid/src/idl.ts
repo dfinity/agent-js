@@ -919,6 +919,7 @@ export class OptClass<T> extends ConstructType<[T] | []> {
     if (t instanceof NullClass) {
       return []
     }
+
     if (t instanceof ReservedClass) {
       return []
     }
@@ -937,15 +938,18 @@ export class OptClass<T> extends ConstructType<[T] | []> {
         case 0:
           return [];
         case 1: {
+          // Save the current state of the Pipe `b` to allow rollback in case of an error
           const checkpoint = b.save();
           try {
+	    // Attempt to decode a value using the `_type` of the current instance
             const v = this._type.decodeValue(b, wireType._type);
             return [v];
           } catch (e : any) {
+            // If an error occurs during decoding, restore the Pipe `b` to its previous state
             b.restore(checkpoint);
-            // skip value at wire type (to advance b)
+            // Skip the value at the current wire type to advance the Pipe `b` position
             const skipped = wireType._type.decodeValue(b, wireType._type);
-            // retun none
+            // Return an empty array to indicate a `none` value
             return [];
           }
         }
