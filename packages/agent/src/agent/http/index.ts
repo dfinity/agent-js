@@ -454,13 +454,14 @@ export class HttpAgent implements Agent {
       arg: ArrayBuffer;
       effectiveCanisterId?: Principal | string;
       callSync?: boolean;
+      nonce?: Uint8Array | Nonce;
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
     await this.#rootKeyGuard();
     // TODO - restore this value
     const callSync = options.callSync ?? true;
-    const id = await (identity !== undefined ? await identity : await this.#identity);
+    const id = await(identity !== undefined ? await identity : await this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -504,14 +505,32 @@ export class HttpAgent implements Agent {
       body: submit,
     })) as HttpAgentSubmitRequest;
 
-    const nonce: Nonce | undefined = transformedRequest.body.nonce
-      ? toNonce(transformedRequest.body.nonce)
-      : undefined;
+    // Determine the nonce to use for the request
+    let nonce: Nonce | undefined;
 
+    // Check if a nonce is provided in the options and convert it to the correct type
+    if (options?.nonce) {
+        nonce = toNonce(options.nonce);
+    } 
+    // If no nonce is provided in the options, check the transformedRequest body
+    else if (transformedRequest.body.nonce) {
+        nonce = toNonce(transformedRequest.body.nonce);
+    } 
+    // If no nonce is found, set it to undefined
+    else {
+        nonce = undefined;
+    }
+
+    // Assign the determined nonce to the submit object
     submit.nonce = nonce;
 
-    function toNonce(buf: ArrayBuffer): Nonce {
-      return new Uint8Array(buf) as Nonce;
+    /**
+     * Converts an ArrayBuffer or Uint8Array to a Nonce type.
+     * @param buf - The buffer to convert.
+     * @returns The buffer as a Nonce.
+     */
+    function toNonce(buf: ArrayBuffer | Uint8Array): Nonce {
+        return new Uint8Array(buf) as Nonce;
     }
 
     // Apply transform for identity.
