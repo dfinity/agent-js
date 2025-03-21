@@ -1,6 +1,25 @@
 # Changelog
 
+
 ## [Unreleased]
+
+- fix:  Bring Candid decoding of `opt` types up to Candid spec:
+  In particular, when decoding at an `opt` type:
+  - If the wire type is an `opt` type, decode its payload at the expected content type
+    (as before).
+  - Allow decoding `null` wire type as IDL value `null` (i.e. JS `[]`).
+  - Allow decoding of value of `reserved` wire type, defaulting to IDL value `null` (i.e. JS `[]`).
+  - Allow decoding of wider variant type on the wire at narrower expected variant type,
+    provided the decoded value is valid at the expected variant type. Otherwise, default to `null` (i.e. JS `[]`).
+  - Otherwise:
+    - If the expected content type is `null` or `reserved` or (nested) `opt`, return IDL value `null` (i.e. JS `[]`).
+    - The expected content type is neither `null`, `reserved` or nested `opt`:
+      allow decoding of the non-optioned value `v` as `opt v` (JS `[v*]`) if compatible with
+      the expected content type; if incompatible, return IDL value `null` (JS `[]`).
+
+### Added
+
+- test: added e2e test for CanisterStatus requesting a subnet path, as a reference for getting the subnet id of a given canister id
 
 ## [2.3.0] - 2025-02-07
 

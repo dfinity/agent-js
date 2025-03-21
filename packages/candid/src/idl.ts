@@ -215,6 +215,7 @@ export abstract class Type<T = any> {
   public abstract encodeType(typeTable: TypeTable): ArrayBuffer;
 
   public abstract checkType(t: Type): Type;
+
   public abstract decodeValue(x: Pipe, t: Type): T;
 
   protected abstract _buildTypeTableImpl(typeTable: TypeTable): void;
@@ -227,6 +228,7 @@ export abstract class PrimitiveType<T = any> extends Type<T> {
     }
     return t;
   }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public _buildTypeTableImpl(typeTable: TypeTable): void {
     // No type table encoding for Primitive types.
@@ -914,17 +916,68 @@ export class OptClass<T> extends ConstructType<[T] | []> {
   }
 
   public decodeValue(b: Pipe, t: Type): [T] | [] {
-    const opt = this.checkType(t);
-    if (!(opt instanceof OptClass)) {
-      throw new Error('Not an option type');
+    if (t instanceof NullClass) {
+      return []
     }
-    switch (safeReadUint8(b)) {
-      case 0:
+
+    if (t instanceof ReservedClass) {
+      return []
+    }
+
+    let wireType = t;
+    // unfold wireType, if needed
+    if (t instanceof RecClass) {
+      const ty = t.getType();
+      if (typeof ty === 'undefined') {
+        throw new Error('type mismatch with uninitialized type');
+      } else wireType = ty;
+    }
+
+    if (wireType instanceof OptClass) {
+      switch (safeReadUint8(b)) {
+        case 0:
+          return [];
+        case 1: {
+          // Save the current state of the Pipe `b` to allow rollback in case of an error
+          const checkpoint = b.save();
+          try {
+            // Attempt to decode a value using the `_type` of the current instance
+            const v = this._type.decodeValue(b, wireType._type);
+            return [v];
+          } catch (e : any) {
+            // If an error occurs during decoding, restore the Pipe `b` to its previous state
+            b.restore(checkpoint);
+            // Skip the value at the current wire type to advance the Pipe `b` position
+            const skipped = wireType._type.decodeValue(b, wireType._type);
+            // Return an empty array to indicate a `none` value
+            return [];
+          }
+        }
+        default:
+          throw new Error('Not an option value');
+      }
+    } else if
+      // this check corresponds to `not (null <: <t>)` in the spec
+      (this._type instanceof NullClass || this._type instanceof OptClass || this._type instanceof ReservedClass) {
+      // null <: <t> :
+      // skip value at wire type (to advance b) and return "null", i.e. []
+      const skipped = wireType.decodeValue(b, wireType);
+      return [];
+    } else {
+      // not (null <: t) :
+      // try constituent type
+      const checkpoint = b.save();
+      try {
+        const v = this._type.decodeValue(b, t)
+        return [v];
+      } catch (e : any) {
+        // decoding failed, but this is opt, so return "null", i.e. []
+        b.restore(checkpoint);
+        // skip value at wire type (to advance b)
+        const skipped = wireType.decodeValue(b, t)
+        // return "null"
         return [];
-      case 1:
-        return [this._type.decodeValue(b, opt._type)];
-      default:
-        throw new Error('Not an option value');
+      }
     }
   }
 
