@@ -240,6 +240,32 @@ test('readState should not call transformers if request is passed', async () => 
   expect(transformMock).toBeCalledTimes(1);
 });
 
+test('use provided nonce for call', async () => {
+  const mockFetch: jest.Mock = jest.fn(() => {
+    return Promise.resolve(
+      new Response(null, {
+        status: 200,
+      }),
+    );
+  });
+
+  const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+  const nonce = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
+
+  const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://localhost' });
+
+  const methodName = 'greet';
+  const arg = new ArrayBuffer(32);
+
+  const callResponse = await httpAgent.call(canisterId, {
+    methodName,
+    arg,
+    nonce,
+  });
+
+  expect(callResponse?.requestDetails?.nonce).toEqual(nonce);
+});
+
 test('redirect avoid', async () => {
   function checkUrl(base: string, result: string) {
     const httpAgent = new HttpAgent({ host: base });
