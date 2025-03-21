@@ -447,6 +447,18 @@ export class HttpAgent implements Agent {
     return (await this.#identity).getPrincipal();
   }
 
+  /**
+   * Makes a call to a canister method.
+   * @param canisterId - The ID of the canister to call. Can be a Principal or a string.
+   * @param options - Options for the call.
+   * @param options.methodName - The name of the method to call.
+   * @param options.arg - The argument to pass to the method, as an ArrayBuffer.
+   * @param options.effectiveCanisterId - (Optional) The effective canister ID, if different from the target canister ID.
+   * @param options.callSync - (Optional) Whether to use synchronous call mode. Defaults to true.
+   * @param options.nonce - (Optional) A unique nonce for the request. If provided, it will override any nonce set by transforms.
+   * @param identity - (Optional) The identity to use for the call. If not provided, the agent's current identity will be used.
+   * @returns A promise that resolves to the response of the call, including the request ID and response details.
+   */
   public async call(
     canisterId: Principal | string,
     options: {
@@ -510,15 +522,15 @@ export class HttpAgent implements Agent {
 
     // Check if a nonce is provided in the options and convert it to the correct type
     if (options?.nonce) {
-        nonce = toNonce(options.nonce);
-    } 
+      nonce = toNonce(options.nonce);
+    }
     // If no nonce is provided in the options, check the transformedRequest body
     else if (transformedRequest.body.nonce) {
-        nonce = toNonce(transformedRequest.body.nonce);
-    } 
+      nonce = toNonce(transformedRequest.body.nonce);
+    }
     // If no nonce is found, set it to undefined
     else {
-        nonce = undefined;
+      nonce = undefined;
     }
 
     // Assign the determined nonce to the submit object
@@ -530,7 +542,7 @@ export class HttpAgent implements Agent {
      * @returns The buffer as a Nonce.
      */
     function toNonce(buf: ArrayBuffer | Uint8Array): Nonce {
-        return new Uint8Array(buf) as Nonce;
+      return new Uint8Array(buf) as Nonce;
     }
 
     // Apply transform for identity.
