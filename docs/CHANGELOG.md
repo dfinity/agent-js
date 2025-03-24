@@ -3,6 +3,8 @@
 
 ## [Unreleased]
 
+## [2.4.0] - 2025-03-24
+
 ### Changed
 
 - fix:  Bring Candid decoding of `opt` types up to Candid spec:
