@@ -3,6 +3,8 @@
 
 ## [Unreleased]
 
+### Changed
+
 - fix:  Bring Candid decoding of `opt` types up to Candid spec:
   In particular, when decoding at an `opt` type:
   - If the wire type is an `opt` type, decode its payload at the expected content type
@@ -19,6 +21,7 @@
 
 ### Added
 
+- feat: refactor nonce logic to prioritize options and ensure compatibility with ArrayBuffer and Uint8Array
 - test: added e2e test for CanisterStatus requesting a subnet path, as a reference for getting the subnet id of a given canister id
 
 ## [2.3.0] - 2025-02-07
