@@ -28,7 +28,13 @@ import {
 } from './storage';
 import { PartialIdentity } from '@dfinity/identity/lib/cjs/identity/partial';
 
-export { AuthClientStorage, IdbStorage, LocalStorage, KEY_STORAGE_DELEGATION, KEY_STORAGE_KEY } from './storage';
+export {
+  AuthClientStorage,
+  IdbStorage,
+  LocalStorage,
+  KEY_STORAGE_DELEGATION,
+  KEY_STORAGE_KEY,
+} from './storage';
 export { IdbKeyVal, DBCreateOptions } from './db';
 
 const IDENTITY_PROVIDER_DEFAULT = 'https://identity.ic0.app';
@@ -428,8 +434,12 @@ export class AuthClient {
     return this._identity;
   }
 
-  public async isAuthenticated(): Promise<boolean> {
-    return !this.getIdentity().getPrincipal().isAnonymous() && this._chain !== null;
+  public isAuthenticated(): boolean {
+    return (
+      !this.getIdentity().getPrincipal().isAnonymous() &&
+      this._chain !== null &&
+      isDelegationValid(this._chain)
+    );
   }
 
   /**

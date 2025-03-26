@@ -52,7 +52,7 @@ afterEach(() => {
 describe('Auth Client', () => {
   it('should initialize with an AnonymousIdentity', async () => {
     const test = await AuthClient.create();
-    expect(await test.isAuthenticated()).toBe(false);
+    expect(test.isAuthenticated()).toBe(false);
     expect(test.getIdentity().getPrincipal().isAnonymous()).toBe(true);
   });
 
@@ -68,7 +68,7 @@ describe('Auth Client', () => {
   it('should log users out', async () => {
     const test = await AuthClient.create();
     await test.logout();
-    expect(await test.isAuthenticated()).toBe(false);
+    expect(test.isAuthenticated()).toBe(false);
     expect(test.getIdentity().getPrincipal().isAnonymous()).toBe(true);
   });
   it('should not initialize an idleManager if the user is not logged in', async () => {
@@ -125,6 +125,7 @@ describe('Auth Client', () => {
     try {
       await actor.greet('hello');
     } catch (error) {
+      expect(test.isAuthenticated()).toBe(false);
       expect((error as AgentError).message).toBe(expectedError);
     }
   });
