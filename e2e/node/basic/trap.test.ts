@@ -50,7 +50,7 @@ describe('trap', () => {
     try {
       await actor.test();
     } catch (error) {
-      expect(error.reject_message).toContain('Canister called `ic0.trap` with message: trapping');
+      expect(error.reject_message).toContain("Canister called `ic0.trap` with message: 'trapping'");
     }
   });
 });
