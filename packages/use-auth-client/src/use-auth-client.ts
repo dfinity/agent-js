@@ -81,10 +81,10 @@ export function useAuthClient(options?: UseAuthClientOptions) {
             logout();
           }),
       },
-    }).then(async client => {
+    }).then(client => {
       setAuthClient(client);
       setIdentity(client.getIdentity());
-      setIsAuthenticated(await client.isAuthenticated());
+      setIsAuthenticated(client.isAuthenticated());
     });
   }, []);
 
