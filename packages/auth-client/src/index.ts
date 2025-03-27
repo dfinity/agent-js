@@ -434,7 +434,7 @@ export class AuthClient {
     return this._identity;
   }
 
-  public isAuthenticated(): boolean {
+  public async isAuthenticated(): Promise<boolean> {
     return (
       !this.getIdentity().getPrincipal().isAnonymous() &&
       this._chain !== null &&
