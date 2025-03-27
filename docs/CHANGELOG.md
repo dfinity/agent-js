@@ -3,6 +3,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- fix: AuthClient `isAuthenticated` now correctly returns false if the delegation chain is invalid; eg: expired session
+
 ## [2.4.0] - 2025-03-24
 
 ### Changed

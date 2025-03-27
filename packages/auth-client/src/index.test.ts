@@ -125,6 +125,7 @@ describe('Auth Client', () => {
     try {
       await actor.greet('hello');
     } catch (error) {
+      expect(await test.isAuthenticated()).toBe(false);
       expect((error as AgentError).message).toBe(expectedError);
     }
   });
