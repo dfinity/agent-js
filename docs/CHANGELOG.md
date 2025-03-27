@@ -11,6 +11,7 @@
 
 ### Changed
 
+- chore: changes trap e2e test to check for the response "trapping". Resolves a discrepancy with the replica response introduced in dfx 0.25.1
 - fix:  Bring Candid decoding of `opt` types up to Candid spec:
   In particular, when decoding at an `opt` type:
   - If the wire type is an `opt` type, decode its payload at the expected content type
