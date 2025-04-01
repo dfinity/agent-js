@@ -3,6 +3,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- feat: change auth-client's default identity provider url
+
 ## [2.4.0] - 2025-03-24
 
 ### Changed
