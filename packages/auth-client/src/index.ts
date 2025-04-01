@@ -94,7 +94,7 @@ export type OnErrorFunc = (error?: string) => void | Promise<void>;
 export interface AuthClientLoginOptions {
   /**
    * Identity provider
-   * @default "https://identity.ic0.app"
+   * @default "https://identity.internetcomputer.org"
    */
   identityProvider?: string | URL;
   /**
