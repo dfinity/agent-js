@@ -31,7 +31,7 @@ import { PartialIdentity } from '@dfinity/identity/lib/cjs/identity/partial';
 export { AuthClientStorage, IdbStorage, LocalStorage, KEY_STORAGE_DELEGATION, KEY_STORAGE_KEY } from './storage';
 export { IdbKeyVal, DBCreateOptions } from './db';
 
-const IDENTITY_PROVIDER_DEFAULT = 'https://identity.ic0.app';
+const IDENTITY_PROVIDER_DEFAULT = 'https://identity.internetcomputer.org';
 const IDENTITY_PROVIDER_ENDPOINT = '#authorize';
 
 const ECDSA_KEY_LABEL = 'ECDSA';
