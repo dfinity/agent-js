@@ -21,7 +21,7 @@ const App = () => {
     process.env.DFX_NETWORK === 'local'
       ? // eslint-disable-next-line no-undef
         `http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.localhost:4943`
-      : 'https://identity.ic0.app';
+      : 'https://identity.internetcomputer.org';
 
   const { isAuthenticated, login, logout, actor } = useAuthClient({
     loginOptions: {
