@@ -13,7 +13,7 @@ import {
   lookup_path,
   lookupResultToBuffer,
 } from '../certificate';
-import { toHex } from '../utils/buffer';
+import { bufFromBufLike, toHex, uint8ToBuf } from '../utils/buffer';
 import * as Cbor from '../cbor';
 import { decodeLeb128, decodeTime } from '../utils/leb';
 import { DerEncodedPublicKey } from '..';
@@ -142,7 +142,7 @@ export const request = async (options: {
   const promises = uniquePaths.map((path, index) => {
     return (async () => {
       try {
-        const response = await agent.readState(canisterId, {
+        const response = await agent.readStateUnsigned(canisterId, {
           paths: [encodedPaths[index]],
         });
         if (agent.rootKey == null) {
@@ -264,7 +264,7 @@ export const fetchNodeKeys = (
   if (!canisterId._isPrincipal) {
     throw new Error('Invalid canisterId');
   }
-  const cert = Cbor.decode(new Uint8Array(certificate)) as Cert;
+  const cert = Cbor.decode(uint8ToBuf(new Uint8Array(certificate))) as Cert;
   const tree = cert.tree;
   let delegation = cert.delegation;
   let subnetId: Principal;
@@ -276,7 +276,7 @@ export const fetchNodeKeys = (
   else if (!delegation && typeof root_key !== 'undefined') {
     subnetId = Principal.selfAuthenticating(new Uint8Array(root_key));
     delegation = {
-      subnet_id: subnetId.toUint8Array(),
+      subnet_id: bufFromBufLike(subnetId.toUint8Array()),
       certificate: new ArrayBuffer(0),
     };
   }
@@ -288,7 +288,7 @@ export const fetchNodeKeys = (
       ).toUint8Array(),
     );
     delegation = {
-      subnet_id: subnetId.toUint8Array(),
+      subnet_id: bufFromBufLike(subnetId.toUint8Array()),
       certificate: new ArrayBuffer(0),
     };
   }
@@ -334,9 +334,9 @@ export const encodePath = (path: Path, canisterId: Principal): ArrayBuffer[] => 
   const encoder = new TextEncoder();
 
   const encode = (arg: string): ArrayBuffer => {
-    return new DataView(encoder.encode(arg).buffer).buffer;
+    return bufFromBufLike(encoder.encode(arg));
   };
-  const canisterBuffer = new DataView(canisterId.toUint8Array().buffer).buffer;
+  const canisterBuffer = bufFromBufLike(canisterId.toUint8Array());
   switch (path) {
     case 'time':
       return [encode('time')];

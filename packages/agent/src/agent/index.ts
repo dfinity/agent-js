@@ -4,7 +4,6 @@ import { Agent } from './api';
 export * from './api';
 export * from './http';
 export * from './http/errors';
-export * from './proxy';
 
 declare const window: GlobalInternetComputer;
 declare const global: GlobalInternetComputer;

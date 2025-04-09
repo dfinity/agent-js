@@ -133,7 +133,12 @@ export async function pollForResponse(
   }
   const currentRequest = await constructRequest([path]);
 
-  const state = await agent.readState(canisterId, { paths: [path] }, undefined, currentRequest);
+  // Check if agent is v3 and use appropriate readState method
+  const state =
+    'readStateSigned' in agent
+      ? await agent.readStateSigned(canisterId, { paths: [path] }, currentRequest)
+      : await agent.readState(canisterId, { paths: [path] }, undefined, currentRequest);
+
   if (agent.rootKey == null) throw new Error('Agent root key not initialized before polling');
   const cert = await Certificate.create({
     certificate: state.certificate,

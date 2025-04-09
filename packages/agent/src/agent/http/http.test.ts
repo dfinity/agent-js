@@ -26,15 +26,13 @@ import {
 } from '../..';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { AgentError } from '../../errors';
-import {
-  AgentCallError,
-  AgentHTTPResponseError,
-  AgentQueryError,
-  AgentReadStateError,
-} from './errors';
+import { AgentCallError, AgentQueryError, AgentReadStateError } from './errors';
+import { bufFromBufLike } from '@dfinity/candid';
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;
+
+const textEncodeBuffer = (text: string) => bufFromBufLike(new TextEncoder().encode(text));
 
 const HTTP_AGENT_HOST = 'http://127.0.0.1:4943';
 
@@ -88,7 +86,7 @@ test('call', async () => {
   const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://127.0.0.1' });
 
   const methodName = 'greet';
-  const arg = new Uint8Array([]);
+  const arg = bufFromBufLike(new Uint8Array([]));
 
   const { requestId } = await httpAgent.call(canisterId, {
     methodName,
@@ -156,7 +154,7 @@ test('queries with the same content should have the same signature', async () =>
   });
 
   const methodName = 'greet';
-  const arg = new Uint8Array([]);
+  const arg = bufFromBufLike(new Uint8Array([]));
 
   const requestId = requestIdOf({
     request_type: SubmitRequestType.Call,
@@ -167,12 +165,10 @@ test('queries with the same content should have the same signature', async () =>
     sender: principal,
   });
 
-  const paths = [
-    [new TextEncoder().encode('request_status'), requestId, new TextEncoder().encode('reply')],
-  ];
+  const paths = [[textEncodeBuffer('request_status'), requestId, textEncodeBuffer('reply')]];
 
-  const response1 = await httpAgent.readState(canisterIdent, { paths });
-  const response2 = await httpAgent.readState(canisterIdent, { paths });
+  const response1 = await httpAgent.readStateUnsigned(canisterIdent, { paths });
+  const response2 = await httpAgent.readStateUnsigned(canisterIdent, { paths });
 
   const response3 = await httpAgent.query(canisterIdent, { arg, methodName });
   const response4 = await httpAgent.query(canisterIdent, { methodName, arg });
@@ -230,13 +226,11 @@ test('readState should not call transformers if request is passed', async () => 
     sender: principal,
   });
 
-  const paths = [
-    [new TextEncoder().encode('request_status'), requestId, new TextEncoder().encode('reply')],
-  ];
+  const paths = [[textEncodeBuffer('request_status'), requestId, textEncodeBuffer('reply')]];
 
   const request = await httpAgent.createReadStateRequest({ paths });
   expect(transformMock).toBeCalledTimes(1);
-  await httpAgent.readState(canisterIdent, { paths }, undefined, request);
+  await httpAgent.readStateSigned(canisterIdent, { paths }, request);
   expect(transformMock).toBeCalledTimes(1);
 });
 
@@ -329,7 +323,7 @@ test('use anonymous principal if unspecified', async () => {
   });
 
   const methodName = 'greet';
-  const arg = new Uint8Array([]);
+  const arg = bufFromBufLike(new Uint8Array([]));
 
   const { requestId } = await httpAgent.call(canisterId, {
     methodName,
@@ -444,8 +438,8 @@ describe('invalidate identity', () => {
     }
     // Test readState
     try {
-      const path = new TextEncoder().encode('request_status');
-      await agent.readState(canisterId, {
+      const path = textEncodeBuffer('request_status');
+      await agent.readStateUnsigned(canisterId, {
         paths: [[path]],
       });
     } catch (error) {
@@ -504,7 +498,7 @@ describe('makeNonce', () => {
   it('should create unique values', () => {
     const nonces = new Set();
     for (let i = 0; i < 100; i++) {
-      nonces.add(toHex(makeNonce()));
+      nonces.add(toHex(bufFromBufLike(makeNonce())));
     }
     expect(nonces.size).toBe(100);
   });
@@ -530,10 +524,10 @@ describe('makeNonce', () => {
 
     it('should create same value using polyfill', () => {
       const spyOnSetUint32 = jest.spyOn(DataView.prototype, 'setUint32').mockImplementation();
-      const originalNonce = toHex(makeNonce());
+      const originalNonce = toHex(bufFromBufLike(makeNonce()));
       expect(spyOnSetUint32).toBeCalledTimes(4);
 
-      const nonce = toHex(makeNonce());
+      const nonce = toHex(bufFromBufLike(makeNonce()));
       expect(spyOnSetUint32).toBeCalledTimes(8);
 
       expect(nonce).toBe(originalNonce);
@@ -745,12 +739,12 @@ test('should fetch with given call options and fetch options', async () => {
 
   await httpAgent.call(canisterId, {
     methodName: 'greet',
-    arg: new Uint8Array([]),
+    arg: bufFromBufLike(new Uint8Array([])),
   });
 
   await httpAgent.query(canisterId, {
     methodName: 'greet',
-    arg: new Uint8Array([]),
+    arg: bufFromBufLike(new Uint8Array([])),
   });
 
   const { calls } = mockFetch.mock;
@@ -847,7 +841,7 @@ test('retry requests that fail due to a network failure', async () => {
     fetch: mockFetch,
   });
 
-  agent.rootKey = new Uint8Array(32);
+  agent.rootKey = bufFromBufLike(new Uint8Array(32));
 
   try {
     await agent.call(Principal.managementCanister(), {
@@ -1048,7 +1042,7 @@ describe('await fetching root keys before making a call to the network.', () => 
     expect(agent.rootKey).toBe(null);
 
     const methodName = 'greet';
-    const arg = new Uint8Array([]);
+    const arg = bufFromBufLike(new Uint8Array([]));
 
     await agent.call(canisterId, {
       methodName,
@@ -1219,7 +1213,7 @@ describe('error logs for bad signature', () => {
     const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
 
     const methodName = 'greet';
-    const arg = new Uint8Array([]);
+    const arg = bufFromBufLike(new Uint8Array([]));
     const logs: {
       message: string;
       level: 'error';
@@ -1259,7 +1253,7 @@ describe('error logs for bad signature', () => {
     const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
 
     const methodName = 'greet';
-    const arg = new Uint8Array([]);
+    const arg = bufFromBufLike(new Uint8Array([]));
     const logs: {
       message: string;
       level: 'error';
@@ -1342,8 +1336,8 @@ describe('error logs for bad signature', () => {
 
     try {
       const requestId = new ArrayBuffer(32) as RequestId;
-      const path = new TextEncoder().encode('request_status');
-      await agent.readState(canisterId, { paths: [[path, requestId]] });
+      const path = textEncodeBuffer('request_status');
+      await agent.readStateUnsigned(canisterId, { paths: [[path, requestId]] });
     } catch (e) {
       expect(e instanceof AgentReadStateError).toBe(true);
     }

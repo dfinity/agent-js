@@ -119,5 +119,5 @@ export function makeNonce(): Nonce {
   view.setUint32(8, rand3);
   view.setUint32(12, rand4);
 
-  return buffer as Nonce;
+  return new Uint8Array(buffer) as Nonce;
 }
