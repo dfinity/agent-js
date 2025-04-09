@@ -11,7 +11,7 @@ import {
 } from './agent';
 import { AgentError } from './errors';
 import { bufFromBufLike, IDL } from '@dfinity/candid';
-import { pollForResponse, strategy, PollingOptions } from './polling';
+import { pollForResponse,  strategy, PollingOptions } from './polling';
 import { Principal } from '@dfinity/principal';
 import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
