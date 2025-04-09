@@ -131,7 +131,13 @@ export async function pollForResponse(
     }
     return request;
   }
-  const currentRequest = await constructRequest([path]);
+  // const currentRequest = await constructRequest([path]);
+
+  // Check if agent is v3 and use appropriate readState method
+  const state =
+    'readStateSigned' in agent
+      ? await agent.readStateUnsigned(canisterId, { paths: [path] })
+      : await agent.readState(canisterId, { paths: [path] }, undefined);
 
   if (agent.rootKey == null) throw new Error('Agent root key not initialized before polling');
   const cert = await Certificate.create({
@@ -166,7 +172,7 @@ export async function pollForResponse(
       await strategy(canisterId, requestId, status);
       return pollForResponse(agent, canisterId, requestId, {
         ...options,
-        request: options.reuseReadStateSignatures !== false ? currentRequest : undefined,
+        // request: options.reuseReadStateSignatures !== false ? currentRequest : undefined,
       });
     }
 

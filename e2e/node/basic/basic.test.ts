@@ -42,7 +42,8 @@ test('read_state', async () => {
   const resolvedAgent = await agent;
   const now = Date.now() / 1000;
   const path = [new TextEncoder().encode('time')];
-  const response = await resolvedAgent.readState(ecid, {
+  const canisterId = Principal.fromHex('00000000000000000001');
+  const response = await resolvedAgent.readState(canisterId, {
     paths: [path],
   });
   if (resolvedAgent.rootKey == null) throw new Error(`The agent doesn't have a root key yet`);
@@ -54,6 +55,7 @@ test('read_state', async () => {
   expect(cert.lookup([new TextEncoder().encode('Time')])).toEqual({
     status: LookupStatus.Unknown,
   });
+  expect(cert.lookup([new TextEncoder().encode('Time')])).toEqual({ status: LookupStatus.Unknown });
 
   let rawTime = cert.lookup(path);
 
@@ -80,7 +82,7 @@ test('read_state with passed request', async () => {
   const resolvedAgent = await agent;
   const now = Date.now() / 1000;
   const path = [new TextEncoder().encode('time')];
-  const canisterId = await getDefaultEffectiveCanisterId();
+  const canisterId = Principal.fromHex('00000000000000000001');
   const request = await resolvedAgent.createReadStateRequest({ paths: [path] });
   const response = await resolvedAgent.readStateSigned(canisterId, request);
   if (resolvedAgent.rootKey == null) throw new Error(`The agent doesn't have a root key yet`);
@@ -89,9 +91,7 @@ test('read_state with passed request', async () => {
     rootKey: resolvedAgent.rootKey,
     canisterId: canisterId,
   });
-  expect(cert.lookup([new TextEncoder().encode('Time')])).toEqual({
-    status: LookupStatus.Unknown,
-  });
+  expect(cert.lookup([new TextEncoder().encode('Time')])).toEqual({ status: LookupStatus.Unknown });
 
   let rawTime = cert.lookup(path);
 
