@@ -1,5 +1,4 @@
 import { Identity, PublicKey } from '@dfinity/agent';
-import { bufFromBufLike } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 
 /**
