@@ -5,6 +5,8 @@
 
 ### Changed
 
+- feat: breaks `readState` into `signed` and `unsigned` methods. The `signed` method will take a pre-signed request and re-use it for polling. The `unsigned` method will create a new request and sign it for each poll.
+  - This can be called directly in the `HttpAgent` or through the `Actor` interface, with a new `signed` polling strategy.
 - feat: change auth-client's default identity provider url
 
 ## [2.4.0] - 2025-03-24

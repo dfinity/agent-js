@@ -1,25 +1,57 @@
-import { Principal } from '@dfinity/principal';
-import { Agent, Expiry, RequestStatusResponseStatus } from '../agent';
-import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from '../certificate';
 import { RequestId } from '../request_id';
-import { toHex } from '../utils/buffer';
+import { bufFromBufLike, toHex } from '../utils/buffer';
+import { CreateCertificateOptions, Certificate, lookupResultToBuffer } from '../certificate';
+import { Agent } from '../agent/api';
+import { Principal } from '@dfinity/principal';
 
 export * as strategy from './strategy';
 import { defaultStrategy } from './strategy';
-import { DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS } from '../constants';
 import { ReadRequestType, ReadStateRequest } from '../agent/http/types';
+import { CreateReadStateRequestError } from '../errors';
+import { RequestStatusResponseStatus } from '../agent';
 export { defaultStrategy } from './strategy';
+
 export type PollStrategy = (
   canisterId: Principal,
   requestId: RequestId,
   status: RequestStatusResponseStatus,
 ) => Promise<void>;
+
 export type PollStrategyFactory = () => PollStrategy;
 
-interface SignedReadStateRequestWithExpiry {
+interface SignedReadStateRequestWithExpiry extends ReadStateRequest {
   body: {
     content: Pick<ReadStateRequest, 'request_type' | 'ingress_expiry'>;
   };
+}
+
+/**
+ * Options for controlling polling behavior
+ */
+export interface PollingOptions {
+  /**
+   * A polling strategy that dictates how much and often we should poll the
+   * read_state endpoint to get the result of an update call.
+   * @default defaultStrategy()
+   */
+  strategy?: PollStrategy;
+
+  /**
+   * Whether to reuse the same signed request for polling or create a new unsigned request each time.
+   * @default true
+   */
+  reuseReadStateSignatures?: boolean;
+
+  /**
+   * Optional replacement function that verifies the BLS signature of a certificate.
+   */
+  blsVerify?: CreateCertificateOptions['blsVerify'];
+
+  /**
+   * The request to use for polling. If not provided, a new request will be created.
+   * This is only used if `reuseReadStateSignatures` is set to true.
+   */
+  request?: ReadStateRequest;
 }
 
 /**
@@ -68,23 +100,38 @@ function isSignedReadStateRequestWithExpiry(
  * @param agent The agent to use to poll read_state.
  * @param canisterId The effective canister ID.
  * @param requestId The Request ID to poll status for.
- * @param strategy A polling strategy.
- * @param request Request for the repeated readState call.
- * @param blsVerify - optional replacement function that verifies the BLS signature of a certificate.
+ * @param options - polling options to control behavior
  */
 export async function pollForResponse(
   agent: Agent,
   canisterId: Principal,
   requestId: RequestId,
-  strategy: PollStrategy = defaultStrategy(),
-  request?: unknown,
-  blsVerify?: CreateCertificateOptions['blsVerify'],
+  options: PollingOptions = {},
 ): Promise<{
   certificate: Certificate;
   reply: ArrayBuffer;
 }> {
-  const path = [new TextEncoder().encode('request_status'), requestId];
-  const currentRequest = request ?? (await agent.createReadStateRequest?.({ paths: [path] }));
+  const encode = (str: string) => bufFromBufLike(new TextEncoder().encode(str));
+  const path = [encode('request_status'), requestId];
+
+  // Determine if we should reuse the read state request or create a new one
+  // based on the options provided.
+  async function constructRequest(paths: ArrayBuffer[][]): Promise<ReadStateRequest> {
+    if (options.request && isSignedReadStateRequestWithExpiry(options.request)) {
+      return options.request;
+    }
+    const request = await agent.createReadStateRequest?.(
+      {
+        paths,
+      },
+      undefined,
+    );
+    if (!isSignedReadStateRequestWithExpiry(request)) {
+      throw new CreateReadStateRequestError('Invalid read state request', request);
+    }
+    return request;
+  }
+  const currentRequest = await constructRequest([path]);
 
   const state = await agent.readState(canisterId, { paths: [path] }, undefined, currentRequest);
   if (agent.rootKey == null) throw new Error('Agent root key not initialized before polling');
@@ -92,10 +139,10 @@ export async function pollForResponse(
     certificate: state.certificate,
     rootKey: agent.rootKey,
     canisterId: canisterId,
-    blsVerify,
+    blsVerify: options.blsVerify,
   });
 
-  const maybeBuf = lookupResultToBuffer(cert.lookup([...path, new TextEncoder().encode('status')]));
+  const maybeBuf = lookupResultToBuffer(cert.lookup([...path, encode('status')]));
   let status;
   if (typeof maybeBuf === 'undefined') {
     // Missing requestId means we need to wait
@@ -114,10 +161,15 @@ export async function pollForResponse(
 
     case RequestStatusResponseStatus.Received:
     case RequestStatusResponseStatus.Unknown:
-    case RequestStatusResponseStatus.Processing:
+    case RequestStatusResponseStatus.Processing: {
       // Execute the polling strategy, then retry.
+      const strategy = options.strategy ?? defaultStrategy();
       await strategy(canisterId, requestId, status);
-      return pollForResponse(agent, canisterId, requestId, strategy, currentRequest, blsVerify);
+      return pollForResponse(agent, canisterId, requestId, {
+        ...options,
+        request: options.reuseReadStateSignatures !== false ? currentRequest : undefined,
+      });
+    }
 
     case RequestStatusResponseStatus.Rejected: {
       const rejectCode = new Uint8Array(

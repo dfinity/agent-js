@@ -48,7 +48,6 @@ import { Ed25519PublicKey } from '../../public_key';
 import { decodeTime } from '../../utils/leb';
 import { ObservableLog } from '../../observable';
 import { BackoffStrategy, BackoffStrategyFactory, ExponentialBackoff } from '../../polling/backoff';
-import { DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS } from '../../constants';
 export * from './transforms';
 export * from './errors';
 export { Nonce, makeNonce } from './types';
@@ -473,7 +472,7 @@ export class HttpAgent implements Agent {
     await this.#rootKeyGuard();
     // TODO - restore this value
     const callSync = options.callSync ?? true;
-    const id = await(identity !== undefined ? await identity : await this.#identity);
+    const id = await (identity !== undefined ? await identity : await this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -1010,7 +1009,7 @@ export class HttpAgent implements Agent {
         throw new Error(`Unknown status: ${status}`);
       }
 
-      const separatorWithHash = concat(domainSeparator, new Uint8Array(hash));
+      const separatorWithHash = concat(bufFromBufLike(domainSeparator), bufFromBufLike(new Uint8Array(hash)));
 
       // FIX: check for match without verifying N times
       const pubKey = subnetStatus?.nodeKeys.get(nodeId);
@@ -1081,7 +1080,7 @@ export class HttpAgent implements Agent {
       for (const path of fields.paths) {
         const [pathName, value] = path;
         const request_status = new TextEncoder().encode('request_status');
-        if (bufEquals(pathName, request_status)) {
+        if (bufEquals(pathName, bufFromBufLike(request_status))) {
           return value as RequestId;
         }
       }
