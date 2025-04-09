@@ -11,6 +11,7 @@ import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import agent from '../utils/agent';
 import { test, expect } from 'vitest';
+import { strToUtf8 } from '@dfinity/agent/src';
 
 /**
  * Util for determining the default effective canister id, necessary for pocketic
@@ -85,14 +86,7 @@ test('read_state with passed request', async () => {
   const path = [strToUtf8('time')];
   const canisterId = await getDefaultEffectiveCanisterId();
   const request = await resolvedAgent.createReadStateRequest({ paths: [path] });
-  const response = await resolvedAgent.readState(
-    canisterId,
-    {
-      paths: [path],
-    },
-    undefined,
-    request,
-  );
+  const response = await resolvedAgent.readStateSigned(canisterId, request);
   if (resolvedAgent.rootKey == null) throw new Error(`The agent doesn't have a root key yet`);
   const cert = await Certificate.create({
     certificate: response.certificate,
