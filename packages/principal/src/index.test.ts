@@ -66,4 +66,9 @@ describe('Principal', () => {
     const json = JSON.stringify(principal);
     expect(Principal.from(json)).toEqual(principal);
   });
+
+  it('returns the management canister principal', () => {
+    const principal = Principal.fromText('aaaaa-aa');
+    expect(Principal.managementCanister()).toEqual(principal);
+  });
 });
