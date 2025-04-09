@@ -5,6 +5,7 @@
 
 ### Changed
 
+- fix: fixes a bug in the `Principal` library where the management canister id util was incorrectly importing using `fromHex`
 - feat: change auth-client's default identity provider url
 
 ## [2.4.0] - 2025-03-24
