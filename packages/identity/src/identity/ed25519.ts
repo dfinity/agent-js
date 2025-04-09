@@ -230,11 +230,11 @@ export class Ed25519KeyIdentity extends SignIdentity {
         x = fromHex(x);
       }
       if (x instanceof Uint8Array) {
-        x = x.buffer;
+        x = bufFromBufLike(x.buffer);
       }
       return new Uint8Array(x);
     });
-    return ed25519.verify(message, signature, publicKey);
+    return ed25519.verify(signature, message, publicKey);
   }
 }
 

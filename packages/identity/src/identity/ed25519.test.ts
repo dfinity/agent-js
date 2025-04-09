@@ -1,5 +1,6 @@
 import { DerEncodedPublicKey, PublicKey, fromHex, toHex } from '@dfinity/agent';
 import { Ed25519KeyIdentity, Ed25519PublicKey } from './ed25519';
+import { bufFromBufLike } from '@dfinity/candid';
 
 const testVectors: Array<[string, string]> = [
   [
@@ -107,10 +108,10 @@ describe('Ed25519KeyIdentity tests', () => {
     const identity = Ed25519KeyIdentity.generate();
     const message = new TextEncoder().encode('Hello, World!');
 
-    const signature = await identity.sign(message);
+    const signature = await identity.sign(bufFromBufLike(message));
     const pubkey = identity.getPublicKey();
 
-    const isValid = Ed25519KeyIdentity.verify(message, signature, pubkey.rawKey);
+    const isValid = Ed25519KeyIdentity.verify(signature, message, pubkey.rawKey);
 
     expect(isValid).toBe(true);
   });
@@ -120,13 +121,15 @@ describe('Ed25519KeyIdentity tests', () => {
     const key2 = Ed25519KeyIdentity.generate();
     expect(key1.toJSON().toString()).not.toEqual(key2.toJSON().toString());
   });
-  
+
   it('should warn if the key is an Uint8Array consisting of all zeroes', () => {
     const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     const baseKey = new Uint8Array(new Array(32).fill(0));
     Ed25519KeyIdentity.generate(baseKey);
-    expect(consoleSpy).toHaveBeenCalledWith("Seed is all zeros. This is not a secure seed. Please provide a seed with sufficient entropy if this is a production environment.");
+    expect(consoleSpy).toHaveBeenCalledWith(
+      'Seed is all zeros. This is not a secure seed. Please provide a seed with sufficient entropy if this is a production environment.',
+    );
   });
 });
 
@@ -139,8 +142,8 @@ test('from JSON', async () => {
   const identity = Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
 
   const msg = new TextEncoder().encode('Hello, World!');
-  const signature = await identity.sign(msg);
-  const isValid = Ed25519KeyIdentity.verify(msg, signature, identity.getPublicKey().rawKey);
+  const signature = await identity.sign(bufFromBufLike(msg));
+  const isValid = Ed25519KeyIdentity.verify(signature, msg, identity.getPublicKey().rawKey);
   expect(isValid).toBe(true);
 });
 
