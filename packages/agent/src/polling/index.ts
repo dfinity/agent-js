@@ -4,18 +4,19 @@ import { CreateCertificateOptions, Certificate, lookupResultToBuffer } from '../
 import { Agent } from '../agent/api';
 import { Principal } from '@dfinity/principal';
 
-
 export * as strategy from './strategy';
 import { defaultStrategy } from './strategy';
 import { ReadRequestType, ReadStateRequest } from '../agent/http/types';
 import { CreateReadStateRequestError } from '../errors';
 import { RequestStatusResponseStatus } from '../agent';
 export { defaultStrategy } from './strategy';
+
 export type PollStrategy = (
   canisterId: Principal,
   requestId: RequestId,
   status: RequestStatusResponseStatus,
 ) => Promise<void>;
+
 export type PollStrategyFactory = () => PollStrategy;
 
 interface SignedReadStateRequestWithExpiry extends ReadStateRequest {

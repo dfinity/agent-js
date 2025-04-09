@@ -473,7 +473,7 @@ export class HttpAgent implements Agent {
     await this.#rootKeyGuard();
     // TODO - restore this value
     const callSync = options.callSync ?? true;
-    const id = await (identity ?? this.#identity);
+    const id = await(identity ?? this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
