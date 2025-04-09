@@ -142,8 +142,8 @@ test('from JSON', async () => {
   const identity = Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
 
   const msg = new TextEncoder().encode('Hello, World!');
-  const signature = await identity.sign(msg);
-  const isValid = Ed25519KeyIdentity.verify(msg, signature, identity.getPublicKey().rawKey);
+  const signature = await identity.sign(bufFromBufLike(msg));
+  const isValid = Ed25519KeyIdentity.verify(signature, msg, identity.getPublicKey().rawKey);
   expect(isValid).toBe(true);
 });
 

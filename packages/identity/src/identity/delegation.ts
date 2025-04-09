@@ -11,6 +11,7 @@ import {
 import { Principal } from '@dfinity/principal';
 import * as cbor from 'simple-cbor';
 import { PartialIdentity } from './partial';
+import { bufFromBufLike } from '@dfinity/candid';
 
 const domainSeparator = new TextEncoder().encode('\x1Aic-request-auth-delegation');
 const requestDomainSeparator = new TextEncoder().encode('\x0Aic-request');
@@ -42,7 +43,9 @@ export class Delegation {
       pubkey: cbor.value.bytes(this.pubkey),
       expiration: cbor.value.u64(this.expiration.toString(16), 16),
       ...(this.targets && {
-        targets: cbor.value.array(this.targets.map(t => cbor.value.bytes(t.toUint8Array()))),
+        targets: cbor.value.array(
+          this.targets.map(t => cbor.value.bytes(bufFromBufLike(t.toUint8Array()))),
+        ),
       }),
     });
   }
@@ -112,7 +115,7 @@ async function _createSingleDelegation(
     ...domainSeparator,
     ...new Uint8Array(requestIdOf({ ...delegation })),
   ]);
-  const signature = await from.sign(challenge);
+  const signature = await from.sign(bufFromBufLike(challenge));
 
   return {
     delegation,
@@ -305,7 +308,7 @@ export class DelegationIdentity extends SignIdentity {
       body: {
         content: body,
         sender_sig: await this.sign(
-          new Uint8Array([...requestDomainSeparator, ...new Uint8Array(requestId)]),
+          bufFromBufLike(new Uint8Array([...requestDomainSeparator, ...new Uint8Array(requestId)])),
         ),
         sender_delegation: this._delegation.delegations,
         sender_pubkey: this._delegation.publicKey,

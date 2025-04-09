@@ -1,4 +1,5 @@
 import { Identity, PublicKey } from '@dfinity/agent';
+import { bufFromBufLike } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 
 /**
@@ -39,7 +40,10 @@ export class PartialIdentity implements Identity {
    * The {@link Principal} of this identity.
    */
   public getPrincipal(): Principal {
-    return Principal.from(this.#inner.rawKey);
+    if (!this.#inner.rawKey) {
+      throw new Error('Cannot get principal from a public key without a raw key.');
+    }
+    return Principal.fromUint8Array(new Uint8Array(this.#inner.rawKey));
   }
 
   /**
