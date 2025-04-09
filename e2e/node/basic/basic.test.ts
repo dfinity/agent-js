@@ -3,19 +3,21 @@ import {
   Certificate,
   LookupResultFound,
   LookupStatus,
+  bufFromBufLike,
   getManagementCanister,
 } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import agent from '../utils/agent';
 import { test, expect } from 'vitest';
+import { strToUtf8 } from '@dfinity/agent/src';
 
 test('read_state', async () => {
   const resolvedAgent = await agent;
   const now = Date.now() / 1000;
-  const path = [new TextEncoder().encode('time')];
+  const path = [strToUtf8('time')];
   const canisterId = Principal.fromHex('00000000000000000001');
-  const response = await resolvedAgent.readState(canisterId, {
+  const response = await resolvedAgent.readStateUnsigned(canisterId, {
     paths: [path],
   });
   if (resolvedAgent.rootKey == null) throw new Error(`The agent doesn't have a root key yet`);
@@ -24,7 +26,7 @@ test('read_state', async () => {
     rootKey: resolvedAgent.rootKey,
     canisterId: canisterId,
   });
-  expect(cert.lookup([new TextEncoder().encode('Time')])).toEqual({ status: LookupStatus.Unknown });
+  expect(cert.lookup([strToUtf8('Time')])).toEqual({ status: LookupStatus.Unknown });
 
   let rawTime = cert.lookup(path);
 
@@ -36,7 +38,7 @@ test('read_state', async () => {
 
   const decoded = IDL.decode(
     [IDL.Nat],
-    new Uint8Array([
+    bufFromBufLike([
       ...new TextEncoder().encode('DIDL\x00\x01\x7d'),
       ...(new Uint8Array(rawTime.value) || []),
     ]),
@@ -50,24 +52,17 @@ test('read_state', async () => {
 test('read_state with passed request', async () => {
   const resolvedAgent = await agent;
   const now = Date.now() / 1000;
-  const path = [new TextEncoder().encode('time')];
+  const path = [strToUtf8('time')];
   const canisterId = Principal.fromHex('00000000000000000001');
   const request = await resolvedAgent.createReadStateRequest({ paths: [path] });
-  const response = await resolvedAgent.readState(
-    canisterId,
-    {
-      paths: [path],
-    },
-    undefined,
-    request,
-  );
+  const response = await resolvedAgent.readStateSigned(canisterId, request);
   if (resolvedAgent.rootKey == null) throw new Error(`The agent doesn't have a root key yet`);
   const cert = await Certificate.create({
     certificate: response.certificate,
     rootKey: resolvedAgent.rootKey,
     canisterId: canisterId,
   });
-  expect(cert.lookup([new TextEncoder().encode('Time')])).toEqual({ status: LookupStatus.Unknown });
+  expect(cert.lookup([strToUtf8('Time')])).toEqual({ status: LookupStatus.Unknown });
 
   let rawTime = cert.lookup(path);
 
@@ -79,7 +74,7 @@ test('read_state with passed request', async () => {
 
   const decoded = IDL.decode(
     [IDL.Nat],
-    new Uint8Array([
+    bufFromBufLike([
       ...new TextEncoder().encode('DIDL\x00\x01\x7d'),
       ...(new Uint8Array(rawTime.value) || []),
     ]),

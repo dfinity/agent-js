@@ -1157,24 +1157,10 @@ export class HttpAgent implements V3Agent {
 
   public async readStateSigned(
     canisterId: Principal | string,
-    fields: ReadStateOptions,
     request: ReadStateRequest,
   ): Promise<ReadStateResponse> {
-    function getRequestId(fields: ReadStateOptions): RequestId | undefined {
-      for (const path of fields.paths) {
-        const [pathName, value] = path;
-        const request_status = new TextEncoder().encode('request_status');
-        if (bufEquals(pathName, bufFromBufLike(request_status))) {
-          return value as RequestId;
-        }
-      }
-    }
-    const requestId = getRequestId(fields);
-
     await this.#rootKeyGuard();
     const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
-
-    const body = cbor.encode(request);
 
     this.log.print(`fetching "/api/v2/canister/${canister}/read_state" with request:`, request);
     // TODO - https://dfinity.atlassian.net/browse/SDK-1092
@@ -1185,9 +1171,9 @@ export class HttpAgent implements V3Agent {
           this.#fetch(
             '' + new URL(`/api/v2/canister/${canister.toString()}/read_state`, this.host),
             {
-              ...this.#fetchOptions,
-              body,
-            },
+              ...request.request,
+              body: cbor.encode(request.body),
+            } as RequestInit,
           ),
         backoff,
         tries: 0,
@@ -1211,6 +1197,7 @@ export class HttpAgent implements V3Agent {
 
       return decodedResponse;
     } catch (error) {
+      const requestId = requestIdOf(request);
       const message = `Caught exception while attempting to read state: ${(error as Error).message ?? String(error)}`;
       const readStateError = new AgentReadStateError(
         message,
