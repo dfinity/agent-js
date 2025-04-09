@@ -81,7 +81,7 @@ const getRealStatus = async () => {
 // Mocked status using precomputed certificate
 const getStatus = async (paths: Path[]) => {
   const agent = new HttpAgent({ host: 'https://ic0.app' });
-  agent.readState = jest.fn(() =>
+  agent.readStateUnsigned = jest.fn(() =>
     Promise.resolve({ certificate: fromHex(testCases[0].certificate) }),
   );
 

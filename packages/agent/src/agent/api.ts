@@ -2,7 +2,7 @@ import { Principal } from '@dfinity/principal';
 import { RequestId } from '../request_id';
 import { JsonObject } from '@dfinity/candid';
 import { Identity } from '../auth';
-import { CallRequest, HttpHeaderField, QueryRequest } from './http/types';
+import { CallRequest, HttpHeaderField, QueryRequest, ReadStateRequest } from './http/types';
 
 /**
  * Codes used by the replica for rejecting a message.
@@ -143,10 +143,7 @@ export interface SubmitResponse {
   requestDetails?: CallRequest;
 }
 
-/**
- * An Agent able to make calls and queries to a Replica.
- */
-export interface Agent {
+export interface V2Agent {
   readonly rootKey: ArrayBuffer | null;
   /**
    * Returns the principal ID associated with this agent (by default). It only shows
@@ -163,6 +160,7 @@ export interface Agent {
   createReadStateRequest?(options: ReadStateOptions, identity?: Identity): Promise<unknown>;
 
   /**
+   * @deprecated Use readStateSigned or readStateUnsigned instead. This method will be removed in a future version.
    * Send a read state query to the replica. This includes a list of paths to return,
    * and will return a Certificate. This will only reject on communication errors,
    * but the certificate might contain less information than requested.
@@ -178,6 +176,15 @@ export interface Agent {
     request?: unknown,
   ): Promise<ReadStateResponse>;
 
+  /**
+   * Send a call to the replica. This will only reject on communication errors.
+   * @param canisterId The Principal of the Canister to send the call to. Sending a call to
+   *     the management canister is not supported (as it has no meaning from an agent).
+   * @param fields Options to use to create and send the call.
+   * @returns The response from the replica. The Promise will only reject when the communication
+   *     failed. If the call itself failed but no protocol errors happened, the response will
+   *     be of type SubmitResponse.
+   */
   call(canisterId: Principal | string, fields: CallOptions): Promise<SubmitResponse>;
 
   /**
@@ -236,3 +243,39 @@ export interface Agent {
    */
   replaceIdentity?(identity: Identity): void;
 }
+
+// extends v2 agent, without the deprecated readState method
+export interface V3Agent extends Omit<V2Agent, 'readState'> {
+  /**
+   * Send a presigned read state query to the replica. This includes a list of paths to return,
+   * and will return a Certificate. This will only reject on communication errors,
+   * but the certificate might contain less information than requested.
+   * @param effectiveCanisterId A Canister ID related to this call.
+   * @param options The options for this call.
+   * @param request The request to send in case it has already been created.
+   */
+  readStateSigned(
+    effectiveCanisterId: Principal | string,
+    options: ReadStateOptions,
+    request: ReadStateRequest,
+  ): Promise<ReadStateResponse>;
+
+  /**
+   * Send an unsigned read state query to the replica. This includes a list of paths to return,
+   * and will return a Certificate. This will only reject on communication errors,
+   * but the certificate might contain less information than requested.
+   * @param effectiveCanisterId A Canister ID related to this call.
+   * @param options The options for this call.
+   */
+  readStateUnsigned(
+    effectiveCanisterId: Principal | string,
+    options: ReadStateOptions,
+  ): Promise<ReadStateResponse>;
+
+  call(canisterId: Principal | string, fields: CallOptions): Promise<SubmitResponse>;
+}
+
+/**
+ * An Agent able to make calls and queries to a Replica.
+ */
+export type Agent = V2Agent | V3Agent;
