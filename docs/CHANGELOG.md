@@ -7,6 +7,7 @@
 
 - feat: breaks `readState` into `signed` and `unsigned` methods. The `signed` method will take a pre-signed request and re-use it for polling. The `unsigned` method will create a new request and sign it for each poll.
   - This can be called directly in the `HttpAgent` or through the `Actor` interface, with a new `signed` polling strategy.
+- fix: fixes a bug in Ed25519KeyIdentity `toRaw` where the output was not an ArrayBuffer
 - test: fixes e2e tests for compatibility with dfx 0.26.0 and `pocket-ic` by querying for the `default_effective_canister_id` before calling the management canister
 - fix: fixes a bug in the Ed25519KeyIdentity verify implementation where the argument order was incorrect
 - fix: fixes a bug in the `Principal` library where the management canister id util was incorrectly importing using `fromHex`
