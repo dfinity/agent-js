@@ -1010,10 +1010,7 @@ export class HttpAgent implements V3Agent {
         throw new Error(`Unknown status: ${status}`);
       }
 
-      const separatorWithHash = concat(
-        bufFromBufLike(domainSeparator),
-        bufFromBufLike(new Uint8Array(hash)),
-      );
+      const separatorWithHash = concat(domainSeparator, bufFromBufLike(new Uint8Array(hash)));
 
       // FIX: check for match without verifying N times
       const pubKey = subnetStatus?.nodeKeys.get(nodeId);
@@ -1083,8 +1080,8 @@ export class HttpAgent implements V3Agent {
     function getRequestId(fields: ReadStateOptions): RequestId | undefined {
       for (const path of fields.paths) {
         const [pathName, value] = path;
-        const request_status = new TextEncoder().encode('request_status');
-        if (bufEquals(pathName, bufFromBufLike(request_status))) {
+        const request_status = bufFromBufLike(new TextEncoder().encode('request_status'));
+        if (bufEquals(pathName, request_status)) {
           return value as RequestId;
         }
       }
