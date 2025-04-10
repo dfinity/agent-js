@@ -48,7 +48,6 @@ import { Ed25519PublicKey } from '../../public_key';
 import { decodeTime } from '../../utils/leb';
 import { ObservableLog } from '../../observable';
 import { BackoffStrategy, BackoffStrategyFactory, ExponentialBackoff } from '../../polling/backoff';
-import { DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS } from '../../constants';
 export * from './transforms';
 export * from './errors';
 export { Nonce, makeNonce } from './types';
@@ -981,7 +980,7 @@ export class HttpAgent implements Agent {
     }
     const { status, signatures = [], requestId } = queryResponse;
 
-    const domainSeparator = new TextEncoder().encode('\x0Bic-response');
+    const domainSeparator = bufFromBufLike(new TextEncoder().encode('\x0Bic-response'));
     for (const sig of signatures) {
       const { timestamp, identity } = sig;
       const nodeId = Principal.fromUint8Array(identity).toText();
@@ -1010,7 +1009,7 @@ export class HttpAgent implements Agent {
         throw new Error(`Unknown status: ${status}`);
       }
 
-      const separatorWithHash = concat(domainSeparator, new Uint8Array(hash));
+      const separatorWithHash = concat(domainSeparator, bufFromBufLike(new Uint8Array(hash)));
 
       // FIX: check for match without verifying N times
       const pubKey = subnetStatus?.nodeKeys.get(nodeId);
@@ -1080,7 +1079,7 @@ export class HttpAgent implements Agent {
     function getRequestId(fields: ReadStateOptions): RequestId | undefined {
       for (const path of fields.paths) {
         const [pathName, value] = path;
-        const request_status = new TextEncoder().encode('request_status');
+        const request_status = bufFromBufLike(new TextEncoder().encode('request_status'));
         if (bufEquals(pathName, request_status)) {
           return value as RequestId;
         }

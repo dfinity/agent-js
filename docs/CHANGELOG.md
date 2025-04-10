@@ -5,6 +5,7 @@
 
 ### Changed
 
+- fix: fixes a bug in Ed25519KeyIdentity `toRaw` where the output was not an ArrayBuffer
 - fix: fixes a bug in the Ed25519KeyIdentity verify implementation where the argument order was incorrect
 - fix: fixes a bug in the `Principal` library where the management canister id util was incorrectly importing using `fromHex`
 - feat: change auth-client's default identity provider url

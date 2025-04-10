@@ -73,7 +73,7 @@ export class Ed25519PublicKey implements PublicKey {
     if (unwrapped.length !== this.RAW_KEY_LENGTH) {
       throw new Error('An Ed25519 public key must be exactly 32bytes long');
     }
-    return unwrapped;
+    return bufFromBufLike(unwrapped);
   }
 
   #rawKey: ArrayBuffer;
@@ -93,7 +93,7 @@ export class Ed25519PublicKey implements PublicKey {
     if (key.byteLength !== Ed25519PublicKey.RAW_KEY_LENGTH) {
       throw new Error('An Ed25519 public key must be exactly 32bytes long');
     }
-    this.#rawKey = key;
+    this.#rawKey = bufFromBufLike(key);
     this.#derKey = Ed25519PublicKey.derEncode(key);
   }
 
