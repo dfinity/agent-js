@@ -365,7 +365,8 @@ test('IDL encoding (service)', () => {
   testDecode(
     IDL.Service({ foo: IDL.Func([IDL.Text], [IDL.Nat], []) }),
     Principal.fromText('w7x7r-cok77-xa'),
-    '4449444c02690103666f6f016a0171017d0001010103caffee',
+    // didc encode -t "(service { foo : (text) -> (nat) })" "(service \"w7x7r-cok77-xa\")"
+    '4449444c02690103666f6f016a0171017d0001000103caffee',
     'service',
   );
   test_(
