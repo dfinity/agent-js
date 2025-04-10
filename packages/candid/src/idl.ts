@@ -917,11 +917,11 @@ export class OptClass<T> extends ConstructType<[T] | []> {
 
   public decodeValue(b: Pipe, t: Type): [T] | [] {
     if (t instanceof NullClass) {
-      return []
+      return [];
     }
 
     if (t instanceof ReservedClass) {
-      return []
+      return [];
     }
 
     let wireType = t;
@@ -944,7 +944,7 @@ export class OptClass<T> extends ConstructType<[T] | []> {
             // Attempt to decode a value using the `_type` of the current instance
             const v = this._type.decodeValue(b, wireType._type);
             return [v];
-          } catch (e : any) {
+          } catch (e: any) {
             // If an error occurs during decoding, restore the Pipe `b` to its previous state
             b.restore(checkpoint);
             // Skip the value at the current wire type to advance the Pipe `b` position
@@ -956,9 +956,12 @@ export class OptClass<T> extends ConstructType<[T] | []> {
         default:
           throw new Error('Not an option value');
       }
-    } else if
+    } else if (
       // this check corresponds to `not (null <: <t>)` in the spec
-      (this._type instanceof NullClass || this._type instanceof OptClass || this._type instanceof ReservedClass) {
+      this._type instanceof NullClass ||
+      this._type instanceof OptClass ||
+      this._type instanceof ReservedClass
+    ) {
       // null <: <t> :
       // skip value at wire type (to advance b) and return "null", i.e. []
       const skipped = wireType.decodeValue(b, wireType);
@@ -968,13 +971,13 @@ export class OptClass<T> extends ConstructType<[T] | []> {
       // try constituent type
       const checkpoint = b.save();
       try {
-        const v = this._type.decodeValue(b, t)
+        const v = this._type.decodeValue(b, t);
         return [v];
-      } catch (e : any) {
+      } catch (e: any) {
         // decoding failed, but this is opt, so return "null", i.e. []
         b.restore(checkpoint);
         // skip value at wire type (to advance b)
-        const skipped = wireType.decodeValue(b, t)
+        const skipped = wireType.decodeValue(b, t);
         // return "null"
         return [];
       }
@@ -1120,9 +1123,9 @@ export class RecordClass extends ConstructType<Record<string, any>> {
   get fieldsAsObject(): Record<string, Type> {
     const fields: Record<string, Type> = {};
     for (const [name, ty] of this._fields) {
-      fields[name] = ty
+      fields[name] = ty;
     }
-    return fields
+    return fields;
   }
 
   get name() {
@@ -1324,9 +1327,9 @@ export class VariantClass extends ConstructType<Record<string, any>> {
   get alternativesAsObject(): Record<string, Type> {
     const alternatives: Record<string, Type> = {};
     for (const [name, ty] of this._fields) {
-      alternatives[name] = ty
+      alternatives[name] = ty;
     }
-    return alternatives
+    return alternatives;
   }
 }
 
@@ -1500,9 +1503,11 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
   }
 
   public decodeValue(b: Pipe, t: Type): [PrincipalId, string] {
-    const tt = t instanceof RecClass ? (t.getType() ?? t) : t;
+    const tt = t instanceof RecClass ? t.getType() ?? t : t;
     if (!subtype(tt, this)) {
-      throw new Error(`Cannot decode function reference at type ${this.display()} from wire type ${tt.display()}`);
+      throw new Error(
+        `Cannot decode function reference at type ${this.display()} from wire type ${tt.display()}`,
+      );
     }
     const x = safeReadUint8(b);
     if (x !== 1) {
@@ -1591,9 +1596,11 @@ export class ServiceClass extends ConstructType<PrincipalId> {
   }
 
   public decodeValue(b: Pipe, t: Type): PrincipalId {
-    const tt = t instanceof RecClass ? (t.getType() ?? t) : t;
+    const tt = t instanceof RecClass ? t.getType() ?? t : t;
     if (!subtype(tt, this)) {
-      throw new Error(`Cannot decode service reference at type ${this.display()} from wire type ${tt.display()}`);
+      throw new Error(
+        `Cannot decode service reference at type ${this.display()} from wire type ${tt.display()}`,
+      );
     }
     return decodePrincipalId(b);
   }
@@ -1609,9 +1616,9 @@ export class ServiceClass extends ConstructType<PrincipalId> {
   public fieldsAsObject() {
     const fields: Record<string, Type> = {};
     for (const [name, ty] of this._fields) {
-      fields[name] = ty
+      fields[name] = ty;
     }
-    return fields
+    return fields;
   }
 }
 
@@ -2067,42 +2074,42 @@ class Relations {
   private rels: Map<string, Set<string>> = new Map();
 
   known(t1: Type, t2: Type): boolean {
-    return this.rels.get(t1.name)?.has(t2.name) ?? false
+    return this.rels.get(t1.name)?.has(t2.name) ?? false;
   }
 
   add(t1: Type, t2: Type) {
-    this.addNames(t1.name, t2.name)
+    this.addNames(t1.name, t2.name);
   }
 
   private addNames(t1: string, t2: string) {
-    const t1Set = this.rels.get(t1)
+    const t1Set = this.rels.get(t1);
     if (t1Set == undefined) {
-      this.rels.set(t1, new Set([t2]))
+      this.rels.set(t1, new Set([t2]));
     } else {
-      t1Set.add(t2)
+      t1Set.add(t2);
     }
   }
 }
 
 function eqArray<T>(arr1: T[], arr2: T[], eq: (t1: T, t2: T) => boolean) {
   if (arr1.length != arr2.length) {
-    return false
+    return false;
   }
   for (let i = 0; i < arr1.length; i++) {
     if (!eq(arr1[i], arr2[i])) {
-      return false
+      return false;
     }
   }
-  return true
+  return true;
 }
 
 function eqFunctionAnnotations(t1: FuncClass, t2: FuncClass): boolean {
   // TODO(Christoph): Can we assume function annotations are sorted?
-  return eqArray(t1.annotations, t2.annotations, (s1: string, s2: string) => s1 === s2)
+  return eqArray(t1.annotations, t2.annotations, (s1: string, s2: string) => s1 === s2);
 }
 
 function canBeOmmitted(t: Type) {
-   return t instanceof OptClass || t instanceof NullClass || t instanceof ReservedClass
+  return t instanceof OptClass || t instanceof NullClass || t instanceof ReservedClass;
 }
 
 /**
@@ -2111,7 +2118,7 @@ function canBeOmmitted(t: Type) {
  * @param t2 The potential supertype
  */
 export function subtype(t1: Type, t2: Type): boolean {
-  return subtype_(new Relations(), t1, t2)
+  return subtype_(new Relations(), t1, t2);
 }
 
 function subtype_(relations: Relations, t1: Type, t2: Type): boolean {
@@ -2119,70 +2126,71 @@ function subtype_(relations: Relations, t1: Type, t2: Type): boolean {
   if (relations.known(t1, t2)) return true;
   relations.add(t1, t2);
 
-  if (t2 instanceof ReservedClass) return true
-  if (t1 instanceof EmptyClass) return true
-  if (t1 instanceof NatClass && t2 instanceof IntClass) return true
-  if (t1 instanceof VecClass && t2 instanceof VecClass) return subtype_(relations, t1._type, t2._type)
-  if (t2 instanceof OptClass) return true
+  if (t2 instanceof ReservedClass) return true;
+  if (t1 instanceof EmptyClass) return true;
+  if (t1 instanceof NatClass && t2 instanceof IntClass) return true;
+  if (t1 instanceof VecClass && t2 instanceof VecClass)
+    return subtype_(relations, t1._type, t2._type);
+  if (t2 instanceof OptClass) return true;
   if (t1 instanceof RecordClass && t2 instanceof RecordClass) {
-    const t1Object = t1.fieldsAsObject
+    const t1Object = t1.fieldsAsObject;
     for (const [name, ty2] of t2._fields) {
-      const ty1 = t1Object[name]
+      const ty1 = t1Object[name];
       if (!ty1) {
-        if (!canBeOmmitted(ty2)) return false
+        if (!canBeOmmitted(ty2)) return false;
       } else {
-        if (!subtype_(relations, ty1, ty2)) return false
+        if (!subtype_(relations, ty1, ty2)) return false;
       }
     }
-    return true
+    return true;
   }
 
   if (t1 instanceof FuncClass && t2 instanceof FuncClass) {
-    if (!eqFunctionAnnotations(t1, t2)) return false
+    if (!eqFunctionAnnotations(t1, t2)) return false;
     for (let i = 0; i < t1.argTypes.length; i++) {
-      const argTy1 = t1.argTypes[i]
+      const argTy1 = t1.argTypes[i];
       if (i < t2.argTypes.length) {
-        if (!subtype_(relations, t2.argTypes[i], argTy1)) return false
+        if (!subtype_(relations, t2.argTypes[i], argTy1)) return false;
       } else {
-        if (!canBeOmmitted(argTy1)) return false
+        if (!canBeOmmitted(argTy1)) return false;
       }
     }
     for (let i = 0; i < t2.retTypes.length; i++) {
-      const retTy2 = t2.retTypes[i]
+      const retTy2 = t2.retTypes[i];
       if (i < t1.retTypes.length) {
-        if (!subtype_(relations, t1.retTypes[i], retTy2)) return false
+        if (!subtype_(relations, t1.retTypes[i], retTy2)) return false;
       } else {
-        if (!canBeOmmitted(retTy2)) return false
+        if (!canBeOmmitted(retTy2)) return false;
       }
     }
-    return true
+    return true;
   }
 
   if (t1 instanceof VariantClass && t2 instanceof VariantClass) {
-    const t2Object = t2.alternativesAsObject
+    const t2Object = t2.alternativesAsObject;
     for (const [name, ty1] of t1._fields) {
-      const ty2 = t2Object[name]
-      if (!ty2) return false
-      if (!subtype_(relations, ty1, ty2)) return false
+      const ty2 = t2Object[name];
+      if (!ty2) return false;
+      if (!subtype_(relations, ty1, ty2)) return false;
     }
-    return true
+    return true;
   }
 
   if (t1 instanceof ServiceClass && t2 instanceof ServiceClass) {
-    const t1Object = t1.fieldsAsObject()
+    const t1Object = t1.fieldsAsObject();
     for (const [name, ty2] of t2._fields) {
       const ty1 = t1Object[name];
-      if (!ty1) return false
-      if (!subtype_(relations, ty1, ty2)) return false
+      if (!ty1) return false;
+      if (!subtype_(relations, ty1, ty2)) return false;
     }
-    return true
+    return true;
   }
 
   if (t1 instanceof RecClass) {
-    return subtype_(relations, t1.getType()!, t2)
+    return subtype_(relations, t1.getType()!, t2);
   }
   if (t2 instanceof RecClass) {
-    return subtype_(relations, t1, t2.getType()!)
+    return subtype_(relations, t1, t2.getType()!);
   }
-  return false
+  return false;
 }
