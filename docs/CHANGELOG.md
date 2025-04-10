@@ -3,6 +3,8 @@
 
 ## [Unreleased]
 
+## [2.4.1] - 2025-04-10
+
 ### Changed
 
 - feat: breaks `readState` into `signed` and `unsigned` methods. The `signed` method will take a pre-signed request and re-use it for polling. The `unsigned` method will create a new request and sign it for each poll.
