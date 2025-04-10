@@ -3,6 +3,8 @@
 
 ## [Unreleased]
 
+## [2.4.1] - 2025-04-10
+
 ### Changed
 
 - fix: fixes a bug in Ed25519KeyIdentity `toRaw` where the output was not an ArrayBuffer
