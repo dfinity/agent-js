@@ -8,6 +8,8 @@
 - fix: fixes a bug in the Ed25519KeyIdentity verify implementation where the argument order was incorrect
 - fix: fixes a bug in the `Principal` library where the management canister id util was incorrectly importing using `fromHex`
 - feat: change auth-client's default identity provider url
+- fix: Check subtyping relationship when decoding function or service references
+  - This means we now follow the Candid spec more closely, and reduces the risk of calling services with the wrong argument types
 
 ## [2.4.0] - 2025-03-24
 
@@ -65,7 +67,7 @@
 ### Changed
 
 - chore: pins nanoid dev dependency version to override warning
-- chore: Removes warning that users found unhelpful, when a message originates from other sources than the identity provider in `AuthClient` during authentication. 
+- chore: Removes warning that users found unhelpful, when a message originates from other sources than the identity provider in `AuthClient` during authentication.
 - chore: fixes typo in DelegationIdentity jsdoc comment
 - chore: Removes warning that users found unhelpful, when a message originates from other sources than the identity provider in `AuthClient` during authentication.
 - fix: Make pollForResponse typesafe to avoid exceptions from unknown requests
