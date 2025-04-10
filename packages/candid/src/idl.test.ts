@@ -1023,6 +1023,24 @@ describe("IDL subtyping", () => {
     );
   });
 
+  describe("Subtyping on recursive types", () => {
+    const IntList = IDL.Rec();
+    IntList.fill(IDL.Opt(IDL.Record({ head: IDL.Int, tail: IntList })));
+    const NatList = IDL.Rec();
+    NatList.fill(IDL.Opt(IDL.Record({ head: IDL.Nat, tail: NatList })));
+
+    testSub(NatList, IntList)
+    testSubFail(IntList, NatList)
+
+    const Even = IDL.Rec();
+    const Odd = IDL.Rec();
+    Even.fill(IDL.Tuple(Odd))
+    Odd.fill(IDL.Tuple(Even))
+
+    testSub(IDL.Tuple(Even), Odd)
+    testSub(IDL.Tuple(IDL.Tuple(Odd)), Odd)
+  });
+
   const principal = Principal.fromText("w7x7r-cok77-xa")
   it("checks subtyping when decoding function references", () => {
     testDecode(

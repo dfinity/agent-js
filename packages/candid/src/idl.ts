@@ -2179,5 +2179,11 @@ function subtype_(relations: Relations, t1: Type, t2: Type): boolean {
     return true
   }
 
+  if (t1 instanceof RecClass) {
+    return subtype_(relations, t1.getType()!, t2)
+  }
+  if (t2 instanceof RecClass) {
+    return subtype_(relations, t1, t2.getType()!)
+  }
   return false
 }
