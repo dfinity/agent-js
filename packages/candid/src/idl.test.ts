@@ -952,6 +952,12 @@ describe("IDL subtyping", () => {
     testReflexive(IDL.Float64);
   });
 
+  describe("Subtyping on Vecs", () => {
+    testReflexive(IDL.Vec(IDL.Nat));
+    testSub(IDL.Vec(IDL.Nat), IDL.Vec(IDL.Int));
+    testSubFail(IDL.Vec(IDL.Int), IDL.Vec(IDL.Nat));
+  });
+
   describe("Subtyping on Options", () => {
     // Because of some of the more "special" rules around Option types
     // it turns out _any_ type is a subtype of _any_ optional type
@@ -989,7 +995,7 @@ describe("IDL subtyping", () => {
     testSub(IDL.Func([IDL.Int, IDL.Opt(IDL.Nat)], []), IDL.Func([IDL.Nat], []));
     testSubFail(IDL.Func([IDL.Nat, IDL.Nat], []), IDL.Func([IDL.Nat], []));
 
-    // Result types are covariant
+    // Return types are covariant
     testSub(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int]));
     testSub(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int, IDL.Opt(IDL.Nat)]));
     testSubFail(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int, IDL.Int]));
