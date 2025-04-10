@@ -952,6 +952,16 @@ describe("IDL subtyping", () => {
     testReflexive(IDL.Float64);
   });
 
+  describe("Subtyping on Options", () => {
+    // Because of some of the more "special" rules around Option types
+    // it turns out _any_ type is a subtype of _any_ optional type
+    testReflexive(IDL.Opt(IDL.Nat));
+    testSub(IDL.Opt(IDL.Nat), IDL.Opt(IDL.Int));
+    testSub(IDL.Opt(IDL.Int), IDL.Opt(IDL.Nat));
+    testSub(IDL.Nat, IDL.Opt(IDL.Int))
+    testSub(IDL.Opt(IDL.Nat), IDL.Opt(IDL.Opt(IDL.Int)))
+  });
+
   describe("Subtyping on Records", () =>  {
     testReflexive(IDL.Record({}));
     testReflexive(IDL.Record({ a: IDL.Nat }));

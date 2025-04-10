@@ -2106,7 +2106,6 @@ export function subtype(t1: Type, t2: Type): boolean {
   return subtype_(new Relations(), t1, t2)
 }
 
-// t1 <: t2
 function subtype_(relations: Relations, t1: Type, t2: Type): boolean {
   if (t1.name === t2.name) return true;
   if (relations.known(t1, t2)) return true;
@@ -2116,15 +2115,7 @@ function subtype_(relations: Relations, t1: Type, t2: Type): boolean {
   if (t1 instanceof EmptyClass) return true
   if (t1 instanceof NatClass && t2 instanceof IntClass) return true
   if (t1 instanceof VecClass && t2 instanceof VecClass) return subtype_(relations, t1._type, t2._type)
-  if (t1 instanceof NullClass && t2 instanceof OptClass) return true
-  if (t1 instanceof OptClass && t2 instanceof OptClass) return subtype_(relations, t1._type, t2._type)
-  if (t2 instanceof OptClass) {
-    if (canBeOmmitted(t1)) return false
-    if (subtype_(relations, t1, t2._type)) return true
-    // Special Opt rule? Rust Candid implementation warns/errors here depending on flags
-    return true
-  }
-
+  if (t2 instanceof OptClass) return true
   if (t1 instanceof RecordClass && t2 instanceof RecordClass) {
     const t1Object = t1.fieldsAsObject
     for (const [name, ty2] of t2._fields) {
