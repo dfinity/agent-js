@@ -55,7 +55,6 @@ test('read_state', async () => {
   expect(cert.lookup([strToUtf8('Time')])).toEqual({
     status: LookupStatus.Unknown,
   });
-  expect(cert.lookup([strToUtf8('Time')])).toEqual({ status: LookupStatus.Unknown });
 
   let rawTime = cert.lookup(path);
 
