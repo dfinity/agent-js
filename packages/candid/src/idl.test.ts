@@ -909,3 +909,100 @@ describe('IDL opt edge cases (embedded)', () => {
     'opt expected, wire type non-opt, other type - defaulting',
   )});
 });
+
+function testSub(t1: IDL.Type, t2: IDL.Type) {
+  it(`${t1.display()} <: ${t2.display()}`, () => {
+    expect(IDL.subtype(t1, t2)).toEqual(true)
+  })
+}
+
+function testSubFail(t1: IDL.Type, t2: IDL.Type) {
+  it(`not ${t1.display()} <: ${t2.display()}`, () => {
+    expect(IDL.subtype(t1, t2)).toEqual(false)
+  })
+}
+
+function testReflexive(t: IDL.Type) {
+  testSub(t, t)
+}
+
+describe("IDL subtyping", () => {
+  describe("Subtyping is reflexive", () => {
+    testReflexive(IDL.Bool);
+    testReflexive(IDL.Empty);
+    testReflexive(IDL.Null);
+    testReflexive(IDL.Principal);
+    testReflexive(IDL.Reserved);
+    testReflexive(IDL.Text);
+    testReflexive(IDL.Unknown);
+
+    testReflexive(IDL.Nat);
+    testReflexive(IDL.Nat8);
+    testReflexive(IDL.Nat16);
+    testReflexive(IDL.Nat32);
+    testReflexive(IDL.Nat64);
+
+    testReflexive(IDL.Int);
+    testReflexive(IDL.Int8);
+    testReflexive(IDL.Int16);
+    testReflexive(IDL.Int32);
+    testReflexive(IDL.Int64);
+
+    testReflexive(IDL.Float32);
+    testReflexive(IDL.Float64);
+  });
+
+  describe("Subtyping on Records", () =>  {
+    testReflexive(IDL.Record({}));
+    testReflexive(IDL.Record({ a: IDL.Nat }));
+
+    // Subtyping on individual fields
+    testSub(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Int }))
+    testSubFail(IDL.Record({ a: IDL.Int }), IDL.Record({ a: IDL.Nat }))
+
+    // Width subtyping
+    testSub(IDL.Record({ a: IDL.Nat, b: IDL.Nat }), IDL.Record({ a: IDL.Nat }))
+    testSubFail(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Nat, b: IDL.Nat }))
+
+    // Opt, Null, or Reserved fields are allowed to be missing
+    testSub(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Nat, b: IDL.Opt(IDL.Nat) }))
+    testSub(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Nat, b: IDL.Null }))
+    testSub(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Nat, b: IDL.Reserved }))
+  })
+
+  describe("Subtyping on Functions", () =>  {
+    testReflexive(IDL.Func([], []))
+    testReflexive(IDL.Func([IDL.Nat], [IDL.Int]))
+
+    // Arg types are contravariant
+    testSub(IDL.Func([IDL.Int], []), IDL.Func([IDL.Nat], []))
+    testSub(IDL.Func([IDL.Int, IDL.Opt(IDL.Nat)], []), IDL.Func([IDL.Nat], []))
+    testSubFail(IDL.Func([IDL.Nat, IDL.Nat], []), IDL.Func([IDL.Nat], []))
+
+    // Result types are covariant
+    testSub(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int]))
+    testSub(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int, IDL.Opt(IDL.Nat)]))
+    testSubFail(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int, IDL.Int]))
+
+  })
+
+  const principal = Principal.fromText("w7x7r-cok77-xa")
+  it("checks subtyping when decoding function references", () => {
+    testDecode(
+      IDL.Func([IDL.Int], [IDL.Nat]),
+      [principal, "myFunc"],
+      // didc encode -t "(func (int) -> (nat))" "(func \"w7x7r-cok77-xa\" . \"myFunc\")"
+      `4449444c016a017c017d000100010103caffee066d7946756e63`,
+      "expects subtyping check to succeed"
+    );
+
+    // TODO: This should fail
+    testDecode(
+      IDL.Func([IDL.Int], [IDL.Nat]),
+      [principal, "myFunc"],
+      // didc encode -t "(func (nat) -> (nat))" "(func \"w7x7r-cok77-xa\" . \"myFunc\")"
+      `4449444c016a017d017d000100010103caffee066d7946756e63`,
+      "expects subtyping check to fail"
+    );
+  })
+});

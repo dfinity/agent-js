@@ -576,7 +576,7 @@ export class NatClass extends PrimitiveType<bigint> {
  * Represents an IDL Float
  */
 export class FloatClass extends PrimitiveType<number> {
-  constructor(private _bits: number) {
+  constructor(public readonly _bits: number) {
     super();
     if (_bits !== 32 && _bits !== 64) {
       throw new Error('not a valid float type');
@@ -755,7 +755,7 @@ export class VecClass<T> extends ConstructType<T[]> {
   // to be backward compatible.
   private _blobOptimization = false;
 
-  constructor(protected _type: Type<T>) {
+  constructor(public _type: Type<T>) {
     super();
     if (_type instanceof FixedNatClass && _type._bits === 8) {
       this._blobOptimization = true;
@@ -879,7 +879,7 @@ export class VecClass<T> extends ConstructType<T[]> {
  * @param {Type} t
  */
 export class OptClass<T> extends ConstructType<[T] | []> {
-  constructor(protected _type: Type<T>) {
+  constructor(public _type: Type<T>) {
     super();
   }
 
@@ -1003,7 +1003,7 @@ export class OptClass<T> extends ConstructType<[T] | []> {
  * @param {object} [fields] - mapping of function name to Type
  */
 export class RecordClass extends ConstructType<Record<string, any>> {
-  protected readonly _fields: Array<[string, Type]>;
+  public readonly _fields: Array<[string, Type]>;
 
   constructor(fields: Record<string, Type> = {}) {
     super();
@@ -1115,6 +1115,14 @@ export class RecordClass extends ConstructType<Record<string, any>> {
       }
     }
     return x;
+  }
+
+  get fieldsAsObject(): Record<string, Type> {
+    const fields: Record<string, Type> = {};
+    for (const [name, ty] of this._fields) {
+      fields[name] = ty
+    }
+    return fields
   }
 
   get name() {
@@ -2028,4 +2036,112 @@ export function Func(args: Type[], ret: Type[], annotations: string[] = []): Fun
  */
 export function Service(t: Record<string, FuncClass>): ServiceClass {
   return new ServiceClass(t);
+}
+
+// The list of relations between types we assume to hold. Uses the types ._name property as key
+class Relations {
+  private rels: Map<string, Set<string>> = new Map();
+
+  known(t1: Type, t2: Type): boolean {
+    return this.rels.get(t1.name)?.has(t2.name) ?? false
+  }
+
+  add(t1: Type, t2: Type) {
+    this.addNames(t1.name, t2.name)
+  }
+
+  private addNames(t1: string, t2: string) {
+    const t1Set = this.rels.get(t1)
+    if (t1Set == undefined) {
+      this.rels.set(t1, new Set([t2]))
+    } else {
+      t1Set.add(t2)
+    }
+  }
+}
+
+function eqArray<T>(arr1: T[], arr2: T[], eq: (t1: T, t2: T) => boolean) {
+  if (arr1.length != arr2.length) {
+    return false
+  }
+  for (let i = 0; i < arr1.length; i++) {
+    if (!eq(arr1[i], arr2[i])) {
+      return false
+    }
+  }
+  return true
+}
+
+function eqFunctionAnnotations(t1: FuncClass, t2: FuncClass): boolean {
+  // TODO(Christoph): Can we assume function annotations are sorted?
+  return eqArray(t1.annotations, t2.annotations, (s1: string, s2: string) => s1 === s2)
+}
+
+function canBeOmmitted(t: Type) {
+   return t instanceof OptClass || t instanceof NullClass || t instanceof ReservedClass
+}
+
+/**
+ * Subtyping on Candid types t1 <: t2 (Exported for testing)
+ * @param t1 The potential subtype
+ * @param t2 The potential supertype
+ */
+export function subtype(t1: Type, t2: Type): boolean {
+  return subtype_(new Relations(), t1, t2)
+}
+
+// t1 <: t2
+function subtype_(relations: Relations, t1: Type, t2: Type): boolean {
+  if (t1.name === t2.name) return true;
+  if (relations.known(t1, t2)) return true;
+  relations.add(t1, t2);
+
+  if (t2 instanceof ReservedClass) return true
+  if (t1 instanceof EmptyClass) return true
+  if (t1 instanceof NatClass && t2 instanceof IntClass) return true
+  if (t1 instanceof VecClass && t2 instanceof VecClass) return subtype_(relations, t1._type, t2._type)
+  if (t1 instanceof NullClass && t2 instanceof OptClass) return true
+  if (t1 instanceof OptClass && t2 instanceof OptClass) return subtype_(relations, t1._type, t2._type)
+  if (t2 instanceof OptClass) {
+    if (canBeOmmitted(t1)) return false
+    if (subtype_(relations, t1, t2._type)) return true
+    // Special Opt rule? Rust Candid implementation warns/errors here depending on flags
+    return true
+  }
+
+  if (t1 instanceof RecordClass && t2 instanceof RecordClass) {
+    const t1Object = t1.fieldsAsObject
+    for (const [name, ty2] of t2._fields) {
+      const ty1 = t1Object[name]
+      if (!ty1) {
+        if (!canBeOmmitted(ty2)) return false
+      } else {
+        if (!subtype_(relations, ty1, ty2)) return false
+      }
+    }
+    return true
+  }
+
+  if (t1 instanceof FuncClass && t2 instanceof FuncClass) {
+    if (!eqFunctionAnnotations(t1, t2)) return false
+    for (let i = 0; i < t1.argTypes.length; i++) {
+      const argTy1 = t1.argTypes[i]
+      if (i < t2.argTypes.length) {
+        if (!subtype_(relations, t2.argTypes[i], argTy1)) return false
+      } else {
+        if (!canBeOmmitted(argTy1)) return false
+      }
+    }
+    for (let i = 0; i < t2.retTypes.length; i++) {
+      const retTy2 = t2.retTypes[i]
+      if (i < t1.retTypes.length) {
+        if (!subtype_(relations, t1.retTypes[i], retTy2)) return false
+      } else {
+        if (!canBeOmmitted(retTy2)) return false
+      }
+    }
+    return true
+  }
+
+  return false
 }
