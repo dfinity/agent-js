@@ -957,34 +957,46 @@ describe("IDL subtyping", () => {
     testReflexive(IDL.Record({ a: IDL.Nat }));
 
     // Subtyping on individual fields
-    testSub(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Int }))
-    testSubFail(IDL.Record({ a: IDL.Int }), IDL.Record({ a: IDL.Nat }))
+    testSub(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Int }));
+    testSubFail(IDL.Record({ a: IDL.Int }), IDL.Record({ a: IDL.Nat }));
 
     // Width subtyping
-    testSub(IDL.Record({ a: IDL.Nat, b: IDL.Nat }), IDL.Record({ a: IDL.Nat }))
-    testSubFail(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Nat, b: IDL.Nat }))
+    testSub(IDL.Record({ a: IDL.Nat, b: IDL.Nat }), IDL.Record({ a: IDL.Nat }));
+    testSubFail(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Nat, b: IDL.Nat }));
 
     // Opt, Null, or Reserved fields are allowed to be missing
-    testSub(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Nat, b: IDL.Opt(IDL.Nat) }))
-    testSub(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Nat, b: IDL.Null }))
-    testSub(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Nat, b: IDL.Reserved }))
+    testSub(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Nat, b: IDL.Opt(IDL.Nat) }));
+    testSub(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Nat, b: IDL.Null }));
+    testSub(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Nat, b: IDL.Reserved }));
   })
 
-  describe("Subtyping on Functions", () =>  {
-    testReflexive(IDL.Func([], []))
-    testReflexive(IDL.Func([IDL.Nat], [IDL.Int]))
+  describe("Subtyping on Functions", () => {
+    testReflexive(IDL.Func([], []));
+    testReflexive(IDL.Func([IDL.Nat], [IDL.Int]));
 
     // Arg types are contravariant
-    testSub(IDL.Func([IDL.Int], []), IDL.Func([IDL.Nat], []))
-    testSub(IDL.Func([IDL.Int, IDL.Opt(IDL.Nat)], []), IDL.Func([IDL.Nat], []))
-    testSubFail(IDL.Func([IDL.Nat, IDL.Nat], []), IDL.Func([IDL.Nat], []))
+    testSub(IDL.Func([IDL.Int], []), IDL.Func([IDL.Nat], []));
+    testSub(IDL.Func([IDL.Int, IDL.Opt(IDL.Nat)], []), IDL.Func([IDL.Nat], []));
+    testSubFail(IDL.Func([IDL.Nat, IDL.Nat], []), IDL.Func([IDL.Nat], []));
 
     // Result types are covariant
-    testSub(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int]))
-    testSub(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int, IDL.Opt(IDL.Nat)]))
-    testSubFail(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int, IDL.Int]))
+    testSub(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int]));
+    testSub(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int, IDL.Opt(IDL.Nat)]));
+    testSubFail(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int, IDL.Int]));
+  });
 
-  })
+  describe("Subtyping on variants", () => {
+    testReflexive(IDL.Variant({}))
+    testReflexive(IDL.Variant({ a : IDL.Nat}))
+
+    // Subtyping on individual alternatives happens pointwise
+    testSub(IDL.Variant({ a: IDL.Nat }), IDL.Variant({ a: IDL.Int }));
+    testSubFail(IDL.Variant({ a: IDL.Int }), IDL.Variant({ a: IDL.Nat }));
+
+    // Width subtyping
+    testSub(IDL.Variant({ a: IDL.Nat }), IDL.Variant({ a: IDL.Nat, b : IDL.Nat }));
+    testSubFail(IDL.Variant({ a: IDL.Nat, b : IDL.Nat }), IDL.Variant({ a: IDL.Nat }));
+  });
 
   const principal = Principal.fromText("w7x7r-cok77-xa")
   it("checks subtyping when decoding function references", () => {

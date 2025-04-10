@@ -1220,7 +1220,7 @@ export class TupleClass<T extends any[]> extends RecordClass {
  * @param {object} [fields] - mapping of function name to Type
  */
 export class VariantClass extends ConstructType<Record<string, any>> {
-  private readonly _fields: Array<[string, Type]>;
+  public readonly _fields: Array<[string, Type]>;
 
   constructor(fields: Record<string, Type> = {}) {
     super();
@@ -1319,6 +1319,14 @@ export class VariantClass extends ConstructType<Record<string, any>> {
       }
     }
     throw new Error('Variant has no data: ' + x);
+  }
+
+  get alternativesAsObject(): Record<string, Type> {
+    const alternatives: Record<string, Type> = {};
+    for (const [name, ty] of this._fields) {
+      alternatives[name] = ty
+    }
+    return alternatives
   }
 }
 
@@ -2138,6 +2146,19 @@ function subtype_(relations: Relations, t1: Type, t2: Type): boolean {
         if (!subtype_(relations, t1.retTypes[i], retTy2)) return false
       } else {
         if (!canBeOmmitted(retTy2)) return false
+      }
+    }
+    return true
+  }
+
+  if (t1 instanceof VariantClass && t2 instanceof VariantClass) {
+    const t2Object = t2.alternativesAsObject
+    for (const [name, ty1] of t1._fields) {
+      const ty2 = t2Object[name]
+      if (!ty2) {
+        return false
+      } else {
+        if (!subtype_(relations, ty1, ty2)) return false
       }
     }
     return true
