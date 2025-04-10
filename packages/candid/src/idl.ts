@@ -1597,6 +1597,14 @@ export class ServiceClass extends ConstructType<PrincipalId> {
   public valueToString(x: PrincipalId) {
     return `service "${x.toText()}"`;
   }
+
+  public fieldsAsObject() {
+    const fields: Record<string, Type> = {};
+    for (const [name, ty] of this._fields) {
+      fields[name] = ty
+    }
+    return fields
+  }
 }
 
 /**
@@ -2155,11 +2163,18 @@ function subtype_(relations: Relations, t1: Type, t2: Type): boolean {
     const t2Object = t2.alternativesAsObject
     for (const [name, ty1] of t1._fields) {
       const ty2 = t2Object[name]
-      if (!ty2) {
-        return false
-      } else {
-        if (!subtype_(relations, ty1, ty2)) return false
-      }
+      if (!ty2) return false
+      if (!subtype_(relations, ty1, ty2)) return false
+    }
+    return true
+  }
+
+  if (t1 instanceof ServiceClass && t2 instanceof ServiceClass) {
+    const t1Object = t1.fieldsAsObject()
+    for (const [name, ty2] of t2._fields) {
+      const ty1 = t1Object[name];
+      if (!ty1) return false
+      if (!subtype_(relations, ty1, ty2)) return false
     }
     return true
   }

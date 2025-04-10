@@ -998,6 +998,31 @@ describe("IDL subtyping", () => {
     testSubFail(IDL.Variant({ a: IDL.Nat, b : IDL.Nat }), IDL.Variant({ a: IDL.Nat }));
   });
 
+  describe("Subtyping on services", () => {
+    testReflexive(IDL.Service({}));
+    testReflexive(IDL.Service({ f: IDL.Func([], []) }));
+
+    // Subtyping on service methods happens pointwise
+    testSub(
+      IDL.Service({ f: IDL.Func([IDL.Int], [IDL.Nat]) }),
+      IDL.Service({ f: IDL.Func([IDL.Nat], [IDL.Int]) }),
+    );
+    testSubFail(
+      IDL.Service({ f: IDL.Func([IDL.Nat], [IDL.Int]) }),
+      IDL.Service({ f: IDL.Func([IDL.Int], [IDL.Nat]) }),
+    );
+
+    // Width subtyping
+    testSub(
+      IDL.Service({ f: IDL.Func([], []), g: IDL.Func([], []) }),
+      IDL.Service({ f: IDL.Func([], []) }),
+    );
+    testSubFail(
+      IDL.Service({ f: IDL.Func([], []) }),
+      IDL.Service({ f: IDL.Func([], []), g: IDL.Func([], []) }),
+    );
+  });
+
   const principal = Principal.fromText("w7x7r-cok77-xa")
   it("checks subtyping when decoding function references", () => {
     testDecode(
