@@ -16,6 +16,10 @@ function testDecode(typ: IDL.Type, val: any, hex: string, _str: string) {
   expect(IDL.decode([typ], fromHexString(hex))[0]).toEqual(val);
 }
 
+function testDecodeFail(typ: IDL.Type, hex: string, _str: string) {
+  expect(() => IDL.decode([typ], fromHexString(hex))[0]).toThrow()
+}
+
 function test_(typ: IDL.Type, val: any, hex: string, str: string) {
   testEncode(typ, val, hex, str);
   testDecode(typ, val, hex, str);
@@ -1044,9 +1048,7 @@ describe("IDL subtyping", () => {
     IntList.fill(IDL.Opt(IDL.Record({ head: IDL.Int, tail: IntList })));
     const NatList = IDL.Rec();
     NatList.fill(IDL.Opt(IDL.Record({ head: IDL.Nat, tail: NatList })));
-
     testSub(NatList, IntList)
-    testSubFail(IntList, NatList)
 
     const Even = IDL.Rec();
     const Odd = IDL.Rec();
@@ -1057,23 +1059,43 @@ describe("IDL subtyping", () => {
     testSub(IDL.Tuple(IDL.Tuple(Odd)), Odd)
   });
 
-  const principal = Principal.fromText("w7x7r-cok77-xa")
-  it("checks subtyping when decoding function references", () => {
-    testDecode(
-      IDL.Func([IDL.Int], [IDL.Nat]),
-      [principal, "myFunc"],
-      // didc encode -t "(func (int) -> (nat))" "(func \"w7x7r-cok77-xa\" . \"myFunc\")"
-      `4449444c016a017c017d000100010103caffee066d7946756e63`,
-      "expects subtyping check to succeed"
-    );
+  describe("decoding function/service references", () => {
+    const principal = Principal.fromText("w7x7r-cok77-xa")
+    it("checks subtyping when decoding function references", () => {
+      testDecode(
+        IDL.Func([IDL.Int], [IDL.Nat]),
+        [principal, "myFunc"],
+        // didc encode -t "(func (int) -> (nat))" "(func \"w7x7r-cok77-xa\" . \"myFunc\")"
+        `4449444c016a017c017d000100010103caffee066d7946756e63`,
+        "expects subtyping check to succeed"
+      );
 
-    // TODO: This should fail
-    testDecode(
-      IDL.Func([IDL.Int], [IDL.Nat]),
-      [principal, "myFunc"],
-      // didc encode -t "(func (nat) -> (nat))" "(func \"w7x7r-cok77-xa\" . \"myFunc\")"
-      `4449444c016a017d017d000100010103caffee066d7946756e63`,
-      "expects subtyping check to fail"
-    );
+      testDecodeFail(
+        IDL.Func([IDL.Int], [IDL.Nat]),
+        // didc encode -t "(func (nat) -> (nat))" "(func \"w7x7r-cok77-xa\" . \"myFunc\")"
+        `4449444c016a017d017d000100010103caffee066d7946756e63`,
+        "expects subtyping check to fail"
+      );
+    });
+    it("checks subtyping when decoding service references", () => {
+      testDecode(
+        IDL.Service({
+          f: IDL.Func([IDL.Int], [IDL.Nat]),
+        }),
+        principal,
+        // didc encode -t "(service { f : (int) -> (nat) })" "(service \"w7x7r-cok77-xa\")"
+        `4449444c0269010166016a017c017d0001000103caffee`,
+        "expects subtyping check to succeed"
+      );
+
+      testDecodeFail(
+        IDL.Service({
+          f: IDL.Func([IDL.Int], [IDL.Nat]),
+        }),
+        // didc encode -t "(service { f : (nat) -> (nat) })" "(service \"w7x7r-cok77-xa\")"
+        `4449444c0269010166016a017d017d0001000103caffee`,
+        "expects subtyping check to fail"
+      );
+    })
   })
 });

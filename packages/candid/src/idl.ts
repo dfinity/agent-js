@@ -1499,7 +1499,11 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
     T.add(this, concat(opCode, argLen, args, retLen, rets, annLen, anns));
   }
 
-  public decodeValue(b: Pipe): [PrincipalId, string] {
+  public decodeValue(b: Pipe, t: Type): [PrincipalId, string] {
+    const tt = t instanceof RecClass ? (t.getType() ?? t) : t;
+    if (!subtype(tt, this)) {
+      throw new Error(`Cannot decode function reference at type ${this.display()} from wire type ${tt.display()}`);
+    }
     const x = safeReadUint8(b);
     if (x !== 1) {
       throw new Error('Cannot decode function reference');
@@ -1586,7 +1590,11 @@ export class ServiceClass extends ConstructType<PrincipalId> {
     T.add(this, concat(opCode, len, ...meths));
   }
 
-  public decodeValue(b: Pipe): PrincipalId {
+  public decodeValue(b: Pipe, t: Type): PrincipalId {
+    const tt = t instanceof RecClass ? (t.getType() ?? t) : t;
+    if (!subtype(tt, this)) {
+      throw new Error(`Cannot decode service reference at type ${this.display()} from wire type ${tt.display()}`);
+    }
     return decodePrincipalId(b);
   }
   get name() {
