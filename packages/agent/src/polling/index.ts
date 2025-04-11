@@ -1,7 +1,7 @@
 import { RequestId } from '../request_id';
 import { bufFromBufLike, toHex } from '../utils/buffer';
 import { CreateCertificateOptions, Certificate, lookupResultToBuffer } from '../certificate';
-import { Agent } from '../agent/api';
+import { Agent, V2Agent } from '../agent/api';
 import { Principal } from '@dfinity/principal';
 
 export * as strategy from './strategy';
@@ -131,13 +131,19 @@ export async function pollForResponse(
     }
     return request;
   }
-  // const currentRequest = await constructRequest([path]);
+
+  let state;
+  const shouldReuseSignatures = options.reuseReadStateSignatures !== false;
 
   // Check if agent is v3 and use appropriate readState method
-  const state =
-    'readStateSigned' in agent
-      ? await agent.readStateUnsigned(canisterId, { paths: [path] })
-      : await agent.readState(canisterId, { paths: [path] }, undefined);
+  if ('readStateSigned' in agent && shouldReuseSignatures) {
+    const request = options.request || (await constructRequest([path]));
+    state = await agent.readStateSigned(canisterId, { paths: [path] }, request);
+  } else if ('readStateSigned' in agent) {
+    state = await agent.readStateUnsigned(canisterId, { paths: [path] });
+  } else {
+    state = await(agent as V2Agent).readState(canisterId, { paths: [path] }, undefined);
+  }
 
   if (agent.rootKey == null) throw new Error('Agent root key not initialized before polling');
   const cert = await Certificate.create({
@@ -172,7 +178,9 @@ export async function pollForResponse(
       await strategy(canisterId, requestId, status);
       return pollForResponse(agent, canisterId, requestId, {
         ...options,
-        // request: options.reuseReadStateSignatures !== false ? currentRequest : undefined,
+        request: shouldReuseSignatures
+          ? options.request || (await constructRequest([path]))
+          : undefined,
       });
     }
 
