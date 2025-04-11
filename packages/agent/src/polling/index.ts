@@ -1,7 +1,7 @@
 import { RequestId } from '../request_id';
 import { bufFromBufLike, toHex } from '../utils/buffer';
 import { CreateCertificateOptions, Certificate, lookupResultToBuffer } from '../certificate';
-import { Agent } from '../agent/api';
+import { Agent, V2Agent } from '../agent/api';
 import { Principal } from '@dfinity/principal';
 
 export * as strategy from './strategy';
