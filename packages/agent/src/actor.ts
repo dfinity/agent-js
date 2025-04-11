@@ -1,7 +1,6 @@
 import { Buffer } from 'buffer/';
 import {
   Agent,
-  getDefaultAgent,
   HttpDetailsResponse,
   QueryResponseRejected,
   QueryResponseStatus,
@@ -19,6 +18,7 @@ import { toHex } from './utils/buffer';
 import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from './certificate';
 import managementCanisterIdl from './canisters/management_idl';
 import _SERVICE, { canister_install_mode, canister_settings } from './canisters/management_service';
+import { HttpAgent } from './agent/http';
 
 export class ActorCallError extends AgentError {
   constructor(
@@ -483,7 +483,7 @@ function _createActorMethod(
         }),
       };
 
-      const agent = options.agent || actor[metadataSymbol].config.agent || getDefaultAgent();
+      const agent = options.agent || actor[metadataSymbol].config.agent || new HttpAgent();
       const cid = Principal.from(options.canisterId || actor[metadataSymbol].config.canisterId);
       const arg = IDL.encode(func.argTypes, args);
 
@@ -521,7 +521,7 @@ function _createActorMethod(
         }),
       };
 
-      const agent = options.agent || actor[metadataSymbol].config.agent || getDefaultAgent();
+      const agent = options.agent || actor[metadataSymbol].config.agent || HttpAgent.createSync();
       const { canisterId, effectiveCanisterId, pollingStrategyFactory } = {
         ...DEFAULT_ACTOR_CONFIG,
         ...actor[metadataSymbol].config,

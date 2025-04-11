@@ -3,6 +3,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- feat!: removes the unused `defaultAgent` global concept and the `getDefaultAgent` function. The `HttpAgent` constructor is now the only way to create an agent.
+- feat!: removes the `ProxyAgent` class.
+
 ## [2.4.1] - 2025-04-10
 
 ### Changed
