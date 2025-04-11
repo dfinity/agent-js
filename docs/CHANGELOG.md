@@ -7,6 +7,13 @@
 
 - feat!: removes the unused `defaultAgent` global concept and the `getDefaultAgent` function. The `HttpAgent` constructor is now the only way to create an agent.
 - feat!: removes the `ProxyAgent` class.
+
+## [2.4.1] - 2025-04-10
+
+### Changed
+
+- fix: fixes a bug in Ed25519KeyIdentity `toRaw` where the output was not an ArrayBuffer
+- test: fixes e2e tests for compatibility with dfx 0.26.0 and `pocket-ic` by querying for the `default_effective_canister_id` before calling the management canister
 - fix: fixes a bug in the Ed25519KeyIdentity verify implementation where the argument order was incorrect
 - fix: fixes a bug in the `Principal` library where the management canister id util was incorrectly importing using `fromHex`
 - feat: change auth-client's default identity provider url
