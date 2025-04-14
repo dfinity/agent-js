@@ -2132,21 +2132,16 @@ export function resetSubtypeCache() {
   subtypeCache = new Relations();
 }
 
-function eqArray<T>(arr1: T[], arr2: T[], eq: (t1: T, t2: T) => boolean) {
-  if (arr1.length != arr2.length) {
+function eqFunctionAnnotations(t1: FuncClass, t2: FuncClass): boolean {
+  const t1Annotations = new Set(t1.annotations);
+  const t2Annotations = new Set(t2.annotations);
+  if (t1Annotations.size !== t2Annotations.size) {
     return false;
   }
-  for (let i = 0; i < arr1.length; i++) {
-    if (!eq(arr1[i], arr2[i])) {
-      return false;
-    }
+  for (const a of t1Annotations) {
+    if (!t2Annotations.has(a)) return false;
   }
   return true;
-}
-
-function eqFunctionAnnotations(t1: FuncClass, t2: FuncClass): boolean {
-  // TODO(Christoph): Can we assume function annotations are sorted?
-  return eqArray(t1.annotations, t2.annotations, (s1: string, s2: string) => s1 === s2);
 }
 
 function canBeOmmitted(t: Type) {
