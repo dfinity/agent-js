@@ -917,11 +917,11 @@ export class OptClass<T> extends ConstructType<[T] | []> {
 
   public decodeValue(b: Pipe, t: Type): [T] | [] {
     if (t instanceof NullClass) {
-      return []
+      return [];
     }
 
     if (t instanceof ReservedClass) {
-      return []
+      return [];
     }
 
     let wireType = t;
@@ -944,7 +944,7 @@ export class OptClass<T> extends ConstructType<[T] | []> {
             // Attempt to decode a value using the `_type` of the current instance
             const v = this._type.decodeValue(b, wireType._type);
             return [v];
-          } catch (e : any) {
+          } catch (e: any) {
             // If an error occurs during decoding, restore the Pipe `b` to its previous state
             b.restore(checkpoint);
             // Skip the value at the current wire type to advance the Pipe `b` position
@@ -956,9 +956,12 @@ export class OptClass<T> extends ConstructType<[T] | []> {
         default:
           throw new Error('Not an option value');
       }
-    } else if
+    } else if (
       // this check corresponds to `not (null <: <t>)` in the spec
-      (this._type instanceof NullClass || this._type instanceof OptClass || this._type instanceof ReservedClass) {
+      this._type instanceof NullClass ||
+      this._type instanceof OptClass ||
+      this._type instanceof ReservedClass
+    ) {
       // null <: <t> :
       // skip value at wire type (to advance b) and return "null", i.e. []
       const skipped = wireType.decodeValue(b, wireType);
@@ -968,13 +971,13 @@ export class OptClass<T> extends ConstructType<[T] | []> {
       // try constituent type
       const checkpoint = b.save();
       try {
-        const v = this._type.decodeValue(b, t)
+        const v = this._type.decodeValue(b, t);
         return [v];
-      } catch (e : any) {
+      } catch (e: any) {
         // decoding failed, but this is opt, so return "null", i.e. []
         b.restore(checkpoint);
         // skip value at wire type (to advance b)
-        const skipped = wireType.decodeValue(b, t)
+        const skipped = wireType.decodeValue(b, t);
         // return "null"
         return [];
       }
