@@ -1,5 +1,8 @@
 # Changelog
 
+### Changed
+
+- feat!: changes all @dfinity/candid interfaces to `Uint8Array<ArrayBuffer>` instead of `ArrayBuffer` to make the API more consistent.
 
 ## [Unreleased]
 
