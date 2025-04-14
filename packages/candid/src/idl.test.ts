@@ -936,12 +936,14 @@ describe('IDL opt edge cases (embedded)', () => {
 
 function testSub(t1: IDL.Type, t2: IDL.Type) {
   it(`${t1.display()} <: ${t2.display()}`, () => {
+    IDL.resetSubtypeCache();
     expect(IDL.subtype(t1, t2)).toEqual(true);
   });
 }
 
 function testSubFail(t1: IDL.Type, t2: IDL.Type) {
   it(`not ${t1.display()} <: ${t2.display()}`, () => {
+    IDL.resetSubtypeCache();
     expect(IDL.subtype(t1, t2)).toEqual(false);
   });
 }

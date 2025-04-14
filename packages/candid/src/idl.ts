@@ -1914,6 +1914,7 @@ export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
     }
   });
 
+  resetSubtypeCache();
   const types = rawTypes.map(t => getType(t));
   const output = retTypes.map((t, i) => {
     return t.decodeValue(b, types[i]);
@@ -2071,24 +2072,64 @@ export function Service(t: Record<string, FuncClass>): ServiceClass {
 
 // The list of relations between types we assume to hold. Uses the types ._name property as key
 class Relations {
-  private rels: Map<string, Set<string>> = new Map();
+  private rels: Map<string, Map<string, boolean>>;
 
-  known(t1: Type, t2: Type): boolean {
-    return this.rels.get(t1.name)?.has(t2.name) ?? false;
+  constructor(relations = new Map()) {
+    this.rels = relations;
+  }
+
+  copy(): Relations {
+    const copy = new Map();
+    for (const [key, value] of this.rels.entries()) {
+      const valCopy = new Map(value);
+      copy.set(key, valCopy);
+    }
+    return new Relations(copy);
+  }
+
+  /// Returns whether we know for sure that a relation holds or doesn't (`true` or `false`), or
+  /// if we don't know yet (`undefined`)
+  known(t1: Type, t2: Type): boolean | undefined {
+    return this.rels.get(t1.name)?.get(t2.name);
+  }
+
+  addNegative(t1: Type, t2: Type) {
+    this.addNames(t1.name, t2.name, false);
   }
 
   add(t1: Type, t2: Type) {
-    this.addNames(t1.name, t2.name);
+    this.addNames(t1.name, t2.name, true);
   }
 
-  private addNames(t1: string, t2: string) {
-    const t1Set = this.rels.get(t1);
-    if (t1Set == undefined) {
-      this.rels.set(t1, new Set([t2]));
+  display(): string {
+    let result = '';
+    for (const [t1, v] of this.rels) {
+      for (const [t2, known] of v) {
+        const subty = known ? ':<' : '!<:';
+        result += `${t1} ${subty} ${t2}\n`;
+      }
+    }
+    return result;
+  }
+
+  private addNames(t1: string, t2: string, isSubtype: boolean) {
+    const t1Map = this.rels.get(t1);
+    if (t1Map == undefined) {
+      const newMap = new Map();
+      newMap.set(t2, isSubtype);
+      this.rels.set(t1, newMap);
     } else {
-      t1Set.add(t2);
+      t1Map.set(t2, isSubtype);
     }
   }
+}
+
+/// `subtypeCache` holds subtyping relations we've previously computed while decoding a message
+let subtypeCache: Relations = new Relations();
+
+/** Resets the global subtyping cache */
+export function resetSubtypeCache() {
+  subtypeCache = new Relations();
 }
 
 function eqArray<T>(arr1: T[], arr2: T[], eq: (t1: T, t2: T) => boolean) {
@@ -2118,12 +2159,18 @@ function canBeOmmitted(t: Type) {
  * @param t2 The potential supertype
  */
 export function subtype(t1: Type, t2: Type): boolean {
-  return subtype_(new Relations(), t1, t2);
+  const relations = subtypeCache.copy();
+  const isSubtype = subtype_(relations, t1, t2);
+  if (isSubtype) {
+    subtypeCache.add(t1, t2);
+  }
+  return isSubtype;
 }
 
 function subtype_(relations: Relations, t1: Type, t2: Type): boolean {
   if (t1.name === t2.name) return true;
-  if (relations.known(t1, t2)) return true;
+  const known = relations.known(t1, t2);
+  if (known !== undefined) return known;
   relations.add(t1, t2);
 
   if (t2 instanceof ReservedClass) return true;
