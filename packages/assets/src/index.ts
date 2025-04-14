@@ -5,7 +5,6 @@ import {
   Cbor as cbor,
   Certificate,
   compare,
-  getDefaultAgent,
   HashTree,
   lookup_path,
   lookupResultToBuffer,
@@ -26,6 +25,7 @@ import { ReadablePath } from './readable/readablePath';
 import { ReadableBytes } from './readable/readableBytes';
 import { limit, LimitFn } from './utils/limit';
 import fs from 'fs';
+import { HttpAgent } from '@dfinity/agent';
 
 /**
  * Supported content encodings by asset canister
@@ -334,7 +334,7 @@ class AssetManagerBatch {
         }),
       );
       await readable.close();
-      const headers: [] | [[string,string][]] = config?.headers ? [config.headers] : [];
+      const headers: [] | [[string, string][]] = config?.headers ? [config.headers] : [];
       return [
         {
           CreateAsset: { key, content_type: config?.contentType ?? readable.contentType, headers },
@@ -496,7 +496,7 @@ class Asset {
    */
   public async isCertified(): Promise<boolean> {
     // Below implementation is based on Internet Computer service worker
-    const agent = Actor.agentOf(this._actor) ?? getDefaultAgent();
+    const agent = Actor.agentOf(this._actor) ?? new HttpAgent();
     const canisterId = Actor.canisterIdOf(this._actor);
 
     if (!agent.rootKey) {

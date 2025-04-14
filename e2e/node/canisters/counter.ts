@@ -4,6 +4,7 @@ import { readFileSync } from 'fs';
 import path from 'path';
 import agent, { makeAgent } from '../utils/agent';
 import { _SERVICE } from './declarations/counter';
+import { getDefaultEffectiveCanisterId } from '../basic/basic.test';
 
 let cache: {
   canisterId: Principal;
@@ -61,7 +62,10 @@ export const createActor = async (options?: HttpAgentOptions, agent?: Agent) => 
     //
   }
 
-  const canisterId = await Actor.createCanister({ agent: effectiveAgent });
+  const canisterId = await Actor.createCanister({
+    agent: effectiveAgent,
+    effectiveCanisterId: await getDefaultEffectiveCanisterId(),
+  });
   await Actor.install({ module }, { canisterId, agent: effectiveAgent });
   return Actor.createActor(idl, { canisterId, agent: effectiveAgent }) as ActorSubclass<_SERVICE>;
 };
