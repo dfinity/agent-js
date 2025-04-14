@@ -32,6 +32,10 @@
 - chore: formatting files and changelog
 - fix: Check subtyping relationship when decoding function or service references
   - This means we now follow the Candid spec more closely, and reduces the risk of calling services with the wrong argument types
+- feat!: changes all @dfinity/candid interfaces to `Uint8Array<ArrayBuffer>` instead of `ArrayBuffer` to make the API more consistent.
+- feat!: removes the unused `defaultAgent` global concept and the `getDefaultAgent` function. The `HttpAgent` constructor is now the only way to create an agent.
+- feat!: removes the `ProxyAgent` class.
+- chore: formatting files and changelog
 
 ## [2.4.1] - 2025-04-10
 
