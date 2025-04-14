@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Principal as PrincipalId } from '@dfinity/principal';
 import { JsonValue } from './types';
-import { concat, PipeArrayBuffer as Pipe,  uint8ToDataView } from './utils/buffer';
+import { concat, PipeArrayBuffer as Pipe, uint8ToBuf, uint8ToDataView } from './utils/buffer';
 import { idlLabelToId } from './utils/hash';
 import {
   lebDecode,
@@ -834,7 +834,6 @@ export class VecClass<T> extends ConstructType<T[]> {
         return concat(len, new Uint8Array(x.buffer, x.byteOffset, x.byteLength));
       }
     }
-
     const buf = new Pipe(new Uint8Array(len.byteLength + x.length), 0);
     buf.write(len);
     for (const d of x) {

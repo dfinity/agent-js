@@ -181,8 +181,8 @@ export class PipeArrayBuffer {
  */
 export function uint8FromBufLike(
   bufLike:
-    | ArrayBuffer
     | Uint8Array
+    | ArrayBuffer
     | DataView
     | ArrayBufferView
     | ArrayBufferLike
@@ -191,7 +191,7 @@ export function uint8FromBufLike(
     | { buffer: ArrayBuffer },
 ): Uint8Array {
   if(!(bufLike)) {
-    throw new Error('Buffer-like object is required');
+    throw new Error('Input cannot be null or undefined');
   }
 
   if (bufLike instanceof Uint8Array) {
@@ -201,6 +201,9 @@ export function uint8FromBufLike(
     return new Uint8Array(bufLike);
   }
   if (Array.isArray(bufLike)) {
+    if (!bufLike.every(n => typeof n === 'number' && Number.isInteger(n) && n >= 0 && n <= 255)) {
+      throw new Error('Array elements must be integers between 0 and 255');
+    }
     return new Uint8Array(bufLike);
   }
   if ('buffer' in bufLike) {
@@ -248,7 +251,6 @@ export function uint8ToDataView(uint8: Uint8Array): DataView {
   }
   return new DataView(uint8.buffer, uint8.byteOffset, uint8.byteLength);
 }
-
 
 /**
  * Returns a true ArrayBuffer from a Uint8Array, as Uint8Array.buffer is unsafe.
