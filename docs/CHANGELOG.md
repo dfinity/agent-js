@@ -7,6 +7,8 @@
 - feat!: removes the unused `defaultAgent` global concept and the `getDefaultAgent` function. The `HttpAgent` constructor is now the only way to create an agent.
 - feat!: removes the `ProxyAgent` class.
 - chore: formatting files and changelog
+- fix: Check subtyping relationship when decoding function or service references
+  - This means we now follow the Candid spec more closely, and reduces the risk of calling services with the wrong argument types
 
 ## [2.4.1] - 2025-04-10
 
@@ -17,8 +19,6 @@
 - fix: fixes a bug in the Ed25519KeyIdentity verify implementation where the argument order was incorrect
 - fix: fixes a bug in the `Principal` library where the management canister id util was incorrectly importing using `fromHex`
 - feat: change auth-client's default identity provider url
-- fix: Check subtyping relationship when decoding function or service references
-  - This means we now follow the Candid spec more closely, and reduces the risk of calling services with the wrong argument types
 
 ## [2.4.0] - 2025-03-24
 
