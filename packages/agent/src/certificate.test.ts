@@ -319,6 +319,34 @@ describe('lookup', () => {
       status: Cert.LookupStatus.Absent,
     });
   });
+
+  test('invalid leaf node returns error status', () => {
+    // Create an invalid leaf node (missing tree[1])
+    const invalidLeaf = [Cert.NodeType.Leaf] as unknown as Cert.HashTree;
+
+    // Direct lookup on invalid leaf should return error status
+    expect(Cert.lookup_path([], invalidLeaf)).toEqual({
+      status: Cert.LookupStatus.Error,
+    });
+
+    // Create a tree with an invalid leaf node
+    const treeWithInvalidLeaf: Cert.HashTree = [
+      Cert.NodeType.Fork,
+      [Cert.NodeType.Labeled, label('invalid'), invalidLeaf],
+      [Cert.NodeType.Labeled, label('valid'), [Cert.NodeType.Leaf, label('hello')]],
+    ];
+
+    // Lookup path to invalid leaf should return error status
+    expect(Cert.lookup_path([label('invalid')], treeWithInvalidLeaf)).toEqual({
+      status: Cert.LookupStatus.Error,
+    });
+
+    // Lookup path to valid leaf should still work
+    expect(Cert.lookup_path([label('valid')], treeWithInvalidLeaf)).toEqual({
+      status: Cert.LookupStatus.Found,
+      value: label('hello'),
+    });
+  });
 });
 
 // The sample certificate for testing delegation is extracted from the response used in agent-rs tests, where they were taken

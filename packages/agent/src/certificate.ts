@@ -391,6 +391,7 @@ export enum LookupStatus {
   Unknown = 'unknown',
   Absent = 'absent',
   Found = 'found',
+  Error = 'error',
 }
 
 export interface LookupResultAbsent {
@@ -406,7 +407,15 @@ export interface LookupResultFound {
   value: ArrayBuffer | HashTree;
 }
 
-export type LookupResult = LookupResultAbsent | LookupResultUnknown | LookupResultFound;
+export interface LookupResultError {
+  status: LookupStatus.Error;
+}
+
+export type LookupResult =
+  | LookupResultAbsent
+  | LookupResultUnknown
+  | LookupResultFound
+  | LookupResultError;
 
 enum LabelLookupStatus {
   Less = 'less',
@@ -428,7 +437,7 @@ export function lookup_path(path: Array<ArrayBuffer | string>, tree: HashTree): 
     switch (tree[0]) {
       case NodeType.Leaf: {
         if (!tree[1]) {
-          throw new Error('Invalid tree structure for leaf');
+          return { status: LookupStatus.Error };
         }
 
         if (tree[1] instanceof ArrayBuffer) {
