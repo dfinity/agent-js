@@ -2070,7 +2070,9 @@ export function Service(t: Record<string, FuncClass>): ServiceClass {
   return new ServiceClass(t);
 }
 
-// The list of relations between types we assume to hold. Uses the types ._name property as key
+/**
+ * The list of relations between types we assume to hold. Uses the types .name property as key
+ */
 class Relations {
   private rels: Map<string, Map<string, boolean>>;
 
