@@ -320,14 +320,12 @@ describe('lookup', () => {
     });
   });
 
-  test('invalid leaf node returns error status', () => {
+  test('invalid leaf node throws an error', () => {
     // Create an invalid leaf node (missing tree[1])
     const invalidLeaf = [Cert.NodeType.Leaf] as unknown as Cert.HashTree;
 
     // Direct lookup on invalid leaf should return error status
-    expect(Cert.lookup_path([], invalidLeaf)).toEqual({
-      status: Cert.LookupStatus.Error,
-    });
+    expect(() => Cert.lookup_path([], invalidLeaf)).toThrow('Invalid tree structure for leaf');
 
     // Create a tree with an invalid leaf node
     const treeWithInvalidLeaf: Cert.HashTree = [
@@ -337,9 +335,9 @@ describe('lookup', () => {
     ];
 
     // Lookup path to invalid leaf should return error status
-    expect(Cert.lookup_path([label('invalid')], treeWithInvalidLeaf)).toEqual({
-      status: Cert.LookupStatus.Error,
-    });
+    expect(() => Cert.lookup_path([label('invalid')], treeWithInvalidLeaf)).toThrow(
+      'Invalid tree structure for leaf',
+    );
 
     // Lookup path to valid leaf should still work
     expect(Cert.lookup_path([label('valid')], treeWithInvalidLeaf)).toEqual({
