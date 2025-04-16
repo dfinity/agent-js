@@ -331,9 +331,9 @@ function extractDER(buf: ArrayBuffer): ArrayBuffer {
 }
 
 /**
- * utility function to constrain the type of a path
- * @param {ArrayBuffer | HashTree | undefined} result - the result of a lookup
- * @returns ArrayBuffer or Undefined
+ * Utility function to constrain the type of a lookup result
+ * @param result the result of a lookup
+ * @returns {ArrayBuffer | undefined} the value if the lookup was found, `undefined` otherwise
  */
 export function lookupResultToBuffer(result: LookupResult): ArrayBuffer | undefined {
   if (result.status !== LookupStatus.Found) {
@@ -427,9 +427,9 @@ type LabelLookupResult = LookupResult | LookupResultGreater | LookupResultLess;
 
 /**
  * Lookup a path in a tree
- * @param path - the path to look up
- * @param tree - the tree to search
- * @returns LookupResult
+ * @param path the path to look up
+ * @param tree the tree to search
+ * @returns {LookupResult} the result of the lookup
  */
 export function lookup_path(path: Array<ArrayBuffer | string>, tree: HashTree): LookupResult {
   if (path.length === 0) {
@@ -491,8 +491,8 @@ export function lookup_path(path: Array<ArrayBuffer | string>, tree: HashTree): 
 
 /**
  * If the tree is a fork, flatten it into an array of trees
- * @param t - the tree to flatten
- * @returns HashTree[] - the flattened tree
+ * @param {HashTree} t the tree to flatten
+ * @returns {HashTree[]} the flattened tree
  */
 export function flatten_forks(t: HashTree): HashTree[] {
   switch (t[0]) {
@@ -507,9 +507,9 @@ export function flatten_forks(t: HashTree): HashTree[] {
 
 /**
  * Find a label in a tree
- * @param label - the label to find
- * @param tree - the tree to search
- * @returns LabelLookupResult
+ * @param label the label to find
+ * @param tree the tree to search
+ * @returns {LabelLookupResult} the result of the label lookup
  */
 export function find_label(label: ArrayBuffer, tree: HashTree): LabelLookupResult {
   switch (tree[0]) {
@@ -609,12 +609,12 @@ export function find_label(label: ArrayBuffer, tree: HashTree): LabelLookupResul
 }
 
 /**
- * Check if a canister falls within a range of canisters
- * @param params - the parameters to check
- * @param params.canisterId Principal
- * @param params.subnetId Principal
- * @param params.tree HashTree
- * @returns `true` if the canister is in the range, `false` otherwise
+ * Check if a canister ID falls within the canister ranges of a given subnet
+ * @param params the parameters with which to check the canister ranges
+ * @param params.canisterId the canister ID to check
+ * @param params.subnetId the subnet ID from which to check the canister ranges
+ * @param params.tree the hash tree in which to lookup the subnet's canister ranges
+ * @returns {boolean} `true` if the canister is in the range, `false` otherwise
  */
 export function check_canister_ranges(params: {
   canisterId: Principal;

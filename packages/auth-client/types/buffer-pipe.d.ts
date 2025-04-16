@@ -6,19 +6,19 @@ declare module 'buffer-pipe' {
 
     /**
      * Creates a new instance of a pipe
-     * @param buf - an optional buffer to start with
+     * @param buf an optional buffer to start with
      */
     constructor(buf?: Buffer);
 
     /**
      * Reads `num` number of bytes from the pipe
-     * @param {number} num
+     * @param num the number of bytes to read
      */
     read(num: number): Buffer;
 
     /**
      * Writes a buffer to the pipe
-     * @param buf
+     * @param buf the buffer to write to the pipe
      */
     write(buf: Buffer | number[]): void;
 
