@@ -63,7 +63,7 @@ const getRealStatus = async () => {
   const agent = new HttpAgent({ host: 'http://127.0.0.1:4943', fetch, identity });
   await agent.fetchRootKey();
   const canisterBuffer = bufFromBufLike(testPrincipal.toUint8Array().buffer);
-  const response = await agent.readStateUnsigned(
+  const response = await agent.readState(
     testPrincipal,
     // Note: subnet is not currently working due to a bug
     {
@@ -81,7 +81,7 @@ const getRealStatus = async () => {
 // Mocked status using precomputed certificate
 const getStatus = async (paths: Path[]) => {
   const agent = new HttpAgent({ host: 'https://ic0.app' });
-  agent.readStateUnsigned = jest.fn(() =>
+  agent.readState = jest.fn(() =>
     Promise.resolve({ certificate: fromHex(testCases[0].certificate) }),
   );
 

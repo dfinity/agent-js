@@ -142,7 +142,7 @@ test('queries with the same content should have the same signature', async () =>
     );
   });
 
-  const canisterIdent = '2chl6-4hpzw-vqaaa-aaaaa-c';
+  const canisterId = '2chl6-4hpzw-vqaaa-aaaaa-c';
   const nonce = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
 
   const principal = await Principal.anonymous();
@@ -159,7 +159,7 @@ test('queries with the same content should have the same signature', async () =>
   const requestId = requestIdOf({
     request_type: SubmitRequestType.Call,
     nonce,
-    canister_id: Principal.fromText(canisterIdent).toString(),
+    canister_id: Principal.fromText(canisterId).toString(),
     method_name: methodName,
     arg,
     sender: principal,
@@ -167,11 +167,11 @@ test('queries with the same content should have the same signature', async () =>
 
   const paths = [[textEncodeBuffer('request_status'), requestId, textEncodeBuffer('reply')]];
 
-  const response1 = await httpAgent.readStateUnsigned(canisterIdent, { paths });
-  const response2 = await httpAgent.readStateUnsigned(canisterIdent, { paths });
+  const response1 = await httpAgent.readState(canisterId, { paths });
+  const response2 = await httpAgent.readState(canisterId, { paths });
 
-  const response3 = await httpAgent.query(canisterIdent, { arg, methodName });
-  const response4 = await httpAgent.query(canisterIdent, { methodName, arg });
+  const response3 = await httpAgent.query(canisterId, { arg, methodName });
+  const response4 = await httpAgent.query(canisterId, { methodName, arg });
 
   const { calls } = mockFetch.mock;
   expect(calls.length).toBe(4);
@@ -230,7 +230,7 @@ test('readState should not call transformers if request is passed', async () => 
 
   const request = await httpAgent.createReadStateRequest({ paths });
   expect(transformMock).toBeCalledTimes(1);
-  await httpAgent.readStateSigned(canisterIdent, request);
+  await httpAgent.readState(canisterIdent, { paths }, undefined, request);
   expect(transformMock).toBeCalledTimes(1);
 });
 
@@ -439,7 +439,7 @@ describe('invalidate identity', () => {
     // Test readState
     try {
       const path = textEncodeBuffer('request_status');
-      await agent.readStateUnsigned(canisterId, {
+      await agent.readState(canisterId, {
         paths: [[path]],
       });
     } catch (error) {
@@ -1337,7 +1337,7 @@ describe('error logs for bad signature', () => {
     try {
       const requestId = new ArrayBuffer(32) as RequestId;
       const path = textEncodeBuffer('request_status');
-      await agent.readStateUnsigned(canisterId, { paths: [[path, requestId]] });
+      await agent.readState(canisterId, { paths: [[path, requestId]] });
     } catch (e) {
       expect(e instanceof AgentReadStateError).toBe(true);
     }

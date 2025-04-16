@@ -142,7 +142,7 @@ export const request = async (options: {
   const promises = uniquePaths.map((path, index) => {
     return (async () => {
       try {
-        const response = await agent.readStateUnsigned(canisterId, {
+        const response = await agent.readState(canisterId, {
           paths: [encodedPaths[index]],
         });
         if (agent.rootKey == null) {
