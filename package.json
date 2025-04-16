@@ -60,6 +60,7 @@
     "convert:changelog": "markdown-to-html --source docs/CHANGELOG.md --output docs/changelog.html",
     "build": "npm run build --workspaces --if-present; npm run bundle --workspaces --if-present",
     "lint:fix": "",
+    "lint": "npm run lint --workspaces --if-present -- --max-warnings=0",
     "make:docs": "npm run make:docs/reference --workspaces --if-present; npm run convert:changelog",
     "release": "release-it",
     "size": "size-limit --json",

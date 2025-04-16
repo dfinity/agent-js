@@ -23,7 +23,7 @@
     "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=node",
     "size-limit": "size-limit",
     "ci": "npm run prettier && npm run lint && npm run test",
-    "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
+    "lint": "eslint 'src' 'types' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/bls-verify --excludeInternal",
     "test": "jest",
