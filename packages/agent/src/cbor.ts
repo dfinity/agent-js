@@ -21,6 +21,7 @@ class PrincipalEncoder implements CborEncoder<Principal> {
     return 0;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public match(value: any): boolean {
     return value && value._isPrincipal === true;
   }
@@ -39,6 +40,7 @@ class BufferEncoder implements CborEncoder<ArrayBuffer> {
     return 1;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public match(value: any): boolean {
     return value instanceof ArrayBuffer || ArrayBuffer.isView(value);
   }
@@ -48,7 +50,7 @@ class BufferEncoder implements CborEncoder<ArrayBuffer> {
   }
 }
 
-class BigIntEncoder implements CborEncoder<BigInt> {
+class BigIntEncoder implements CborEncoder<bigint> {
   public get name() {
     return 'BigInt';
   }
@@ -57,6 +59,7 @@ class BigIntEncoder implements CborEncoder<BigInt> {
     return 1;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public match(value: any): boolean {
     return typeof value === `bigint`;
   }
@@ -83,7 +86,9 @@ export enum CborTag {
 
 /**
  * Encode a JavaScript value into CBOR.
+ * @param value The value to encode
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function encode(value: any): ArrayBuffer {
   return serializer.serialize(value);
 }
@@ -109,10 +114,15 @@ class Uint8ArrayDecoder extends borc.Decoder {
       return new ArrayBuffer(0);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return new Uint8Array((this as any)._heap.slice(start, end));
   }
 }
 
+/**
+ * Decode a CBOR encoded value into a JavaScript value.
+ * @param input The CBOR encoded value
+ */
 export function decode<T>(input: ArrayBuffer): T {
   const buffer = new Uint8Array(input);
   const decoder = new Uint8ArrayDecoder({
@@ -127,7 +137,7 @@ export function decode<T>(input: ArrayBuffer): T {
 
   try {
     return decoder.decodeFirst(buffer);
-  } catch(e: unknown) {
+  } catch (e: unknown) {
     throw new Error(`Failed to decode CBOR: ${e}, input: ${toHex(buffer)}`);
   }
 }

@@ -7,7 +7,7 @@
   "main": "./lib/cjs/index.js",
   "scripts": {
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
-    "eslint": "eslint --ext '.js,.jsx,.ts,.tsx'",
+    "lint": "eslint 'src' 'types' --ext '.js,.jsx,.ts,.tsx'",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/identity-secp256k1 --excludeInternal",
     "bundle": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=node",
     "test": "jest",
@@ -21,6 +21,9 @@
     "@scure/bip39": "^1.3.0",
     "asn1js": "^3.0.5",
     "bs58check": "^3.0.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.19.0"
   },
   "overrides": {
     "hdkey": {

@@ -4,7 +4,9 @@ import { randomInt } from 'node:crypto';
 
 const webcrypto = new Crypto();
 beforeEach(() => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (global as any).window = undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (global as any).crypto = undefined;
 });
 
@@ -26,6 +28,7 @@ describe('randomNumber', () => {
       crypto: {
         getRandomValues: webcrypto.getRandomValues,
       },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
     const result = randomNumber();
     expect(result).toBeGreaterThanOrEqual(0);
@@ -35,6 +38,7 @@ describe('randomNumber', () => {
   it('should use globabl webcrypto if available', () => {
     global.crypto = {
       getRandomValues: webcrypto.getRandomValues,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
     const result = randomNumber();
     expect(result).toBeGreaterThanOrEqual(0);
@@ -44,13 +48,16 @@ describe('randomNumber', () => {
   it('should use node crypto if available', () => {
     global.crypto = {
       randomInt,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
     const result = randomNumber();
     expect(isInteger(result)).toBe(true);
     expect(result).toBeLessThanOrEqual(0xffffffff);
   });
   it('should use Math.random if nothing else is available', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (global as any).window = undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (global as any).crypto = undefined;
     const result = randomNumber();
     expect(isInteger(result)).toBe(true);
