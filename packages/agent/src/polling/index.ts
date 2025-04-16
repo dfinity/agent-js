@@ -4,19 +4,18 @@ import { CreateCertificateOptions, Certificate, lookupResultToBuffer } from '../
 import { Agent } from '../agent/api';
 import { Principal } from '@dfinity/principal';
 
+
 export * as strategy from './strategy';
 import { defaultStrategy } from './strategy';
 import { ReadRequestType, ReadStateRequest } from '../agent/http/types';
 import { CreateReadStateRequestError } from '../errors';
 import { RequestStatusResponseStatus } from '../agent';
 export { defaultStrategy } from './strategy';
-
 export type PollStrategy = (
   canisterId: Principal,
   requestId: RequestId,
   status: RequestStatusResponseStatus,
 ) => Promise<void>;
-
 export type PollStrategyFactory = () => PollStrategy;
 
 interface SignedReadStateRequestWithExpiry extends ReadStateRequest {
@@ -38,9 +37,9 @@ export interface PollingOptions {
 
   /**
    * Whether to reuse the same signed request for polling or create a new unsigned request each time.
-   * @default true
+   * @default false
    */
-  reuseReadStateSignatures?: boolean;
+  preSignReadStateRequest?: boolean;
 
   /**
    * Optional replacement function that verifies the BLS signature of a certificate.
@@ -49,7 +48,7 @@ export interface PollingOptions {
 
   /**
    * The request to use for polling. If not provided, a new request will be created.
-   * This is only used if `reuseReadStateSignatures` is set to true.
+   * This is only used if `preSignReadStateRequest` is set to false.
    */
   request?: ReadStateRequest;
 }
@@ -133,14 +132,14 @@ export async function pollForResponse(
   }
 
   let state;
-  const shouldReuseSignatures = options.reuseReadStateSignatures !== false;
-
-  // Check if agent is v3 and use appropriate readState method
-  if (shouldReuseSignatures) {
-    const request = options.request || (await constructRequest([path]));
-    state = await agent.readState(canisterId, { paths: [path] }, undefined, request);
+  let currentRequest: ReadStateRequest | undefined = undefined;
+  const preSignReadStateRequest = options.preSignReadStateRequest ?? false;
+  if (preSignReadStateRequest) {
+    // If preSignReadStateRequest is true, we need to create a new request
+    currentRequest = options.request ?? (await constructRequest([path]));
+    state = await agent.readState(canisterId, { paths: [path] }, undefined, currentRequest);
   } else {
-    // If we are not reusing signatures, we need to create a new request each time
+    // If preSignReadStateRequest is false, we use the default strategy and sign the request each time
     state = await agent.readState(canisterId, { paths: [path] });
   }
 
@@ -177,9 +176,7 @@ export async function pollForResponse(
       await strategy(canisterId, requestId, status);
       return pollForResponse(agent, canisterId, requestId, {
         ...options,
-        request: shouldReuseSignatures
-          ? options.request || (await constructRequest([path]))
-          : undefined,
+        request: currentRequest,
       });
     }
 
