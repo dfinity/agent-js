@@ -1092,6 +1092,24 @@ describe('IDL subtyping', () => {
         'expects subtyping check to succeed',
       );
 
+      testDecode(
+        IDL.Opt(IDL.Func([IDL.Int], [IDL.Nat])),
+        [],
+        // didc encode -t "(opt func (nat) -> (nat))" "(opt func \"w7x7r-cok77-xa\" . \"myFunc\")"
+        `4449444c026e016a017d017d00010001010103caffee066d7946756e63`,
+        'expects failed subtype check under option to default to null',
+      );
+
+      testDecode(
+        IDL.Record({
+          optF: IDL.Opt(IDL.Func([IDL.Int], [IDL.Nat])),
+        }),
+        { optF: [] },
+        // didc encode -t "(record { optF : func (nat) -> (nat) })" "(record { optF = func \"w7x7r-cok77-xa\" . \"myFunc\" })"
+        `4449444c026c01b3a1d0cd04016a017d017d000100010103caffee066d7946756e63`,
+        'expects failed subtype check under option to default to null',
+      );
+
       testDecodeFail(
         IDL.Func([IDL.Int], [IDL.Nat]),
         // didc encode -t "(func (nat) -> (nat))" "(func \"w7x7r-cok77-xa\" . \"myFunc\")"
@@ -1108,6 +1126,30 @@ describe('IDL subtyping', () => {
         // didc encode -t "(service { f : (int) -> (nat) })" "(service \"w7x7r-cok77-xa\")"
         `4449444c0269010166016a017c017d0001000103caffee`,
         'expects subtyping check to succeed',
+      );
+
+      testDecode(
+        IDL.Opt(
+          IDL.Service({
+            f: IDL.Func([IDL.Int], [IDL.Nat]),
+          }),
+        ),
+        [],
+        // didc encode -t "(service { f : (nat) -> (nat) })" "(service \"w7x7r-cok77-xa\")"
+        `4449444c0269010166016a017d017d0001000103caffee`,
+        'expects subtyping check to fail',
+      );
+
+      testDecode(
+        IDL.Opt(
+          IDL.Service({
+            f: IDL.Func([IDL.Int], [IDL.Nat]),
+          }),
+        ),
+        [],
+        // didc encode -t "(opt service { f : (nat) -> (nat) })" "(opt service \"w7x7r-cok77-xa\")"
+        `4449444c036e0169010166026a017d017d000100010103caffee`,
+        'expects subtyping check to fail',
       );
 
       testDecodeFail(
