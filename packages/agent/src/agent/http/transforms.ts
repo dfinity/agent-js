@@ -74,7 +74,6 @@ export function makeNonceTransform(nonceFn: () => Nonce = makeNonce): HttpAgentR
 
 /**
  * Create a transform that adds a delay (by default 5 minutes) to the expiry.
- *
  * @param delayInMilliseconds The delay to add to the call time, in milliseconds.
  */
 export function makeExpiryTransform(delayInMilliseconds: number): HttpAgentRequestTransformFn {
@@ -85,7 +84,6 @@ export function makeExpiryTransform(delayInMilliseconds: number): HttpAgentReque
 
 /**
  * Maps the default fetch headers field to the serializable HttpHeaderField.
- *
  * @param headers Fetch definition of the headers type
  * @returns array of header fields
  */

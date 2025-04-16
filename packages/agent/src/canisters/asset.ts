@@ -1,4 +1,4 @@
-import { Actor, ActorConfig, ActorSubclass, CallConfig } from '../actor';
+import { Actor, ActorConfig } from '../actor';
 import assetCanister from './asset_idl';
 
 export interface AssetCanisterRecord {
@@ -8,7 +8,7 @@ export interface AssetCanisterRecord {
 
 /**
  * Create a management canister actor.
- * @param config
+ * @param config The Actor configuration
  */
 export function createAssetCanisterActor(config: ActorConfig) {
   return Actor.createActor<AssetCanisterRecord>(assetCanister, config);
