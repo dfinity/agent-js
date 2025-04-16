@@ -1018,12 +1018,24 @@ describe('IDL subtyping', () => {
 
     // Arg types are contravariant
     testSub(IDL.Func([IDL.Int], []), IDL.Func([IDL.Nat], []));
+    // Trailing arguments are allowed to be missing on the incoming type
+    testSub(IDL.Func([IDL.Int], []), IDL.Func([IDL.Nat, IDL.Nat], []));
+    // Trailing arguments are allowed to be missing if they are opt/null/reserved on the expected type
     testSub(IDL.Func([IDL.Int, IDL.Opt(IDL.Nat)], []), IDL.Func([IDL.Nat], []));
+    testSub(IDL.Func([IDL.Int, IDL.Null], []), IDL.Func([IDL.Nat], []));
+    testSub(IDL.Func([IDL.Int, IDL.Reserved], []), IDL.Func([IDL.Nat], []));
+    // Non-opt/null/reserved arguments are not allowed to be missing on the expected type
     testSubFail(IDL.Func([IDL.Nat, IDL.Nat], []), IDL.Func([IDL.Nat], []));
 
     // Return types are covariant
     testSub(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int]));
-    testSub(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int, IDL.Opt(IDL.Nat)]));
+    // Trailing results are allowed to be missing on the expected type
+    testSub(IDL.Func([], [IDL.Nat, IDL.Nat]), IDL.Func([], [IDL.Int]));
+    // Trailing results are allowed to be missing if they are opt/null/reserved on the expected type
+    testSub(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int, IDL.Opt(IDL.Int)]));
+    testSub(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int, IDL.Null]));
+    testSub(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int, IDL.Reserved]));
+    // Non-opt/null/reserved results are not allowed to be missing on the expected type
     testSubFail(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int, IDL.Int]));
   });
 
