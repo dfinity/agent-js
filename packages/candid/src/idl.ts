@@ -2158,6 +2158,8 @@ export function subtype(t1: Type, t2: Type): boolean {
   const isSubtype = subtype_(relations, t1, t2);
   if (isSubtype) {
     subtypeCache.add(t1, t2);
+  } else {
+    subtypeCache.addNegative(t1, t2);
   }
   return isSubtype;
 }
