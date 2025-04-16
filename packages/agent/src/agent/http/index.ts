@@ -844,7 +844,7 @@ export class HttpAgent implements Agent {
 
     let transformedRequest: HttpAgentRequest | undefined = undefined;
     let queryResult;
-    const id = await (identity !== undefined ? identity : this.#identity);
+    const id = await(identity ?? this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -1043,7 +1043,7 @@ export class HttpAgent implements Agent {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<any> {
     await this.#rootKeyGuard();
-    const id = await (identity !== undefined ? await identity : await this.#identity);
+    const id = await(identity ?? this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
