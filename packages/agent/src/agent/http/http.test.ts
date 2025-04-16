@@ -230,7 +230,7 @@ test('readState should not call transformers if request is passed', async () => 
 
   const request = await httpAgent.createReadStateRequest({ paths });
   expect(transformMock).toBeCalledTimes(1);
-  await httpAgent.readStateSigned(canisterIdent, request);
+  await httpAgent.readState(canisterIdent, { paths }, undefined, request);
   expect(transformMock).toBeCalledTimes(1);
 });
 

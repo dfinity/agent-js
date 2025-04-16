@@ -6,6 +6,7 @@ import * as cbor from '../../cbor';
 import { RequestId, hashOfMap, requestIdOf } from '../../request_id';
 import { bufEquals, bufFromBufLike, concat, fromHex, toHex } from '../../utils/buffer';
 import {
+  Agent,
   ApiQueryResponse,
   HttpDetailsResponse,
   QueryFields,
@@ -13,7 +14,6 @@ import {
   ReadStateOptions,
   ReadStateResponse,
   SubmitResponse,
-  V3Agent,
   v3ResponseBody,
 } from '../api';
 import { Expiry, httpHeadersTransform, makeNonceTransform } from './transforms';
@@ -256,7 +256,7 @@ it to the client. This is to decouple signature, nonce generation and
 other computations so that this class can stay as simple as possible while
 allowing extensions.
  */
-export class HttpAgent implements V3Agent {
+export class HttpAgent implements Agent {
   public rootKey: ArrayBuffer | null;
   #rootKeyPromise: Promise<ArrayBuffer> | null = null;
   #shouldFetchRootKey: boolean = false;
@@ -844,7 +844,7 @@ export class HttpAgent implements V3Agent {
 
     let transformedRequest: HttpAgentRequest | undefined = undefined;
     let queryResult;
-    const id = await(identity ?? this.#identity);
+    const id = await (identity ?? this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -1010,7 +1010,10 @@ export class HttpAgent implements V3Agent {
         throw new Error(`Unknown status: ${status}`);
       }
 
-      const separatorWithHash = concat(domainSeparator, bufFromBufLike(new Uint8Array(hash)));
+      const separatorWithHash = concat(
+        bufFromBufLike(domainSeparator),
+        bufFromBufLike(new Uint8Array(hash)),
+      );
 
       // FIX: check for match without verifying N times
       const pubKey = subnetStatus?.nodeKeys.get(nodeId);
@@ -1040,7 +1043,7 @@ export class HttpAgent implements V3Agent {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<any> {
     await this.#rootKeyGuard();
-    const id = await(identity ?? this.#identity);
+    const id = await (identity ?? this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -1070,9 +1073,12 @@ export class HttpAgent implements V3Agent {
     return id?.transformRequest(transformedRequest);
   }
 
-  public async readStateUnsigned(
+  public async readState(
     canisterId: Principal | string,
     fields: ReadStateOptions,
+    identity?: Identity | Promise<Identity>,
+    // eslint-disable-next-line
+    request?: any,
   ): Promise<ReadStateResponse> {
     await this.#rootKeyGuard();
     const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
@@ -1080,8 +1086,8 @@ export class HttpAgent implements V3Agent {
     function getRequestId(fields: ReadStateOptions): RequestId | undefined {
       for (const path of fields.paths) {
         const [pathName, value] = path;
-        const request_status = bufFromBufLike(new TextEncoder().encode('request_status'));
-        if (bufEquals(pathName, request_status)) {
+        const request_status = new TextEncoder().encode('request_status');
+        if (bufEquals(pathName, bufFromBufLike(request_status))) {
           return value as RequestId;
         }
       }
@@ -1156,63 +1162,6 @@ export class HttpAgent implements V3Agent {
         toHex(transformedRequest?.body?.sender_pubkey),
         toHex(transformedRequest?.body?.sender_sig),
         String(transformedRequest?.body?.content.ingress_expiry['_value']),
-      );
-      this.log.error(message, readStateError);
-      throw readStateError;
-    }
-  }
-
-  public async readStateSigned(
-    canisterId: Principal | string,
-    request: ReadStateRequest,
-  ): Promise<ReadStateResponse> {
-    await this.#rootKeyGuard();
-    const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
-
-    this.log.print(`fetching "/api/v2/canister/${canister}/read_state" with request:`, request);
-    // TODO - https://dfinity.atlassian.net/browse/SDK-1092
-    const backoff = this.#backoffStrategy();
-    try {
-      const response = await this.#requestAndRetry({
-        request: () =>
-          this.#fetch(
-            '' + new URL(`/api/v2/canister/${canister.toString()}/read_state`, this.host),
-            {
-              ...request.request,
-              body: cbor.encode(request.body),
-            } as RequestInit,
-          ),
-        backoff,
-        tries: 0,
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `Server returned an error:\n` +
-            `  Code: ${response.status} (${response.statusText})\n` +
-            `  Body: ${await response.text()}\n`,
-        );
-      }
-      const decodedResponse: ReadStateResponse = cbor.decode(await response.arrayBuffer());
-
-      this.log.print('Read state response:', decodedResponse);
-      const parsedTime = await this.parseTimeFromResponse(decodedResponse);
-      if (parsedTime > 0) {
-        this.log.print('Read state response time:', parsedTime);
-        this.#waterMark = parsedTime;
-      }
-
-      return decodedResponse;
-    } catch (error) {
-      const requestId = requestIdOf(request);
-      const message = `Caught exception while attempting to read state: ${(error as Error).message ?? String(error)}`;
-      const readStateError = new AgentReadStateError(
-        message,
-        error as HttpDetailsResponse,
-        String(requestId),
-        toHex(request?.body?.sender_pubkey),
-        toHex(request?.body?.sender_sig),
-        String(request?.body?.content.ingress_expiry['_value']),
       );
       this.log.error(message, readStateError);
       throw readStateError;
