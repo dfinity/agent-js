@@ -18,7 +18,7 @@ import { strToUtf8 } from '@dfinity/agent/src';
  * @returns the default effective canister id
  */
 export async function getDefaultEffectiveCanisterId() {
-  const res = await fetch('http://localhost:4943/_/topology'); //?
+  const res = await fetch('http://localhost:4943/_/topology');
   const data = await res.json();
   const id = data['default_effective_canister_id']['canister_id'];
   // decode from base64

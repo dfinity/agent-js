@@ -524,6 +524,7 @@ function _createActorMethod(
       };
 
       const agent = options.agent || actor[metadataSymbol].config.agent || HttpAgent.createSync();
+
       const { canisterId, effectiveCanisterId, pollingOptions } = {
         ...DEFAULT_ACTOR_CONFIG,
         ...actor[metadataSymbol].config,

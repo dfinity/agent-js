@@ -19,6 +19,7 @@ export type PollStrategy = (
 
 export type PollStrategyFactory = () => PollStrategy;
 
+
 interface SignedReadStateRequestWithExpiry extends ReadStateRequest {
   body: {
     content: Pick<ReadStateRequest, 'request_type' | 'ingress_expiry'>;

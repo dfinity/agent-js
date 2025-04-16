@@ -1010,6 +1010,7 @@ export class HttpAgent implements Agent {
         throw new Error(`Unknown status: ${status}`);
       }
 
+
       const separatorWithHash = concat(
         bufFromBufLike(domainSeparator),
         bufFromBufLike(new Uint8Array(hash)),
@@ -1086,8 +1087,9 @@ export class HttpAgent implements Agent {
     function getRequestId(fields: ReadStateOptions): RequestId | undefined {
       for (const path of fields.paths) {
         const [pathName, value] = path;
-        const request_status = new TextEncoder().encode('request_status');
-        if (bufEquals(pathName, bufFromBufLike(request_status))) {
+
+        const request_status = bufFromBufLike(new TextEncoder().encode('request_status'));
+        if (bufEquals(pathName, request_status)) {
           return value as RequestId;
         }
       }
