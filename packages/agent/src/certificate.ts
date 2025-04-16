@@ -41,7 +41,7 @@ export type HashTree =
 
 /**
  * Make a human readable string out of a hash tree.
- * @param tree
+ * @param tree The hash tree to convert to a string
  */
 export function hashTreeToString(tree: HashTree): string {
   const indent = (s: string) =>
@@ -53,6 +53,7 @@ export function hashTreeToString(tree: HashTree): string {
     const decoder = new TextDecoder(undefined, { fatal: true });
     try {
       return JSON.stringify(decoder.decode(label));
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       return `data(...${label.byteLength} bytes)`;
     }
@@ -256,6 +257,7 @@ export class Certificate {
 
     try {
       sigVer = await this._blsVerify(new Uint8Array(key), new Uint8Array(sig), new Uint8Array(msg));
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       sigVer = false;
     }
@@ -350,7 +352,7 @@ export function lookupResultToBuffer(result: LookupResult): ArrayBuffer | undefi
 }
 
 /**
- * @param t
+ * @param t The hash tree to reconstruct
  */
 export async function reconstruct(t: HashTree): Promise<ArrayBuffer> {
   switch (t[0]) {
@@ -423,6 +425,12 @@ interface LookupResultLess {
 
 type LabelLookupResult = LookupResult | LookupResultGreater | LookupResultLess;
 
+/**
+ * Lookup a path in a tree
+ * @param path - the path to look up
+ * @param tree - the tree to search
+ * @returns LookupResult
+ */
 export function lookup_path(path: Array<ArrayBuffer | string>, tree: HashTree): LookupResult {
   if (path.length === 0) {
     switch (tree[0]) {
@@ -497,6 +505,12 @@ export function flatten_forks(t: HashTree): HashTree[] {
   }
 }
 
+/**
+ * Find a label in a tree
+ * @param label - the label to find
+ * @param tree - the tree to search
+ * @returns LabelLookupResult
+ */
 export function find_label(label: ArrayBuffer, tree: HashTree): LabelLookupResult {
   switch (tree[0]) {
     // if we have a labelled node, compare the node's label to the one we are
@@ -527,7 +541,7 @@ export function find_label(label: ArrayBuffer, tree: HashTree): LabelLookupResul
       };
 
     // if we have a fork node, we need to search both sides, starting with the left
-    case NodeType.Fork:
+    case NodeType.Fork: {
       // search in the left node
       const leftLookupResult = find_label(label, tree[1]);
 
@@ -553,7 +567,7 @@ export function find_label(label: ArrayBuffer, tree: HashTree): LabelLookupResul
         // if the left node returns an uncertain result, we need to search the
         // right node
         case LookupStatus.Unknown: {
-          let rightLookupResult = find_label(label, tree[2]);
+          const rightLookupResult = find_label(label, tree[2]);
 
           // if the label we're searching for is less than the right node lookup,
           // then we also need to return an uncertain result
@@ -576,6 +590,7 @@ export function find_label(label: ArrayBuffer, tree: HashTree): LabelLookupResul
           return leftLookupResult;
         }
       }
+    }
 
     // if we encounter a Pruned node, we can't know for certain if the label
     // we're searching for is present or not
@@ -595,9 +610,11 @@ export function find_label(label: ArrayBuffer, tree: HashTree): LabelLookupResul
 
 /**
  * Check if a canister falls within a range of canisters
- * @param canisterId Principal
- * @param ranges [Principal, Principal][]
- * @returns
+ * @param params - the parameters to check
+ * @param params.canisterId Principal
+ * @param params.subnetId Principal
+ * @param params.tree HashTree
+ * @returns `true` if the canister is in the range, `false` otherwise
  */
 export function check_canister_ranges(params: {
   canisterId: Principal;

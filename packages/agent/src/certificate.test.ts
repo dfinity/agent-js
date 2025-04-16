@@ -20,6 +20,7 @@ function pruned(str: string): ArrayBuffer {
   return fromHex(str);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (expect as any).addEqualityTesters([bufEquals]);
 
 test('hash tree', async () => {

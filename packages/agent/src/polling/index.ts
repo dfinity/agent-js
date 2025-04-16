@@ -1,13 +1,11 @@
 import { Principal } from '@dfinity/principal';
-import { Agent, Expiry, RequestStatusResponseStatus } from '../agent';
+import { Agent, RequestStatusResponseStatus } from '../agent';
 import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from '../certificate';
 import { RequestId } from '../request_id';
 import { toHex } from '../utils/buffer';
 
 export * as strategy from './strategy';
 import { defaultStrategy } from './strategy';
-import { DEFAULT_INGRESS_EXPIRY_DELTA_IN_MSECS } from '../constants';
-import { ReadRequestType, ReadStateRequest } from '../agent/http/types';
 export { defaultStrategy } from './strategy';
 export type PollStrategy = (
   canisterId: Principal,
@@ -15,52 +13,6 @@ export type PollStrategy = (
   status: RequestStatusResponseStatus,
 ) => Promise<void>;
 export type PollStrategyFactory = () => PollStrategy;
-
-interface SignedReadStateRequestWithExpiry {
-  body: {
-    content: Pick<ReadStateRequest, 'request_type' | 'ingress_expiry'>;
-  };
-}
-
-/**
- * Check if an object has a property
- * @param value the object that might have the property
- * @param property the key of property we're looking for
- */
-function hasProperty<O extends object, P extends string>(
-  value: O,
-  property: P,
-): value is O & Record<P, unknown> {
-  return Object.prototype.hasOwnProperty.call(value, property);
-}
-
-/**
- * Check if value is a signed read state request with expiry
- * @param value to check
- */
-function isSignedReadStateRequestWithExpiry(
-  value: unknown,
-): value is SignedReadStateRequestWithExpiry {
-  return (
-    value !== null &&
-    typeof value === 'object' &&
-    hasProperty(value, 'body') &&
-    value.body !== null &&
-    typeof value.body === 'object' &&
-    hasProperty(value.body, 'content') &&
-    value.body.content !== null &&
-    typeof value.body.content === 'object' &&
-    hasProperty(value.body.content, 'request_type') &&
-    value.body.content.request_type === ReadRequestType.ReadState &&
-    hasProperty(value.body.content, 'ingress_expiry') &&
-    typeof value.body.content.ingress_expiry === 'object' &&
-    value.body.content.ingress_expiry !== null &&
-    hasProperty(value.body.content.ingress_expiry, 'toCBOR') &&
-    typeof value.body.content.ingress_expiry.toCBOR === 'function' &&
-    hasProperty(value.body.content.ingress_expiry, 'toHash') &&
-    typeof value.body.content.ingress_expiry.toHash === 'function'
-  );
-}
 
 /**
  * Polls the IC to check the status of the given request then

@@ -6,38 +6,34 @@ declare module 'buffer-pipe' {
 
     /**
      * Creates a new instance of a pipe
-     * @param {Buffer} buf - an optional buffer to start with
+     * @param buf - an optional buffer to start with
      */
     constructor(buf?: Buffer);
 
     /**
-     * read `num` number of bytes from the pipe
-     * @param {Number} num
-     * @return {Buffer}
+     * Reads `num` number of bytes from the pipe
+     * @param {number} num
      */
     read(num: number): Buffer;
 
     /**
-     * Wites a buffer to the pipe
-     * @param {Buffer} buf
+     * Writes a buffer to the pipe
+     * @param buf
      */
     write(buf: Buffer | number[]): void;
 
     /**
-     * Whether or not there is more data to read from the buffer
-     * returns {Boolean}
+     * @returns {boolean} whether or not there is more data to read from the buffer
      */
     get end(): boolean;
 
     /**
-     * returns the number of bytes read from the stream
-     * @return {Integer}
+     * @returns {number} the number of bytes read from the stream
      */
     get bytesRead(): number;
 
     /**
-     * returns the number of bytes wrote to the stream
-     * @return {Integer}
+     * @returns {number} the number of bytes wrote to the stream
      */
     get bytesWrote(): number;
   }
