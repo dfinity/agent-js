@@ -58,6 +58,7 @@ export interface HttpAgentRequestTransformFn {
 }
 
 // The fields in a "call" submit request.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface CallRequest extends Record<string, any> {
   request_type: SubmitRequestType.Call;
   canister_id: Principal;
@@ -80,6 +81,7 @@ export const enum ReadRequestType {
 }
 
 // The fields in a "query" read request.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface QueryRequest extends Record<string, any> {
   request_type: ReadRequestType.Query;
   canister_id: Principal;
@@ -90,6 +92,7 @@ export interface QueryRequest extends Record<string, any> {
   nonce?: Nonce;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface ReadStateRequest extends Record<string, any> {
   request_type: ReadRequestType.ReadState;
   paths: ArrayBuffer[][];
