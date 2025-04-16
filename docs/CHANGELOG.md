@@ -7,6 +7,7 @@
 - feat!: removes the unused `defaultAgent` global concept and the `getDefaultAgent` function. The `HttpAgent` constructor is now the only way to create an agent.
 - feat!: removes the `ProxyAgent` class.
 - chore: formatting files and changelog
+- fix: returns the `LookupStatus.Error` variant instead of throwing when encountering invalid leaf nodes in the hash tree in `lookup_path`, according to the Internet Computer specification.
 
 ## [2.4.1] - 2025-04-10
 
