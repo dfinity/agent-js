@@ -1916,20 +1916,24 @@ export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
 
   resetSubtypeCache();
   const types = rawTypes.map(t => getType(t));
-  const output = retTypes.map((t, i) => {
-    return t.decodeValue(b, types[i]);
-  });
+  try {
+    const output = retTypes.map((t, i) => {
+      return t.decodeValue(b, types[i]);
+    });
 
-  // skip unused values
-  for (let ind = retTypes.length; ind < types.length; ind++) {
-    types[ind].decodeValue(b, types[ind]);
+    // skip unused values
+    for (let ind = retTypes.length; ind < types.length; ind++) {
+      types[ind].decodeValue(b, types[ind]);
+    }
+
+    if (b.byteLength > 0) {
+      throw new Error('decode: Left-over bytes');
+    }
+
+    return output;
+  } finally {
+    resetSubtypeCache();
   }
-
-  if (b.byteLength > 0) {
-    throw new Error('decode: Left-over bytes');
-  }
-
-  return output;
 }
 
 /**
