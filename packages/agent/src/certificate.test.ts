@@ -11,6 +11,12 @@ import { decodeTime } from './utils/leb';
 import { readFileSync } from 'fs';
 import path from 'path';
 import { IC_ROOT_KEY } from './agent';
+import {
+  CertificateHasTooManyDelegationsError,
+  CertificateNotAuthorizedError,
+  CertificateTimeError,
+  CertificateVerificationError,
+} from './errors';
 
 function label(str: string): ArrayBuffer {
   return new TextEncoder().encode(str);
@@ -416,7 +422,7 @@ test('delegation check fails for canisters outside of the subnet range', async (
         rootKey: fromHex(IC_ROOT_KEY),
         canisterId: canisterId,
       }),
-    ).rejects.toThrow(/Invalid certificate/);
+    ).rejects.toThrow(CertificateNotAuthorizedError);
   }
   await certificateFails(beforeRange);
   await certificateFails(afterRange);
@@ -438,7 +444,7 @@ test('certificate verification fails for an invalid signature', async () => {
       rootKey: fromHex(IC_ROOT_KEY),
       canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
     }),
-  ).rejects.toThrow('Invalid certificate');
+  ).rejects.toThrow(CertificateVerificationError);
 });
 
 test('certificate verification fails if the time of the certificate is > 5 minutes in the past', async () => {
@@ -454,7 +460,7 @@ test('certificate verification fails if the time of the certificate is > 5 minut
       canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
       blsVerify: async () => true,
     }),
-  ).rejects.toThrow('Invalid certificate: Certificate is signed more than 5 minutes in the past');
+  ).rejects.toThrow(CertificateTimeError);
 });
 
 test('certificate verification fails if the time of the certificate is > 5 minutes in the future', async () => {
@@ -470,7 +476,7 @@ test('certificate verification fails if the time of the certificate is > 5 minut
       canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
       blsVerify: async () => true,
     }),
-  ).rejects.toThrow('Invalid certificate: Certificate is signed more than 5 minutes in the future');
+  ).rejects.toThrow(CertificateTimeError);
 });
 
 test('certificate verification fails on nested delegations', async () => {
@@ -498,5 +504,5 @@ test('certificate verification fails on nested delegations', async () => {
       rootKey: fromHex(IC_ROOT_KEY),
       canisterId: canisterId,
     }),
-  ).rejects.toThrow('Invalid certificate: Delegation certificates cannot be nested');
+  ).rejects.toThrow(CertificateHasTooManyDelegationsError);
 });

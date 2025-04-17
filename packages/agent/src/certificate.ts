@@ -1,5 +1,15 @@
 import * as cbor from './cbor';
-import { AgentError } from './errors';
+import {
+  AgentError,
+  CertificateHasTooManyDelegationsError,
+  CertificateNotAuthorizedError,
+  CertificateTimeError,
+  CertificateVerificationError as CertificateVerificationErrorV2,
+  DerKeyLengthMismatchError,
+  DerPrefixMismatchError,
+  ErrorKind,
+  LookupError,
+} from './errors';
 import { hash } from './request_id';
 import { bufEquals, concat, fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
@@ -9,6 +19,7 @@ import { MANAGEMENT_CANISTER_ID } from './agent';
 
 /**
  * A certificate may fail verification with respect to the provided public key
+ * @todo remove this and rename `CertificateVerificationErrorV2` to `CertificateVerificationError`
  */
 export class CertificateVerificationError extends AgentError {
   constructor(reason: string) {
@@ -160,15 +171,14 @@ export class Certificate {
   #disableTimeVerification: boolean = false;
 
   /**
-   * Create a new instance of a certificate, automatically verifying it. Throws a
-   * CertificateVerificationError if the certificate cannot be verified.
+   * Create a new instance of a certificate, automatically verifying it.
    * @constructs  Certificate
    * @param {CreateCertificateOptions} options {@link CreateCertificateOptions}
    * @param {ArrayBuffer} options.certificate The bytes of the certificate
    * @param {ArrayBuffer} options.rootKey The root key to verify against
    * @param {Principal} options.canisterId The effective or signing canister ID
    * @param {number} options.maxAgeInMinutes The maximum age of the certificate in minutes. Default is 5 minutes.
-   * @throws {CertificateVerificationError}
+   * @throws if the certificate cannot be verified
    */
   public static async create(options: CreateCertificateOptions): Promise<Certificate> {
     const cert = Certificate.createUnverified(options);
@@ -225,7 +235,10 @@ export class Certificate {
     const lookupTime = lookupResultToBuffer(this.lookup(['time']));
     if (!lookupTime) {
       // Should never happen - time is always present in IC certificates
-      throw new CertificateVerificationError('Certificate does not contain a time');
+      throw new CertificateVerificationErrorV2(
+        'Certificate does not contain a time',
+        ErrorKind.Protocol,
+      );
     }
 
     // Certificate time verification checks
@@ -239,18 +252,24 @@ export class Certificate {
       const certTime = decodeTime(lookupTime);
 
       if (certTime.getTime() < earliestCertificateTime) {
-        throw new CertificateVerificationError(
-          `Certificate is signed more than ${this._maxAgeInMinutes} minutes in the past. Certificate time: ` +
-            certTime.toISOString() +
-            ' Current time: ' +
-            new Date(now).toISOString(),
+        throw new CertificateTimeError(
+          {
+            maxAgeInMinutes: this._maxAgeInMinutes,
+            certificateTime: certTime,
+            currentTime: new Date(now),
+            ageType: 'past',
+          },
+          ErrorKind.Trust,
         );
       } else if (certTime.getTime() > fiveMinutesFromNow) {
-        throw new CertificateVerificationError(
-          'Certificate is signed more than 5 minutes in the future. Certificate time: ' +
-            certTime.toISOString() +
-            ' Current time: ' +
-            new Date(now).toISOString(),
+        throw new CertificateTimeError(
+          {
+            maxAgeInMinutes: 5,
+            certificateTime: certTime,
+            currentTime: new Date(now),
+            ageType: 'future',
+          },
+          ErrorKind.Trust,
         );
       }
     }
@@ -262,7 +281,7 @@ export class Certificate {
       sigVer = false;
     }
     if (!sigVer) {
-      throw new CertificateVerificationError('Signature verification failed');
+      throw new CertificateVerificationErrorV2('Signature verification failed', ErrorKind.Trust);
     }
   }
 
@@ -271,7 +290,7 @@ export class Certificate {
       return this._rootKey;
     }
 
-    const cert: Certificate = await Certificate.createUnverified({
+    const cert = Certificate.createUnverified({
       certificate: d.certificate,
       rootKey: this._rootKey,
       canisterId: this._canisterId,
@@ -281,7 +300,7 @@ export class Certificate {
     });
 
     if (cert.cert.delegation) {
-      throw new CertificateVerificationError('Delegation certificates cannot be nested');
+      throw new CertificateHasTooManyDelegationsError(ErrorKind.Protocol);
     }
 
     await cert.verify();
@@ -293,10 +312,12 @@ export class Certificate {
         tree: cert.cert.tree,
       });
       if (!canisterInRange) {
-        throw new CertificateVerificationError(
-          `Canister ${this._canisterId} not in range of delegations for subnet 0x${toHex(
-            d.subnet_id,
-          )}`,
+        throw new CertificateNotAuthorizedError(
+          {
+            canisterId: this._canisterId,
+            subnetId: d.subnet_id,
+          },
+          ErrorKind.Trust,
         );
       }
     }
@@ -304,7 +325,10 @@ export class Certificate {
       cert.lookup(['subnet', d.subnet_id, 'public_key']),
     );
     if (!publicKeyLookup) {
-      throw new Error(`Could not find subnet key for subnet 0x${toHex(d.subnet_id)}`);
+      throw new LookupError(
+        `Could not find subnet key for subnet 0x${toHex(d.subnet_id)}`,
+        ErrorKind.Trust,
+      );
     }
     return publicKeyLookup;
   }
@@ -318,12 +342,22 @@ const KEY_LENGTH = 96;
 function extractDER(buf: ArrayBuffer): ArrayBuffer {
   const expectedLength = DER_PREFIX.byteLength + KEY_LENGTH;
   if (buf.byteLength !== expectedLength) {
-    throw new TypeError(`BLS DER-encoded public key must be ${expectedLength} bytes long`);
+    throw new DerKeyLengthMismatchError(
+      {
+        expectedLength,
+        actualLength: buf.byteLength,
+      },
+      ErrorKind.Protocol,
+    );
   }
   const prefix = buf.slice(0, DER_PREFIX.byteLength);
   if (!bufEquals(prefix, DER_PREFIX)) {
-    throw new TypeError(
-      `BLS DER-encoded public key is invalid. Expect the following prefix: ${DER_PREFIX}, but get ${prefix}`,
+    throw new DerPrefixMismatchError(
+      {
+        expectedPrefix: DER_PREFIX,
+        actualPrefix: prefix,
+      },
+      ErrorKind.Protocol,
     );
   }
 
@@ -625,7 +659,10 @@ export function check_canister_ranges(params: {
   const rangeLookup = lookup_path(['subnet', subnetId.toUint8Array(), 'canister_ranges'], tree);
 
   if (rangeLookup.status !== LookupStatus.Found || !(rangeLookup.value instanceof ArrayBuffer)) {
-    throw new Error(`Could not find canister ranges for subnet ${subnetId}`);
+    throw new LookupError(
+      `Could not find canister ranges for subnet ${subnetId.toText()}`,
+      ErrorKind.Protocol,
+    );
   }
 
   const ranges_arr: Array<[Uint8Array, Uint8Array]> = cbor.decode(rangeLookup.value);
