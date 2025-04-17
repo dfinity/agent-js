@@ -89,7 +89,6 @@ export const SECP256K1_OID = Uint8Array.from([
 /**
  * Wraps the given `payload` in a DER encoding tagged with the given encoded `oid` like so:
  * `SEQUENCE(oid, BITSTRING(payload))`
- *
  * @param payload The payload to encode as the bit string
  * @param oid The DER encoded (and SEQUENCE wrapped!) OID to tag the payload with
  */
@@ -122,7 +121,6 @@ export function wrapDER(payload: ArrayBuffer, oid: Uint8Array): Uint8Array {
  * Extracts a payload from the given `derEncoded` data, and checks that it was tagged with the given `oid`.
  *
  * `derEncoded = SEQUENCE(oid, BITSTRING(payload))`
- *
  * @param derEncoded The DER encoded and tagged data
  * @param oid The DER encoded (and SEQUENCE wrapped!) expected OID
  * @returns The unwrapped payload
