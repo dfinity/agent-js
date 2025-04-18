@@ -54,6 +54,11 @@ export interface PollingOptions {
   request?: ReadStateRequest;
 }
 
+export const DEFAULT_POLLING_OPTIONS: PollingOptions = {
+  strategy: defaultStrategy(),
+  preSignReadStateRequest: false,
+}
+
 /**
  * Check if an object has a property
  * @param value the object that might have the property

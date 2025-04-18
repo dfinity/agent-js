@@ -10,10 +10,10 @@ import {
 } from './agent';
 import { AgentError } from './errors';
 import { bufFromBufLike, IDL } from '@dfinity/candid';
-import { pollForResponse,  strategy, PollingOptions } from './polling';
+import { pollForResponse,  strategy, PollingOptions, DEFAULT_POLLING_OPTIONS } from './polling';
 import { Principal } from '@dfinity/principal';
 import { RequestId } from './request_id';
-import { toHex } from './utils/buffer';
+import { strToUtf8, toHex } from './utils/buffer';
 import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from './certificate';
 import managementCanisterIdl from './canisters/management_idl';
 import _SERVICE, { canister_install_mode, canister_settings } from './canisters/management_service';
@@ -138,6 +138,11 @@ export interface ActorConfig extends CallConfig {
    * Polyfill for BLS Certificate verification in case wasm is not supported
    */
   blsVerify?: CreateCertificateOptions['blsVerify'];
+
+  /**
+   * Polling options to use when making update calls. This will override the default DEFAULT_POLLING_OPTIONS.
+   */
+  pollingOptions?: PollingOptions;
 }
 
 // TODO: move this to proper typing when Candid support TypeScript.
@@ -455,11 +460,8 @@ function decodeReturnValue(types: IDL.Type[], msg: ArrayBuffer) {
 }
 
 const DEFAULT_ACTOR_CONFIG = {
-  pollingOptions: {
-    strategy: strategy.defaultStrategy(),
-    reuseReadStateSignatures: true,
-  },
-};
+  pollingOptions: DEFAULT_POLLING_OPTIONS,
+} satisfies Partial<ActorConfig>;
 
 export type ActorConstructor = new (config: ActorConfig) => ActorSubclass;
 
@@ -551,7 +553,7 @@ function _createActorMethod(
           canisterId: Principal.from(canisterId),
           blsVerify,
         });
-        const path = [encodeBuf('request_status'), requestId];
+        const path = [strToUtf8('request_status'), requestId];
         const status = new TextDecoder().decode(
           lookupResultToBuffer(certificate.lookup([...path, 'status'])),
         );
