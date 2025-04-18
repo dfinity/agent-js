@@ -1,5 +1,5 @@
 import { RequestId } from '../request_id';
-import { bufFromBufLike, toHex } from '../utils/buffer';
+import { bufFromBufLike, strToUtf8, toHex } from '../utils/buffer';
 import { CreateCertificateOptions, Certificate, lookupResultToBuffer } from '../certificate';
 import { Agent } from '../agent/api';
 import { Principal } from '@dfinity/principal';
@@ -18,7 +18,6 @@ export type PollStrategy = (
 ) => Promise<void>;
 
 export type PollStrategyFactory = () => PollStrategy;
-
 
 interface SignedReadStateRequestWithExpiry extends ReadStateRequest {
   body: {
@@ -101,7 +100,7 @@ function isSignedReadStateRequestWithExpiry(
  * @param agent The agent to use to poll read_state.
  * @param canisterId The effective canister ID.
  * @param requestId The Request ID to poll status for.
- * @param options - polling options to control behavior
+ * @param options polling options to control behavior
  */
 export async function pollForResponse(
   agent: Agent,
@@ -112,7 +111,7 @@ export async function pollForResponse(
   certificate: Certificate;
   reply: ArrayBuffer;
 }> {
-  const encode = (str: string) => bufFromBufLike(new TextEncoder().encode(str));
+  const encode = (str: string) => strToUtf8(str);
   const path = [encode('request_status'), requestId];
 
   // Determine if we should reuse the read state request or create a new one
@@ -138,7 +137,7 @@ export async function pollForResponse(
   const preSignReadStateRequest = options.preSignReadStateRequest ?? false;
   if (preSignReadStateRequest) {
     // If preSignReadStateRequest is true, we need to create a new request
-    currentRequest = options.request ?? (await constructRequest([path]));
+    currentRequest = await constructRequest([path]);  
     state = await agent.readState(canisterId, { paths: [path] }, undefined, currentRequest);
   } else {
     // If preSignReadStateRequest is false, we use the default strategy and sign the request each time

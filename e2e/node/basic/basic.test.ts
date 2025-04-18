@@ -11,7 +11,6 @@ import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import agent from '../utils/agent';
 import { test, expect } from 'vitest';
-import { strToUtf8 } from '@dfinity/agent/src';
 
 /**
  * Util for determining the default effective canister id, necessary for pocketic
@@ -55,7 +54,6 @@ test('read_state', async () => {
   expect(cert.lookup([strToUtf8('Time')])).toEqual({
     status: LookupStatus.Unknown,
   });
-  expect(cert.lookup([strToUtf8('Time')])).toEqual({ status: LookupStatus.Unknown });
 
   let rawTime = cert.lookup(path);
 
