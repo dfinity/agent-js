@@ -472,7 +472,6 @@ function _createActorMethod(
   func: IDL.FuncClass,
   blsVerify?: CreateCertificateOptions['blsVerify'],
 ): ActorMethod {
-  const encodeBuf = (str: string) => bufFromBufLike(new TextEncoder().encode(str));
   let caller: (options: CallConfig, ...args: unknown[]) => Promise<unknown>;
   if (func.annotations.includes('query') || func.annotations.includes('composite_query')) {
     caller = async (options, ...args) => {
