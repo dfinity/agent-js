@@ -1,4 +1,3 @@
-import { Buffer } from 'buffer/';
 import {
   Agent,
   HttpDetailsResponse,
@@ -11,10 +10,10 @@ import {
 } from './agent';
 import { AgentError } from './errors';
 import { bufFromBufLike, IDL } from '@dfinity/candid';
-import { pollForResponse, PollStrategyFactory, strategy } from './polling';
+import { pollForResponse, PollingOptions, DEFAULT_POLLING_OPTIONS } from './polling';
 import { Principal } from '@dfinity/principal';
 import { RequestId } from './request_id';
-import { toHex } from './utils/buffer';
+import { strToUtf8, toHex } from './utils/buffer';
 import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from './certificate';
 import managementCanisterIdl from './canisters/management_idl';
 import _SERVICE, { canister_install_mode, canister_settings } from './canisters/management_service';
@@ -93,10 +92,9 @@ export interface CallConfig {
   agent?: Agent;
 
   /**
-   * A polling strategy factory that dictates how much and often we should poll the
-   * read_state endpoint to get the result of an update call.
+   * Options for controlling polling behavior.
    */
-  pollingStrategyFactory?: PollStrategyFactory;
+  pollingOptions?: PollingOptions;
 
   /**
    * The canister ID of this Actor.
@@ -140,6 +138,11 @@ export interface ActorConfig extends CallConfig {
    * Polyfill for BLS Certificate verification in case wasm is not supported
    */
   blsVerify?: CreateCertificateOptions['blsVerify'];
+
+  /**
+   * Polling options to use when making update calls. This will override the default DEFAULT_POLLING_OPTIONS.
+   */
+  pollingOptions?: PollingOptions;
 }
 
 // TODO: move this to proper typing when Candid support TypeScript.
@@ -445,7 +448,7 @@ export class Actor {
 // produces an array. Ensure that functions with single or zero return
 // values behave as expected.
 function decodeReturnValue(types: IDL.Type[], msg: ArrayBuffer) {
-  const returnValues = IDL.decode(types, Buffer.from(msg));
+  const returnValues = IDL.decode(types, msg);
   switch (returnValues.length) {
     case 0:
       return undefined;
@@ -457,8 +460,8 @@ function decodeReturnValue(types: IDL.Type[], msg: ArrayBuffer) {
 }
 
 const DEFAULT_ACTOR_CONFIG = {
-  pollingStrategyFactory: strategy.defaultStrategy,
-};
+  pollingOptions: DEFAULT_POLLING_OPTIONS,
+} satisfies Partial<ActorConfig>;
 
 export type ActorConstructor = new (config: ActorConfig) => ActorSubclass;
 
@@ -522,7 +525,8 @@ function _createActorMethod(
       };
 
       const agent = options.agent || actor[metadataSymbol].config.agent || HttpAgent.createSync();
-      const { canisterId, effectiveCanisterId, pollingStrategyFactory } = {
+
+      const { canisterId, effectiveCanisterId, pollingOptions } = {
         ...DEFAULT_ACTOR_CONFIG,
         ...actor[metadataSymbol].config,
         ...options,
@@ -540,7 +544,7 @@ function _createActorMethod(
       let certificate: Certificate | undefined;
       if (response.body && (response.body as v3ResponseBody).certificate) {
         if (agent.rootKey == null) {
-          throw new Error('Agent is missing root key');
+          throw new AgentError('Agent root key not initialized before calling');
         }
         const cert = (response.body as v3ResponseBody).certificate;
         certificate = await Certificate.create({
@@ -549,7 +553,7 @@ function _createActorMethod(
           canisterId: Principal.from(canisterId),
           blsVerify,
         });
-        const path = [new TextEncoder().encode('request_status'), requestId];
+        const path = [strToUtf8('request_status'), requestId];
         const status = new TextDecoder().decode(
           lookupResultToBuffer(certificate.lookup([...path, 'status'])),
         );
@@ -566,12 +570,14 @@ function _createActorMethod(
             const rejectMessage = new TextDecoder().decode(
               lookupResultToBuffer(certificate.lookup([...path, 'reject_message']))!,
             );
+
             const error_code_buf = lookupResultToBuffer(
               certificate.lookup([...path, 'error_code']),
             );
             const error_code = error_code_buf
               ? new TextDecoder().decode(error_code_buf)
               : undefined;
+
             throw new UpdateCallRejectedError(
               cid,
               methodName,
@@ -583,7 +589,7 @@ function _createActorMethod(
             );
           }
         }
-      } else if (response.body && 'reject_message' in response.body) {
+      } else if (response.body && (response.body as v2ResponseBody).reject_code !== undefined) {
         // handle v2 response errors by throwing an UpdateCallRejectedError object
         const { reject_code, reject_message, error_code } = response.body as v2ResponseBody;
         throw new UpdateCallRejectedError(
@@ -599,9 +605,12 @@ function _createActorMethod(
 
       // Fall back to polling if we receive an Accepted response code
       if (response.status === 202) {
-        const pollStrategy = pollingStrategyFactory();
+        const pollOptions: PollingOptions = {
+          ...pollingOptions,
+          blsVerify,
+        };
         // Contains the certificate and the reply from the boundary node
-        const response = await pollForResponse(agent, ecid, requestId, pollStrategy, blsVerify);
+        const response = await pollForResponse(agent, ecid, requestId, pollOptions);
         certificate = response.certificate;
         reply = response.reply;
       }

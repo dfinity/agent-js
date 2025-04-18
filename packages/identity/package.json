@@ -64,7 +64,8 @@
     "jest": "^29.7.0",
     "size-limit": "^8.2.6",
     "text-encoding": "^0.7.0",
-    "typedoc": "^0.22.11",
+    "typedoc": "^0.28.2",
+    "typescript": "^5.8.3",
     "whatwg-fetch": "^3.0.0"
   },
   "size-limit": [

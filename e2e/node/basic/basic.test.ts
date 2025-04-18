@@ -3,7 +3,9 @@ import {
   Certificate,
   LookupResultFound,
   LookupStatus,
+  bufFromBufLike,
   getManagementCanister,
+  strToUtf8,
 } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
@@ -15,8 +17,8 @@ import { test, expect } from 'vitest';
  * @returns the default effective canister id
  */
 export async function getDefaultEffectiveCanisterId() {
-  const res = await fetch('http://localhost:4943/_/topology'); //?
-  const data = await res.json(); //?
+  const res = await fetch('http://localhost:4943/_/topology');
+  const data = await res.json();
   const id = data['default_effective_canister_id']['canister_id'];
   // decode from base64
   const decoded = Buffer.from(id, 'base64').toString('hex');
@@ -39,7 +41,7 @@ test('read_state', async () => {
   const ecid = await getDefaultEffectiveCanisterId();
   const resolvedAgent = await agent;
   const now = Date.now() / 1000;
-  const path = [new TextEncoder().encode('time')];
+  const path = [strToUtf8('time')];
   const response = await resolvedAgent.readState(ecid, {
     paths: [path],
   });
@@ -49,7 +51,7 @@ test('read_state', async () => {
     rootKey: resolvedAgent.rootKey,
     canisterId: ecid,
   });
-  expect(cert.lookup([new TextEncoder().encode('Time')])).toEqual({
+  expect(cert.lookup([strToUtf8('Time')])).toEqual({
     status: LookupStatus.Unknown,
   });
 
@@ -63,10 +65,12 @@ test('read_state', async () => {
 
   const decoded = IDL.decode(
     [IDL.Nat],
-    new Uint8Array([
-      ...new TextEncoder().encode('DIDL\x00\x01\x7d'),
-      ...(new Uint8Array(rawTime.value) || []),
-    ]),
+    bufFromBufLike(
+      new Uint8Array([
+        ...new TextEncoder().encode('DIDL\x00\x01\x7d'),
+        ...(new Uint8Array(rawTime.value) || []),
+      ]),
+    ),
   )[0];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const time = Number(decoded as any) / 1e9;
@@ -77,24 +81,17 @@ test('read_state', async () => {
 test('read_state with passed request', async () => {
   const resolvedAgent = await agent;
   const now = Date.now() / 1000;
-  const path = [new TextEncoder().encode('time')];
+  const path = [strToUtf8('time')];
   const canisterId = await getDefaultEffectiveCanisterId();
   const request = await resolvedAgent.createReadStateRequest({ paths: [path] });
-  const response = await resolvedAgent.readState(
-    canisterId,
-    {
-      paths: [path],
-    },
-    undefined,
-    request,
-  );
+  const response = await resolvedAgent.readState(canisterId, { paths: [path] }, undefined, request);
   if (resolvedAgent.rootKey == null) throw new Error(`The agent doesn't have a root key yet`);
   const cert = await Certificate.create({
     certificate: response.certificate,
     rootKey: resolvedAgent.rootKey,
     canisterId: canisterId,
   });
-  expect(cert.lookup([new TextEncoder().encode('Time')])).toEqual({
+  expect(cert.lookup([strToUtf8('Time')])).toEqual({
     status: LookupStatus.Unknown,
   });
 
@@ -108,10 +105,12 @@ test('read_state with passed request', async () => {
 
   const decoded = IDL.decode(
     [IDL.Nat],
-    new Uint8Array([
-      ...new TextEncoder().encode('DIDL\x00\x01\x7d'),
-      ...(new Uint8Array(rawTime.value) || []),
-    ]),
+    bufFromBufLike(
+      new Uint8Array([
+        ...new TextEncoder().encode('DIDL\x00\x01\x7d'),
+        ...(new Uint8Array(rawTime.value) || []),
+      ]),
+    ),
   )[0];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const time = Number(decoded as any) / 1e9;

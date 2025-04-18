@@ -120,6 +120,7 @@ async function _createCredential(
     getClientExtensionResults: creds.getClientExtensionResults,
     // Some password managers will return a Uint8Array, so we ensure we return an ArrayBuffer.
     rawId: bufFromBufLike(creds.rawId),
+    toJSON: creds.toJSON.bind(creds), // Ensure the toJSON method is included
   };
 }
 
@@ -167,7 +168,7 @@ export class WebAuthnIdentity extends SignIdentity {
     }
 
     // Parse the attestationObject as CBOR.
-    const attObject = borc.decodeFirst(new Uint8Array(response.attestationObject));
+    const attObject = borc.decodeFirst(bufFromBufLike(response.attestationObject));
 
     return new this(
       creds.rawId,

@@ -5,7 +5,7 @@ import { fromHexString } from '@dfinity/candid';
 import { Identity } from '../auth';
 import fetch from 'isomorphic-fetch';
 import { HttpAgent } from '../agent';
-import { fromHex, toHex } from '../utils/buffer';
+import { bufFromBufLike, fromHex, toHex } from '../utils/buffer';
 import * as Cert from '../certificate';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -32,9 +32,9 @@ jest.setSystemTime(certificateTime);
 // Utils
 const encoder = new TextEncoder();
 const encode = (arg: string): ArrayBuffer => {
-  return new DataView(encoder.encode(arg).buffer).buffer;
+  return bufFromBufLike(encoder.encode(arg).buffer);
 };
-const canisterBuffer = new DataView(testPrincipal.toUint8Array().buffer).buffer;
+const canisterBuffer = bufFromBufLike(testPrincipal.toUint8Array());
 
 /* Produced by deploying a dfx new canister and requesting
   | 'time'
@@ -62,7 +62,7 @@ const getRealStatus = async () => {
 
   const agent = new HttpAgent({ host: 'http://127.0.0.1:4943', fetch, identity });
   await agent.fetchRootKey();
-  const canisterBuffer = new DataView(testPrincipal.toUint8Array().buffer).buffer;
+  const canisterBuffer = bufFromBufLike(testPrincipal.toUint8Array().buffer);
   const response = await agent.readState(
     testPrincipal,
     // Note: subnet is not currently working due to a bug
@@ -74,7 +74,6 @@ const getRealStatus = async () => {
         encodePath('candid', testPrincipal),
       ],
     },
-    identity,
   );
   console.log(toHex(response.certificate));
 };
@@ -115,14 +114,14 @@ describe('Canister Status utility', () => {
     const status = await getStatus([
       {
         key: 'time',
-        path: [new DataView(new TextEncoder().encode('time').buffer).buffer],
+        path: [encode('time')],
         decodeStrategy: 'leb128',
       },
     ]);
     const statusRaw = await getStatus([
       {
         key: 'time',
-        path: [new DataView(new TextEncoder().encode('time').buffer).buffer],
+        path: [encode('time')],
         decodeStrategy: 'raw',
       },
     ]);
@@ -137,7 +136,7 @@ describe('Canister Status utility', () => {
     const statusHex = await getStatus([
       {
         key: 'time',
-        path: [new DataView(new TextEncoder().encode('time').buffer).buffer],
+        path: [encode('time')],
         decodeStrategy: 'hex',
       },
     ]);
@@ -188,7 +187,7 @@ describe('Canister Status utility', () => {
       'subnet',
       {
         key: 'asdf',
-        path: [new DataView(new TextEncoder().encode('asdf').buffer).buffer],
+        path: [encode('asdf')],
         decodeStrategy: 'hex',
       },
     ]);
