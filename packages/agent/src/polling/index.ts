@@ -1,5 +1,5 @@
 import { RequestId } from '../request_id';
-import { bufFromBufLike, strToUtf8, toHex } from '../utils/buffer';
+import { strToUtf8, toHex } from '../utils/buffer';
 import { CreateCertificateOptions, Certificate, lookupResultToBuffer } from '../certificate';
 import { Agent } from '../agent/api';
 import { Principal } from '@dfinity/principal';
