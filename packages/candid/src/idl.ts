@@ -576,7 +576,7 @@ export class NatClass extends PrimitiveType<bigint> {
  * Represents an IDL Float
  */
 export class FloatClass extends PrimitiveType<number> {
-  constructor(private _bits: number) {
+  constructor(public readonly _bits: number) {
     super();
     if (_bits !== 32 && _bits !== 64) {
       throw new Error('not a valid float type');
@@ -755,7 +755,7 @@ export class VecClass<T> extends ConstructType<T[]> {
   // to be backward compatible.
   private _blobOptimization = false;
 
-  constructor(protected _type: Type<T>) {
+  constructor(public _type: Type<T>) {
     super();
     if (_type instanceof FixedNatClass && _type._bits === 8) {
       this._blobOptimization = true;
@@ -879,7 +879,7 @@ export class VecClass<T> extends ConstructType<T[]> {
  * @param {Type} t
  */
 export class OptClass<T> extends ConstructType<[T] | []> {
-  constructor(protected _type: Type<T>) {
+  constructor(public _type: Type<T>) {
     super();
   }
 
@@ -1006,7 +1006,7 @@ export class OptClass<T> extends ConstructType<[T] | []> {
  * @param {object} [fields] - mapping of function name to Type
  */
 export class RecordClass extends ConstructType<Record<string, any>> {
-  protected readonly _fields: Array<[string, Type]>;
+  public readonly _fields: Array<[string, Type]>;
 
   constructor(fields: Record<string, Type> = {}) {
     super();
@@ -1120,6 +1120,14 @@ export class RecordClass extends ConstructType<Record<string, any>> {
     return x;
   }
 
+  get fieldsAsObject(): Record<string, Type> {
+    const fields: Record<string, Type> = {};
+    for (const [name, ty] of this._fields) {
+      fields[name] = ty;
+    }
+    return fields;
+  }
+
   get name() {
     const fields = this._fields.map(([key, value]) => key + ':' + value.name);
     return `record {${fields.join('; ')}}`;
@@ -1215,7 +1223,7 @@ export class TupleClass<T extends any[]> extends RecordClass {
  * @param {object} [fields] - mapping of function name to Type
  */
 export class VariantClass extends ConstructType<Record<string, any>> {
-  private readonly _fields: Array<[string, Type]>;
+  public readonly _fields: Array<[string, Type]>;
 
   constructor(fields: Record<string, Type> = {}) {
     super();
@@ -1314,6 +1322,14 @@ export class VariantClass extends ConstructType<Record<string, any>> {
       }
     }
     throw new Error('Variant has no data: ' + x);
+  }
+
+  get alternativesAsObject(): Record<string, Type> {
+    const alternatives: Record<string, Type> = {};
+    for (const [name, ty] of this._fields) {
+      alternatives[name] = ty;
+    }
+    return alternatives;
   }
 }
 
@@ -1486,7 +1502,13 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
     T.add(this, concat(opCode, argLen, args, retLen, rets, annLen, anns));
   }
 
-  public decodeValue(b: Pipe): [PrincipalId, string] {
+  public decodeValue(b: Pipe, t: Type): [PrincipalId, string] {
+    const tt = t instanceof RecClass ? t.getType() ?? t : t;
+    if (!subtype(tt, this)) {
+      throw new Error(
+        `Cannot decode function reference at type ${this.display()} from wire type ${tt.display()}`,
+      );
+    }
     const x = safeReadUint8(b);
     if (x !== 1) {
       throw new Error('Cannot decode function reference');
@@ -1573,7 +1595,13 @@ export class ServiceClass extends ConstructType<PrincipalId> {
     T.add(this, concat(opCode, len, ...meths));
   }
 
-  public decodeValue(b: Pipe): PrincipalId {
+  public decodeValue(b: Pipe, t: Type): PrincipalId {
+    const tt = t instanceof RecClass ? t.getType() ?? t : t;
+    if (!subtype(tt, this)) {
+      throw new Error(
+        `Cannot decode service reference at type ${this.display()} from wire type ${tt.display()}`,
+      );
+    }
     return decodePrincipalId(b);
   }
   get name() {
@@ -1583,6 +1611,14 @@ export class ServiceClass extends ConstructType<PrincipalId> {
 
   public valueToString(x: PrincipalId) {
     return `service "${x.toText()}"`;
+  }
+
+  public fieldsAsObject() {
+    const fields: Record<string, Type> = {};
+    for (const [name, ty] of this._fields) {
+      fields[name] = ty;
+    }
+    return fields;
   }
 }
 
@@ -1878,21 +1914,26 @@ export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
     }
   });
 
+  resetSubtypeCache();
   const types = rawTypes.map(t => getType(t));
-  const output = retTypes.map((t, i) => {
-    return t.decodeValue(b, types[i]);
-  });
+  try {
+    const output = retTypes.map((t, i) => {
+      return t.decodeValue(b, types[i]);
+    });
 
-  // skip unused values
-  for (let ind = retTypes.length; ind < types.length; ind++) {
-    types[ind].decodeValue(b, types[ind]);
+    // skip unused values
+    for (let ind = retTypes.length; ind < types.length; ind++) {
+      types[ind].decodeValue(b, types[ind]);
+    }
+
+    if (b.byteLength > 0) {
+      throw new Error('decode: Left-over bytes');
+    }
+
+    return output;
+  } finally {
+    resetSubtypeCache();
   }
-
-  if (b.byteLength > 0) {
-    throw new Error('decode: Left-over bytes');
-  }
-
-  return output;
 }
 
 /**
@@ -2031,4 +2072,175 @@ export function Func(args: Type[], ret: Type[], annotations: string[] = []): Fun
  */
 export function Service(t: Record<string, FuncClass>): ServiceClass {
   return new ServiceClass(t);
+}
+
+/**
+ * The list of relations between types we assume to hold. Uses the types .name property as key
+ */
+class Relations {
+  private rels: Map<string, Map<string, boolean>>;
+
+  constructor(relations = new Map()) {
+    this.rels = relations;
+  }
+
+  copy(): Relations {
+    const copy = new Map();
+    for (const [key, value] of this.rels.entries()) {
+      const valCopy = new Map(value);
+      copy.set(key, valCopy);
+    }
+    return new Relations(copy);
+  }
+
+  /// Returns whether we know for sure that a relation holds or doesn't (`true` or `false`), or
+  /// if we don't know yet (`undefined`)
+  known(t1: Type, t2: Type): boolean | undefined {
+    return this.rels.get(t1.name)?.get(t2.name);
+  }
+
+  addNegative(t1: Type, t2: Type) {
+    this.addNames(t1.name, t2.name, false);
+  }
+
+  add(t1: Type, t2: Type) {
+    this.addNames(t1.name, t2.name, true);
+  }
+
+  display(): string {
+    let result = '';
+    for (const [t1, v] of this.rels) {
+      for (const [t2, known] of v) {
+        const subty = known ? ':<' : '!<:';
+        result += `${t1} ${subty} ${t2}\n`;
+      }
+    }
+    return result;
+  }
+
+  private addNames(t1: string, t2: string, isSubtype: boolean) {
+    const t1Map = this.rels.get(t1);
+    if (t1Map == undefined) {
+      const newMap = new Map();
+      newMap.set(t2, isSubtype);
+      this.rels.set(t1, newMap);
+    } else {
+      t1Map.set(t2, isSubtype);
+    }
+  }
+}
+
+/// `subtypeCache` holds subtyping relations we've previously computed while decoding a message
+let subtypeCache: Relations = new Relations();
+
+/** Resets the global subtyping cache */
+export function resetSubtypeCache() {
+  subtypeCache = new Relations();
+}
+
+function eqFunctionAnnotations(t1: FuncClass, t2: FuncClass): boolean {
+  const t1Annotations = new Set(t1.annotations);
+  const t2Annotations = new Set(t2.annotations);
+  if (t1Annotations.size !== t2Annotations.size) {
+    return false;
+  }
+  for (const a of t1Annotations) {
+    if (!t2Annotations.has(a)) return false;
+  }
+  return true;
+}
+
+function canBeOmmitted(t: Type) {
+  return t instanceof OptClass || t instanceof NullClass || t instanceof ReservedClass;
+}
+
+/**
+ * Subtyping on Candid types t1 <: t2 (Exported for testing)
+ * @param t1 The potential subtype
+ * @param t2 The potential supertype
+ */
+export function subtype(t1: Type, t2: Type): boolean {
+  const relations = subtypeCache.copy();
+  const isSubtype = subtype_(relations, t1, t2);
+  if (isSubtype) {
+    subtypeCache.add(t1, t2);
+  } else {
+    subtypeCache.addNegative(t1, t2);
+  }
+  return isSubtype;
+}
+
+function subtype_(relations: Relations, t1: Type, t2: Type): boolean {
+  if (t1.name === t2.name) return true;
+  const known = relations.known(t1, t2);
+  if (known !== undefined) return known;
+  relations.add(t1, t2);
+
+  if (t2 instanceof ReservedClass) return true;
+  if (t1 instanceof EmptyClass) return true;
+  if (t1 instanceof NatClass && t2 instanceof IntClass) return true;
+  if (t1 instanceof VecClass && t2 instanceof VecClass)
+    return subtype_(relations, t1._type, t2._type);
+  if (t2 instanceof OptClass) return true;
+  if (t1 instanceof RecordClass && t2 instanceof RecordClass) {
+    const t1Object = t1.fieldsAsObject;
+    for (const [name, ty2] of t2._fields) {
+      const ty1 = t1Object[name];
+      if (!ty1) {
+        if (!canBeOmmitted(ty2)) return false;
+      } else {
+        if (!subtype_(relations, ty1, ty2)) return false;
+      }
+    }
+    return true;
+  }
+
+  if (t1 instanceof FuncClass && t2 instanceof FuncClass) {
+    if (!eqFunctionAnnotations(t1, t2)) return false;
+    for (let i = 0; i < t1.argTypes.length; i++) {
+      const argTy1 = t1.argTypes[i];
+      if (i < t2.argTypes.length) {
+        if (!subtype_(relations, t2.argTypes[i], argTy1)) return false;
+      } else {
+        if (!canBeOmmitted(argTy1)) return false;
+      }
+    }
+    for (let i = 0; i < t2.retTypes.length; i++) {
+      const retTy2 = t2.retTypes[i];
+      if (i < t1.retTypes.length) {
+        if (!subtype_(relations, t1.retTypes[i], retTy2)) return false;
+      } else {
+        if (!canBeOmmitted(retTy2)) return false;
+      }
+    }
+    return true;
+  }
+
+  if (t1 instanceof VariantClass && t2 instanceof VariantClass) {
+    const t2Object = t2.alternativesAsObject;
+    for (const [name, ty1] of t1._fields) {
+      const ty2 = t2Object[name];
+      if (!ty2) return false;
+      if (!subtype_(relations, ty1, ty2)) return false;
+    }
+    return true;
+  }
+
+  if (t1 instanceof ServiceClass && t2 instanceof ServiceClass) {
+    const t1Object = t1.fieldsAsObject();
+    for (const [name, ty2] of t2._fields) {
+      const ty1 = t1Object[name];
+      if (!ty1) return false;
+      if (!subtype_(relations, ty1, ty2)) return false;
+    }
+    return true;
+  }
+
+  if (t1 instanceof RecClass) {
+    return subtype_(relations, t1.getType()!, t2);
+  }
+  if (t2 instanceof RecClass) {
+    return subtype_(relations, t1, t2.getType()!);
+  }
+  return false;
 }

@@ -16,6 +16,10 @@ function testDecode(typ: IDL.Type, val: any, hex: string, _str: string) {
   expect(IDL.decode([typ], fromHexString(hex))[0]).toEqual(val);
 }
 
+function testDecodeFail(typ: IDL.Type, hex: string, _str: string) {
+  expect(() => IDL.decode([typ], fromHexString(hex))[0]).toThrow();
+}
+
 function test_(typ: IDL.Type, val: any, hex: string, str: string) {
   testEncode(typ, val, hex, str);
   testDecode(typ, val, hex, str);
@@ -361,7 +365,8 @@ test('IDL encoding (service)', () => {
   testDecode(
     IDL.Service({ foo: IDL.Func([IDL.Text], [IDL.Nat], []) }),
     Principal.fromText('w7x7r-cok77-xa'),
-    '4449444c02690103666f6f016a0171017d0001010103caffee',
+    // didc encode -t "(service { foo : (text) -> (nat) })" "(service \"w7x7r-cok77-xa\")"
+    '4449444c02690103666f6f016a0171017d0001000103caffee',
     'service',
   );
   test_(
@@ -926,5 +931,247 @@ describe('IDL opt edge cases (embedded)', () => {
       // Motoko: {a = 1; b = "abc"} : {a : Nat; b : Text }
       'opt expected, wire type non-opt, other type - defaulting',
     );
+  });
+});
+
+function testSub(t1: IDL.Type, t2: IDL.Type) {
+  it(`${t1.display()} <: ${t2.display()}`, () => {
+    IDL.resetSubtypeCache();
+    expect(IDL.subtype(t1, t2)).toEqual(true);
+  });
+}
+
+function testSubFail(t1: IDL.Type, t2: IDL.Type) {
+  it(`not ${t1.display()} <: ${t2.display()}`, () => {
+    IDL.resetSubtypeCache();
+    expect(IDL.subtype(t1, t2)).toEqual(false);
+  });
+}
+
+function testReflexive(t: IDL.Type) {
+  testSub(t, t);
+}
+
+describe('IDL subtyping', () => {
+  describe('Subtyping is reflexive', () => {
+    testReflexive(IDL.Bool);
+    testReflexive(IDL.Empty);
+    testReflexive(IDL.Null);
+    testReflexive(IDL.Principal);
+    testReflexive(IDL.Reserved);
+    testReflexive(IDL.Text);
+    testReflexive(IDL.Unknown);
+
+    testReflexive(IDL.Nat);
+    testReflexive(IDL.Nat8);
+    testReflexive(IDL.Nat16);
+    testReflexive(IDL.Nat32);
+    testReflexive(IDL.Nat64);
+
+    testReflexive(IDL.Int);
+    testReflexive(IDL.Int8);
+    testReflexive(IDL.Int16);
+    testReflexive(IDL.Int32);
+    testReflexive(IDL.Int64);
+
+    testReflexive(IDL.Float32);
+    testReflexive(IDL.Float64);
+  });
+
+  describe('Subtyping on Vecs', () => {
+    testReflexive(IDL.Vec(IDL.Nat));
+    testSub(IDL.Vec(IDL.Nat), IDL.Vec(IDL.Int));
+    testSubFail(IDL.Vec(IDL.Int), IDL.Vec(IDL.Nat));
+  });
+
+  describe('Subtyping on Options', () => {
+    // Because of some of the more "special" rules around Option types
+    // it turns out _any_ type is a subtype of _any_ optional type
+    testReflexive(IDL.Opt(IDL.Nat));
+    testSub(IDL.Opt(IDL.Nat), IDL.Opt(IDL.Int));
+    testSub(IDL.Opt(IDL.Int), IDL.Opt(IDL.Nat));
+    testSub(IDL.Nat, IDL.Opt(IDL.Int));
+    testSub(IDL.Opt(IDL.Nat), IDL.Opt(IDL.Opt(IDL.Int)));
+  });
+
+  describe('Subtyping on Records', () => {
+    testReflexive(IDL.Record({}));
+    testReflexive(IDL.Record({ a: IDL.Nat }));
+
+    // Subtyping on individual fields
+    testSub(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Int }));
+    testSubFail(IDL.Record({ a: IDL.Int }), IDL.Record({ a: IDL.Nat }));
+
+    // Width subtyping
+    testSub(IDL.Record({ a: IDL.Nat, b: IDL.Nat }), IDL.Record({ a: IDL.Nat }));
+    testSubFail(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Nat, b: IDL.Nat }));
+
+    // Opt, Null, or Reserved fields are allowed to be missing
+    testSub(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Nat, b: IDL.Opt(IDL.Nat) }));
+    testSub(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Nat, b: IDL.Null }));
+    testSub(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Nat, b: IDL.Reserved }));
+  });
+
+  describe('Subtyping on Functions', () => {
+    testReflexive(IDL.Func([], []));
+    testReflexive(IDL.Func([IDL.Nat], [IDL.Int]));
+
+    // Arg types are contravariant
+    testSub(IDL.Func([IDL.Int], []), IDL.Func([IDL.Nat], []));
+    // Trailing arguments are allowed to be missing on the incoming type
+    testSub(IDL.Func([IDL.Int], []), IDL.Func([IDL.Nat, IDL.Nat], []));
+    // Trailing arguments are allowed to be missing if they are opt/null/reserved on the expected type
+    testSub(IDL.Func([IDL.Int, IDL.Opt(IDL.Nat)], []), IDL.Func([IDL.Nat], []));
+    testSub(IDL.Func([IDL.Int, IDL.Null], []), IDL.Func([IDL.Nat], []));
+    testSub(IDL.Func([IDL.Int, IDL.Reserved], []), IDL.Func([IDL.Nat], []));
+    // Non-opt/null/reserved arguments are not allowed to be missing on the expected type
+    testSubFail(IDL.Func([IDL.Nat, IDL.Nat], []), IDL.Func([IDL.Nat], []));
+
+    // Return types are covariant
+    testSub(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int]));
+    // Trailing results are allowed to be missing on the expected type
+    testSub(IDL.Func([], [IDL.Nat, IDL.Nat]), IDL.Func([], [IDL.Int]));
+    // Trailing results are allowed to be missing if they are opt/null/reserved on the expected type
+    testSub(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int, IDL.Opt(IDL.Int)]));
+    testSub(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int, IDL.Null]));
+    testSub(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int, IDL.Reserved]));
+    // Non-opt/null/reserved results are not allowed to be missing on the expected type
+    testSubFail(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int, IDL.Int]));
+  });
+
+  describe('Subtyping on variants', () => {
+    testReflexive(IDL.Variant({}));
+    testReflexive(IDL.Variant({ a: IDL.Nat }));
+
+    // Subtyping on individual alternatives happens pointwise
+    testSub(IDL.Variant({ a: IDL.Nat }), IDL.Variant({ a: IDL.Int }));
+    testSubFail(IDL.Variant({ a: IDL.Int }), IDL.Variant({ a: IDL.Nat }));
+
+    // Width subtyping
+    testSub(IDL.Variant({ a: IDL.Nat }), IDL.Variant({ a: IDL.Nat, b: IDL.Nat }));
+    testSubFail(IDL.Variant({ a: IDL.Nat, b: IDL.Nat }), IDL.Variant({ a: IDL.Nat }));
+  });
+
+  describe('Subtyping on services', () => {
+    testReflexive(IDL.Service({}));
+    testReflexive(IDL.Service({ f: IDL.Func([], []) }));
+
+    // Subtyping on service methods happens pointwise
+    testSub(
+      IDL.Service({ f: IDL.Func([IDL.Int], [IDL.Nat]) }),
+      IDL.Service({ f: IDL.Func([IDL.Nat], [IDL.Int]) }),
+    );
+    testSubFail(
+      IDL.Service({ f: IDL.Func([IDL.Nat], [IDL.Int]) }),
+      IDL.Service({ f: IDL.Func([IDL.Int], [IDL.Nat]) }),
+    );
+
+    // Width subtyping
+    testSub(
+      IDL.Service({ f: IDL.Func([], []), g: IDL.Func([], []) }),
+      IDL.Service({ f: IDL.Func([], []) }),
+    );
+    testSubFail(
+      IDL.Service({ f: IDL.Func([], []) }),
+      IDL.Service({ f: IDL.Func([], []), g: IDL.Func([], []) }),
+    );
+  });
+
+  describe('Subtyping on recursive types', () => {
+    const IntList = IDL.Rec();
+    IntList.fill(IDL.Opt(IDL.Record({ head: IDL.Int, tail: IntList })));
+    const NatList = IDL.Rec();
+    NatList.fill(IDL.Opt(IDL.Record({ head: IDL.Nat, tail: NatList })));
+    testSub(NatList, IntList);
+
+    const Even = IDL.Rec();
+    const Odd = IDL.Rec();
+    Even.fill(IDL.Tuple(Odd));
+    Odd.fill(IDL.Tuple(Even));
+
+    testSub(IDL.Tuple(Even), Odd);
+    testSub(IDL.Tuple(IDL.Tuple(Odd)), Odd);
+  });
+
+  describe('decoding function/service references', () => {
+    const principal = Principal.fromText('w7x7r-cok77-xa');
+    it('checks subtyping when decoding function references', () => {
+      testDecode(
+        IDL.Func([IDL.Int], [IDL.Nat]),
+        [principal, 'myFunc'],
+        // didc encode -t "(func (int) -> (nat))" "(func \"w7x7r-cok77-xa\" . \"myFunc\")"
+        `4449444c016a017c017d000100010103caffee066d7946756e63`,
+        'expects subtyping check to succeed',
+      );
+
+      testDecode(
+        IDL.Opt(IDL.Func([IDL.Int], [IDL.Nat])),
+        [],
+        // didc encode -t "(opt func (nat) -> (nat))" "(opt func \"w7x7r-cok77-xa\" . \"myFunc\")"
+        `4449444c026e016a017d017d00010001010103caffee066d7946756e63`,
+        'expects failed subtype check under option to default to null',
+      );
+
+      testDecode(
+        IDL.Record({
+          optF: IDL.Opt(IDL.Func([IDL.Int], [IDL.Nat])),
+        }),
+        { optF: [] },
+        // didc encode -t "(record { optF : func (nat) -> (nat) })" "(record { optF = func \"w7x7r-cok77-xa\" . \"myFunc\" })"
+        `4449444c026c01b3a1d0cd04016a017d017d000100010103caffee066d7946756e63`,
+        'expects failed subtype check under option to default to null',
+      );
+
+      testDecodeFail(
+        IDL.Func([IDL.Int], [IDL.Nat]),
+        // didc encode -t "(func (nat) -> (nat))" "(func \"w7x7r-cok77-xa\" . \"myFunc\")"
+        `4449444c016a017d017d000100010103caffee066d7946756e63`,
+        'expects subtyping check to fail',
+      );
+    });
+    it('checks subtyping when decoding service references', () => {
+      testDecode(
+        IDL.Service({
+          f: IDL.Func([IDL.Int], [IDL.Nat]),
+        }),
+        principal,
+        // didc encode -t "(service { f : (int) -> (nat) })" "(service \"w7x7r-cok77-xa\")"
+        `4449444c0269010166016a017c017d0001000103caffee`,
+        'expects subtyping check to succeed',
+      );
+
+      testDecode(
+        IDL.Opt(
+          IDL.Service({
+            f: IDL.Func([IDL.Int], [IDL.Nat]),
+          }),
+        ),
+        [],
+        // didc encode -t "(service { f : (nat) -> (nat) })" "(service \"w7x7r-cok77-xa\")"
+        `4449444c0269010166016a017d017d0001000103caffee`,
+        'expects subtyping check to fail',
+      );
+
+      testDecode(
+        IDL.Opt(
+          IDL.Service({
+            f: IDL.Func([IDL.Int], [IDL.Nat]),
+          }),
+        ),
+        [],
+        // didc encode -t "(opt service { f : (nat) -> (nat) })" "(opt service \"w7x7r-cok77-xa\")"
+        `4449444c036e0169010166026a017d017d000100010103caffee`,
+        'expects subtyping check to fail',
+      );
+
+      testDecodeFail(
+        IDL.Service({
+          f: IDL.Func([IDL.Int], [IDL.Nat]),
+        }),
+        // didc encode -t "(service { f : (nat) -> (nat) })" "(service \"w7x7r-cok77-xa\")"
+        `4449444c0269010166016a017d017d0001000103caffee`,
+        'expects subtyping check to fail',
+      );
+    });
   });
 });
