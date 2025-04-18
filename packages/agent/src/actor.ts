@@ -10,7 +10,7 @@ import {
 } from './agent';
 import { AgentError } from './errors';
 import { bufFromBufLike, IDL } from '@dfinity/candid';
-import { pollForResponse,  strategy, PollingOptions, DEFAULT_POLLING_OPTIONS } from './polling';
+import { pollForResponse, PollingOptions, DEFAULT_POLLING_OPTIONS } from './polling';
 import { Principal } from '@dfinity/principal';
 import { RequestId } from './request_id';
 import { strToUtf8, toHex } from './utils/buffer';
