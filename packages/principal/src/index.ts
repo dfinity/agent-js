@@ -87,7 +87,18 @@ export class Principal {
 
   public readonly _isPrincipal = true;
 
-  protected constructor(private _arr: Uint8Array) {}
+  protected constructor(private _arr: Uint8Array) {
+    if (this._arr.length === 0) {
+      throw new Error('Principal cannot be empty');
+    }
+    if(!(_arr instanceof Uint8Array)) {
+      try {
+        this._arr = new Uint8Array(_arr);
+      } catch (error) {
+        throw new Error('Principal must be a Uint8Array. Provided value is not a Uint8Array. ' + error);
+      }
+    }
+  }
 
   public isAnonymous(): boolean {
     return this._arr.byteLength === 1 && this._arr[0] === ANONYMOUS_SUFFIX;
@@ -107,8 +118,7 @@ export class Principal {
     view.setUint32(0, getCrc32(this._arr));
     const checksum = new Uint8Array(checksumArrayBuf);
 
-    const bytes = Uint8Array.from(this._arr);
-    const array = new Uint8Array([...checksum, ...bytes]);
+    const array = new Uint8Array([...checksum, ...this._arr]);
 
     const result = encode(array);
     const matches = result.match(/.{1,5}/g);
