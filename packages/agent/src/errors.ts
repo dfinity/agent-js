@@ -7,6 +7,7 @@ import {
 } from './agent/api';
 import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
+import { RequestStatusResponseStatus } from './agent/http';
 
 export enum ErrorKind {
   Trust = 'Trust',
@@ -317,6 +318,39 @@ export class HexDecodeError extends AgentErrorV2 {
   constructor(options: { error: string }, kind: ErrorKind) {
     super(new HexDecodeErrorCode(options.error), kind);
     Object.setPrototypeOf(this, HexDecodeError.prototype);
+  }
+}
+
+class TimeoutWaitingForResponseErrorCode implements ErrorCode {
+  constructor(
+    public readonly message: string,
+    public readonly requestId: RequestId,
+    public readonly status: RequestStatusResponseStatus,
+  ) {
+    Object.setPrototypeOf(this, TimeoutWaitingForResponseErrorCode.prototype);
+  }
+
+  public toString(): string {
+    return (
+      `${this.message}:\n` +
+      `  Request ID: ${toHex(this.requestId)}\n` +
+      `  Request status: ${this.status}\n`
+    );
+  }
+}
+
+export class TimeoutWaitingForResponseError extends AgentErrorV2 {
+  public name = 'TimeoutWaitingForResponseError';
+
+  constructor(
+    options: { message: string; requestId: RequestId; status: RequestStatusResponseStatus },
+    kind: ErrorKind,
+  ) {
+    super(
+      new TimeoutWaitingForResponseErrorCode(options.message, options.requestId, options.status),
+      kind,
+    );
+    Object.setPrototypeOf(this, TimeoutWaitingForResponseError.prototype);
   }
 }
 

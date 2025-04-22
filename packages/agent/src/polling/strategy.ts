@@ -1,8 +1,8 @@
 import { Principal } from '@dfinity/principal';
 import { RequestStatusResponseStatus } from '../agent';
-import { toHex } from '../utils/buffer';
 import { PollStrategy } from './index';
 import { RequestId } from '../request_id';
+import { ErrorKind, TimeoutWaitingForResponseError } from '../errors';
 
 export type Predicate<T> = (
   canisterId: Principal,
@@ -63,10 +63,13 @@ export function maxAttempts(count: number): PollStrategy {
     status: RequestStatusResponseStatus,
   ) => {
     if (--attempts <= 0) {
-      throw new Error(
-        `Failed to retrieve a reply for request after ${count} attempts:\n` +
-          `  Request ID: ${toHex(requestId)}\n` +
-          `  Request status: ${status}\n`,
+      throw new TimeoutWaitingForResponseError(
+        {
+          message: `Failed to retrieve a reply for request after ${count} attempts`,
+          requestId,
+          status,
+        },
+        ErrorKind.Protocol,
       );
     }
   };
@@ -92,10 +95,9 @@ export function timeout(timeInMsec: number): PollStrategy {
     status: RequestStatusResponseStatus,
   ) => {
     if (Date.now() > end) {
-      throw new Error(
-        `Request timed out after ${timeInMsec} msec:\n` +
-          `  Request ID: ${toHex(requestId)}\n` +
-          `  Request status: ${status}\n`,
+      throw new TimeoutWaitingForResponseError(
+        { message: `Request timed out after ${timeInMsec} msec`, requestId, status },
+        ErrorKind.Protocol,
       );
     }
   };
