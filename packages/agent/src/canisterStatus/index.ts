@@ -10,6 +10,10 @@ import {
   ProtocolError,
   TrustError,
   AgentErrorV2,
+  UnknownError,
+  HashTreeDecodeErrorCode,
+  UnexpectedErrorCode,
+  InputError,
 } from '../errors';
 import { HttpAgent } from '../agent/http';
 import {
@@ -272,7 +276,7 @@ export const fetchNodeKeys = (
   root_key?: ArrayBuffer | Uint8Array,
 ): SubnetStatus => {
   if (!canisterId._isPrincipal) {
-    throw new Error('Invalid canisterId');
+    throw InputError.fromCode(new UnexpectedErrorCode('Invalid canisterId'));
   }
   const cert = Cbor.decode(new Uint8Array(certificate)) as Cert;
   const tree = cert.tree;
@@ -315,7 +319,7 @@ export const fetchNodeKeys = (
     throw ProtocolError.fromCode(new LookupErrorCode('Node not found'));
   }
   if (subnetLookupResult.value instanceof ArrayBuffer) {
-    throw new Error('Invalid node tree');
+    throw UnknownError.fromCode(new HashTreeDecodeErrorCode('Invalid node tree'));
   }
 
   const nodeForks = flatten_forks(subnetLookupResult.value);
@@ -379,8 +383,10 @@ export const encodePath = (path: Path, canisterId: Principal): ArrayBuffer[] => 
       }
     }
   }
-  throw new Error(
-    `An unexpected error was encountered while encoding your path for canister status. Please ensure that your path ${path} was formatted correctly.`,
+  throw UnknownError.fromCode(
+    new UnexpectedErrorCode(
+      `Error while encoding your path for canister status. Please ensure that your path ${path} was formatted correctly.`,
+    ),
   );
 };
 

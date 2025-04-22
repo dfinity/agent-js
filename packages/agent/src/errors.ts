@@ -8,6 +8,7 @@ import {
 import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
 import { RequestStatusResponseStatus } from './agent/http';
+import { HttpHeaderField } from './agent/http/types';
 
 enum ErrorKindEnum {
   Trust = 'Trust',
@@ -322,19 +323,22 @@ export class TimeoutWaitingForResponseErrorCode extends ErrorCode {
 
   constructor(
     public readonly message: string,
-    public readonly requestId: RequestId,
-    public readonly status: RequestStatusResponseStatus,
+    public readonly requestId: RequestId | undefined = undefined,
+    public readonly status: RequestStatusResponseStatus | undefined = undefined,
   ) {
     super();
     Object.setPrototypeOf(this, TimeoutWaitingForResponseErrorCode.prototype);
   }
 
   public toErrorMessage(): string {
-    return (
-      `${this.message}:\n` +
-      `  Request ID: ${toHex(this.requestId)}\n` +
-      `  Request status: ${this.status}\n`
-    );
+    let errorMessage = `${this.message}\n`;
+    if (this.requestId) {
+      errorMessage += `  Request ID: ${toHex(this.requestId)}\n`;
+    }
+    if (this.status) {
+      errorMessage += `  Request status: ${this.status}\n`;
+    }
+    return errorMessage;
   }
 }
 
@@ -379,13 +383,16 @@ export class RequestStatusDoneNoReplyErrorCode extends ErrorCode {
 export class MissingRootKeyErrorCode extends ErrorCode {
   public name = 'MissingRootKeyErrorCode';
 
-  constructor() {
+  constructor(public readonly shouldFetchRootKey: boolean | undefined = undefined) {
     super();
     Object.setPrototypeOf(this, MissingRootKeyErrorCode.prototype);
   }
 
   public toErrorMessage(): string {
-    return 'Agent is missing root key';
+    if (this.shouldFetchRootKey === undefined) {
+      return 'Agent is missing root key';
+    }
+    return `Agent is missing root key and the shouldFetchRootKey value is set to ${this.shouldFetchRootKey}. The root key should only be unknown if you are in local development. Otherwise you should avoid fetching and use the default IC Root Key or the known root key of your environment.`;
   }
 }
 
@@ -399,6 +406,177 @@ export class HashValueErrorCode extends ErrorCode {
 
   public toErrorMessage(): string {
     return `Attempt to hash a value of unsupported type: ${this.value}`;
+  }
+}
+
+export class HttpDefaultFetchErrorCode extends ErrorCode {
+  public name = 'HttpDefaultFetchErrorCode';
+
+  constructor(public readonly error: string) {
+    super();
+    Object.setPrototypeOf(this, HttpDefaultFetchErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    return this.error;
+  }
+}
+
+export class IdentityInvalidErrorCode extends ErrorCode {
+  public name = 'IdentityInvalidErrorCode';
+
+  constructor() {
+    super();
+    Object.setPrototypeOf(this, IdentityInvalidErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    return "This identity has expired due this application's security policy. Please refresh your authentication.";
+  }
+}
+
+export class IngressExpiryInvalidErrorCode extends ErrorCode {
+  public name = 'IngressExpiryInvalidErrorCode';
+
+  constructor(
+    public readonly message: string,
+    public readonly providedIngressExpiryInMinutes: number,
+  ) {
+    super();
+    Object.setPrototypeOf(this, IngressExpiryInvalidErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    return `${this.message}. Provided ingress expiry time is ${this.providedIngressExpiryInMinutes} minutes.`;
+  }
+}
+
+export class CreateHttpAgentErrorCode extends ErrorCode {
+  public name = 'CreateHttpAgentErrorCode';
+
+  constructor() {
+    super();
+    Object.setPrototypeOf(this, CreateHttpAgentErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    return 'Failed to create agent from provided agent';
+  }
+}
+
+export class MalformedSignatureErrorCode extends ErrorCode {
+  public name = 'MalformedSignatureErrorCode';
+
+  constructor(public readonly error: string) {
+    super();
+    Object.setPrototypeOf(this, MalformedSignatureErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    return `Query response contained a malformed signature: ${this.error}`;
+  }
+}
+
+export class MissingSignatureErrorCode extends ErrorCode {
+  public name = 'MissingSignatureErrorCode';
+
+  constructor() {
+    super();
+    Object.setPrototypeOf(this, MissingSignatureErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    return 'Query response did not contain any node signatures';
+  }
+}
+
+export class MalformedPublicKeyErrorCode extends ErrorCode {
+  public name = 'MalformedPublicKeyErrorCode';
+
+  constructor() {
+    super();
+    Object.setPrototypeOf(this, MalformedPublicKeyErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    return 'Read state response contained a malformed public key';
+  }
+}
+
+export class QuerySignatureVerificationFailedErrorCode extends ErrorCode {
+  public name = 'QuerySignatureVerificationFailedErrorCode';
+
+  constructor(public readonly nodeId: string) {
+    super();
+    Object.setPrototypeOf(this, QuerySignatureVerificationFailedErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    return `Query signature verification failed. Node ID: ${this.nodeId}`;
+  }
+}
+
+export class UnexpectedErrorCode extends ErrorCode {
+  public name = 'UnexpectedErrorCode';
+
+  constructor(public readonly error: string) {
+    super();
+    Object.setPrototypeOf(this, UnexpectedErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    return `Unexpected error: ${this.error}`;
+  }
+}
+
+export class HashTreeDecodeErrorCode extends ErrorCode {
+  public name = 'HashTreeDecodeErrorCode';
+
+  constructor(public readonly error: string) {
+    super();
+    Object.setPrototypeOf(this, HashTreeDecodeErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    return `Failed to decode certificate: ${this.error}`;
+  }
+}
+
+export class HttpErrorCode extends ErrorCode {
+  public name = 'HttpErrorCode';
+
+  constructor(
+    public readonly status: number,
+    public readonly statusText: string,
+    public readonly headers: HttpHeaderField[],
+    public readonly bodyText: string | undefined = undefined,
+  ) {
+    super();
+    Object.setPrototypeOf(this, HttpErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    let errorMessage =
+      'HTTP request failed:\n' +
+      `  Status: ${this.status} (${this.statusText})\n` +
+      `  Headers: ${JSON.stringify(this.headers)}\n`;
+    if (this.bodyText) {
+      errorMessage += `  Body: ${this.bodyText}\n`;
+    }
+    return errorMessage;
+  }
+}
+
+export class HttpV3ApiNotSupportedErrorCode extends ErrorCode {
+  public name = 'HttpV3ApiNotSupportedErrorCode';
+
+  constructor() {
+    super();
+    Object.setPrototypeOf(this, HttpV3ApiNotSupportedErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    return 'HTTP request failed: v3 API is not supported';
   }
 }
 

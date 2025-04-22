@@ -419,6 +419,7 @@ describe('invalidate identity', () => {
     const expectedError =
       "This identity has expired due this application's security policy. Please refresh your authentication.";
 
+    expect.assertions(3);
     // Test Agent.call
     try {
       await agent.call(canisterId, {
@@ -591,6 +592,7 @@ describe('retry failures', () => {
     });
 
     const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
+    expect.assertions(1);
     try {
       expect(
         agent.call(Principal.managementCanister(), {
@@ -844,6 +846,7 @@ test('retry requests that fail due to a network failure', async () => {
 
   agent.rootKey = new Uint8Array(32);
 
+  expect.assertions(1);
   try {
     await agent.call(Principal.managementCanister(), {
       methodName: 'test',
@@ -1226,6 +1229,7 @@ describe('error logs for bad signature', () => {
       }
     });
 
+    expect.assertions(3);
     try {
       await agent.call(canisterId, {
         methodName,
@@ -1266,6 +1270,7 @@ describe('error logs for bad signature', () => {
       }
     });
 
+    expect.assertions(3);
     try {
       await agent.query(canisterId, {
         methodName,
@@ -1335,6 +1340,7 @@ describe('error logs for bad signature', () => {
       }
     });
 
+    expect.assertions(1);
     try {
       const requestId = new ArrayBuffer(32) as RequestId;
       const path = new TextEncoder().encode('request_status');
