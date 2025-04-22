@@ -1,6 +1,6 @@
 /** @module CanisterStatus */
 import { Principal } from '@dfinity/principal';
-import { AgentError } from '../errors';
+import { CertificateVerificationError } from '../errors';
 import { HttpAgent } from '../agent/http';
 import {
   Cert,
@@ -234,8 +234,8 @@ export const request = async (options: {
         }
       } catch (error) {
         // Break on signature verification errors
-        if ((error as AgentError)?.message?.includes('Invalid certificate')) {
-          throw new AgentError((error as AgentError).message);
+        if (error instanceof CertificateVerificationError) {
+          throw error;
         }
         if (typeof path !== 'string' && 'key' in path && 'path' in path) {
           status.set(path.key, null);

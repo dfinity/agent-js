@@ -6,6 +6,14 @@ export * from './auth';
 export * from './canisters/asset';
 export * from './certificate';
 export * from './der';
+// TODO: rename to CertificateVerificationError once we have removed the old error
+export {
+  CertificateHasTooManyDelegationsError,
+  CertificateNotAuthorizedError,
+  CertificateTimeError,
+  CertificateVerificationError as CertificateVerificationErrorV2,
+  ErrorKind,
+} from './errors';
 export * from './fetch_candid';
 export * from './observable';
 export * from './public_key';
