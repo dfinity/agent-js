@@ -1081,7 +1081,7 @@ export class HttpAgent implements Agent {
     request?: any,
   ): Promise<ReadStateResponse> {
     await this.#rootKeyGuard();
-    const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
+    const canister = Principal.from(canisterId);
 
     function getRequestId(fields: ReadStateOptions): RequestId | undefined {
       for (const path of fields.paths) {
