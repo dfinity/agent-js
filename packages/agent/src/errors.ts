@@ -301,6 +301,25 @@ export class CborDecodeError extends AgentErrorV2 {
   }
 }
 
+class HexDecodeErrorCode implements ErrorCode {
+  constructor(public readonly error: string) {
+    Object.setPrototypeOf(this, HexDecodeErrorCode.prototype);
+  }
+
+  public toString(): string {
+    return `Failed to decode hex: ${this.error}`;
+  }
+}
+
+export class HexDecodeError extends AgentErrorV2 {
+  public name = 'HexDecodeError';
+
+  constructor(options: { error: string }, kind: ErrorKind) {
+    super(new HexDecodeErrorCode(options.error), kind);
+    Object.setPrototypeOf(this, HexDecodeError.prototype);
+  }
+}
+
 /**
  * An error that happens in the Agent. This is the root of all errors and should be used
  * everywhere in the Agent code (this package).
