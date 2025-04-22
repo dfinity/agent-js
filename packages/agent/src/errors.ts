@@ -31,10 +31,7 @@ abstract class ErrorCode {
 export class AgentErrorV2 extends Error {
   public name = 'AgentError';
 
-  constructor(
-    public readonly code: ErrorCode,
-    public readonly kind: ErrorKind,
-  ) {
+  constructor(code: ErrorCode, kind: ErrorKind) {
     // @ts-expect-error - Error.cause is not supported in the Typescript version that we are using
     super(code.toString(), { cause: { code, kind } });
     Object.setPrototypeOf(this, AgentErrorV2.prototype);
