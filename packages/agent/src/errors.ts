@@ -219,6 +219,66 @@ export class DerPrefixMismatchError extends AgentErrorV2 {
   }
 }
 
+class DerDecodeLengthMismatchErrorCode implements ErrorCode {
+  constructor(
+    public readonly expectedLength: number,
+    public readonly actualLength: number,
+  ) {
+    Object.setPrototypeOf(this, DerDecodeLengthMismatchErrorCode.prototype);
+  }
+
+  public toString(): string {
+    return `DER payload mismatch: Expected length ${this.expectedLength}, actual length: ${this.actualLength}`;
+  }
+}
+
+export class DerDecodeLengthMismatchError extends AgentErrorV2 {
+  public name = 'DerDecodeLengthMismatchError';
+
+  constructor(options: { expectedLength: number; actualLength: number }, kind: ErrorKind) {
+    super(new DerDecodeLengthMismatchErrorCode(options.expectedLength, options.actualLength), kind);
+    Object.setPrototypeOf(this, DerDecodeLengthMismatchError.prototype);
+  }
+}
+
+class DerDecodeErrorCode implements ErrorCode {
+  constructor(public readonly error: string) {
+    Object.setPrototypeOf(this, DerDecodeErrorCode.prototype);
+  }
+
+  public toString(): string {
+    return `Failed to decode DER: ${this.error}`;
+  }
+}
+
+export class DerDecodeError extends AgentErrorV2 {
+  public name = 'DerDecodeError';
+
+  constructor(options: { error: string }, kind: ErrorKind) {
+    super(new DerDecodeErrorCode(options.error), kind);
+    Object.setPrototypeOf(this, DerDecodeError.prototype);
+  }
+}
+
+class DerEncodeErrorCode implements ErrorCode {
+  constructor(public readonly error: string) {
+    Object.setPrototypeOf(this, DerEncodeErrorCode.prototype);
+  }
+
+  public toString(): string {
+    return `Failed to encode DER: ${this.error}`;
+  }
+}
+
+export class DerEncodeError extends AgentErrorV2 {
+  public name = 'DerEncodeError';
+
+  constructor(options: { error: string }, kind: ErrorKind) {
+    super(new DerEncodeErrorCode(options.error), kind);
+    Object.setPrototypeOf(this, DerEncodeError.prototype);
+  }
+}
+
 class CborDecodeErrorCode implements ErrorCode {
   constructor(
     public readonly error: unknown,
