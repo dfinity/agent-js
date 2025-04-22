@@ -2,7 +2,12 @@ import { Principal } from '@dfinity/principal';
 import { Agent, RequestStatusResponseStatus } from '../agent';
 import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from '../certificate';
 import { RequestId } from '../request_id';
-import { toHex } from '../utils/buffer';
+import {
+  CertifiedRejectError,
+  ErrorKind,
+  MissingRootKeyError,
+  RequestStatusDoneNoReplyError,
+} from '../errors';
 
 export * as strategy from './strategy';
 import { defaultStrategy } from './strategy';
@@ -39,7 +44,7 @@ export async function pollForResponse(
   const currentRequest = request ?? (await agent.createReadStateRequest?.({ paths: [path] }));
 
   const state = await agent.readState(canisterId, { paths: [path] }, undefined, currentRequest);
-  if (agent.rootKey == null) throw new Error('Agent root key not initialized before polling');
+  if (agent.rootKey == null) throw new MissingRootKeyError(ErrorKind.External);
   const cert = await Certificate.create({
     certificate: state.certificate,
     rootKey: agent.rootKey,
@@ -78,20 +83,24 @@ export async function pollForResponse(
       const rejectMessage = new TextDecoder().decode(
         lookupResultToBuffer(cert.lookup([...path, 'reject_message']))!,
       );
-      throw new Error(
-        `Call was rejected:\n` +
-          `  Request ID: ${toHex(requestId)}\n` +
-          `  Reject code: ${rejectCode}\n` +
-          `  Reject text: ${rejectMessage}\n`,
+      throw new CertifiedRejectError(
+        {
+          requestId,
+          rejectCode,
+          rejectMessage,
+        },
+        ErrorKind.Reject,
       );
     }
 
     case RequestStatusResponseStatus.Done:
       // This is _technically_ not an error, but we still didn't see the `Replied` status so
       // we don't know the result and cannot decode it.
-      throw new Error(
-        `Call was marked as done but we never saw the reply:\n` +
-          `  Request ID: ${toHex(requestId)}\n`,
+      throw new RequestStatusDoneNoReplyError(
+        {
+          requestId,
+        },
+        ErrorKind.Unknown,
       );
   }
   throw new Error('unreachable');

@@ -354,6 +354,81 @@ export class TimeoutWaitingForResponseError extends AgentErrorV2 {
   }
 }
 
+class CertifiedRejectErrorCode implements ErrorCode {
+  constructor(
+    public readonly requestId: RequestId,
+    public readonly rejectCode: number,
+    public readonly rejectMessage: string,
+  ) {
+    Object.setPrototypeOf(this, CertifiedRejectErrorCode.prototype);
+  }
+
+  public toString(): string {
+    return (
+      `Call was rejected:\n` +
+      `  Request ID: ${toHex(this.requestId)}\n` +
+      `  Reject code: ${this.rejectCode}\n` +
+      `  Reject text: ${this.rejectMessage}\n`
+    );
+  }
+}
+
+export class CertifiedRejectError extends AgentErrorV2 {
+  public name = 'CertifiedRejectError';
+
+  constructor(
+    options: { requestId: RequestId; rejectCode: number; rejectMessage: string },
+    kind: ErrorKind,
+  ) {
+    super(
+      new CertifiedRejectErrorCode(options.requestId, options.rejectCode, options.rejectMessage),
+      kind,
+    );
+    Object.setPrototypeOf(this, CertifiedRejectError.prototype);
+  }
+}
+
+class RequestStatusDoneNoReplyErrorCode implements ErrorCode {
+  constructor(public readonly requestId: RequestId) {
+    Object.setPrototypeOf(this, RequestStatusDoneNoReplyErrorCode.prototype);
+  }
+
+  public toString(): string {
+    return (
+      `Call was marked as done but we never saw the reply:\n` +
+      `  Request ID: ${toHex(this.requestId)}\n`
+    );
+  }
+}
+
+export class RequestStatusDoneNoReplyError extends AgentErrorV2 {
+  public name = 'RequestStatusDoneNoReplyError';
+
+  constructor(options: { requestId: RequestId }, kind: ErrorKind) {
+    super(new RequestStatusDoneNoReplyErrorCode(options.requestId), kind);
+    Object.setPrototypeOf(this, RequestStatusDoneNoReplyError.prototype);
+  }
+}
+
+class MissingRootKeyErrorCode implements ErrorCode {
+  constructor() {
+    Object.setPrototypeOf(this, MissingRootKeyErrorCode.prototype);
+  }
+
+  public toString(): string {
+    return 'Agent is missing root key';
+  }
+}
+
+export class MissingRootKeyError extends AgentErrorV2 {
+  public name = 'MissingRootKeyError';
+
+  constructor(kind: ErrorKind) {
+    super(new MissingRootKeyErrorCode(), kind);
+    Object.setPrototypeOf(this, MissingRootKeyError.prototype);
+  }
+}
+
 /**
  * An error that happens in the Agent. This is the root of all errors and should be used
  * everywhere in the Agent code (this package).
