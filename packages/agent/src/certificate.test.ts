@@ -16,6 +16,7 @@ import {
   CertificateNotAuthorizedError,
   CertificateTimeError,
   CertificateVerificationError,
+  ErrorKind,
 } from './errors';
 
 function label(str: string): ArrayBuffer {
@@ -416,14 +417,18 @@ test('delegation check fails for canisters outside of the subnet range', async (
   const beforeRange = Principal.fromHex('00000000000000020101');
   const afterRange = Principal.fromHex('00000000003000020101');
   async function certificateFails(canisterId: Principal) {
-    await expect(
-      Cert.Certificate.create({
+    try {
+      await Cert.Certificate.create({
         certificate: fromHex(SAMPLE_CERT),
         rootKey: fromHex(IC_ROOT_KEY),
         canisterId: canisterId,
-      }),
-    ).rejects.toThrow(CertificateNotAuthorizedError);
+      });
+    } catch (error) {
+      expect(error).toBeInstanceOf(CertificateNotAuthorizedError);
+      expect(error.cause.kind).toBe(ErrorKind.Trust);
+    }
   }
+  expect.assertions(4);
   await certificateFails(beforeRange);
   await certificateFails(afterRange);
 });
@@ -438,13 +443,17 @@ test('certificate verification fails for an invalid signature', async () => {
   const badCert: FakeCert = cbor.decode(fromHex(SAMPLE_CERT));
   badCert.signature = new ArrayBuffer(badCert.signature.byteLength);
   const badCertEncoded = cbor.encode(badCert);
-  await expect(
-    Cert.Certificate.create({
+  expect.assertions(2);
+  try {
+    await Cert.Certificate.create({
       certificate: badCertEncoded,
       rootKey: fromHex(IC_ROOT_KEY),
       canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
-    }),
-  ).rejects.toThrow(CertificateVerificationError);
+    });
+  } catch (error) {
+    expect(error).toBeInstanceOf(CertificateVerificationError);
+    expect(error.cause.kind).toBe(ErrorKind.Trust);
+  }
 });
 
 test('certificate verification fails if the time of the certificate is > 5 minutes in the past', async () => {
@@ -453,14 +462,18 @@ test('certificate verification fails if the time of the certificate is > 5 minut
 
   const tenMinutesFuture = Date.parse('2022-02-23T07:48:00.652Z');
   jest.setSystemTime(tenMinutesFuture);
-  await expect(
-    Cert.Certificate.create({
+  expect.assertions(2);
+  try {
+    await Cert.Certificate.create({
       certificate: badCertEncoded,
       rootKey: fromHex(IC_ROOT_KEY),
       canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
       blsVerify: async () => true,
-    }),
-  ).rejects.toThrow(CertificateTimeError);
+    });
+  } catch (error) {
+    expect(error).toBeInstanceOf(CertificateTimeError);
+    expect(error.cause.kind).toBe(ErrorKind.Trust);
+  }
 });
 
 test('certificate verification fails if the time of the certificate is > 5 minutes in the future', async () => {
@@ -468,15 +481,18 @@ test('certificate verification fails if the time of the certificate is > 5 minut
   const badCertEncoded = cbor.encode(badCert);
   const tenMinutesPast = Date.parse('2022-02-23T07:28:00.652Z');
   jest.setSystemTime(tenMinutesPast);
-
-  await expect(
-    Cert.Certificate.create({
+  expect.assertions(2);
+  try {
+    await Cert.Certificate.create({
       certificate: badCertEncoded,
       rootKey: fromHex(IC_ROOT_KEY),
       canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
       blsVerify: async () => true,
-    }),
-  ).rejects.toThrow(CertificateTimeError);
+    });
+  } catch (error) {
+    expect(error).toBeInstanceOf(CertificateTimeError);
+    expect(error.cause.kind).toBe(ErrorKind.Trust);
+  }
 });
 
 test('certificate verification fails on nested delegations', async () => {
@@ -498,11 +514,25 @@ test('certificate verification fails on nested delegations', async () => {
       certificate: withSubnetSubtree,
     },
   });
-  await expect(
-    Cert.Certificate.create({
+  expect.assertions(4);
+  try {
+    await Cert.Certificate.create({
       certificate: overlyNested,
       rootKey: fromHex(IC_ROOT_KEY),
       canisterId: canisterId,
-    }),
-  ).rejects.toThrow(CertificateHasTooManyDelegationsError);
+    });
+  } catch (error) {
+    expect(error).toBeInstanceOf(CertificateHasTooManyDelegationsError);
+    expect(error.cause.kind).toBe(ErrorKind.Protocol);
+  }
+  try {
+    await Cert.Certificate.create({
+      certificate: overlyNested,
+      rootKey: fromHex(IC_ROOT_KEY),
+      canisterId: canisterId,
+    });
+  } catch (error) {
+    expect(error).toBeInstanceOf(CertificateHasTooManyDelegationsError);
+    expect(error.cause.kind).toBe(ErrorKind.Protocol);
+  }
 });
