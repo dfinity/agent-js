@@ -57,7 +57,7 @@ export interface PollingOptions {
 export const DEFAULT_POLLING_OPTIONS: PollingOptions = {
   strategy: defaultStrategy(),
   preSignReadStateRequest: false,
-}
+};
 
 /**
  * Check if an object has a property
@@ -95,7 +95,8 @@ function isSignedReadStateRequestWithExpiry(
   return (
     isObjectWithProperty(value, 'body') &&
     isObjectWithProperty(value.body, 'content') &&
-    (value.body.content as { request_type: ReadRequestType }).request_type === ReadRequestType.ReadState &&
+    (value.body.content as { request_type: ReadRequestType }).request_type ===
+      ReadRequestType.ReadState &&
     isObjectWithProperty(value.body.content, 'ingress_expiry') &&
     typeof value.body.content.ingress_expiry === 'object' &&
     value.body.content.ingress_expiry !== null &&
@@ -123,30 +124,16 @@ export async function pollForResponse(
 }> {
   const path = [strToUtf8('request_status'), requestId];
 
-  // Determine if we should reuse the read state request or create a new one
-  // based on the options provided.
-  async function constructRequest(paths: ArrayBuffer[][]): Promise<ReadStateRequest> {
-    if (options.request && isSignedReadStateRequestWithExpiry(options.request)) {
-      return options.request;
-    }
-    const request = await agent.createReadStateRequest?.(
-      {
-        paths,
-      },
-      undefined,
-    );
-    if (!isSignedReadStateRequestWithExpiry(request)) {
-      throw new CreateReadStateRequestError('Invalid read state request', request);
-    }
-    return request;
-  }
-
   let state: ReadStateResponse;
   let currentRequest: ReadStateRequest | undefined = undefined;
   const preSignReadStateRequest = options.preSignReadStateRequest ?? false;
   if (preSignReadStateRequest) {
     // If preSignReadStateRequest is true, we need to create a new request
-    currentRequest = await constructRequest([path]);  
+    currentRequest = await constructRequest({
+      paths: [path],
+      agent,
+      pollingOptions: options,
+    });
     state = await agent.readState(canisterId, { paths: [path] }, undefined, currentRequest);
   } else {
     // If preSignReadStateRequest is false, we use the default strategy and sign the request each time
@@ -214,4 +201,38 @@ export async function pollForResponse(
       );
   }
   throw new Error('unreachable');
+}
+
+// Determine if we should reuse the read state request or create a new one
+// based on the options provided.
+
+/**
+ * Constructs a read state request for the given paths.
+ * If the request is already signed and has an expiry, it will be returned as is.
+ * Otherwise, a new request will be created.
+ * @param options The options to use for creating the request.
+ * @param options.paths The paths to read from.
+ * @param options.agent The agent to use to create the request.
+ * @param options.pollingOptions The options to use for creating the request.
+ * @returns The read state request.
+ */
+export async function constructRequest(options: {
+  paths: ArrayBuffer[][];
+  agent: Agent;
+  pollingOptions: PollingOptions;
+}): Promise<ReadStateRequest> {
+  const { paths, agent, pollingOptions } = options;
+  if (pollingOptions.request && isSignedReadStateRequestWithExpiry(pollingOptions.request)) {
+    return pollingOptions.request;
+  }
+  const request = await agent.createReadStateRequest?.(
+    {
+      paths,
+    },
+    undefined,
+  );
+  if (!isSignedReadStateRequestWithExpiry(request)) {
+    throw new CreateReadStateRequestError('Invalid read state request', request);
+  }
+  return request;
 }
