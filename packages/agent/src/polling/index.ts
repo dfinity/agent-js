@@ -78,24 +78,29 @@ function hasProperty<O extends object, P extends string>(
 function isSignedReadStateRequestWithExpiry(
   value: unknown,
 ): value is SignedReadStateRequestWithExpiry {
+  function isObjectWithProperty<O extends object, P extends string>(
+    value: unknown,
+    property: P,
+  ): value is O & Record<P, unknown> {
+    return value !== null && typeof value === 'object' && hasProperty(value, property);
+  }
+
+  function hasFunction<O extends object, P extends string>(
+    value: O,
+    property: P,
+  ): value is O & Record<P, (...args: unknown[]) => unknown> {
+    return hasProperty(value, property) && typeof value[property] === 'function';
+  }
+
   return (
-    value !== null &&
-    typeof value === 'object' &&
-    hasProperty(value, 'body') &&
-    value.body !== null &&
-    typeof value.body === 'object' &&
-    hasProperty(value.body, 'content') &&
-    value.body.content !== null &&
-    typeof value.body.content === 'object' &&
-    hasProperty(value.body.content, 'request_type') &&
-    value.body.content.request_type === ReadRequestType.ReadState &&
-    hasProperty(value.body.content, 'ingress_expiry') &&
+    isObjectWithProperty(value, 'body') &&
+    isObjectWithProperty(value.body, 'content') &&
+    (value.body.content as { request_type: ReadRequestType }).request_type === ReadRequestType.ReadState &&
+    isObjectWithProperty(value.body.content, 'ingress_expiry') &&
     typeof value.body.content.ingress_expiry === 'object' &&
     value.body.content.ingress_expiry !== null &&
-    hasProperty(value.body.content.ingress_expiry, 'toCBOR') &&
-    typeof value.body.content.ingress_expiry.toCBOR === 'function' &&
-    hasProperty(value.body.content.ingress_expiry, 'toHash') &&
-    typeof value.body.content.ingress_expiry.toHash === 'function'
+    hasFunction(value.body.content.ingress_expiry, 'toCBOR') &&
+    hasFunction(value.body.content.ingress_expiry, 'toHash')
   );
 }
 
