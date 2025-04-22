@@ -1,14 +1,15 @@
 import * as cbor from './cbor';
 import {
   AgentError,
-  CertificateHasTooManyDelegationsError,
-  CertificateNotAuthorizedError,
-  CertificateTimeError,
-  CertificateVerificationError as CertificateVerificationErrorV2,
-  DerKeyLengthMismatchError,
-  DerPrefixMismatchError,
-  ErrorKind,
-  LookupError,
+  CertificateHasTooManyDelegationsErrorCode,
+  CertificateNotAuthorizedErrorCode,
+  CertificateTimeErrorCode,
+  CertificateVerificationErrorCode,
+  DerKeyLengthMismatchErrorCode,
+  DerPrefixMismatchErrorCode,
+  ProtocolError,
+  LookupErrorCode,
+  TrustError,
 } from './errors';
 import { hash } from './request_id';
 import { bufEquals, concat, fromHex, toHex } from './utils/buffer';
@@ -19,7 +20,7 @@ import { MANAGEMENT_CANISTER_ID } from './agent';
 
 /**
  * A certificate may fail verification with respect to the provided public key
- * @todo remove this and rename `CertificateVerificationErrorV2` to `CertificateVerificationError`
+ * @todo remove this once we have the new errors
  */
 export class CertificateVerificationError extends AgentError {
   constructor(reason: string) {
@@ -235,9 +236,8 @@ export class Certificate {
     const lookupTime = lookupResultToBuffer(this.lookup(['time']));
     if (!lookupTime) {
       // Should never happen - time is always present in IC certificates
-      throw new CertificateVerificationErrorV2(
-        'Certificate does not contain a time',
-        ErrorKind.Protocol,
+      throw ProtocolError.fromCode(
+        new CertificateVerificationErrorCode('Certificate does not contain a time'),
       );
     }
 
@@ -252,24 +252,12 @@ export class Certificate {
       const certTime = decodeTime(lookupTime);
 
       if (certTime.getTime() < earliestCertificateTime) {
-        throw new CertificateTimeError(
-          {
-            maxAgeInMinutes: this._maxAgeInMinutes,
-            certificateTime: certTime,
-            currentTime: new Date(now),
-            ageType: 'past',
-          },
-          ErrorKind.Trust,
+        throw TrustError.fromCode(
+          new CertificateTimeErrorCode(this._maxAgeInMinutes, certTime, new Date(now), 'past'),
         );
       } else if (certTime.getTime() > fiveMinutesFromNow) {
-        throw new CertificateTimeError(
-          {
-            maxAgeInMinutes: 5,
-            certificateTime: certTime,
-            currentTime: new Date(now),
-            ageType: 'future',
-          },
-          ErrorKind.Trust,
+        throw TrustError.fromCode(
+          new CertificateTimeErrorCode(5, certTime, new Date(now), 'future'),
         );
       }
     }
@@ -281,7 +269,9 @@ export class Certificate {
       sigVer = false;
     }
     if (!sigVer) {
-      throw new CertificateVerificationErrorV2('Signature verification failed', ErrorKind.Trust);
+      throw TrustError.fromCode(
+        new CertificateVerificationErrorCode('Signature verification failed'),
+      );
     }
   }
 
@@ -300,7 +290,7 @@ export class Certificate {
     });
 
     if (cert.cert.delegation) {
-      throw new CertificateHasTooManyDelegationsError(ErrorKind.Protocol);
+      throw ProtocolError.fromCode(new CertificateHasTooManyDelegationsErrorCode());
     }
 
     await cert.verify();
@@ -312,12 +302,8 @@ export class Certificate {
         tree: cert.cert.tree,
       });
       if (!canisterInRange) {
-        throw new CertificateNotAuthorizedError(
-          {
-            canisterId: this._canisterId,
-            subnetId: d.subnet_id,
-          },
-          ErrorKind.Trust,
+        throw TrustError.fromCode(
+          new CertificateNotAuthorizedErrorCode(this._canisterId, d.subnet_id),
         );
       }
     }
@@ -325,9 +311,8 @@ export class Certificate {
       cert.lookup(['subnet', d.subnet_id, 'public_key']),
     );
     if (!publicKeyLookup) {
-      throw new LookupError(
-        `Could not find subnet key for subnet 0x${toHex(d.subnet_id)}`,
-        ErrorKind.Trust,
+      throw TrustError.fromCode(
+        new LookupErrorCode(`Could not find subnet key for subnet 0x${toHex(d.subnet_id)}`),
       );
     }
     return publicKeyLookup;
@@ -342,23 +327,11 @@ const KEY_LENGTH = 96;
 function extractDER(buf: ArrayBuffer): ArrayBuffer {
   const expectedLength = DER_PREFIX.byteLength + KEY_LENGTH;
   if (buf.byteLength !== expectedLength) {
-    throw new DerKeyLengthMismatchError(
-      {
-        expectedLength,
-        actualLength: buf.byteLength,
-      },
-      ErrorKind.Protocol,
-    );
+    throw ProtocolError.fromCode(new DerKeyLengthMismatchErrorCode(expectedLength, buf.byteLength));
   }
   const prefix = buf.slice(0, DER_PREFIX.byteLength);
   if (!bufEquals(prefix, DER_PREFIX)) {
-    throw new DerPrefixMismatchError(
-      {
-        expectedPrefix: DER_PREFIX,
-        actualPrefix: prefix,
-      },
-      ErrorKind.Protocol,
-    );
+    throw ProtocolError.fromCode(new DerPrefixMismatchErrorCode(DER_PREFIX, prefix));
   }
 
   return buf.slice(DER_PREFIX.byteLength);
@@ -659,9 +632,8 @@ export function check_canister_ranges(params: {
   const rangeLookup = lookup_path(['subnet', subnetId.toUint8Array(), 'canister_ranges'], tree);
 
   if (rangeLookup.status !== LookupStatus.Found || !(rangeLookup.value instanceof ArrayBuffer)) {
-    throw new LookupError(
-      `Could not find canister ranges for subnet ${subnetId.toText()}`,
-      ErrorKind.Protocol,
+    throw ProtocolError.fromCode(
+      new LookupErrorCode(`Could not find canister ranges for subnet ${subnetId.toText()}`),
     );
   }
 

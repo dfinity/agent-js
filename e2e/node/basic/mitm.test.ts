@@ -1,7 +1,7 @@
 import { createActor } from '../canisters/declarations/counter/index';
 import { test, expect, TestAPI } from 'vitest';
 import { makeAgent } from '../utils/agent';
-import { AgentQueryError, CertificateVerificationErrorV2, ErrorKind } from '@dfinity/agent';
+import { AgentQueryError, CertificateVerificationErrorCode, TrustError } from '@dfinity/agent';
 
 let mitmTest: TestAPI | typeof test.skip = test;
 if (!process.env['MITM']) {
@@ -20,8 +20,8 @@ mitmTest(
     try {
       await counter.greet('counter');
     } catch (error) {
-      expect(error).toBeInstanceOf(CertificateVerificationErrorV2);
-      expect(error.cause.kind).toBe(ErrorKind.Trust);
+      expect(error).toBeInstanceOf(TrustError);
+      expect(error.cause.code).toBeInstanceOf(CertificateVerificationErrorCode);
     }
     expect(await counter.queryGreet('counter')).toEqual('Hullo, counter!');
   },
@@ -39,8 +39,8 @@ mitmTest('mitm with query verification', async () => {
   try {
     await counter.greet('counter');
   } catch (error) {
-    expect(error).toBeInstanceOf(CertificateVerificationErrorV2);
-    expect(error.cause.kind).toBe(ErrorKind.Trust);
+    expect(error).toBeInstanceOf(TrustError);
+    expect(error.cause.code).toBeInstanceOf(CertificateVerificationErrorCode);
   }
   try {
     await counter.queryGreet('counter');

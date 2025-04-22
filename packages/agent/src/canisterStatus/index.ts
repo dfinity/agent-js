@@ -1,12 +1,15 @@
 /** @module CanisterStatus */
 import { Principal } from '@dfinity/principal';
 import {
-  CertificateVerificationError,
-  MissingRootKeyError,
-  ErrorKind,
-  CertificateNotAuthorizedError,
-  LookupError,
-  DerKeyLengthMismatchError,
+  CertificateVerificationErrorCode,
+  MissingRootKeyErrorCode,
+  CertificateNotAuthorizedErrorCode,
+  LookupErrorCode,
+  DerKeyLengthMismatchErrorCode,
+  ExternalError,
+  ProtocolError,
+  TrustError,
+  AgentErrorV2,
 } from '../errors';
 import { HttpAgent } from '../agent/http';
 import {
@@ -153,7 +156,7 @@ export const request = async (options: {
           paths: [encodedPaths[index]],
         });
         if (agent.rootKey == null) {
-          throw new MissingRootKeyError(ErrorKind.External);
+          throw ExternalError.fromCode(new MissingRootKeyErrorCode());
         }
         const cert = await Certificate.create({
           certificate: response.certificate,
@@ -165,7 +168,7 @@ export const request = async (options: {
         const lookup = (cert: Certificate, path: Path) => {
           if (path === 'subnet') {
             if (agent.rootKey == null) {
-              throw new MissingRootKeyError(ErrorKind.External);
+              throw ExternalError.fromCode(new MissingRootKeyErrorCode());
             }
             const data = fetchNodeKeys(response.certificate, canisterId, agent.rootKey);
             return {
@@ -241,7 +244,7 @@ export const request = async (options: {
         }
       } catch (error) {
         // Break on signature verification errors
-        if (error instanceof CertificateVerificationError) {
+        if (error instanceof AgentErrorV2 && error.hasCode(CertificateVerificationErrorCode)) {
           throw error;
         }
         if (typeof path !== 'string' && 'key' in path && 'path' in path) {
@@ -302,18 +305,14 @@ export const fetchNodeKeys = (
 
   const canisterInRange = check_canister_ranges({ canisterId, subnetId, tree });
   if (!canisterInRange) {
-    throw new CertificateNotAuthorizedError(
-      {
-        canisterId,
-        subnetId: delegation.subnet_id,
-      },
-      ErrorKind.Trust,
+    throw TrustError.fromCode(
+      new CertificateNotAuthorizedErrorCode(canisterId, delegation.subnet_id),
     );
   }
 
   const subnetLookupResult = lookup_path(['subnet', delegation.subnet_id, 'node'], tree);
   if (subnetLookupResult.status !== LookupStatus.Found) {
-    throw new LookupError('Node not found', ErrorKind.Protocol);
+    throw ProtocolError.fromCode(new LookupErrorCode('Node not found'));
   }
   if (subnetLookupResult.value instanceof ArrayBuffer) {
     throw new Error('Invalid node tree');
@@ -326,14 +325,13 @@ export const fetchNodeKeys = (
     const node_id = Principal.from(new Uint8Array(fork[1] as ArrayBuffer)).toText();
     const publicKeyLookupResult = lookup_path(['public_key'], fork[2] as HashTree);
     if (publicKeyLookupResult.status !== LookupStatus.Found) {
-      throw new LookupError('Public key not found', ErrorKind.Protocol);
+      throw ProtocolError.fromCode(new LookupErrorCode('Public key not found'));
     }
 
     const derEncodedPublicKey = publicKeyLookupResult.value as ArrayBuffer;
     if (derEncodedPublicKey.byteLength !== 44) {
-      throw new DerKeyLengthMismatchError(
-        { expectedLength: 44, actualLength: derEncodedPublicKey.byteLength },
-        ErrorKind.Protocol,
+      throw ProtocolError.fromCode(
+        new DerKeyLengthMismatchErrorCode(44, derEncodedPublicKey.byteLength),
       );
     } else {
       nodeKeys.set(node_id, derEncodedPublicKey as DerEncodedPublicKey);

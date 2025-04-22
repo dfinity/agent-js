@@ -1,4 +1,4 @@
-import { ErrorKind, HexDecodeError } from '../errors';
+import { HexDecodeErrorCode, InputError } from '../errors';
 
 /**
  * Concatenate multiple array buffers.
@@ -30,7 +30,7 @@ const hexRe = new RegExp(/^[0-9a-fA-F]+$/);
  */
 export function fromHex(hex: string): ArrayBuffer {
   if (!hexRe.test(hex)) {
-    throw new HexDecodeError({ error: 'Invalid hexadecimal string.' }, ErrorKind.Input);
+    throw InputError.fromCode(new HexDecodeErrorCode('Invalid hexadecimal string.'));
   }
   const buffer = [...hex]
     .reduce((acc, curr, i) => {

@@ -12,11 +12,12 @@ import { readFileSync } from 'fs';
 import path from 'path';
 import { IC_ROOT_KEY } from './agent';
 import {
-  CertificateHasTooManyDelegationsError,
-  CertificateNotAuthorizedError,
-  CertificateTimeError,
-  CertificateVerificationError,
-  ErrorKind,
+  CertificateHasTooManyDelegationsErrorCode,
+  CertificateNotAuthorizedErrorCode,
+  CertificateTimeErrorCode,
+  CertificateVerificationErrorCode,
+  ProtocolError,
+  TrustError,
 } from './errors';
 
 function label(str: string): ArrayBuffer {
@@ -424,8 +425,8 @@ test('delegation check fails for canisters outside of the subnet range', async (
         canisterId: canisterId,
       });
     } catch (error) {
-      expect(error).toBeInstanceOf(CertificateNotAuthorizedError);
-      expect(error.cause.kind).toBe(ErrorKind.Trust);
+      expect(error).toBeInstanceOf(TrustError);
+      expect(error.cause.code).toBeInstanceOf(CertificateNotAuthorizedErrorCode);
     }
   }
   expect.assertions(4);
@@ -451,8 +452,8 @@ test('certificate verification fails for an invalid signature', async () => {
       canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
     });
   } catch (error) {
-    expect(error).toBeInstanceOf(CertificateVerificationError);
-    expect(error.cause.kind).toBe(ErrorKind.Trust);
+    expect(error).toBeInstanceOf(TrustError);
+    expect(error.cause.code).toBeInstanceOf(CertificateVerificationErrorCode);
   }
 });
 
@@ -471,8 +472,8 @@ test('certificate verification fails if the time of the certificate is > 5 minut
       blsVerify: async () => true,
     });
   } catch (error) {
-    expect(error).toBeInstanceOf(CertificateTimeError);
-    expect(error.cause.kind).toBe(ErrorKind.Trust);
+    expect(error).toBeInstanceOf(TrustError);
+    expect(error.cause.code).toBeInstanceOf(CertificateTimeErrorCode);
   }
 });
 
@@ -490,8 +491,8 @@ test('certificate verification fails if the time of the certificate is > 5 minut
       blsVerify: async () => true,
     });
   } catch (error) {
-    expect(error).toBeInstanceOf(CertificateTimeError);
-    expect(error.cause.kind).toBe(ErrorKind.Trust);
+    expect(error).toBeInstanceOf(TrustError);
+    expect(error.cause.code).toBeInstanceOf(CertificateTimeErrorCode);
   }
 });
 
@@ -522,8 +523,8 @@ test('certificate verification fails on nested delegations', async () => {
       canisterId: canisterId,
     });
   } catch (error) {
-    expect(error).toBeInstanceOf(CertificateHasTooManyDelegationsError);
-    expect(error.cause.kind).toBe(ErrorKind.Protocol);
+    expect(error).toBeInstanceOf(ProtocolError);
+    expect(error.cause.code).toBeInstanceOf(CertificateHasTooManyDelegationsErrorCode);
   }
   try {
     await Cert.Certificate.create({
@@ -532,7 +533,7 @@ test('certificate verification fails on nested delegations', async () => {
       canisterId: canisterId,
     });
   } catch (error) {
-    expect(error).toBeInstanceOf(CertificateHasTooManyDelegationsError);
-    expect(error.cause.kind).toBe(ErrorKind.Protocol);
+    expect(error).toBeInstanceOf(ProtocolError);
+    expect(error.cause.code).toBeInstanceOf(CertificateHasTooManyDelegationsErrorCode);
   }
 });

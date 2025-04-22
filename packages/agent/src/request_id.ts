@@ -3,7 +3,7 @@ import { Principal } from '@dfinity/principal';
 import borc from 'borc';
 import { sha256 } from '@noble/hashes/sha256';
 import { compare, concat, uint8ToBuf } from './utils/buffer';
-import { ErrorKind, HashValueError } from './errors';
+import { HashValueErrorCode, InputError } from './errors';
 
 export type RequestId = ArrayBuffer & { __requestId__: void };
 
@@ -57,7 +57,7 @@ export function hashValue(value: unknown): ArrayBuffer {
     // So we want to try all the high-assurance type guards before this 'probable' one.
     return hash(lebEncode(value));
   }
-  throw new HashValueError({ value }, ErrorKind.Input);
+  throw InputError.fromCode(new HashValueErrorCode(value));
 }
 
 const hashString = (value: string): ArrayBuffer => {

@@ -3,10 +3,12 @@ import { Agent, RequestStatusResponseStatus } from '../agent';
 import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from '../certificate';
 import { RequestId } from '../request_id';
 import {
-  CertifiedRejectError,
-  ErrorKind,
-  MissingRootKeyError,
-  RequestStatusDoneNoReplyError,
+  CertifiedRejectErrorCode,
+  ExternalError,
+  MissingRootKeyErrorCode,
+  RejectError,
+  RequestStatusDoneNoReplyErrorCode,
+  UnknownError,
 } from '../errors';
 
 export * as strategy from './strategy';
@@ -44,7 +46,7 @@ export async function pollForResponse(
   const currentRequest = request ?? (await agent.createReadStateRequest?.({ paths: [path] }));
 
   const state = await agent.readState(canisterId, { paths: [path] }, undefined, currentRequest);
-  if (agent.rootKey == null) throw new MissingRootKeyError(ErrorKind.External);
+  if (agent.rootKey == null) throw ExternalError.fromCode(new MissingRootKeyErrorCode());
   const cert = await Certificate.create({
     certificate: state.certificate,
     rootKey: agent.rootKey,
@@ -83,25 +85,15 @@ export async function pollForResponse(
       const rejectMessage = new TextDecoder().decode(
         lookupResultToBuffer(cert.lookup([...path, 'reject_message']))!,
       );
-      throw new CertifiedRejectError(
-        {
-          requestId,
-          rejectCode,
-          rejectMessage,
-        },
-        ErrorKind.Reject,
+      throw RejectError.fromCode(
+        new CertifiedRejectErrorCode(requestId, rejectCode, rejectMessage),
       );
     }
 
     case RequestStatusResponseStatus.Done:
       // This is _technically_ not an error, but we still didn't see the `Replied` status so
       // we don't know the result and cannot decode it.
-      throw new RequestStatusDoneNoReplyError(
-        {
-          requestId,
-        },
-        ErrorKind.Unknown,
-      );
+      throw UnknownError.fromCode(new RequestStatusDoneNoReplyErrorCode(requestId));
   }
   throw new Error('unreachable');
 }

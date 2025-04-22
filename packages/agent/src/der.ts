@@ -1,4 +1,9 @@
-import { DerDecodeError, DerDecodeLengthMismatchError, DerEncodeError, ErrorKind } from './errors';
+import {
+  DerDecodeErrorCode,
+  DerDecodeLengthMismatchErrorCode,
+  DerEncodeErrorCode,
+  InputError,
+} from './errors';
 import { bufEquals } from './utils/buffer';
 
 export const encodeLenBytes = (len: number): number => {
@@ -11,7 +16,7 @@ export const encodeLenBytes = (len: number): number => {
   } else if (len <= 0xffffff) {
     return 4;
   } else {
-    throw new DerEncodeError({ error: 'Length too long (> 4 bytes)' }, ErrorKind.Input);
+    throw InputError.fromCode(new DerEncodeErrorCode('Length too long (> 4 bytes)'));
   }
 };
 
@@ -35,18 +40,17 @@ export const encodeLen = (buf: Uint8Array, offset: number, len: number): number 
     buf[offset + 3] = len;
     return 4;
   } else {
-    throw new DerEncodeError({ error: 'Length too long (> 4 bytes)' }, ErrorKind.Input);
+    throw InputError.fromCode(new DerEncodeErrorCode('Length too long (> 4 bytes)'));
   }
 };
 
 export const decodeLenBytes = (buf: Uint8Array, offset: number): number => {
   if (buf[offset] < 0x80) return 1;
-  if (buf[offset] === 0x80)
-    throw new DerDecodeError({ error: 'Invalid length 0' }, ErrorKind.Input);
+  if (buf[offset] === 0x80) throw InputError.fromCode(new DerDecodeErrorCode('Invalid length 0'));
   if (buf[offset] === 0x81) return 2;
   if (buf[offset] === 0x82) return 3;
   if (buf[offset] === 0x83) return 4;
-  throw new DerDecodeError({ error: 'Length too long (> 4 bytes)' }, ErrorKind.Input);
+  throw InputError.fromCode(new DerDecodeErrorCode('Length too long (> 4 bytes)'));
 };
 
 export const decodeLen = (buf: Uint8Array, offset: number): number => {
@@ -56,7 +60,7 @@ export const decodeLen = (buf: Uint8Array, offset: number): number => {
   else if (lenBytes === 3) return (buf[offset + 1] << 8) + buf[offset + 2];
   else if (lenBytes === 4)
     return (buf[offset + 1] << 16) + (buf[offset + 2] << 8) + buf[offset + 3];
-  throw new DerDecodeError({ error: 'Length too long (> 4 bytes)' }, ErrorKind.Input);
+  throw InputError.fromCode(new DerDecodeErrorCode('Length too long (> 4 bytes)'));
 };
 
 /**
@@ -131,7 +135,7 @@ export const unwrapDER = (derEncoded: ArrayBuffer, oid: Uint8Array): Uint8Array 
   let offset = 0;
   const expect = (n: number, msg: string) => {
     if (buf[offset++] !== n) {
-      throw new DerDecodeError({ error: `Expected ${msg} at offset ${offset}` }, ErrorKind.Input);
+      throw InputError.fromCode(new DerDecodeErrorCode(`Expected ${msg} at offset ${offset}`));
     }
   };
 
@@ -140,7 +144,7 @@ export const unwrapDER = (derEncoded: ArrayBuffer, oid: Uint8Array): Uint8Array 
   offset += decodeLenBytes(buf, offset);
 
   if (!bufEquals(buf.slice(offset, offset + oid.byteLength), oid)) {
-    throw new DerDecodeError({ error: 'Not the expected OID.' }, ErrorKind.Input);
+    throw InputError.fromCode(new DerDecodeErrorCode('Not the expected OID.'));
   }
   offset += oid.byteLength;
 
@@ -150,13 +154,7 @@ export const unwrapDER = (derEncoded: ArrayBuffer, oid: Uint8Array): Uint8Array 
   expect(0x00, '0 padding');
   const result = buf.slice(offset);
   if (payloadLen !== result.length) {
-    throw new DerDecodeLengthMismatchError(
-      {
-        expectedLength: payloadLen,
-        actualLength: result.length,
-      },
-      ErrorKind.Input,
-    );
+    throw InputError.fromCode(new DerDecodeLengthMismatchErrorCode(payloadLen, result.length));
   }
   return result;
 };

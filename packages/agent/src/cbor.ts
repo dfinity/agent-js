@@ -5,7 +5,7 @@ import * as cbor from 'simple-cbor';
 import { CborEncoder, SelfDescribeCborSerializer } from 'simple-cbor';
 import { Principal } from '@dfinity/principal';
 import { concat, fromHex } from './utils/buffer';
-import { CborDecodeError, ErrorKind } from './errors';
+import { CborDecodeErrorCode, InputError } from './errors';
 
 // We are using hansl/simple-cbor for CBOR serialization, to avoid issues with
 // encoding the uint64 values that the HTTP handler of the client expects for
@@ -139,6 +139,6 @@ export function decode<T>(input: ArrayBuffer): T {
   try {
     return decoder.decodeFirst(buffer);
   } catch (error: unknown) {
-    throw new CborDecodeError({ error, input: buffer }, ErrorKind.Input);
+    throw InputError.fromCode(new CborDecodeErrorCode(error, buffer));
   }
 }

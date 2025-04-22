@@ -9,7 +9,7 @@ import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
 import { RequestStatusResponseStatus } from './agent/http';
 
-export enum ErrorKind {
+enum ErrorKindEnum {
   Trust = 'Trust',
   Protocol = 'Protocol',
   Reject = 'Reject',
@@ -21,7 +21,10 @@ export enum ErrorKind {
 }
 
 abstract class ErrorCode {
-  public abstract toString(): string;
+  public abstract toErrorMessage(): string;
+  public toString(): string {
+    return this.toErrorMessage();
+  }
 }
 
 /**
@@ -32,36 +35,120 @@ abstract class ErrorCode {
 export class AgentErrorV2 extends Error {
   public name = 'AgentError';
 
-  constructor(code: ErrorCode, kind: ErrorKind) {
-    // @ts-expect-error - Error.cause is not supported in the Typescript version that we are using
-    super(code.toString(), { cause: { code, kind } });
+  constructor(
+    public readonly code: ErrorCode,
+    public readonly kind: ErrorKindEnum,
+  ) {
+    super(
+      code.toErrorMessage(),
+      // @ts-expect-error - Error.cause is not supported in the Typescript version that we are using
+      {
+        cause: {
+          code,
+          kind,
+        },
+      },
+    );
     Object.setPrototypeOf(this, AgentErrorV2.prototype);
+  }
+
+  public hasCode<C extends ErrorCode>(code: new (...args: never[]) => C): boolean {
+    return this.code instanceof code;
   }
 }
 
-class CertificateVerificationErrorCode implements ErrorCode {
+class ErrorKind extends AgentErrorV2 {
+  public static fromCode<C extends ErrorCode, E extends ErrorKind>(
+    this: new (code: C) => E,
+    code: C,
+  ): E {
+    return new this(code);
+  }
+}
+
+export class TrustError extends ErrorKind {
+  public name = 'TrustError';
+
+  constructor(code: ErrorCode) {
+    super(code, ErrorKindEnum.Trust);
+    Object.setPrototypeOf(this, TrustError.prototype);
+  }
+}
+
+export class ProtocolError extends ErrorKind {
+  public name = 'ProtocolError';
+
+  constructor(code: ErrorCode) {
+    super(code, ErrorKindEnum.Protocol);
+    Object.setPrototypeOf(this, ProtocolError.prototype);
+  }
+}
+
+export class RejectError extends ErrorKind {
+  public name = 'RejectError';
+
+  constructor(code: ErrorCode) {
+    super(code, ErrorKindEnum.Reject);
+    Object.setPrototypeOf(this, RejectError.prototype);
+  }
+}
+
+export class TransportError extends ErrorKind {
+  public name = 'TransportError';
+
+  constructor(code: ErrorCode) {
+    super(code, ErrorKindEnum.Transport);
+    Object.setPrototypeOf(this, TransportError.prototype);
+  }
+}
+
+export class ExternalError extends ErrorKind {
+  public name = 'ExternalError';
+
+  constructor(code: ErrorCode) {
+    super(code, ErrorKindEnum.External);
+    Object.setPrototypeOf(this, ExternalError.prototype);
+  }
+}
+
+export class LimitError extends ErrorKind {
+  public name = 'LimitError';
+
+  constructor(code: ErrorCode) {
+    super(code, ErrorKindEnum.Limit);
+    Object.setPrototypeOf(this, LimitError.prototype);
+  }
+}
+
+export class InputError extends ErrorKind {
+  public name = 'InputError';
+
+  constructor(code: ErrorCode) {
+    super(code, ErrorKindEnum.Input);
+    Object.setPrototypeOf(this, InputError.prototype);
+  }
+}
+
+export class UnknownError extends ErrorKind {
+  public name = 'UnknownError';
+
+  constructor(code: ErrorCode) {
+    super(code, ErrorKindEnum.Unknown);
+    Object.setPrototypeOf(this, UnknownError.prototype);
+  }
+}
+
+export class CertificateVerificationErrorCode implements ErrorCode {
   constructor(public readonly reason: string) {
     Object.setPrototypeOf(this, CertificateVerificationErrorCode.prototype);
   }
 
-  public toString(): string {
+  public toErrorMessage(): string {
     return `Certificate verification error: "${this.reason}"`;
   }
 }
 
-/**
- * A certificate may fail verification with respect to the provided public key
- */
-export class CertificateVerificationError extends AgentErrorV2 {
-  public name = 'CertificateVerificationError';
-
-  constructor(reason: string, kind: ErrorKind) {
-    super(new CertificateVerificationErrorCode(reason), kind);
-    Object.setPrototypeOf(this, CertificateVerificationError.prototype);
-  }
-}
-
-class CertificateTimeErrorCode implements ErrorCode {
+export class CertificateTimeErrorCode implements ErrorCode {
   constructor(
     public readonly maxAgeInMinutes: number,
     public readonly certificateTime: Date,
@@ -71,56 +158,22 @@ class CertificateTimeErrorCode implements ErrorCode {
     Object.setPrototypeOf(this, CertificateTimeErrorCode.prototype);
   }
 
-  public toString(): string {
+  public toErrorMessage(): string {
     return `Certificate is signed more than ${this.maxAgeInMinutes} minutes in the ${this.ageType}. Certificate time: ${this.certificateTime.toISOString()} Current time: ${this.currentTime.toISOString()}`;
   }
 }
 
-export class CertificateTimeError extends AgentErrorV2 {
-  public name = 'CertificateTimeError';
-
-  constructor(
-    options: {
-      maxAgeInMinutes: number;
-      certificateTime: Date;
-      currentTime: Date;
-      ageType: 'past' | 'future';
-    },
-    kind: ErrorKind,
-  ) {
-    super(
-      new CertificateTimeErrorCode(
-        options.maxAgeInMinutes,
-        options.certificateTime,
-        options.currentTime,
-        options.ageType,
-      ),
-      kind,
-    );
-    Object.setPrototypeOf(this, CertificateTimeError.prototype);
-  }
-}
-
-class CertificateHasTooManyDelegationsErrorCode implements ErrorCode {
+export class CertificateHasTooManyDelegationsErrorCode implements ErrorCode {
   constructor() {
     Object.setPrototypeOf(this, CertificateHasTooManyDelegationsErrorCode.prototype);
   }
 
-  public toString(): string {
+  public toErrorMessage(): string {
     return 'Certificate has too many delegations';
   }
 }
 
-export class CertificateHasTooManyDelegationsError extends AgentErrorV2 {
-  public name = 'CertificateHasTooManyDelegationsError';
-
-  constructor(kind: ErrorKind) {
-    super(new CertificateHasTooManyDelegationsErrorCode(), kind);
-    Object.setPrototypeOf(this, CertificateHasTooManyDelegationsError.prototype);
-  }
-}
-
-class CertificateNotAuthorizedErrorCode implements ErrorCode {
+export class CertificateNotAuthorizedErrorCode implements ErrorCode {
   constructor(
     public readonly canisterId: Principal,
     public readonly subnetId: ArrayBuffer,
@@ -128,46 +181,22 @@ class CertificateNotAuthorizedErrorCode implements ErrorCode {
     Object.setPrototypeOf(this, CertificateNotAuthorizedErrorCode.prototype);
   }
 
-  public toString(): string {
+  public toErrorMessage(): string {
     return `The certificate contains a delegation that does not include the canister ${this.canisterId.toText()} in the canister_ranges field. Subnet ID: 0x${toHex(this.subnetId)}`;
   }
 }
 
-export class CertificateNotAuthorizedError extends AgentErrorV2 {
-  public name = 'CertificateNotAuthorizedError';
-
-  constructor(
-    options: {
-      canisterId: Principal;
-      subnetId: ArrayBuffer;
-    },
-    kind: ErrorKind,
-  ) {
-    super(new CertificateNotAuthorizedErrorCode(options.canisterId, options.subnetId), kind);
-    Object.setPrototypeOf(this, CertificateNotAuthorizedError.prototype);
-  }
-}
-
-class LookupErrorCode implements ErrorCode {
+export class LookupErrorCode implements ErrorCode {
   constructor(public readonly message: string) {
     Object.setPrototypeOf(this, LookupErrorCode.prototype);
   }
 
-  public toString(): string {
+  public toErrorMessage(): string {
     return this.message;
   }
 }
 
-export class LookupError extends AgentErrorV2 {
-  public name = 'LookupError';
-
-  constructor(message: string, kind: ErrorKind) {
-    super(new LookupErrorCode(message), kind);
-    Object.setPrototypeOf(this, LookupError.prototype);
-  }
-}
-
-class DerKeyLengthMismatchErrorCode implements ErrorCode {
+export class DerKeyLengthMismatchErrorCode implements ErrorCode {
   constructor(
     public readonly expectedLength: number,
     public readonly actualLength: number,
@@ -175,27 +204,12 @@ class DerKeyLengthMismatchErrorCode implements ErrorCode {
     Object.setPrototypeOf(this, DerKeyLengthMismatchErrorCode.prototype);
   }
 
-  public toString(): string {
+  public toErrorMessage(): string {
     return `BLS DER-encoded public key must be ${this.expectedLength} bytes long, but is ${this.actualLength} bytes long`;
   }
 }
 
-export class DerKeyLengthMismatchError extends AgentErrorV2 {
-  public name = 'DerKeyLengthMismatchError';
-
-  constructor(
-    options: {
-      expectedLength: number;
-      actualLength: number;
-    },
-    kind: ErrorKind,
-  ) {
-    super(new DerKeyLengthMismatchErrorCode(options.expectedLength, options.actualLength), kind);
-    Object.setPrototypeOf(this, DerKeyLengthMismatchError.prototype);
-  }
-}
-
-class DerPrefixMismatchErrorCode implements ErrorCode {
+export class DerPrefixMismatchErrorCode implements ErrorCode {
   constructor(
     public readonly expectedPrefix: ArrayBuffer,
     public readonly actualPrefix: ArrayBuffer,
@@ -203,24 +217,12 @@ class DerPrefixMismatchErrorCode implements ErrorCode {
     Object.setPrototypeOf(this, DerPrefixMismatchErrorCode.prototype);
   }
 
-  public toString(): string {
+  public toErrorMessage(): string {
     return `BLS DER-encoded public key is invalid. Expected the following prefix: ${this.expectedPrefix}, but got ${this.actualPrefix}`;
   }
 }
 
-export class DerPrefixMismatchError extends AgentErrorV2 {
-  public name = 'DerPrefixMismatchError';
-
-  constructor(
-    options: { expectedPrefix: ArrayBuffer; actualPrefix: ArrayBuffer },
-    kind: ErrorKind,
-  ) {
-    super(new DerPrefixMismatchErrorCode(options.expectedPrefix, options.actualPrefix), kind);
-    Object.setPrototypeOf(this, DerPrefixMismatchError.prototype);
-  }
-}
-
-class DerDecodeLengthMismatchErrorCode implements ErrorCode {
+export class DerDecodeLengthMismatchErrorCode implements ErrorCode {
   constructor(
     public readonly expectedLength: number,
     public readonly actualLength: number,
@@ -228,59 +230,32 @@ class DerDecodeLengthMismatchErrorCode implements ErrorCode {
     Object.setPrototypeOf(this, DerDecodeLengthMismatchErrorCode.prototype);
   }
 
-  public toString(): string {
+  public toErrorMessage(): string {
     return `DER payload mismatch: Expected length ${this.expectedLength}, actual length: ${this.actualLength}`;
   }
 }
 
-export class DerDecodeLengthMismatchError extends AgentErrorV2 {
-  public name = 'DerDecodeLengthMismatchError';
-
-  constructor(options: { expectedLength: number; actualLength: number }, kind: ErrorKind) {
-    super(new DerDecodeLengthMismatchErrorCode(options.expectedLength, options.actualLength), kind);
-    Object.setPrototypeOf(this, DerDecodeLengthMismatchError.prototype);
-  }
-}
-
-class DerDecodeErrorCode implements ErrorCode {
+export class DerDecodeErrorCode implements ErrorCode {
   constructor(public readonly error: string) {
     Object.setPrototypeOf(this, DerDecodeErrorCode.prototype);
   }
 
-  public toString(): string {
+  public toErrorMessage(): string {
     return `Failed to decode DER: ${this.error}`;
   }
 }
 
-export class DerDecodeError extends AgentErrorV2 {
-  public name = 'DerDecodeError';
-
-  constructor(options: { error: string }, kind: ErrorKind) {
-    super(new DerDecodeErrorCode(options.error), kind);
-    Object.setPrototypeOf(this, DerDecodeError.prototype);
-  }
-}
-
-class DerEncodeErrorCode implements ErrorCode {
+export class DerEncodeErrorCode implements ErrorCode {
   constructor(public readonly error: string) {
     Object.setPrototypeOf(this, DerEncodeErrorCode.prototype);
   }
 
-  public toString(): string {
+  public toErrorMessage(): string {
     return `Failed to encode DER: ${this.error}`;
   }
 }
 
-export class DerEncodeError extends AgentErrorV2 {
-  public name = 'DerEncodeError';
-
-  constructor(options: { error: string }, kind: ErrorKind) {
-    super(new DerEncodeErrorCode(options.error), kind);
-    Object.setPrototypeOf(this, DerEncodeError.prototype);
-  }
-}
-
-class CborDecodeErrorCode implements ErrorCode {
+export class CborDecodeErrorCode implements ErrorCode {
   constructor(
     public readonly error: unknown,
     public readonly input: Uint8Array,
@@ -288,40 +263,22 @@ class CborDecodeErrorCode implements ErrorCode {
     Object.setPrototypeOf(this, CborDecodeErrorCode.prototype);
   }
 
-  public toString(): string {
+  public toErrorMessage(): string {
     return `Failed to decode CBOR: ${this.error}, input: ${toHex(this.input)}`;
   }
 }
 
-export class CborDecodeError extends AgentErrorV2 {
-  public name = 'CborDecodeError';
-
-  constructor(options: { error: unknown; input: Uint8Array }, kind: ErrorKind) {
-    super(new CborDecodeErrorCode(options.error, options.input), kind);
-    Object.setPrototypeOf(this, CborDecodeError.prototype);
-  }
-}
-
-class HexDecodeErrorCode implements ErrorCode {
+export class HexDecodeErrorCode implements ErrorCode {
   constructor(public readonly error: string) {
     Object.setPrototypeOf(this, HexDecodeErrorCode.prototype);
   }
 
-  public toString(): string {
+  public toErrorMessage(): string {
     return `Failed to decode hex: ${this.error}`;
   }
 }
 
-export class HexDecodeError extends AgentErrorV2 {
-  public name = 'HexDecodeError';
-
-  constructor(options: { error: string }, kind: ErrorKind) {
-    super(new HexDecodeErrorCode(options.error), kind);
-    Object.setPrototypeOf(this, HexDecodeError.prototype);
-  }
-}
-
-class TimeoutWaitingForResponseErrorCode implements ErrorCode {
+export class TimeoutWaitingForResponseErrorCode implements ErrorCode {
   constructor(
     public readonly message: string,
     public readonly requestId: RequestId,
@@ -330,7 +287,7 @@ class TimeoutWaitingForResponseErrorCode implements ErrorCode {
     Object.setPrototypeOf(this, TimeoutWaitingForResponseErrorCode.prototype);
   }
 
-  public toString(): string {
+  public toErrorMessage(): string {
     return (
       `${this.message}:\n` +
       `  Request ID: ${toHex(this.requestId)}\n` +
@@ -339,22 +296,7 @@ class TimeoutWaitingForResponseErrorCode implements ErrorCode {
   }
 }
 
-export class TimeoutWaitingForResponseError extends AgentErrorV2 {
-  public name = 'TimeoutWaitingForResponseError';
-
-  constructor(
-    options: { message: string; requestId: RequestId; status: RequestStatusResponseStatus },
-    kind: ErrorKind,
-  ) {
-    super(
-      new TimeoutWaitingForResponseErrorCode(options.message, options.requestId, options.status),
-      kind,
-    );
-    Object.setPrototypeOf(this, TimeoutWaitingForResponseError.prototype);
-  }
-}
-
-class CertifiedRejectErrorCode implements ErrorCode {
+export class CertifiedRejectErrorCode implements ErrorCode {
   constructor(
     public readonly requestId: RequestId,
     public readonly rejectCode: number,
@@ -363,7 +305,7 @@ class CertifiedRejectErrorCode implements ErrorCode {
     Object.setPrototypeOf(this, CertifiedRejectErrorCode.prototype);
   }
 
-  public toString(): string {
+  public toErrorMessage(): string {
     return (
       `Call was rejected:\n` +
       `  Request ID: ${toHex(this.requestId)}\n` +
@@ -373,27 +315,12 @@ class CertifiedRejectErrorCode implements ErrorCode {
   }
 }
 
-export class CertifiedRejectError extends AgentErrorV2 {
-  public name = 'CertifiedRejectError';
-
-  constructor(
-    options: { requestId: RequestId; rejectCode: number; rejectMessage: string },
-    kind: ErrorKind,
-  ) {
-    super(
-      new CertifiedRejectErrorCode(options.requestId, options.rejectCode, options.rejectMessage),
-      kind,
-    );
-    Object.setPrototypeOf(this, CertifiedRejectError.prototype);
-  }
-}
-
-class RequestStatusDoneNoReplyErrorCode implements ErrorCode {
+export class RequestStatusDoneNoReplyErrorCode implements ErrorCode {
   constructor(public readonly requestId: RequestId) {
     Object.setPrototypeOf(this, RequestStatusDoneNoReplyErrorCode.prototype);
   }
 
-  public toString(): string {
+  public toErrorMessage(): string {
     return (
       `Call was marked as done but we never saw the reply:\n` +
       `  Request ID: ${toHex(this.requestId)}\n`
@@ -401,50 +328,23 @@ class RequestStatusDoneNoReplyErrorCode implements ErrorCode {
   }
 }
 
-export class RequestStatusDoneNoReplyError extends AgentErrorV2 {
-  public name = 'RequestStatusDoneNoReplyError';
-
-  constructor(options: { requestId: RequestId }, kind: ErrorKind) {
-    super(new RequestStatusDoneNoReplyErrorCode(options.requestId), kind);
-    Object.setPrototypeOf(this, RequestStatusDoneNoReplyError.prototype);
-  }
-}
-
-class MissingRootKeyErrorCode implements ErrorCode {
+export class MissingRootKeyErrorCode implements ErrorCode {
   constructor() {
     Object.setPrototypeOf(this, MissingRootKeyErrorCode.prototype);
   }
 
-  public toString(): string {
+  public toErrorMessage(): string {
     return 'Agent is missing root key';
   }
 }
 
-export class MissingRootKeyError extends AgentErrorV2 {
-  public name = 'MissingRootKeyError';
-
-  constructor(kind: ErrorKind) {
-    super(new MissingRootKeyErrorCode(), kind);
-    Object.setPrototypeOf(this, MissingRootKeyError.prototype);
-  }
-}
-
-class HashValueErrorCode implements ErrorCode {
+export class HashValueErrorCode implements ErrorCode {
   constructor(public readonly value: unknown) {
     Object.setPrototypeOf(this, HashValueErrorCode.prototype);
   }
 
-  public toString(): string {
+  public toErrorMessage(): string {
     return `Attempt to hash a value of unsupported type: ${this.value}`;
-  }
-}
-
-export class HashValueError extends AgentErrorV2 {
-  public name = 'HashValueError';
-
-  constructor(options: { value: unknown }, kind: ErrorKind) {
-    super(new HashValueErrorCode(options.value), kind);
-    Object.setPrototypeOf(this, HashValueError.prototype);
   }
 }
 
