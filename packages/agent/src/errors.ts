@@ -429,6 +429,25 @@ export class MissingRootKeyError extends AgentErrorV2 {
   }
 }
 
+class HashValueErrorCode implements ErrorCode {
+  constructor(public readonly value: unknown) {
+    Object.setPrototypeOf(this, HashValueErrorCode.prototype);
+  }
+
+  public toString(): string {
+    return `Attempt to hash a value of unsupported type: ${this.value}`;
+  }
+}
+
+export class HashValueError extends AgentErrorV2 {
+  public name = 'HashValueError';
+
+  constructor(options: { value: unknown }, kind: ErrorKind) {
+    super(new HashValueErrorCode(options.value), kind);
+    Object.setPrototypeOf(this, HashValueError.prototype);
+  }
+}
+
 /**
  * An error that happens in the Agent. This is the root of all errors and should be used
  * everywhere in the Agent code (this package).
