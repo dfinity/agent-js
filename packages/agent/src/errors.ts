@@ -20,8 +20,11 @@ enum ErrorKindEnum {
   Unknown = 'Unknown',
 }
 
-abstract class ErrorCode {
-  public abstract toErrorMessage(): string;
+class ErrorCode {
+  public toErrorMessage(): string {
+    throw new Error('Not implemented');
+  }
+
   public toString(): string {
     return this.toErrorMessage();
   }
@@ -138,8 +141,11 @@ export class UnknownError extends ErrorKind {
   }
 }
 
-export class CertificateVerificationErrorCode implements ErrorCode {
+export class CertificateVerificationErrorCode extends ErrorCode {
+  public name = 'CertificateVerificationErrorCode';
+
   constructor(public readonly reason: string) {
+    super();
     Object.setPrototypeOf(this, CertificateVerificationErrorCode.prototype);
   }
 
@@ -148,13 +154,16 @@ export class CertificateVerificationErrorCode implements ErrorCode {
   }
 }
 
-export class CertificateTimeErrorCode implements ErrorCode {
+export class CertificateTimeErrorCode extends ErrorCode {
+  public name = 'CertificateTimeErrorCode';
+
   constructor(
     public readonly maxAgeInMinutes: number,
     public readonly certificateTime: Date,
     public readonly currentTime: Date,
     public readonly ageType: 'past' | 'future',
   ) {
+    super();
     Object.setPrototypeOf(this, CertificateTimeErrorCode.prototype);
   }
 
@@ -163,8 +172,11 @@ export class CertificateTimeErrorCode implements ErrorCode {
   }
 }
 
-export class CertificateHasTooManyDelegationsErrorCode implements ErrorCode {
+export class CertificateHasTooManyDelegationsErrorCode extends ErrorCode {
+  public name = 'CertificateHasTooManyDelegationsErrorCode';
+
   constructor() {
+    super();
     Object.setPrototypeOf(this, CertificateHasTooManyDelegationsErrorCode.prototype);
   }
 
@@ -173,11 +185,14 @@ export class CertificateHasTooManyDelegationsErrorCode implements ErrorCode {
   }
 }
 
-export class CertificateNotAuthorizedErrorCode implements ErrorCode {
+export class CertificateNotAuthorizedErrorCode extends ErrorCode {
+  public name = 'CertificateNotAuthorizedErrorCode';
+
   constructor(
     public readonly canisterId: Principal,
     public readonly subnetId: ArrayBuffer,
   ) {
+    super();
     Object.setPrototypeOf(this, CertificateNotAuthorizedErrorCode.prototype);
   }
 
@@ -186,8 +201,11 @@ export class CertificateNotAuthorizedErrorCode implements ErrorCode {
   }
 }
 
-export class LookupErrorCode implements ErrorCode {
+export class LookupErrorCode extends ErrorCode {
+  public name = 'LookupErrorCode';
+
   constructor(public readonly message: string) {
+    super();
     Object.setPrototypeOf(this, LookupErrorCode.prototype);
   }
 
@@ -196,11 +214,14 @@ export class LookupErrorCode implements ErrorCode {
   }
 }
 
-export class DerKeyLengthMismatchErrorCode implements ErrorCode {
+export class DerKeyLengthMismatchErrorCode extends ErrorCode {
+  public name = 'DerKeyLengthMismatchErrorCode';
+
   constructor(
     public readonly expectedLength: number,
     public readonly actualLength: number,
   ) {
+    super();
     Object.setPrototypeOf(this, DerKeyLengthMismatchErrorCode.prototype);
   }
 
@@ -209,11 +230,14 @@ export class DerKeyLengthMismatchErrorCode implements ErrorCode {
   }
 }
 
-export class DerPrefixMismatchErrorCode implements ErrorCode {
+export class DerPrefixMismatchErrorCode extends ErrorCode {
+  public name = 'DerPrefixMismatchErrorCode';
+
   constructor(
     public readonly expectedPrefix: ArrayBuffer,
     public readonly actualPrefix: ArrayBuffer,
   ) {
+    super();
     Object.setPrototypeOf(this, DerPrefixMismatchErrorCode.prototype);
   }
 
@@ -222,11 +246,14 @@ export class DerPrefixMismatchErrorCode implements ErrorCode {
   }
 }
 
-export class DerDecodeLengthMismatchErrorCode implements ErrorCode {
+export class DerDecodeLengthMismatchErrorCode extends ErrorCode {
+  public name = 'DerDecodeLengthMismatchErrorCode';
+
   constructor(
     public readonly expectedLength: number,
     public readonly actualLength: number,
   ) {
+    super();
     Object.setPrototypeOf(this, DerDecodeLengthMismatchErrorCode.prototype);
   }
 
@@ -235,8 +262,11 @@ export class DerDecodeLengthMismatchErrorCode implements ErrorCode {
   }
 }
 
-export class DerDecodeErrorCode implements ErrorCode {
+export class DerDecodeErrorCode extends ErrorCode {
+  public name = 'DerDecodeErrorCode';
+
   constructor(public readonly error: string) {
+    super();
     Object.setPrototypeOf(this, DerDecodeErrorCode.prototype);
   }
 
@@ -245,8 +275,11 @@ export class DerDecodeErrorCode implements ErrorCode {
   }
 }
 
-export class DerEncodeErrorCode implements ErrorCode {
+export class DerEncodeErrorCode extends ErrorCode {
+  public name = 'DerEncodeErrorCode';
+
   constructor(public readonly error: string) {
+    super();
     Object.setPrototypeOf(this, DerEncodeErrorCode.prototype);
   }
 
@@ -255,11 +288,14 @@ export class DerEncodeErrorCode implements ErrorCode {
   }
 }
 
-export class CborDecodeErrorCode implements ErrorCode {
+export class CborDecodeErrorCode extends ErrorCode {
+  public name = 'CborDecodeErrorCode';
+
   constructor(
     public readonly error: unknown,
     public readonly input: Uint8Array,
   ) {
+    super();
     Object.setPrototypeOf(this, CborDecodeErrorCode.prototype);
   }
 
@@ -268,8 +304,11 @@ export class CborDecodeErrorCode implements ErrorCode {
   }
 }
 
-export class HexDecodeErrorCode implements ErrorCode {
+export class HexDecodeErrorCode extends ErrorCode {
+  public name = 'HexDecodeErrorCode';
+
   constructor(public readonly error: string) {
+    super();
     Object.setPrototypeOf(this, HexDecodeErrorCode.prototype);
   }
 
@@ -278,12 +317,15 @@ export class HexDecodeErrorCode implements ErrorCode {
   }
 }
 
-export class TimeoutWaitingForResponseErrorCode implements ErrorCode {
+export class TimeoutWaitingForResponseErrorCode extends ErrorCode {
+  public name = 'TimeoutWaitingForResponseErrorCode';
+
   constructor(
     public readonly message: string,
     public readonly requestId: RequestId,
     public readonly status: RequestStatusResponseStatus,
   ) {
+    super();
     Object.setPrototypeOf(this, TimeoutWaitingForResponseErrorCode.prototype);
   }
 
@@ -296,12 +338,15 @@ export class TimeoutWaitingForResponseErrorCode implements ErrorCode {
   }
 }
 
-export class CertifiedRejectErrorCode implements ErrorCode {
+export class CertifiedRejectErrorCode extends ErrorCode {
+  public name = 'CertifiedRejectErrorCode';
+
   constructor(
     public readonly requestId: RequestId,
     public readonly rejectCode: number,
     public readonly rejectMessage: string,
   ) {
+    super();
     Object.setPrototypeOf(this, CertifiedRejectErrorCode.prototype);
   }
 
@@ -315,8 +360,11 @@ export class CertifiedRejectErrorCode implements ErrorCode {
   }
 }
 
-export class RequestStatusDoneNoReplyErrorCode implements ErrorCode {
+export class RequestStatusDoneNoReplyErrorCode extends ErrorCode {
+  public name = 'RequestStatusDoneNoReplyErrorCode';
+
   constructor(public readonly requestId: RequestId) {
+    super();
     Object.setPrototypeOf(this, RequestStatusDoneNoReplyErrorCode.prototype);
   }
 
@@ -328,8 +376,11 @@ export class RequestStatusDoneNoReplyErrorCode implements ErrorCode {
   }
 }
 
-export class MissingRootKeyErrorCode implements ErrorCode {
+export class MissingRootKeyErrorCode extends ErrorCode {
+  public name = 'MissingRootKeyErrorCode';
+
   constructor() {
+    super();
     Object.setPrototypeOf(this, MissingRootKeyErrorCode.prototype);
   }
 
@@ -338,8 +389,11 @@ export class MissingRootKeyErrorCode implements ErrorCode {
   }
 }
 
-export class HashValueErrorCode implements ErrorCode {
+export class HashValueErrorCode extends ErrorCode {
+  public name = 'HashValueErrorCode';
+
   constructor(public readonly value: unknown) {
+    super();
     Object.setPrototypeOf(this, HashValueErrorCode.prototype);
   }
 
