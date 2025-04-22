@@ -1,6 +1,13 @@
 /** @module CanisterStatus */
 import { Principal } from '@dfinity/principal';
-import { CertificateVerificationError } from '../errors';
+import {
+  CertificateVerificationError,
+  MissingRootKeyError,
+  ErrorKind,
+  CertificateNotAuthorizedError,
+  LookupError,
+  DerKeyLengthMismatchError,
+} from '../errors';
 import { HttpAgent } from '../agent/http';
 import {
   Cert,
@@ -16,7 +23,7 @@ import {
 import { toHex } from '../utils/buffer';
 import * as Cbor from '../cbor';
 import { decodeLeb128, decodeTime } from '../utils/leb';
-import { DerEncodedPublicKey } from '..';
+import { DerEncodedPublicKey } from '../auth';
 
 /**
  * Represents the useful information about a subnet
@@ -146,7 +153,7 @@ export const request = async (options: {
           paths: [encodedPaths[index]],
         });
         if (agent.rootKey == null) {
-          throw new Error('Agent is missing root key');
+          throw new MissingRootKeyError(ErrorKind.External);
         }
         const cert = await Certificate.create({
           certificate: response.certificate,
@@ -158,7 +165,7 @@ export const request = async (options: {
         const lookup = (cert: Certificate, path: Path) => {
           if (path === 'subnet') {
             if (agent.rootKey == null) {
-              throw new Error('Agent is missing root key');
+              throw new MissingRootKeyError(ErrorKind.External);
             }
             const data = fetchNodeKeys(response.certificate, canisterId, agent.rootKey);
             return {
@@ -295,12 +302,18 @@ export const fetchNodeKeys = (
 
   const canisterInRange = check_canister_ranges({ canisterId, subnetId, tree });
   if (!canisterInRange) {
-    throw new Error('Canister not in range');
+    throw new CertificateNotAuthorizedError(
+      {
+        canisterId,
+        subnetId: delegation.subnet_id,
+      },
+      ErrorKind.Trust,
+    );
   }
 
   const subnetLookupResult = lookup_path(['subnet', delegation.subnet_id, 'node'], tree);
   if (subnetLookupResult.status !== LookupStatus.Found) {
-    throw new Error('Node not found');
+    throw new LookupError('Node not found', ErrorKind.Protocol);
   }
   if (subnetLookupResult.value instanceof ArrayBuffer) {
     throw new Error('Invalid node tree');
@@ -313,12 +326,15 @@ export const fetchNodeKeys = (
     const node_id = Principal.from(new Uint8Array(fork[1] as ArrayBuffer)).toText();
     const publicKeyLookupResult = lookup_path(['public_key'], fork[2] as HashTree);
     if (publicKeyLookupResult.status !== LookupStatus.Found) {
-      throw new Error('Public key not found');
+      throw new LookupError('Public key not found', ErrorKind.Protocol);
     }
 
     const derEncodedPublicKey = publicKeyLookupResult.value as ArrayBuffer;
     if (derEncodedPublicKey.byteLength !== 44) {
-      throw new Error('Invalid public key length');
+      throw new DerKeyLengthMismatchError(
+        { expectedLength: 44, actualLength: derEncodedPublicKey.byteLength },
+        ErrorKind.Protocol,
+      );
     } else {
       nodeKeys.set(node_id, derEncodedPublicKey as DerEncodedPublicKey);
     }
@@ -366,7 +382,7 @@ export const encodePath = (path: Path, canisterId: Principal): ArrayBuffer[] => 
     }
   }
   throw new Error(
-    `An unexpeected error was encountered while encoding your path for canister status. Please ensure that your path, ${path} was formatted correctly.`,
+    `An unexpected error was encountered while encoding your path for canister status. Please ensure that your path ${path} was formatted correctly.`,
   );
 };
 
