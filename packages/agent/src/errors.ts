@@ -222,6 +222,28 @@ export class DerPrefixMismatchError extends AgentErrorV2 {
   }
 }
 
+class CborDecodeErrorCode implements ErrorCode {
+  constructor(
+    public readonly error: unknown,
+    public readonly input: Uint8Array,
+  ) {
+    Object.setPrototypeOf(this, CborDecodeErrorCode.prototype);
+  }
+
+  public toString(): string {
+    return `Failed to decode CBOR: ${this.error}, input: ${toHex(this.input)}`;
+  }
+}
+
+export class CborDecodeError extends AgentErrorV2 {
+  public name = 'CborDecodeError';
+
+  constructor(options: { error: unknown; input: Uint8Array }, kind: ErrorKind) {
+    super(new CborDecodeErrorCode(options.error, options.input), kind);
+    Object.setPrototypeOf(this, CborDecodeError.prototype);
+  }
+}
+
 /**
  * An error that happens in the Agent. This is the root of all errors and should be used
  * everywhere in the Agent code (this package).
