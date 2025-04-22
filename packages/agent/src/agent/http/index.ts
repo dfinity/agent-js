@@ -842,7 +842,7 @@ export class HttpAgent implements Agent {
     this.log.print(`ecid ${ecid.toString()}`);
     this.log.print(`canisterId ${canisterId.toString()}`);
 
-    let transformedRequest: HttpAgentRequest | undefined = undefined;
+    let transformedRequest: HttpAgentRequest | undefined;
     let queryResult;
     const id = await (identity ?? this.#identity);
     if (!id) {

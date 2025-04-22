@@ -125,7 +125,7 @@ export async function pollForResponse(
   const path = [strToUtf8('request_status'), requestId];
 
   let state: ReadStateResponse;
-  let currentRequest: ReadStateRequest | undefined = undefined;
+  let currentRequest: ReadStateRequest | undefined;
   const preSignReadStateRequest = options.preSignReadStateRequest ?? false;
   if (preSignReadStateRequest) {
     // If preSignReadStateRequest is true, we need to create a new request

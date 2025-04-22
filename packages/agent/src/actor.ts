@@ -7,7 +7,6 @@ import {
   QueryResponseStatus,
   ReplicaRejectCode,
   SubmitResponse,
-  v2ResponseBody,
 } from './agent';
 import { AgentError } from './errors';
 import { bufFromBufLike, IDL } from '@dfinity/candid';

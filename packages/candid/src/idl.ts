@@ -1340,7 +1340,7 @@ export class VariantClass extends ConstructType<Record<string, any>> {
 export class RecClass<T = any> extends ConstructType<T> {
   private static _counter = 0;
   private _id = RecClass._counter++;
-  private _type: ConstructType<T> | undefined = undefined;
+  private _type: ConstructType<T> | undefined;
 
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     if (!this._type) {
