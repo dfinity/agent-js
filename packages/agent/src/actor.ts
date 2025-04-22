@@ -459,7 +459,7 @@ function decodeReturnValue(types: IDL.Type[], msg: ArrayBuffer) {
   }
 }
 
-const DEFAULT_ACTOR_CONFIG = {
+const DEFAULT_ACTOR_CONFIG: Partial<ActorConfig> = {
   pollingOptions: DEFAULT_POLLING_OPTIONS,
 } satisfies Partial<ActorConfig>;
 
