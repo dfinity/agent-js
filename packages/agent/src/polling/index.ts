@@ -1,7 +1,7 @@
 import { RequestId } from '../request_id';
 import { strToUtf8, toHex } from '../utils/buffer';
 import { CreateCertificateOptions, Certificate, lookupResultToBuffer } from '../certificate';
-import { Agent } from '../agent/api';
+import { Agent, ReadStateResponse } from '../agent/api';
 import { Principal } from '@dfinity/principal';
 
 export * as strategy from './strategy';
@@ -121,8 +121,7 @@ export async function pollForResponse(
   certificate: Certificate;
   reply: ArrayBuffer;
 }> {
-  const encode = (str: string) => strToUtf8(str);
-  const path = [encode('request_status'), requestId];
+  const path = [strToUtf8('request_status'), requestId];
 
   // Determine if we should reuse the read state request or create a new one
   // based on the options provided.
@@ -142,7 +141,7 @@ export async function pollForResponse(
     return request;
   }
 
-  let state;
+  let state: ReadStateResponse;
   let currentRequest: ReadStateRequest | undefined = undefined;
   const preSignReadStateRequest = options.preSignReadStateRequest ?? false;
   if (preSignReadStateRequest) {
@@ -162,7 +161,7 @@ export async function pollForResponse(
     blsVerify: options.blsVerify,
   });
 
-  const maybeBuf = lookupResultToBuffer(cert.lookup([...path, encode('status')]));
+  const maybeBuf = lookupResultToBuffer(cert.lookup([...path, strToUtf8('status')]));
   let status;
   if (typeof maybeBuf === 'undefined') {
     // Missing requestId means we need to wait
