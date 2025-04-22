@@ -39,14 +39,12 @@ mitmTest('mitm with query verification', async () => {
   try {
     await counter.greet('counter');
   } catch (error) {
-    console.log(error);
     expect(error).toBeInstanceOf(CertificateVerificationErrorV2);
     expect(error.cause.kind).toBe(ErrorKind.Trust);
   }
   try {
     await counter.queryGreet('counter');
   } catch (error) {
-    console.log(error);
     expect(error).toBeInstanceOf(AgentQueryError);
   }
 });
