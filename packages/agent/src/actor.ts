@@ -1,12 +1,13 @@
 import {
   Agent,
   HttpDetailsResponse,
+  isV2ResponseBody,
+  isV3ResponseBody,
   QueryResponseRejected,
   QueryResponseStatus,
   ReplicaRejectCode,
   SubmitResponse,
   v2ResponseBody,
-  v3ResponseBody,
 } from './agent';
 import { AgentError } from './errors';
 import { bufFromBufLike, IDL } from '@dfinity/candid';
@@ -542,11 +543,12 @@ function _createActorMethod(
       });
       let reply: ArrayBuffer | undefined;
       let certificate: Certificate | undefined;
-      if (response.body && (response.body as v3ResponseBody).certificate) {
+      if (isV3ResponseBody(response.body)) {
+        // handle v3 response errors by throwing an UpdateCallRejectedError object
         if (agent.rootKey == null) {
           throw new AgentError('Agent root key not initialized before calling');
         }
-        const cert = (response.body as v3ResponseBody).certificate;
+        const cert = response.body.certificate;
         certificate = await Certificate.create({
           certificate: bufFromBufLike(cert),
           rootKey: agent.rootKey,
@@ -589,9 +591,9 @@ function _createActorMethod(
             );
           }
         }
-      } else if (response.body && (response.body as v2ResponseBody).reject_code !== undefined) {
+      } else if (isV2ResponseBody(response.body) && response.body.reject_code !== undefined) {
         // handle v2 response errors by throwing an UpdateCallRejectedError object
-        const { reject_code, reject_message, error_code } = response.body as v2ResponseBody;
+        const { reject_code, reject_message, error_code } = response.body;
         throw new UpdateCallRejectedError(
           cid,
           methodName,
