@@ -13,7 +13,7 @@ import {
   lookup_path,
   lookupResultToBuffer,
 } from '../certificate';
-import { bufFromBufLike, toHex, uint8ToBuf } from '../utils/buffer';
+import { bufFromBufLike, strToUtf8, toHex } from '../utils/buffer';
 import * as Cbor from '../cbor';
 import { decodeLeb128, decodeTime } from '../utils/leb';
 import { DerEncodedPublicKey } from '..';
@@ -264,7 +264,7 @@ export const fetchNodeKeys = (
   if (!canisterId._isPrincipal) {
     throw new Error('Invalid canisterId');
   }
-  const cert = Cbor.decode(uint8ToBuf(new Uint8Array(certificate))) as Cert;
+  const cert = Cbor.decode(bufFromBufLike(certificate)) as Cert;
   const tree = cert.tree;
   let delegation = cert.delegation;
   let subnetId: Principal;
@@ -331,32 +331,27 @@ export const fetchNodeKeys = (
 };
 
 export const encodePath = (path: Path, canisterId: Principal): ArrayBuffer[] => {
-  const encoder = new TextEncoder();
-
-  const encode = (arg: string): ArrayBuffer => {
-    return bufFromBufLike(encoder.encode(arg));
-  };
   const canisterBuffer = bufFromBufLike(canisterId.toUint8Array());
   switch (path) {
     case 'time':
-      return [encode('time')];
+      return [strToUtf8('time')];
     case 'controllers':
-      return [encode('canister'), canisterBuffer, encode('controllers')];
+      return [strToUtf8('canister'), canisterBuffer, strToUtf8('controllers')];
     case 'module_hash':
-      return [encode('canister'), canisterBuffer, encode('module_hash')];
+      return [strToUtf8('canister'), canisterBuffer, strToUtf8('module_hash')];
     case 'subnet':
-      return [encode('subnet')];
+      return [strToUtf8('subnet')];
     case 'candid':
-      return [encode('canister'), canisterBuffer, encode('metadata'), encode('candid:service')];
+      return [strToUtf8('canister'), canisterBuffer, strToUtf8('metadata'), strToUtf8('candid:service')];
     default: {
       // Check for CustomPath signature
       if ('key' in path && 'path' in path) {
         // For simplified metadata queries
         if (typeof path['path'] === 'string' || path['path'] instanceof ArrayBuffer) {
           const metaPath = path.path;
-          const encoded = typeof metaPath === 'string' ? encode(metaPath) : metaPath;
+          const encoded = typeof metaPath === 'string' ? strToUtf8(metaPath) : metaPath;
 
-          return [encode('canister'), canisterBuffer, encode('metadata'), encoded];
+          return [strToUtf8('canister'), canisterBuffer, strToUtf8('metadata'), encoded];
 
           // For non-metadata, return the provided custompath
         } else {
