@@ -28,10 +28,10 @@ import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { AgentError } from '../../errors';
 import { AgentCallError, AgentQueryError, AgentReadStateError } from './errors';
 import { bufFromBufLike } from '@dfinity/candid';
+import { utf8ToBytes } from '@noble/hashes/utils';
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;
-
 
 const HTTP_AGENT_HOST = 'http://127.0.0.1:4943';
 
@@ -164,7 +164,13 @@ test('queries with the same content should have the same signature', async () =>
     sender: principal,
   });
 
-  const paths = [[textEncodeBuffer('request_status'), requestId, textEncodeBuffer('reply')]];
+  const paths = [
+    [
+      bufFromBufLike(utf8ToBytes('request_status')),
+      requestId,
+      bufFromBufLike(utf8ToBytes('reply')),
+    ],
+  ];
 
   const response1 = await httpAgent.readState(canisterId, { paths });
   const response2 = await httpAgent.readState(canisterId, { paths });
@@ -225,7 +231,13 @@ test('readState should not call transformers if request is passed', async () => 
     sender: principal,
   });
 
-  const paths = [[textEncodeBuffer('request_status'), requestId, textEncodeBuffer('reply')]];
+  const paths = [
+    [
+      bufFromBufLike(utf8ToBytes('request_status')),
+      requestId,
+      bufFromBufLike(utf8ToBytes('reply')),
+    ],
+  ];
 
   const request = await httpAgent.createReadStateRequest({ paths });
   expect(transformMock).toBeCalledTimes(1);
@@ -437,7 +449,7 @@ describe('invalidate identity', () => {
     }
     // Test readState
     try {
-      const path = textEncodeBuffer('request_status');
+      const path = bufFromBufLike(utf8ToBytes('request_status'));
       await agent.readState(canisterId, {
         paths: [[path]],
       });
@@ -1335,7 +1347,7 @@ describe('error logs for bad signature', () => {
 
     try {
       const requestId = new ArrayBuffer(32) as RequestId;
-      const path = textEncodeBuffer('request_status');
+      const path = bufFromBufLike(utf8ToBytes('request_status'));
       await agent.readState(canisterId, { paths: [[path, requestId]] });
     } catch (e) {
       expect(e instanceof AgentReadStateError).toBe(true);
