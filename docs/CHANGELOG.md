@@ -9,6 +9,18 @@
 - chore: formatting files and changelog
 - fix: Check subtyping relationship when decoding function or service references
   - This means we now follow the Candid spec more closely, and reduces the risk of calling services with the wrong argument types
+- refactor!: removes the following errors in favor of the new `AgentError`:
+
+  - `AgentHTTPResponseError`
+  - `AgentCallError`
+  - `AgentQueryError`
+  - `AgentReadStateError`
+  - `CertificateVerificationError`
+  - `ActorCallError`
+  - `QueryCallRejectedError`
+  - `UpdateCallRejectedError`
+
+  The new `AgentError` error uses the `code` and `kind` props to enable a better programmatic error handling.
 
 ## [2.4.1] - 2025-04-10
 
