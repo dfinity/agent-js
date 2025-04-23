@@ -328,9 +328,7 @@ describe('makeActor', () => {
           "canister_id": {
             "__principal__": "2chl6-4hpzw-vqaaa-aaaaa-c",
           },
-          "ingress_expiry": Expiry {
-            "_value": 1200000000000n,
-          },
+          "ingress_expiry": "1200000000000",
           "method_name": "greet",
           "request_type": "query",
           "sender": {
@@ -393,7 +391,7 @@ test('it should preserve errors from call', async () => {
           undefined,
           new Uint8Array(),
           new Uint8Array(),
-          '1200000000000',
+          new Expiry(10_000),
         ),
       );
     },

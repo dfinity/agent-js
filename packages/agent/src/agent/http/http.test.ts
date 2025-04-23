@@ -597,15 +597,14 @@ describe('retry failures', () => {
     });
 
     const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
-    expect.assertions(1);
+    expect.assertions(2);
     try {
-      expect(
-        agent.call(Principal.managementCanister(), {
-          methodName: 'test',
-          arg: new Uint8Array().buffer,
-        }),
-      ).rejects.toThrow();
-    } catch {
+      await agent.call(Principal.managementCanister(), {
+        methodName: 'test',
+        arg: new Uint8Array().buffer,
+      });
+    } catch (error) {
+      expect(error).toBeInstanceOf(AgentError);
       // One try + three retries
       expect(mockFetch.mock.calls.length).toBe(4);
     }

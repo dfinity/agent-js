@@ -640,7 +640,7 @@ export class HttpAgent implements Agent {
             requestId,
             transformedRequest.body.sender_pubkey,
             transformedRequest.body.sender_sig,
-            String(transformedRequest.body.content.ingress_expiry['_value']),
+            transformedRequest.body.content.ingress_expiry,
           ),
         );
       } else {
@@ -971,7 +971,7 @@ export class HttpAgent implements Agent {
             requestId,
             transformedRequest.body.sender_pubkey,
             transformedRequest.body.sender_sig,
-            String(transformedRequest.body.content.ingress_expiry['_value']),
+            transformedRequest.body.content.ingress_expiry,
           ),
         );
       } else {
@@ -1159,7 +1159,7 @@ export class HttpAgent implements Agent {
             requestId,
             transformedRequest.body.sender_pubkey,
             transformedRequest.body.sender_sig,
-            String(transformedRequest.body.content.ingress_expiry['_value']),
+            transformedRequest.body.content.ingress_expiry,
           ),
         );
       } else {

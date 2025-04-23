@@ -2,7 +2,7 @@ import { Principal } from '@dfinity/principal';
 import { HttpDetailsResponse, ReplicaRejectCode } from './agent/api';
 import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
-import { RequestStatusResponseStatus } from './agent/http';
+import { Expiry, RequestStatusResponseStatus } from './agent/http';
 import { HttpHeaderField } from './agent/http/types';
 
 export enum ErrorKindEnum {
@@ -387,7 +387,7 @@ export class UncertifiedRejectErrorCode extends ErrorCode {
 
   public toErrorMessage(): string {
     let errorMessage =
-      `Call was rejected:\n` +
+      `The replica returned a rejection error:\n` +
       `  Request ID: ${toHex(this.requestId)}\n` +
       `  Reject code: ${this.rejectCode}\n` +
       `  Reject text: ${this.rejectMessage}\n` +
@@ -636,7 +636,7 @@ export class WithRequestDetailsErrorCode extends ErrorCode {
     public readonly requestId: RequestId | undefined,
     public readonly senderPubKey: ArrayBuffer,
     public readonly senderSignature: ArrayBuffer,
-    public readonly ingressExpiryStr: string,
+    public readonly ingressExpiry: Expiry,
   ) {
     super();
     Object.setPrototypeOf(this, WithRequestDetailsErrorCode.prototype);
@@ -644,10 +644,10 @@ export class WithRequestDetailsErrorCode extends ErrorCode {
 
   public toErrorMessage(): string {
     let errorMessage =
-      `Caught error: ${this.caughtErrorCode.toErrorMessage()}` +
+      `Caught error: ${this.caughtErrorCode.toErrorMessage()}\n` +
       `  Sender public key: ${toHex(this.senderPubKey)}\n` +
       `  Sender signature: ${toHex(this.senderSignature)}\n` +
-      `  Ingress expiry: ${this.ingressExpiryStr}\n`;
+      `  Ingress expiry: ${this.ingressExpiry.toString()}\n`;
     if (this.requestId) {
       errorMessage += `  Request ID: ${toHex(this.requestId)}\n`;
     }

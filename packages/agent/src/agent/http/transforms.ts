@@ -50,6 +50,14 @@ export class Expiry {
   public toHash(): ArrayBuffer {
     return lebEncode(this._value);
   }
+
+  public toString(): string {
+    return this._value.toString();
+  }
+
+  public toJSON(): string {
+    return this.toString();
+  }
 }
 
 /**

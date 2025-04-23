@@ -103,7 +103,7 @@ describe('assets', () => {
 
     // Batch store A and B assets and delete X asset
     const readables = [randomBytesReadable('A.bin', 1000), randomBytesReadable('B.bin', 1000)];
-    await batch.delete(`/${x.fileName}`);
+    batch.delete(`/${x.fileName}`);
     await Promise.all(readables.map(readable => batch.store(readable)));
     await batch.commit();
     await expect(
