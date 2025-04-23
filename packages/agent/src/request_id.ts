@@ -3,6 +3,7 @@ import { Principal } from '@dfinity/principal';
 import borc from 'borc';
 import { sha256 } from '@noble/hashes/sha256';
 import { compare, concat, uint8ToBuf } from './utils/buffer';
+import { HashValueErrorCode, InputError } from './errors';
 
 export type RequestId = ArrayBuffer & { __requestId__: void };
 
@@ -56,11 +57,7 @@ export function hashValue(value: unknown): ArrayBuffer {
     // So we want to try all the high-assurance type guards before this 'probable' one.
     return hash(lebEncode(value));
   }
-  throw Object.assign(new Error(`Attempt to hash a value of unsupported type: ${value}`), {
-    // include so logs/callers can understand the confusing value.
-    // (when stringified in error message, prototype info is lost)
-    value,
-  });
+  throw InputError.fromCode(new HashValueErrorCode(value));
 }
 
 const hashString = (value: string): ArrayBuffer => {
