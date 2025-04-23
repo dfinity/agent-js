@@ -1,16 +1,11 @@
 import { Principal } from '@dfinity/principal';
-import {
-  QueryResponseRejected,
-  ReplicaRejectCode,
-  SubmitResponse,
-  v2ResponseBody,
-} from './agent/api';
+import { HttpDetailsResponse, ReplicaRejectCode } from './agent/api';
 import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
 import { RequestStatusResponseStatus } from './agent/http';
 import { HttpHeaderField } from './agent/http/types';
 
-enum ErrorKindEnum {
+export enum ErrorKindEnum {
   Trust = 'Trust',
   Protocol = 'Protocol',
   Reject = 'Reject',
@@ -34,34 +29,36 @@ class ErrorCode {
 /**
  * An error that happens in the Agent. This is the root of all errors and should be used
  * everywhere in the Agent code (this package).
- * @todo rename to `AgentError` and remove the old `AgentError`
  */
-export class AgentErrorV2 extends Error {
+export class AgentError extends Error {
   public name = 'AgentError';
+  // override the Error.cause property
+  public readonly cause: { code: ErrorCode; kind: ErrorKindEnum };
 
-  constructor(
-    public readonly code: ErrorCode,
-    public readonly kind: ErrorKindEnum,
-  ) {
-    super(
-      code.toErrorMessage(),
-      // @ts-expect-error - Error.cause is not supported in the Typescript version that we are using
-      {
-        cause: {
-          code,
-          kind,
-        },
-      },
-    );
-    Object.setPrototypeOf(this, AgentErrorV2.prototype);
+  get code(): ErrorCode {
+    return this.cause.code;
+  }
+
+  get kind(): ErrorKindEnum {
+    return this.cause.kind;
+  }
+
+  constructor(code: ErrorCode, kind: ErrorKindEnum) {
+    super(code.toErrorMessage());
+    this.cause = { code, kind };
+    Object.setPrototypeOf(this, AgentError.prototype);
   }
 
   public hasCode<C extends ErrorCode>(code: new (...args: never[]) => C): boolean {
     return this.code instanceof code;
   }
+
+  public toString(): string {
+    return `${this.name} (${this.kind}): ${this.message}`;
+  }
 }
 
-class ErrorKind extends AgentErrorV2 {
+class ErrorKind extends AgentError {
   public static fromCode<C extends ErrorCode, E extends ErrorKind>(
     this: new (code: C) => E,
     code: C,
@@ -342,25 +339,65 @@ export class TimeoutWaitingForResponseErrorCode extends ErrorCode {
   }
 }
 
+type CallContext = {
+  canisterId: Principal;
+  methodName: string;
+  httpDetails: HttpDetailsResponse;
+};
+
 export class CertifiedRejectErrorCode extends ErrorCode {
   public name = 'CertifiedRejectErrorCode';
 
   constructor(
     public readonly requestId: RequestId,
-    public readonly rejectCode: number,
+    public readonly rejectCode: ReplicaRejectCode,
     public readonly rejectMessage: string,
+    public readonly errorCode: string | undefined,
+    public readonly context: CallContext | undefined = undefined,
   ) {
     super();
     Object.setPrototypeOf(this, CertifiedRejectErrorCode.prototype);
   }
 
   public toErrorMessage(): string {
-    return (
+    let errorMessage =
+      `The replica returned a rejection error:\n` +
+      `  Request ID: ${toHex(this.requestId)}\n` +
+      `  Reject code: ${this.rejectCode}\n` +
+      `  Reject text: ${this.rejectMessage}\n` +
+      `  Error code: ${this.errorCode}\n`;
+    if (this.context) {
+      errorMessage += `  Context: ${JSON.stringify(this.context, null, 2)}\n`;
+    }
+    return errorMessage;
+  }
+}
+
+export class UncertifiedRejectErrorCode extends ErrorCode {
+  public name = 'UncertifiedRejectErrorCode';
+
+  constructor(
+    public readonly requestId: RequestId,
+    public readonly rejectCode: ReplicaRejectCode,
+    public readonly rejectMessage: string,
+    public readonly errorCode: string | undefined,
+    public readonly context: CallContext | undefined = undefined,
+  ) {
+    super();
+    Object.setPrototypeOf(this, UncertifiedRejectErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    let errorMessage =
       `Call was rejected:\n` +
       `  Request ID: ${toHex(this.requestId)}\n` +
       `  Reject code: ${this.rejectCode}\n` +
-      `  Reject text: ${this.rejectMessage}\n`
-    );
+      `  Reject text: ${this.rejectMessage}\n` +
+      `  Error code: ${this.errorCode}\n`;
+    if (this.context) {
+      errorMessage += `  Context: ${JSON.stringify(this.context, null, 2)}\n`;
+    }
+    return errorMessage;
   }
 }
 
@@ -519,7 +556,7 @@ export class QuerySignatureVerificationFailedErrorCode extends ErrorCode {
 export class UnexpectedErrorCode extends ErrorCode {
   public name = 'UnexpectedErrorCode';
 
-  constructor(public readonly error: string) {
+  constructor(public readonly error: unknown) {
     super();
     Object.setPrototypeOf(this, UnexpectedErrorCode.prototype);
   }
@@ -580,87 +617,55 @@ export class HttpV3ApiNotSupportedErrorCode extends ErrorCode {
   }
 }
 
-/**
- * An error that happens in the Agent. This is the root of all errors and should be used
- * everywhere in the Agent code (this package).
- * @todo https://github.com/dfinity/agent-js/issues/420
- */
-export class AgentError extends Error {
-  public name = 'AgentError';
-  public __proto__ = AgentError.prototype;
-  constructor(public readonly message: string) {
-    super(message);
-    Object.setPrototypeOf(this, AgentError.prototype);
+export class HttpFetchErrorCode extends ErrorCode {
+  public name = 'HttpFetchErrorCode';
+
+  constructor(public readonly error: unknown) {
+    super();
+    Object.setPrototypeOf(this, HttpFetchErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    return `Failed to fetch HTTP request: ${this.error}`;
   }
 }
 
-export class ActorCallError extends AgentError {
-  public name = 'ActorCallError';
-  public __proto__ = ActorCallError.prototype;
+export class WithRequestDetailsErrorCode extends ErrorCode {
+  public name = 'WithRequestDetailsErrorCode';
+
   constructor(
-    public readonly canisterId: Principal | string,
-    public readonly methodName: string,
-    public readonly type: 'query' | 'update',
-    public readonly props: Record<string, string>,
+    public readonly caughtErrorCode: ErrorCode,
+    public readonly requestId: RequestId | undefined,
+    public readonly senderPubKey: ArrayBuffer,
+    public readonly senderSignature: ArrayBuffer,
+    public readonly ingressExpiryStr: string,
   ) {
-    const cid = Principal.from(canisterId);
-    super(
-      [
-        `Call failed:`,
-        `  Canister: ${cid.toText()}`,
-        `  Method: ${methodName} (${type})`,
-        ...Object.getOwnPropertyNames(props).map(n => `  "${n}": ${JSON.stringify(props[n])}`),
-      ].join('\n'),
-    );
-    Object.setPrototypeOf(this, ActorCallError.prototype);
+    super();
+    Object.setPrototypeOf(this, WithRequestDetailsErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    let errorMessage =
+      `Caught error: ${this.caughtErrorCode.toErrorMessage()}` +
+      `  Sender public key: ${toHex(this.senderPubKey)}\n` +
+      `  Sender signature: ${toHex(this.senderSignature)}\n` +
+      `  Ingress expiry: ${this.ingressExpiryStr}\n`;
+    if (this.requestId) {
+      errorMessage += `  Request ID: ${toHex(this.requestId)}\n`;
+    }
+    return errorMessage;
   }
 }
 
-export class QueryCallRejectedError extends ActorCallError {
-  public name = 'QueryCallRejectedError';
-  public __proto__ = QueryCallRejectedError.prototype;
-  constructor(
-    canisterId: Principal | string,
-    methodName: string,
-    public readonly result: QueryResponseRejected,
-  ) {
-    const cid = Principal.from(canisterId);
-    super(cid, methodName, 'query', {
-      Status: result.status,
-      Code: ReplicaRejectCode[result.reject_code] ?? `Unknown Code "${result.reject_code}"`,
-      Message: result.reject_message,
-    });
-    Object.setPrototypeOf(this, QueryCallRejectedError.prototype);
-  }
-}
+export class MissingCanisterIdErrorCode extends ErrorCode {
+  public name = 'MissingCanisterIdErrorCode';
 
-export class UpdateCallRejectedError extends ActorCallError {
-  public name = 'UpdateCallRejectedError';
-  public __proto__ = UpdateCallRejectedError.prototype;
-  constructor(
-    canisterId: Principal | string,
-    methodName: string,
-    public readonly requestId: RequestId,
-    public readonly response: SubmitResponse['response'],
-  ) {
-    const cid = Principal.from(canisterId);
-    super(cid, methodName, 'update', {
-      'Request ID': toHex(requestId),
-      ...(response.body
-        ? {
-            ...((response.body as v2ResponseBody).error_code
-              ? {
-                  'Error code': (response.body as v2ResponseBody).error_code,
-                }
-              : {}),
-            'Reject code': String((response.body as v2ResponseBody).reject_code),
-            'Reject message': (response.body as v2ResponseBody).reject_message,
-          }
-        : {
-            'HTTP status code': response.status.toString(),
-            'HTTP status text': response.statusText,
-          }),
-    });
-    Object.setPrototypeOf(this, UpdateCallRejectedError.prototype);
+  constructor(public readonly receivedCanisterId: unknown) {
+    super();
+    Object.setPrototypeOf(this, MissingCanisterIdErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    return `Canister ID is required, but received ${typeof this.receivedCanisterId} instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.`;
   }
 }

@@ -1,13 +1,19 @@
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
-import { AgentCallError, HttpAgent, HttpDetailsResponse, Nonce, SubmitResponse } from './agent';
+import { HttpAgent, Nonce, SubmitResponse } from './agent';
 import { Expiry } from './agent/http/transforms';
 import { CallRequest, SubmitRequestType, UnSigned } from './agent/http/types';
 import * as cbor from './cbor';
 import { requestIdOf } from './request_id';
 import * as pollingImport from './polling';
 import { ActorConfig } from './actor';
-import { UpdateCallRejectedError } from './errors';
+import {
+  CertifiedRejectErrorCode,
+  RejectError,
+  UnexpectedErrorCode,
+  UnknownError,
+  WithRequestDetailsErrorCode,
+} from './errors';
 
 const importActor = async (mockUpdatePolling?: () => void) => {
   jest.dontMock('./polling');
@@ -97,7 +103,7 @@ describe('makeActor', () => {
     const arg = IDL.encode([IDL.Text], [argValue]);
 
     const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
-    const principal = await Principal.anonymous();
+    const principal = Principal.anonymous();
     const sender = principal.toUint8Array();
 
     const nonces = [
@@ -139,9 +145,16 @@ describe('makeActor', () => {
     const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
     const reply = await actor.greet(argValue);
 
+    expect.assertions(13);
+
     expect(reply).toEqual(IDL.decode([IDL.Text], expectedReplyArg)[0]);
 
-    await expect(async () => actor.error()).rejects.toThrow(UpdateCallRejectedError);
+    try {
+      await actor.error();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RejectError);
+      expect(error.cause.code).toBeInstanceOf(CertifiedRejectErrorCode);
+    }
 
     const { calls } = mockFetch.mock;
 
@@ -374,13 +387,14 @@ describe('makeActor', () => {
 test('it should preserve errors from call', async () => {
   const httpAgent = {
     call: () => {
-      throw new AgentCallError(
-        'test error',
-        {} as unknown as HttpDetailsResponse,
-        'request id',
-        'pubkey',
-        'senderSig',
-        'ingressExpiry',
+      throw UnknownError.fromCode(
+        new WithRequestDetailsErrorCode(
+          new UnexpectedErrorCode('test error'),
+          undefined,
+          new Uint8Array(),
+          new Uint8Array(),
+          '1200000000000',
+        ),
       );
     },
   };
@@ -392,12 +406,13 @@ test('it should preserve errors from call', async () => {
   const { Actor } = await importActor();
   const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
   const config = { agent: httpAgent, canisterId } as unknown as ActorConfig;
-  const testActor = await Actor.createActor(actorInterface, config);
+  const testActor = Actor.createActor(actorInterface, config);
+  expect.assertions(2);
   try {
-    await testActor.greet('foo'); //?
+    await testActor.greet('foo');
   } catch (error) {
-    expect(error.message).toBe('test error');
-    expect(error instanceof AgentCallError).toBe(true);
+    expect(error).toBeInstanceOf(UnknownError);
+    expect(error.cause.code).toBeInstanceOf(WithRequestDetailsErrorCode);
   }
 });
 

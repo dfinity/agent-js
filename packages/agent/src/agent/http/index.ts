@@ -1,7 +1,6 @@
 import { JsonObject } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import {
-  AgentError,
   HashTreeDecodeErrorCode,
   CreateHttpAgentErrorCode,
   ExternalError,
@@ -22,15 +21,18 @@ import {
   UnknownError,
   HttpErrorCode,
   HttpV3ApiNotSupportedErrorCode,
+  TransportError,
+  HttpFetchErrorCode,
+  AgentError,
+  WithRequestDetailsErrorCode,
 } from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
 import { RequestId, hashOfMap, requestIdOf } from '../../request_id';
-import { bufEquals, bufFromBufLike, concat, fromHex, toHex } from '../../utils/buffer';
+import { bufEquals, bufFromBufLike, concat, fromHex } from '../../utils/buffer';
 import {
   Agent,
   ApiQueryResponse,
-  HttpDetailsResponse,
   QueryFields,
   QueryResponse,
   ReadStateOptions,
@@ -51,7 +53,6 @@ import {
   ReadRequestType,
   SubmitRequestType,
 } from './types';
-import { AgentCallError, AgentQueryError, AgentReadStateError } from './errors';
 import { SubnetStatus, request } from '../../canisterStatus';
 import { HashTree, LookupStatus, lookup_path } from '../../certificate';
 import { ed25519 } from '@noble/curves/ed25519';
@@ -61,7 +62,6 @@ import { decodeTime } from '../../utils/leb';
 import { ObservableLog } from '../../observable';
 import { BackoffStrategy, BackoffStrategyFactory, ExponentialBackoff } from '../../polling/backoff';
 export * from './transforms';
-export * from './errors';
 export { Nonce, makeNonce } from './types';
 
 export enum RequestStatusResponseStatus {
@@ -620,7 +620,7 @@ export class HttpAgent implements Agent {
       };
     } catch (error) {
       // If the error is due to the v3 api not being supported, fall back to v2
-      if (error instanceof ProtocolError && error.hasCode(HttpV3ApiNotSupportedErrorCode)) {
+      if (error instanceof AgentError && error.hasCode(HttpV3ApiNotSupportedErrorCode)) {
         this.log.warn('v3 api not supported. Fall back to v2');
         return this.call(
           canisterId,
@@ -632,16 +632,21 @@ export class HttpAgent implements Agent {
           identity,
         );
       }
-      const message = `Error while making call: ${(error as Error).message ?? String(error)}`;
-      const callError = new AgentCallError(
-        message,
-        error as HttpDetailsResponse,
-        toHex(requestId),
-        toHex(transformedRequest.body.sender_pubkey),
-        toHex(transformedRequest.body.sender_sig),
-        String(transformedRequest.body.content.ingress_expiry['_value']),
-      );
-      this.log.error(message, callError);
+      let callError: AgentError;
+      if (error instanceof AgentError) {
+        callError = UnknownError.fromCode(
+          new WithRequestDetailsErrorCode(
+            error.code,
+            requestId,
+            transformedRequest.body.sender_pubkey,
+            transformedRequest.body.sender_sig,
+            String(transformedRequest.body.content.ingress_expiry['_value']),
+          ),
+        );
+      } else {
+        callError = UnknownError.fromCode(new UnexpectedErrorCode(error));
+      }
+      this.log.error(`Error while making call: ${callError.message}`, callError);
       throw callError;
     }
   }
@@ -724,7 +729,12 @@ export class HttpAgent implements Agent {
         );
         return await this.#requestAndRetryQuery({ ...args, tries: tries + 1 });
       }
-      throw error;
+      if (error instanceof AgentError) {
+        // if it's an error that we have thrown, just throw it as is
+        throw error;
+      }
+      // if it's an error that we have not thrown, wrap it in a TransportError
+      throw TransportError.fromCode(new HttpFetchErrorCode(error));
     }
 
     const timestamp = response.signatures?.[0]?.timestamp;
@@ -752,7 +762,12 @@ export class HttpAgent implements Agent {
 
     // If the timestamp is less than the watermark, retry the request up to the retry limit
     if (Number(this.waterMark) > timeStampInMs) {
-      const error = new AgentError('Timestamp is below the watermark. Retrying query.');
+      const error = ProtocolError.fromCode(
+        new TimeoutWaitingForResponseErrorCode(
+          'Timestamp is below the watermark. Retrying query.',
+          requestId,
+        ),
+      );
       this.log.error('Timestamp is below', error, {
         timestamp,
         waterMark: this.waterMark,
@@ -809,7 +824,7 @@ export class HttpAgent implements Agent {
         // Delay the request by the configured backoff strategy
         return await this.#requestAndRetry({ request, backoff, tries: tries + 1 });
       }
-      throw error;
+      throw TransportError.fromCode(new HttpFetchErrorCode(error));
     }
     if (response.ok) {
       return response;
@@ -948,16 +963,21 @@ export class HttpAgent implements Agent {
         return this.#verifyQueryResponse(queryWithDetails, updatedSubnetStatus);
       }
     } catch (error) {
-      const message = `Error while making call: ${(error as Error).message ?? String(error)}`;
-      const queryError = new AgentQueryError(
-        message,
-        error as HttpDetailsResponse,
-        String(requestId),
-        toHex(transformedRequest?.body?.sender_pubkey),
-        toHex(transformedRequest?.body?.sender_sig),
-        String(transformedRequest?.body?.content.ingress_expiry['_value']),
-      );
-      this.log.error(message, queryError);
+      let queryError: AgentError;
+      if (error instanceof AgentError) {
+        queryError = UnknownError.fromCode(
+          new WithRequestDetailsErrorCode(
+            error.code,
+            requestId,
+            transformedRequest.body.sender_pubkey,
+            transformedRequest.body.sender_sig,
+            String(transformedRequest.body.content.ingress_expiry['_value']),
+          ),
+        );
+      } else {
+        queryError = UnknownError.fromCode(new UnexpectedErrorCode(error));
+      }
+      this.log.error(`Error while making query: ${queryError.message}`, queryError);
       throw queryError;
     }
   }
@@ -1131,16 +1151,21 @@ export class HttpAgent implements Agent {
 
       return decodedResponse;
     } catch (error) {
-      const message = `Caught exception while attempting to read state: ${(error as Error).message ?? String(error)}`;
-      const readStateError = new AgentReadStateError(
-        message,
-        error as HttpDetailsResponse,
-        String(requestId),
-        toHex(transformedRequest?.body?.sender_pubkey),
-        toHex(transformedRequest?.body?.sender_sig),
-        String(transformedRequest?.body?.content.ingress_expiry['_value']),
-      );
-      this.log.error(message, readStateError);
+      let readStateError: AgentError;
+      if (error instanceof AgentError) {
+        readStateError = UnknownError.fromCode(
+          new WithRequestDetailsErrorCode(
+            error.code,
+            requestId,
+            transformedRequest.body.sender_pubkey,
+            transformedRequest.body.sender_sig,
+            String(transformedRequest.body.content.ingress_expiry['_value']),
+          ),
+        );
+      } else {
+        readStateError = UnknownError.fromCode(new UnexpectedErrorCode(error));
+      }
+      this.log.error(`Error while making read state: ${readStateError.message}`, readStateError);
       throw readStateError;
     }
   }
@@ -1220,7 +1245,13 @@ export class HttpAgent implements Agent {
         });
       }
     } catch (error) {
-      this.log.error('Caught exception while attempting to sync time', error as AgentError);
+      let syncTimeError: AgentError;
+      if (error instanceof AgentError) {
+        syncTimeError = error;
+      } else {
+        syncTimeError = UnknownError.fromCode(new UnexpectedErrorCode(error));
+      }
+      this.log.error('Caught exception while attempting to sync time', syncTimeError);
     }
   }
 

@@ -1,7 +1,12 @@
 import { createActor } from '../canisters/declarations/counter/index';
 import { test, expect, TestAPI } from 'vitest';
 import { makeAgent } from '../utils/agent';
-import { AgentQueryError, CertificateVerificationErrorCode, TrustError } from '@dfinity/agent';
+import {
+  CertificateVerificationErrorCode,
+  TrustError,
+  UnknownError,
+  WithRequestDetailsErrorCode,
+} from '@dfinity/agent';
 
 let mitmTest: TestAPI | typeof test.skip = test;
 if (!process.env['MITM']) {
@@ -10,7 +15,7 @@ if (!process.env['MITM']) {
 mitmTest(
   'mitm greet',
   async () => {
-    const counter = await createActor('tnnnb-2yaaa-aaaab-qaiiq-cai', {
+    const counter = createActor('tnnnb-2yaaa-aaaab-qaiiq-cai', {
       agent: await makeAgent({
         host: 'http://127.0.0.1:8888',
         verifyQuerySignatures: false,
@@ -45,6 +50,7 @@ mitmTest('mitm with query verification', async () => {
   try {
     await counter.queryGreet('counter');
   } catch (error) {
-    expect(error).toBeInstanceOf(AgentQueryError);
+    expect(error).toBeInstanceOf(UnknownError);
+    expect(error.cause.code).toBeInstanceOf(WithRequestDetailsErrorCode);
   }
 });

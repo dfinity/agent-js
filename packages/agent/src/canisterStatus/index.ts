@@ -9,7 +9,7 @@ import {
   ExternalError,
   ProtocolError,
   TrustError,
-  AgentErrorV2,
+  AgentError,
   UnknownError,
   HashTreeDecodeErrorCode,
   UnexpectedErrorCode,
@@ -248,7 +248,7 @@ export const request = async (options: {
         }
       } catch (error) {
         // Break on signature verification errors
-        if (error instanceof AgentErrorV2 && error.hasCode(CertificateVerificationErrorCode)) {
+        if (error instanceof AgentError && error.hasCode(CertificateVerificationErrorCode)) {
           throw error;
         }
         if (typeof path !== 'string' && 'key' in path && 'path' in path) {

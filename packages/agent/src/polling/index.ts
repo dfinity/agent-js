@@ -85,8 +85,10 @@ export async function pollForResponse(
       const rejectMessage = new TextDecoder().decode(
         lookupResultToBuffer(cert.lookup([...path, 'reject_message']))!,
       );
+      const errorCodeBuf = lookupResultToBuffer(cert.lookup([...path, 'error_code']));
+      const errorCode = errorCodeBuf ? new TextDecoder().decode(errorCodeBuf) : undefined;
       throw RejectError.fromCode(
-        new CertifiedRejectErrorCode(requestId, rejectCode, rejectMessage),
+        new CertifiedRejectErrorCode(requestId, rejectCode, rejectMessage, errorCode),
       );
     }
 
