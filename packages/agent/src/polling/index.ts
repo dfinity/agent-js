@@ -46,7 +46,9 @@ export async function pollForResponse(
   const currentRequest = request ?? (await agent.createReadStateRequest?.({ paths: [path] }));
 
   const state = await agent.readState(canisterId, { paths: [path] }, undefined, currentRequest);
-  if (agent.rootKey == null) throw ExternalError.fromCode(new MissingRootKeyErrorCode());
+  if (agent.rootKey == null) {
+    throw ExternalError.fromCode(new MissingRootKeyErrorCode());
+  }
   const cert = await Certificate.create({
     certificate: state.certificate,
     rootKey: agent.rootKey,
