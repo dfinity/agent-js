@@ -4,8 +4,10 @@
 
 ### Added
 
-- feat: breaks `readState` into `signed` and `unsigned` methods. The `signed` method will take a pre-signed request and re-use it for polling. The `unsigned` method will create a new request and sign it for each poll.
-  - This can be called directly in the `HttpAgent` or through the `Actor` interface, with a new `signed` polling strategy.
+- feat!: changes polling strategy for `read_state` requests to support presigned requests. By default, `read_state` requests will create a new signature with a new ingress expiry each time they are made. However, the new `preSignReadStateRequest` will make one signature and use it for all polling requests. This is useful for hardware wallets or other external signing solutions that make signing cumbersome.
+  - pollForResponse now moves `strategy`, `request`, and `preSignReadStateRequest` to the `options: PollingOptions` object
+  - new export: `PollingOptions` type
+  - Actor also includes a `pollingOptions` object that can be passed to the `actor` function and will be passed to the `pollForResponse` method
 - feat!: removes the unused `defaultAgent` global concept and the `getDefaultAgent` function. The `HttpAgent` constructor is now the only way to create an agent.
 - feat!: removes the `ProxyAgent` class.
 - chore: formatting files and changelog
