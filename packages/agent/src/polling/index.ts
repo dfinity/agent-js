@@ -71,6 +71,20 @@ function hasProperty<O extends object, P extends string>(
   return Object.prototype.hasOwnProperty.call(value, property);
 }
 
+function isObjectWithProperty<O extends object, P extends string>(
+  value: unknown,
+  property: P,
+): value is O & Record<P, unknown> {
+  return value !== null && typeof value === 'object' && hasProperty(value, property);
+}
+
+function hasFunction<O extends object, P extends string>(
+  value: O,
+  property: P,
+): value is O & Record<P, (...args: unknown[]) => unknown> {
+  return hasProperty(value, property) && typeof value[property] === 'function';
+}
+
 /**
  * Check if value is a signed read state request with expiry
  * @param value to check
@@ -78,20 +92,6 @@ function hasProperty<O extends object, P extends string>(
 function isSignedReadStateRequestWithExpiry(
   value: unknown,
 ): value is SignedReadStateRequestWithExpiry {
-  function isObjectWithProperty<O extends object, P extends string>(
-    value: unknown,
-    property: P,
-  ): value is O & Record<P, unknown> {
-    return value !== null && typeof value === 'object' && hasProperty(value, property);
-  }
-
-  function hasFunction<O extends object, P extends string>(
-    value: O,
-    property: P,
-  ): value is O & Record<P, (...args: unknown[]) => unknown> {
-    return hasProperty(value, property) && typeof value[property] === 'function';
-  }
-
   return (
     isObjectWithProperty(value, 'body') &&
     isObjectWithProperty(value.body, 'content') &&
