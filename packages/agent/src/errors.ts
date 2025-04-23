@@ -16,10 +16,8 @@ export enum ErrorKindEnum {
   Unknown = 'Unknown',
 }
 
-class ErrorCode {
-  public toErrorMessage(): string {
-    throw new Error('Not implemented');
-  }
+abstract class ErrorCode {
+  public abstract toErrorMessage(): string;
 
   public toString(): string {
     return this.toErrorMessage();
