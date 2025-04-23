@@ -4,7 +4,8 @@ import borc from 'borc';
 import * as cbor from 'simple-cbor';
 import { CborEncoder, SelfDescribeCborSerializer } from 'simple-cbor';
 import { Principal } from '@dfinity/principal';
-import { concat, fromHex, toHex } from './utils/buffer';
+import { concat, fromHex } from './utils/buffer';
+import { CborDecodeErrorCode, InputError } from './errors';
 
 // We are using hansl/simple-cbor for CBOR serialization, to avoid issues with
 // encoding the uint64 values that the HTTP handler of the client expects for
@@ -137,7 +138,7 @@ export function decode<T>(input: ArrayBuffer): T {
 
   try {
     return decoder.decodeFirst(buffer);
-  } catch (e: unknown) {
-    throw new Error(`Failed to decode CBOR: ${e}, input: ${toHex(buffer)}`);
+  } catch (error: unknown) {
+    throw InputError.fromCode(new CborDecodeErrorCode(error, buffer));
   }
 }

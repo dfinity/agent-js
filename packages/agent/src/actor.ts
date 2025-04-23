@@ -675,7 +675,12 @@ export function getManagementCanister(config: CallConfig): ActorSubclass<Managem
     }
     const first = args[0];
     let effectiveCanisterId = Principal.fromHex('');
-    if (first && typeof first === 'object' && first.target_canister && methodName === "install_chunked_code") {
+    if (
+      first &&
+      typeof first === 'object' &&
+      first.target_canister &&
+      methodName === 'install_chunked_code'
+    ) {
       effectiveCanisterId = Principal.from(first.target_canister);
     }
     if (first && typeof first === 'object' && first.canister_id) {
