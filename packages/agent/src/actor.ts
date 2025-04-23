@@ -590,7 +590,7 @@ function _createActorMethod(
             );
           }
         }
-      } else if (isV2ResponseBody(response.body) && response.body.reject_code !== undefined) {
+      } else if (isV2ResponseBody(response.body)) {
         // handle v2 response errors by throwing an UpdateCallRejectedError object
         const { reject_code, reject_message, error_code } = response.body;
         throw new UpdateCallRejectedError(
