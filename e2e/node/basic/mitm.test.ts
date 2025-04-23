@@ -3,6 +3,7 @@ import { test, expect, TestAPI } from 'vitest';
 import { makeAgent } from '../utils/agent';
 import {
   CertificateVerificationErrorCode,
+  QuerySignatureVerificationFailedErrorCode,
   TrustError,
   UnknownError,
   WithRequestDetailsErrorCode,
@@ -40,7 +41,7 @@ mitmTest('mitm with query verification', async () => {
       verifyQuerySignatures: true,
     }),
   });
-  expect.assertions(3);
+  expect.assertions(5);
   try {
     await counter.greet('counter');
   } catch (error) {
@@ -51,6 +52,8 @@ mitmTest('mitm with query verification', async () => {
     await counter.queryGreet('counter');
   } catch (error) {
     expect(error).toBeInstanceOf(UnknownError);
-    expect(error.cause.code).toBeInstanceOf(WithRequestDetailsErrorCode);
+    const errorCode = error.cause.code as WithRequestDetailsErrorCode;
+    expect(errorCode).toBeInstanceOf(WithRequestDetailsErrorCode);
+    expect(errorCode.caughtErrorCode).toBeInstanceOf(QuerySignatureVerificationFailedErrorCode);
   }
 });
