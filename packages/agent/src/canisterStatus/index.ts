@@ -1,6 +1,16 @@
 /** @module CanisterStatus */
 import { Principal } from '@dfinity/principal';
-import { AgentError } from '../errors';
+import {
+  CertificateVerificationErrorCode,
+  MissingRootKeyErrorCode,
+  CertificateNotAuthorizedErrorCode,
+  LookupErrorCode,
+  DerKeyLengthMismatchErrorCode,
+  ExternalError,
+  ProtocolError,
+  TrustError,
+  AgentErrorV2,
+} from '../errors';
 import { HttpAgent } from '../agent/http';
 import {
   Cert,
@@ -16,7 +26,7 @@ import {
 import { strToUtf8, toHex } from '@dfinity/candid';
 import * as Cbor from '../cbor';
 import { decodeLeb128, decodeTime } from '../utils/leb';
-import { DerEncodedPublicKey } from '..';
+import { DerEncodedPublicKey } from '../auth';
 
 /**
  * Represents the useful information about a subnet
@@ -146,7 +156,7 @@ export const request = async (options: {
           paths: [encodedPaths[index]],
         });
         if (agent.rootKey == null) {
-          throw new Error('Agent is missing root key');
+          throw ExternalError.fromCode(new MissingRootKeyErrorCode());
         }
         const cert = await Certificate.create({
           certificate: response.certificate,
@@ -158,7 +168,7 @@ export const request = async (options: {
         const lookup = (cert: Certificate, path: Path) => {
           if (path === 'subnet') {
             if (agent.rootKey == null) {
-              throw new Error('Agent is missing root key');
+              throw ExternalError.fromCode(new MissingRootKeyErrorCode());
             }
             const data = fetchNodeKeys(response.certificate, canisterId, agent.rootKey);
             return {
@@ -234,8 +244,8 @@ export const request = async (options: {
         }
       } catch (error) {
         // Break on signature verification errors
-        if ((error as AgentError)?.message?.includes('Invalid certificate')) {
-          throw new AgentError((error as AgentError).message);
+        if (error instanceof AgentErrorV2 && error.hasCode(CertificateVerificationErrorCode)) {
+          throw error;
         }
         if (typeof path !== 'string' && 'key' in path && 'path' in path) {
           status.set(path.key, null);
@@ -295,12 +305,14 @@ export const fetchNodeKeys = (
 
   const canisterInRange = check_canister_ranges({ canisterId, subnetId, tree });
   if (!canisterInRange) {
-    throw new Error('Canister not in range');
+    throw TrustError.fromCode(
+      new CertificateNotAuthorizedErrorCode(canisterId, delegation.subnet_id),
+    );
   }
 
   const subnetLookupResult = lookup_path(['subnet', delegation.subnet_id, 'node'], tree);
   if (subnetLookupResult.status !== LookupStatus.Found) {
-    throw new Error('Node not found');
+    throw ProtocolError.fromCode(new LookupErrorCode('Node not found'));
   }
   if (subnetLookupResult.value instanceof Uint8Array) {
     throw new Error('Invalid node tree');
@@ -313,7 +325,7 @@ export const fetchNodeKeys = (
     const node_id = Principal.from(fork[1]).toText();
     const publicKeyLookupResult = lookup_path(['public_key'], fork[2] as HashTree);
     if (publicKeyLookupResult.status !== LookupStatus.Found) {
-      throw new Error('Public key not found');
+      throw ProtocolError.fromCode(new LookupErrorCode('Public key not found'));
     }
 
     const derEncodedPublicKey = publicKeyLookupResult.value;
@@ -321,7 +333,9 @@ export const fetchNodeKeys = (
       throw new Error('Invalid public key');
     }
     if (derEncodedPublicKey.byteLength !== 44) {
-      throw new Error('Invalid public key length');
+      throw ProtocolError.fromCode(
+        new DerKeyLengthMismatchErrorCode(44, derEncodedPublicKey.byteLength),
+      );
     } else {
       nodeKeys.set(node_id, derEncodedPublicKey as DerEncodedPublicKey);
     }
@@ -364,7 +378,7 @@ export const encodePath = (path: Path, canisterId: Principal): Uint8Array[] => {
     }
   }
   throw new Error(
-    `An unexpeected error was encountered while encoding your path for canister status. Please ensure that your path, ${path} was formatted correctly.`,
+    `An unexpected error was encountered while encoding your path for canister status. Please ensure that your path ${path} was formatted correctly.`,
   );
 };
 
