@@ -32,7 +32,6 @@ const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;
 
-const textEncodeBuffer = (text: string) => bufFromBufLike(new TextEncoder().encode(text));
 
 const HTTP_AGENT_HOST = 'http://127.0.0.1:4943';
 
