@@ -25,7 +25,12 @@ import {
   Signature,
 } from '../..';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
-import { AgentError, IdentityInvalidErrorCode, WithRequestDetailsErrorCode } from '../../errors';
+import {
+  AgentError,
+  HttpErrorCode,
+  IdentityInvalidErrorCode,
+  WithRequestDetailsErrorCode,
+} from '../../errors';
 
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
@@ -589,6 +594,13 @@ describe('retry failures', () => {
     expect(mockFetch.mock.calls.length).toBe(1);
   });
   it('should throw errors after 3 retries by default', async () => {
+    jest.useFakeTimers();
+    jest.spyOn(global, 'setTimeout').mockImplementation(callback => {
+      if (typeof callback === 'function') {
+        callback();
+      }
+      return { hasRef: () => false } as NodeJS.Timeout;
+    });
     const mockFetch: jest.Mock = jest.fn(() => {
       return new Response('Error', {
         status: 500,
@@ -597,7 +609,7 @@ describe('retry failures', () => {
     });
 
     const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
-    expect.assertions(2);
+    expect.assertions(4);
     try {
       await agent.call(Principal.managementCanister(), {
         methodName: 'test',
@@ -605,8 +617,11 @@ describe('retry failures', () => {
       });
     } catch (error) {
       expect(error).toBeInstanceOf(AgentError);
+      const errorCode = error.cause.code as WithRequestDetailsErrorCode;
+      expect(errorCode).toBeInstanceOf(WithRequestDetailsErrorCode);
+      expect(errorCode.caughtErrorCode).toBeInstanceOf(HttpErrorCode);
       // One try + three retries
-      expect(mockFetch.mock.calls.length).toBe(4);
+      expect(mockFetch.mock.calls.length).toEqual(4);
     }
   });
   it('should succeed after multiple failures within the configured limit', async () => {
