@@ -634,15 +634,15 @@ export class HttpAgent implements Agent {
       }
       let callError: AgentError;
       if (error instanceof AgentError) {
-        callError = UnknownError.fromCode(
-          new WithRequestDetailsErrorCode(
-            error.code,
-            requestId,
-            transformedRequest.body.sender_pubkey,
-            transformedRequest.body.sender_sig,
-            transformedRequest.body.content.ingress_expiry,
-          ),
+        // override the error code to include the request details
+        error.code = new WithRequestDetailsErrorCode(
+          error.code,
+          requestId,
+          transformedRequest.body.sender_pubkey,
+          transformedRequest.body.sender_sig,
+          transformedRequest.body.content.ingress_expiry,
         );
+        callError = error;
       } else {
         callError = UnknownError.fromCode(new UnexpectedErrorCode(error));
       }
@@ -965,15 +965,15 @@ export class HttpAgent implements Agent {
     } catch (error) {
       let queryError: AgentError;
       if (error instanceof AgentError) {
-        queryError = UnknownError.fromCode(
-          new WithRequestDetailsErrorCode(
-            error.code,
-            requestId,
-            transformedRequest.body.sender_pubkey,
-            transformedRequest.body.sender_sig,
-            transformedRequest.body.content.ingress_expiry,
-          ),
+        // override the error code to include the request details
+        error.code = new WithRequestDetailsErrorCode(
+          error.code,
+          requestId,
+          transformedRequest.body.sender_pubkey,
+          transformedRequest.body.sender_sig,
+          transformedRequest.body.content.ingress_expiry,
         );
+        queryError = error;
       } else {
         queryError = UnknownError.fromCode(new UnexpectedErrorCode(error));
       }
@@ -1153,15 +1153,15 @@ export class HttpAgent implements Agent {
     } catch (error) {
       let readStateError: AgentError;
       if (error instanceof AgentError) {
-        readStateError = UnknownError.fromCode(
-          new WithRequestDetailsErrorCode(
-            error.code,
-            requestId,
-            transformedRequest.body.sender_pubkey,
-            transformedRequest.body.sender_sig,
-            transformedRequest.body.content.ingress_expiry,
-          ),
+        // override the error code to include the request details
+        error.code = new WithRequestDetailsErrorCode(
+          error.code,
+          requestId,
+          transformedRequest.body.sender_pubkey,
+          transformedRequest.body.sender_sig,
+          transformedRequest.body.content.ingress_expiry,
         );
+        readStateError = error;
       } else {
         readStateError = UnknownError.fromCode(new UnexpectedErrorCode(error));
       }

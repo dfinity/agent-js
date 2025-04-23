@@ -5,7 +5,6 @@ import {
   CertificateVerificationErrorCode,
   QuerySignatureVerificationFailedErrorCode,
   TrustError,
-  UnknownError,
   WithRequestDetailsErrorCode,
 } from '@dfinity/agent';
 
@@ -51,7 +50,7 @@ mitmTest('mitm with query verification', async () => {
   try {
     await counter.queryGreet('counter');
   } catch (error) {
-    expect(error).toBeInstanceOf(UnknownError);
+    expect(error).toBeInstanceOf(TrustError);
     const errorCode = error.cause.code as WithRequestDetailsErrorCode;
     expect(errorCode).toBeInstanceOf(WithRequestDetailsErrorCode);
     expect(errorCode.caughtErrorCode).toBeInstanceOf(QuerySignatureVerificationFailedErrorCode);

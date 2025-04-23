@@ -36,9 +36,15 @@ export class AgentError extends Error {
   get code(): ErrorCode {
     return this.cause.code;
   }
+  set code(code: ErrorCode) {
+    this.cause.code = code;
+  }
 
   get kind(): ErrorKindEnum {
     return this.cause.kind;
+  }
+  set kind(kind: ErrorKindEnum) {
+    this.cause.kind = kind;
   }
 
   constructor(code: ErrorCode, kind: ErrorKindEnum) {
