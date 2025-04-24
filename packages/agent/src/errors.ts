@@ -38,10 +38,19 @@ abstract class ErrorCode {
   public toString(): string {
     let errorMessage = this.toErrorMessage();
     if (this.requestContext) {
-      errorMessage += `\nRequest context: ${JSON.stringify(this.requestContext, null, 2)}`;
+      errorMessage +=
+        `\nRequest context:\n` +
+        `  Request ID (hex): ${this.requestContext.requestId ? toHex(this.requestContext.requestId) : 'undefined'}\n` +
+        `  Sender pubkey (hex): ${toHex(this.requestContext.senderPubKey)}\n` +
+        `  Sender signature (hex): ${toHex(this.requestContext.senderSignature)}\n` +
+        `  Ingress expiry: ${this.requestContext.ingressExpiry.toString()}`;
     }
     if (this.callContext) {
-      errorMessage += `\nCall context: ${JSON.stringify(this.callContext, null, 2)}`;
+      errorMessage +=
+        `\nCall context:\n` +
+        `  Canister ID: ${this.callContext.canisterId.toText()}\n` +
+        `  Method name: ${this.callContext.methodName}\n` +
+        `  HTTP details: ${JSON.stringify(this.callContext.httpDetails, null, 2)}`;
     }
     return errorMessage;
   }
