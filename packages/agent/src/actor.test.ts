@@ -380,6 +380,149 @@ describe('makeActor', () => {
       'Canister ID is required, but received undefined instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.',
     );
   });
+  it('should properly handle preSignReadStateRequest option', async () => {
+    // Mock response value
+    const canisterDecodedReturnValue = 'Hello, World!';
+    const expectedReplyArg = IDL.encode([IDL.Text], [canisterDecodedReturnValue]);
+
+    // Mock the polling module with a spy to track calls
+    const mockPollForResponse = jest.fn(async () => {
+      return { certificate: undefined, reply: expectedReplyArg };
+    });
+
+    // Import actor with mocked polling
+    const { Actor } = await importActor(() =>
+      jest.doMock('./polling', () => ({
+        ...pollingImport,
+        pollForResponse: mockPollForResponse,
+      })),
+    );
+
+    // Create a simple actor interface
+    const actorInterface = () => {
+      return IDL.Service({
+        greet: IDL.Func([IDL.Text], [IDL.Text]),
+      });
+    };
+
+    // Mock the fetch implementation for the call
+    const mockFetch = jest.fn(() => {
+      return Promise.resolve(
+        new Response(null, {
+          status: 202,
+          statusText: 'accepted',
+        }),
+      );
+    });
+
+    const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+    const httpAgent = new HttpAgent({ fetch: mockFetch });
+
+    // Create actor with preSignReadStateRequest enabled
+    const actor = Actor.createActor(actorInterface, {
+      canisterId,
+      agent: httpAgent,
+      pollingOptions: {
+        preSignReadStateRequest: true,
+      },
+    });
+
+    // Make the call
+    const reply = await actor.greet('Name');
+
+    // Verify the result is as expected
+    expect(reply).toEqual(canisterDecodedReturnValue);
+
+    // Verify pollForResponse was called with preSignReadStateRequest option
+    expect(mockPollForResponse).toHaveBeenCalledTimes(1);
+    expect(mockPollForResponse.mock.calls.length).toBeGreaterThan(0);
+
+    // Use any to handle the mock call structure
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const callArgs = mockPollForResponse.mock.calls[0] as any[];
+    // Options should be the 4th argument (index 3)
+    if (callArgs.length > 3) {
+      const pollOptions = callArgs[3];
+      expect(pollOptions.preSignReadStateRequest).toBe(true);
+    } else {
+      fail('pollOptions was not passed to pollForResponse');
+    }
+  });
+
+  it('should allow method-specific pollingOptions override with withOptions', async () => {
+    // Mock response value
+    const canisterDecodedReturnValue = 'Hello, World!';
+    const expectedReplyArg = IDL.encode([IDL.Text], [canisterDecodedReturnValue]);
+
+    // Mock the polling module with a spy to track calls
+    const mockPollForResponse = jest.fn(async () => {
+      return { certificate: undefined, reply: expectedReplyArg };
+    });
+
+    // Import actor with mocked polling
+    const { Actor } = await importActor(() =>
+      jest.doMock('./polling', () => ({
+        ...pollingImport,
+        pollForResponse: mockPollForResponse,
+      })),
+    );
+
+    // Create a simple actor interface
+    const actorInterface = () => {
+      return IDL.Service({
+        greet: IDL.Func([IDL.Text], [IDL.Text]),
+      });
+    };
+
+    // Mock the fetch implementation for the call
+    const mockFetch = jest.fn(() => {
+      return Promise.resolve(
+        new Response(null, {
+          status: 202,
+          statusText: 'accepted',
+        }),
+      );
+    });
+
+    const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+    const httpAgent = new HttpAgent({ fetch: mockFetch });
+
+    // Create actor without preSignReadStateRequest at actor level
+    const actor = Actor.createActor(actorInterface, {
+      canisterId,
+      agent: httpAgent,
+    });
+
+    // Custom polling strategy
+    const customStrategy = jest.fn(() => Promise.resolve());
+
+    // Call with method-specific options
+    const reply = await actor.greet.withOptions({
+      pollingOptions: {
+        preSignReadStateRequest: true,
+        strategy: customStrategy,
+      },
+    })('Name');
+
+    // Verify the result is as expected
+    expect(reply).toEqual(canisterDecodedReturnValue);
+
+    // Verify pollForResponse was called with the right options
+    expect(mockPollForResponse).toHaveBeenCalledTimes(1);
+    expect(mockPollForResponse.mock.calls.length).toBeGreaterThan(0);
+
+    // Use any to handle the mock call structure
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const callArgs = mockPollForResponse.mock.calls[0] as any[];
+    // Options should be the 4th argument (index 3)
+    if (callArgs.length > 3) {
+      const pollOptions = callArgs[3];
+      expect(pollOptions.preSignReadStateRequest).toBe(true);
+      expect(pollOptions.strategy).toBe(customStrategy);
+    } else {
+      fail('pollOptions was not passed to pollForResponse');
+    }
+  });
 });
 
 test('it should preserve errors from call', async () => {

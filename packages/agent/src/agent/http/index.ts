@@ -52,15 +52,16 @@ import {
   QueryRequest,
   ReadRequestType,
   SubmitRequestType,
+  ReadStateRequest,
 } from './types';
 import { SubnetStatus, request } from '../../canisterStatus';
 import { HashTree, LookupStatus, lookup_path } from '../../certificate';
 import { ed25519 } from '@noble/curves/ed25519';
 import { ExpirableMap } from '../../utils/expirableMap';
 import { Ed25519PublicKey } from '../../public_key';
-import { decodeTime } from '../../utils/leb';
 import { ObservableLog } from '../../observable';
 import { BackoffStrategy, BackoffStrategyFactory, ExponentialBackoff } from '../../polling/backoff';
+import { decodeTime } from '../../utils/leb';
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
 
@@ -863,7 +864,7 @@ export class HttpAgent implements Agent {
     this.log.print(`ecid ${ecid.toString()}`);
     this.log.print(`canisterId ${canisterId.toString()}`);
 
-    let transformedRequest: HttpAgentRequest | undefined = undefined;
+    let transformedRequest: HttpAgentRequest | undefined;
     let queryResult;
     const id = await (identity ?? this.#identity);
     if (!id) {
@@ -1030,7 +1031,7 @@ export class HttpAgent implements Agent {
         throw UnknownError.fromCode(new UnexpectedErrorCode(`Unknown status: ${status}`));
       }
 
-      const separatorWithHash = concat(domainSeparator, bufFromBufLike(new Uint8Array(hash)));
+      const separatorWithHash = concat(bufFromBufLike(domainSeparator), bufFromBufLike(hash));
 
       // FIX: check for match without verifying N times
       const pubKey = subnetStatus?.nodeKeys.get(nodeId);
@@ -1091,29 +1092,45 @@ export class HttpAgent implements Agent {
     // eslint-disable-next-line
     request?: any,
   ): Promise<ReadStateResponse> {
+    await this.#rootKeyGuard();
+    const canister = Principal.from(canisterId);
+
     function getRequestId(fields: ReadStateOptions): RequestId | undefined {
       for (const path of fields.paths) {
         const [pathName, value] = path;
+
         const request_status = bufFromBufLike(new TextEncoder().encode('request_status'));
         if (bufEquals(pathName, request_status)) {
           return value as RequestId;
         }
       }
     }
-    const requestId = getRequestId(fields);
 
-    await this.#rootKeyGuard();
-    const canister = typeof canisterId === 'string' ? Principal.fromText(canisterId) : canisterId;
+    let transformedRequest: ReadStateRequest;
+    let requestId: RequestId | undefined;
 
-    const transformedRequest = request ?? (await this.createReadStateRequest(fields, identity));
+    // If a pre-signed request is provided, use it
+    if (request) {
+      // This is a pre-signed request
+      transformedRequest = request;
+      requestId = requestIdOf(transformedRequest);
+    } else {
+      // This is fields, we need to create a request
+      requestId = getRequestId(fields);
 
-    const body = cbor.encode(transformedRequest.body);
+      // Always create a fresh request with the current identity
+      const identity = await this.#identity;
+      if (!identity) {
+        throw ExternalError.fromCode(new IdentityInvalidErrorCode());
+      }
+      transformedRequest = await this.createReadStateRequest(fields, identity);
+    }
 
     this.log.print(
       `fetching "/api/v2/canister/${canister}/read_state" with request:`,
       transformedRequest,
     );
-    // TODO - https://dfinity.atlassian.net/browse/SDK-1092
+
     const backoff = this.#backoffStrategy();
     try {
       const response = await this.#requestAndRetry({
@@ -1123,7 +1140,7 @@ export class HttpAgent implements Agent {
             {
               ...this.#fetchOptions,
               ...transformedRequest.request,
-              body,
+              body: cbor.encode(transformedRequest.body),
             },
           ),
         backoff,

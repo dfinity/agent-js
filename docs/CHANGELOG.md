@@ -4,11 +4,12 @@
 
 ### Changed
 
+- feat!: changes polling strategy for `read_state` requests to support presigned requests. By default, `read_state` requests will create a new signature with a new ingress expiry each time they are made. However, the new `preSignReadStateRequest` will make one signature and use it for all polling requests. This is useful for hardware wallets or other external signing solutions that make signing cumbersome.
+  - pollForResponse now moves `strategy`, `request`, and `preSignReadStateRequest` to the `options: PollingOptions` object
+  - new export: `PollingOptions` type
+  - Actor also includes a `pollingOptions` object that can be passed to the `actor` function and will be passed to the `pollForResponse` method
 - feat!: removes the unused `defaultAgent` global concept and the `getDefaultAgent` function. The `HttpAgent` constructor is now the only way to create an agent.
 - feat!: removes the `ProxyAgent` class.
-- chore: formatting files and changelog
-- fix: Check subtyping relationship when decoding function or service references
-  - This means we now follow the Candid spec more closely, and reduces the risk of calling services with the wrong argument types
 - refactor!: removes the following errors in favor of the new `AgentError`:
 
   - `AgentHTTPResponseError`
@@ -21,6 +22,10 @@
   - `UpdateCallRejectedError`
 
   The new `AgentError` error uses the `code` and `kind` props to enable a better programmatic error handling.
+
+- chore: formatting files and changelog
+- fix: Check subtyping relationship when decoding function or service references
+  - This means we now follow the Candid spec more closely, and reduces the risk of calling services with the wrong argument types
 
 ## [2.4.1] - 2025-04-10
 

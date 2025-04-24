@@ -112,3 +112,12 @@ export function bufFromBufLike(
   }
   return uint8ToBuf(new Uint8Array(bufLike));
 }
+
+/**
+ * Returns text encoded buffer from a string.
+ * @param str string to encode
+ * @returns ArrayBuffer
+ */
+export function strToUtf8(str: string): ArrayBuffer {
+  return uint8ToBuf(new TextEncoder().encode(str));
+}

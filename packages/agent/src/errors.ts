@@ -673,3 +673,16 @@ export class MissingCanisterIdErrorCode extends ErrorCode {
     return `Canister ID is required, but received ${typeof this.receivedCanisterId} instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.`;
   }
 }
+
+export class InvalidReadStateRequestErrorCode extends ErrorCode {
+  public name = 'InvalidReadStateRequestErrorCode';
+
+  constructor(public readonly request: unknown) {
+    super();
+    Object.setPrototypeOf(this, InvalidReadStateRequestErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    return `Invalid read state request: ${this.request}`;
+  }
+}
