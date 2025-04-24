@@ -59,6 +59,7 @@
     "lint:e2e": "eslint --cache --cache-location node_modules/.cache/eslint 'e2e/*/**/*.ts*'",
     "convert:changelog": "markdown-to-html --source docs/CHANGELOG.md --output docs/changelog.html",
     "build": "npm run build --workspaces --if-present; npm run bundle --workspaces --if-present",
+    "e2e": "npm run e2e --workspaces --if-present",
     "lint:fix": "",
     "lint": "npm run lint --workspaces --if-present -- --max-warnings=0",
     "make:docs": "npm run make:docs/reference --workspaces --if-present; npm run convert:changelog",

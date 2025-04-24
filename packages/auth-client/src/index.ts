@@ -313,7 +313,7 @@ export class AuthClient {
         key = null;
       }
     }
-    let idleManager: IdleManager | undefined = undefined;
+    let idleManager: IdleManager | undefined;
     if (options.idleOptions?.disableIdle) {
       idleManager = undefined;
     }

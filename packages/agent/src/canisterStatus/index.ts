@@ -23,7 +23,7 @@ import {
   lookup_path,
   lookupResultToBuffer,
 } from '../certificate';
-import { toHex } from '../utils/buffer';
+import { bufFromBufLike, strToUtf8, toHex } from '../utils/buffer';
 import * as Cbor from '../cbor';
 import { decodeLeb128, decodeTime } from '../utils/leb';
 import { DerEncodedPublicKey } from '../auth';
@@ -274,7 +274,7 @@ export const fetchNodeKeys = (
   if (!canisterId._isPrincipal) {
     throw new Error('Invalid canisterId');
   }
-  const cert = Cbor.decode(new Uint8Array(certificate)) as Cert;
+  const cert = Cbor.decode(bufFromBufLike(certificate)) as Cert;
   const tree = cert.tree;
   let delegation = cert.delegation;
   let subnetId: Principal;
@@ -286,7 +286,7 @@ export const fetchNodeKeys = (
   else if (!delegation && typeof root_key !== 'undefined') {
     subnetId = Principal.selfAuthenticating(new Uint8Array(root_key));
     delegation = {
-      subnet_id: subnetId.toUint8Array(),
+      subnet_id: bufFromBufLike(subnetId.toUint8Array()),
       certificate: new ArrayBuffer(0),
     };
   }
@@ -298,7 +298,7 @@ export const fetchNodeKeys = (
       ).toUint8Array(),
     );
     delegation = {
-      subnet_id: subnetId.toUint8Array(),
+      subnet_id: bufFromBufLike(subnetId.toUint8Array()),
       certificate: new ArrayBuffer(0),
     };
   }
@@ -345,32 +345,27 @@ export const fetchNodeKeys = (
 };
 
 export const encodePath = (path: Path, canisterId: Principal): ArrayBuffer[] => {
-  const encoder = new TextEncoder();
-
-  const encode = (arg: string): ArrayBuffer => {
-    return new DataView(encoder.encode(arg).buffer).buffer;
-  };
-  const canisterBuffer = new DataView(canisterId.toUint8Array().buffer).buffer;
+  const canisterBuffer = bufFromBufLike(canisterId.toUint8Array());
   switch (path) {
     case 'time':
-      return [encode('time')];
+      return [strToUtf8('time')];
     case 'controllers':
-      return [encode('canister'), canisterBuffer, encode('controllers')];
+      return [strToUtf8('canister'), canisterBuffer, strToUtf8('controllers')];
     case 'module_hash':
-      return [encode('canister'), canisterBuffer, encode('module_hash')];
+      return [strToUtf8('canister'), canisterBuffer, strToUtf8('module_hash')];
     case 'subnet':
-      return [encode('subnet')];
+      return [strToUtf8('subnet')];
     case 'candid':
-      return [encode('canister'), canisterBuffer, encode('metadata'), encode('candid:service')];
+      return [strToUtf8('canister'), canisterBuffer, strToUtf8('metadata'), strToUtf8('candid:service')];
     default: {
       // Check for CustomPath signature
       if ('key' in path && 'path' in path) {
         // For simplified metadata queries
         if (typeof path['path'] === 'string' || path['path'] instanceof ArrayBuffer) {
           const metaPath = path.path;
-          const encoded = typeof metaPath === 'string' ? encode(metaPath) : metaPath;
+          const encoded = typeof metaPath === 'string' ? strToUtf8(metaPath) : metaPath;
 
-          return [encode('canister'), canisterBuffer, encode('metadata'), encoded];
+          return [strToUtf8('canister'), canisterBuffer, strToUtf8('metadata'), encoded];
 
           // For non-metadata, return the provided custompath
         } else {
