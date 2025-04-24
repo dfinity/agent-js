@@ -324,8 +324,8 @@ export class TimeoutWaitingForResponseErrorCode extends ErrorCode {
 
   constructor(
     public readonly message: string,
-    public readonly requestId: RequestId | undefined = undefined,
-    public readonly status: RequestStatusResponseStatus | undefined = undefined,
+    public readonly requestId?: RequestId,
+    public readonly status?: RequestStatusResponseStatus,
   ) {
     super();
     Object.setPrototypeOf(this, TimeoutWaitingForResponseErrorCode.prototype);
@@ -357,7 +357,7 @@ export class CertifiedRejectErrorCode extends ErrorCode {
     public readonly rejectCode: ReplicaRejectCode,
     public readonly rejectMessage: string,
     public readonly errorCode: string | undefined,
-    public readonly context: CallContext | undefined = undefined,
+    public readonly context?: CallContext,
   ) {
     super();
     Object.setPrototypeOf(this, CertifiedRejectErrorCode.prototype);
@@ -385,7 +385,7 @@ export class UncertifiedRejectErrorCode extends ErrorCode {
     public readonly rejectCode: ReplicaRejectCode,
     public readonly rejectMessage: string,
     public readonly errorCode: string | undefined,
-    public readonly context: CallContext | undefined = undefined,
+    public readonly context?: CallContext,
   ) {
     super();
     Object.setPrototypeOf(this, UncertifiedRejectErrorCode.prototype);
@@ -424,7 +424,7 @@ export class RequestStatusDoneNoReplyErrorCode extends ErrorCode {
 export class MissingRootKeyErrorCode extends ErrorCode {
   public name = 'MissingRootKeyErrorCode';
 
-  constructor(public readonly shouldFetchRootKey: boolean | undefined = undefined) {
+  constructor(public readonly shouldFetchRootKey?: boolean) {
     super();
     Object.setPrototypeOf(this, MissingRootKeyErrorCode.prototype);
   }
@@ -590,7 +590,7 @@ export class HttpErrorCode extends ErrorCode {
     public readonly status: number,
     public readonly statusText: string,
     public readonly headers: HttpHeaderField[],
-    public readonly bodyText: string | undefined = undefined,
+    public readonly bodyText?: string,
   ) {
     super();
     Object.setPrototypeOf(this, HttpErrorCode.prototype);

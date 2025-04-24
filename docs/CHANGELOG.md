@@ -10,7 +10,7 @@
   - Actor also includes a `pollingOptions` object that can be passed to the `actor` function and will be passed to the `pollForResponse` method
 - feat!: removes the unused `defaultAgent` global concept and the `getDefaultAgent` function. The `HttpAgent` constructor is now the only way to create an agent.
 - feat!: removes the `ProxyAgent` class.
-- refactor!: removes the following errors in favor of the new `AgentError`:
+- feat!: removes the following errors in favor of the new `AgentError`:
 
   - `AgentHTTPResponseError`
   - `AgentCallError`
