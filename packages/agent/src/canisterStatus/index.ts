@@ -274,7 +274,7 @@ export const fetchNodeKeys = (
   if (!canisterId._isPrincipal) {
     throw new Error('Invalid canisterId');
   }
-  const cert = Cbor.decode(new Uint8Array(certificate)) as Cert;
+  const cert = Cbor.decode(bufFromBufLike(certificate)) as Cert;
   const tree = cert.tree;
   let delegation = cert.delegation;
   let subnetId: Principal;

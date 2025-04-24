@@ -486,3 +486,15 @@ export class UpdateCallRejectedError extends ActorCallError {
     Object.setPrototypeOf(this, UpdateCallRejectedError.prototype);
   }
 }
+
+export class CreateReadStateRequestError extends AgentError {
+  public name = 'CreateReadStateRequestError';
+  public __proto__ = CreateReadStateRequestError.prototype;
+  constructor(
+    public readonly message: string,
+    public readonly request: unknown,
+  ) {
+    super(message);
+    Object.setPrototypeOf(this, CreateReadStateRequestError.prototype);
+  }
+}

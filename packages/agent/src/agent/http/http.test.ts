@@ -144,7 +144,7 @@ test('queries with the same content should have the same signature', async () =>
     );
   });
 
-  const canisterIdent = '2chl6-4hpzw-vqaaa-aaaaa-c';
+  const canisterId = '2chl6-4hpzw-vqaaa-aaaaa-c';
   const nonce = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
 
   const principal = await Principal.anonymous();
@@ -156,26 +156,30 @@ test('queries with the same content should have the same signature', async () =>
   });
 
   const methodName = 'greet';
-  const arg = new Uint8Array([]);
+  const arg = bufFromBufLike(new Uint8Array([]));
 
   const requestId = requestIdOf({
     request_type: SubmitRequestType.Call,
     nonce,
-    canister_id: Principal.fromText(canisterIdent).toString(),
+    canister_id: Principal.fromText(canisterId).toString(),
     method_name: methodName,
     arg,
     sender: principal,
   });
 
   const paths = [
-    [new TextEncoder().encode('request_status'), requestId, new TextEncoder().encode('reply')],
+    [
+      bufFromBufLike(utf8ToBytes('request_status')),
+      requestId,
+      bufFromBufLike(utf8ToBytes('reply')),
+    ],
   ];
 
-  const response1 = await httpAgent.readState(canisterIdent, { paths });
-  const response2 = await httpAgent.readState(canisterIdent, { paths });
+  const response1 = await httpAgent.readState(canisterId, { paths });
+  const response2 = await httpAgent.readState(canisterId, { paths });
 
-  const response3 = await httpAgent.query(canisterIdent, { arg, methodName });
-  const response4 = await httpAgent.query(canisterIdent, { methodName, arg });
+  const response3 = await httpAgent.query(canisterId, { arg, methodName });
+  const response4 = await httpAgent.query(canisterId, { methodName, arg });
 
   const { calls } = mockFetch.mock;
   expect(calls.length).toBe(4);
@@ -231,7 +235,11 @@ test('readState should not call transformers if request is passed', async () => 
   });
 
   const paths = [
-    [new TextEncoder().encode('request_status'), requestId, new TextEncoder().encode('reply')],
+    [
+      bufFromBufLike(utf8ToBytes('request_status')),
+      requestId,
+      bufFromBufLike(utf8ToBytes('reply')),
+    ],
   ];
 
   const request = await httpAgent.createReadStateRequest({ paths });
@@ -329,7 +337,7 @@ test('use anonymous principal if unspecified', async () => {
   });
 
   const methodName = 'greet';
-  const arg = new Uint8Array([]);
+  const arg = bufFromBufLike(new Uint8Array([]));
 
   const { requestId } = await httpAgent.call(canisterId, {
     methodName,
@@ -449,7 +457,7 @@ describe('invalidate identity', () => {
     }
     // Test readState
     try {
-      const path = new TextEncoder().encode('request_status');
+      const path = bufFromBufLike(utf8ToBytes('request_status'));
       await agent.readState(canisterId, {
         paths: [[path]],
       });
@@ -509,7 +517,7 @@ describe('makeNonce', () => {
   it('should create unique values', () => {
     const nonces = new Set();
     for (let i = 0; i < 100; i++) {
-      nonces.add(toHex(makeNonce()));
+      nonces.add(toHex(bufFromBufLike(makeNonce())));
     }
     expect(nonces.size).toBe(100);
   });
@@ -535,10 +543,10 @@ describe('makeNonce', () => {
 
     it('should create same value using polyfill', () => {
       const spyOnSetUint32 = jest.spyOn(DataView.prototype, 'setUint32').mockImplementation();
-      const originalNonce = toHex(makeNonce());
+      const originalNonce = toHex(bufFromBufLike(makeNonce()));
       expect(spyOnSetUint32).toBeCalledTimes(4);
 
-      const nonce = toHex(makeNonce());
+      const nonce = toHex(bufFromBufLike(makeNonce()));
       expect(spyOnSetUint32).toBeCalledTimes(8);
 
       expect(nonce).toBe(originalNonce);
@@ -763,12 +771,12 @@ test('should fetch with given call options and fetch options', async () => {
 
   await httpAgent.call(canisterId, {
     methodName: 'greet',
-    arg: new Uint8Array([]),
+    arg: bufFromBufLike(new Uint8Array([])),
   });
 
   await httpAgent.query(canisterId, {
     methodName: 'greet',
-    arg: new Uint8Array([]),
+    arg: bufFromBufLike(new Uint8Array([])),
   });
 
   const { calls } = mockFetch.mock;
@@ -865,7 +873,7 @@ test('retry requests that fail due to a network failure', async () => {
     fetch: mockFetch,
   });
 
-  agent.rootKey = new Uint8Array(32);
+  agent.rootKey = bufFromBufLike(new Uint8Array(32));
 
   try {
     await agent.call(Principal.managementCanister(), {
@@ -1066,7 +1074,7 @@ describe('await fetching root keys before making a call to the network.', () => 
     expect(agent.rootKey).toBe(null);
 
     const methodName = 'greet';
-    const arg = new Uint8Array([]);
+    const arg = bufFromBufLike(new Uint8Array([]));
 
     await agent.call(canisterId, {
       methodName,
@@ -1237,7 +1245,7 @@ describe('error logs for bad signature', () => {
     const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
 
     const methodName = 'greet';
-    const arg = new Uint8Array([]);
+    const arg = bufFromBufLike(new Uint8Array([]));
     const logs: {
       message: string;
       level: 'error';
@@ -1277,7 +1285,7 @@ describe('error logs for bad signature', () => {
     const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
 
     const methodName = 'greet';
-    const arg = new Uint8Array([]);
+    const arg = bufFromBufLike(new Uint8Array([]));
     const logs: {
       message: string;
       level: 'error';

@@ -127,8 +127,30 @@ export interface v2ResponseBody {
   reject_message: string;
 }
 
+/**
+ * Utility function to check if a body is a v2ResponseBody for type safety.
+ * @param body The body to check
+ * @returns boolean indicating if the body is a v2ResponseBody
+ */
+export function isV2ResponseBody(  
+  body: v2ResponseBody | v3ResponseBody | null,  
+): body is v2ResponseBody {  
+  return body !== null && body !== undefined && 'reject_code' in body;  
+}  
+
 export interface v3ResponseBody {
   certificate: Uint8Array;
+}
+
+/**
+ * Utility function to check if a body is a v3ResponseBody for type safety.
+ * @param body The body to check
+ * @returns boolean indicating if the body is a v3ResponseBody
+ */
+export function isV3ResponseBody(
+  body: v2ResponseBody | v3ResponseBody | null,
+): body is v3ResponseBody {
+  return body !== null && body !== undefined && 'certificate' in body;
 }
 
 export interface SubmitResponse {

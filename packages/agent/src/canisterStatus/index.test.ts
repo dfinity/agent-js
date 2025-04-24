@@ -68,7 +68,6 @@ const getRealStatus = async () => {
         encodePath('candid', testPrincipal),
       ],
     },
-    identity,
   );
   console.log(toHex(response.certificate));
 };

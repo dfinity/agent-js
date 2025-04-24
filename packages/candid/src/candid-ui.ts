@@ -46,7 +46,7 @@ export class Render extends IDL.Visitor<null, InputBox> {
       config = { container };
     }
     const form = recordForm(fields, config);
-    return inputBox(t, { form });
+    return inputBox(t as IDL.Type<any>, { form });
   }
   public visitTuple<T extends any[]>(
     t: IDL.TupleClass<T>,
@@ -60,7 +60,7 @@ export class Render extends IDL.Visitor<null, InputBox> {
       config = { container };
     }
     const form = tupleForm(components, config);
-    return inputBox(t, { form });
+    return inputBox(t as IDL.Type<any>, { form });
   }
   public visitVariant(t: IDL.VariantClass, fields: Array<[string, IDL.Type]>, d: null): InputBox {
     const select = document.createElement('select');
@@ -72,14 +72,14 @@ export class Render extends IDL.Visitor<null, InputBox> {
     select.classList.add('open');
     const config: Partial<UI.FormConfig> = { open: select, event: 'change' };
     const form = variantForm(fields, config);
-    return inputBox(t, { form });
+    return inputBox(t as IDL.Type<any>, { form });
   }
   public visitOpt<T>(t: IDL.OptClass<T>, ty: IDL.Type<T>, d: null): InputBox {
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.classList.add('open');
     const form = optForm(ty, { open: checkbox, event: 'change' });
-    return inputBox(t, { form });
+    return inputBox(t as IDL.Type<any>, { form });
   }
   public visitVec<T>(t: IDL.VecClass<T>, ty: IDL.Type<T>, d: null): InputBox {
     const len = document.createElement('input');
