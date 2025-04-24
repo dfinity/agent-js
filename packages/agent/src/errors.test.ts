@@ -1,4 +1,5 @@
 /* eslint-disable no-prototype-builtins */
+import { Principal } from '@dfinity/principal';
 import {
   AgentError,
   ErrorKindEnum,
@@ -6,6 +7,7 @@ import {
   IdentityInvalidErrorCode,
   UnknownError,
 } from './errors';
+import { Expiry } from './agent';
 
 test('AgentError', () => {
   const errorCode = new UnexpectedErrorCode('message');
@@ -46,6 +48,30 @@ test('AgentError', () => {
 
   expect(errorCode.toErrorMessage()).toEqual(expectedErrorMessage);
   expect(errorCode.toString()).toEqual(expectedErrorMessage);
+  expect(errorCode.requestContext).toBeUndefined();
+  expect(errorCode.toString().includes('\nRequest context:')).toBe(false);
+  expect(errorCode.callContext).toBeUndefined();
+  expect(errorCode.toString().includes('\nCall context:')).toBe(false);
+  errorCode.requestContext = {
+    requestId: undefined,
+    senderPubKey: new ArrayBuffer(1),
+    senderSignature: new ArrayBuffer(1),
+    ingressExpiry: new Expiry(1),
+  };
+  expect(errorCode.requestContext).toBeDefined();
+  expect(errorCode.toString().includes('\nRequest context:')).toBe(true);
+  errorCode.callContext = {
+    canisterId: Principal.anonymous(),
+    methodName: 'test',
+    httpDetails: {
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      headers: [],
+    },
+  };
+  expect(errorCode.callContext).toBeDefined();
+  expect(errorCode.toString().includes('\nCall context:')).toBe(true);
 
   const anotherErrorCode = new IdentityInvalidErrorCode();
   agentError.code = anotherErrorCode;
