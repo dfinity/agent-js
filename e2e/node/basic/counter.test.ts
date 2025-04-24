@@ -1,4 +1,4 @@
-import { Actor, HttpAgent } from '@dfinity/agent';
+import { Actor, HttpAgent, ActorMethod } from '@dfinity/agent';
 import counterCanister, { idl } from '../canisters/counter';
 import { it, expect, describe, vi } from 'vitest';
 
@@ -34,7 +34,71 @@ describe('counter', () => {
       expected += 1;
     }
   }, 40000);
+
+  it('should work with preSignReadStateRequest enabled', async () => {
+    const { canisterId } = await counterCanister();
+
+    // Create counter actor with preSignReadStateRequest enabled
+    const counter = await Actor.createActor(idl, {
+      canisterId,
+      agent: await HttpAgent.create({
+        host: 'http://localhost:4943',
+        shouldFetchRootKey: true,
+      }),
+      pollingOptions: {
+        preSignReadStateRequest: true,
+      },
+    });
+
+    // Reset counter to 0
+    await counter.write(0);
+    expect(Number(await counter.read())).toEqual(0);
+
+    // Call inc_read which will trigger polling and use preSignReadStateRequest
+    const result = Number(await counter.inc_read());
+
+    // Verify the operation was successful
+    expect(result).toEqual(1);
+
+    // Verify the state was actually updated
+    expect(Number(await counter.read())).toEqual(1);
+  }, 40000);
+
+  it('should allow method-specific pollingOptions override', async () => {
+    const { canisterId } = await counterCanister();
+
+    // Create counter actor without preSignReadStateRequest
+    const counter = await Actor.createActor(idl, {
+      canisterId,
+      agent: await HttpAgent.create({
+        host: 'http://localhost:4943',
+        shouldFetchRootKey: true,
+      }),
+    });
+
+    // Reset counter to 0
+    await counter.write(0);
+    expect(Number(await counter.read())).toEqual(0);
+
+    // Use withOptions to set preSignReadStateRequest for this specific call
+    const result = Number(
+      await (counter.inc_read as ActorMethod).withOptions({
+        pollingOptions: {
+          preSignReadStateRequest: true,
+          // Custom polling strategy with simple 1-second delay
+          strategy: () => new Promise(resolve => setTimeout(resolve, 1000)),
+        },
+      })(),
+    );
+
+    // Verify the operation was successful
+    expect(result).toEqual(1);
+
+    // Verify the state was actually updated
+    expect(Number(await counter.read())).toEqual(1);
+  }, 40000);
 });
+
 describe('retrytimes', () => {
   it('should retry after a failure', async () => {
     let count = 0;
