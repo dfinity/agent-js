@@ -29,6 +29,7 @@ import { AgentError } from '../../errors';
 import { AgentCallError, AgentQueryError, AgentReadStateError } from './errors';
 import { bufFromBufLike } from '@dfinity/candid';
 import { utf8ToBytes } from '@noble/hashes/utils';
+
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;
@@ -144,7 +145,7 @@ test('queries with the same content should have the same signature', async () =>
   const canisterId = '2chl6-4hpzw-vqaaa-aaaaa-c';
   const nonce = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]) as Nonce;
 
-  const principal = await Principal.anonymous();
+  const principal = Principal.anonymous();
 
   const httpAgent = new HttpAgent({
     fetch: mockFetch,
@@ -240,9 +241,9 @@ test('readState should not call transformers if request is passed', async () => 
   ];
 
   const request = await httpAgent.createReadStateRequest({ paths });
-  expect(transformMock).toBeCalledTimes(1);
+  expect(transformMock).toHaveBeenCalledTimes(1);
   await httpAgent.readState(canisterIdent, { paths }, undefined, request);
-  expect(transformMock).toBeCalledTimes(1);
+  expect(transformMock).toHaveBeenCalledTimes(1);
 });
 
 test('use provided nonce for call', async () => {
@@ -407,9 +408,7 @@ describe('getDefaultFetch', () => {
 
     expect(generateAgent).not.toThrow();
   });
-  it.skip('should throw an error if window, global, and fetch are not available', () => {
-    // TODO: Figure out how to test the self and default case errors
-  });
+  it.todo('should throw an error if window, global, and fetch are not available');
 });
 
 describe('invalidate identity', () => {
@@ -501,7 +500,7 @@ describe('replace identity', () => {
       methodName: 'test',
       arg: new ArrayBuffer(16),
     });
-    expect(mockFetch).toBeCalledTimes(1);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -536,10 +535,10 @@ describe('makeNonce', () => {
     it('should create same value using polyfill', () => {
       const spyOnSetUint32 = jest.spyOn(DataView.prototype, 'setUint32').mockImplementation();
       const originalNonce = toHex(bufFromBufLike(makeNonce()));
-      expect(spyOnSetUint32).toBeCalledTimes(4);
+      expect(spyOnSetUint32).toHaveBeenCalledTimes(4);
 
       const nonce = toHex(bufFromBufLike(makeNonce()));
-      expect(spyOnSetUint32).toBeCalledTimes(8);
+      expect(spyOnSetUint32).toHaveBeenCalledTimes(8);
 
       expect(nonce).toBe(originalNonce);
     });
