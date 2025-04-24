@@ -7,9 +7,8 @@ import {
   fromHex,
   polling,
   requestIdOf,
-  AgentError,
+  TrustError,
   MissingSignatureErrorCode,
-  WithRequestDetailsErrorCode,
 } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
@@ -208,10 +207,10 @@ test('it should allow you to set an incorrect root key', async () => {
   try {
     await actor.whoami();
   } catch (error) {
-    expect(error).toBeInstanceOf(AgentError);
-    const errorCode = (error as AgentError).cause.code as WithRequestDetailsErrorCode;
-    expect(errorCode).toBeInstanceOf(WithRequestDetailsErrorCode);
-    expect(errorCode.caughtErrorCode).toBeInstanceOf(MissingSignatureErrorCode);
+    expect(error).toBeInstanceOf(TrustError);
+    const errorCode = (error as TrustError).cause.code;
+    expect(errorCode).toBeInstanceOf(MissingSignatureErrorCode);
+    expect(errorCode.requestContext).toBeDefined();
   }
 });
 

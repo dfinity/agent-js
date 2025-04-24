@@ -7,13 +7,7 @@ import * as cbor from './cbor';
 import { requestIdOf } from './request_id';
 import * as pollingImport from './polling';
 import { ActorConfig } from './actor';
-import {
-  CertifiedRejectErrorCode,
-  RejectError,
-  UnexpectedErrorCode,
-  UnknownError,
-  WithRequestDetailsErrorCode,
-} from './errors';
+import { CertifiedRejectErrorCode, RejectError, UnexpectedErrorCode, UnknownError } from './errors';
 
 const importActor = async (mockUpdatePolling?: () => void) => {
   jest.dontMock('./polling');
@@ -528,15 +522,7 @@ describe('makeActor', () => {
 test('it should preserve errors from call', async () => {
   const httpAgent = {
     call: () => {
-      throw UnknownError.fromCode(
-        new WithRequestDetailsErrorCode(
-          new UnexpectedErrorCode('test error'),
-          undefined,
-          new Uint8Array(),
-          new Uint8Array(),
-          new Expiry(10_000),
-        ),
-      );
+      throw UnknownError.fromCode(new UnexpectedErrorCode('test error'));
     },
   };
   const actorInterface = () => {
@@ -553,7 +539,7 @@ test('it should preserve errors from call', async () => {
     await testActor.greet('foo');
   } catch (error) {
     expect(error).toBeInstanceOf(UnknownError);
-    expect(error.cause.code).toBeInstanceOf(WithRequestDetailsErrorCode);
+    expect(error.cause.code).toBeInstanceOf(UnexpectedErrorCode);
   }
 });
 

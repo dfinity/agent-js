@@ -28,8 +28,8 @@ import { Ed25519KeyIdentity } from '@dfinity/identity';
 import {
   AgentError,
   HttpErrorCode,
+  HttpFetchErrorCode,
   IdentityInvalidErrorCode,
-  WithRequestDetailsErrorCode,
 } from '../../errors';
 import { bufFromBufLike } from '@dfinity/candid';
 import { utf8ToBytes } from '@noble/hashes/utils';
@@ -594,12 +594,13 @@ describe('retry failures', () => {
         methodName: 'test',
         arg: new Uint8Array().buffer,
       });
-    expect.assertions(3);
+    expect.assertions(4);
     try {
       await performCall();
     } catch (error) {
       expect(error).toBeInstanceOf(AgentError);
-      expect(error.cause.code).toBeInstanceOf(WithRequestDetailsErrorCode);
+      expect(error.cause.code).toBeInstanceOf(HttpErrorCode);
+      expect(error.cause.code.requestContext).toBeDefined();
     }
     expect(mockFetch.mock.calls.length).toBe(1);
   });
@@ -627,9 +628,8 @@ describe('retry failures', () => {
       });
     } catch (error) {
       expect(error).toBeInstanceOf(AgentError);
-      const errorCode = error.cause.code as WithRequestDetailsErrorCode;
-      expect(errorCode).toBeInstanceOf(WithRequestDetailsErrorCode);
-      expect(errorCode.caughtErrorCode).toBeInstanceOf(HttpErrorCode);
+      expect(error.cause.code).toBeInstanceOf(HttpErrorCode);
+      expect(error.cause.code.requestContext).toBeDefined();
       // One try + three retries
       expect(mockFetch.mock.calls.length).toEqual(4);
     }
@@ -1258,7 +1258,7 @@ describe('error logs for bad signature', () => {
       }
     });
 
-    expect.assertions(5);
+    expect.assertions(7);
     try {
       await agent.call(canisterId, {
         methodName,
@@ -1266,11 +1266,13 @@ describe('error logs for bad signature', () => {
       });
     } catch (error) {
       expect(error).toBeInstanceOf(AgentError);
-      expect(error.cause.code).toBeInstanceOf(WithRequestDetailsErrorCode);
+      expect(error.cause.code).toBeInstanceOf(HttpErrorCode);
+      expect(error.cause.code.requestContext).toBeDefined();
     }
     expect(JSON.stringify(logs[0])).toMatchSnapshot();
     expect(logs[0].error).toBeInstanceOf(AgentError);
-    expect(logs[0].error.cause.code).toBeInstanceOf(WithRequestDetailsErrorCode);
+    expect(logs[0].error.cause.code).toBeInstanceOf(HttpErrorCode);
+    expect(logs[0].error.cause.code.requestContext).toBeDefined();
   });
   it('should throw query errors for bad signature', async () => {
     jest.spyOn(Date, 'now').mockImplementation(() => 1738362489290);
@@ -1301,7 +1303,7 @@ describe('error logs for bad signature', () => {
       }
     });
 
-    expect.assertions(5);
+    expect.assertions(7);
     try {
       await agent.query(canisterId, {
         methodName,
@@ -1309,11 +1311,13 @@ describe('error logs for bad signature', () => {
       });
     } catch (error) {
       expect(error).toBeInstanceOf(AgentError);
-      expect(error.cause.code).toBeInstanceOf(WithRequestDetailsErrorCode);
+      expect(error.cause.code).toBeInstanceOf(HttpFetchErrorCode);
+      expect(error.cause.code.requestContext).toBeDefined();
     }
     expect(JSON.stringify(logs[0])).toMatchSnapshot();
     expect(logs[0].error).toBeInstanceOf(AgentError);
-    expect(logs[0].error.cause.code).toBeInstanceOf(WithRequestDetailsErrorCode);
+    expect(logs[0].error.cause.code).toBeInstanceOf(HttpFetchErrorCode);
+    expect(logs[0].error.cause.code.requestContext).toBeDefined();
   });
 
   it('should throw read_state errors for bad signature', async () => {
@@ -1373,17 +1377,19 @@ describe('error logs for bad signature', () => {
       }
     });
 
-    expect.assertions(4);
+    expect.assertions(6);
     try {
       const requestId = new ArrayBuffer(32) as RequestId;
       const path = bufFromBufLike(utf8ToBytes('request_status'));
       await agent.readState(canisterId, { paths: [[path, requestId]] });
     } catch (error) {
       expect(error).toBeInstanceOf(AgentError);
-      expect(error.cause.code).toBeInstanceOf(WithRequestDetailsErrorCode);
+      expect(error.cause.code).toBeInstanceOf(HttpErrorCode);
+      expect(error.cause.code.requestContext).toBeDefined();
     }
     expect(logs[0].error).toBeInstanceOf(AgentError);
-    expect(logs[0].error.cause.code).toBeInstanceOf(WithRequestDetailsErrorCode);
+    expect(logs[0].error.cause.code).toBeInstanceOf(HttpErrorCode);
+    expect(logs[0].error.cause.code.requestContext).toBeDefined();
   });
 });
 

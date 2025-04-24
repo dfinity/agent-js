@@ -16,11 +16,34 @@ export enum ErrorKindEnum {
   Unknown = 'Unknown',
 }
 
+type RequestContext = {
+  requestId?: RequestId;
+  senderPubKey: ArrayBuffer;
+  senderSignature: ArrayBuffer;
+  ingressExpiry: Expiry;
+};
+
+type CallContext = {
+  canisterId: Principal;
+  methodName: string;
+  httpDetails: HttpDetailsResponse;
+};
+
 abstract class ErrorCode {
+  public requestContext?: RequestContext;
+  public callContext?: CallContext;
+
   public abstract toErrorMessage(): string;
 
   public toString(): string {
-    return this.toErrorMessage();
+    let errorMessage = this.toErrorMessage();
+    if (this.requestContext) {
+      errorMessage += `\nRequest context: ${JSON.stringify(this.requestContext, null, 2)}`;
+    }
+    if (this.callContext) {
+      errorMessage += `\nCall context: ${JSON.stringify(this.callContext, null, 2)}`;
+    }
+    return errorMessage;
   }
 }
 
@@ -48,7 +71,7 @@ export class AgentError extends Error {
   }
 
   constructor(code: ErrorCode, kind: ErrorKindEnum) {
-    super(code.toErrorMessage());
+    super(code.toString());
     this.cause = { code, kind };
     Object.setPrototypeOf(this, AgentError.prototype);
   }
@@ -343,12 +366,6 @@ export class TimeoutWaitingForResponseErrorCode extends ErrorCode {
   }
 }
 
-type CallContext = {
-  canisterId: Principal;
-  methodName: string;
-  httpDetails: HttpDetailsResponse;
-};
-
 export class CertifiedRejectErrorCode extends ErrorCode {
   public name = 'CertifiedRejectErrorCode';
 
@@ -357,23 +374,19 @@ export class CertifiedRejectErrorCode extends ErrorCode {
     public readonly rejectCode: ReplicaRejectCode,
     public readonly rejectMessage: string,
     public readonly errorCode: string | undefined,
-    public readonly context?: CallContext,
   ) {
     super();
     Object.setPrototypeOf(this, CertifiedRejectErrorCode.prototype);
   }
 
   public toErrorMessage(): string {
-    let errorMessage =
+    return (
       `The replica returned a rejection error:\n` +
       `  Request ID: ${toHex(this.requestId)}\n` +
       `  Reject code: ${this.rejectCode}\n` +
       `  Reject text: ${this.rejectMessage}\n` +
-      `  Error code: ${this.errorCode}\n`;
-    if (this.context) {
-      errorMessage += `  Context: ${JSON.stringify(this.context, null, 2)}\n`;
-    }
-    return errorMessage;
+      `  Error code: ${this.errorCode}\n`
+    );
   }
 }
 
@@ -385,23 +398,19 @@ export class UncertifiedRejectErrorCode extends ErrorCode {
     public readonly rejectCode: ReplicaRejectCode,
     public readonly rejectMessage: string,
     public readonly errorCode: string | undefined,
-    public readonly context?: CallContext,
   ) {
     super();
     Object.setPrototypeOf(this, UncertifiedRejectErrorCode.prototype);
   }
 
   public toErrorMessage(): string {
-    let errorMessage =
+    return (
       `The replica returned a rejection error:\n` +
       `  Request ID: ${toHex(this.requestId)}\n` +
       `  Reject code: ${this.rejectCode}\n` +
       `  Reject text: ${this.rejectMessage}\n` +
-      `  Error code: ${this.errorCode}\n`;
-    if (this.context) {
-      errorMessage += `  Context: ${JSON.stringify(this.context, null, 2)}\n`;
-    }
-    return errorMessage;
+      `  Error code: ${this.errorCode}\n`
+    );
   }
 }
 
@@ -631,33 +640,6 @@ export class HttpFetchErrorCode extends ErrorCode {
 
   public toErrorMessage(): string {
     return `Failed to fetch HTTP request: ${this.error}`;
-  }
-}
-
-export class WithRequestDetailsErrorCode extends ErrorCode {
-  public name = 'WithRequestDetailsErrorCode';
-
-  constructor(
-    public readonly caughtErrorCode: ErrorCode,
-    public readonly requestId: RequestId | undefined,
-    public readonly senderPubKey: ArrayBuffer,
-    public readonly senderSignature: ArrayBuffer,
-    public readonly ingressExpiry: Expiry,
-  ) {
-    super();
-    Object.setPrototypeOf(this, WithRequestDetailsErrorCode.prototype);
-  }
-
-  public toErrorMessage(): string {
-    let errorMessage =
-      `Caught error: ${this.caughtErrorCode.toErrorMessage()}\n` +
-      `  Sender public key: ${toHex(this.senderPubKey)}\n` +
-      `  Sender signature: ${toHex(this.senderSignature)}\n` +
-      `  Ingress expiry: ${this.ingressExpiry.toString()}\n`;
-    if (this.requestId) {
-      errorMessage += `  Request ID: ${toHex(this.requestId)}\n`;
-    }
-    return errorMessage;
   }
 }
 

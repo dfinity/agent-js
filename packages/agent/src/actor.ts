@@ -442,20 +442,20 @@ function _createActorMethod(
       } as HttpDetailsResponse;
 
       switch (result.status) {
-        case QueryResponseStatus.Rejected:
-          throw RejectError.fromCode(
-            new UncertifiedRejectErrorCode(
-              result.requestId,
-              result.reject_code,
-              result.reject_message,
-              result.error_code,
-              {
-                canisterId: cid,
-                methodName,
-                httpDetails,
-              },
-            ),
+        case QueryResponseStatus.Rejected: {
+          const uncertifiedRejectErrorCode = new UncertifiedRejectErrorCode(
+            result.requestId,
+            result.reject_code,
+            result.reject_message,
+            result.error_code,
           );
+          uncertifiedRejectErrorCode.callContext = {
+            canisterId: cid,
+            methodName,
+            httpDetails,
+          };
+          throw RejectError.fromCode(uncertifiedRejectErrorCode);
+        }
 
         case QueryResponseStatus.Replied:
           return func.annotations.includes(ACTOR_METHOD_WITH_HTTP_DETAILS)
@@ -530,25 +530,36 @@ function _createActorMethod(
             const error_code = error_code_buf
               ? new TextDecoder().decode(error_code_buf)
               : undefined;
-            throw RejectError.fromCode(
-              new CertifiedRejectErrorCode(requestId, rejectCode, rejectMessage, error_code, {
-                canisterId: cid,
-                methodName,
-                httpDetails: response,
-              }),
+
+            const certifiedRejectErrorCode = new CertifiedRejectErrorCode(
+              requestId,
+              rejectCode,
+              rejectMessage,
+              error_code,
             );
+            certifiedRejectErrorCode.callContext = {
+              canisterId: cid,
+              methodName,
+              httpDetails: response,
+            };
+            throw RejectError.fromCode(certifiedRejectErrorCode);
           }
         }
       } else if (isV2ResponseBody(response.body)) {
         // handle v2 response errors by throwing an UpdateCallRejectedError object
         const { reject_code, reject_message, error_code } = response.body;
-        throw RejectError.fromCode(
-          new CertifiedRejectErrorCode(requestId, reject_code, reject_message, error_code, {
-            canisterId: cid,
-            methodName,
-            httpDetails: response,
-          }),
+        const certifiedRejectErrorCode = new CertifiedRejectErrorCode(
+          requestId,
+          reject_code,
+          reject_message,
+          error_code,
         );
+        certifiedRejectErrorCode.callContext = {
+          canisterId: cid,
+          methodName,
+          httpDetails: response,
+        };
+        throw RejectError.fromCode(certifiedRejectErrorCode);
       }
 
       // Fall back to polling if we receive an Accepted response code
