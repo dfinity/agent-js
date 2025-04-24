@@ -1,5 +1,6 @@
-test.skip('goldenCertificates', () => {
+test('goldenCertificates', () => {
   // file needs to include at least one test
+  expect(42).toEqual(42);
 });
 
 export const goldenCertificates = {

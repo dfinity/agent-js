@@ -8,7 +8,11 @@
     "rootDir": "."
   },
   "files": [],
-  "references": [{ "path": "packages/agent" }, { "path": "packages/identity" }],
+  "references": [
+    { "path": "packages/agent" },
+    { "path": "packages/identity" },
+    { "path": "packages/principal" }
+  ],
   "include": ["packages/**/types/*"],
   "resolveJsonModule": true,
   "exclude": ["**/src/**/*.test.ts"]

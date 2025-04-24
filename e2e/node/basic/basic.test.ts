@@ -3,11 +3,10 @@ import {
   Certificate,
   LookupResultFound,
   LookupStatus,
-  bufFromBufLike,
   getManagementCanister,
   strToUtf8,
 } from '@dfinity/agent';
-import { IDL } from '@dfinity/candid';
+import { IDL, PipeArrayBuffer } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import agent from '../utils/agent';
 import { test, expect } from 'vitest';
@@ -63,17 +62,8 @@ test('read_state', async () => {
   expect(rawTime.value).toBeInstanceOf(ArrayBuffer);
   rawTime.value = rawTime.value as ArrayBuffer;
 
-  const decoded = IDL.decode(
-    [IDL.Nat],
-    bufFromBufLike(
-      new Uint8Array([
-        ...new TextEncoder().encode('DIDL\x00\x01\x7d'),
-        ...(new Uint8Array(rawTime.value) || []),
-      ]),
-    ),
-  )[0];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const time = Number(decoded as any) / 1e9;
+  const decoded = new IDL.NatClass().decodeValue(new PipeArrayBuffer(rawTime.value), IDL.Nat);
+  const time = Number(decoded) / 1e9;
   // The diff between decoded time and local time is within 5s
   expect(Math.abs(time - now) < 5).toBe(true);
 });
@@ -103,17 +93,8 @@ test('read_state with passed request', async () => {
   expect(rawTime.value).toBeInstanceOf(ArrayBuffer);
   rawTime.value = rawTime.value as ArrayBuffer;
 
-  const decoded = IDL.decode(
-    [IDL.Nat],
-    bufFromBufLike(
-      new Uint8Array([
-        ...new TextEncoder().encode('DIDL\x00\x01\x7d'),
-        ...(new Uint8Array(rawTime.value) || []),
-      ]),
-    ),
-  )[0];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const time = Number(decoded as any) / 1e9;
+  const decoded = new IDL.NatClass().decodeValue(new PipeArrayBuffer(rawTime.value), IDL.Nat);
+  const time = Number(decoded) / 1e9;
   // The diff between decoded time and local time is within 5s
   expect(Math.abs(time - now) < 5).toBe(true);
 });
