@@ -142,6 +142,6 @@ describe('hashValue', () => {
     const shouldThrow = () => {
       hashValue(() => undefined);
     };
-    expect(shouldThrow).toThrowError('Attempt to hash');
+    expect(shouldThrow).toThrow('Attempt to hash');
   });
 });

@@ -90,7 +90,7 @@ describe('Ed25519KeyIdentity tests', () => {
       const shortArray = new Uint8Array(secretKey).subarray(1, 32);
       Ed25519KeyIdentity.fromSecretKey(Uint8Array.from(shortArray).subarray(1, 32));
     };
-    expect(shouldFail).toThrowError('private key expected 32 bytes, got 30');
+    expect(shouldFail).toThrow('private key expected 32 bytes, got 30');
   });
 
   test('can encode and decode to/from JSON', async () => {
