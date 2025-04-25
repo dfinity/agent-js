@@ -16,14 +16,14 @@ export enum ErrorKindEnum {
   Unknown = 'Unknown',
 }
 
-type RequestContext = {
+export type RequestContext = {
   requestId?: RequestId;
   senderPubKey: ArrayBuffer;
   senderSignature: ArrayBuffer;
   ingressExpiry: Expiry;
 };
 
-type CallContext = {
+export type CallContext = {
   canisterId: Principal;
   methodName: string;
   httpDetails: HttpDetailsResponse;
