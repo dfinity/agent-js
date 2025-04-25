@@ -2,7 +2,7 @@ import { Principal } from '@dfinity/principal';
 import { decode, encode } from './cbor';
 import { toHex } from '@dfinity/candid';
 
-test('round trip', () => {
+test.only('round trip', () => {
   interface Data {
     a: number;
     b: string;

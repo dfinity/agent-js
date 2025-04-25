@@ -14,7 +14,7 @@ import { ed25519 } from '@noble/curves/ed25519';
 declare type KeyLike = PublicKey | DerEncodedPublicKey | ArrayBuffer | ArrayBufferView;
 
 function isObject(value: unknown) {
-  return value !== null && typeof value === 'object';
+  return value !== null && typeof value === 'object';  
 }
 
 export class Ed25519PublicKey implements PublicKey {

@@ -16,7 +16,7 @@ import {
   MissingLookupValueErrorCode,
 } from './errors';
 import { hash } from './request_id';
-import { uint8Equals, concat, fromHex, toHex, uint8FromBufLike, strToUtf8 } from '@dfinity/candid';
+import { uint8Equals, concat, fromHex, toHex, strToUtf8 } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import * as bls from './utils/bls';
 import { decodeTime } from './utils/leb';
@@ -37,9 +37,9 @@ export enum NodeType {
 }
 
 export type NodePath = Array<Uint8Array | string>;
-export type NodeLabel = (Uint8Array | Uint8Array) & { __nodeLabel__: void };
-export type NodeValue = (Uint8Array | Uint8Array) & { __nodeValue__: void };
-export type NodeHash = (Uint8Array | Uint8Array) & { __nodeHash__: void };
+export type NodeLabel = (Uint8Array) & { __nodeLabel__: void };
+export type NodeValue = (Uint8Array) & { __nodeValue__: void };
+export type NodeHash = (Uint8Array) & { __nodeHash__: void };
 
 export type EmptyHashTree = [NodeType.Empty];
 export type ForkHashTree = [NodeType.Fork, HashTree, HashTree];
@@ -364,10 +364,8 @@ export function lookupResultToBuffer(result: LookupResult): Uint8Array | undefin
   }
 
   // Attepmt to decode the value as a Uint8Array
-  const uint8Result = uint8FromBufLike(result.value);
-
-  if (uint8Result instanceof Uint8Array) {
-    return uint8Result;
+  if (result.value instanceof Uint8Array) {
+    return result.value;
   }
 
   return undefined;

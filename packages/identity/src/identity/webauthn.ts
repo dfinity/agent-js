@@ -8,7 +8,7 @@ import {
 } from '@dfinity/agent';
 import borc from 'borc';
 import { randomBytes } from '@noble/hashes/utils';
-import { fromHex, toHex, uint8FromBufLike, uint8ToBuf } from '@dfinity/candid';
+import { uint8FromBufLike } from '@dfinity/candid';
 
 function _coseToDerEncodedBlob(cose: Uint8Array): DerEncodedPublicKey {
   return wrapDER(cose, DER_COSE_OID) as DerEncodedPublicKey;
@@ -117,8 +117,8 @@ async function _createCredential(
     authenticatorAttachment: creds.authenticatorAttachment,
     getClientExtensionResults: creds.getClientExtensionResults,
     // Some password managers will return a Uint8Array, so we ensure we return an ArrayBuffer.
-    rawId: uint8ToBuf( uint8FromBufLike(creds.rawId)),
-    toJSON: creds.toJSON,
+    rawId: creds.rawId,
+    toJSON: creds.toJSON.bind(creds), // Ensure the toJSON method is included
   };
 }
 

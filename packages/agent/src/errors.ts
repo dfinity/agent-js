@@ -19,8 +19,8 @@ export enum ErrorKindEnum {
 
 export type RequestContext = {
   requestId?: RequestId;
-  senderPubKey: ArrayBuffer;
-  senderSignature: ArrayBuffer;
+  senderPubKey: Uint8Array;
+  senderSignature: Uint8Array;
   ingressExpiry: Expiry;
 };
 

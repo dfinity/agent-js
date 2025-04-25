@@ -181,8 +181,8 @@ export class PipeArrayBuffer {
  */
 export function uint8FromBufLike(
   bufLike:
-    | Uint8Array
     | ArrayBuffer
+    | Uint8Array
     | DataView
     | ArrayBufferView
     | ArrayBufferLike
@@ -201,9 +201,6 @@ export function uint8FromBufLike(
     return new Uint8Array(bufLike);
   }
   if (Array.isArray(bufLike)) {
-    if (!bufLike.every(n => typeof n === 'number' && Number.isInteger(n) && n >= 0 && n <= 255)) {
-      throw new Error('Array elements must be integers between 0 and 255');
-    }
     return new Uint8Array(bufLike);
   }
   if ('buffer' in bufLike) {

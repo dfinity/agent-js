@@ -55,7 +55,7 @@ import {
   ReadStateRequest,
 } from './types';
 import { SubnetStatus, request } from '../../canisterStatus';
-import { HashTree, LookupPathStatus, lookup_path } from '../../certificate';
+import { HashTree, lookup_path, LookupPathStatus } from '../../certificate';
 import { ed25519 } from '@noble/curves/ed25519';
 import { ExpirableMap } from '../../utils/expirableMap';
 import { Ed25519PublicKey } from '../../public_key';
@@ -1035,7 +1035,7 @@ export class HttpAgent implements Agent {
         throw UnknownError.fromCode(new UnexpectedErrorCode(`Unknown status: ${status}`));
       }
 
-      const separatorWithHash = concat(domainSeparator, uint8FromBufLike(new Uint8Array(hash)));
+      const separatorWithHash = concat(domainSeparator, hash);
 
       // FIX: check for match without verifying N times
       const pubKey = subnetStatus?.nodeKeys.get(nodeId);
