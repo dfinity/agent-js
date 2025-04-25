@@ -11,7 +11,7 @@ import {
   wrapDER,
   fromHex,
   toHex,
-  bufFromBufLike,
+  uint8FromBufLike,
 } from '@dfinity/agent';
 import { ed25519 } from '@noble/curves/ed25519';
 
@@ -37,7 +37,7 @@ export class Ed25519PublicKey implements PublicKey {
         return this.fromDer(key as DerEncodedPublicKey);
       } else if (ArrayBuffer.isView(key)) {
         const view = key as ArrayBufferView;
-        return this.fromRaw(bufFromBufLike(view.buffer));
+        return this.fromRaw(uint8FromBufLike(view.buffer));
       } else if (key instanceof ArrayBuffer) {
         return this.fromRaw(key);
       } else if ('rawKey' in key) {
@@ -73,7 +73,7 @@ export class Ed25519PublicKey implements PublicKey {
     if (unwrapped.length !== this.RAW_KEY_LENGTH) {
       throw new Error('An Ed25519 public key must be exactly 32bytes long');
     }
-    return bufFromBufLike(unwrapped);
+    return uint8FromBufLike(unwrapped);
   }
 
   #rawKey: ArrayBuffer;
@@ -93,7 +93,7 @@ export class Ed25519PublicKey implements PublicKey {
     if (key.byteLength !== Ed25519PublicKey.RAW_KEY_LENGTH) {
       throw new Error('An Ed25519 public key must be exactly 32bytes long');
     }
-    this.#rawKey = bufFromBufLike(key);
+    this.#rawKey = uint8FromBufLike(key);
     this.#derKey = Ed25519PublicKey.derEncode(key);
   }
 
@@ -230,7 +230,7 @@ export class Ed25519KeyIdentity extends SignIdentity {
         x = fromHex(x);
       }
       if (x instanceof Uint8Array) {
-        x = bufFromBufLike(x.buffer);
+        x = uint8FromBufLike(x.buffer);
       }
       return new Uint8Array(x);
     });

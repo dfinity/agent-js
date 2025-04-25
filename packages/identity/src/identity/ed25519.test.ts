@@ -1,6 +1,6 @@
 import { DerEncodedPublicKey, PublicKey, fromHex, toHex } from '@dfinity/agent';
 import { Ed25519KeyIdentity, Ed25519PublicKey } from './ed25519';
-import { bufFromBufLike } from '@dfinity/candid';
+import { uint8FromBufLike } from '@dfinity/candid';
 
 const testVectors: Array<[string, string]> = [
   [
@@ -108,7 +108,7 @@ describe('Ed25519KeyIdentity tests', () => {
     const identity = Ed25519KeyIdentity.generate();
     const message = new TextEncoder().encode('Hello, World!');
 
-    const signature = await identity.sign(bufFromBufLike(message));
+    const signature = await identity.sign(uint8FromBufLike(message));
     const pubkey = identity.getPublicKey();
 
     const isValid = Ed25519KeyIdentity.verify(signature, message, pubkey.rawKey);
@@ -142,7 +142,7 @@ test('from JSON', async () => {
   const identity = Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
 
   const msg = new TextEncoder().encode('Hello, World!');
-  const signature = await identity.sign(bufFromBufLike(msg));
+  const signature = await identity.sign(uint8FromBufLike(msg));
   const isValid = Ed25519KeyIdentity.verify(signature, msg, identity.getPublicKey().rawKey);
   expect(isValid).toBe(true);
 });

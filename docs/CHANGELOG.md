@@ -295,7 +295,7 @@ const result = await management.bitcoin_get_balance_query({
 ### Added
 
 - feat: introduces `ObservableLog` to `HttpAgent`. Allows subscribers to be notified of events from the agent without sending them directly to the console
-- feat: enhances `.from` methods on public key classes to support unknown types, including PublicKey instances, ArrayBuffer-like objects, DER encoded public keys, and hex strings. Also introduces a new `bufFromBufLike` util
+- feat: enhances `.from` methods on public key classes to support unknown types, including PublicKey instances, ArrayBuffer-like objects, DER encoded public keys, and hex strings. Also introduces a new `uint8FromBufLike` util
 
 ### Changed
 

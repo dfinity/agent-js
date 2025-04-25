@@ -4,7 +4,7 @@ import {
   KeyPair,
   Signature,
   uint8ToBuf,
-  bufFromBufLike,
+  uint8FromBufLike,
   fromHex,
   toHex,
   PublicKey,
@@ -30,7 +30,7 @@ function isObject(value: unknown) {
 
 export class Secp256k1PublicKey implements PublicKey {
   public static fromRaw(rawKey: ArrayBuffer): Secp256k1PublicKey {
-    return new Secp256k1PublicKey(bufFromBufLike(rawKey));
+    return new Secp256k1PublicKey(uint8FromBufLike(rawKey));
   }
 
   public static fromDer(derKey: DerEncodedPublicKey): Secp256k1PublicKey {
@@ -52,7 +52,7 @@ export class Secp256k1PublicKey implements PublicKey {
         return this.fromDer(key as DerEncodedPublicKey);
       } else if (ArrayBuffer.isView(key)) {
         const view = key as ArrayBufferView;
-        return this.fromRaw(bufFromBufLike(view.buffer));
+        return this.fromRaw(uint8FromBufLike(view.buffer));
       } else if (key instanceof ArrayBuffer) {
         return this.fromRaw(key);
       } else if ('rawKey' in key) {
@@ -67,7 +67,7 @@ export class Secp256k1PublicKey implements PublicKey {
   }
 
   private static derEncode(publicKey: ArrayBuffer): DerEncodedPublicKey {
-    const key = bufFromBufLike(wrapDER(publicKey, SECP256K1_OID).buffer) as DerEncodedPublicKey;
+    const key = uint8FromBufLike(wrapDER(publicKey, SECP256K1_OID).buffer) as DerEncodedPublicKey;
     key.__derEncodedPublicKey__ = undefined;
     return key;
   }
@@ -90,7 +90,7 @@ export class Secp256k1PublicKey implements PublicKey {
 
   // `fromRaw` and `fromDer` should be used for instantiation, not this constructor.
   private constructor(key: ArrayBuffer) {
-    this.#rawKey = bufFromBufLike(key);
+    this.#rawKey = uint8FromBufLike(key);
     this.#derKey = Secp256k1PublicKey.derEncode(key);
   }
 
@@ -209,7 +209,7 @@ export class Secp256k1KeyIdentity extends SignIdentity {
       throw new Error('Failed to derive private key from seed phrase');
     }
 
-    return Secp256k1KeyIdentity.fromSecretKey(bufFromBufLike(addrnode.privateKey));
+    return Secp256k1KeyIdentity.fromSecretKey(uint8FromBufLike(addrnode.privateKey));
   }
 
   /**

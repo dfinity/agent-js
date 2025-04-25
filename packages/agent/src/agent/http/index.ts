@@ -1,10 +1,10 @@
-import { JsonObject } from '@dfinity/candid';
+import { JsonObject, uint8Equals } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { AgentError } from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
 import { RequestId, hashOfMap, requestIdOf } from '../../request_id';
-import { bufEquals, bufFromBufLike, concat, fromHex, toHex } from '../../utils/buffer';
+import { uint8FromBufLike, concat, fromHex, toHex } from '@dfinity/candid';
 import {
   Agent,
   ApiQueryResponse,
@@ -39,6 +39,7 @@ import { SubnetStatus, request } from '../../canisterStatus';
 import {
   CertificateVerificationError,
   HashTree,
+  LookupResult,
   LookupStatus,
   lookup_path,
 } from '../../certificate';
@@ -155,7 +156,7 @@ export interface HttpAgentOptions {
   /**
    * Alternate root key to use for verifying certificates. If not provided, the default IC root key will be used.
    */
-  rootKey?: ArrayBuffer;
+  rootKey?: Uint8Array;
 
   /**
    * Whether or not the root key should be automatically fetched during construction.
@@ -256,8 +257,8 @@ other computations so that this class can stay as simple as possible while
 allowing extensions.
  */
 export class HttpAgent implements Agent {
-  public rootKey: ArrayBuffer | null;
-  #rootKeyPromise: Promise<ArrayBuffer> | null = null;
+  public rootKey: Uint8Array | null;
+  #rootKeyPromise: Promise<Uint8Array> | null = null;
   #shouldFetchRootKey: boolean = false;
   #identity: Promise<Identity> | null;
   readonly #fetch: typeof fetch;
@@ -381,7 +382,7 @@ export class HttpAgent implements Agent {
     },
   ): Promise<HttpAgent> {
     const agent = HttpAgent.createSync(options);
-    const initPromises: Promise<ArrayBuffer | void>[] = [agent.syncTime()];
+    const initPromises: Promise<Uint8Array | void>[] = [agent.syncTime()];
     if (agent.host.toString() !== 'https://icp-api.io' && options.shouldFetchRootKey) {
       initPromises.push(agent.fetchRootKey());
     }
@@ -451,7 +452,7 @@ export class HttpAgent implements Agent {
    * @param canisterId - The ID of the canister to call. Can be a Principal or a string.
    * @param options - Options for the call.
    * @param options.methodName - The name of the method to call.
-   * @param options.arg - The argument to pass to the method, as an ArrayBuffer.
+   * @param options.arg - The argument to pass to the method, as a Uint8Array.
    * @param options.effectiveCanisterId - (Optional) The effective canister ID, if different from the target canister ID.
    * @param options.callSync - (Optional) Whether to use synchronous call mode. Defaults to true.
    * @param options.nonce - (Optional) A unique nonce for the request. If provided, it will override any nonce set by transforms.
@@ -462,7 +463,7 @@ export class HttpAgent implements Agent {
     canisterId: Principal | string,
     options: {
       methodName: string;
-      arg: ArrayBuffer;
+      arg: Uint8Array;
       effectiveCanisterId?: Principal | string;
       callSync?: boolean;
       nonce?: Uint8Array | Nonce;
@@ -472,7 +473,7 @@ export class HttpAgent implements Agent {
     await this.#rootKeyGuard();
     // TODO - restore this value
     const callSync = options.callSync ?? true;
-    const id = await(identity !== undefined ? await identity : await this.#identity);
+    const id = await (identity !== undefined ? await identity : await this.#identity);
     if (!id) {
       throw new IdentityInvalidError(
         "This identity has expired due this application's security policy. Please refresh your authentication.",
@@ -540,8 +541,8 @@ export class HttpAgent implements Agent {
      * @param buf - The buffer to convert.
      * @returns The buffer as a Nonce.
      */
-    function toNonce(buf: ArrayBuffer | Uint8Array): Nonce {
-      return new Uint8Array(buf) as Nonce;
+    function toNonce(buf: Uint8Array): Nonce {
+      return Object.assign(buf, { __nonce__: undefined });
     }
 
     // Apply transform for identity.
@@ -583,7 +584,7 @@ export class HttpAgent implements Agent {
       });
 
       const response = await request;
-      const responseBuffer = await response.arrayBuffer();
+      const responseBuffer = uint8FromBufLike(await response.arrayBuffer());
       const responseBody = (
         response.status === 200 && responseBuffer.byteLength > 0
           ? cbor.decode(responseBuffer)
@@ -640,7 +641,7 @@ export class HttpAgent implements Agent {
   async #requestAndRetryQuery(args: {
     ecid: Principal;
     transformedRequest: HttpAgentRequest;
-    body: ArrayBuffer;
+    body: Uint8Array;
     requestId: RequestId;
     backoff: BackoffStrategy;
     tries: number;
@@ -682,7 +683,9 @@ export class HttpAgent implements Agent {
         },
       );
       if (fetchResponse.status === 200) {
-        const queryResponse: QueryResponse = cbor.decode(await fetchResponse.arrayBuffer());
+        const queryResponse: QueryResponse = cbor.decode(
+          uint8FromBufLike(await fetchResponse.arrayBuffer()),
+        );
         response = {
           ...queryResponse,
           httpDetails: {
@@ -980,11 +983,11 @@ export class HttpAgent implements Agent {
     }
     const { status, signatures = [], requestId } = queryResponse;
 
-    const domainSeparator = bufFromBufLike(new TextEncoder().encode('\x0Bic-response'));
+    const domainSeparator = uint8FromBufLike(new TextEncoder().encode('\x0Bic-response'));
     for (const sig of signatures) {
       const { timestamp, identity } = sig;
       const nodeId = Principal.fromUint8Array(identity).toText();
-      let hash: ArrayBuffer;
+      let hash: Uint8Array;
 
       // Hash is constructed differently depending on the status
       if (status === 'replied') {
@@ -1009,7 +1012,7 @@ export class HttpAgent implements Agent {
         throw new Error(`Unknown status: ${status}`);
       }
 
-      const separatorWithHash = concat(domainSeparator, bufFromBufLike(new Uint8Array(hash)));
+      const separatorWithHash = concat(domainSeparator, uint8FromBufLike(new Uint8Array(hash)));
 
       // FIX: check for match without verifying N times
       const pubKey = subnetStatus?.nodeKeys.get(nodeId);
@@ -1079,8 +1082,8 @@ export class HttpAgent implements Agent {
     function getRequestId(fields: ReadStateOptions): RequestId | undefined {
       for (const path of fields.paths) {
         const [pathName, value] = path;
-        const request_status = bufFromBufLike(new TextEncoder().encode('request_status'));
-        if (bufEquals(pathName, request_status)) {
+        const request_status = uint8FromBufLike(new TextEncoder().encode('request_status'));
+        if (uint8Equals(pathName, request_status)) {
           return value as RequestId;
         }
       }
@@ -1122,7 +1125,9 @@ export class HttpAgent implements Agent {
             `  Body: ${await response.text()}\n`,
         );
       }
-      const decodedResponse: ReadStateResponse = cbor.decode(await response.arrayBuffer());
+      const decodedResponse: ReadStateResponse = cbor.decode(
+        uint8FromBufLike(await response.arrayBuffer()),
+      );
 
       this.log.print('Read state response:', decodedResponse);
       const parsedTime = await this.parseTimeFromResponse(decodedResponse);
@@ -1147,7 +1152,7 @@ export class HttpAgent implements Agent {
     }
   }
 
-  public async parseTimeFromResponse(response: { certificate: ArrayBuffer }): Promise<number> {
+  public async parseTimeFromResponse(response: { certificate: Uint8Array }): Promise<number> {
     let tree: HashTree;
     if (response.certificate) {
       const decoded: { tree: HashTree } | undefined = cbor.decode(response.certificate);
@@ -1156,18 +1161,29 @@ export class HttpAgent implements Agent {
       } else {
         throw new Error('Could not decode time from response');
       }
-      const timeLookup = lookup_path(['time'], tree);
-      if (timeLookup.status !== LookupStatus.Found) {
-        throw new Error('Time was not found in the response or was not in its expected format.');
-      }
 
-      if (!(timeLookup.value instanceof ArrayBuffer) && !ArrayBuffer.isView(timeLookup)) {
-        throw new Error('Time was not found in the response or was not in its expected format.');
+      const timeLookup: LookupResult = lookup_path(['time'], tree);
+      switch (timeLookup.status) {
+        case LookupStatus.Found: {
+          let value: Uint8Array;
+          if (timeLookup.value instanceof Uint8Array) {
+            value = uint8FromBufLike(timeLookup.value);
+          } else {
+            throw new Error('Unexpected type for timeLookup.value');
+          }
+          if (value instanceof Uint8Array) {
+            const date = decodeTime(value);
+            this.log.print('Time from response:', date);
+            this.log.print('Time from response in milliseconds:', Number(date));
+            return Number(date);
+          } else {
+            this.log.warn('Expected a Uint8Array but got:', value);
+          }
+          break;
+        }
+        default:
+          throw new Error('Time was not found in the response or was not in its expected format.');
       }
-      const date = decodeTime(bufFromBufLike(timeLookup.value as ArrayBuffer));
-      this.log.print('Time from response:', date);
-      this.log.print('Time from response in milliseconds:', Number(date));
-      return Number(date);
     } else {
       this.log.warn('No certificate found in response');
     }
@@ -1231,21 +1247,21 @@ export class HttpAgent implements Agent {
         this.#fetch('' + new URL(`/api/v2/status`, this.host), { headers, ...this.#fetchOptions }),
       tries: 0,
     });
-    return cbor.decode(await response.arrayBuffer());
+    return cbor.decode(uint8FromBufLike(await response.arrayBuffer()));
   }
 
-  public async fetchRootKey(): Promise<ArrayBuffer> {
-    let result: ArrayBuffer;
+  public async fetchRootKey(): Promise<Uint8Array> {
+    let result: Uint8Array;
     // Wait for already pending promise to avoid duplicate calls
     if (this.#rootKeyPromise) {
       result = await this.#rootKeyPromise;
     } else {
       // construct promise
-      this.#rootKeyPromise = new Promise<ArrayBuffer>((resolve, reject) => {
+      this.#rootKeyPromise = new Promise<Uint8Array>((resolve, reject) => {
         this.status()
           .then(value => {
             // Hex-encoded version of the replica root key
-            const rootKey = (value as JsonObject & { root_key: ArrayBuffer }).root_key;
+            const rootKey = (value as JsonObject & { root_key: Uint8Array }).root_key;
             this.rootKey = rootKey;
             resolve(rootKey);
           })

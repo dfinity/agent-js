@@ -23,7 +23,7 @@ export interface ReadStateOptions {
   /**
    * A list of paths to read the state of.
    */
-  paths: ArrayBuffer[][];
+  paths: Uint8Array[][];
 }
 
 /**
@@ -64,7 +64,7 @@ export type NodeSignature = {
 
 export interface QueryResponseReplied extends QueryResponseBase {
   status: QueryResponseStatus.Replied;
-  reply: { arg: ArrayBuffer };
+  reply: { arg: Uint8Array };
   signatures?: NodeSignature[];
 }
 
@@ -88,7 +88,7 @@ export interface QueryFields {
   /**
    * A binary encoded argument. This is already encoded and will be sent as is.
    */
-  arg: ArrayBuffer;
+  arg: Uint8Array;
 
   /**
    * Overrides canister id for path to fetch. This is used for management canister calls.
@@ -108,7 +108,7 @@ export interface CallOptions {
   /**
    * A binary encoded argument. This is already encoded and will be sent as is.
    */
-  arg: ArrayBuffer;
+  arg: Uint8Array;
 
   /**
    * An effective canister ID, used for routing. Usually the canister ID, except for management canister calls.
@@ -118,7 +118,7 @@ export interface CallOptions {
 }
 
 export interface ReadStateResponse {
-  certificate: ArrayBuffer;
+  certificate: Uint8Array;
 }
 
 export interface v2ResponseBody {
@@ -128,7 +128,7 @@ export interface v2ResponseBody {
 }
 
 export interface v3ResponseBody {
-  certificate: ArrayBuffer;
+  certificate: Uint8Array;
 }
 
 export interface SubmitResponse {
@@ -147,7 +147,7 @@ export interface SubmitResponse {
  * An Agent able to make calls and queries to a Replica.
  */
 export interface Agent {
-  readonly rootKey: ArrayBuffer | null;
+  readonly rootKey: Uint8Array | null;
   /**
    * Returns the principal ID associated with this agent (by default). It only shows
    * the principal of the default identity in the agent, which is the principal used
@@ -218,7 +218,7 @@ export interface Agent {
    * otherwise you are prone to man-in-the-middle attacks! Do not call this
    * function by default.
    */
-  fetchRootKey(): Promise<ArrayBuffer>;
+  fetchRootKey(): Promise<Uint8Array>;
   /**
    * If an application needs to invalidate an identity under certain conditions, an `Agent` may expose an `invalidateIdentity` method.
    * Invoking this method will set the inner identity used by the `Agent` to `null`.

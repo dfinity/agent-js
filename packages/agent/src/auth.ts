@@ -1,7 +1,7 @@
 import { Principal } from '@dfinity/principal';
 import { HttpAgentRequest } from './agent/http/types';
 import { requestIdOf } from './request_id';
-import { concat, toHex } from './utils/buffer';
+import { concat, toHex } from '@dfinity/candid';
 
 const domainSeparator = new TextEncoder().encode('\x0Aic-request');
 
@@ -9,19 +9,19 @@ const domainSeparator = new TextEncoder().encode('\x0Aic-request');
  * A Key Pair, containing a secret and public key.
  */
 export interface KeyPair {
-  secretKey: ArrayBuffer;
+  secretKey: Uint8Array;
   publicKey: PublicKey;
 }
 
 /**
- * A public key that is DER encoded. This is a branded ArrayBuffer.
+ * A public key that is DER encoded. This is a branded Uint8Array.
  */
-export type DerEncodedPublicKey = ArrayBuffer & { __derEncodedPublicKey__?: void };
+export type DerEncodedPublicKey = Uint8Array & { __derEncodedPublicKey__?: void };
 
 /**
  * A signature array buffer.
  */
-export type Signature = ArrayBuffer & { __signature__: void };
+export type Signature = Uint8Array & { __signature__: void };
 
 /**
  * A Public Key implementation.
@@ -29,8 +29,8 @@ export type Signature = ArrayBuffer & { __signature__: void };
 export interface PublicKey {
   toDer(): DerEncodedPublicKey;
   // rawKey, toRaw, and derKey are optional for backwards compatibility.
-  toRaw?(): ArrayBuffer;
-  rawKey?: ArrayBuffer;
+  toRaw?(): Uint8Array;
+  rawKey?: Uint8Array;
   derKey?: DerEncodedPublicKey;
 }
 
@@ -67,7 +67,7 @@ export abstract class SignIdentity implements Identity {
   /**
    * Signs a blob of data, with this identity's private key.
    */
-  public abstract sign(blob: ArrayBuffer): Promise<Signature>;
+  public abstract sign(blob: Uint8Array): Promise<Signature>;
 
   /**
    * Get the principal represented by this identity. Normally should be a

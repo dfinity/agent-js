@@ -1,6 +1,6 @@
 import { Principal } from '@dfinity/principal';
 import { RequestStatusResponseStatus } from '../agent';
-import { toHex } from '../utils/buffer';
+import { toHex } from '@dfinity/candid';
 import { PollStrategy } from './index';
 import { RequestId } from '../request_id';
 

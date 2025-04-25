@@ -1,5 +1,5 @@
 import { bls12_381 } from '@noble/curves/bls12-381';
-import { toHex } from './buffer';
+import { toHex } from '@dfinity/candid';
 
 export let verify: (pk: Uint8Array, sig: Uint8Array, msg: Uint8Array) => boolean;
 

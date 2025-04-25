@@ -1,41 +1,43 @@
 /**
  * Concatenate multiple Uint8Arrays.
- * @param buffers The buffers to concatenate.
+ * @param uint8Arrays The Uint8Arrays to concatenate.
  */
-export function concat(...buffers: Uint8Array[]): Uint8Array {
-  const result = new Uint8Array(buffers.reduce((acc, curr) => acc + curr.byteLength, 0));
+export function concat(...uint8Arrays: Uint8Array[]): Uint8Array {
+  const result = new Uint8Array(uint8Arrays.reduce((acc, curr) => acc + curr.byteLength, 0));
   let index = 0;
-  for (const b of buffers) {
-    result.set(b, index);
+  for (const b of uint8Arrays) {
+    result.set(uint8FromBufLike(new Uint8Array(b)), index);
     index += b.byteLength;
   }
   return result;
 }
 
 /**
-/**
- * Returns an hexadecimal representation of a Uint8Array
- * @param bytes The array buffer.
+ * Transforms a Uint8Array to an hexadecimal string. This will use the Uint8Array as an Uint8Array.
+ * @param uint8Array The Uint8Array to return the hexadecimal string of.
  */
-export function toHexString(bytes: Uint8Array): string {
-  return bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
+export function toHex(uint8Array: Uint8Array): string {
+  return [...uint8FromBufLike(uint8Array)].map(x => x.toString(16).padStart(2, '0')).join('');
 }
 
+const hexRe = new RegExp(/^[0-9a-fA-F]+$/);
+
 /**
- * Return a Uint8Array from its hexadecimal representation.
- * @param hexString The hexadecimal string.
+ * Transforms a hexadecimal string into a Uint8Array.
+ * @param hex The hexadecimal string to use.
  */
-export function fromHexString(hexString: string): Uint8Array {
-  if (typeof hexString !== 'string') {
-    throw new Error('Input must be a string');
+export function fromHex(hex: string): Uint8Array {
+  if (!hexRe.test(hex)) {
+    throw new Error('Invalid hexadecimal string.');
   }
-  if (!/^[0-9a-fA-F]*$/.test(hexString)) {
-    throw new Error('Input must be a valid hexadecimal string');
-  }
-  if (hexString.length % 2 !== 0) {
-    throw new Error('Hexadecimal string must have an even number of characters');
-  }
-  return new Uint8Array((hexString.match(/.{1,2}/g) ?? []).map(byte => parseInt(byte, 16)));
+  const buffer = [...hex]
+    .reduce((acc, curr, i) => {
+      acc[(i / 2) | 0] = (acc[(i / 2) | 0] || '') + curr;
+      return acc;
+    }, [] as string[])
+    .map(x => Number.parseInt(x, 16));
+
+  return new Uint8Array(buffer);
 }
 
 /**
@@ -166,27 +168,18 @@ export class PipeArrayBuffer {
     this._view = v;
   }
 }
-/**
- * Returns a true ArrayBuffer from a Uint8Array, as Uint8Array.buffer is unsafe.
- * @param {Uint8Array} arr Uint8Array to convert
- * @returns ArrayBuffer
- */
-export function uint8ToBuf(arr: Uint8Array): ArrayBuffer {
-  const result = new ArrayBuffer(arr.byteLength);
-  const resultView = new Uint8Array(result);
-  resultView.set(arr);
-  return result;
-}
+
+
 
 /**
- * Returns a Uint8Array from a buffer-like object.
+ * Returns a true Uint8Array from an ArrayBufferLike object.
  * @param bufLike a buffer-like object
  * @returns Uint8Array
  */
-export function bufFromBufLike(
+export function uint8FromBufLike(
   bufLike:
-    | Uint8Array
     | ArrayBuffer
+    | Uint8Array
     | DataView
     | ArrayBufferView
     | ArrayBufferLike
@@ -194,9 +187,10 @@ export function bufFromBufLike(
     | number[]
     | { buffer: ArrayBuffer },
 ): Uint8Array {
-  if (!bufLike) {
-    throw new Error('Input cannot be null or undefined');
+  if(!(bufLike)) {
+    throw new Error('Buffer-like object is required');
   }
+
   if (bufLike instanceof Uint8Array) {
     return bufLike;
   }
@@ -204,21 +198,40 @@ export function bufFromBufLike(
     return new Uint8Array(bufLike);
   }
   if (Array.isArray(bufLike)) {
-    if (!bufLike.every(n => typeof n === 'number' && Number.isInteger(n) && n >= 0 && n <= 255)) {
-      throw new Error('Array elements must be integers between 0 and 255');
-    }
     return new Uint8Array(bufLike);
   }
   if ('buffer' in bufLike) {
-    return bufFromBufLike(bufLike.buffer);
+    return uint8FromBufLike(bufLike.buffer);
   }
-  if (bufLike instanceof DataView) {
-    return new Uint8Array(bufLike.buffer);
+  return new Uint8Array(bufLike);
+}
+
+/**
+ *
+ * @param u1 uint8Array 1
+ * @param u2 uint8Array 2
+ * @returns number - negative if u1 < u2, positive if u1 > u2, 0 if u1 === u2
+ */
+export function compare(u1: Uint8Array, u2: Uint8Array): number {
+  if (u1.byteLength !== u2.byteLength) {
+    return u1.byteLength - u2.byteLength;
   }
-  if (bufLike instanceof SharedArrayBuffer) {
-    return new Uint8Array(bufLike);
+  for (let i = 0; i < u1.length; i++) {
+    if (u1[i] !== u2[i]) {
+      return u1[i] - u2[i];
+    }
   }
-  throw new Error('Invalid buffer-like object');
+  return 0;
+}
+
+/**
+ * Checks two uint8Arrays for equality.
+ * @param u1 uint8Array 1
+ * @param u2 uint8Array 2
+ * @returns boolean
+ */
+export function uint8Equals(u1: Uint8Array, u2: Uint8Array): boolean {
+  return compare(u1, u2) === 0;
 }
 
 /**
@@ -231,4 +244,27 @@ export function uint8ToDataView(uint8: Uint8Array): DataView {
     throw new Error('Input must be a Uint8Array');
   }
   return new DataView(uint8.buffer, uint8.byteOffset, uint8.byteLength);
+}
+
+
+/**
+ * Returns a true ArrayBuffer from a Uint8Array, as Uint8Array.buffer is unsafe.
+ * @param {Uint8Array} arr Uint8Array to convert
+ * @returns ArrayBuffer
+ */
+export function uint8ToBuf(arr: Uint8Array): ArrayBuffer {
+  const buf = new ArrayBuffer(arr.byteLength);
+  const view = new Uint8Array(buf);
+  view.set(arr);
+  return buf;
+}
+
+const encoder = new TextEncoder();
+/**
+ * Returns text encoded buffer from a string.
+ * @param str string to encode
+ * @returns Uint8Array
+ */
+export function strToUtf8(str: string): Uint8Array {
+  return encoder.encode(str);
 }

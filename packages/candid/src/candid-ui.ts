@@ -234,10 +234,10 @@ class RenderValue extends IDL.Visitor<ValueConfig, void> {
   public visitText(t: IDL.TextClass, d: ValueConfig) {
     (d.input.ui.input as HTMLInputElement).value = d.value;
   }
-  public visitRec<T>(t: IDL.RecClass<T>, ty: IDL.ConstructType<T>, d: ValueConfig) {
+  public visitRec<T>(t: IDL.RecClass<T>, ty: IDL.ConstructType<T>, d: ValueConfig): void {
     renderValue(ty, d.input, d.value);
   }
-  public visitOpt<T>(t: IDL.OptClass<T>, ty: IDL.Type<T>, d: ValueConfig) {
+  public visitOpt<T>(t: IDL.OptClass<T>, ty: IDL.Type<T>, d: ValueConfig): void {
     if (d.value.length === 0) {
       return;
     } else {

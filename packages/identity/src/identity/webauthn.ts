@@ -10,7 +10,7 @@ import {
 } from '@dfinity/agent';
 import borc from 'borc';
 import { randomBytes } from '@noble/hashes/utils';
-import { bufFromBufLike } from '@dfinity/candid';
+import { uint8FromBufLike } from '@dfinity/candid';
 
 function _coseToDerEncodedBlob(cose: ArrayBuffer): DerEncodedPublicKey {
   return wrapDER(cose, DER_COSE_OID).buffer as DerEncodedPublicKey;
@@ -119,7 +119,7 @@ async function _createCredential(
     authenticatorAttachment: creds.authenticatorAttachment,
     getClientExtensionResults: creds.getClientExtensionResults,
     // Some password managers will return a Uint8Array, so we ensure we return an ArrayBuffer.
-    rawId: bufFromBufLike(creds.rawId),
+    rawId: uint8FromBufLike(creds.rawId),
   };
 }
 

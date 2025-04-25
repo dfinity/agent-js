@@ -2,7 +2,7 @@ import { Principal } from '@dfinity/principal';
 import { Agent, RequestStatusResponseStatus } from '../agent';
 import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from '../certificate';
 import { RequestId } from '../request_id';
-import { toHex } from '../utils/buffer';
+import { toHex } from '@dfinity/candid';
 
 export * as strategy from './strategy';
 import { defaultStrategy } from './strategy';
@@ -33,7 +33,7 @@ export async function pollForResponse(
   blsVerify?: CreateCertificateOptions['blsVerify'],
 ): Promise<{
   certificate: Certificate;
-  reply: ArrayBuffer;
+  reply: Uint8Array;
 }> {
   const path = [new TextEncoder().encode('request_status'), requestId];
   const currentRequest = request ?? (await agent.createReadStateRequest?.({ paths: [path] }));

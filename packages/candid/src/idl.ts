@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Principal as PrincipalId } from '@dfinity/principal';
 import { JsonValue } from './types';
-import { concat, PipeArrayBuffer as Pipe, uint8ToBuf, uint8ToDataView } from './utils/buffer';
+import { concat, PipeArrayBuffer as Pipe,  uint8ToDataView } from './utils/buffer';
 import { idlLabelToId } from './utils/hash';
 import {
   lebDecode,
@@ -843,7 +843,7 @@ export class VecClass<T> extends ConstructType<T[]> {
         return new Int8Array(b.read(len)) as unknown as T[];
       }
       if (this._type._bits == 16) {
-        return new Int16Array(uint8ToBuf(b.read(len * 2))) as unknown as T[];
+        return new Int16Array(b.read(len * 2)) as unknown as T[];
       }
       if (this._type._bits == 32) {
         return new Int32Array(b.read(len * 4)) as unknown as T[];

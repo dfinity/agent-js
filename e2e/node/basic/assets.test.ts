@@ -5,6 +5,7 @@ import { Actor } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import { AssetManager } from '@dfinity/assets';
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
+import { uint8FromBufLike } from '@dfinity/candid';
 
 /**
  * Create (pseudo) random bytes Readable
@@ -68,7 +69,7 @@ describe('assets', () => {
   };
 
   beforeAll(async () => {
-    const module = readFileSync(path.join(__dirname, '../canisters/assets.wasm'));
+    const module = uint8FromBufLike( readFileSync(path.join(__dirname, '../canisters/assets.wasm')));
     canisterId = await Actor.createCanister({ agent: await agent });
     await Actor.install({ module }, { canisterId, agent: await agent });
   });

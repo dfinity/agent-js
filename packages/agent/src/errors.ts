@@ -6,7 +6,7 @@ import {
   v2ResponseBody,
 } from './agent/api';
 import { RequestId } from './request_id';
-import { toHex } from './utils/buffer';
+import { toHex } from '@dfinity/candid';
 
 /**
  * An error that happens in the Agent. This is the root of all errors and should be used

@@ -10,11 +10,11 @@ import {
   v3ResponseBody,
 } from './agent';
 import { AgentError } from './errors';
-import { bufFromBufLike, IDL } from '@dfinity/candid';
+import { uint8FromBufLike, IDL } from '@dfinity/candid';
 import { pollForResponse, PollStrategyFactory, strategy } from './polling';
 import { Principal } from '@dfinity/principal';
 import { RequestId } from './request_id';
-import { toHex } from './utils/buffer';
+import { toHex } from '@dfinity/candid';
 import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from './certificate';
 import managementCanisterIdl from './canisters/management_idl';
 import _SERVICE, { canister_install_mode, canister_settings } from './canisters/management_service';
@@ -268,9 +268,9 @@ export class Actor {
 
   public static async install(
     fields: {
-      module: ArrayBuffer;
+      module: Uint8Array;
       mode?: canister_install_mode;
-      arg?: ArrayBuffer;
+      arg?: Uint8Array;
     },
     config: ActorConfig,
   ): Promise<void> {
@@ -326,8 +326,8 @@ export class Actor {
   public static async createAndInstallCanister(
     interfaceFactory: IDL.InterfaceFactory,
     fields: {
-      module: ArrayBuffer;
-      arg?: ArrayBuffer;
+      module: Uint8Array;
+      arg?: Uint8Array;
     },
     config?: CallConfig,
   ): Promise<ActorSubclass> {
@@ -444,7 +444,7 @@ export class Actor {
 // IDL functions can have multiple return values, so decoding always
 // produces an array. Ensure that functions with single or zero return
 // values behave as expected.
-function decodeReturnValue(types: IDL.Type[], msg: ArrayBuffer) {
+function decodeReturnValue(types: IDL.Type[], msg: Uint8Array) {
   const returnValues = IDL.decode(types, Buffer.from(msg));
   switch (returnValues.length) {
     case 0:
@@ -536,7 +536,7 @@ function _createActorMethod(
         arg,
         effectiveCanisterId: ecid,
       });
-      let reply: ArrayBuffer | undefined;
+      let reply: Uint8Array | undefined;
       let certificate: Certificate | undefined;
       if (response.body && (response.body as v3ResponseBody).certificate) {
         if (agent.rootKey == null) {
@@ -544,7 +544,7 @@ function _createActorMethod(
         }
         const cert = (response.body as v3ResponseBody).certificate;
         certificate = await Certificate.create({
-          certificate: bufFromBufLike(cert),
+          certificate: uint8FromBufLike(cert),
           rootKey: agent.rootKey,
           canisterId: Principal.from(canisterId),
           blsVerify,

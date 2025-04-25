@@ -11,7 +11,6 @@ export * from './observable';
 export * from './public_key';
 export * from './request_id';
 export * from './utils/bls';
-export * from './utils/buffer';
 export * from './utils/random';
 export * as polling from './polling';
 import * as CanisterStatus from './canisterStatus';

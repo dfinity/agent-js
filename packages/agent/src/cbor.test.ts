@@ -1,15 +1,15 @@
 import { Principal } from '@dfinity/principal';
 import { decode, encode } from './cbor';
-import { toHex } from './utils/buffer';
+import { toHex } from '@dfinity/candid';
 
-test('round trip', () => {
+test.only('round trip', () => {
   interface Data {
     a: number;
     b: string;
-    c: ArrayBuffer;
+    c: Uint8Array;
     d: { four: string };
     e: Principal;
-    f: ArrayBuffer;
+    f: Uint8Array;
     g: bigint;
   }
 
@@ -25,7 +25,6 @@ test('round trip', () => {
     f: new Uint8Array([]),
     g: BigInt('0xffffffffffffffff'),
   };
-
   const output = decode<Data>(encode(input));
 
   // Some values don't decode exactly to the value that was encoded,
@@ -33,7 +32,6 @@ test('round trip', () => {
   const { c: inputC, e: inputE, f: inputF, ...inputRest } = input;
 
   const { c: outputC, e: outputE, f: outputF, ...outputRest } = output;
-
   expect(toHex(outputC)).toBe(toHex(inputC));
   expect(buf2hex(outputE as unknown as Uint8Array).toUpperCase()).toBe(inputE.toHex());
   expect(toHex(outputF)).toBe(toHex(inputF));

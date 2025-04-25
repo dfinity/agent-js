@@ -1,4 +1,4 @@
-import { bufFromBufLike, getManagementCanister } from '@dfinity/agent';
+import { uint8FromBufLike, getManagementCanister } from '@dfinity/agent';
 import { describe, it, expect } from 'vitest';
 import logsActor from '../canisters/logs';
 import { makeAgent } from '../utils/agent';
@@ -11,7 +11,7 @@ describe('canister logs', () => {
     const logs = await management.fetch_canister_logs({ canister_id: canisterId });
 
     expect(logs.canister_log_records.length).toBe(1);
-    const content = bufFromBufLike(logs.canister_log_records[0].content);
+    const content = uint8FromBufLike(logs.canister_log_records[0].content);
 
     expect(new TextDecoder().decode(content).trim()).toBe('Hello, first call!');
   });
@@ -24,7 +24,7 @@ describe('canister logs', () => {
     const logs = await management.fetch_canister_logs({ canister_id: canisterId });
 
     expect(logs.canister_log_records.length).toBe(2);
-    const content = bufFromBufLike(logs.canister_log_records[1].content);
+    const content = uint8FromBufLike(logs.canister_log_records[1].content);
 
     expect(new TextDecoder().decode(content).trim()).toBe('Hello, second call!');
   });

@@ -16,17 +16,16 @@ import { JSDOM } from 'jsdom';
 import {
   Actor,
   AnonymousIdentity,
-  fromHex,
   getManagementCanister,
   type ManagementCanisterRecord,
   type ActorSubclass,
   SignIdentity,
-  toHex,
   Signature,
 } from '../..';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { AgentError } from '../../errors';
 import { AgentCallError, AgentQueryError, AgentReadStateError } from './errors';
+import { fromHex, toHex, uint8FromBufLike } from '@dfinity/candid';
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;
@@ -250,7 +249,7 @@ test('use provided nonce for call', async () => {
   const httpAgent = new HttpAgent({ fetch: mockFetch, host: 'http://localhost' });
 
   const methodName = 'greet';
-  const arg = new ArrayBuffer(32);
+  const arg = new Uint8Array(32);
 
   const callResponse = await httpAgent.call(canisterId, {
     methodName,
@@ -423,7 +422,7 @@ describe('invalidate identity', () => {
     try {
       await agent.call(canisterId, {
         methodName: 'test',
-        arg: new ArrayBuffer(16),
+        arg: new Uint8Array(16),
       });
     } catch (error) {
       expect((error as Error).message).toBe(expectedError);
@@ -432,7 +431,7 @@ describe('invalidate identity', () => {
     try {
       await agent.query(canisterId, {
         methodName: 'test',
-        arg: new ArrayBuffer(16),
+        arg: new Uint8Array(16),
       });
     } catch (error) {
       expect((error as Error).message).toBe(expectedError);
@@ -477,7 +476,7 @@ describe('replace identity', () => {
     await agent
       .query(canisterId, {
         methodName: 'test',
-        arg: new ArrayBuffer(16),
+        arg: new Uint8Array(16),
       })
       .catch((reason: AgentError) => {
         // This should fail
@@ -489,7 +488,7 @@ describe('replace identity', () => {
     agent.replaceIdentity(identity2);
     await agent.call(canisterId, {
       methodName: 'test',
-      arg: new ArrayBuffer(16),
+      arg: new Uint8Array(16),
     });
     expect(mockFetch).toBeCalledTimes(1);
   });
@@ -545,7 +544,7 @@ describe('makeNonce', () => {
       const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
       await agent.call(canisterId, {
         methodName: 'test',
-        arg: new ArrayBuffer(16),
+        arg: new Uint8Array(16),
       });
 
       expect(mockFetch).toBeCalledTimes(1);
@@ -577,7 +576,7 @@ describe('retry failures', () => {
     const performCall = async () =>
       await agent.call(Principal.managementCanister(), {
         methodName: 'test',
-        arg: new Uint8Array().buffer,
+        arg: new Uint8Array(),
       });
     await expect(performCall).rejects.toThrow(AgentCallError);
     expect(mockFetch.mock.calls.length).toBe(1);
@@ -595,7 +594,7 @@ describe('retry failures', () => {
       expect(
         agent.call(Principal.managementCanister(), {
           methodName: 'test',
-          arg: new Uint8Array().buffer,
+          arg: new Uint8Array(),
         }),
       ).rejects.toThrow();
     } catch {
@@ -630,7 +629,7 @@ describe('retry failures', () => {
     const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
     const result = await agent.call(Principal.managementCanister(), {
       methodName: 'test',
-      arg: new Uint8Array().buffer,
+      arg: new Uint8Array(),
     });
     // Remove the request details to make the snapshot consistent
     result.requestDetails = undefined;
@@ -665,7 +664,7 @@ test('should adjust the Expiry if the clock is more than 30 seconds behind', asy
   await agent
     .call(Principal.managementCanister(), {
       methodName: 'test',
-      arg: new Uint8Array().buffer,
+      arg: new Uint8Array(),
     })
     // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
     .catch(function (_) {});
@@ -701,7 +700,7 @@ test('should adjust the Expiry if the clock is more than 30 seconds ahead', asyn
   await agent
     .call(Principal.managementCanister(), {
       methodName: 'test',
-      arg: new Uint8Array().buffer,
+      arg: new Uint8Array(),
     })
     // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
     .catch(function (_) {});
@@ -847,7 +846,7 @@ test('retry requests that fail due to a network failure', async () => {
   try {
     await agent.call(Principal.managementCanister(), {
       methodName: 'test',
-      arg: new Uint8Array().buffer,
+      arg: new Uint8Array(),
     });
   } catch {
     // One try + three retries
@@ -1198,7 +1197,7 @@ describe('error logs for bad signature', () => {
 
     const identity = Ed25519KeyIdentity.generate(new Uint8Array(32)) as unknown as SignIdentity;
     identity.sign = async () => {
-      return new ArrayBuffer(64) as Signature;
+      return new Uint8Array(64) as Signature;
     };
     const agent = HttpAgent.createSync({
       identity,
@@ -1243,7 +1242,7 @@ describe('error logs for bad signature', () => {
 
     const identity = Ed25519KeyIdentity.generate(new Uint8Array(32)) as unknown as SignIdentity;
     identity.sign = async () => {
-      return new ArrayBuffer(64) as Signature;
+      return new Uint8Array(64) as Signature;
     };
     const agent = HttpAgent.createSync({
       identity,
@@ -1310,7 +1309,7 @@ describe('error logs for bad signature', () => {
     const identity = Ed25519KeyIdentity.generate(new Uint8Array(32)) as unknown as SignIdentity;
 
     identity.sign = async () => {
-      return new ArrayBuffer(64) as Signature;
+      return new Uint8Array(64) as Signature;
     };
     const agent = HttpAgent.createSync({
       identity,
@@ -1336,7 +1335,7 @@ describe('error logs for bad signature', () => {
     });
 
     try {
-      const requestId = new ArrayBuffer(32) as RequestId;
+      const requestId = new Uint8Array(32) as RequestId;
       const path = new TextEncoder().encode('request_status');
       await agent.readState(canisterId, { paths: [[path, requestId]] });
     } catch (e) {
@@ -1357,7 +1356,7 @@ export async function fetchCloner(
 ): Promise<Response> {
   const response = await fetch(request, init);
   const cloned = response.clone();
-  const responseBuffer = await cloned.arrayBuffer();
+  const responseBuffer =  uint8FromBufLike(await cloned.arrayBuffer());
 
   const mock = {
     headers: [...response.headers.entries()],
