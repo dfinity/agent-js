@@ -77,7 +77,7 @@ test('requestIdOf', async () => {
   );
 });
 
-test.skip('requestIdOf for sender_delegation signature', async () => {
+test('requestIdOf for sender_delegation signature', async () => {
   // this is what replica wants
   const expectedHashBytes = 'f0c66015041eccb5528fc7fd817bb4d0707369d7e1383d3cdaa074b2b2236824';
   const delegation1 = {
@@ -98,7 +98,7 @@ test.skip('requestIdOf for sender_delegation signature', async () => {
   const delegation2 = {
     ...delegation1,
     pubkey: delegation1.pubkey,
-    targets: delegation1.targets.map(t => t),
+    targets: delegation1.targets,
     expiration: BigInt(delegation1.expiration.toString()),
   };
   const delegation2ActualHashBytes = requestIdOf(delegation2);
@@ -107,7 +107,7 @@ test.skip('requestIdOf for sender_delegation signature', async () => {
   // This one uses Principals as targets
   const delegation3 = {
     ...delegation1,
-    targets: delegation1.targets.map(t => Principal.fromText(t.toString())),
+    targets: delegation1.targets.map(t => Principal.fromUint8Array(t)),
   };
   const delegation3ActualHashBytes = requestIdOf(delegation3);
   expect(toHex(delegation3ActualHashBytes)).toEqual(toHex(delegation1ActualHashBytes));
@@ -142,6 +142,6 @@ describe('hashValue', () => {
     const shouldThrow = () => {
       hashValue(() => undefined);
     };
-    expect(shouldThrow).toThrowError('Attempt to hash');
+    expect(shouldThrow).toThrow('Attempt to hash');
   });
 });
