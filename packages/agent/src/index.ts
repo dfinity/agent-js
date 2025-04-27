@@ -6,8 +6,7 @@ export * from './auth';
 export * from './canisters/asset';
 export * from './certificate';
 export * from './der';
-// TODO: use * export once we have removed all the old errors
-export { CertificateVerificationErrorCode, TrustError } from './errors';
+export * from './errors';
 export * from './fetch_candid';
 export * from './observable';
 export * from './public_key';

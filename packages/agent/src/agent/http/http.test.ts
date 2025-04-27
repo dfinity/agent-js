@@ -25,8 +25,12 @@ import {
   Signature,
 } from '../..';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
-import { AgentError } from '../../errors';
-import { AgentCallError, AgentQueryError, AgentReadStateError } from './errors';
+import {
+  AgentError,
+  HttpErrorCode,
+  HttpFetchErrorCode,
+  IdentityInvalidErrorCode,
+} from '../../errors';
 import { bufFromBufLike } from '@dfinity/candid';
 import { utf8ToBytes } from '@noble/hashes/utils';
 
@@ -428,6 +432,7 @@ describe('invalidate identity', () => {
     const expectedError =
       "This identity has expired due this application's security policy. Please refresh your authentication.";
 
+    expect.assertions(3);
     // Test Agent.call
     try {
       await agent.call(canisterId, {
@@ -475,23 +480,22 @@ describe('replace identity', () => {
         }),
       );
     });
-    const expectedError =
-      "This identity has expired due this application's security policy. Please refresh your authentication.";
 
     const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
     const identity = new AnonymousIdentity();
     const agent = new HttpAgent({ identity, fetch: mockFetch, host: 'http://127.0.0.1' });
     // First invalidate identity
     agent.invalidateIdentity();
-    await agent
-      .query(canisterId, {
+    expect.assertions(3);
+    try {
+      await agent.query(canisterId, {
         methodName: 'test',
         arg: new ArrayBuffer(16),
-      })
-      .catch((reason: AgentError) => {
-        // This should fail
-        expect(reason.message).toBe(expectedError);
       });
+    } catch (error) {
+      expect(error).toBeInstanceOf(AgentError);
+      expect(error.cause.code).toBeInstanceOf(IdentityInvalidErrorCode);
+    }
 
     // Then, add new identity
     const identity2 = createIdentity(0) as unknown as SignIdentity;
@@ -588,10 +592,24 @@ describe('retry failures', () => {
         methodName: 'test',
         arg: new Uint8Array().buffer,
       });
-    await expect(performCall).rejects.toThrow(AgentCallError);
+    expect.assertions(4);
+    try {
+      await performCall();
+    } catch (error) {
+      expect(error).toBeInstanceOf(AgentError);
+      expect(error.cause.code).toBeInstanceOf(HttpErrorCode);
+      expect(error.cause.code.requestContext).toBeDefined();
+    }
     expect(mockFetch.mock.calls.length).toBe(1);
   });
   it('should throw errors after 3 retries by default', async () => {
+    jest.useFakeTimers();
+    jest.spyOn(global, 'setTimeout').mockImplementation(callback => {
+      if (typeof callback === 'function') {
+        callback();
+      }
+      return { hasRef: () => false } as NodeJS.Timeout;
+    });
     const mockFetch: jest.Mock = jest.fn(() => {
       return new Response('Error', {
         status: 500,
@@ -600,16 +618,18 @@ describe('retry failures', () => {
     });
 
     const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
+    expect.assertions(4);
     try {
-      expect(
-        agent.call(Principal.managementCanister(), {
-          methodName: 'test',
-          arg: new Uint8Array().buffer,
-        }),
-      ).rejects.toThrow();
-    } catch {
+      await agent.call(Principal.managementCanister(), {
+        methodName: 'test',
+        arg: new Uint8Array().buffer,
+      });
+    } catch (error) {
+      expect(error).toBeInstanceOf(AgentError);
+      expect(error.cause.code).toBeInstanceOf(HttpErrorCode);
+      expect(error.cause.code.requestContext).toBeDefined();
       // One try + three retries
-      expect(mockFetch.mock.calls.length).toBe(4);
+      expect(mockFetch.mock.calls.length).toEqual(4);
     }
   });
   it('should succeed after multiple failures within the configured limit', async () => {
@@ -853,6 +873,7 @@ test('retry requests that fail due to a network failure', async () => {
 
   agent.rootKey = bufFromBufLike(new Uint8Array(32));
 
+  expect.assertions(1);
   try {
     await agent.call(Principal.managementCanister(), {
       methodName: 'test',
@@ -1235,16 +1256,21 @@ describe('error logs for bad signature', () => {
       }
     });
 
+    expect.assertions(7);
     try {
       await agent.call(canisterId, {
         methodName,
         arg,
       });
-    } catch (e) {
-      expect(e instanceof AgentCallError).toBe(true);
+    } catch (error) {
+      expect(error).toBeInstanceOf(AgentError);
+      expect(error.cause.code).toBeInstanceOf(HttpErrorCode);
+      expect(error.cause.code.requestContext).toBeDefined();
     }
     expect(JSON.stringify(logs[0])).toMatchSnapshot();
-    expect(logs[0].error instanceof AgentCallError).toBe(true);
+    expect(logs[0].error).toBeInstanceOf(AgentError);
+    expect(logs[0].error.cause.code).toBeInstanceOf(HttpErrorCode);
+    expect(logs[0].error.cause.code.requestContext).toBeDefined();
   });
   it('should throw query errors for bad signature', async () => {
     jest.spyOn(Date, 'now').mockImplementation(() => 1738362489290);
@@ -1275,16 +1301,21 @@ describe('error logs for bad signature', () => {
       }
     });
 
+    expect.assertions(7);
     try {
       await agent.query(canisterId, {
         methodName,
         arg,
       });
-    } catch (e) {
-      expect(e instanceof AgentQueryError).toBe(true);
+    } catch (error) {
+      expect(error).toBeInstanceOf(AgentError);
+      expect(error.cause.code).toBeInstanceOf(HttpFetchErrorCode);
+      expect(error.cause.code.requestContext).toBeDefined();
     }
     expect(JSON.stringify(logs[0])).toMatchSnapshot();
-    expect(logs[0].error instanceof AgentQueryError).toBe(true);
+    expect(logs[0].error).toBeInstanceOf(AgentError);
+    expect(logs[0].error.cause.code).toBeInstanceOf(HttpFetchErrorCode);
+    expect(logs[0].error.cause.code.requestContext).toBeDefined();
   });
 
   it('should throw read_state errors for bad signature', async () => {
@@ -1344,13 +1375,19 @@ describe('error logs for bad signature', () => {
       }
     });
 
+    expect.assertions(6);
     try {
       const requestId = new ArrayBuffer(32) as RequestId;
       const path = bufFromBufLike(utf8ToBytes('request_status'));
       await agent.readState(canisterId, { paths: [[path, requestId]] });
-    } catch (e) {
-      expect(e instanceof AgentReadStateError).toBe(true);
+    } catch (error) {
+      expect(error).toBeInstanceOf(AgentError);
+      expect(error.cause.code).toBeInstanceOf(HttpErrorCode);
+      expect(error.cause.code.requestContext).toBeDefined();
     }
+    expect(logs[0].error).toBeInstanceOf(AgentError);
+    expect(logs[0].error.cause.code).toBeInstanceOf(HttpErrorCode);
+    expect(logs[0].error.cause.code.requestContext).toBeDefined();
   });
 });
 

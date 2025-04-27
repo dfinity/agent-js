@@ -1,6 +1,5 @@
 import * as cbor from './cbor';
 import {
-  AgentError,
   CertificateHasTooManyDelegationsErrorCode,
   CertificateNotAuthorizedErrorCode,
   CertificateTimeErrorCode,
@@ -10,6 +9,8 @@ import {
   ProtocolError,
   LookupErrorCode,
   TrustError,
+  UnknownError,
+  HashTreeDecodeErrorCode,
 } from './errors';
 import { hash } from './request_id';
 import { bufEquals, concat, fromHex, toHex } from './utils/buffer';
@@ -17,16 +18,6 @@ import { Principal } from '@dfinity/principal';
 import * as bls from './utils/bls';
 import { decodeTime } from './utils/leb';
 import { MANAGEMENT_CANISTER_ID } from './agent';
-
-/**
- * A certificate may fail verification with respect to the provided public key
- * @todo remove this once we have the new errors
- */
-export class CertificateVerificationError extends AgentError {
-  constructor(reason: string) {
-    super(`Invalid certificate: ${reason}`);
-  }
-}
 
 export interface Cert {
   tree: HashTree;
@@ -80,7 +71,7 @@ export function hashTreeToString(tree: HashTree): string {
         const right = hashTreeToString(tree[2]);
         return `sub(\n left:\n${indent(left)}\n---\n right:\n${indent(right)}\n)`;
       } else {
-        throw new Error('Invalid tree structure for fork');
+        throw UnknownError.fromCode(new HashTreeDecodeErrorCode('Invalid tree structure for fork'));
       }
     }
     case NodeType.Labeled: {
@@ -89,12 +80,14 @@ export function hashTreeToString(tree: HashTree): string {
         const sub = hashTreeToString(tree[2]);
         return `label(\n label:\n${indent(label)}\n sub:\n${indent(sub)}\n)`;
       } else {
-        throw new Error('Invalid tree structure for labeled');
+        throw UnknownError.fromCode(
+          new HashTreeDecodeErrorCode('Invalid tree structure for labeled'),
+        );
       }
     }
     case NodeType.Leaf: {
       if (!tree[1]) {
-        throw new Error('Invalid tree structure for leaf');
+        throw UnknownError.fromCode(new HashTreeDecodeErrorCode('Invalid tree structure for leaf'));
       } else if (Array.isArray(tree[1])) {
         return JSON.stringify(tree[1]);
       }
@@ -102,7 +95,9 @@ export function hashTreeToString(tree: HashTree): string {
     }
     case NodeType.Pruned: {
       if (!tree[1]) {
-        throw new Error('Invalid tree structure for pruned');
+        throw UnknownError.fromCode(
+          new HashTreeDecodeErrorCode('Invalid tree structure for pruned'),
+        );
       } else if (Array.isArray(tree[1])) {
         return JSON.stringify(tree[1]);
       }
@@ -443,7 +438,9 @@ export function lookup_path(path: Array<ArrayBuffer | string>, tree: HashTree): 
     switch (tree[0]) {
       case NodeType.Leaf: {
         if (!tree[1]) {
-          throw new Error('Invalid tree structure for leaf');
+          throw UnknownError.fromCode(
+            new HashTreeDecodeErrorCode('Invalid tree structure for leaf'),
+          );
         }
 
         if (tree[1] instanceof ArrayBuffer) {

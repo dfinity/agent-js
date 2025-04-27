@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { ActorMethod, Actor, HttpAgent } from '@dfinity/agent';
+import {
+  ActorMethod,
+  Actor,
+  HttpAgent,
+  AgentError,
+  CertifiedRejectErrorCode,
+} from '@dfinity/agent';
 import util from 'util';
 import exec from 'child_process';
 const execAsync = util.promisify(exec.exec);
@@ -33,11 +39,14 @@ describe('trap', () => {
       shouldFetchRootKey: true,
     });
     const actor = Actor.createActor<_SERVICE>(idlFactory, { canisterId, agent });
+    expect.assertions(3);
     try {
       await actor.Throw();
     } catch (error) {
-      console.log(error);
-      expect(error.reject_message).toBe('foo');
+      expect(error).toBeInstanceOf(AgentError);
+      const errorCode = (error as AgentError).cause.code;
+      expect(errorCode).toBeInstanceOf(CertifiedRejectErrorCode);
+      expect((errorCode as CertifiedRejectErrorCode).rejectMessage).toBe('foo');
     }
   });
   it('should trap', async () => {
@@ -47,10 +56,14 @@ describe('trap', () => {
       shouldFetchRootKey: true,
     });
     const actor = Actor.createActor<_SERVICE>(idlFactory, { canisterId, agent });
+    expect.assertions(3);
     try {
       await actor.test();
     } catch (error) {
-      expect(error.reject_message).toContain('trapping');
+      expect(error).toBeInstanceOf(AgentError);
+      const errorCode = (error as AgentError).cause.code;
+      expect(errorCode).toBeInstanceOf(CertifiedRejectErrorCode);
+      expect((errorCode as CertifiedRejectErrorCode).rejectMessage).toContain('trapping');
     }
   });
 });
