@@ -6,6 +6,8 @@ import { Principal } from '@dfinity/principal';
 import {
   CertifiedRejectErrorCode,
   ExternalError,
+  InputError,
+  InvalidReadStateRequestErrorCode,
   MissingRootKeyErrorCode,
   RejectError,
   RequestStatusDoneNoReplyErrorCode,
@@ -15,7 +17,6 @@ import {
 export * as strategy from './strategy';
 import { defaultStrategy } from './strategy';
 import { ReadRequestType, ReadStateRequest } from '../agent/http/types';
-import { CreateReadStateRequestError } from '../errors';
 import { RequestStatusResponseStatus } from '../agent';
 export { defaultStrategy } from './strategy';
 
@@ -148,7 +149,9 @@ export async function pollForResponse(
     state = await agent.readState(canisterId, { paths: [path] });
   }
 
-  if (agent.rootKey == null) throw ExternalError.fromCode(new MissingRootKeyErrorCode());
+  if (agent.rootKey == null) {
+    throw ExternalError.fromCode(new MissingRootKeyErrorCode());
+  }
   const cert = await Certificate.create({
     certificate: state.certificate,
     rootKey: agent.rootKey,
@@ -192,8 +195,10 @@ export async function pollForResponse(
       const rejectMessage = new TextDecoder().decode(
         lookupResultToBuffer(cert.lookup([...path, 'reject_message']))!,
       );
+      const errorCodeBuf = lookupResultToBuffer(cert.lookup([...path, 'error_code']));
+      const errorCode = errorCodeBuf ? new TextDecoder().decode(errorCodeBuf) : undefined;
       throw RejectError.fromCode(
-        new CertifiedRejectErrorCode(requestId, rejectCode, rejectMessage),
+        new CertifiedRejectErrorCode(requestId, rejectCode, rejectMessage, errorCode),
       );
     }
 
@@ -234,7 +239,7 @@ export async function constructRequest(options: {
     undefined,
   );
   if (!isSignedReadStateRequestWithExpiry(request)) {
-    throw new CreateReadStateRequestError('Invalid read state request', request);
+    throw InputError.fromCode(new InvalidReadStateRequestErrorCode(request));
   }
   return request;
 }

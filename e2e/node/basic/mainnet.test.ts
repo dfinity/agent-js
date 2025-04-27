@@ -7,6 +7,8 @@ import {
   fromHex,
   polling,
   requestIdOf,
+  TrustError,
+  MissingSignatureErrorCode,
 } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
@@ -201,7 +203,15 @@ test('it should allow you to set an incorrect root key', async () => {
     canisterId: Principal.fromText('rrkah-fqaaa-aaaaa-aaaaq-cai'),
   });
 
-  expect(actor.whoami).rejects.toThrowError(`Invalid certificate:`);
+  expect.assertions(3);
+  try {
+    await actor.whoami();
+  } catch (error) {
+    expect(error).toBeInstanceOf(TrustError);
+    const errorCode = (error as TrustError).cause.code;
+    expect(errorCode).toBeInstanceOf(MissingSignatureErrorCode);
+    expect(errorCode.requestContext).toBeDefined();
+  }
 });
 
 test('should allow you to sync time when the system time is over 5 minutes apart from the replica time', async () => {
