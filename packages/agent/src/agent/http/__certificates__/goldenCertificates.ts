@@ -12,4 +12,5 @@ test('goldenCertificates', () => {
   expect(goldenCertificates).toHaveProperty('mainnetApplication');
   expect(goldenCertificates).toHaveProperty('localSystem');
   expect(goldenCertificates).toHaveProperty('localApplication');
+  expect(goldenCertificates).not.toHaveProperty('notExistingProp');
 });
