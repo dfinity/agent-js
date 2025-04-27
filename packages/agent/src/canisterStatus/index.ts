@@ -9,7 +9,11 @@ import {
   ExternalError,
   ProtocolError,
   TrustError,
-  AgentErrorV2,
+  AgentError,
+  UnknownError,
+  HashTreeDecodeErrorCode,
+  UnexpectedErrorCode,
+  InputError,
 } from '../errors';
 import { HttpAgent } from '../agent/http';
 import {
@@ -244,7 +248,7 @@ export const request = async (options: {
         }
       } catch (error) {
         // Break on signature verification errors
-        if (error instanceof AgentErrorV2 && error.hasCode(CertificateVerificationErrorCode)) {
+        if (error instanceof AgentError && error.hasCode(CertificateVerificationErrorCode)) {
           throw error;
         }
         if (typeof path !== 'string' && 'key' in path && 'path' in path) {
@@ -272,9 +276,9 @@ export const fetchNodeKeys = (
   root_key?: Uint8Array,
 ): SubnetStatus => {
   if (!canisterId._isPrincipal) {
-    throw new Error('Invalid canisterId');
+    throw InputError.fromCode(new UnexpectedErrorCode('Invalid canisterId'));
   }
-  const cert = Cbor.decode(bufFromBufLike(certificate)) as Cert;
+  const cert = Cbor.decode(certificate) as Cert;
   const tree = cert.tree;
   let delegation = cert.delegation;
   let subnetId: Principal;
@@ -315,7 +319,7 @@ export const fetchNodeKeys = (
     throw ProtocolError.fromCode(new LookupErrorCode('Node not found'));
   }
   if (subnetLookupResult.value instanceof Uint8Array) {
-    throw new Error('Invalid node tree');
+    throw UnknownError.fromCode(new HashTreeDecodeErrorCode('Invalid node tree'));
   }
 
   const nodeForks = flatten_forks(subnetLookupResult.value);
@@ -377,8 +381,10 @@ export const encodePath = (path: Path, canisterId: Principal): Uint8Array[] => {
       }
     }
   }
-  throw new Error(
-    `An unexpected error was encountered while encoding your path for canister status. Please ensure that your path ${path} was formatted correctly.`,
+  throw UnknownError.fromCode(
+    new UnexpectedErrorCode(
+      `Error while encoding your path for canister status. Please ensure that your path ${path} was formatted correctly.`,
+    ),
   );
 };
 

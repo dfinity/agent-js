@@ -11,6 +11,19 @@
   - Actor also includes a `pollingOptions` object that can be passed to the `actor` function and will be passed to the `pollForResponse` method
 - feat!: removes the unused `defaultAgent` global concept and the `getDefaultAgent` function. The `HttpAgent` constructor is now the only way to create an agent.
 - feat!: removes the `ProxyAgent` class.
+- feat!: removes the following errors in favor of the new `AgentError`:
+
+  - `AgentHTTPResponseError`
+  - `AgentCallError`
+  - `AgentQueryError`
+  - `AgentReadStateError`
+  - `CertificateVerificationError`
+  - `ActorCallError`
+  - `QueryCallRejectedError`
+  - `UpdateCallRejectedError`
+
+  The new `AgentError` error uses the `code` and `kind` props to enable a better programmatic error handling.
+
 - chore: formatting files and changelog
 - fix: Check subtyping relationship when decoding function or service references
   - This means we now follow the Candid spec more closely, and reduces the risk of calling services with the wrong argument types

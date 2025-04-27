@@ -23,9 +23,7 @@ exports[`makeActor should enrich actor interface with httpDetails 2`] = `
     "canister_id": {
       "__principal__": "2chl6-4hpzw-vqaaa-aaaaa-c",
     },
-    "ingress_expiry": Expiry {
-      "_value": 1200000000000n,
-    },
+    "ingress_expiry": "1200000000000",
     "method_name": "greet_update",
     "nonce": Uint8Array [],
     "request_type": "call",

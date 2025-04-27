@@ -1,14 +1,37 @@
 import { JsonObject, uint8Equals } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
-import { AgentError } from '../../errors';
+import {
+  HashTreeDecodeErrorCode,
+  CreateHttpAgentErrorCode,
+  ExternalError,
+  HttpDefaultFetchErrorCode,
+  IdentityInvalidErrorCode,
+  IngressExpiryInvalidErrorCode,
+  InputError,
+  LookupErrorCode,
+  MalformedPublicKeyErrorCode,
+  MalformedSignatureErrorCode,
+  MissingRootKeyErrorCode,
+  MissingSignatureErrorCode,
+  ProtocolError,
+  QuerySignatureVerificationFailedErrorCode,
+  TimeoutWaitingForResponseErrorCode,
+  TrustError,
+  UnexpectedErrorCode,
+  UnknownError,
+  HttpErrorCode,
+  HttpV3ApiNotSupportedErrorCode,
+  TransportError,
+  HttpFetchErrorCode,
+  AgentError,
+} from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
 import { RequestId, hashOfMap, requestIdOf } from '../../request_id';
-import { uint8FromBufLike, concat, fromHex, toHex } from '@dfinity/candid';
+import { uint8FromBufLike, concat, fromHex } from '@dfinity/candid';
 import {
   Agent,
   ApiQueryResponse,
-  HttpDetailsResponse,
   QueryFields,
   QueryResponse,
   ReadStateOptions,
@@ -30,27 +53,14 @@ import {
   SubmitRequestType,
   ReadStateRequest,
 } from './types';
-import {
-  AgentCallError,
-  AgentHTTPResponseError,
-  AgentQueryError,
-  AgentReadStateError,
-} from './errors';
 import { SubnetStatus, request } from '../../canisterStatus';
-import {
-  CertificateVerificationError,
-  HashTree,
-  lookup_path,
-  LookupStatus,
-} from '../../certificate';
+import { HashTree, LookupStatus, lookup_path } from '../../certificate';
 import { ed25519 } from '@noble/curves/ed25519';
 import { ExpirableMap } from '../../utils/expirableMap';
 import { Ed25519PublicKey } from '../../public_key';
 import { ObservableLog } from '../../observable';
 import { BackoffStrategy, BackoffStrategyFactory, ExponentialBackoff } from '../../polling/backoff';
-import { decodeTime } from '../../utils/leb';
 export * from './transforms';
-export * from './errors';
 export { Nonce, makeNonce } from './types';
 
 export enum RequestStatusResponseStatus {
@@ -82,17 +92,6 @@ const ICP0_SUB_DOMAIN = '.icp0.io';
 
 const ICP_API_DOMAIN = 'icp-api.io';
 const ICP_API_SUB_DOMAIN = '.icp-api.io';
-
-class HttpDefaultFetchError extends AgentError {
-  constructor(public readonly message: string) {
-    super(message);
-  }
-}
-export class IdentityInvalidError extends AgentError {
-  constructor(public readonly message: string) {
-    super(message);
-  }
-}
 
 // HttpAgent options that can be used at construction.
 export interface HttpAgentOptions {
@@ -172,8 +171,10 @@ function getDefaultFetch(): typeof fetch {
     if (window.fetch) {
       defaultFetch = window.fetch.bind(window);
     } else {
-      throw new HttpDefaultFetchError(
-        'Fetch implementation was not available. You appear to be in a browser context, but window.fetch was not present.',
+      throw ExternalError.fromCode(
+        new HttpDefaultFetchErrorCode(
+          'Fetch implementation was not available. You appear to be in a browser context, but window.fetch was not present.',
+        ),
       );
     }
   } else if (typeof global !== 'undefined') {
@@ -181,8 +182,10 @@ function getDefaultFetch(): typeof fetch {
     if (global.fetch) {
       defaultFetch = global.fetch.bind(global);
     } else {
-      throw new HttpDefaultFetchError(
-        'Fetch implementation was not available. You appear to be in a Node.js context, but global.fetch was not available.',
+      throw ExternalError.fromCode(
+        new HttpDefaultFetchErrorCode(
+          'Fetch implementation was not available. You appear to be in a Node.js context, but global.fetch was not available.',
+        ),
       );
     }
   } else if (typeof self !== 'undefined') {
@@ -194,8 +197,10 @@ function getDefaultFetch(): typeof fetch {
   if (defaultFetch) {
     return defaultFetch;
   }
-  throw new HttpDefaultFetchError(
-    'Fetch implementation was not available. Please provide fetch to the HttpAgent constructor, or ensure it is available in the window or global context.',
+  throw ExternalError.fromCode(
+    new HttpDefaultFetchErrorCode(
+      'Fetch implementation was not available. Please provide fetch to the HttpAgent constructor, or ensure it is available in the window or global context.',
+    ),
   );
 }
 
@@ -342,13 +347,19 @@ export class HttpAgent implements Agent {
     this.#identity = Promise.resolve(options.identity || new AnonymousIdentity());
 
     if (options.ingressExpiryInMinutes && options.ingressExpiryInMinutes > 5) {
-      throw new AgentError(
-        `The maximum ingress expiry time is 5 minutes. Provided ingress expiry time is ${options.ingressExpiryInMinutes} minutes.`,
+      throw InputError.fromCode(
+        new IngressExpiryInvalidErrorCode(
+          'The maximum ingress expiry time is 5 minutes.',
+          options.ingressExpiryInMinutes,
+        ),
       );
     }
     if (options.ingressExpiryInMinutes && options.ingressExpiryInMinutes <= 0) {
-      throw new AgentError(
-        `Ingress expiry time must be greater than 0. Provided ingress expiry time is ${options.ingressExpiryInMinutes} minutes.`,
+      throw InputError.fromCode(
+        new IngressExpiryInvalidErrorCode(
+          'Ingress expiry time must be greater than 0.',
+          options.ingressExpiryInMinutes,
+        ),
       );
     }
 
@@ -405,7 +416,7 @@ export class HttpAgent implements Agent {
         identity: agent._identity ?? undefined,
       });
     } catch {
-      throw new AgentError('Failed to create agent from provided agent');
+      throw InputError.fromCode(new CreateHttpAgentErrorCode());
     }
   }
 
@@ -440,9 +451,7 @@ export class HttpAgent implements Agent {
 
   public async getPrincipal(): Promise<Principal> {
     if (!this.#identity) {
-      throw new IdentityInvalidError(
-        "This identity has expired due this application's security policy. Please refresh your authentication.",
-      );
+      throw ExternalError.fromCode(new IdentityInvalidErrorCode());
     }
     return (await this.#identity).getPrincipal();
   }
@@ -475,16 +484,14 @@ export class HttpAgent implements Agent {
     const callSync = options.callSync ?? true;
     const id = await (identity ?? this.#identity);
     if (!id) {
-      throw new IdentityInvalidError(
-        "This identity has expired due this application's security policy. Please refresh your authentication.",
-      );
+      throw ExternalError.fromCode(new IdentityInvalidErrorCode());
     }
     const canister = Principal.from(canisterId);
     const ecid = options.effectiveCanisterId
       ? Principal.from(options.effectiveCanisterId)
       : canister;
 
-    const sender: Principal = id.getPrincipal() || Principal.anonymous();
+    const sender = id.getPrincipal();
 
     let ingress_expiry = new Expiry(this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS);
 
@@ -612,7 +619,7 @@ export class HttpAgent implements Agent {
       };
     } catch (error) {
       // If the error is due to the v3 api not being supported, fall back to v2
-      if ((error as AgentError).message.includes('v3 api not supported.')) {
+      if (error instanceof AgentError && error.hasCode(HttpV3ApiNotSupportedErrorCode)) {
         this.log.warn('v3 api not supported. Fall back to v2');
         return this.call(
           canisterId,
@@ -624,16 +631,20 @@ export class HttpAgent implements Agent {
           identity,
         );
       }
-      const message = `Error while making call: ${(error as Error).message ?? String(error)}`;
-      const callError = new AgentCallError(
-        message,
-        error as HttpDetailsResponse,
-        toHex(requestId),
-        transformedRequest.body.sender_pubkey ?toHex(transformedRequest.body.sender_pubkey) : '',
-        transformedRequest.body.sender_sig ? toHex(transformedRequest.body.sender_sig) : '',
-        String(transformedRequest.body.content.ingress_expiry['_value']),
-      );
-      this.log.error(message, callError);
+      let callError: AgentError;
+      if (error instanceof AgentError) {
+        // override the error code to include the request details
+        error.code.requestContext = {
+          requestId,
+          senderPubKey: transformedRequest.body.sender_pubkey,
+          senderSignature: transformedRequest.body.sender_sig,
+          ingressExpiry: transformedRequest.body.content.ingress_expiry,
+        };
+        callError = error;
+      } else {
+        callError = UnknownError.fromCode(new UnexpectedErrorCode(error));
+      }
+      this.log.error(`Error while making call: ${callError.message}`, callError);
       throw callError;
     }
   }
@@ -657,10 +668,13 @@ export class HttpAgent implements Agent {
 
     // If delay is null, the backoff strategy is exhausted due to a maximum number of retries, duration, or other reason
     if (delay === null) {
-      throw new AgentError(
-        `Timestamp failed to pass the watermark after retrying the configured ${
-          this.#retryTimes
-        } times. We cannot guarantee the integrity of the response since it could be a replay attack.`,
+      throw ProtocolError.fromCode(
+        new TimeoutWaitingForResponseErrorCode(
+          `Timestamp failed to pass the watermark after retrying the configured ${
+            this.#retryTimes
+          } times. We cannot guarantee the integrity of the response since it could be a replay attack.`,
+          requestId,
+        ),
       );
     }
 
@@ -697,16 +711,13 @@ export class HttpAgent implements Agent {
           requestId,
         };
       } else {
-        throw new AgentHTTPResponseError(
-          `Gateway returned an error:\n` +
-            `  Code: ${fetchResponse.status} (${fetchResponse.statusText})\n` +
-            `  Body: ${await fetchResponse.text()}\n`,
-          {
-            ok: fetchResponse.ok,
-            status: fetchResponse.status,
-            statusText: fetchResponse.statusText,
-            headers: httpHeadersTransform(fetchResponse.headers),
-          },
+        throw ProtocolError.fromCode(
+          new HttpErrorCode(
+            fetchResponse.status,
+            fetchResponse.statusText,
+            httpHeadersTransform(fetchResponse.headers),
+            await fetchResponse.text(),
+          ),
         );
       }
     } catch (error) {
@@ -718,7 +729,12 @@ export class HttpAgent implements Agent {
         );
         return await this.#requestAndRetryQuery({ ...args, tries: tries + 1 });
       }
-      throw error;
+      if (error instanceof AgentError) {
+        // if it's an error that we have thrown, just throw it as is
+        throw error;
+      }
+      // if it's an error that we have not thrown, wrap it in a TransportError
+      throw TransportError.fromCode(new HttpFetchErrorCode(error));
     }
 
     const timestamp = response.signatures?.[0]?.timestamp;
@@ -729,8 +745,10 @@ export class HttpAgent implements Agent {
     }
 
     if (!timestamp) {
-      throw new Error(
-        'Timestamp not found in query response. This suggests a malformed or malicious response.',
+      throw ProtocolError.fromCode(
+        new MalformedSignatureErrorCode(
+          'Timestamp not found in query response. This suggests a malformed or malicious response.',
+        ),
       );
     }
 
@@ -744,7 +762,12 @@ export class HttpAgent implements Agent {
 
     // If the timestamp is less than the watermark, retry the request up to the retry limit
     if (Number(this.waterMark) > timeStampInMs) {
-      const error = new AgentError('Timestamp is below the watermark. Retrying query.');
+      const error = ProtocolError.fromCode(
+        new TimeoutWaitingForResponseErrorCode(
+          'Timestamp is below the watermark. Retrying query.',
+          requestId,
+        ),
+      );
       this.log.error('Timestamp is below', error, {
         timestamp,
         waterMark: this.waterMark,
@@ -752,13 +775,14 @@ export class HttpAgent implements Agent {
       if (tries < this.#retryTimes) {
         return await this.#requestAndRetryQuery({ ...args, tries: tries + 1 });
       }
-      {
-        throw new AgentError(
+      throw ProtocolError.fromCode(
+        new TimeoutWaitingForResponseErrorCode(
           `Timestamp failed to pass the watermark after retrying the configured ${
             this.#retryTimes
           } times. We cannot guarantee the integrity of the response since it could be a replay attack.`,
-        );
-      }
+          requestId,
+        ),
+      );
     }
 
     return response;
@@ -774,10 +798,12 @@ export class HttpAgent implements Agent {
 
     // If delay is null, the backoff strategy is exhausted due to a maximum number of retries, duration, or other reason
     if (delay === null) {
-      throw new AgentError(
-        `Timestamp failed to pass the watermark after retrying the configured ${
-          this.#retryTimes
-        } times. We cannot guarantee the integrity of the response since it could be a replay attack.`,
+      throw ProtocolError.fromCode(
+        new TimeoutWaitingForResponseErrorCode(
+          `Timestamp failed to pass the watermark after retrying the configured ${
+            this.#retryTimes
+          } times. We cannot guarantee the integrity of the response since it could be a replay attack.`,
+        ),
       );
     }
 
@@ -798,36 +824,29 @@ export class HttpAgent implements Agent {
         // Delay the request by the configured backoff strategy
         return await this.#requestAndRetry({ request, backoff, tries: tries + 1 });
       }
-      throw error;
+      throw TransportError.fromCode(new HttpFetchErrorCode(error));
     }
     if (response.ok) {
       return response;
     }
 
     const responseText = await response.clone().text();
-    const errorMessage =
-      `Server returned an error:\n` +
-      `  Code: ${response.status} (${response.statusText})\n` +
-      `  Body: ${responseText}\n`;
 
     if (response.status === 404 && response.url.includes('api/v3')) {
-      throw new AgentHTTPResponseError('v3 api not supported. Fall back to v2', {
-        ok: response.ok,
-        status: response.status,
-        statusText: response.statusText,
-        headers: httpHeadersTransform(response.headers),
-      });
+      throw ProtocolError.fromCode(new HttpV3ApiNotSupportedErrorCode());
     }
     if (tries < this.#retryTimes) {
       return await this.#requestAndRetry({ request, backoff, tries: tries + 1 });
     }
 
-    throw new AgentHTTPResponseError(errorMessage, {
-      ok: response.ok,
-      status: response.status,
-      statusText: response.statusText,
-      headers: httpHeadersTransform(response.headers),
-    });
+    throw ProtocolError.fromCode(
+      new HttpErrorCode(
+        response.status,
+        response.statusText,
+        httpHeadersTransform(response.headers),
+        responseText,
+      ),
+    );
   }
 
   public async query(
@@ -848,13 +867,11 @@ export class HttpAgent implements Agent {
     let queryResult;
     const id = await (identity ?? this.#identity);
     if (!id) {
-      throw new IdentityInvalidError(
-        "This identity has expired due this application's security policy. Please refresh your authentication.",
-      );
+      throw ExternalError.fromCode(new IdentityInvalidErrorCode());
     }
 
     const canister = Principal.from(canisterId);
-    const sender = id?.getPrincipal() || Principal.anonymous();
+    const sender = id.getPrincipal();
 
     const request: QueryRequest = {
       request_type: ReadRequestType.Query,
@@ -941,23 +958,25 @@ export class HttpAgent implements Agent {
 
         const updatedSubnetStatus = this.#subnetKeys.get(canisterId.toString());
         if (!updatedSubnetStatus) {
-          throw new CertificateVerificationError(
-            'Invalid signature from replica signed query: no matching node key found.',
-          );
+          throw TrustError.fromCode(new MissingSignatureErrorCode());
         }
         return this.#verifyQueryResponse(queryWithDetails, updatedSubnetStatus);
       }
     } catch (error) {
-      const message = `Error while making call: ${(error as Error).message ?? String(error)}`;
-      const queryError = new AgentQueryError(
-        message,
-        error as HttpDetailsResponse,
-        String(requestId),
-        toHex(transformedRequest?.body?.sender_pubkey),
-        toHex(transformedRequest?.body?.sender_sig),
-        String(transformedRequest?.body?.content.ingress_expiry['_value']),
-      );
-      this.log.error(message, queryError);
+      let queryError: AgentError;
+      if (error instanceof AgentError) {
+        // override the error code to include the request details
+        error.code.requestContext = {
+          requestId,
+          senderPubKey: transformedRequest.body.sender_pubkey,
+          senderSignature: transformedRequest.body.sender_sig,
+          ingressExpiry: transformedRequest.body.content.ingress_expiry,
+        };
+        queryError = error;
+      } else {
+        queryError = UnknownError.fromCode(new UnexpectedErrorCode(error));
+      }
+      this.log.error(`Error while making query: ${queryError.message}`, queryError);
       throw queryError;
     }
   }
@@ -977,9 +996,7 @@ export class HttpAgent implements Agent {
       return queryResponse;
     }
     if (!subnetStatus) {
-      throw new CertificateVerificationError(
-        'Invalid signature from replica signed query: no matching node key found.',
-      );
+      throw TrustError.fromCode(new MissingSignatureErrorCode());
     }
     const { status, signatures = [], requestId } = queryResponse;
 
@@ -1009,7 +1026,7 @@ export class HttpAgent implements Agent {
           request_id: requestId,
         });
       } else {
-        throw new Error(`Unknown status: ${status}`);
+        throw UnknownError.fromCode(new UnexpectedErrorCode(`Unknown status: ${status}`));
       }
 
       const separatorWithHash = concat(domainSeparator, uint8FromBufLike(new Uint8Array(hash)));
@@ -1017,9 +1034,7 @@ export class HttpAgent implements Agent {
       // FIX: check for match without verifying N times
       const pubKey = subnetStatus?.nodeKeys.get(nodeId);
       if (!pubKey) {
-        throw new CertificateVerificationError(
-          'Invalid signature from replica signed query: no matching node key found.',
-        );
+        throw ProtocolError.fromCode(new MalformedPublicKeyErrorCode());
       }
       const rawKey = Ed25519PublicKey.fromDer(pubKey).rawKey;
       const valid = ed25519.verify(
@@ -1029,9 +1044,7 @@ export class HttpAgent implements Agent {
       );
       if (valid) return queryResponse;
 
-      throw new CertificateVerificationError(
-        `Invalid signature from replica ${nodeId} signed query.`,
-      );
+      throw TrustError.fromCode(new QuerySignatureVerificationFailedErrorCode(nodeId));
     }
     return queryResponse;
   };
@@ -1044,11 +1057,9 @@ export class HttpAgent implements Agent {
     await this.#rootKeyGuard();
     const id = await (identity ?? this.#identity);
     if (!id) {
-      throw new IdentityInvalidError(
-        "This identity has expired due this application's security policy. Please refresh your authentication.",
-      );
+      throw ExternalError.fromCode(new IdentityInvalidErrorCode());
     }
-    const sender = id?.getPrincipal() || Principal.anonymous();
+    const sender = id.getPrincipal();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const transformedRequest = await this._transform({
@@ -1069,7 +1080,7 @@ export class HttpAgent implements Agent {
     });
 
     // Apply transform for identity.
-    return id?.transformRequest(transformedRequest);
+    return id.transformRequest(transformedRequest);
   }
 
   public async readState(
@@ -1107,9 +1118,7 @@ export class HttpAgent implements Agent {
       // Always create a fresh request with the current identity
       const identity = await this.#identity;
       if (!identity) {
-        throw new IdentityInvalidError(
-          "This identity has expired due this application's security policy. Please refresh your authentication.",
-        );
+        throw ExternalError.fromCode(new IdentityInvalidErrorCode());
       }
       transformedRequest = await this.createReadStateRequest(fields, identity);
     }
@@ -1136,10 +1145,13 @@ export class HttpAgent implements Agent {
       });
 
       if (!response.ok) {
-        throw new Error(
-          `Server returned an error:\n` +
-            `  Code: ${response.status} (${response.statusText})\n` +
-            `  Body: ${await response.text()}\n`,
+        throw ProtocolError.fromCode(
+          new HttpErrorCode(
+            response.status,
+            response.statusText,
+            httpHeadersTransform(response.headers),
+            await response.text(),
+          ),
         );
       }
       const decodedResponse: ReadStateResponse = cbor.decode(
@@ -1155,16 +1167,20 @@ export class HttpAgent implements Agent {
 
       return decodedResponse;
     } catch (error) {
-      const message = `Caught exception while attempting to read state: ${(error as Error).message ?? String(error)}`;
-      const readStateError = new AgentReadStateError(
-        message,
-        error as HttpDetailsResponse,
-        String(requestId),
-        toHex(transformedRequest?.body?.sender_pubkey),
-        toHex(transformedRequest?.body?.sender_sig),
-        String(transformedRequest?.body?.content.ingress_expiry['_value']),
-      );
-      this.log.error(message, readStateError);
+      let readStateError: AgentError;
+      if (error instanceof AgentError) {
+        // override the error code to include the request details
+        error.code.requestContext = {
+          requestId,
+          senderPubKey: transformedRequest.body.sender_pubkey,
+          senderSignature: transformedRequest.body.sender_sig,
+          ingressExpiry: transformedRequest.body.content.ingress_expiry,
+        };
+        readStateError = error;
+      } else {
+        readStateError = UnknownError.fromCode(new UnexpectedErrorCode(error));
+      }
+      this.log.error(`Error while making read state: ${readStateError.message}`, readStateError);
       throw readStateError;
     }
   }
@@ -1176,30 +1192,25 @@ export class HttpAgent implements Agent {
       if (decoded && 'tree' in decoded) {
         tree = decoded.tree;
       } else {
-        throw new Error('Could not decode time from response');
+        throw ProtocolError.fromCode(
+          new HashTreeDecodeErrorCode('Could not decode time from response'),
+        );
+      }
+      const timeLookup = lookup_path(['time'], tree);
+      if (timeLookup.status !== LookupStatus.Found) {
+        throw ProtocolError.fromCode(
+          new LookupErrorCode(
+            'Time was not found in the response or was not in its expected format.',
+          ),
+        );
       }
 
-      const timeLookup: LookupResult = lookup_path(['time'], tree);
-      switch (timeLookup.status) {
-        case LookupStatus.Found: {
-          let value: Uint8Array;
-          if (timeLookup.value instanceof Uint8Array) {
-            value = uint8FromBufLike(timeLookup.value);
-          } else {
-            throw new Error('Unexpected type for timeLookup.value');
-          }
-          if (value instanceof Uint8Array) {
-            const date = decodeTime(value);
-            this.log.print('Time from response:', date);
-            this.log.print('Time from response in milliseconds:', Number(date));
-            return Number(date);
-          } else {
-            this.log.warn('Expected a Uint8Array but got:', value);
-          }
-          break;
-        }
-        default:
-          throw new Error('Time was not found in the response or was not in its expected format.');
+      if (!(timeLookup.value instanceof ArrayBuffer) && !ArrayBuffer.isView(timeLookup)) {
+        throw ProtocolError.fromCode(
+          new LookupErrorCode(
+            'Time was not found in the response or was not in its expected format.',
+          ),
+        );
       }
     } else {
       this.log.warn('No certificate found in response');
@@ -1245,7 +1256,13 @@ export class HttpAgent implements Agent {
         });
       }
     } catch (error) {
-      this.log.error('Caught exception while attempting to sync time', error as AgentError);
+      let syncTimeError: AgentError;
+      if (error instanceof AgentError) {
+        syncTimeError = error;
+      } else {
+        syncTimeError = UnknownError.fromCode(new UnexpectedErrorCode(error));
+      }
+      this.log.error('Caught exception while attempting to sync time', syncTimeError);
     }
   }
 
@@ -1297,9 +1314,7 @@ export class HttpAgent implements Agent {
     } else if (this.rootKey === null && this.#shouldFetchRootKey) {
       await this.fetchRootKey();
     } else {
-      throw new AgentError(
-        `Invalid root key detected. The root key for this agent is ${this.rootKey} and the shouldFetchRootKey value is set to ${this.#shouldFetchRootKey}. The root key should only be unknown if you are in local development. Otherwise you should avoid fetching and use the default IC Root Key or the known root key of your environment.`,
-      );
+      throw ExternalError.fromCode(new MissingRootKeyErrorCode(this.#shouldFetchRootKey));
     }
   }
 

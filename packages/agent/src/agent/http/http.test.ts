@@ -23,9 +23,15 @@ import {
   Signature,
 } from '../..';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
-import { AgentError } from '../../errors';
-import { AgentCallError, AgentQueryError, AgentReadStateError } from './errors';
+import {
+  AgentError,
+  HttpErrorCode,
+  HttpFetchErrorCode,
+  IdentityInvalidErrorCode,
+} from '../../errors';
+import { utf8ToBytes } from '@noble/hashes/utils';
 import { fromHex, toHex, uint8FromBufLike } from '@dfinity/candid';
+
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;
@@ -156,7 +162,7 @@ test('queries with the same content should have the same signature', async () =>
   });
 
   const methodName = 'greet';
-  const arg = bufFromBufLike(new Uint8Array([]));
+  const arg = new Uint8Array([]);
 
   const requestId = requestIdOf({
     request_type: SubmitRequestType.Call,
@@ -169,9 +175,9 @@ test('queries with the same content should have the same signature', async () =>
 
   const paths = [
     [
-      bufFromBufLike(utf8ToBytes('request_status')),
+      utf8ToBytes('request_status'),
       requestId,
-      bufFromBufLike(utf8ToBytes('reply')),
+      utf8ToBytes('reply'),
     ],
   ];
 
@@ -236,9 +242,9 @@ test('readState should not call transformers if request is passed', async () => 
 
   const paths = [
     [
-      bufFromBufLike(utf8ToBytes('request_status')),
+      utf8ToBytes('request_status'),
       requestId,
-      bufFromBufLike(utf8ToBytes('reply')),
+      utf8ToBytes('reply'),
     ],
   ];
 
@@ -337,7 +343,7 @@ test('use anonymous principal if unspecified', async () => {
   });
 
   const methodName = 'greet';
-  const arg = bufFromBufLike(new Uint8Array([]));
+  const arg = new Uint8Array([]);
 
   const { requestId } = await httpAgent.call(canisterId, {
     methodName,
@@ -437,6 +443,7 @@ describe('invalidate identity', () => {
     const expectedError =
       "This identity has expired due this application's security policy. Please refresh your authentication.";
 
+    expect.assertions(3);
     // Test Agent.call
     try {
       await agent.call(canisterId, {
@@ -457,7 +464,7 @@ describe('invalidate identity', () => {
     }
     // Test readState
     try {
-      const path = bufFromBufLike(utf8ToBytes('request_status'));
+      const path = utf8ToBytes('request_status');
       await agent.readState(canisterId, {
         paths: [[path]],
       });
@@ -484,23 +491,22 @@ describe('replace identity', () => {
         }),
       );
     });
-    const expectedError =
-      "This identity has expired due this application's security policy. Please refresh your authentication.";
 
     const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
     const identity = new AnonymousIdentity();
     const agent = new HttpAgent({ identity, fetch: mockFetch, host: 'http://127.0.0.1' });
     // First invalidate identity
     agent.invalidateIdentity();
-    await agent
-      .query(canisterId, {
+    expect.assertions(3);
+    try {
+      await agent.query(canisterId, {
         methodName: 'test',
         arg: new Uint8Array(16),
-      })
-      .catch((reason: AgentError) => {
-        // This should fail
-        expect(reason.message).toBe(expectedError);
       });
+    } catch (error) {
+      expect(error).toBeInstanceOf(AgentError);
+      expect(error.cause.code).toBeInstanceOf(IdentityInvalidErrorCode);
+    }
 
     // Then, add new identity
     const identity2 = createIdentity(0) as unknown as SignIdentity;
@@ -509,7 +515,7 @@ describe('replace identity', () => {
       methodName: 'test',
       arg: new Uint8Array(16),
     });
-    expect(mockFetch).toBeCalledTimes(1);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -517,7 +523,7 @@ describe('makeNonce', () => {
   it('should create unique values', () => {
     const nonces = new Set();
     for (let i = 0; i < 100; i++) {
-      nonces.add(toHex(bufFromBufLike(makeNonce())));
+      nonces.add(toHex(makeNonce()));
     }
     expect(nonces.size).toBe(100);
   });
@@ -543,10 +549,10 @@ describe('makeNonce', () => {
 
     it('should create same value using polyfill', () => {
       const spyOnSetUint32 = jest.spyOn(DataView.prototype, 'setUint32').mockImplementation();
-      const originalNonce = toHex(bufFromBufLike(makeNonce()));
+      const originalNonce = toHex(makeNonce());
       expect(spyOnSetUint32).toBeCalledTimes(4);
 
-      const nonce = toHex(bufFromBufLike(makeNonce()));
+      const nonce = toHex(makeNonce());
       expect(spyOnSetUint32).toBeCalledTimes(8);
 
       expect(nonce).toBe(originalNonce);
@@ -597,10 +603,24 @@ describe('retry failures', () => {
         methodName: 'test',
         arg: new Uint8Array(),
       });
-    await expect(performCall).rejects.toThrow(AgentCallError);
+    expect.assertions(4);
+    try {
+      await performCall();
+    } catch (error) {
+      expect(error).toBeInstanceOf(AgentError);
+      expect(error.cause.code).toBeInstanceOf(HttpErrorCode);
+      expect(error.cause.code.requestContext).toBeDefined();
+    }
     expect(mockFetch.mock.calls.length).toBe(1);
   });
   it('should throw errors after 3 retries by default', async () => {
+    jest.useFakeTimers();
+    jest.spyOn(global, 'setTimeout').mockImplementation(callback => {
+      if (typeof callback === 'function') {
+        callback();
+      }
+      return { hasRef: () => false } as NodeJS.Timeout;
+    });
     const mockFetch: jest.Mock = jest.fn(() => {
       return new Response('Error', {
         status: 500,
@@ -609,16 +629,18 @@ describe('retry failures', () => {
     });
 
     const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
+    expect.assertions(4);
     try {
-      expect(
-        agent.call(Principal.managementCanister(), {
-          methodName: 'test',
-          arg: new Uint8Array(),
-        }),
-      ).rejects.toThrow();
-    } catch {
+      await agent.call(Principal.managementCanister(), {
+        methodName: 'test',
+        arg: new Uint8Array(),
+      });
+    } catch (error) {
+      expect(error).toBeInstanceOf(AgentError);
+      expect(error.cause.code).toBeInstanceOf(HttpErrorCode);
+      expect(error.cause.code.requestContext).toBeDefined();
       // One try + three retries
-      expect(mockFetch.mock.calls.length).toBe(4);
+      expect(mockFetch.mock.calls.length).toEqual(4);
     }
   });
   it('should succeed after multiple failures within the configured limit', async () => {
@@ -771,12 +793,12 @@ test('should fetch with given call options and fetch options', async () => {
 
   await httpAgent.call(canisterId, {
     methodName: 'greet',
-    arg: bufFromBufLike(new Uint8Array([])),
+    arg: new Uint8Array([]),
   });
 
   await httpAgent.query(canisterId, {
     methodName: 'greet',
-    arg: bufFromBufLike(new Uint8Array([])),
+    arg: new Uint8Array([]),
   });
 
   const { calls } = mockFetch.mock;
@@ -873,8 +895,9 @@ test('retry requests that fail due to a network failure', async () => {
     fetch: mockFetch,
   });
 
-  agent.rootKey = bufFromBufLike(new Uint8Array(32));
+  agent.rootKey = new Uint8Array(32);
 
+  expect.assertions(1);
   try {
     await agent.call(Principal.managementCanister(), {
       methodName: 'test',
@@ -1074,7 +1097,7 @@ describe('await fetching root keys before making a call to the network.', () => 
     expect(agent.rootKey).toBe(null);
 
     const methodName = 'greet';
-    const arg = bufFromBufLike(new Uint8Array([]));
+    const arg = new Uint8Array([]);
 
     await agent.call(canisterId, {
       methodName,
@@ -1245,7 +1268,7 @@ describe('error logs for bad signature', () => {
     const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
 
     const methodName = 'greet';
-    const arg = bufFromBufLike(new Uint8Array([]));
+    const arg = new Uint8Array([]);
     const logs: {
       message: string;
       level: 'error';
@@ -1257,16 +1280,21 @@ describe('error logs for bad signature', () => {
       }
     });
 
+    expect.assertions(7);
     try {
       await agent.call(canisterId, {
         methodName,
         arg,
       });
-    } catch (e) {
-      expect(e instanceof AgentCallError).toBe(true);
+    } catch (error) {
+      expect(error).toBeInstanceOf(AgentError);
+      expect(error.cause.code).toBeInstanceOf(HttpErrorCode);
+      expect(error.cause.code.requestContext).toBeDefined();
     }
     expect(JSON.stringify(logs[0])).toMatchSnapshot();
-    expect(logs[0].error instanceof AgentCallError).toBe(true);
+    expect(logs[0].error).toBeInstanceOf(AgentError);
+    expect(logs[0].error.cause.code).toBeInstanceOf(HttpErrorCode);
+    expect(logs[0].error.cause.code.requestContext).toBeDefined();
   });
   it('should throw query errors for bad signature', async () => {
     jest.spyOn(Date, 'now').mockImplementation(() => 1738362489290);
@@ -1285,7 +1313,7 @@ describe('error logs for bad signature', () => {
     const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
 
     const methodName = 'greet';
-    const arg = bufFromBufLike(new Uint8Array([]));
+    const arg = new Uint8Array([]);
     const logs: {
       message: string;
       level: 'error';
@@ -1297,21 +1325,21 @@ describe('error logs for bad signature', () => {
       }
     });
 
+    expect.assertions(7);
     try {
       await agent.query(canisterId, {
         methodName,
         arg,
       });
-    } catch (e) {
-      expect(e instanceof AgentQueryError).toBe(true);
+    } catch (error) {
+      expect(error).toBeInstanceOf(AgentError);
+      expect(error.cause.code).toBeInstanceOf(HttpFetchErrorCode);
+      expect(error.cause.code.requestContext).toBeDefined();
     }
-
-    // Update snapshots to be compatible with current test environment
-    expect(logs[0].error instanceof AgentQueryError).toBe(true);
-
-    // Instead of relying on the snapshot, check specific parts of the error
-    expect(logs[0].message).toContain('Error while making call');
-    expect(logs[0].level).toBe('error');
+    expect(JSON.stringify(logs[0])).toMatchSnapshot();
+    expect(logs[0].error).toBeInstanceOf(AgentError);
+    expect(logs[0].error.cause.code).toBeInstanceOf(HttpFetchErrorCode);
+    expect(logs[0].error.cause.code.requestContext).toBeDefined();
   });
 
   it('should throw read_state errors for bad signature', async () => {
@@ -1371,13 +1399,19 @@ describe('error logs for bad signature', () => {
       }
     });
 
+    expect.assertions(6);
     try {
       const requestId = new Uint8Array(32) as RequestId;
       const path = new TextEncoder().encode('request_status');
       await agent.readState(canisterId, { paths: [[path, requestId]] });
-    } catch (e) {
-      expect(e instanceof AgentReadStateError).toBe(true);
+    } catch (error) {
+      expect(error).toBeInstanceOf(AgentError);
+      expect(error.cause.code).toBeInstanceOf(HttpErrorCode);
+      expect(error.cause.code.requestContext).toBeDefined();
     }
+    expect(logs[0].error).toBeInstanceOf(AgentError);
+    expect(logs[0].error.cause.code).toBeInstanceOf(HttpErrorCode);
+    expect(logs[0].error.cause.code.requestContext).toBeDefined();
   });
 });
 
