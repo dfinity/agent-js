@@ -9,15 +9,28 @@ import {
   Nonce,
 } from './types';
 
+export const JSON_KEY_EXPIRY = '__expiry__';
 const NANOSECONDS_PER_MILLISECOND = BigInt(1_000_000);
 const NANOSECONDS_PER_SECOND = NANOSECONDS_PER_MILLISECOND * BigInt(1_000);
 const SECONDS_PER_MINUTE = BigInt(60);
 
 const REPLICA_PERMITTED_DRIFT_MILLISECONDS = 60 * 1000;
 
-export class Expiry {
-  private constructor(private readonly _value: bigint) {}
+export type JsonnableExpiry = {
+  [JSON_KEY_EXPIRY]: string;
+};
 
+export class Expiry {
+  private constructor(private readonly __expiry__: bigint) {}
+
+  /**
+   * Creates an Expiry object from a delta in milliseconds.
+   * If the delta is less than 90 seconds, it is rounded to the nearest second.
+   * Otherwise, the delta is rounded down to the nearest minute, with a
+   * replica permitted drift subtracted.
+   * @param deltaInMs The delta in milliseconds.
+   * @returns {Expiry} an Expiry object
+   */
   public static fromDeltaInMilliseconds(deltaInMs: number): Expiry {
     // if ingress as seconds is less than 90, round to nearest second
     if (deltaInMs < 90 * 1_000) {
@@ -45,27 +58,31 @@ export class Expiry {
 
   public toCBOR(): cbor.CborValue {
     // TODO: change this to take the minimum amount of space (it always takes 8 bytes now).
-    return cbor.value.u64(this._value.toString(16), 16);
+    return cbor.value.u64(this.__expiry__.toString(16), 16);
   }
 
   public toHash(): ArrayBuffer {
-    return lebEncode(this._value);
+    return lebEncode(this.__expiry__);
   }
 
   public toString(): string {
-    return this._value.toString();
+    return this.__expiry__.toString();
   }
 
-  public toJSON(): { _value: string } {
-    return { _value: this.toString() };
+  /**
+   * Serializes to JSON
+   * @returns {JsonnableExpiry} a JSON object with a single key, {@link JSON_KEY_EXPIRY}, whose value is the expiry as a string
+   */
+  public toJSON(): JsonnableExpiry {
+    return { [JSON_KEY_EXPIRY]: this.toString() };
   }
 
   public static fromJSON(input: string): Expiry {
     const obj = JSON.parse(input);
-    if (obj._value) {
-      return new Expiry(BigInt(obj._value));
+    if (obj[JSON_KEY_EXPIRY]) {
+      return new Expiry(BigInt(obj[JSON_KEY_EXPIRY]));
     }
-    throw new Error('Invalid input');
+    throw new Error(`The input does not contain the key ${JSON_KEY_EXPIRY}`);
   }
 }
 

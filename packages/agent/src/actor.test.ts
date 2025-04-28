@@ -323,7 +323,7 @@ describe('makeActor', () => {
             "__principal__": "2chl6-4hpzw-vqaaa-aaaaa-c",
           },
           "ingress_expiry": {
-            "_value": "1200000000000",
+            "__expiry__": "1200000000000",
           },
           "method_name": "greet",
           "request_type": "query",
