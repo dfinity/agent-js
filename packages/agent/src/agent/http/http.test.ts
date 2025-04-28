@@ -103,7 +103,7 @@ test('call', async () => {
     arg,
     nonce,
     sender: principal,
-    ingress_expiry: new Expiry(300000),
+    ingress_expiry: Expiry.fromDeltaInMilliseconds(300000),
   };
 
   const mockPartialsRequestId = requestIdOf(mockPartialRequest);
@@ -358,7 +358,7 @@ test('use anonymous principal if unspecified', async () => {
     arg,
     nonce,
     sender: principal,
-    ingress_expiry: new Expiry(300000),
+    ingress_expiry: Expiry.fromDeltaInMilliseconds(300000),
   };
 
   const mockPartialsRequestId = requestIdOf(mockPartialRequest);

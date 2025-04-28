@@ -677,3 +677,16 @@ export class InvalidReadStateRequestErrorCode extends ErrorCode {
     return `Invalid read state request: ${this.request}`;
   }
 }
+
+export class ExpiryJsonDeserializeErrorCode extends ErrorCode {
+  public name = 'ExpiryJsonDeserializeErrorCode';
+
+  constructor(public readonly error: string) {
+    super();
+    Object.setPrototypeOf(this, ExpiryJsonDeserializeErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    return `Failed to deserialize expiry: ${this.error}`;
+  }
+}

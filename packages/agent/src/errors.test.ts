@@ -56,7 +56,7 @@ test('AgentError', () => {
     requestId: undefined,
     senderPubKey: new ArrayBuffer(1),
     senderSignature: new ArrayBuffer(1),
-    ingressExpiry: new Expiry(1),
+    ingressExpiry: Expiry.fromDeltaInMilliseconds(1),
   };
   expect(errorCode.requestContext).toBeDefined();
   expect(errorCode.toString().includes('\nRequest context:')).toBe(true);

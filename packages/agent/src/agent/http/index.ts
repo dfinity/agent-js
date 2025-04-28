@@ -493,11 +493,13 @@ export class HttpAgent implements Agent {
 
     const sender = id.getPrincipal();
 
-    let ingress_expiry = new Expiry(this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS);
+    let ingress_expiry = Expiry.fromDeltaInMilliseconds(
+      this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS,
+    );
 
     // If the value is off by more than 30 seconds, reconcile system time with the network
     if (Math.abs(this.#timeDiffMsecs) > 1_000 * 30) {
-      ingress_expiry = new Expiry(
+      ingress_expiry = Expiry.fromDeltaInMilliseconds(
         this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS + this.#timeDiffMsecs,
       );
     }
@@ -879,7 +881,9 @@ export class HttpAgent implements Agent {
       method_name: fields.methodName,
       arg: fields.arg,
       sender,
-      ingress_expiry: new Expiry(this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS),
+      ingress_expiry: Expiry.fromDeltaInMilliseconds(
+        this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS,
+      ),
     };
 
     const requestId = requestIdOf(request);
@@ -1075,7 +1079,9 @@ export class HttpAgent implements Agent {
         request_type: ReadRequestType.ReadState,
         paths: fields.paths,
         sender,
-        ingress_expiry: new Expiry(this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS),
+        ingress_expiry: Expiry.fromDeltaInMilliseconds(
+          this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS,
+        ),
       },
     });
 
