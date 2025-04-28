@@ -16,7 +16,7 @@ const SECONDS_PER_MINUTE = BigInt(60);
 const REPLICA_PERMITTED_DRIFT_MILLISECONDS = 60 * 1000;
 
 export class Expiry {
-  constructor(private readonly _value: bigint) {}
+  private constructor(private readonly _value: bigint) {}
 
   public static fromDeltaInMilliseconds(deltaInMs: number): Expiry {
     // if ingress as seconds is less than 90, round to nearest second
