@@ -12,6 +12,7 @@ import {
   RejectError,
   RequestStatusDoneNoReplyErrorCode,
   UnknownError,
+  UNREACHABLE_ERROR,
 } from '../errors';
 
 export * as strategy from './strategy';
@@ -207,7 +208,7 @@ export async function pollForResponse(
       // we don't know the result and cannot decode it.
       throw UnknownError.fromCode(new RequestStatusDoneNoReplyErrorCode(requestId));
   }
-  throw new Error('unreachable');
+  throw UNREACHABLE_ERROR;
 }
 
 // Determine if we should reuse the read state request or create a new one

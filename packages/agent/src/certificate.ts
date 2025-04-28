@@ -11,6 +11,7 @@ import {
   TrustError,
   UnknownError,
   HashTreeDecodeErrorCode,
+  UNREACHABLE_ERROR,
 } from './errors';
 import { hash } from './request_id';
 import { bufEquals, concat, fromHex, toHex } from './utils/buffer';
@@ -381,7 +382,7 @@ export async function reconstruct(t: HashTree): Promise<ArrayBuffer> {
         ),
       );
     default:
-      throw new Error('unreachable');
+      throw UNREACHABLE_ERROR;
   }
 }
 

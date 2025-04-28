@@ -690,3 +690,10 @@ export class ExpiryJsonDeserializeErrorCode extends ErrorCode {
     return `Failed to deserialize expiry: ${this.error}`;
   }
 }
+
+/**
+ * Special error used to indicate that a code path is unreachable.
+ *
+ * For internal use only.
+ */
+export const UNREACHABLE_ERROR = new Error('unreachable');
