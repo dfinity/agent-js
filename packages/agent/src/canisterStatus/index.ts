@@ -316,7 +316,7 @@ export const fetchNodeKeys = (
 
   const subnetLookupResult = lookup_path(['subnet', delegation.subnet_id, 'node'], tree);
   if (subnetLookupResult.status !== LookupStatus.Found) {
-    throw ProtocolError.fromCode(new LookupErrorCode('Node not found'));
+    throw ProtocolError.fromCode(new LookupErrorCode('Node not found', subnetLookupResult.status));
   }
   if (subnetLookupResult.value instanceof ArrayBuffer) {
     throw UnknownError.fromCode(new HashTreeDecodeErrorCode('Invalid node tree'));
@@ -329,7 +329,9 @@ export const fetchNodeKeys = (
     const node_id = Principal.from(new Uint8Array(fork[1] as ArrayBuffer)).toText();
     const publicKeyLookupResult = lookup_path(['public_key'], fork[2] as HashTree);
     if (publicKeyLookupResult.status !== LookupStatus.Found) {
-      throw ProtocolError.fromCode(new LookupErrorCode('Public key not found'));
+      throw ProtocolError.fromCode(
+        new LookupErrorCode('Public key not found', publicKeyLookupResult.status),
+      );
     }
 
     const derEncodedPublicKey = publicKeyLookupResult.value as ArrayBuffer;
@@ -360,7 +362,12 @@ export const encodePath = (path: Path, canisterId: Principal): ArrayBuffer[] => 
     case 'subnet':
       return [strToUtf8('subnet')];
     case 'candid':
-      return [strToUtf8('canister'), canisterBuffer, strToUtf8('metadata'), strToUtf8('candid:service')];
+      return [
+        strToUtf8('canister'),
+        canisterBuffer,
+        strToUtf8('metadata'),
+        strToUtf8('candid:service'),
+      ];
     default: {
       // Check for CustomPath signature
       if ('key' in path && 'path' in path) {

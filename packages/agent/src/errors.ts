@@ -4,6 +4,7 @@ import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
 import { Expiry, RequestStatusResponseStatus } from './agent/http';
 import { HttpHeaderField } from './agent/http/types';
+import { LookupStatus } from './certificate';
 
 export enum ErrorKindEnum {
   Trust = 'Trust',
@@ -238,9 +239,38 @@ export class CertificateNotAuthorizedErrorCode extends ErrorCode {
 export class LookupErrorCode extends ErrorCode {
   public name = 'LookupErrorCode';
 
-  constructor(public readonly message: string) {
+  constructor(
+    public readonly message: string,
+    public readonly lookupStatus: LookupStatus,
+  ) {
     super();
     Object.setPrototypeOf(this, LookupErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    return `${this.message}. Lookup status: ${this.lookupStatus}`;
+  }
+}
+
+export class MalformedLookupFoundValueErrorCode extends ErrorCode {
+  public name = 'MalformedLookupFoundValueErrorCode';
+
+  constructor(public readonly message: string) {
+    super();
+    Object.setPrototypeOf(this, MalformedLookupFoundValueErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    return this.message;
+  }
+}
+
+export class MissingLookupValueErrorCode extends ErrorCode {
+  public name = 'MissingLookupValueErrorCode';
+
+  constructor(public readonly message: string) {
+    super();
+    Object.setPrototypeOf(this, MissingLookupValueErrorCode.prototype);
   }
 
   public toErrorMessage(): string {

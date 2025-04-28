@@ -24,6 +24,7 @@ import {
   TransportError,
   HttpFetchErrorCode,
   AgentError,
+  MalformedLookupFoundValueErrorCode,
 } from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
@@ -1205,15 +1206,14 @@ export class HttpAgent implements Agent {
         throw ProtocolError.fromCode(
           new LookupErrorCode(
             'Time was not found in the response or was not in its expected format.',
+            timeLookup.status,
           ),
         );
       }
 
       if (!(timeLookup.value instanceof ArrayBuffer) && !ArrayBuffer.isView(timeLookup)) {
         throw ProtocolError.fromCode(
-          new LookupErrorCode(
-            'Time was not found in the response or was not in its expected format.',
-          ),
+          new MalformedLookupFoundValueErrorCode('Time was not in its expected format.'),
         );
       }
       const date = decodeTime(bufFromBufLike(timeLookup.value as ArrayBuffer));

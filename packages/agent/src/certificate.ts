@@ -12,6 +12,8 @@ import {
   UnknownError,
   HashTreeDecodeErrorCode,
   UNREACHABLE_ERROR,
+  MalformedLookupFoundValueErrorCode,
+  MissingLookupValueErrorCode,
 } from './errors';
 import { hash } from './request_id';
 import { bufEquals, concat, fromHex, toHex } from './utils/buffer';
@@ -308,7 +310,9 @@ export class Certificate {
     );
     if (!publicKeyLookup) {
       throw TrustError.fromCode(
-        new LookupErrorCode(`Could not find subnet key for subnet 0x${toHex(d.subnet_id)}`),
+        new MissingLookupValueErrorCode(
+          `Could not find subnet key for subnet 0x${toHex(d.subnet_id)}`,
+        ),
       );
     }
     return publicKeyLookup;
@@ -629,9 +633,20 @@ export function check_canister_ranges(params: {
   const { canisterId, subnetId, tree } = params;
   const rangeLookup = lookup_path(['subnet', subnetId.toUint8Array(), 'canister_ranges'], tree);
 
-  if (rangeLookup.status !== LookupStatus.Found || !(rangeLookup.value instanceof ArrayBuffer)) {
+  if (rangeLookup.status !== LookupStatus.Found) {
     throw ProtocolError.fromCode(
-      new LookupErrorCode(`Could not find canister ranges for subnet ${subnetId.toText()}`),
+      new LookupErrorCode(
+        `Could not find canister ranges for subnet ${subnetId.toText()}`,
+        rangeLookup.status,
+      ),
+    );
+  }
+
+  if (!(rangeLookup.value instanceof ArrayBuffer)) {
+    throw ProtocolError.fromCode(
+      new MalformedLookupFoundValueErrorCode(
+        `Could not find canister ranges for subnet ${subnetId.toText()}`,
+      ),
     );
   }
 
