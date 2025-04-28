@@ -23,6 +23,8 @@
 
   The new `AgentError` error uses the `code` and `kind` props to enable a better programmatic error handling.
 
+- feat!: refactors `Expiry` class to use static factory methods and add JSON serialization/deserialization.
+
 - chore: formatting files and changelog
 - fix: Check subtyping relationship when decoding function or service references
   - This means we now follow the Candid spec more closely, and reduces the risk of calling services with the wrong argument types
