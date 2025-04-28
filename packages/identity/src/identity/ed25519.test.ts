@@ -1,6 +1,6 @@
-import { DerEncodedPublicKey, PublicKey, fromHex, toHex } from '@dfinity/agent';
+import { DerEncodedPublicKey, PublicKey } from '@dfinity/agent';
 import { Ed25519KeyIdentity, Ed25519PublicKey } from './ed25519';
-import { uint8FromBufLike } from '@dfinity/candid';
+import { fromHex, toHex, uint8FromBufLike } from '@dfinity/candid';
 
 const testVectors: Array<[string, string]> = [
   [

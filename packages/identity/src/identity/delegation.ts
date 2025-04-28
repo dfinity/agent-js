@@ -1,22 +1,20 @@
 import {
   DerEncodedPublicKey,
-  fromHex,
   HttpAgentRequest,
   PublicKey,
   requestIdOf,
   Signature,
   SignIdentity,
-  toHex,
 } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import * as cbor from 'simple-cbor';
 import { PartialIdentity } from './partial';
-import { uint8FromBufLike } from '@dfinity/candid';
+import { uint8FromBufLike, toHex, fromHex, uint8ToBuf } from '@dfinity/candid';
 
 const domainSeparator = new TextEncoder().encode('\x1Aic-request-auth-delegation');
 const requestDomainSeparator = new TextEncoder().encode('\x0Aic-request');
 
-function _parseBlob(value: unknown): ArrayBuffer {
+function _parseBlob(value: unknown): Uint8Array {
   if (typeof value !== 'string' || value.length < 64) {
     throw new Error('Invalid public key.');
   }
@@ -32,7 +30,7 @@ function _parseBlob(value: unknown): ArrayBuffer {
  */
 export class Delegation {
   constructor(
-    public readonly pubkey: ArrayBuffer,
+    public readonly pubkey: Uint8Array,
     public readonly expiration: bigint,
     public readonly targets?: Principal[],
   ) {}
@@ -40,11 +38,11 @@ export class Delegation {
   public toCBOR(): cbor.CborValue {
     // Expiration field needs to be encoded as a u64 specifically.
     return cbor.value.map({
-      pubkey: cbor.value.bytes(this.pubkey),
+      pubkey: cbor.value.bytes(uint8ToBuf(this.pubkey)),
       expiration: cbor.value.u64(this.expiration.toString(16), 16),
       ...(this.targets && {
         targets: cbor.value.array(
-          this.targets.map(t => cbor.value.bytes(uint8FromBufLike(t.toUint8Array()))),
+          this.targets.map(t => cbor.value.bytes(uint8ToBuf(t.toUint8Array()))),
         ),
       }),
     });
@@ -296,7 +294,7 @@ export class DelegationIdentity extends SignIdentity {
       toDer: () => this._delegation.publicKey,
     };
   }
-  public sign(blob: ArrayBuffer): Promise<Signature> {
+  public sign(blob: Uint8Array): Promise<Signature> {
     return this._inner.sign(blob);
   }
 
@@ -308,7 +306,9 @@ export class DelegationIdentity extends SignIdentity {
       body: {
         content: body,
         sender_sig: await this.sign(
-          uint8FromBufLike(new Uint8Array([...requestDomainSeparator, ...new Uint8Array(requestId)])),
+          uint8FromBufLike(
+            new Uint8Array([...requestDomainSeparator, ...new Uint8Array(requestId)]),
+          ),
         ),
         sender_delegation: this._delegation.delegations,
         sender_pubkey: this._delegation.publicKey,

@@ -1,8 +1,9 @@
-import { DerEncodedPublicKey, PublicKey, fromHex, toHex } from '@dfinity/agent';
+import { DerEncodedPublicKey, PublicKey } from '@dfinity/agent';
 import { randomBytes } from 'crypto';
 import { sha256 } from '@noble/hashes/sha256';
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { Secp256k1KeyIdentity, Secp256k1PublicKey } from './secp256k1';
+import { fromHex, toHex } from '@dfinity/candid';
 
 // DER KEY SECP256K1 PREFIX = 3056301006072a8648ce3d020106052b8104000a03420004
 // These test vectors contain the hex encoding of the corresponding raw and DER versions

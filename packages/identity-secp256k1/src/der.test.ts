@@ -1,22 +1,4 @@
-import { bufEquals, encodeLenBytes, encodeLen, decodeLenBytes, decodeLen } from './der';
-
-describe('bufEquals tests', () => {
-  test('equal buffers', () => {
-    const buf1 = Uint8Array.from([0, 0, 0, 1]).buffer;
-    const buf2 = Uint8Array.from([0, 0, 0, 1]).buffer;
-    expect(bufEquals(buf1, buf2)).toBe(true);
-  });
-  test('rejects buffers with different lengths', () => {
-    const buf1 = Uint8Array.from([0, 0, 0, 0, 1]).buffer;
-    const buf2 = Uint8Array.from([0, 0, 0, 1]).buffer;
-    expect(bufEquals(buf1, buf2)).toBe(false);
-  });
-  test('rejects buffers with different values', () => {
-    const buf1 = Uint8Array.from([0, 0, 0, 2]).buffer;
-    const buf2 = Uint8Array.from([0, 0, 0, 1]).buffer;
-    expect(bufEquals(buf1, buf2)).toBe(false);
-  });
-});
+import {  encodeLenBytes, encodeLen, decodeLenBytes, decodeLen } from './der';
 
 describe('encodeLenBytes', () => {
   test('Length of up to 127', () => {

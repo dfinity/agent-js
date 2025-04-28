@@ -5,23 +5,23 @@
  */
 import * as cbor from './cbor';
 import * as Cert from './certificate';
-import { bufEquals, fromHex, toHex } from './utils/buffer';
+import { uint8Equals, fromHex, toHex } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import { decodeTime } from './utils/leb';
 import { readFileSync } from 'fs';
 import path from 'path';
 import { IC_ROOT_KEY } from './agent';
 
-function label(str: string): ArrayBuffer {
+function label(str: string): Uint8Array {
   return new TextEncoder().encode(str);
 }
 
-function pruned(str: string): ArrayBuffer {
+function pruned(str: string): Uint8Array {
   return fromHex(str);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-(expect as any).addEqualityTesters([bufEquals]);
+(expect as any).addEqualityTesters([uint8Equals]);
 
 test('hash tree', async () => {
   const cborEncode = fromHex(

@@ -1,18 +1,14 @@
-import { bufEquals } from '@dfinity/agent';
 import {
   DerEncodedPublicKey,
   KeyPair,
   PublicKey,
   Signature,
   SignIdentity,
-  uint8ToBuf,
   ED25519_OID,
   unwrapDER,
   wrapDER,
-  fromHex,
-  toHex,
-  uint8FromBufLike,
 } from '@dfinity/agent';
+import { uint8Equals, fromHex, toHex, uint8FromBufLike } from '@dfinity/candid';
 import { ed25519 } from '@noble/curves/ed25519';
 
 declare type KeyLike = PublicKey | DerEncodedPublicKey | ArrayBuffer | ArrayBufferView;
@@ -39,19 +35,19 @@ export class Ed25519PublicKey implements PublicKey {
         const view = key as ArrayBufferView;
         return this.fromRaw(uint8FromBufLike(view.buffer));
       } else if (key instanceof ArrayBuffer) {
-        return this.fromRaw(key);
-      } else if ('rawKey' in key) {
-        return this.fromRaw(key.rawKey as ArrayBuffer);
+        return this.fromRaw(uint8FromBufLike(key));
+      } else if ('rawKey' in key && key.rawKey instanceof Uint8Array) {
+        return this.fromRaw(key.rawKey);
       } else if ('derKey' in key) {
         return this.fromDer(key.derKey as DerEncodedPublicKey);
       } else if ('toDer' in key) {
-        return this.fromDer(key.toDer() as ArrayBuffer);
+        return this.fromDer(key.toDer());
       }
     }
     throw new Error('Cannot construct Ed25519PublicKey from the provided key.');
   }
 
-  public static fromRaw(rawKey: ArrayBuffer): Ed25519PublicKey {
+  public static fromRaw(rawKey: Uint8Array): Ed25519PublicKey {
     return new Ed25519PublicKey(rawKey);
   }
 
@@ -62,13 +58,13 @@ export class Ed25519PublicKey implements PublicKey {
   // The length of Ed25519 public keys is always 32 bytes.
   private static RAW_KEY_LENGTH = 32;
 
-  private static derEncode(publicKey: ArrayBuffer): DerEncodedPublicKey {
-    const key = wrapDER(publicKey, ED25519_OID).buffer as DerEncodedPublicKey;
+  private static derEncode(publicKey: Uint8Array): DerEncodedPublicKey {
+    const key = wrapDER(publicKey, ED25519_OID) as DerEncodedPublicKey;
     key.__derEncodedPublicKey__ = undefined;
     return key;
   }
 
-  private static derDecode(key: DerEncodedPublicKey): ArrayBuffer {
+  private static derDecode(key: DerEncodedPublicKey): Uint8Array {
     const unwrapped = unwrapDER(key, ED25519_OID);
     if (unwrapped.length !== this.RAW_KEY_LENGTH) {
       throw new Error('An Ed25519 public key must be exactly 32bytes long');
@@ -76,9 +72,9 @@ export class Ed25519PublicKey implements PublicKey {
     return uint8FromBufLike(unwrapped);
   }
 
-  #rawKey: ArrayBuffer;
+  #rawKey: Uint8Array;
 
-  public get rawKey(): ArrayBuffer {
+  public get rawKey(): Uint8Array {
     return this.#rawKey;
   }
 
@@ -89,11 +85,11 @@ export class Ed25519PublicKey implements PublicKey {
   }
 
   // `fromRaw` and `fromDer` should be used for instantiation, not this constructor.
-  private constructor(key: ArrayBuffer) {
+  private constructor(key: Uint8Array) {
     if (key.byteLength !== Ed25519PublicKey.RAW_KEY_LENGTH) {
       throw new Error('An Ed25519 public key must be exactly 32bytes long');
     }
-    this.#rawKey = uint8FromBufLike(key);
+    this.#rawKey = key;
     this.#derKey = Ed25519PublicKey.derEncode(key);
   }
 
@@ -101,7 +97,7 @@ export class Ed25519PublicKey implements PublicKey {
     return this.derKey;
   }
 
-  public toRaw(): ArrayBuffer {
+  public toRaw(): Uint8Array {
     return this.rawKey;
   }
 }
@@ -116,19 +112,20 @@ export class Ed25519KeyIdentity extends SignIdentity {
    * @returns Ed25519KeyIdentity
    */
   public static generate(seed?: Uint8Array): Ed25519KeyIdentity {
-
     if (seed && seed.length !== 32) {
       throw new Error('Ed25519 Seed needs to be 32 bytes long.');
     }
     if (!seed) seed = ed25519.utils.randomPrivateKey();
     // Check if the seed is all zeros
-    if(bufEquals(seed, new Uint8Array(new Array(32).fill(0)))) {
-      console.warn('Seed is all zeros. This is not a secure seed. Please provide a seed with sufficient entropy if this is a production environment.');
+    if (uint8Equals(seed, new Uint8Array(new Array(32).fill(0)))) {
+      console.warn(
+        'Seed is all zeros. This is not a secure seed. Please provide a seed with sufficient entropy if this is a production environment.',
+      );
     }
     const sk = new Uint8Array(32);
     for (let i = 0; i < 32; i++) sk[i] = new Uint8Array(seed)[i];
 
-    const pk = ed25519.getPublicKey(sk);
+    const pk = uint8FromBufLike(ed25519.getPublicKey(sk));
     return Ed25519KeyIdentity.fromKeyPair(pk, sk);
   }
 
@@ -152,11 +149,11 @@ export class Ed25519KeyIdentity extends SignIdentity {
     throw new Error(`Deserialization error: Invalid JSON type for string: ${JSON.stringify(json)}`);
   }
 
-  public static fromKeyPair(publicKey: ArrayBuffer, privateKey: ArrayBuffer): Ed25519KeyIdentity {
+  public static fromKeyPair(publicKey: Uint8Array, privateKey: Uint8Array): Ed25519KeyIdentity {
     return new Ed25519KeyIdentity(Ed25519PublicKey.fromRaw(publicKey), privateKey);
   }
 
-  public static fromSecretKey(secretKey: ArrayBuffer): Ed25519KeyIdentity {
+  public static fromSecretKey(secretKey: Uint8Array): Ed25519KeyIdentity {
     const publicKey = ed25519.getPublicKey(new Uint8Array(secretKey));
     return Ed25519KeyIdentity.fromKeyPair(publicKey, secretKey);
   }
@@ -165,7 +162,7 @@ export class Ed25519KeyIdentity extends SignIdentity {
   #privateKey: Uint8Array;
 
   // `fromRaw` and `fromDer` should be used for instantiation, not this constructor.
-  protected constructor(publicKey: PublicKey, privateKey: ArrayBuffer) {
+  protected constructor(publicKey: PublicKey, privateKey: Uint8Array) {
     super();
     this.#publicKey = Ed25519PublicKey.from(publicKey);
     this.#privateKey = new Uint8Array(privateKey);
@@ -199,10 +196,10 @@ export class Ed25519KeyIdentity extends SignIdentity {
    * Signs a blob of data, with this identity's private key.
    * @param challenge - challenge to sign with this identity's secretKey, producing a signature
    */
-  public async sign(challenge: ArrayBuffer): Promise<Signature> {
+  public async sign(challenge: Uint8Array): Promise<Signature> {
     const blob = new Uint8Array(challenge);
     // Some implementations of Ed25519 private keys append a public key to the end of the private key. We only want the private key.
-    const signature = uint8ToBuf(ed25519.sign(blob, this.#privateKey.slice(0, 32)));
+    const signature = ed25519.sign(blob, this.#privateKey.slice(0, 32));
     // add { __signature__: void; } to the signature to make it compatible with the agent
 
     Object.defineProperty(signature, '__signature__', {
