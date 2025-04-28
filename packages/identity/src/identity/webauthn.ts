@@ -8,7 +8,7 @@ import {
 } from '@dfinity/agent';
 import borc from 'borc';
 import { randomBytes } from '@noble/hashes/utils';
-import { uint8FromBufLike } from '@dfinity/candid';
+import { fromHex, toHex, uint8FromBufLike, uint8ToBuf } from '@dfinity/candid';
 
 function _coseToDerEncodedBlob(cose: Uint8Array): DerEncodedPublicKey {
   return wrapDER(cose, DER_COSE_OID) as DerEncodedPublicKey;
