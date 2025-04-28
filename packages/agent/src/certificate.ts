@@ -397,9 +397,10 @@ function domain_sep(s: string): ArrayBuffer {
 }
 
 export enum LookupStatus {
-  Unknown = 'unknown',
-  Absent = 'absent',
-  Found = 'found',
+  Unknown = 'Unknown',
+  Absent = 'Absent',
+  Found = 'Found',
+  Error = 'Error',
 }
 
 export interface LookupResultAbsent {
@@ -415,7 +416,15 @@ export interface LookupResultFound {
   value: ArrayBuffer | HashTree;
 }
 
-export type LookupResult = LookupResultAbsent | LookupResultUnknown | LookupResultFound;
+export interface LookupResultError {
+  status: LookupStatus.Error;
+}
+
+export type LookupResult =
+  | LookupResultAbsent
+  | LookupResultUnknown
+  | LookupResultFound
+  | LookupResultError;
 
 enum LabelLookupStatus {
   Less = 'less',
@@ -441,6 +450,12 @@ type LabelLookupResult = LookupResult | LookupResultGreater | LookupResultLess;
 export function lookup_path(path: Array<ArrayBuffer | string>, tree: HashTree): LookupResult {
   if (path.length === 0) {
     switch (tree[0]) {
+      case NodeType.Empty: {
+        return {
+          status: LookupStatus.Absent,
+        };
+      }
+
       case NodeType.Leaf: {
         if (!tree[1]) {
           throw UnknownError.fromCode(
@@ -468,11 +483,21 @@ export function lookup_path(path: Array<ArrayBuffer | string>, tree: HashTree): 
         };
       }
 
-      default: {
+      case NodeType.Pruned: {
         return {
-          status: LookupStatus.Found,
-          value: tree,
+          status: LookupStatus.Unknown,
         };
+      }
+
+      case NodeType.Labeled:
+      case NodeType.Fork: {
+        return {
+          status: LookupStatus.Error,
+        };
+      }
+
+      default: {
+        throw UNREACHABLE_ERROR;
       }
     }
   }
