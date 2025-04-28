@@ -116,7 +116,7 @@ describe('makeActor', () => {
         arg,
         nonce: nonces[0],
         sender,
-        ingress_expiry: new Expiry(300000),
+        ingress_expiry: Expiry.fromDeltaInMilliseconds(300000),
       },
     } as UnSigned<CallRequest>;
 
@@ -128,7 +128,7 @@ describe('makeActor', () => {
         arg,
         nonce: nonces[0],
         sender,
-        ingress_expiry: new Expiry(300000),
+        ingress_expiry: Expiry.fromDeltaInMilliseconds(300000),
       },
     } as UnSigned<CallRequest>;
 
@@ -175,7 +175,7 @@ describe('makeActor', () => {
           content: {
             request_type: 'request_status',
             request_id: expectedCallRequestId,
-            ingress_expiry: new Expiry(300000),
+            ingress_expiry: Expiry.fromDeltaInMilliseconds(300000),
           },
         }),
       },
@@ -191,7 +191,7 @@ describe('makeActor', () => {
         content: {
           request_type: 'request_status',
           request_id: expectedCallRequestId,
-          ingress_expiry: new Expiry(300000),
+          ingress_expiry: Expiry.fromDeltaInMilliseconds(300000),
         },
       }),
     });
@@ -206,7 +206,7 @@ describe('makeActor', () => {
         content: {
           request_type: 'request_status',
           request_id: expectedCallRequestId,
-          ingress_expiry: new Expiry(300000),
+          ingress_expiry: Expiry.fromDeltaInMilliseconds(300000),
         },
       }),
     });
@@ -221,7 +221,7 @@ describe('makeActor', () => {
         content: {
           request_type: 'request_status',
           request_id: expectedCallRequestId,
-          ingress_expiry: new Expiry(300000),
+          ingress_expiry: Expiry.fromDeltaInMilliseconds(300000),
         },
       }),
     });
@@ -322,7 +322,9 @@ describe('makeActor', () => {
           "canister_id": {
             "__principal__": "2chl6-4hpzw-vqaaa-aaaaa-c",
           },
-          "ingress_expiry": "1200000000000",
+          "ingress_expiry": {
+            "_value": "1200000000000",
+          },
           "method_name": "greet",
           "request_type": "query",
           "sender": {

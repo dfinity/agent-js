@@ -9,37 +9,38 @@ import {
   Nonce,
 } from './types';
 
-const NANOSECONDS_PER_MILLISECONDS = BigInt(1_000_000);
+const NANOSECONDS_PER_MILLISECOND = BigInt(1_000_000);
+const NANOSECONDS_PER_SECOND = NANOSECONDS_PER_MILLISECOND * BigInt(1_000);
+const SECONDS_PER_MINUTE = BigInt(60);
 
 const REPLICA_PERMITTED_DRIFT_MILLISECONDS = 60 * 1000;
 
 export class Expiry {
-  private readonly _value: bigint;
+  constructor(private readonly _value: bigint) {}
 
-  constructor(deltaInMSec: number) {
+  public static fromDeltaInMilliseconds(deltaInMs: number): Expiry {
     // if ingress as seconds is less than 90, round to nearest second
-    if (deltaInMSec < 90 * 1_000) {
+    if (deltaInMs < 90 * 1_000) {
       // Raw value without subtraction of REPLICA_PERMITTED_DRIFT_MILLISECONDS
-      const raw_value = BigInt(Date.now() + deltaInMSec) * NANOSECONDS_PER_MILLISECONDS;
-      const ingress_as_seconds = raw_value / BigInt(1_000_000_000);
-      this._value = ingress_as_seconds * BigInt(1_000_000_000);
-      return;
+      const raw_value = BigInt(Date.now() + deltaInMs) * NANOSECONDS_PER_MILLISECOND;
+      const ingress_as_seconds = raw_value / NANOSECONDS_PER_SECOND;
+      return new Expiry(ingress_as_seconds * NANOSECONDS_PER_SECOND);
     }
 
     // Use bigint because it can overflow the maximum number allowed in a double float.
     const raw_value =
-      BigInt(Math.floor(Date.now() + deltaInMSec - REPLICA_PERMITTED_DRIFT_MILLISECONDS)) *
-      NANOSECONDS_PER_MILLISECONDS;
+      BigInt(Math.floor(Date.now() + deltaInMs - REPLICA_PERMITTED_DRIFT_MILLISECONDS)) *
+      NANOSECONDS_PER_MILLISECOND;
 
-    // round down to the nearest second (since )
-    const ingress_as_seconds = raw_value / BigInt(1_000_000_000);
+    // round down to the nearest second
+    const ingress_as_seconds = raw_value / NANOSECONDS_PER_SECOND;
 
     // round down to nearest minute
-    const ingress_as_minutes = ingress_as_seconds / BigInt(60);
+    const ingress_as_minutes = ingress_as_seconds / SECONDS_PER_MINUTE;
 
-    const rounded_down_nanos = ingress_as_minutes * BigInt(60) * BigInt(1_000_000_000);
+    const rounded_down_nanos = ingress_as_minutes * SECONDS_PER_MINUTE * NANOSECONDS_PER_SECOND;
 
-    this._value = rounded_down_nanos;
+    return new Expiry(rounded_down_nanos);
   }
 
   public toCBOR(): cbor.CborValue {
@@ -55,8 +56,16 @@ export class Expiry {
     return this._value.toString();
   }
 
-  public toJSON(): string {
-    return this.toString();
+  public toJSON(): { _value: string } {
+    return { _value: this.toString() };
+  }
+
+  public static fromJSON(input: string): Expiry {
+    const obj = JSON.parse(input);
+    if (obj._value) {
+      return new Expiry(BigInt(obj._value));
+    }
+    throw new Error('Invalid input');
   }
 }
 
@@ -86,7 +95,7 @@ export function makeNonceTransform(nonceFn: () => Nonce = makeNonce): HttpAgentR
  */
 export function makeExpiryTransform(delayInMilliseconds: number): HttpAgentRequestTransformFn {
   return async (request: HttpAgentRequest) => {
-    request.body.ingress_expiry = new Expiry(delayInMilliseconds);
+    request.body.ingress_expiry = Expiry.fromDeltaInMilliseconds(delayInMilliseconds);
   };
 }
 
