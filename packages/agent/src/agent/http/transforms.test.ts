@@ -1,3 +1,5 @@
+import { ExpiryJsonDeserializeErrorCode } from '../../errors';
+import { InputError } from '../../errors';
 import { Expiry } from './transforms';
 
 jest.useFakeTimers();
@@ -31,12 +33,28 @@ test('should serialize and deserialize expiry', () => {
   const expiry = Expiry.fromDeltaInMilliseconds(1000);
   const json = JSON.stringify(expiry.toJSON());
   const deserialized = Expiry.fromJSON(json);
+
+  expect.assertions(8);
   expect(deserialized['__expiry__']).toEqual(expiry['__expiry__']);
   expect(deserialized.toString()).toEqual(expiry.toString());
 
   const invalidJson = '{"__expiry__": "not a number"}';
-  expect(() => Expiry.fromJSON(invalidJson)).toThrow();
+  try {
+    Expiry.fromJSON(invalidJson);
+  } catch (error) {
+    expect(error).toBeInstanceOf(InputError);
+    const inputError = error as InputError;
+    expect(inputError.cause.code).toBeInstanceOf(ExpiryJsonDeserializeErrorCode);
+    expect(inputError.message).toContain('Not a valid BigInt');
+  }
 
   const emptyJson = '{}';
-  expect(() => Expiry.fromJSON(emptyJson)).toThrow();
+  try {
+    Expiry.fromJSON(emptyJson);
+  } catch (error) {
+    expect(error).toBeInstanceOf(InputError);
+    const inputError = error as InputError;
+    expect(inputError.cause.code).toBeInstanceOf(ExpiryJsonDeserializeErrorCode);
+    expect(inputError.message).toContain('The input does not contain the key __expiry__');
+  }
 });

@@ -8,6 +8,7 @@ import {
   makeNonce,
   Nonce,
 } from './types';
+import { ExpiryJsonDeserializeErrorCode, InputError } from '../../errors';
 
 export const JSON_KEY_EXPIRY = '__expiry__';
 const NANOSECONDS_PER_MILLISECOND = BigInt(1_000_000);
@@ -77,12 +78,24 @@ export class Expiry {
     return { [JSON_KEY_EXPIRY]: this.toString() };
   }
 
+  /**
+   * Deserializes a {@link JsonnableExpiry} object from a JSON string.
+   * @param input The JSON string to deserialize.
+   * @returns {Expiry} The deserialized Expiry object.
+   */
   public static fromJSON(input: string): Expiry {
     const obj = JSON.parse(input);
     if (obj[JSON_KEY_EXPIRY]) {
-      return new Expiry(BigInt(obj[JSON_KEY_EXPIRY]));
+      try {
+        const expiry = BigInt(obj[JSON_KEY_EXPIRY]);
+        return new Expiry(expiry);
+      } catch (error) {
+        throw new InputError(new ExpiryJsonDeserializeErrorCode(`Not a valid BigInt: ${error}`));
+      }
     }
-    throw new Error(`The input does not contain the key ${JSON_KEY_EXPIRY}`);
+    throw new InputError(
+      new ExpiryJsonDeserializeErrorCode(`The input does not contain the key ${JSON_KEY_EXPIRY}`),
+    );
   }
 }
 
