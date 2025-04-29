@@ -72,7 +72,7 @@ describe('PipeArrayBuffer', () => {
     expect([...new Uint8Array(pipe.buffer)]).toEqual([3, 4, 5]);
 
     // Invalid restore
-    expect(() => pipe.restore('not a uint8array' as any)).toThrow(
+    expect(() => pipe.restore('not a uint8array' as unknown as Uint8Array)).toThrow(
       'Checkpoint must be a Uint8Array',
     );
   });
@@ -294,10 +294,12 @@ describe('uint8ToDataView', () => {
   });
 
   test('with invalid input', () => {
-    // @ts-expect-error: testing invalid input
-    expect(() => uint8ToDataView('not a uint8array')).toThrow('Input must be a Uint8Array');
-    // @ts-expect-error: testing invalid input
-    expect(() => uint8ToDataView(null)).toThrow('Input must be a Uint8Array');
+    expect(() => uint8ToDataView('not a uint8array' as unknown as Uint8Array)).toThrow(
+      'Input must be a Uint8Array',
+    );
+    expect(() => uint8ToDataView(null as unknown as Uint8Array)).toThrow(
+      'Input must be a Uint8Array',
+    );
   });
 
   test('with empty array', () => {

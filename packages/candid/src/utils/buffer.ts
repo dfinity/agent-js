@@ -27,6 +27,9 @@ const hexRe = new RegExp(/^[0-9a-fA-F]+$/);
  * @param hex The hexadecimal string to use.
  */
 export function fromHex(hex: string): Uint8Array {
+  if (hex === '') {
+    return new Uint8Array(0);
+  }
   if (!hexRe.test(hex)) {
     throw new Error('Invalid hexadecimal string.');
   }

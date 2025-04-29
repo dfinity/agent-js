@@ -796,9 +796,45 @@ export class VecClass<T> extends ConstructType<T[]> {
     if (this._blobOptimization) {
       return concat(len, new Uint8Array(x as unknown as number[]));
     }
+
     if (ArrayBuffer.isView(x)) {
-      return concat(len, new Uint8Array(x.buffer));
+      // Handle TypedArrays with endianness concerns
+      if (x instanceof Int16Array || x instanceof Uint16Array) {
+        const buffer = new DataView(new ArrayBuffer(x.length * 2));
+        for (let i = 0; i < x.length; i++) {
+          if (x instanceof Int16Array) {
+            buffer.setInt16(i * 2, x[i], true); // true = little-endian
+          } else {
+            buffer.setUint16(i * 2, x[i], true);
+          }
+        }
+        return concat(len, new Uint8Array(buffer.buffer));
+      } else if (x instanceof Int32Array || x instanceof Uint32Array) {
+        const buffer = new DataView(new ArrayBuffer(x.length * 4));
+        for (let i = 0; i < x.length; i++) {
+          if (x instanceof Int32Array) {
+            buffer.setInt32(i * 4, x[i], true);
+          } else {
+            buffer.setUint32(i * 4, x[i], true);
+          }
+        }
+        return concat(len, new Uint8Array(buffer.buffer));
+      } else if (x instanceof BigInt64Array || x instanceof BigUint64Array) {
+        const buffer = new DataView(new ArrayBuffer(x.length * 8));
+        for (let i = 0; i < x.length; i++) {
+          if (x instanceof BigInt64Array) {
+            buffer.setBigInt64(i * 8, x[i], true);
+          } else {
+            buffer.setBigUint64(i * 8, x[i], true);
+          }
+        }
+        return concat(len, new Uint8Array(buffer.buffer));
+      } else {
+        // For Uint8Array, Int8Array, etc. that don't have endianness concerns
+        return concat(len, new Uint8Array(x.buffer, x.byteOffset, x.byteLength));
+      }
     }
+
     const buf = new Pipe(new Uint8Array(len.byteLength + x.length), 0);
     buf.write(len);
     for (const d of x) {
@@ -828,10 +864,15 @@ export class VecClass<T> extends ConstructType<T[]> {
         return new Uint8Array(b.read(len)) as unknown as T[];
       }
       if (this._type._bits == 16) {
-        return new Uint16Array(b.read(len * 2)) as unknown as T[];
+        const bytes = b.read(len * 2);
+        // Check if we need to swap bytes for endianness
+        const u16 = new Uint16Array(bytes.buffer, bytes.byteOffset, len);
+        return u16 as unknown as T[];
       }
       if (this._type._bits == 32) {
-        return new Uint32Array(b.read(len * 4)) as unknown as T[];
+        const bytes = b.read(len * 4);
+        const u32 = new Uint32Array(bytes.buffer, bytes.byteOffset, len);
+        return u32 as unknown as T[];
       }
       if (this._type._bits == 64) {
         return new BigUint64Array(b.read(len * 8).buffer) as unknown as T[];
@@ -843,13 +884,37 @@ export class VecClass<T> extends ConstructType<T[]> {
         return new Int8Array(b.read(len)) as unknown as T[];
       }
       if (this._type._bits == 16) {
-        return new Int16Array(b.read(len * 2)) as unknown as T[];
+        const bytes = b.read(len * 2);
+        // Create a DataView to properly handle endianness
+        const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+
+        // Create result array with correct endianness
+        const result = new Int16Array(len);
+        for (let i = 0; i < len; i++) {
+          // Read each value as little-endian (Candid wire format is little-endian)
+          result[i] = view.getInt16(i * 2, true);
+        }
+        return result as unknown as T[];
       }
       if (this._type._bits == 32) {
-        return new Int32Array(b.read(len * 4)) as unknown as T[];
+        const bytes = b.read(len * 4);
+        const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+
+        const result = new Int32Array(len);
+        for (let i = 0; i < len; i++) {
+          result[i] = view.getInt32(i * 4, true);
+        }
+        return result as unknown as T[];
       }
       if (this._type._bits == 64) {
-        return new BigInt64Array(b.read(len * 8).buffer) as unknown as T[];
+        const bytes = b.read(len * 8);
+        const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+
+        const result = new BigInt64Array(len);
+        for (let i = 0; i < len; i++) {
+          result[i] = view.getBigInt64(i * 8, true);
+        }
+        return result as unknown as T[];
       }
     }
 
