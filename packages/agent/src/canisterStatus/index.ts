@@ -183,7 +183,7 @@ export const request = async (options: {
           } else {
             return {
               path: path,
-              data: lookupResultToBuffer(cert.lookup(encodePath(path, canisterId))),
+              data: lookupResultToBuffer(cert.lookup_path(encodePath(path, canisterId))),
             };
           }
         };

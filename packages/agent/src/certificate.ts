@@ -36,6 +36,7 @@ export enum NodeType {
   Pruned = 4,
 }
 
+export type NodePath = Array<ArrayBuffer | string>;
 export type NodeLabel = (ArrayBuffer | Uint8Array) & { __nodeLabel__: void };
 export type NodeValue = (ArrayBuffer | Uint8Array) & { __nodeValue__: void };
 export type NodeHash = (ArrayBuffer | Uint8Array) & { __nodeHash__: void };
@@ -52,8 +53,6 @@ export type HashTree =
   | LabeledHashTree
   | LeafHashTree
   | PrunedHashTree;
-
-type NodePath = Array<ArrayBuffer | string>;
 
 /**
  * Make a human readable string out of a hash tree.
@@ -224,13 +223,22 @@ export class Certificate {
     this.cert = cbor.decode(new Uint8Array(certificate));
   }
 
-  public lookup(path: NodePath): LookupResult {
-    // constrain the type of the result, so that empty HashTree is undefined
+  /**
+   * Lookup a path in the certificate tree, using {@link lookup_path}.
+   * @param path The path to lookup.
+   * @returns The result of the lookup.
+   */
+  public lookup_path(path: NodePath): LookupResult {
     return lookup_path(path, this.cert.tree);
   }
 
-  public lookup_label(label: ArrayBuffer): LookupResult {
-    return this.lookup([label]);
+  /**
+   * Lookup a subtree in the certificate tree, using {@link lookup_subtree}.
+   * @param path The path to lookup.
+   * @returns The result of the lookup.
+   */
+  public lookup_subtree(path: NodePath): SubtreeLookupResult {
+    return lookup_subtree(path, this.cert.tree);
   }
 
   private async verify(): Promise<void> {
@@ -241,7 +249,7 @@ export class Certificate {
     const msg = concat(domain_sep('ic-state-root'), rootHash);
     let sigVer = false;
 
-    const lookupTime = lookupResultToBuffer(this.lookup(['time']));
+    const lookupTime = lookupResultToBuffer(this.lookup_path(['time']));
     if (!lookupTime) {
       // Should never happen - time is always present in IC certificates
       throw ProtocolError.fromCode(
@@ -316,7 +324,7 @@ export class Certificate {
       }
     }
     const publicKeyLookup = lookupResultToBuffer(
-      cert.lookup(['subnet', d.subnet_id, 'public_key']),
+      cert.lookup_path(['subnet', d.subnet_id, 'public_key']),
     );
     if (!publicKeyLookup) {
       throw TrustError.fromCode(

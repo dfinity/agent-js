@@ -50,11 +50,11 @@ test('read_state', async () => {
     rootKey: resolvedAgent.rootKey,
     canisterId: ecid,
   });
-  expect(cert.lookup([strToUtf8('Time')])).toEqual({
+  expect(cert.lookup_path([strToUtf8('Time')])).toEqual({
     status: LookupStatus.Unknown,
   });
 
-  let rawTime = cert.lookup(path);
+  let rawTime = cert.lookup_path(path);
 
   expect(rawTime.status).toEqual(LookupStatus.Found);
   rawTime = rawTime as LookupResultFound;
@@ -81,11 +81,11 @@ test('read_state with passed request', async () => {
     rootKey: resolvedAgent.rootKey,
     canisterId: canisterId,
   });
-  expect(cert.lookup([strToUtf8('Time')])).toEqual({
+  expect(cert.lookup_path([strToUtf8('Time')])).toEqual({
     status: LookupStatus.Unknown,
   });
 
-  let rawTime = cert.lookup(path);
+  let rawTime = cert.lookup_path(path);
 
   expect(rawTime.status).toEqual(LookupStatus.Found);
   rawTime = rawTime as LookupResultFound;
