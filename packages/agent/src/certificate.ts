@@ -400,8 +400,8 @@ function domain_sep(s: string): ArrayBuffer {
   return concat(len, str);
 }
 
-function pathToLabel(path: NodePath): ArrayBuffer {
-  return typeof path[0] === 'string' ? strToUtf8(path[0]) : path[0];
+function pathToLabel(path: NodePath): NodeLabel {
+  return (typeof path[0] === 'string' ? strToUtf8(path[0]) : path[0]) as NodeLabel;
 }
 
 export enum LookupStatus {
@@ -622,7 +622,7 @@ export function flatten_forks(t: HashTree): Array<LabeledHashTree | LeafHashTree
  * @param tree the tree to search
  * @returns {LabelLookupResult} the result of the label lookup
  */
-export function find_label(label: ArrayBuffer, tree: HashTree): LabelLookupResult {
+export function find_label(label: NodeLabel, tree: HashTree): LabelLookupResult {
   switch (tree[0]) {
     // if we have a labelled node, compare the node's label to the one we are
     // looking for
