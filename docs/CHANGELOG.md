@@ -24,7 +24,8 @@
   The new `AgentError` error uses the `code` and `kind` props to enable a better programmatic error handling.
 
 - feat!: refactors `Expiry` class to use static factory methods and add JSON serialization/deserialization.
-- feat!: makes `lookup_path` compliant with the [IC Interface Specification](https://github.com/dfinity/portal/blob/8015a4ab50232176723ffd95e32a02f1bf7fef30/docs/references/ic-interface-spec.md?plain=1#L3069). Renames the `Certificate.lookup` method into `Certificate.lookup_path` for consistency
+- feat!: makes `lookup_path` compliant with the [IC Interface Specification](https://github.com/dfinity/portal/blob/8015a4ab50232176723ffd95e32a02f1bf7fef30/docs/references/ic-interface-spec.md?plain=1#L3069). Renames the `lookup` method of the `Certificate` class into `lookup_path` for consistency.
+- feat!: removes the `lookup_label` method from the `Certificate` class
 
 - feat: introduces the `lookup_subtree` standalone function and `Certificate` class method.
 - chore: formatting files and changelog
