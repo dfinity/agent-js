@@ -629,8 +629,8 @@ export class HttpAgent implements Agent {
         message,
         error as HttpDetailsResponse,
         toHex(requestId),
-        toHex(transformedRequest.body.sender_pubkey),
-        toHex(transformedRequest.body.sender_sig),
+        transformedRequest.body.sender_pubkey ?toHex(transformedRequest.body.sender_pubkey) : '',
+        transformedRequest.body.sender_sig ? toHex(transformedRequest.body.sender_sig) : '',
         String(transformedRequest.body.content.ingress_expiry['_value']),
       );
       this.log.error(message, callError);

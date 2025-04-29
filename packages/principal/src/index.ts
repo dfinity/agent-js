@@ -87,18 +87,7 @@ export class Principal {
 
   public readonly _isPrincipal = true;
 
-  protected constructor(private _arr: Uint8Array) {
-    if (this._arr.length === 0) {
-      throw new Error('Principal cannot be empty');
-    }
-    if(!(_arr instanceof Uint8Array)) {
-      try {
-        this._arr = new Uint8Array(_arr);
-      } catch (error) {
-        throw new Error('Principal must be a Uint8Array. Provided value is not a Uint8Array. ' + error);
-      }
-    }
-  }
+  protected constructor(private _arr: Uint8Array) {}
 
   public isAnonymous(): boolean {
     return this._arr.byteLength === 1 && this._arr[0] === ANONYMOUS_SUFFIX;

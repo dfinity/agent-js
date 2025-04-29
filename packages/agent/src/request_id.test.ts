@@ -1,10 +1,10 @@
 // https://github.com/dfinity-lab/dfinity/blob/5fef1450c9ab16ccf18381379149e504b11c8218/docs/spec/public/index.adoc#request-ids
 import { Principal } from '@dfinity/principal';
 import { hash, hashValue, requestIdOf } from './request_id';
-import { fromHex, toHex } from './utils/buffer';
+import { fromHex, toHex } from '@dfinity/candid';
 import borc from 'borc';
 
-const testHashOfBlob = async (input: ArrayBuffer, expected: string) => {
+const testHashOfBlob = async (input: Uint8Array, expected: string) => {
   const hashed = await hash(input);
   const hex = toHex(hashed);
   expect(hex).toBe(expected);
@@ -116,27 +116,27 @@ test.skip('requestIdOf for sender_delegation signature', async () => {
 describe('hashValue', () => {
   it('should hash a string', () => {
     const value = hashValue('test');
-    expect(value instanceof ArrayBuffer).toBe(true);
+    expect(value instanceof Uint8Array).toBe(true);
   });
   it('should hash a borc tagged value', () => {
     const tagged = hashValue(new borc.Tagged(42, 'hello'));
-    expect(tagged instanceof ArrayBuffer).toBe(true);
+    expect(tagged instanceof Uint8Array).toBe(true);
   });
   it('should hash a number', () => {
     const value = hashValue(7);
-    expect(value instanceof ArrayBuffer).toBe(true);
+    expect(value instanceof Uint8Array).toBe(true);
   });
   it('should hash an array', () => {
     const value = hashValue([7]);
-    expect(value instanceof ArrayBuffer).toBe(true);
+    expect(value instanceof Uint8Array).toBe(true);
   });
   it('should hash a bigint', () => {
     const value = hashValue(BigInt(7));
-    expect(value instanceof ArrayBuffer).toBe(true);
+    expect(value instanceof Uint8Array).toBe(true);
   });
   it('should hash objects using HashOfMap on their contents', () => {
     const value = hashValue({ foo: 'bar' });
-    expect(value instanceof ArrayBuffer).toBe(true);
+    expect(value instanceof Uint8Array).toBe(true);
   });
   it('should throw otherwise', () => {
     const shouldThrow = () => {
