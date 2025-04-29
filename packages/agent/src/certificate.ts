@@ -505,10 +505,7 @@ export function lookup_path(path: NodePath, tree: HashTree): LookupResult {
           };
         }
 
-        return {
-          status: LookupStatus.Found,
-          value: tree[1],
-        };
+        throw UNREACHABLE_ERROR;
       }
 
       case NodeType.Pruned: {
