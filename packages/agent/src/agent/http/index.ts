@@ -1216,7 +1216,7 @@ export class HttpAgent implements Agent {
           new MalformedLookupFoundValueErrorCode('Time was not in its expected format.'),
         );
       }
-      const date = decodeTime(bufFromBufLike(timeLookup.value as ArrayBuffer));
+      const date = decodeTime(bufFromBufLike(timeLookup.value));
       this.log.print('Time from response:', date);
       this.log.print('Time from response in milliseconds:', Number(date));
       return Number(date);

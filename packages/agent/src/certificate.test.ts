@@ -5,7 +5,7 @@
  */
 import * as cbor from './cbor';
 import * as Cert from './certificate';
-import { bufEquals, fromHex, toHex } from './utils/buffer';
+import { bufEquals, fromHex, strToUtf8, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
 import { decodeTime } from './utils/leb';
 import { readFileSync } from 'fs';
@@ -20,12 +20,12 @@ import {
   TrustError,
 } from './errors';
 
-function label(str: string): ArrayBuffer {
-  return new TextEncoder().encode(str);
+function label(str: string): Cert.NodeLabel {
+  return strToUtf8(str) as Cert.NodeLabel;
 }
 
-function pruned(str: string): ArrayBuffer {
-  return fromHex(str);
+function pruned(str: string): Cert.NodeHash {
+  return fromHex(str) as Cert.NodeHash;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,18 +47,34 @@ test('hash tree', async () => {
           Cert.NodeType.Fork,
           [
             Cert.NodeType.Fork,
-            [Cert.NodeType.Labeled, label('x'), [3, label('hello')]],
+            [
+              Cert.NodeType.Labeled,
+              label('x'),
+              [Cert.NodeType.Leaf, strToUtf8('hello') as Cert.NodeValue],
+            ],
             [Cert.NodeType.Empty],
           ],
-          [Cert.NodeType.Labeled, label('y'), [Cert.NodeType.Leaf, label('world')]],
+          [
+            Cert.NodeType.Labeled,
+            label('y'),
+            [Cert.NodeType.Leaf, strToUtf8('world') as Cert.NodeValue],
+          ],
         ],
       ],
-      [Cert.NodeType.Labeled, label('b'), [Cert.NodeType.Leaf, label('good')]],
+      [
+        Cert.NodeType.Labeled,
+        label('b'),
+        [Cert.NodeType.Leaf, strToUtf8('good') as Cert.NodeValue],
+      ],
     ],
     [
       Cert.NodeType.Fork,
       [Cert.NodeType.Labeled, label('c'), [Cert.NodeType.Empty]],
-      [Cert.NodeType.Labeled, label('d'), [Cert.NodeType.Leaf, label('morning')]],
+      [
+        Cert.NodeType.Labeled,
+        label('d'),
+        [Cert.NodeType.Leaf, strToUtf8('morning') as Cert.NodeValue],
+      ],
     ],
   ];
   const tree: Cert.HashTree = cbor.decode(new Uint8Array(cborEncode));
@@ -86,7 +102,11 @@ test('pruned hash tree', async () => {
         [
           Cert.NodeType.Fork,
           [4, pruned('1b4feff9bef8131788b0c9dc6dbad6e81e524249c879e9f10f71ce3749f5a638')],
-          [Cert.NodeType.Labeled, label('y'), [Cert.NodeType.Leaf, label('world')]],
+          [
+            Cert.NodeType.Labeled,
+            label('y'),
+            [Cert.NodeType.Leaf, strToUtf8('world') as Cert.NodeValue],
+          ],
         ],
       ],
       [
@@ -104,7 +124,11 @@ test('pruned hash tree', async () => {
         Cert.NodeType.Pruned,
         pruned('ec8324b8a1f1ac16bd2e806edba78006479c9877fed4eb464a25485465af601d'),
       ],
-      [Cert.NodeType.Labeled, label('d'), [Cert.NodeType.Leaf, label('morning')]],
+      [
+        Cert.NodeType.Labeled,
+        label('d'),
+        [Cert.NodeType.Leaf, strToUtf8('morning') as Cert.NodeValue],
+      ],
     ],
   ];
   const tree: Cert.HashTree = cbor.decode(new Uint8Array(cborEncode));
@@ -129,14 +153,22 @@ describe('lookup', () => {
             pruned('1b842dfc254abb83e61bcdd7b7c24492322a2e1b006e6d20b88bedd147c248fc'),
           ],
         ],
-        [Cert.NodeType.Labeled, label('c'), [Cert.NodeType.Leaf, label('hello')]],
+        [
+          Cert.NodeType.Labeled,
+          label('c'),
+          [Cert.NodeType.Leaf, strToUtf8('hello') as Cert.NodeValue],
+        ],
       ],
       [
         Cert.NodeType.Labeled,
         label('d'),
         [
           Cert.NodeType.Fork,
-          [Cert.NodeType.Labeled, label('1'), [Cert.NodeType.Leaf, label('42')]],
+          [
+            Cert.NodeType.Labeled,
+            label('1'),
+            [Cert.NodeType.Leaf, strToUtf8('42') as Cert.NodeValue],
+          ],
           [
             Cert.NodeType.Pruned,
             pruned('5ec92bd71f697eee773919200a9718c4719495a4c6bba52acc408bd79b4bf57f'),
@@ -146,7 +178,11 @@ describe('lookup', () => {
     ],
     [
       Cert.NodeType.Fork,
-      [Cert.NodeType.Labeled, label('e'), [Cert.NodeType.Leaf, label('world')]],
+      [
+        Cert.NodeType.Labeled,
+        label('e'),
+        [Cert.NodeType.Leaf, strToUtf8('world') as Cert.NodeValue],
+      ],
       [Cert.NodeType.Labeled, label('g'), [Cert.NodeType.Empty]],
     ],
   ];
@@ -171,7 +207,7 @@ describe('lookup', () => {
 
     // the subtree at label `a` is pruned,
     // so any nested lookups should return Unknown
-    const tree_a = (lookup_a as Cert.LookupResultFound).value as Cert.HashTree;
+    const tree_a = (lookup_a as Cert.LabelLookupResultFound).value;
 
     expect(Cert.find_label(label('1'), tree_a)).toEqual({
       status: Cert.LookupStatus.Unknown,
@@ -243,7 +279,7 @@ describe('lookup', () => {
       ],
     });
 
-    const tree_d = (lookup_d as Cert.LookupResultFound).value as Cert.HashTree;
+    const tree_d = (lookup_d as Cert.LabelLookupResultFound).value;
     // a subtree at label `1` exists in the subtree at label `d`
     expect(Cert.find_label(label('1'), tree_d)).toEqual({
       status: Cert.LookupStatus.Found,
@@ -307,7 +343,7 @@ describe('lookup', () => {
     });
 
     // the subtree at label `g` is empty so any nested lookup are provably Absent
-    const tree_g = (lookup_g as Cert.LookupResultFound).value as Cert.HashTree;
+    const tree_g = (lookup_g as Cert.LabelLookupResultFound).value;
     expect(Cert.find_label(label('1'), tree_g)).toEqual({
       status: Cert.LookupStatus.Absent,
     });
@@ -340,7 +376,11 @@ describe('lookup', () => {
     const treeWithInvalidLeaf: Cert.HashTree = [
       Cert.NodeType.Fork,
       [Cert.NodeType.Labeled, label('invalid'), invalidLeaf],
-      [Cert.NodeType.Labeled, label('valid'), [Cert.NodeType.Leaf, label('hello')]],
+      [
+        Cert.NodeType.Labeled,
+        label('valid'),
+        [Cert.NodeType.Leaf, strToUtf8('hello') as Cert.NodeValue],
+      ],
     ];
 
     // Lookup path to invalid leaf should throw

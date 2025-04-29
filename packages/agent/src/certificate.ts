@@ -16,7 +16,7 @@ import {
   MissingLookupValueErrorCode,
 } from './errors';
 import { hash } from './request_id';
-import { bufEquals, concat, fromHex, toHex } from './utils/buffer';
+import { bufEquals, concat, fromHex, strToUtf8, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
 import * as bls from './utils/bls';
 import { decodeTime } from './utils/leb';
@@ -36,14 +36,24 @@ export enum NodeType {
   Pruned = 4,
 }
 
-export type NodeLabel = ArrayBuffer | Uint8Array;
+export type NodeLabel = (ArrayBuffer | Uint8Array) & { __nodeLabel__: void };
+export type NodeValue = (ArrayBuffer | Uint8Array) & { __nodeValue__: void };
+export type NodeHash = (ArrayBuffer | Uint8Array) & { __nodeHash__: void };
+
+export type EmptyHashTree = [NodeType.Empty];
+export type ForkHashTree = [NodeType.Fork, HashTree, HashTree];
+export type LabeledHashTree = [NodeType.Labeled, NodeLabel, HashTree];
+export type LeafHashTree = [NodeType.Leaf, NodeValue];
+export type PrunedHashTree = [NodeType.Pruned, NodeHash];
 
 export type HashTree =
-  | [NodeType.Empty]
-  | [NodeType.Fork, HashTree, HashTree]
-  | [NodeType.Labeled, NodeLabel, HashTree]
-  | [NodeType.Leaf, NodeLabel]
-  | [NodeType.Pruned, NodeLabel];
+  | EmptyHashTree
+  | ForkHashTree
+  | LabeledHashTree
+  | LeafHashTree
+  | PrunedHashTree;
+
+type NodePath = Array<ArrayBuffer | string>;
 
 /**
  * Make a human readable string out of a hash tree.
@@ -214,7 +224,7 @@ export class Certificate {
     this.cert = cbor.decode(new Uint8Array(certificate));
   }
 
-  public lookup(path: Array<ArrayBuffer | string>): LookupResult {
+  public lookup(path: NodePath): LookupResult {
     // constrain the type of the result, so that empty HashTree is undefined
     return lookup_path(path, this.cert.tree);
   }
@@ -351,10 +361,6 @@ export function lookupResultToBuffer(result: LookupResult): ArrayBuffer | undefi
     return result.value;
   }
 
-  if (result.value instanceof Uint8Array) {
-    return result.value.buffer;
-  }
-
   return undefined;
 }
 
@@ -366,24 +372,14 @@ export async function reconstruct(t: HashTree): Promise<ArrayBuffer> {
     case NodeType.Empty:
       return hash(domain_sep('ic-hashtree-empty'));
     case NodeType.Pruned:
-      return t[1] as ArrayBuffer;
+      return t[1];
     case NodeType.Leaf:
-      return hash(concat(domain_sep('ic-hashtree-leaf'), t[1] as ArrayBuffer));
+      return hash(concat(domain_sep('ic-hashtree-leaf'), t[1]));
     case NodeType.Labeled:
-      return hash(
-        concat(
-          domain_sep('ic-hashtree-labeled'),
-          t[1] as ArrayBuffer,
-          await reconstruct(t[2] as HashTree),
-        ),
-      );
+      return hash(concat(domain_sep('ic-hashtree-labeled'), t[1], await reconstruct(t[2])));
     case NodeType.Fork:
       return hash(
-        concat(
-          domain_sep('ic-hashtree-fork'),
-          await reconstruct(t[1] as HashTree),
-          await reconstruct(t[2] as HashTree),
-        ),
+        concat(domain_sep('ic-hashtree-fork'), await reconstruct(t[1]), await reconstruct(t[2])),
       );
     default:
       throw UNREACHABLE_ERROR;
@@ -394,6 +390,10 @@ function domain_sep(s: string): ArrayBuffer {
   const len = new Uint8Array([s.length]);
   const str = new TextEncoder().encode(s);
   return concat(len, str);
+}
+
+function pathToLabel(path: NodePath): ArrayBuffer {
+  return typeof path[0] === 'string' ? strToUtf8(path[0]) : path[0];
 }
 
 export enum LookupStatus {
@@ -413,7 +413,7 @@ export interface LookupResultUnknown {
 
 export interface LookupResultFound {
   status: LookupStatus.Found;
-  value: ArrayBuffer | HashTree;
+  value: ArrayBuffer;
 }
 
 export interface LookupResultError {
@@ -426,28 +426,48 @@ export type LookupResult =
   | LookupResultFound
   | LookupResultError;
 
-enum LabelLookupStatus {
+export interface SubtreeLookupResultFound {
+  status: LookupStatus.Found;
+  value: HashTree;
+}
+
+export type SubtreeLookupResult =
+  | LookupResultAbsent
+  | LookupResultUnknown
+  | SubtreeLookupResultFound;
+
+export enum LabelLookupStatus {
   Less = 'less',
   Greater = 'greater',
 }
 
-interface LookupResultGreater {
+export interface LabelLookupResultGreater {
   status: LabelLookupStatus.Greater;
 }
 
-interface LookupResultLess {
+export interface LabelLookupResultLess {
   status: LabelLookupStatus.Less;
 }
 
-type LabelLookupResult = LookupResult | LookupResultGreater | LookupResultLess;
+export interface LabelLookupResultFound {
+  status: LookupStatus.Found;
+  value: HashTree;
+}
+
+export type LabelLookupResult =
+  | LookupResultAbsent
+  | LookupResultUnknown
+  | LabelLookupResultFound
+  | LabelLookupResultGreater
+  | LabelLookupResultLess;
 
 /**
- * Lookup a path in a tree
+ * Lookup a path in a tree. If the path is a subtree, use {@link lookup_subtree} instead.
  * @param path the path to look up
  * @param tree the tree to search
  * @returns {LookupResult} the result of the lookup
  */
-export function lookup_path(path: Array<ArrayBuffer | string>, tree: HashTree): LookupResult {
+export function lookup_path(path: NodePath, tree: HashTree): LookupResult {
   if (path.length === 0) {
     switch (tree[0]) {
       case NodeType.Empty: {
@@ -502,14 +522,63 @@ export function lookup_path(path: Array<ArrayBuffer | string>, tree: HashTree): 
     }
   }
 
-  const label = typeof path[0] === 'string' ? new TextEncoder().encode(path[0]) : path[0];
+  const label = pathToLabel(path);
   const lookupResult = find_label(label, tree);
 
   switch (lookupResult.status) {
     case LookupStatus.Found: {
-      return lookup_path(path.slice(1), lookupResult.value as HashTree);
+      return lookup_path(path.slice(1), lookupResult.value);
     }
 
+    case LookupStatus.Absent:
+    case LabelLookupStatus.Greater:
+    case LabelLookupStatus.Less: {
+      return {
+        status: LookupStatus.Absent,
+      };
+    }
+
+    case LookupStatus.Unknown: {
+      return {
+        status: LookupStatus.Unknown,
+      };
+    }
+
+    default: {
+      throw UNREACHABLE_ERROR;
+    }
+  }
+}
+
+/**
+ * Lookup a subtree in a tree.
+ * @param path the path to look up
+ * @param tree the tree to search
+ * @returns {SubtreeLookupResult} the result of the lookup
+ */
+export function lookup_subtree(path: NodePath, tree: HashTree): SubtreeLookupResult {
+  if (path.length === 0) {
+    return {
+      status: LookupStatus.Found,
+      value: tree,
+    };
+  }
+
+  const label = pathToLabel(path);
+  const lookupResult = find_label(label, tree);
+
+  switch (lookupResult.status) {
+    case LookupStatus.Found: {
+      return lookup_subtree(path.slice(1), lookupResult.value);
+    }
+
+    case LookupStatus.Unknown: {
+      return {
+        status: LookupStatus.Unknown,
+      };
+    }
+
+    case LookupStatus.Absent:
     case LabelLookupStatus.Greater:
     case LabelLookupStatus.Less: {
       return {
@@ -518,7 +587,7 @@ export function lookup_path(path: Array<ArrayBuffer | string>, tree: HashTree): 
     }
 
     default: {
-      return lookupResult;
+      throw UNREACHABLE_ERROR;
     }
   }
 }
@@ -528,12 +597,12 @@ export function lookup_path(path: Array<ArrayBuffer | string>, tree: HashTree): 
  * @param {HashTree} t the tree to flatten
  * @returns {HashTree[]} the flattened tree
  */
-export function flatten_forks(t: HashTree): HashTree[] {
+export function flatten_forks(t: HashTree): Array<LabeledHashTree | LeafHashTree | PrunedHashTree> {
   switch (t[0]) {
     case NodeType.Empty:
       return [];
     case NodeType.Fork:
-      return flatten_forks(t[1] as HashTree).concat(flatten_forks(t[2] as HashTree));
+      return flatten_forks(t[1]).concat(flatten_forks(t[2]));
     default:
       return [t];
   }
