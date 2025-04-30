@@ -12,6 +12,7 @@ import {
   RejectError,
   RequestStatusDoneNoReplyErrorCode,
   UnknownError,
+  UNREACHABLE_ERROR,
 } from '../errors';
 
 export * as strategy from './strategy';
@@ -159,7 +160,7 @@ export async function pollForResponse(
     blsVerify: options.blsVerify,
   });
 
-  const maybeBuf = lookupResultToBuffer(cert.lookup([...path, strToUtf8('status')]));
+  const maybeBuf = lookupResultToBuffer(cert.lookup_path([...path, strToUtf8('status')]));
   let status;
   if (typeof maybeBuf === 'undefined') {
     // Missing requestId means we need to wait
@@ -171,7 +172,7 @@ export async function pollForResponse(
   switch (status) {
     case RequestStatusResponseStatus.Replied: {
       return {
-        reply: lookupResultToBuffer(cert.lookup([...path, 'reply']))!,
+        reply: lookupResultToBuffer(cert.lookup_path([...path, 'reply']))!,
         certificate: cert,
       };
     }
@@ -190,12 +191,12 @@ export async function pollForResponse(
 
     case RequestStatusResponseStatus.Rejected: {
       const rejectCode = new Uint8Array(
-        lookupResultToBuffer(cert.lookup([...path, 'reject_code']))!,
+        lookupResultToBuffer(cert.lookup_path([...path, 'reject_code']))!,
       )[0];
       const rejectMessage = new TextDecoder().decode(
-        lookupResultToBuffer(cert.lookup([...path, 'reject_message']))!,
+        lookupResultToBuffer(cert.lookup_path([...path, 'reject_message']))!,
       );
-      const errorCodeBuf = lookupResultToBuffer(cert.lookup([...path, 'error_code']));
+      const errorCodeBuf = lookupResultToBuffer(cert.lookup_path([...path, 'error_code']));
       const errorCode = errorCodeBuf ? new TextDecoder().decode(errorCodeBuf) : undefined;
       throw RejectError.fromCode(
         new CertifiedRejectErrorCode(requestId, rejectCode, rejectMessage, errorCode),
@@ -207,7 +208,7 @@ export async function pollForResponse(
       // we don't know the result and cannot decode it.
       throw UnknownError.fromCode(new RequestStatusDoneNoReplyErrorCode(requestId));
   }
-  throw new Error('unreachable');
+  throw UNREACHABLE_ERROR;
 }
 
 // Determine if we should reuse the read state request or create a new one

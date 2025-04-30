@@ -509,24 +509,24 @@ function _createActorMethod(
         });
         const path = [strToUtf8('request_status'), requestId];
         const status = new TextDecoder().decode(
-          lookupResultToBuffer(certificate.lookup([...path, 'status'])),
+          lookupResultToBuffer(certificate.lookup_path([...path, 'status'])),
         );
 
         switch (status) {
           case 'replied':
-            reply = lookupResultToBuffer(certificate.lookup([...path, 'reply']));
+            reply = lookupResultToBuffer(certificate.lookup_path([...path, 'reply']));
             break;
           case 'rejected': {
             // Find rejection details in the certificate
             const rejectCode = new Uint8Array(
-              lookupResultToBuffer(certificate.lookup([...path, 'reject_code']))!,
+              lookupResultToBuffer(certificate.lookup_path([...path, 'reject_code']))!,
             )[0];
             const rejectMessage = new TextDecoder().decode(
-              lookupResultToBuffer(certificate.lookup([...path, 'reject_message']))!,
+              lookupResultToBuffer(certificate.lookup_path([...path, 'reject_message']))!,
             );
 
             const error_code_buf = lookupResultToBuffer(
-              certificate.lookup([...path, 'error_code']),
+              certificate.lookup_path([...path, 'error_code']),
             );
             const error_code = error_code_buf
               ? new TextDecoder().decode(error_code_buf)

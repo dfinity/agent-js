@@ -5,7 +5,7 @@
  */
 import * as cbor from './cbor';
 import * as Cert from './certificate';
-import { bufEquals, fromHex, toHex } from './utils/buffer';
+import { bufEquals, fromHex, strToUtf8, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
 import { decodeTime } from './utils/leb';
 import { readFileSync } from 'fs';
@@ -18,14 +18,19 @@ import {
   CertificateVerificationErrorCode,
   ProtocolError,
   TrustError,
+  UNREACHABLE_ERROR,
 } from './errors';
 
-function label(str: string): ArrayBuffer {
-  return new TextEncoder().encode(str);
+function label(str: string): Cert.NodeLabel {
+  return strToUtf8(str) as Cert.NodeLabel;
 }
 
-function pruned(str: string): ArrayBuffer {
-  return fromHex(str);
+function pruned(str: string): Cert.NodeHash {
+  return fromHex(str) as Cert.NodeHash;
+}
+
+function value(str: string): Cert.NodeValue {
+  return strToUtf8(str) as Cert.NodeValue;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,18 +52,18 @@ test('hash tree', async () => {
           Cert.NodeType.Fork,
           [
             Cert.NodeType.Fork,
-            [Cert.NodeType.Labeled, label('x'), [3, label('hello')]],
+            [Cert.NodeType.Labeled, label('x'), [Cert.NodeType.Leaf, value('hello')]],
             [Cert.NodeType.Empty],
           ],
-          [Cert.NodeType.Labeled, label('y'), [Cert.NodeType.Leaf, label('world')]],
+          [Cert.NodeType.Labeled, label('y'), [Cert.NodeType.Leaf, value('world')]],
         ],
       ],
-      [Cert.NodeType.Labeled, label('b'), [Cert.NodeType.Leaf, label('good')]],
+      [Cert.NodeType.Labeled, label('b'), [Cert.NodeType.Leaf, value('good')]],
     ],
     [
       Cert.NodeType.Fork,
       [Cert.NodeType.Labeled, label('c'), [Cert.NodeType.Empty]],
-      [Cert.NodeType.Labeled, label('d'), [Cert.NodeType.Leaf, label('morning')]],
+      [Cert.NodeType.Labeled, label('d'), [Cert.NodeType.Leaf, value('morning')]],
     ],
   ];
   const tree: Cert.HashTree = cbor.decode(new Uint8Array(cborEncode));
@@ -86,7 +91,7 @@ test('pruned hash tree', async () => {
         [
           Cert.NodeType.Fork,
           [4, pruned('1b4feff9bef8131788b0c9dc6dbad6e81e524249c879e9f10f71ce3749f5a638')],
-          [Cert.NodeType.Labeled, label('y'), [Cert.NodeType.Leaf, label('world')]],
+          [Cert.NodeType.Labeled, label('y'), [Cert.NodeType.Leaf, value('world')]],
         ],
       ],
       [
@@ -104,7 +109,7 @@ test('pruned hash tree', async () => {
         Cert.NodeType.Pruned,
         pruned('ec8324b8a1f1ac16bd2e806edba78006479c9877fed4eb464a25485465af601d'),
       ],
-      [Cert.NodeType.Labeled, label('d'), [Cert.NodeType.Leaf, label('morning')]],
+      [Cert.NodeType.Labeled, label('d'), [Cert.NodeType.Leaf, value('morning')]],
     ],
   ];
   const tree: Cert.HashTree = cbor.decode(new Uint8Array(cborEncode));
@@ -114,7 +119,7 @@ test('pruned hash tree', async () => {
   );
 });
 
-describe('lookup', () => {
+describe('lookup_path and find_label', () => {
   const tree: Cert.HashTree = [
     Cert.NodeType.Fork,
     [
@@ -129,14 +134,14 @@ describe('lookup', () => {
             pruned('1b842dfc254abb83e61bcdd7b7c24492322a2e1b006e6d20b88bedd147c248fc'),
           ],
         ],
-        [Cert.NodeType.Labeled, label('c'), [Cert.NodeType.Leaf, label('hello')]],
+        [Cert.NodeType.Labeled, label('c'), [Cert.NodeType.Leaf, value('hello')]],
       ],
       [
         Cert.NodeType.Labeled,
         label('d'),
         [
           Cert.NodeType.Fork,
-          [Cert.NodeType.Labeled, label('1'), [Cert.NodeType.Leaf, label('42')]],
+          [Cert.NodeType.Labeled, label('1'), [Cert.NodeType.Leaf, value('42')]],
           [
             Cert.NodeType.Pruned,
             pruned('5ec92bd71f697eee773919200a9718c4719495a4c6bba52acc408bd79b4bf57f'),
@@ -146,7 +151,7 @@ describe('lookup', () => {
     ],
     [
       Cert.NodeType.Fork,
-      [Cert.NodeType.Labeled, label('e'), [Cert.NodeType.Leaf, label('world')]],
+      [Cert.NodeType.Labeled, label('e'), [Cert.NodeType.Leaf, value('world')]],
       [Cert.NodeType.Labeled, label('g'), [Cert.NodeType.Empty]],
     ],
   ];
@@ -155,14 +160,14 @@ describe('lookup', () => {
     // a subtree at label `a` exists
     const lookup_a = Cert.find_label(label('a'), tree);
     expect(lookup_a).toEqual({
-      status: Cert.LookupStatus.Found,
+      status: Cert.LookupPathStatus.Found,
       value: [
         Cert.NodeType.Pruned,
         pruned('1b842dfc254abb83e61bcdd7b7c24492322a2e1b006e6d20b88bedd147c248fc'),
       ],
     });
     expect(Cert.lookup_path([label('a')], tree)).toEqual({
-      status: Cert.LookupStatus.Found,
+      status: Cert.LookupPathStatus.Found,
       value: [
         Cert.NodeType.Pruned,
         pruned('1b842dfc254abb83e61bcdd7b7c24492322a2e1b006e6d20b88bedd147c248fc'),
@@ -171,26 +176,26 @@ describe('lookup', () => {
 
     // the subtree at label `a` is pruned,
     // so any nested lookups should return Unknown
-    const tree_a = (lookup_a as Cert.LookupResultFound).value as Cert.HashTree;
+    const tree_a = (lookup_a as Cert.LookupLabelResultFound).value;
 
     expect(Cert.find_label(label('1'), tree_a)).toEqual({
-      status: Cert.LookupStatus.Unknown,
+      status: Cert.LookupPathStatus.Unknown,
     });
     expect(Cert.lookup_path([label('1')], tree_a)).toEqual({
-      status: Cert.LookupStatus.Unknown,
+      status: Cert.LookupPathStatus.Unknown,
     });
     expect(Cert.lookup_path([label('a'), label('1')], tree)).toEqual({
-      status: Cert.LookupStatus.Unknown,
+      status: Cert.LookupPathStatus.Unknown,
     });
 
     expect(Cert.find_label(label('2'), tree_a)).toEqual({
-      status: Cert.LookupStatus.Unknown,
+      status: Cert.LookupPathStatus.Unknown,
     });
     expect(Cert.lookup_path([label('2')], tree_a)).toEqual({
-      status: Cert.LookupStatus.Unknown,
+      status: Cert.LookupPathStatus.Unknown,
     });
     expect(Cert.lookup_path([label('a'), label('2')], tree)).toEqual({
-      status: Cert.LookupStatus.Unknown,
+      status: Cert.LookupPathStatus.Unknown,
     });
   });
 
@@ -198,21 +203,21 @@ describe('lookup', () => {
     // there are no nodes between labels `a` and `c`,
     // so the subtree at label `b` is provably Absent
     expect(Cert.find_label(label('b'), tree)).toEqual({
-      status: Cert.LookupStatus.Absent,
+      status: Cert.LookupPathStatus.Absent,
     });
     expect(Cert.lookup_path([label('b')], tree)).toEqual({
-      status: Cert.LookupStatus.Absent,
+      status: Cert.LookupPathStatus.Absent,
     });
   });
 
   test('subtree_c', () => {
     // a subtree at label `c` exists
     expect(Cert.find_label(label('c'), tree)).toEqual({
-      status: Cert.LookupStatus.Found,
+      status: Cert.LookupPathStatus.Found,
       value: [Cert.NodeType.Leaf, label('hello')],
     });
     expect(Cert.lookup_path([label('c')], tree)).toEqual({
-      status: Cert.LookupStatus.Found,
+      status: Cert.LookupPathStatus.Found,
       value: label('hello'),
     });
   });
@@ -221,7 +226,7 @@ describe('lookup', () => {
     // a subtree at label `d` exists
     const lookup_d = Cert.find_label(label('d'), tree);
     expect(lookup_d).toEqual({
-      status: Cert.LookupStatus.Found,
+      status: Cert.LookupPathStatus.Found,
       value: [
         Cert.NodeType.Fork,
         [Cert.NodeType.Labeled, label('1'), [Cert.NodeType.Leaf, label('42')]],
@@ -232,7 +237,7 @@ describe('lookup', () => {
       ],
     });
     expect(Cert.lookup_path([label('d')], tree)).toEqual({
-      status: Cert.LookupStatus.Found,
+      status: Cert.LookupPathStatus.Found,
       value: [
         Cert.NodeType.Fork,
         [Cert.NodeType.Labeled, label('1'), [Cert.NodeType.Leaf, label('42')]],
@@ -243,42 +248,42 @@ describe('lookup', () => {
       ],
     });
 
-    const tree_d = (lookup_d as Cert.LookupResultFound).value as Cert.HashTree;
+    const tree_d = (lookup_d as Cert.LookupLabelResultFound).value;
     // a subtree at label `1` exists in the subtree at label `d`
     expect(Cert.find_label(label('1'), tree_d)).toEqual({
-      status: Cert.LookupStatus.Found,
+      status: Cert.LookupPathStatus.Found,
       value: [Cert.NodeType.Leaf, label('42')],
     });
     expect(Cert.lookup_path([label('1')], tree_d)).toEqual({
-      status: Cert.LookupStatus.Found,
+      status: Cert.LookupPathStatus.Found,
       value: label('42'),
     });
     expect(Cert.lookup_path([label('d'), label('1')], tree)).toEqual({
-      status: Cert.LookupStatus.Found,
+      status: Cert.LookupPathStatus.Found,
       value: label('42'),
     });
 
     // the rest of the subtree at label `d` is pruned,
     // so any more lookups return Unknown
     expect(Cert.find_label(label('2'), tree_d)).toEqual({
-      status: Cert.LookupStatus.Unknown,
+      status: Cert.LookupPathStatus.Unknown,
     });
     expect(Cert.lookup_path([label('2')], tree_d)).toEqual({
-      status: Cert.LookupStatus.Unknown,
+      status: Cert.LookupPathStatus.Unknown,
     });
     expect(Cert.lookup_path([label('d'), label('2')], tree)).toEqual({
-      status: Cert.LookupStatus.Unknown,
+      status: Cert.LookupPathStatus.Unknown,
     });
   });
 
   test('subtree_e', () => {
     // a subtree at label `e` exists
     expect(Cert.find_label(label('e'), tree)).toEqual({
-      status: Cert.LookupStatus.Found,
+      status: Cert.LookupPathStatus.Found,
       value: [Cert.NodeType.Leaf, label('world')],
     });
     expect(Cert.lookup_path([label('e')], tree)).toEqual({
-      status: Cert.LookupStatus.Found,
+      status: Cert.LookupPathStatus.Found,
       value: label('world'),
     });
   });
@@ -287,10 +292,10 @@ describe('lookup', () => {
     // there are no nodes between labels `e` and `g`,
     // so the subtree at `f` is provably Absent
     expect(Cert.find_label(label('f'), tree)).toEqual({
-      status: Cert.LookupStatus.Absent,
+      status: Cert.LookupPathStatus.Absent,
     });
     expect(Cert.lookup_path([label('f')], tree)).toEqual({
-      status: Cert.LookupStatus.Absent,
+      status: Cert.LookupPathStatus.Absent,
     });
   });
 
@@ -298,34 +303,51 @@ describe('lookup', () => {
     // a subtree at label `g` exists
     const lookup_g = Cert.find_label(label('g'), tree);
     expect(lookup_g).toEqual({
-      status: Cert.LookupStatus.Found,
+      status: Cert.LookupPathStatus.Found,
       value: [Cert.NodeType.Empty],
     });
     expect(Cert.lookup_path([label('g')], tree)).toEqual({
-      status: Cert.LookupStatus.Found,
+      status: Cert.LookupPathStatus.Found,
       value: [Cert.NodeType.Empty],
     });
 
     // the subtree at label `g` is empty so any nested lookup are provably Absent
-    const tree_g = (lookup_g as Cert.LookupResultFound).value as Cert.HashTree;
+    const tree_g = (lookup_g as Cert.LookupLabelResultFound).value;
     expect(Cert.find_label(label('1'), tree_g)).toEqual({
-      status: Cert.LookupStatus.Absent,
+      status: Cert.LookupPathStatus.Absent,
     });
     expect(Cert.lookup_path([label('1')], tree_g)).toEqual({
-      status: Cert.LookupStatus.Absent,
+      status: Cert.LookupPathStatus.Absent,
     });
     expect(Cert.lookup_path([label('g'), label('1')], tree)).toEqual({
-      status: Cert.LookupStatus.Absent,
+      status: Cert.LookupPathStatus.Absent,
     });
 
     expect(Cert.find_label(label('2'), tree_g)).toEqual({
-      status: Cert.LookupStatus.Absent,
+      status: Cert.LookupPathStatus.Absent,
     });
     expect(Cert.lookup_path([label('2')], tree_g)).toEqual({
-      status: Cert.LookupStatus.Absent,
+      status: Cert.LookupPathStatus.Absent,
     });
     expect(Cert.lookup_path([label('g'), label('2')], tree)).toEqual({
-      status: Cert.LookupStatus.Absent,
+      status: Cert.LookupPathStatus.Absent,
+    });
+  });
+
+  test('returns absent when node is empty', () => {
+    const tree: Cert.HashTree = [Cert.NodeType.Empty];
+    expect(Cert.lookup_path([], tree)).toEqual({
+      status: Cert.LookupPathStatus.Absent,
+    });
+  });
+
+  test('returns unknown when node is pruned', () => {
+    const tree: Cert.HashTree = [
+      Cert.NodeType.Pruned,
+      pruned('1b842dfc254abb83e61bcdd7b7c24492322a2e1b006e6d20b88bedd147c248fc'),
+    ];
+    expect(Cert.lookup_path([], tree)).toEqual({
+      status: Cert.LookupPathStatus.Unknown,
     });
   });
 
@@ -340,7 +362,7 @@ describe('lookup', () => {
     const treeWithInvalidLeaf: Cert.HashTree = [
       Cert.NodeType.Fork,
       [Cert.NodeType.Labeled, label('invalid'), invalidLeaf],
-      [Cert.NodeType.Labeled, label('valid'), [Cert.NodeType.Leaf, label('hello')]],
+      [Cert.NodeType.Labeled, label('valid'), [Cert.NodeType.Leaf, value('hello')]],
     ];
 
     // Lookup path to invalid leaf should throw
@@ -350,9 +372,160 @@ describe('lookup', () => {
 
     // Lookup path to valid leaf should still work
     expect(Cert.lookup_path([label('valid')], treeWithInvalidLeaf)).toEqual({
-      status: Cert.LookupStatus.Found,
+      status: Cert.LookupPathStatus.Found,
       value: label('hello'),
     });
+  });
+
+  test('returns error when path is incomplete for Fork node', () => {
+    const tree: Cert.HashTree = [
+      Cert.NodeType.Fork,
+      [Cert.NodeType.Labeled, label('a'), [Cert.NodeType.Leaf, value('value')]],
+      [Cert.NodeType.Empty],
+    ];
+
+    const result = Cert.lookup_path([], tree);
+    expect(result.status).toEqual(Cert.LookupPathStatus.Error);
+  });
+
+  test('returns error when path is incomplete for Labeled node', () => {
+    const tree: Cert.HashTree = [
+      Cert.NodeType.Fork,
+      [
+        Cert.NodeType.Labeled,
+        label('a'),
+        [Cert.NodeType.Fork, [Cert.NodeType.Empty], [Cert.NodeType.Empty]],
+      ],
+      [Cert.NodeType.Empty],
+    ];
+
+    const result = Cert.lookup_path([label('a')], tree);
+    expect(result.status).toEqual(Cert.LookupPathStatus.Error);
+  });
+
+  test('returns error when path is incomplete for nested structure', () => {
+    const tree: Cert.HashTree = [
+      Cert.NodeType.Fork,
+      [
+        Cert.NodeType.Labeled,
+        label('a'),
+        [
+          Cert.NodeType.Fork,
+          [Cert.NodeType.Labeled, label('b'), [Cert.NodeType.Leaf, value('value')]],
+          [Cert.NodeType.Empty],
+        ],
+      ],
+      [Cert.NodeType.Empty],
+    ];
+
+    const result = Cert.lookup_path([label('a')], tree);
+    expect(result.status).toEqual(Cert.LookupPathStatus.Error);
+  });
+
+  test('throws the unreachable error if the HashTree is malformed', () => {
+    const tree = [5, [Cert.NodeType.Empty], [Cert.NodeType.Empty]] as unknown as Cert.HashTree;
+    expect(() => Cert.lookup_path([], tree)).toThrow(UNREACHABLE_ERROR);
+  });
+});
+
+describe('lookup_path with different value types', () => {
+  test('handles ArrayBuffer values', () => {
+    const buffer = new ArrayBuffer(4);
+    const tree: Cert.HashTree = [
+      Cert.NodeType.Fork,
+      [Cert.NodeType.Labeled, label('arraybuffer'), [Cert.NodeType.Leaf, buffer as Cert.NodeValue]],
+      [Cert.NodeType.Empty],
+    ];
+
+    const result = Cert.lookup_path([label('arraybuffer')], tree) as Cert.LookupPathResultFound;
+    expect(result.status).toEqual(Cert.LookupPathStatus.Found);
+    expect(result.value).toBeInstanceOf(ArrayBuffer);
+  });
+
+  test('handles Uint8Array values', () => {
+    const uint8Array = new Uint8Array(4);
+    const tree: Cert.HashTree = [
+      Cert.NodeType.Fork,
+      [
+        Cert.NodeType.Labeled,
+        label('uint8array'),
+        [Cert.NodeType.Leaf, uint8Array as Cert.NodeValue],
+      ],
+      [Cert.NodeType.Empty],
+    ];
+
+    const result = Cert.lookup_path([label('uint8array')], tree) as Cert.LookupPathResultFound;
+    expect(result.status).toEqual(Cert.LookupPathStatus.Found);
+    expect(result.value).toBeInstanceOf(ArrayBuffer);
+  });
+
+  test('throws the unreachable error if the value is not an ArrayBuffer or Uint8Array', () => {
+    const tree: Cert.HashTree = [
+      Cert.NodeType.Fork,
+      [
+        Cert.NodeType.Labeled,
+        label('unreachable'),
+        [Cert.NodeType.Leaf, 'not an ArrayBuffer or Uint8Array' as unknown as Cert.NodeValue],
+      ],
+      [Cert.NodeType.Empty],
+    ];
+
+    expect(() => Cert.lookup_path([label('unreachable')], tree)).toThrow(UNREACHABLE_ERROR);
+  });
+});
+
+describe('lookup_subtree', () => {
+  const tree: Cert.HashTree = [
+    Cert.NodeType.Fork,
+    [
+      Cert.NodeType.Fork,
+      [
+        Cert.NodeType.Labeled,
+        label('a'),
+        [
+          Cert.NodeType.Pruned,
+          pruned('1b842dfc254abb83e61bcdd7b7c24492322a2e1b006e6d20b88bedd147c248fc'),
+        ],
+      ],
+      [Cert.NodeType.Labeled, label('c'), [Cert.NodeType.Leaf, value('hello')]],
+    ],
+    [
+      Cert.NodeType.Labeled,
+      label('d'),
+      [
+        Cert.NodeType.Fork,
+        [Cert.NodeType.Labeled, label('1'), [Cert.NodeType.Leaf, value('42')]],
+        [
+          Cert.NodeType.Pruned,
+          pruned('5ec92bd71f697eee773919200a9718c4719495a4c6bba52acc408bd79b4bf57f'),
+        ],
+      ],
+    ],
+  ];
+
+  test('empty path returns full tree', () => {
+    const result = Cert.lookup_subtree([], tree) as Cert.LookupSubtreeResultFound;
+    expect(result.status).toEqual(Cert.LookupPathStatus.Found);
+    expect(result.value).toEqual(tree);
+  });
+
+  test('valid path returns subtree', () => {
+    const result = Cert.lookup_subtree(
+      [label('d'), label('1')],
+      tree,
+    ) as Cert.LookupSubtreeResultFound;
+    expect(result.status).toEqual(Cert.LookupPathStatus.Found);
+    expect(result.value).toEqual([Cert.NodeType.Leaf, value('42')]);
+  });
+
+  test('pruned path returns unknown', () => {
+    const result = Cert.lookup_subtree([label('a'), label('x')], tree);
+    expect(result.status).toEqual(Cert.LookupPathStatus.Unknown);
+  });
+
+  test('non-existent path returns absent', () => {
+    const result = Cert.lookup_subtree([label('b')], tree);
+    expect(result.status).toEqual(Cert.LookupPathStatus.Absent);
   });
 });
 

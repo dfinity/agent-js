@@ -8,7 +8,7 @@ import {
   HashTree,
   lookup_path,
   lookupResultToBuffer,
-  LookupStatus,
+  LookupPathStatus,
   reconstruct,
   uint8ToBuf,
 } from '@dfinity/agent';
@@ -548,8 +548,11 @@ class Asset {
     }
 
     // Check certificate time
-    const timeLookup = cert.lookup(['time']);
-    if (timeLookup.status !== LookupStatus.Found || !(timeLookup.value instanceof ArrayBuffer)) {
+    const timeLookup = cert.lookup_path(['time']);
+    if (
+      timeLookup.status !== LookupPathStatus.Found ||
+      !(timeLookup.value instanceof ArrayBuffer)
+    ) {
       return false;
     }
 
@@ -563,9 +566,9 @@ class Asset {
 
     const hashTree: HashTree = cbor.decode(new Uint8Array(tree));
     const reconstructed = await reconstruct(hashTree);
-    const witness = cert.lookup(['canister', canisterId.toUint8Array(), 'certified_data']);
+    const witness = cert.lookup_path(['canister', canisterId.toUint8Array(), 'certified_data']);
 
-    if (witness.status !== LookupStatus.Found || !(witness.value instanceof ArrayBuffer)) {
+    if (witness.status !== LookupPathStatus.Found || !(witness.value instanceof ArrayBuffer)) {
       // Could not find certified data for this canister in the certificate
       return false;
     }

@@ -4,6 +4,7 @@ import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
 import { Expiry, RequestStatusResponseStatus } from './agent/http';
 import { HttpHeaderField } from './agent/http/types';
+import { LookupPathStatus, LookupSubtreeStatus } from './certificate';
 
 export enum ErrorKindEnum {
   Trust = 'Trust',
@@ -250,9 +251,38 @@ export class CertificateNotAuthorizedErrorCode extends ErrorCode {
 export class LookupErrorCode extends ErrorCode {
   public name = 'LookupErrorCode';
 
-  constructor(public readonly message: string) {
+  constructor(
+    public readonly message: string,
+    public readonly lookupStatus: LookupPathStatus | LookupSubtreeStatus,
+  ) {
     super();
     Object.setPrototypeOf(this, LookupErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    return `${this.message}. Lookup status: ${this.lookupStatus}`;
+  }
+}
+
+export class MalformedLookupFoundValueErrorCode extends ErrorCode {
+  public name = 'MalformedLookupFoundValueErrorCode';
+
+  constructor(public readonly message: string) {
+    super();
+    Object.setPrototypeOf(this, MalformedLookupFoundValueErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    return this.message;
+  }
+}
+
+export class MissingLookupValueErrorCode extends ErrorCode {
+  public name = 'MissingLookupValueErrorCode';
+
+  constructor(public readonly message: string) {
+    super();
+    Object.setPrototypeOf(this, MissingLookupValueErrorCode.prototype);
   }
 
   public toErrorMessage(): string {
@@ -703,3 +733,10 @@ export class ExpiryJsonDeserializeErrorCode extends ErrorCode {
     return `Failed to deserialize expiry: ${this.error}`;
   }
 }
+
+/**
+ * Special error used to indicate that a code path is unreachable.
+ *
+ * For internal use only.
+ */
+export const UNREACHABLE_ERROR = new Error('unreachable');
