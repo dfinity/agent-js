@@ -1,8 +1,8 @@
 import {
   ActorMethod,
   Certificate,
-  LookupResultFound,
-  LookupStatus,
+  LookupPathResultFound,
+  LookupPathStatus,
   getManagementCanister,
   strToUtf8,
 } from '@dfinity/agent';
@@ -50,17 +50,16 @@ test('read_state', async () => {
     rootKey: resolvedAgent.rootKey,
     canisterId: ecid,
   });
-  expect(cert.lookup([strToUtf8('Time')])).toEqual({
-    status: LookupStatus.Unknown,
+  expect(cert.lookup_path([strToUtf8('Time')])).toEqual({
+    status: LookupPathStatus.Unknown,
   });
 
-  let rawTime = cert.lookup(path);
+  let rawTime = cert.lookup_path(path);
 
-  expect(rawTime.status).toEqual(LookupStatus.Found);
-  rawTime = rawTime as LookupResultFound;
+  expect(rawTime.status).toEqual(LookupPathStatus.Found);
+  rawTime = rawTime as LookupPathResultFound;
 
   expect(rawTime.value).toBeInstanceOf(ArrayBuffer);
-  rawTime.value = rawTime.value as ArrayBuffer;
 
   const decoded = new IDL.NatClass().decodeValue(new PipeArrayBuffer(rawTime.value), IDL.Nat);
   const time = Number(decoded) / 1e9;
@@ -81,17 +80,16 @@ test('read_state with passed request', async () => {
     rootKey: resolvedAgent.rootKey,
     canisterId: canisterId,
   });
-  expect(cert.lookup([strToUtf8('Time')])).toEqual({
-    status: LookupStatus.Unknown,
+  expect(cert.lookup_path([strToUtf8('Time')])).toEqual({
+    status: LookupPathStatus.Unknown,
   });
 
-  let rawTime = cert.lookup(path);
+  let rawTime = cert.lookup_path(path);
 
-  expect(rawTime.status).toEqual(LookupStatus.Found);
-  rawTime = rawTime as LookupResultFound;
+  expect(rawTime.status).toEqual(LookupPathStatus.Found);
+  rawTime = rawTime as LookupPathResultFound;
 
   expect(rawTime.value).toBeInstanceOf(ArrayBuffer);
-  rawTime.value = rawTime.value as ArrayBuffer;
 
   const decoded = new IDL.NatClass().decodeValue(new PipeArrayBuffer(rawTime.value), IDL.Nat);
   const time = Number(decoded) / 1e9;

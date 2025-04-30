@@ -24,6 +24,7 @@ import {
   TransportError,
   HttpFetchErrorCode,
   AgentError,
+  MalformedLookupFoundValueErrorCode,
 } from '../../errors';
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
@@ -54,12 +55,13 @@ import {
   ReadStateRequest,
 } from './types';
 import { SubnetStatus, request } from '../../canisterStatus';
-import { HashTree, LookupStatus, lookup_path } from '../../certificate';
+import { HashTree, LookupPathStatus, lookup_path } from '../../certificate';
 import { ed25519 } from '@noble/curves/ed25519';
 import { ExpirableMap } from '../../utils/expirableMap';
 import { Ed25519PublicKey } from '../../public_key';
 import { ObservableLog } from '../../observable';
 import { BackoffStrategy, BackoffStrategyFactory, ExponentialBackoff } from '../../polling/backoff';
+import { decodeTime } from '../../utils/leb';
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
 
@@ -1203,21 +1205,24 @@ export class HttpAgent implements Agent {
         );
       }
       const timeLookup = lookup_path(['time'], tree);
-      if (timeLookup.status !== LookupStatus.Found) {
+      if (timeLookup.status !== LookupPathStatus.Found) {
         throw ProtocolError.fromCode(
           new LookupErrorCode(
             'Time was not found in the response or was not in its expected format.',
+            timeLookup.status,
           ),
         );
       }
 
       if (!(timeLookup.value instanceof ArrayBuffer) && !ArrayBuffer.isView(timeLookup)) {
         throw ProtocolError.fromCode(
-          new LookupErrorCode(
-            'Time was not found in the response or was not in its expected format.',
-          ),
+          new MalformedLookupFoundValueErrorCode('Time was not in its expected format.'),
         );
       }
+      const date = decodeTime(timeLookup.value);
+      this.log.print('Time from response:', date);
+      this.log.print('Time from response in milliseconds:', Number(date));
+      return Number(date);
     } else {
       this.log.warn('No certificate found in response');
     }

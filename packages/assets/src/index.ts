@@ -8,8 +8,8 @@ import {
   HttpAgent,
   lookup_path,
   lookupResultToBuffer,
-  LookupStatus,
   reconstruct,
+  LookupStatus,
 } from '@dfinity/agent';
 import { lebDecode } from '@dfinity/candid';
 import { PipeArrayBuffer } from '@dfinity/candid/lib/cjs/utils/buffer';

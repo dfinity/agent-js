@@ -11,9 +11,12 @@ import {
   TrustError,
   UnknownError,
   HashTreeDecodeErrorCode,
+  UNREACHABLE_ERROR,
+  MalformedLookupFoundValueErrorCode,
+  MissingLookupValueErrorCode,
 } from './errors';
 import { hash } from './request_id';
-import { uint8Equals, concat, fromHex, toHex, uint8FromBufLike } from '@dfinity/candid';
+import { uint8Equals, concat, fromHex, toHex, uint8FromBufLike, strToUtf8 } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import * as bls from './utils/bls';
 import { decodeTime } from './utils/leb';
@@ -33,14 +36,23 @@ export enum NodeType {
   Pruned = 4,
 }
 
-export type NodeLabel = Uint8Array;
+export type NodePath = Array<Uint8Array | string>;
+export type NodeLabel = (Uint8Array | Uint8Array) & { __nodeLabel__: void };
+export type NodeValue = (Uint8Array | Uint8Array) & { __nodeValue__: void };
+export type NodeHash = (Uint8Array | Uint8Array) & { __nodeHash__: void };
+
+export type EmptyHashTree = [NodeType.Empty];
+export type ForkHashTree = [NodeType.Fork, HashTree, HashTree];
+export type LabeledHashTree = [NodeType.Labeled, NodeLabel, HashTree];
+export type LeafHashTree = [NodeType.Leaf, NodeValue];
+export type PrunedHashTree = [NodeType.Pruned, NodeHash];
 
 export type HashTree =
-  | [NodeType.Empty]
-  | [NodeType.Fork, HashTree, HashTree]
-  | [NodeType.Labeled, NodeLabel, HashTree]
-  | [NodeType.Leaf, NodeLabel]
-  | [NodeType.Pruned, NodeLabel];
+  | EmptyHashTree
+  | ForkHashTree
+  | LabeledHashTree
+  | LeafHashTree
+  | PrunedHashTree;
 
 /**
  * Make a human readable string out of a hash tree.
@@ -209,13 +221,22 @@ export class Certificate {
     this.cert = cbor.decode(new Uint8Array(certificate));
   }
 
-  public lookup(path: Array<Uint8Array | string>): LookupResult {
-    // constrain the type of the result, so that empty HashTree is undefined
+  /**
+   * Lookup a path in the certificate tree, using {@link lookup_path}.
+   * @param path The path to lookup.
+   * @returns The result of the lookup.
+   */
+  public lookup_path(path: NodePath): LookupResult {
     return lookup_path(path, this.cert.tree);
   }
 
-  public lookup_label(label: Uint8Array): LookupResult {
-    return this.lookup([label]);
+  /**
+   * Lookup a subtree in the certificate tree, using {@link lookup_subtree}.
+   * @param path The path to lookup.
+   * @returns The result of the lookup.
+   */
+  public lookup_subtree(path: NodePath): SubtreeLookupResult {
+    return lookup_subtree(path, this.cert.tree);
   }
 
   private async verify(): Promise<void> {
@@ -226,7 +247,7 @@ export class Certificate {
     const msg = concat(domain_sep('ic-state-root'), rootHash);
     let sigVer = false;
 
-    const lookupTime = lookupResultToBuffer(this.lookup(['time']));
+    const lookupTime = lookupResultToBuffer(this.lookup_path(['time']));
     if (!lookupTime) {
       // Should never happen - time is always present in IC certificates
       throw ProtocolError.fromCode(
@@ -301,11 +322,13 @@ export class Certificate {
       }
     }
     const publicKeyLookup = lookupResultToBuffer(
-      cert.lookup(['subnet', d.subnet_id, 'public_key']),
+      cert.lookup_path(['subnet', d.subnet_id, 'public_key']),
     );
     if (!publicKeyLookup) {
       throw TrustError.fromCode(
-        new LookupErrorCode(`Could not find subnet key for subnet 0x${toHex(d.subnet_id)}`),
+        new MissingLookupValueErrorCode(
+          `Could not find subnet key for subnet 0x${toHex(d.subnet_id)}`,
+        ),
       );
     }
     return publicKeyLookup;
@@ -336,12 +359,12 @@ function extractDER(buf: Uint8Array): Uint8Array {
  * @returns {Uint8Array | undefined} the value if the lookup was found, `undefined` otherwise
  */
 export function lookupResultToBuffer(result: LookupResult): Uint8Array | undefined {
-  if (result.status !== LookupStatus.Found) {
+  if (result.status !== LookupPathStatus.Found) {
     return undefined;
   }
 
   // Attepmt to decode the value as a Uint8Array
-  const uint8Result = uint8FromBufLike(result.value as Uint8Array);
+  const uint8Result = uint8FromBufLike(result.value);
 
   if (uint8Result instanceof Uint8Array) {
     return uint8Result;
@@ -358,27 +381,17 @@ export async function reconstruct(t: HashTree): Promise<Uint8Array> {
     case NodeType.Empty:
       return hash(domain_sep('ic-hashtree-empty'));
     case NodeType.Pruned:
-      return t[1] as Uint8Array;
+      return t[1];
     case NodeType.Leaf:
-      return hash(concat(domain_sep('ic-hashtree-leaf'), t[1] as Uint8Array));
+      return hash(concat(domain_sep('ic-hashtree-leaf'), t[1]));
     case NodeType.Labeled:
-      return hash(
-        concat(
-          domain_sep('ic-hashtree-labeled'),
-          t[1] as Uint8Array,
-          await reconstruct(t[2] as HashTree),
-        ),
-      );
+      return hash(concat(domain_sep('ic-hashtree-labeled'), t[1], await reconstruct(t[2])));
     case NodeType.Fork:
       return hash(
-        concat(
-          domain_sep('ic-hashtree-fork'),
-          await reconstruct(t[1] as HashTree),
-          await reconstruct(t[2] as HashTree),
-        ),
+        concat(domain_sep('ic-hashtree-fork'), await reconstruct(t[1]), await reconstruct(t[2])),
       );
     default:
-      throw new Error('unreachable');
+      throw UNREACHABLE_ERROR;
   }
 }
 
@@ -388,51 +401,115 @@ function domain_sep(s: string): Uint8Array {
   return concat(len, str);
 }
 
-export enum LookupStatus {
-  Unknown = 'unknown',
+function pathToLabel(path: NodePath): NodeLabel {
+  return (typeof path[0] === 'string' ? strToUtf8(path[0]) : path[0]) as NodeLabel;
+}
+
+export enum LookupPathStatus {
+  Unknown = 'Unknown',
+  Absent = 'Absent',
+  Found = 'Found',
+  Error = 'Error',
+}
+
+export interface LookupPathResultAbsent {
+  status: LookupPathStatus.Absent;
+}
+
+export interface LookupPathResultUnknown {
+  status: LookupPathStatus.Unknown;
+}
+
+export interface LookupPathResultFound {
+  status: LookupPathStatus.Found;
+  value: Uint8Array;
+}
+
+export interface LookupPathResultError {
+  status: LookupPathStatus.Error;
+}
+
+export type LookupResult =
+  | LookupPathResultAbsent
+  | LookupPathResultUnknown
+  | LookupPathResultFound
+  | LookupPathResultError;
+
+export enum LookupSubtreeStatus {
   Absent = 'absent',
+  Unknown = 'unknown',
   Found = 'found',
 }
 
-export interface LookupResultAbsent {
-  status: LookupStatus.Absent;
+export interface LookupSubtreeResultAbsent {
+  status: LookupSubtreeStatus.Absent;
 }
 
-export interface LookupResultUnknown {
-  status: LookupStatus.Unknown;
+export interface LookupSubtreeResultUnknown {
+  status: LookupSubtreeStatus.Unknown;
 }
 
-export interface LookupResultFound {
-  status: LookupStatus.Found;
-  value: Uint8Array | HashTree;
+export interface LookupSubtreeResultFound {
+  status: LookupSubtreeStatus.Found;
+  value: HashTree;
 }
 
-export type LookupResult = LookupResultAbsent | LookupResultUnknown | LookupResultFound;
+export type SubtreeLookupResult =
+  | LookupSubtreeResultAbsent
+  | LookupSubtreeResultUnknown
+  | LookupSubtreeResultFound;
 
-enum LabelLookupStatus {
+export enum LookupLabelStatus {
+  Absent = 'absent',
+  Unknown = 'unknown',
+  Found = 'found',
   Less = 'less',
   Greater = 'greater',
 }
 
-interface LookupResultGreater {
-  status: LabelLookupStatus.Greater;
+export interface LookupLabelResultAbsent {
+  status: LookupLabelStatus.Absent;
 }
 
-interface LookupResultLess {
-  status: LabelLookupStatus.Less;
+export interface LookupLabelResultUnknown {
+  status: LookupLabelStatus.Unknown;
 }
 
-type LabelLookupResult = LookupResult | LookupResultGreater | LookupResultLess;
+export interface LookupLabelResultFound {
+  status: LookupLabelStatus.Found;
+  value: HashTree;
+}
+
+export interface LookupLabelResultGreater {
+  status: LookupLabelStatus.Greater;
+}
+
+export interface LookupLabelResultLess {
+  status: LookupLabelStatus.Less;
+}
+
+export type LabelLookupResult =
+  | LookupLabelResultAbsent
+  | LookupLabelResultUnknown
+  | LookupLabelResultFound
+  | LookupLabelResultGreater
+  | LookupLabelResultLess;
 
 /**
- * Lookup a path in a tree
+ * Lookup a path in a tree. If the path is a subtree, use {@link lookup_subtree} instead.
  * @param path the path to look up
  * @param tree the tree to search
  * @returns {LookupResult} the result of the lookup
  */
-export function lookup_path(path: Array<Uint8Array | string>, tree: HashTree): LookupResult {
+export function lookup_path(path: NodePath, tree: HashTree): LookupResult {
   if (path.length === 0) {
     switch (tree[0]) {
+      case NodeType.Empty: {
+        return {
+          status: LookupPathStatus.Absent,
+        };
+      }
+
       case NodeType.Leaf: {
         if (!tree[1]) {
           throw UnknownError.fromCode(
@@ -442,43 +519,99 @@ export function lookup_path(path: Array<Uint8Array | string>, tree: HashTree): L
 
         if (tree[1] instanceof Uint8Array) {
           return {
-            status: LookupStatus.Found,
+            status: LookupPathStatus.Found,
             value: tree[1],
           };
         }
 
+        throw UNREACHABLE_ERROR;
+      }
+
+      case NodeType.Pruned: {
         return {
-          status: LookupStatus.Found,
-          value: tree[1],
+          status: LookupPathStatus.Unknown,
+        };
+      }
+
+      case NodeType.Labeled:
+      case NodeType.Fork: {
+        return {
+          status: LookupPathStatus.Error,
         };
       }
 
       default: {
-        return {
-          status: LookupStatus.Found,
-          value: tree,
-        };
+        throw UNREACHABLE_ERROR;
       }
     }
   }
 
-  const label = typeof path[0] === 'string' ? new TextEncoder().encode(path[0]) : path[0];
+  const label = pathToLabel(path);
   const lookupResult = find_label(label, tree);
 
   switch (lookupResult.status) {
-    case LookupStatus.Found: {
-      return lookup_path(path.slice(1), lookupResult.value as HashTree);
+    case LookupLabelStatus.Found: {
+      return lookup_path(path.slice(1), lookupResult.value);
     }
 
-    case LabelLookupStatus.Greater:
-    case LabelLookupStatus.Less: {
+    case LookupLabelStatus.Absent:
+    case LookupLabelStatus.Greater:
+    case LookupLabelStatus.Less: {
       return {
-        status: LookupStatus.Absent,
+        status: LookupPathStatus.Absent,
+      };
+    }
+
+    case LookupLabelStatus.Unknown: {
+      return {
+        status: LookupPathStatus.Unknown,
       };
     }
 
     default: {
-      return lookupResult;
+      throw UNREACHABLE_ERROR;
+    }
+  }
+}
+
+/**
+ * Lookup a subtree in a tree.
+ * @param path the path to look up
+ * @param tree the tree to search
+ * @returns {SubtreeLookupResult} the result of the lookup
+ */
+export function lookup_subtree(path: NodePath, tree: HashTree): SubtreeLookupResult {
+  if (path.length === 0) {
+    return {
+      status: LookupSubtreeStatus.Found,
+      value: tree,
+    };
+  }
+
+  const label = pathToLabel(path);
+  const lookupResult = find_label(label, tree);
+
+  switch (lookupResult.status) {
+    case LookupLabelStatus.Found: {
+      return lookup_subtree(path.slice(1), lookupResult.value);
+    }
+
+    case LookupLabelStatus.Unknown: {
+      return {
+        status: LookupSubtreeStatus.Unknown,
+      };
+    }
+
+    case LookupLabelStatus.Absent:
+    case LookupLabelStatus.Greater:
+    case LookupLabelStatus.Less: {
+      return {
+        status: LookupSubtreeStatus.Absent,
+      };
+    }
+
+    default: {
+      throw UNREACHABLE_ERROR;
     }
   }
 }
@@ -488,12 +621,12 @@ export function lookup_path(path: Array<Uint8Array | string>, tree: HashTree): L
  * @param {HashTree} t the tree to flatten
  * @returns {HashTree[]} the flattened tree
  */
-export function flatten_forks(t: HashTree): HashTree[] {
+export function flatten_forks(t: HashTree): Array<LabeledHashTree | LeafHashTree | PrunedHashTree> {
   switch (t[0]) {
     case NodeType.Empty:
       return [];
     case NodeType.Fork:
-      return flatten_forks(t[1] as HashTree).concat(flatten_forks(t[2] as HashTree));
+      return flatten_forks(t[1]).concat(flatten_forks(t[2]));
     default:
       return [t];
   }
@@ -505,7 +638,7 @@ export function flatten_forks(t: HashTree): HashTree[] {
  * @param tree the tree to search
  * @returns {LabelLookupResult} the result of the label lookup
  */
-export function find_label(label: Uint8Array, tree: HashTree): LabelLookupResult {
+export function find_label(label: NodeLabel, tree: HashTree): LabelLookupResult {
   switch (tree[0]) {
     // if we have a labelled node, compare the node's label to the one we are
     // looking for
@@ -514,7 +647,7 @@ export function find_label(label: Uint8Array, tree: HashTree): LabelLookupResult
       // we need to keep searching
       if (isBufferGreaterThan(label, tree[1])) {
         return {
-          status: LabelLookupStatus.Greater,
+          status: LookupLabelStatus.Greater,
         };
       }
 
@@ -522,7 +655,7 @@ export function find_label(label: Uint8Array, tree: HashTree): LabelLookupResult
       // stop searching and return the found node
       if (uint8Equals(label, tree[1])) {
         return {
-          status: LookupStatus.Found,
+          status: LookupLabelStatus.Found,
           value: tree[2],
         };
       }
@@ -531,7 +664,7 @@ export function find_label(label: Uint8Array, tree: HashTree): LabelLookupResult
       // node's label, then it's less than this node's label, and we can stop
       // searching because we've looked too far
       return {
-        status: LabelLookupStatus.Less,
+        status: LookupLabelStatus.Less,
       };
 
     // if we have a fork node, we need to search both sides, starting with the left
@@ -542,14 +675,14 @@ export function find_label(label: Uint8Array, tree: HashTree): LabelLookupResult
       switch (leftLookupResult.status) {
         // if the label we're searching for is greater than the left node lookup,
         // we need to search the right node
-        case LabelLookupStatus.Greater: {
+        case LookupLabelStatus.Greater: {
           const rightLookupResult = find_label(label, tree[2]);
 
           // if the label we're searching for is less than the right node lookup,
           // then we can stop searching and say that the label is provably Absent
-          if (rightLookupResult.status === LabelLookupStatus.Less) {
+          if (rightLookupResult.status === LookupLabelStatus.Less) {
             return {
-              status: LookupStatus.Absent,
+              status: LookupLabelStatus.Absent,
             };
           }
 
@@ -560,14 +693,14 @@ export function find_label(label: Uint8Array, tree: HashTree): LabelLookupResult
 
         // if the left node returns an uncertain result, we need to search the
         // right node
-        case LookupStatus.Unknown: {
+        case LookupLabelStatus.Unknown: {
           const rightLookupResult = find_label(label, tree[2]);
 
           // if the label we're searching for is less than the right node lookup,
           // then we also need to return an uncertain result
-          if (rightLookupResult.status === LabelLookupStatus.Less) {
+          if (rightLookupResult.status === LookupLabelStatus.Less) {
             return {
-              status: LookupStatus.Unknown,
+              status: LookupLabelStatus.Unknown,
             };
           }
 
@@ -590,14 +723,14 @@ export function find_label(label: Uint8Array, tree: HashTree): LabelLookupResult
     // we're searching for is present or not
     case NodeType.Pruned:
       return {
-        status: LookupStatus.Unknown,
+        status: LookupLabelStatus.Unknown,
       };
 
     // if the current node is Empty, or a Leaf, we can stop searching because
     // we know for sure that the label we're searching for is not present
     default:
       return {
-        status: LookupStatus.Absent,
+        status: LookupLabelStatus.Absent,
       };
   }
 }
@@ -618,9 +751,20 @@ export function check_canister_ranges(params: {
   const { canisterId, subnetId, tree } = params;
   const rangeLookup = lookup_path(['subnet', subnetId.toUint8Array(), 'canister_ranges'], tree);
 
-  if (rangeLookup.status !== LookupStatus.Found || !(rangeLookup.value instanceof ArrayBuffer)) {
+  if (rangeLookup.status !== LookupPathStatus.Found) {
     throw ProtocolError.fromCode(
-      new LookupErrorCode(`Could not find canister ranges for subnet ${subnetId.toText()}`),
+      new LookupErrorCode(
+        `Could not find canister ranges for subnet ${subnetId.toText()}`,
+        rangeLookup.status,
+      ),
+    );
+  }
+
+  if (!(rangeLookup.value instanceof Uint8Array)) {
+    throw ProtocolError.fromCode(
+      new MalformedLookupFoundValueErrorCode(
+        `Could not find canister ranges for subnet ${subnetId.toText()}`,
+      ),
     );
   }
 
