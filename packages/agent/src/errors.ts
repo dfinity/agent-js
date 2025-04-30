@@ -4,7 +4,7 @@ import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
 import { Expiry, RequestStatusResponseStatus } from './agent/http';
 import { HttpHeaderField } from './agent/http/types';
-import { LookupStatus } from './certificate';
+import { LookupPathStatus, LookupSubtreeStatus } from './certificate';
 
 export enum ErrorKindEnum {
   Trust = 'Trust',
@@ -241,7 +241,7 @@ export class LookupErrorCode extends ErrorCode {
 
   constructor(
     public readonly message: string,
-    public readonly lookupStatus: LookupStatus,
+    public readonly lookupStatus: LookupPathStatus | LookupSubtreeStatus,
   ) {
     super();
     Object.setPrototypeOf(this, LookupErrorCode.prototype);

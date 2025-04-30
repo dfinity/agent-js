@@ -22,11 +22,12 @@ import {
   CreateCertificateOptions,
   flatten_forks,
   check_canister_ranges,
-  LookupStatus,
+  LookupPathStatus,
   lookup_path,
   lookupResultToBuffer,
   lookup_subtree,
   LabeledHashTree,
+  LookupSubtreeStatus,
 } from '../certificate';
 import { bufFromBufLike, strToUtf8, toHex } from '../utils/buffer';
 import * as Cbor from '../cbor';
@@ -316,7 +317,7 @@ export const fetchNodeKeys = (
   }
 
   const subnetLookupResult = lookup_subtree(['subnet', delegation.subnet_id, 'node'], tree);
-  if (subnetLookupResult.status !== LookupStatus.Found) {
+  if (subnetLookupResult.status !== LookupSubtreeStatus.Found) {
     throw ProtocolError.fromCode(new LookupErrorCode('Node not found', subnetLookupResult.status));
   }
   if (subnetLookupResult.value instanceof ArrayBuffer) {
@@ -330,7 +331,7 @@ export const fetchNodeKeys = (
   nodeForks.forEach(fork => {
     const node_id = Principal.from(new Uint8Array(fork[1])).toText();
     const publicKeyLookupResult = lookup_path(['public_key'], fork[2]);
-    if (publicKeyLookupResult.status !== LookupStatus.Found) {
+    if (publicKeyLookupResult.status !== LookupPathStatus.Found) {
       throw ProtocolError.fromCode(
         new LookupErrorCode('Public key not found', publicKeyLookupResult.status),
       );

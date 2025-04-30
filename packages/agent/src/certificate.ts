@@ -361,7 +361,7 @@ function extractDER(buf: ArrayBuffer): ArrayBuffer {
  * @returns {ArrayBuffer | undefined} the value if the lookup was found, `undefined` otherwise
  */
 export function lookupResultToBuffer(result: LookupResult): ArrayBuffer | undefined {
-  if (result.status !== LookupStatus.Found) {
+  if (result.status !== LookupPathStatus.Found) {
     return undefined;
   }
 
@@ -404,70 +404,95 @@ function pathToLabel(path: NodePath): NodeLabel {
   return (typeof path[0] === 'string' ? strToUtf8(path[0]) : path[0]) as NodeLabel;
 }
 
-export enum LookupStatus {
+export enum LookupPathStatus {
   Unknown = 'Unknown',
   Absent = 'Absent',
   Found = 'Found',
   Error = 'Error',
 }
 
-export interface LookupResultAbsent {
-  status: LookupStatus.Absent;
+export interface LookupPathResultAbsent {
+  status: LookupPathStatus.Absent;
 }
 
-export interface LookupResultUnknown {
-  status: LookupStatus.Unknown;
+export interface LookupPathResultUnknown {
+  status: LookupPathStatus.Unknown;
 }
 
-export interface LookupResultFound {
-  status: LookupStatus.Found;
+export interface LookupPathResultFound {
+  status: LookupPathStatus.Found;
   value: ArrayBuffer;
 }
 
-export interface LookupResultError {
-  status: LookupStatus.Error;
+export interface LookupPathResultError {
+  status: LookupPathStatus.Error;
 }
 
 export type LookupResult =
-  | LookupResultAbsent
-  | LookupResultUnknown
-  | LookupResultFound
-  | LookupResultError;
+  | LookupPathResultAbsent
+  | LookupPathResultUnknown
+  | LookupPathResultFound
+  | LookupPathResultError;
 
-export interface SubtreeLookupResultFound {
-  status: LookupStatus.Found;
+export enum LookupSubtreeStatus {
+  Absent = 'absent',
+  Unknown = 'unknown',
+  Found = 'found',
+}
+
+export interface LookupSubtreeResultAbsent {
+  status: LookupSubtreeStatus.Absent;
+}
+
+export interface LookupSubtreeResultUnknown {
+  status: LookupSubtreeStatus.Unknown;
+}
+
+export interface LookupSubtreeResultFound {
+  status: LookupSubtreeStatus.Found;
   value: HashTree;
 }
 
 export type SubtreeLookupResult =
-  | LookupResultAbsent
-  | LookupResultUnknown
-  | SubtreeLookupResultFound;
+  | LookupSubtreeResultAbsent
+  | LookupSubtreeResultUnknown
+  | LookupSubtreeResultFound;
 
-export enum LabelLookupStatus {
+export enum LookupLabelStatus {
+  Absent = 'absent',
+  Unknown = 'unknown',
+  Found = 'found',
   Less = 'less',
   Greater = 'greater',
 }
 
-export interface LabelLookupResultGreater {
-  status: LabelLookupStatus.Greater;
+export interface LookupLabelResultAbsent {
+  status: LookupLabelStatus.Absent;
 }
 
-export interface LabelLookupResultLess {
-  status: LabelLookupStatus.Less;
+export interface LookupLabelResultUnknown {
+  status: LookupLabelStatus.Unknown;
 }
 
-export interface LabelLookupResultFound {
-  status: LookupStatus.Found;
+export interface LookupLabelResultFound {
+  status: LookupLabelStatus.Found;
   value: HashTree;
 }
 
+export interface LookupLabelResultGreater {
+  status: LookupLabelStatus.Greater;
+}
+
+export interface LookupLabelResultLess {
+  status: LookupLabelStatus.Less;
+}
+
 export type LabelLookupResult =
-  | LookupResultAbsent
-  | LookupResultUnknown
-  | LabelLookupResultFound
-  | LabelLookupResultGreater
-  | LabelLookupResultLess;
+  | LookupLabelResultAbsent
+  | LookupLabelResultUnknown
+  | LookupLabelResultFound
+  | LookupLabelResultGreater
+  | LookupLabelResultLess;
 
 /**
  * Lookup a path in a tree. If the path is a subtree, use {@link lookup_subtree} instead.
@@ -480,7 +505,7 @@ export function lookup_path(path: NodePath, tree: HashTree): LookupResult {
     switch (tree[0]) {
       case NodeType.Empty: {
         return {
-          status: LookupStatus.Absent,
+          status: LookupPathStatus.Absent,
         };
       }
 
@@ -493,14 +518,14 @@ export function lookup_path(path: NodePath, tree: HashTree): LookupResult {
 
         if (tree[1] instanceof ArrayBuffer) {
           return {
-            status: LookupStatus.Found,
+            status: LookupPathStatus.Found,
             value: tree[1],
           };
         }
 
         if (tree[1] instanceof Uint8Array) {
           return {
-            status: LookupStatus.Found,
+            status: LookupPathStatus.Found,
             value: tree[1].buffer,
           };
         }
@@ -510,14 +535,14 @@ export function lookup_path(path: NodePath, tree: HashTree): LookupResult {
 
       case NodeType.Pruned: {
         return {
-          status: LookupStatus.Unknown,
+          status: LookupPathStatus.Unknown,
         };
       }
 
       case NodeType.Labeled:
       case NodeType.Fork: {
         return {
-          status: LookupStatus.Error,
+          status: LookupPathStatus.Error,
         };
       }
 
@@ -531,21 +556,21 @@ export function lookup_path(path: NodePath, tree: HashTree): LookupResult {
   const lookupResult = find_label(label, tree);
 
   switch (lookupResult.status) {
-    case LookupStatus.Found: {
+    case LookupLabelStatus.Found: {
       return lookup_path(path.slice(1), lookupResult.value);
     }
 
-    case LookupStatus.Absent:
-    case LabelLookupStatus.Greater:
-    case LabelLookupStatus.Less: {
+    case LookupLabelStatus.Absent:
+    case LookupLabelStatus.Greater:
+    case LookupLabelStatus.Less: {
       return {
-        status: LookupStatus.Absent,
+        status: LookupPathStatus.Absent,
       };
     }
 
-    case LookupStatus.Unknown: {
+    case LookupLabelStatus.Unknown: {
       return {
-        status: LookupStatus.Unknown,
+        status: LookupPathStatus.Unknown,
       };
     }
 
@@ -564,7 +589,7 @@ export function lookup_path(path: NodePath, tree: HashTree): LookupResult {
 export function lookup_subtree(path: NodePath, tree: HashTree): SubtreeLookupResult {
   if (path.length === 0) {
     return {
-      status: LookupStatus.Found,
+      status: LookupSubtreeStatus.Found,
       value: tree,
     };
   }
@@ -573,21 +598,21 @@ export function lookup_subtree(path: NodePath, tree: HashTree): SubtreeLookupRes
   const lookupResult = find_label(label, tree);
 
   switch (lookupResult.status) {
-    case LookupStatus.Found: {
+    case LookupLabelStatus.Found: {
       return lookup_subtree(path.slice(1), lookupResult.value);
     }
 
-    case LookupStatus.Unknown: {
+    case LookupLabelStatus.Unknown: {
       return {
-        status: LookupStatus.Unknown,
+        status: LookupSubtreeStatus.Unknown,
       };
     }
 
-    case LookupStatus.Absent:
-    case LabelLookupStatus.Greater:
-    case LabelLookupStatus.Less: {
+    case LookupLabelStatus.Absent:
+    case LookupLabelStatus.Greater:
+    case LookupLabelStatus.Less: {
       return {
-        status: LookupStatus.Absent,
+        status: LookupSubtreeStatus.Absent,
       };
     }
 
@@ -628,7 +653,7 @@ export function find_label(label: NodeLabel, tree: HashTree): LabelLookupResult 
       // we need to keep searching
       if (isBufferGreaterThan(label, tree[1])) {
         return {
-          status: LabelLookupStatus.Greater,
+          status: LookupLabelStatus.Greater,
         };
       }
 
@@ -636,7 +661,7 @@ export function find_label(label: NodeLabel, tree: HashTree): LabelLookupResult 
       // stop searching and return the found node
       if (bufEquals(label, tree[1])) {
         return {
-          status: LookupStatus.Found,
+          status: LookupLabelStatus.Found,
           value: tree[2],
         };
       }
@@ -645,7 +670,7 @@ export function find_label(label: NodeLabel, tree: HashTree): LabelLookupResult 
       // node's label, then it's less than this node's label, and we can stop
       // searching because we've looked too far
       return {
-        status: LabelLookupStatus.Less,
+        status: LookupLabelStatus.Less,
       };
 
     // if we have a fork node, we need to search both sides, starting with the left
@@ -656,14 +681,14 @@ export function find_label(label: NodeLabel, tree: HashTree): LabelLookupResult 
       switch (leftLookupResult.status) {
         // if the label we're searching for is greater than the left node lookup,
         // we need to search the right node
-        case LabelLookupStatus.Greater: {
+        case LookupLabelStatus.Greater: {
           const rightLookupResult = find_label(label, tree[2]);
 
           // if the label we're searching for is less than the right node lookup,
           // then we can stop searching and say that the label is provably Absent
-          if (rightLookupResult.status === LabelLookupStatus.Less) {
+          if (rightLookupResult.status === LookupLabelStatus.Less) {
             return {
-              status: LookupStatus.Absent,
+              status: LookupLabelStatus.Absent,
             };
           }
 
@@ -674,14 +699,14 @@ export function find_label(label: NodeLabel, tree: HashTree): LabelLookupResult 
 
         // if the left node returns an uncertain result, we need to search the
         // right node
-        case LookupStatus.Unknown: {
+        case LookupLabelStatus.Unknown: {
           const rightLookupResult = find_label(label, tree[2]);
 
           // if the label we're searching for is less than the right node lookup,
           // then we also need to return an uncertain result
-          if (rightLookupResult.status === LabelLookupStatus.Less) {
+          if (rightLookupResult.status === LookupLabelStatus.Less) {
             return {
-              status: LookupStatus.Unknown,
+              status: LookupLabelStatus.Unknown,
             };
           }
 
@@ -704,14 +729,14 @@ export function find_label(label: NodeLabel, tree: HashTree): LabelLookupResult 
     // we're searching for is present or not
     case NodeType.Pruned:
       return {
-        status: LookupStatus.Unknown,
+        status: LookupLabelStatus.Unknown,
       };
 
     // if the current node is Empty, or a Leaf, we can stop searching because
     // we know for sure that the label we're searching for is not present
     default:
       return {
-        status: LookupStatus.Absent,
+        status: LookupLabelStatus.Absent,
       };
   }
 }
@@ -732,7 +757,7 @@ export function check_canister_ranges(params: {
   const { canisterId, subnetId, tree } = params;
   const rangeLookup = lookup_path(['subnet', subnetId.toUint8Array(), 'canister_ranges'], tree);
 
-  if (rangeLookup.status !== LookupStatus.Found) {
+  if (rangeLookup.status !== LookupPathStatus.Found) {
     throw ProtocolError.fromCode(
       new LookupErrorCode(
         `Could not find canister ranges for subnet ${subnetId.toText()}`,

@@ -55,7 +55,7 @@ import {
   ReadStateRequest,
 } from './types';
 import { SubnetStatus, request } from '../../canisterStatus';
-import { HashTree, LookupStatus, lookup_path } from '../../certificate';
+import { HashTree, LookupPathStatus, lookup_path } from '../../certificate';
 import { ed25519 } from '@noble/curves/ed25519';
 import { ExpirableMap } from '../../utils/expirableMap';
 import { Ed25519PublicKey } from '../../public_key';
@@ -1202,7 +1202,7 @@ export class HttpAgent implements Agent {
         );
       }
       const timeLookup = lookup_path(['time'], tree);
-      if (timeLookup.status !== LookupStatus.Found) {
+      if (timeLookup.status !== LookupPathStatus.Found) {
         throw ProtocolError.fromCode(
           new LookupErrorCode(
             'Time was not found in the response or was not in its expected format.',
