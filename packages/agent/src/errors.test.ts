@@ -6,8 +6,11 @@ import {
   UnexpectedErrorCode,
   IdentityInvalidErrorCode,
   UnknownError,
+  UncertifiedRejectErrorCode,
+  CertifiedRejectErrorCode,
 } from './errors';
-import { Expiry } from './agent';
+import { Expiry, ReplicaRejectCode } from './agent';
+import { RequestId } from './request_id';
 
 test('AgentError', () => {
   const errorCode = new UnexpectedErrorCode('message');
@@ -88,4 +91,32 @@ test('AgentError', () => {
   unknownError.kind = anotherKind;
   expect(unknownError.kind).toBe(anotherKind);
   expect(unknownError.cause.kind).toBe(anotherKind);
+});
+
+test('Error code certification', () => {
+  const requestId = new ArrayBuffer(16) as RequestId;
+  const rejectCode = ReplicaRejectCode.CanisterReject;
+  const rejectMessage = 'message';
+  const rejectErrorCode = '42';
+
+  const uncertifiedRejectErrorCode = new UncertifiedRejectErrorCode(
+    requestId,
+    rejectCode,
+    rejectMessage,
+    rejectErrorCode,
+    [],
+  );
+  const agentError = new AgentError(uncertifiedRejectErrorCode, ErrorKindEnum.Trust);
+  expect(uncertifiedRejectErrorCode.isCertified).toBe(false);
+  expect(agentError.isCertified).toBe(false);
+
+  const certifiedRejectErrorCode = new CertifiedRejectErrorCode(
+    requestId,
+    rejectCode,
+    rejectMessage,
+    rejectErrorCode,
+  );
+  agentError.code = certifiedRejectErrorCode;
+  expect(certifiedRejectErrorCode.isCertified).toBe(true);
+  expect(agentError.isCertified).toBe(true);
 });
