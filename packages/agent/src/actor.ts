@@ -448,6 +448,7 @@ function _createActorMethod(
             result.reject_code,
             result.reject_message,
             result.error_code,
+            result.signatures,
           );
           uncertifiedRejectErrorCode.callContext = {
             canisterId: cid,

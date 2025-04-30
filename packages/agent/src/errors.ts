@@ -1,5 +1,5 @@
 import { Principal } from '@dfinity/principal';
-import { HttpDetailsResponse, ReplicaRejectCode } from './agent/api';
+import { HttpDetailsResponse, NodeSignature, ReplicaRejectCode } from './agent/api';
 import { RequestId } from './request_id';
 import { toHex } from './utils/buffer';
 import { Expiry, RequestStatusResponseStatus } from './agent/http';
@@ -34,6 +34,8 @@ abstract class ErrorCode {
   public requestContext?: RequestContext;
   public callContext?: CallContext;
 
+  constructor(public readonly isCertified: boolean = false) {}
+
   public abstract toErrorMessage(): string;
 
   public toString(): string {
@@ -60,6 +62,8 @@ abstract class ErrorCode {
 /**
  * An error that happens in the Agent. This is the root of all errors and should be used
  * everywhere in the Agent code (this package).
+ *
+ * To know if the error is certified, use the `isCertified` getter.
  */
 export class AgentError extends Error {
   public name = 'AgentError';
@@ -78,6 +82,14 @@ export class AgentError extends Error {
   }
   set kind(kind: ErrorKindEnum) {
     this.cause.kind = kind;
+  }
+
+  /**
+   * Reads the `isCertified` property of the underlying error code.
+   * @returns `true` if the error is certified, `false` otherwise.
+   */
+  get isCertified(): boolean {
+    return this.code.isCertified;
   }
 
   constructor(code: ErrorCode, kind: ErrorKindEnum) {
@@ -412,9 +424,9 @@ export class CertifiedRejectErrorCode extends ErrorCode {
     public readonly requestId: RequestId,
     public readonly rejectCode: ReplicaRejectCode,
     public readonly rejectMessage: string,
-    public readonly errorCode: string | undefined,
+    public readonly rejectErrorCode: string | undefined,
   ) {
-    super();
+    super(true);
     Object.setPrototypeOf(this, CertifiedRejectErrorCode.prototype);
   }
 
@@ -424,7 +436,7 @@ export class CertifiedRejectErrorCode extends ErrorCode {
       `  Request ID: ${toHex(this.requestId)}\n` +
       `  Reject code: ${this.rejectCode}\n` +
       `  Reject text: ${this.rejectMessage}\n` +
-      `  Error code: ${this.errorCode}\n`
+      `  Error code: ${this.rejectErrorCode}\n`
     );
   }
 }
@@ -436,7 +448,8 @@ export class UncertifiedRejectErrorCode extends ErrorCode {
     public readonly requestId: RequestId,
     public readonly rejectCode: ReplicaRejectCode,
     public readonly rejectMessage: string,
-    public readonly errorCode: string | undefined,
+    public readonly rejectErrorCode: string | undefined,
+    public readonly signatures: NodeSignature[] | undefined,
   ) {
     super();
     Object.setPrototypeOf(this, UncertifiedRejectErrorCode.prototype);
@@ -448,7 +461,7 @@ export class UncertifiedRejectErrorCode extends ErrorCode {
       `  Request ID: ${toHex(this.requestId)}\n` +
       `  Reject code: ${this.rejectCode}\n` +
       `  Reject text: ${this.rejectMessage}\n` +
-      `  Error code: ${this.errorCode}\n`
+      `  Error code: ${this.rejectErrorCode}\n`
     );
   }
 }
