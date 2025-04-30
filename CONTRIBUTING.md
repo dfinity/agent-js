@@ -142,7 +142,7 @@ gitGraph:
     commit id: "etc, etc"
 ```
 
-The commits with red square icon, indicate the moment when release process was triggered (either by using GitHub Actionr or by running `npm run release`)
+The commits with red square icon, indicate the moment when release process was triggered (either by using GitHub Action or by running `npm run release`)
 
 </details>
 
