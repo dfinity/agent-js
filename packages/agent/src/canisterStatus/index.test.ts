@@ -1,7 +1,7 @@
 import { request, Path, encodePath, fetchNodeKeys } from './index';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
-import { fromHex, strToUtf8, toHex } from '@dfinity/candid';
+import { fromHex, toHex } from '@dfinity/candid';
 import { Identity } from '../auth';
 import fetch from 'isomorphic-fetch';
 import { HttpAgent } from '../agent';
@@ -9,6 +9,7 @@ import * as Cert from '../certificate';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { goldenCertificates } from '../agent/http/__certificates__/goldenCertificates';
+import { utf8ToBytes } from '@noble/hashes/utils';
 
 const IC_ROOT_KEY =
   '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100814' +
@@ -63,8 +64,8 @@ const getRealStatus = async () => {
     {
       paths: [
         encodePath('time', testPrincipal),
-        [strToUtf8('canister'), canisterBuffer, strToUtf8('controllers')],
-        [strToUtf8('canister'), canisterBuffer, strToUtf8('module_hash')],
+        [utf8ToBytes('canister'), canisterBuffer, utf8ToBytes('controllers')],
+        [utf8ToBytes('canister'), canisterBuffer, utf8ToBytes('module_hash')],
         encodePath('candid', testPrincipal),
       ],
     },
@@ -108,14 +109,14 @@ describe('Canister Status utility', () => {
     const status = await getStatus([
       {
         key: 'time',
-        path: [strToUtf8('time')],
+        path: [utf8ToBytes('time')],
         decodeStrategy: 'leb128',
       },
     ]);
     const statusRaw = await getStatus([
       {
         key: 'time',
-        path: [strToUtf8('time')],
+        path: [utf8ToBytes('time')],
         decodeStrategy: 'raw',
       },
     ]);
@@ -130,14 +131,14 @@ describe('Canister Status utility', () => {
     const statusHex = await getStatus([
       {
         key: 'time',
-        path: [strToUtf8('time')],
+        path: [utf8ToBytes('time')],
         decodeStrategy: 'hex',
       },
     ]);
     const statusCBOR = await getStatus([
       {
         key: 'Controller',
-        path: [strToUtf8('canister'), canisterBuffer, strToUtf8('controllers')],
+        path: [utf8ToBytes('canister'), canisterBuffer, utf8ToBytes('controllers')],
         decodeStrategy: 'cbor',
       },
     ]);
@@ -159,7 +160,7 @@ describe('Canister Status utility', () => {
     const statusEncoded = await getStatus([
       {
         kind: 'metadata',
-        path: strToUtf8('candid:service'),
+        path: utf8ToBytes('candid:service'),
         key: 'candid',
         decodeStrategy: 'hex',
       },
@@ -181,7 +182,7 @@ describe('Canister Status utility', () => {
       'subnet',
       {
         key: 'asdf',
-        path: [strToUtf8('asdf')],
+        path: [utf8ToBytes('asdf')],
         decodeStrategy: 'hex',
       },
     ]);

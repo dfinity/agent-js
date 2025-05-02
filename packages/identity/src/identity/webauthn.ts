@@ -21,6 +21,8 @@ type PublicKeyCredentialWithAttachment = PublicKeyCredential & {
   // Note: `null` is included here as a possible value because Edge set this value to null in the
   // past.
   authenticatorAttachment: AuthenticatorAttachment | undefined | null;
+  // Explicitly including toJSON method from the base PublicKeyCredential interface
+  toJSON: () => Record<string, unknown>;
 };
 
 /**

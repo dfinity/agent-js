@@ -19,10 +19,11 @@ import {
   TrustError,
   UNREACHABLE_ERROR,
 } from './errors';
-import { fromHex, strToUtf8, toHex, uint8Equals } from '@dfinity/candid';
+import { fromHex, toHex, uint8Equals } from '@dfinity/candid';
+import { utf8ToBytes } from '@noble/hashes/utils';
 
 function label(str: string): Cert.NodeLabel {
-  return strToUtf8(str) as Cert.NodeLabel;
+  return utf8ToBytes(str) as Cert.NodeLabel;
 }
 
 function pruned(str: string): Cert.NodeHash {
@@ -30,7 +31,7 @@ function pruned(str: string): Cert.NodeHash {
 }
 
 function value(str: string): Cert.NodeValue {
-  return strToUtf8(str) as Cert.NodeValue;
+  return utf8ToBytes(str) as Cert.NodeValue;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

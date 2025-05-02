@@ -153,17 +153,6 @@ export function isV3ResponseBody(
   return body !== null && body !== undefined && 'certificate' in body;
 }
 
-/**
- * Utility function to check if a body is a v3ResponseBody for type safety.
- * @param body The body to check
- * @returns boolean indicating if the body is a v3ResponseBody
- */
-export function isV3ResponseBody(
-  body: v2ResponseBody | v3ResponseBody | null,
-): body is v3ResponseBody {
-  return body !== null && body !== undefined && 'certificate' in body;
-}
-
 export interface SubmitResponse {
   requestId: RequestId;
   response: {

@@ -29,10 +29,11 @@ import {
   LabeledHashTree,
   LookupSubtreeStatus,
 } from '../certificate';
-import { strToUtf8, toHex } from '@dfinity/candid';
+import { toHex } from '@dfinity/candid';
 import * as Cbor from '../cbor';
 import { decodeLeb128, decodeTime } from '../utils/leb';
 import { DerEncodedPublicKey } from '../auth';
+import { utf8ToBytes } from '@noble/hashes/utils';
 
 /**
  * Represents the useful information about a subnet
@@ -357,19 +358,19 @@ export const encodePath = (path: Path, canisterId: Principal): Uint8Array[] => {
   const canisterUint8Array = canisterId.toUint8Array();
   switch (path) {
     case 'time':
-      return [strToUtf8('time')];
+      return [utf8ToBytes('time')];
     case 'controllers':
-      return [strToUtf8('canister'), canisterUint8Array, strToUtf8('controllers')];
+      return [utf8ToBytes('canister'), canisterUint8Array, utf8ToBytes('controllers')];
     case 'module_hash':
-      return [strToUtf8('canister'), canisterUint8Array, strToUtf8('module_hash')];
+      return [utf8ToBytes('canister'), canisterUint8Array, utf8ToBytes('module_hash')];
     case 'subnet':
-      return [strToUtf8('subnet')];
+      return [utf8ToBytes('subnet')];
     case 'candid':
       return [
-        strToUtf8('canister'),
+        utf8ToBytes('canister'),
         canisterUint8Array,
-        strToUtf8('metadata'),
-        strToUtf8('candid:service'),
+        utf8ToBytes('metadata'),
+        utf8ToBytes('candid:service'),
       ];
     default: {
       // Check for CustomPath signature
@@ -377,9 +378,9 @@ export const encodePath = (path: Path, canisterId: Principal): Uint8Array[] => {
         // For simplified metadata queries
         if (typeof path['path'] === 'string' || path['path'] instanceof Uint8Array) {
           const metaPath = path.path;
-          const encoded = typeof metaPath === 'string' ? strToUtf8(metaPath) : metaPath;
+          const encoded = typeof metaPath === 'string' ? utf8ToBytes(metaPath) : metaPath;
 
-          return [strToUtf8('canister'), canisterUint8Array, strToUtf8('metadata'), encoded];
+          return [utf8ToBytes('canister'), canisterUint8Array, utf8ToBytes('metadata'), encoded];
 
           // For non-metadata, return the provided custompath
         } else {

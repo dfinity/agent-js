@@ -16,11 +16,12 @@ import {
   MissingLookupValueErrorCode,
 } from './errors';
 import { hash } from './request_id';
-import { uint8Equals, concat, fromHex, toHex, strToUtf8 } from '@dfinity/candid';
+import { uint8Equals, concat, fromHex, toHex } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import * as bls from './utils/bls';
 import { decodeTime } from './utils/leb';
 import { MANAGEMENT_CANISTER_ID } from './agent';
+import { utf8ToBytes } from '@noble/hashes/utils';
 
 export interface Cert {
   tree: HashTree;
@@ -400,7 +401,7 @@ function domain_sep(s: string): Uint8Array {
 }
 
 function pathToLabel(path: NodePath): NodeLabel {
-  return (typeof path[0] === 'string' ? strToUtf8(path[0]) : path[0]) as NodeLabel;
+  return (typeof path[0] === 'string' ? utf8ToBytes(path[0]) : path[0]) as NodeLabel;
 }
 
 export enum LookupPathStatus {

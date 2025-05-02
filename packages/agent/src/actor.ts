@@ -16,13 +16,14 @@ import {
   UnexpectedErrorCode,
   UnknownError,
 } from './errors';
-import { IDL, strToUtf8, uint8FromBufLike } from '@dfinity/candid';
+import { IDL, uint8FromBufLike } from '@dfinity/candid';
 import { pollForResponse, PollingOptions, DEFAULT_POLLING_OPTIONS } from './polling';
 import { Principal } from '@dfinity/principal';
 import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from './certificate';
 import managementCanisterIdl from './canisters/management_idl';
 import _SERVICE, { canister_install_mode, canister_settings } from './canisters/management_service';
 import { HttpAgent } from './agent/http';
+import { utf8ToBytes } from '@noble/hashes/utils';
 
 /**
  * Configuration to make calls to the Replica.
@@ -506,7 +507,7 @@ function _createActorMethod(
           canisterId: Principal.from(canisterId),
           blsVerify,
         });
-        const path = [strToUtf8('request_status'), requestId];
+        const path = [utf8ToBytes('request_status'), requestId];
         const status = new TextDecoder().decode(
           lookupResultToBuffer(certificate.lookup_path([...path, 'status'])),
         );

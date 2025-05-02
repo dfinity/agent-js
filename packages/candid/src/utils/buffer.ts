@@ -261,12 +261,3 @@ export function uint8ToBuf(arr: Uint8Array): ArrayBuffer {
   return buf;
 }
 
-const encoder = new TextEncoder();
-/**
- * Returns text encoded buffer from a string.
- * @param str string to encode
- * @returns Uint8Array
- */
-export function strToUtf8(str: string): Uint8Array {
-  return encoder.encode(str);
-}
