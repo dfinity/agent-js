@@ -19,7 +19,7 @@ import {
   TrustError,
   UNREACHABLE_ERROR,
 } from './errors';
-import { fromHex, toHex, uint8Equals } from '@dfinity/candid';
+import { fromHex, toHex, uint8Equals, uint8ToBuf } from '@dfinity/candid';
 import { utf8ToBytes } from '@noble/hashes/utils';
 
 function label(str: string): Cert.NodeLabel {
@@ -445,7 +445,7 @@ describe('lookup_path with different value types', () => {
 
     const result = Cert.lookup_path([label('arraybuffer')], tree) as Cert.LookupPathResultFound;
     expect(result.status).toEqual(Cert.LookupPathStatus.Found);
-    expect(result.value).toBeInstanceOf(ArrayBuffer);
+    expect(result.value).toBeInstanceOf(Uint8Array);
   });
 
   test('handles Uint8Array values', () => {
@@ -462,7 +462,7 @@ describe('lookup_path with different value types', () => {
 
     const result = Cert.lookup_path([label('uint8array')], tree) as Cert.LookupPathResultFound;
     expect(result.status).toEqual(Cert.LookupPathStatus.Found);
-    expect(result.value).toBeInstanceOf(ArrayBuffer);
+    expect(result.value).toBeInstanceOf(Uint8Array);
   });
 
   test('throws the unreachable error if the value is not an ArrayBuffer or Uint8Array', () => {
@@ -511,6 +511,12 @@ describe('lookup_subtree', () => {
 
   test('empty path returns full tree', () => {
     const result = Cert.lookup_subtree([], tree) as Cert.LookupSubtreeResultFound;
+    expect(result.status).toEqual(Cert.LookupSubtreeStatus.Found);
+    expect(result.value).toEqual(tree);
+  });
+
+  test('empty path returns full tree', () => {
+    const result = Cert.lookup_subtree([], tree) as Cert.LookupSubtreeResultFound;
     expect(result.status).toEqual(Cert.LookupPathStatus.Found);
     expect(result.value).toEqual(tree);
   });
@@ -521,7 +527,10 @@ describe('lookup_subtree', () => {
       tree,
     ) as Cert.LookupSubtreeResultFound;
     expect(result.status).toEqual(Cert.LookupPathStatus.Found);
-    expect(result.value).toEqual([Cert.NodeType.Leaf, value('42')]);
+    expect(JSON.stringify(result.value)).toEqual(JSON.stringify([
+      Cert.NodeType.Leaf,
+      value('42'),
+    ]));
   });
 
   test('pruned path returns unknown', () => {

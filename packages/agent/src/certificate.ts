@@ -435,9 +435,9 @@ export type LookupResult =
   | LookupPathResultError;
 
 export enum LookupSubtreeStatus {
-  Absent = 'absent',
-  Unknown = 'unknown',
-  Found = 'found',
+  Absent = 'Absent',
+  Unknown = 'Unknown',
+  Found = 'Found',
 }
 
 export interface LookupSubtreeResultAbsent {
@@ -459,11 +459,11 @@ export type SubtreeLookupResult =
   | LookupSubtreeResultFound;
 
 export enum LookupLabelStatus {
-  Absent = 'absent',
-  Unknown = 'unknown',
-  Found = 'found',
-  Less = 'less',
-  Greater = 'greater',
+  Absent = 'Absent',
+  Unknown = 'Unknown',
+  Found = 'Found',
+  Less = 'Less',
+  Greater = 'Greater',
 }
 
 export interface LookupLabelResultAbsent {

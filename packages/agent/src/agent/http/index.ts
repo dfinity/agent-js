@@ -1214,7 +1214,7 @@ export class HttpAgent implements Agent {
         );
       }
 
-      if (!(timeLookup.value instanceof ArrayBuffer) && !ArrayBuffer.isView(timeLookup)) {
+      if (!(timeLookup.value instanceof Uint8Array) && !ArrayBuffer.isView(timeLookup)) {
         throw ProtocolError.fromCode(
           new MalformedLookupFoundValueErrorCode('Time was not in its expected format.'),
         );
