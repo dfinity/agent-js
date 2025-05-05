@@ -48,7 +48,7 @@ jobs:
         continue-on-error: true
         run: npm list
       - run: npm ci
-      - run: npm run build -ws
+      - run: npm run build
       - run: npm audit
       - run: npm publish -ws
         env:

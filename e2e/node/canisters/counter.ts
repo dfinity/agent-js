@@ -67,5 +67,12 @@ export const createActor = async (options?: HttpAgentOptions, agent?: Agent) => 
     effectiveCanisterId: await getDefaultEffectiveCanisterId(),
   });
   await Actor.install({ module }, { canisterId, agent: effectiveAgent });
-  return Actor.createActor(idl, { canisterId, agent: effectiveAgent }) as ActorSubclass<_SERVICE>;
+  return createCounterActor(canisterId, effectiveAgent);
+};
+
+export const createCounterActor = (
+  canisterId: string | Principal,
+  agent: Agent,
+): ActorSubclass<_SERVICE> => {
+  return Actor.createActor<_SERVICE>(idl, { canisterId, agent });
 };

@@ -196,15 +196,11 @@ export class Certificate {
   }
 
   private static createUnverified(options: CreateCertificateOptions): Certificate {
-    let blsVerify = options.blsVerify;
-    if (!blsVerify) {
-      blsVerify = bls.blsVerify;
-    }
     return new Certificate(
       options.certificate,
       options.rootKey,
       options.canisterId,
-      blsVerify,
+      options.blsVerify ?? bls.blsVerify,
       options.maxAgeInMinutes,
       options.disableTimeVerification,
     );
@@ -301,8 +297,7 @@ export class Certificate {
       rootKey: this._rootKey,
       canisterId: this._canisterId,
       blsVerify: this._blsVerify,
-      // Do not check max age for delegation certificates
-      maxAgeInMinutes: Infinity,
+      disableTimeVerification: true,
     });
 
     if (cert.cert.delegation) {
@@ -394,7 +389,13 @@ export async function reconstruct(t: HashTree): Promise<ArrayBuffer> {
   }
 }
 
-function domain_sep(s: string): ArrayBuffer {
+/**
+ * Creates a domain separator for hashing by encoding the input string
+ * with its length as a prefix.
+ * @param s - The input string to encode.
+ * @returns An ArrayBuffer containing the encoded domain separator.
+ */
+export function domain_sep(s: string): ArrayBuffer {
   const len = new Uint8Array([s.length]);
   const str = new TextEncoder().encode(s);
   return concat(len, str);

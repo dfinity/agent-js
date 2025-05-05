@@ -49,6 +49,11 @@ export interface CallConfig {
    * The effective canister ID. This should almost always be ignored.
    */
   effectiveCanisterId?: Principal;
+
+  /**
+   * The nonce to use for this call. This is used to prevent replay attacks.
+   */
+  nonce?: Uint8Array;
 }
 
 /**
@@ -493,6 +498,7 @@ function _createActorMethod(
         methodName,
         arg,
         effectiveCanisterId: ecid,
+        nonce: options.nonce,
       });
       let reply: ArrayBuffer | undefined;
       let certificate: Certificate | undefined;
@@ -607,7 +613,7 @@ function _createActorMethod(
       } else {
         throw UnknownError.fromCode(
           new UnexpectedErrorCode(
-            `Call was returned undefined, but type [${func.retTypes.join(',')}].`,
+            `Call was returned undefined, but type [${func.retTypes.map(t => t.display()).join(',')}].`,
           ),
         );
       }

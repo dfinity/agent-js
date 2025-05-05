@@ -3,7 +3,7 @@ import { HttpAgentRequest } from './agent/http/types';
 import { requestIdOf } from './request_id';
 import { concat, toHex } from './utils/buffer';
 
-const domainSeparator = new TextEncoder().encode('\x0Aic-request');
+export const IC_REQUEST_DOMAIN_SEPARATOR = new TextEncoder().encode('\x0Aic-request');
 
 /**
  * A Key Pair, containing a secret and public key.
@@ -94,7 +94,7 @@ export abstract class SignIdentity implements Identity {
       body: {
         content: body,
         sender_pubkey: this.getPublicKey().toDer(),
-        sender_sig: await this.sign(concat(domainSeparator, requestId)),
+        sender_sig: await this.sign(concat(IC_REQUEST_DOMAIN_SEPARATOR, requestId)),
       },
     };
   }

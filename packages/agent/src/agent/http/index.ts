@@ -160,9 +160,14 @@ export interface HttpAgentOptions {
   rootKey?: ArrayBuffer;
 
   /**
-   * Whether or not the root key should be automatically fetched during construction.
+   * Whether or not the root key should be automatically fetched during construction. Defaults to false.
    */
   shouldFetchRootKey?: boolean;
+
+  /**
+   * Whether or not to sync the time with the network during construction. Defaults to false.
+   */
+  shouldSyncTime?: boolean;
 }
 
 function getDefaultFetch(): typeof fetch {
@@ -266,12 +271,16 @@ allowing extensions.
 export class HttpAgent implements Agent {
   public rootKey: ArrayBuffer | null;
   #rootKeyPromise: Promise<ArrayBuffer> | null = null;
-  #shouldFetchRootKey: boolean = false;
+  readonly #shouldFetchRootKey: boolean = false;
+
+  #timeDiffMsecs = 0;
+  #syncTimePromise: Promise<void> | null = null;
+  readonly #shouldSyncTime: boolean = false;
+
   #identity: Promise<Identity> | null;
   readonly #fetch: typeof fetch;
   readonly #fetchOptions?: Record<string, unknown>;
   readonly #callOptions?: Record<string, unknown>;
-  #timeDiffMsecs = 0;
   readonly host: URL;
   readonly #credentials: string | undefined;
   readonly #retryTimes; // Retry requests N times before erroring by default
@@ -309,6 +318,7 @@ export class HttpAgent implements Agent {
     this.#fetchOptions = options.fetchOptions;
     this.#callOptions = options.callOptions;
     this.#shouldFetchRootKey = options.shouldFetchRootKey ?? false;
+    this.#shouldSyncTime = options.shouldSyncTime ?? false;
 
     // Use provided root key, otherwise fall back to IC_ROOT_KEY for mainnet or null if the key needs to be fetched
     if (options.rootKey) {
@@ -389,17 +399,9 @@ export class HttpAgent implements Agent {
     return new this({ ...options });
   }
 
-  public static async create(
-    options: HttpAgentOptions = {
-      shouldFetchRootKey: false,
-    },
-  ): Promise<HttpAgent> {
+  public static async create(options: HttpAgentOptions = {}): Promise<HttpAgent> {
     const agent = HttpAgent.createSync(options);
-    const initPromises: Promise<ArrayBuffer | void>[] = [agent.syncTime()];
-    if (agent.host.toString() !== 'https://icp-api.io' && options.shouldFetchRootKey) {
-      initPromises.push(agent.fetchRootKey());
-    }
-    await Promise.all(initPromises);
+    await agent.#asyncGuard();
     return agent;
   }
 
@@ -481,7 +483,6 @@ export class HttpAgent implements Agent {
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
-    await this.#rootKeyGuard();
     // TODO - restore this value
     const callSync = options.callSync ?? true;
     const id = await (identity ?? this.#identity);
@@ -492,19 +493,14 @@ export class HttpAgent implements Agent {
     const ecid = options.effectiveCanisterId
       ? Principal.from(options.effectiveCanisterId)
       : canister;
+    await this.#asyncGuard(ecid);
 
     const sender = id.getPrincipal();
 
-    let ingress_expiry = Expiry.fromDeltaInMilliseconds(
-      this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS,
+    const ingress_expiry = calculateIngressExpiry(
+      this.#maxIngressExpiryInMinutes,
+      this.#timeDiffMsecs,
     );
-
-    // If the value is off by more than 30 seconds, reconcile system time with the network
-    if (Math.abs(this.#timeDiffMsecs) > 1_000 * 30) {
-      ingress_expiry = Expiry.fromDeltaInMilliseconds(
-        this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS + this.#timeDiffMsecs,
-      );
-    }
 
     const submit: CallRequest = {
       request_type: SubmitRequestType.Call,
@@ -622,29 +618,34 @@ export class HttpAgent implements Agent {
         requestDetails: submit,
       };
     } catch (error) {
-      // If the error is due to the v3 api not being supported, fall back to v2
-      if (error instanceof AgentError && error.hasCode(HttpV3ApiNotSupportedErrorCode)) {
-        this.log.warn('v3 api not supported. Fall back to v2');
-        return this.call(
-          canisterId,
-          {
-            ...options,
-            // disable v3 api
-            callSync: false,
-          },
-          identity,
-        );
-      }
       let callError: AgentError;
       if (error instanceof AgentError) {
-        // override the error code to include the request details
-        error.code.requestContext = {
-          requestId,
-          senderPubKey: transformedRequest.body.sender_pubkey,
-          senderSignature: transformedRequest.body.sender_sig,
-          ingressExpiry: transformedRequest.body.content.ingress_expiry,
-        };
-        callError = error;
+        // If the error is due to the v3 api not being supported, fall back to v2
+        if (error.hasCode(HttpV3ApiNotSupportedErrorCode)) {
+          this.log.warn('v3 api not supported. Fall back to v2');
+          return this.call(
+            canisterId,
+            {
+              ...options,
+              // disable v3 api
+              callSync: false,
+            },
+            identity,
+          );
+        } else if (error.hasCode(IngressExpiryInvalidErrorCode)) {
+          // if there is an ingress expiry error, sync time with the network and try again
+          await this.syncTime(canister);
+          return this.call(canister, options, identity);
+        } else {
+          // override the error code to include the request details
+          error.code.requestContext = {
+            requestId,
+            senderPubKey: transformedRequest.body.sender_pubkey,
+            senderSignature: transformedRequest.body.sender_sig,
+            ingressExpiry: transformedRequest.body.content.ingress_expiry,
+          };
+          callError = error;
+        }
       } else {
         callError = UnknownError.fromCode(new UnexpectedErrorCode(error));
       }
@@ -813,7 +814,7 @@ export class HttpAgent implements Agent {
       await new Promise(resolve => setTimeout(resolve, delay));
     }
 
-    let response: Response;
+    let response: Response | undefined;
     try {
       response = await request();
     } catch (error) {
@@ -828,6 +829,7 @@ export class HttpAgent implements Agent {
       }
       throw TransportError.fromCode(new HttpFetchErrorCode(error));
     }
+
     if (response.ok) {
       return response;
     }
@@ -837,6 +839,13 @@ export class HttpAgent implements Agent {
     if (response.status === 404 && response.url.includes('api/v3')) {
       throw ProtocolError.fromCode(new HttpV3ApiNotSupportedErrorCode());
     }
+
+    if (responseText.startsWith('Invalid request expiry: ')) {
+      throw InputError.fromCode(
+        new IngressExpiryInvalidErrorCode(responseText, this.#maxIngressExpiryInMinutes),
+      );
+    }
+
     if (tries < this.#retryTimes) {
       return await this.#requestAndRetry({ request, backoff, tries: tries + 1 });
     }
@@ -856,11 +865,11 @@ export class HttpAgent implements Agent {
     fields: QueryFields,
     identity?: Identity | Promise<Identity>,
   ): Promise<ApiQueryResponse> {
-    await this.#rootKeyGuard();
     const backoff = this.#backoffStrategy();
     const ecid = fields.effectiveCanisterId
       ? Principal.from(fields.effectiveCanisterId)
       : Principal.from(canisterId);
+    await this.#asyncGuard(ecid);
 
     this.log.print(`ecid ${ecid.toString()}`);
     this.log.print(`canisterId ${canisterId.toString()}`);
@@ -888,7 +897,6 @@ export class HttpAgent implements Agent {
 
     const requestId = requestIdOf(request);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     transformedRequest = await this._transform({
       request: {
         method: 'POST',
@@ -1058,14 +1066,13 @@ export class HttpAgent implements Agent {
     identity?: Identity | Promise<Identity>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<any> {
-    await this.#rootKeyGuard();
+    await this.#asyncGuard();
     const id = await (identity ?? this.#identity);
     if (!id) {
       throw ExternalError.fromCode(new IdentityInvalidErrorCode());
     }
     const sender = id.getPrincipal();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const transformedRequest = await this._transform({
       request: {
         method: 'POST',
@@ -1228,50 +1235,73 @@ export class HttpAgent implements Agent {
 
   /**
    * Allows agent to sync its time with the network. Can be called during intialization or mid-lifecycle if the device's clock has drifted away from the network time. This is necessary to set the Expiry for a request
-   * @param {Principal} canisterId - Pass a canister ID if you need to sync the time with a particular replica. Uses the management canister by default
+   * @param {Principal} canisterIdOverride - Pass a canister ID if you need to sync the time with a particular subnet. Uses the ICP ledger canister by default.
    */
-  public async syncTime(canisterId?: Principal): Promise<void> {
-    await this.#rootKeyGuard();
-    const CanisterStatus = await import('../../canisterStatus');
-    const callTime = Date.now();
-    try {
-      if (!canisterId) {
-        this.log.print(
-          'Syncing time with the IC. No canisterId provided, so falling back to ryjl3-tyaaa-aaaaa-aaaba-cai',
-        );
-      }
+  public async syncTime(canisterIdOverride?: Principal): Promise<void> {
+    this.#syncTimePromise =
+      this.#syncTimePromise ??
+      (async () => {
+        await this.#rootKeyGuard();
+        const CanisterStatus = await import('../../canisterStatus');
+        const callTime = Date.now();
+        try {
+          if (!canisterIdOverride) {
+            this.log.print(
+              'Syncing time with the IC. No canisterId provided, so falling back to ryjl3-tyaaa-aaaaa-aaaba-cai',
+            );
+          }
+          // Fall back with canisterId of the ICP Ledger
+          const canisterId = canisterIdOverride ?? Principal.from('ryjl3-tyaaa-aaaaa-aaaba-cai');
 
-      const anonymousAgent = HttpAgent.createSync({
-        identity: new AnonymousIdentity(),
-        host: this.host.toString(),
-        fetch: this.#fetch,
-        retryTimes: 0,
-      });
+          const anonymousAgent = HttpAgent.createSync({
+            identity: new AnonymousIdentity(),
+            host: this.host.toString(),
+            fetch: this.#fetch,
+            retryTimes: 0,
+            rootKey: this.rootKey ?? undefined,
+          });
 
-      const status = await CanisterStatus.request({
-        // Fall back with canisterId of the ICP Ledger
-        canisterId: canisterId ?? Principal.from('ryjl3-tyaaa-aaaaa-aaaba-cai'),
-        agent: anonymousAgent,
-        paths: ['time'],
-      });
+          const replicaTimes = await Promise.all(
+            Array(3)
+              .fill(null)
+              .map(async () => {
+                const status = await CanisterStatus.request({
+                  canisterId,
+                  agent: anonymousAgent,
+                  paths: ['time'],
+                });
 
-      const replicaTime = status.get('time');
-      if (replicaTime) {
-        this.#timeDiffMsecs = Number(replicaTime as bigint) - Number(callTime);
-        this.log.notify({
-          message: `Syncing time: offset of ${this.#timeDiffMsecs}`,
-          level: 'info',
-        });
-      }
-    } catch (error) {
-      let syncTimeError: AgentError;
-      if (error instanceof AgentError) {
-        syncTimeError = error;
-      } else {
-        syncTimeError = UnknownError.fromCode(new UnexpectedErrorCode(error));
-      }
-      this.log.error('Caught exception while attempting to sync time', syncTimeError);
-    }
+                const date = status.get('time');
+                if (date instanceof Date) {
+                  return date.getTime();
+                }
+              }, []),
+          );
+
+          const maxReplicaTime = replicaTimes.reduce<number>((max, current) => {
+            return typeof current === 'number' && current > max ? current : max;
+          }, 0);
+
+          if (maxReplicaTime > BigInt(0)) {
+            this.#timeDiffMsecs = Number(maxReplicaTime) - Number(callTime);
+            this.log.notify({
+              message: `Syncing time: offset of ${this.#timeDiffMsecs}`,
+              level: 'info',
+            });
+          }
+        } catch (error) {
+          const syncTimeError =
+            error instanceof AgentError
+              ? error
+              : UnknownError.fromCode(new UnexpectedErrorCode(error));
+          this.log.error('Caught exception while attempting to sync time', syncTimeError);
+
+          throw syncTimeError;
+        }
+      })();
+
+    await this.#syncTimePromise;
+    this.#syncTimePromise = null;
   }
 
   public async status(): Promise<JsonObject> {
@@ -1293,36 +1323,43 @@ export class HttpAgent implements Agent {
   }
 
   public async fetchRootKey(): Promise<ArrayBuffer> {
-    let result: ArrayBuffer;
     // Wait for already pending promise to avoid duplicate calls
-    if (this.#rootKeyPromise) {
-      result = await this.#rootKeyPromise;
-    } else {
-      // construct promise
-      this.#rootKeyPromise = new Promise<ArrayBuffer>((resolve, reject) => {
-        this.status()
-          .then(value => {
-            // Hex-encoded version of the replica root key
-            const rootKey = (value as JsonObject & { root_key: ArrayBuffer }).root_key;
-            this.rootKey = rootKey;
-            resolve(rootKey);
-          })
-          .catch(reject);
-      });
-      result = await this.#rootKeyPromise;
-    }
+    this.#rootKeyPromise =
+      this.#rootKeyPromise ??
+      (async () => {
+        const value = await this.status();
+        // Hex-encoded version of the replica root key
+        this.rootKey = (value as JsonObject & { root_key: ArrayBuffer }).root_key;
+        return this.rootKey;
+      })();
+    const result = await this.#rootKeyPromise;
+
     // clear rootkey promise and return result
     this.#rootKeyPromise = null;
     return result;
   }
 
+  async #asyncGuard(canisterIdOverride?: Principal): Promise<void> {
+    await Promise.all([this.#rootKeyGuard(), this.#syncTimeGuard(canisterIdOverride)]);
+  }
+
   async #rootKeyGuard(): Promise<void> {
     if (this.rootKey) {
       return;
-    } else if (this.rootKey === null && this.#shouldFetchRootKey) {
+    } else if (
+      this.rootKey === null &&
+      this.host.toString() !== 'https://icp-api.io' &&
+      this.#shouldFetchRootKey
+    ) {
       await this.fetchRootKey();
     } else {
       throw ExternalError.fromCode(new MissingRootKeyErrorCode(this.#shouldFetchRootKey));
+    }
+  }
+
+  async #syncTimeGuard(canisterIdOverride?: Principal): Promise<void> {
+    if (this.#shouldSyncTime && this.#timeDiffMsecs === 0) {
+      await this.syncTime(canisterIdOverride);
     }
   }
 
@@ -1335,8 +1372,8 @@ export class HttpAgent implements Agent {
   }
 
   public async fetchSubnetKeys(canisterId: Principal | string) {
-    await this.#rootKeyGuard();
     const effectiveCanisterId: Principal = Principal.from(canisterId);
+    await this.#asyncGuard(effectiveCanisterId);
     const response = await request({
       canisterId: effectiveCanisterId,
       paths: ['subnet'],
@@ -1366,4 +1403,24 @@ export class HttpAgent implements Agent {
 
     return p;
   }
+}
+
+/**
+ * Calculates the ingress expiry time based on the maximum allowed expiry in minutes and the time difference in milliseconds.
+ * @param maxIngressExpiryInMinutes - The maximum ingress expiry time in minutes.
+ * @param timeDiffMsecs - The time difference in milliseconds to adjust the expiry.
+ * @returns The calculated ingress expiry as an Expiry object.
+ */
+export function calculateIngressExpiry(
+  maxIngressExpiryInMinutes: number,
+  timeDiffMsecs: number,
+): Expiry {
+  // If the value is off by more than 30 seconds, reconcile system time with the network
+  if (Math.abs(timeDiffMsecs) > 1_000 * 30) {
+    return Expiry.fromDeltaInMilliseconds(
+      maxIngressExpiryInMinutes * MINUTE_TO_MSECS + timeDiffMsecs,
+    );
+  }
+
+  return Expiry.fromDeltaInMilliseconds(maxIngressExpiryInMinutes * MINUTE_TO_MSECS);
 }

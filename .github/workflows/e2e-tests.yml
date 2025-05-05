@@ -46,7 +46,7 @@ jobs:
         continue-on-error: true
         run: npm list
       - run: npm ci
-      - run: npm run build -ws
+      - run: npm run build
 
       # build monorepo incl. each subpackage
       - run: npm run build --workspaces --if-present

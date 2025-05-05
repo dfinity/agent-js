@@ -318,7 +318,7 @@ export class DerPrefixMismatchErrorCode extends ErrorCode {
   }
 
   public toErrorMessage(): string {
-    return `BLS DER-encoded public key is invalid. Expected the following prefix: ${this.expectedPrefix}, but got ${this.actualPrefix}`;
+    return `BLS DER-encoded public key is invalid. Expected the following prefix: ${toHex(this.expectedPrefix)}, but got ${toHex(this.actualPrefix)}`;
   }
 }
 
