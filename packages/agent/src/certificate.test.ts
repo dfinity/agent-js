@@ -19,7 +19,7 @@ import {
   TrustError,
   UNREACHABLE_ERROR,
 } from './errors';
-import { fromHex, toHex, uint8Equals, uint8ToBuf } from '@dfinity/candid';
+import { fromHex, toHex, uint8Equals } from '@dfinity/candid';
 import { utf8ToBytes } from '@noble/hashes/utils';
 
 function label(str: string): Cert.NodeLabel {
