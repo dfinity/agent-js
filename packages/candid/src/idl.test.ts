@@ -667,6 +667,31 @@ test('decode / encode unknown nested record', () => {
   expect(decodedValue2).toEqual(value);
 });
 
+test.only('should allow records with missing optional fields', () => {
+  const ExtendedRecord = IDL.Record({
+    foo: IDL.Int32,
+    bar: IDL.Bool,
+    bool: IDL.Opt(IDL.Bool),
+    int: IDL.Opt(IDL.Int),
+    nat: IDL.Opt(IDL.Nat),
+    nat32: IDL.Opt(IDL.Nat32),
+    nat64: IDL.Opt(IDL.Nat64),
+    float32: IDL.Opt(IDL.Float32),
+    float64: IDL.Opt(IDL.Float64),
+    text: IDL.Opt(IDL.Text),
+    null: IDL.Opt(IDL.Null),
+    reserved: IDL.Opt(IDL.Reserved),
+    principal: IDL.Opt(IDL.Principal),
+    nested: IDL.Opt(IDL.Opt(IDL.Nat)),
+  });
+
+  const encoded = IDL.encode([ExtendedRecord], [{ foo: 42, bar: true }]);
+
+  expect(toHexString(encoded)).toMatchInlineSnapshot(
+    `"4449444c0d6e7c6e7d6e686e7e6e7f6e716e706e016e796e786e736e726c0ed3e3aa027e868eb70275ef99c00200e199cf0201ae9db1900102aa88ee88040387bdbac80404ad99e7e70405a8ed97f50406f7ddd8f80607c0e7a6b40908dfeca6b40909bba2a2d00e0adaa7a2d00e0b010c012a000000000000000000000000000000"`,
+  );
+});
+
 test('should correctly decode expected optional fields with lower hash than required fields', () => {
   const HttpResponse = IDL.Record({
     body: IDL.Text,
