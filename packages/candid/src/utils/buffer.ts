@@ -84,7 +84,12 @@ export class PipeArrayBuffer {
    */
   constructor(buffer?: Uint8Array, length = buffer?.byteLength || 0) {
     if (buffer && !(buffer instanceof Uint8Array)) {
+      try {
+        buffer = uint8FromBufLike(buffer);
+      }
+      catch {
       throw new Error('Buffer must be a Uint8Array');
+      }
     }
     if (length < 0 || !Number.isInteger(length)) {
       throw new Error('Length must be a non-negative integer');

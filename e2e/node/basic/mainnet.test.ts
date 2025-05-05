@@ -4,20 +4,19 @@ import {
   HttpAgent,
   Identity,
   CanisterStatus,
-  fromHex,
   polling,
   requestIdOf,
   TrustError,
   MissingSignatureErrorCode,
 } from '@dfinity/agent';
-import { IDL } from '@dfinity/candid';
+import { fromHex, IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
 import { describe, it, expect, vi, test } from 'vitest';
 import { makeAgent } from '../utils/agent';
 import { AgentLog } from '@dfinity/agent/src/observable';
 
-const { defaultStrategy, pollForResponse } = polling;
+const {  pollForResponse } = polling;
 
 const createWhoamiActor = async (identity: Identity) => {
   const canisterId = 'ivcos-eqaaa-aaaab-qablq-cai';
@@ -138,7 +137,6 @@ describe('call forwarding', () => {
       agent,
       Principal.fromText(forwardedOptions.effectiveCanisterId),
       requestId,
-      defaultStrategy(),
     );
     expect(certificate).toBeTruthy();
     expect(reply).toBeTruthy();
@@ -221,12 +219,12 @@ test('should allow you to sync time when the system time is over 5 minutes apart
   global.clearTimeout = vi.fn();
   const agent = new HttpAgent({ fetch: fetch });
   const logs: AgentLog[] = [];
-  agent.log.subscribe(log => logs.push(log));
+  agent.log.subscribe(log => logs.push(log as AgentLog));
   await agent.syncTime();
   await agent
     .call(Principal.managementCanister(), {
       methodName: 'test',
-      arg: new Uint8Array().buffer,
+      arg: new Uint8Array(),
     })
     // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
     .catch(function (_) {});

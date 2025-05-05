@@ -16,6 +16,7 @@
   "dependencies": {
     "@dfinity/agent": "^2.4.1",
     "@dfinity/assets": "^2.4.1",
+    "@dfinity/candid": "^2.4.1",
     "@dfinity/identity": "^2.4.1",
     "@dfinity/principal": "^2.4.1",
     "whatwg-fetch": "^3.6.2"
@@ -47,6 +48,9 @@
   "overrides": {
     "vite": {
       "rollup": "^4.22.5"
+    },
+    "agent1": {
+      "@dfinity/candid": "^2.4.1"
     }
   }
 }
