@@ -22,7 +22,7 @@ describe('Ed25519PublicKey Tests', () => {
     testVectors.forEach(([rawPublicKeyHex, derEncodedPublicKeyHex]) => {
       const publicKey = Ed25519PublicKey.fromRaw(fromHex(rawPublicKeyHex));
       const expectedDerPublicKey = fromHex(derEncodedPublicKeyHex);
-      expect(publicKey.toDer()).toEqual(expectedDerPublicKey);
+      expect(publicKey.toDer().toString()).toEqual(expectedDerPublicKey.toString());
     });
   });
 

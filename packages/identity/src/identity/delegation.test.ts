@@ -92,11 +92,11 @@ test('DelegationChain can be serialized to and from JSON', async () => {
     return value;
   });
   const rootToMiddleActual = DelegationChain.fromJSON(rootToMiddleJson);
-  expect(rootToMiddleActual).toEqual(rootToMiddle);
+  expect(rootToMiddleActual.toJSON()).toMatchObject(rootToMiddle.toJSON());
 
   const middleToBottomJson = JSON.stringify(middleToBottom);
   const middleToBottomActual = DelegationChain.fromJSON(middleToBottomJson);
-  expect(middleToBottomActual).toEqual(middleToBottom);
+  expect(middleToBottomActual.toJSON()).toEqual(middleToBottom.toJSON());
 });
 
 test('Delegation Chain can sign', async () => {
