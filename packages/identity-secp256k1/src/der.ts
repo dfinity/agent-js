@@ -1,4 +1,4 @@
-import { uint8Equals } from "@dfinity/candid";
+import { uint8Equals } from '@dfinity/candid';
 
 export const encodeLenBytes = (len: number): number => {
   if (len <= 0x7f) {

@@ -69,7 +69,7 @@ describe('assets', () => {
   };
 
   beforeAll(async () => {
-    const module = uint8FromBufLike( readFileSync(path.join(__dirname, '../canisters/assets.wasm')));
+    const module = uint8FromBufLike(readFileSync(path.join(__dirname, '../canisters/assets.wasm')));
     canisterId = await Actor.createCanister({ agent: await agent });
     await Actor.install({ module }, { canisterId, agent: await agent });
   });

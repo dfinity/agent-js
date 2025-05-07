@@ -132,11 +132,11 @@ export interface v2ResponseBody {
  * @param body The body to check
  * @returns boolean indicating if the body is a v2ResponseBody
  */
-export function isV2ResponseBody(  
-  body: v2ResponseBody | v3ResponseBody | null,  
-): body is v2ResponseBody {  
-  return body !== null && body !== undefined && 'reject_code' in body;  
-}  
+export function isV2ResponseBody(
+  body: v2ResponseBody | v3ResponseBody | null,
+): body is v2ResponseBody {
+  return body !== null && body !== undefined && 'reject_code' in body;
+}
 
 export interface v3ResponseBody {
   certificate: Uint8Array;

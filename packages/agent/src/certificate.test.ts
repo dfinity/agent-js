@@ -37,7 +37,6 @@ function value(str: string): Cert.NodeValue {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (expect as any).addEqualityTesters([uint8Equals]);
 
-
 function normalizeTree(tree: Cert.HashTree): string {
   return JSON.stringify(tree);
 }
@@ -527,10 +526,7 @@ describe('lookup_subtree', () => {
       tree,
     ) as Cert.LookupSubtreeResultFound;
     expect(result.status).toEqual(Cert.LookupPathStatus.Found);
-    expect(JSON.stringify(result.value)).toEqual(JSON.stringify([
-      Cert.NodeType.Leaf,
-      value('42'),
-    ]));
+    expect(JSON.stringify(result.value)).toEqual(JSON.stringify([Cert.NodeType.Leaf, value('42')]));
   });
 
   test('pruned path returns unknown', () => {
@@ -688,7 +684,9 @@ test('certificate verification fails on nested delegations', async () => {
   // This is a recorded certificate from a read_state request to the II
   // subnet, with the /subnet tree included. Thus, it could be used as its
   // own delegation, according to the old interface spec definition.
-  const withSubnetSubtree = new Uint8Array(readFileSync(path.join(__dirname, 'bin/with_subnet_key.bin')));
+  const withSubnetSubtree = new Uint8Array(
+    readFileSync(path.join(__dirname, 'bin/with_subnet_key.bin')),
+  );
   const canisterId = Principal.fromText('rdmx6-jaaaa-aaaaa-aaadq-cai');
   const subnetId = Principal.fromText(
     'uzr34-akd3s-xrdag-3ql62-ocgoh-ld2ao-tamcv-54e7j-krwgb-2gm4z-oqe',

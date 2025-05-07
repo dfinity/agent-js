@@ -86,9 +86,8 @@ export class PipeArrayBuffer {
     if (buffer && !(buffer instanceof Uint8Array)) {
       try {
         buffer = uint8FromBufLike(buffer);
-      }
-      catch {
-      throw new Error('Buffer must be a Uint8Array');
+      } catch {
+        throw new Error('Buffer must be a Uint8Array');
       }
     }
     if (length < 0 || !Number.isInteger(length)) {
@@ -177,8 +176,6 @@ export class PipeArrayBuffer {
   }
 }
 
-
-
 /**
  * Returns a true Uint8Array from an ArrayBufferLike object.
  * @param bufLike a buffer-like object
@@ -195,7 +192,7 @@ export function uint8FromBufLike(
     | number[]
     | { buffer: ArrayBuffer },
 ): Uint8Array {
-  if(!(bufLike)) {
+  if (!bufLike) {
     throw new Error('Input cannot be null or undefined');
   }
 
@@ -265,4 +262,3 @@ export function uint8ToBuf(arr: Uint8Array): ArrayBuffer {
   view.set(arr);
   return buf;
 }
-

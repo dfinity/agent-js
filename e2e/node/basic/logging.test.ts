@@ -1,4 +1,4 @@
-import {  getManagementCanister } from '@dfinity/agent';
+import { getManagementCanister } from '@dfinity/agent';
 import { describe, it, expect } from 'vitest';
 import logsActor from '../canisters/logs';
 import { makeAgent } from '../utils/agent';

@@ -16,7 +16,7 @@ import { describe, it, expect, vi, test } from 'vitest';
 import { makeAgent } from '../utils/agent';
 import { AgentLog } from '@dfinity/agent/src/observable';
 
-const {  pollForResponse } = polling;
+const { pollForResponse } = polling;
 
 const createWhoamiActor = async (identity: Identity) => {
   const canisterId = 'ivcos-eqaaa-aaaab-qablq-cai';

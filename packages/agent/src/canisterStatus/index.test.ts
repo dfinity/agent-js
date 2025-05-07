@@ -51,9 +51,7 @@ const testCases = [
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const getRealStatus = async () => {
   const identity = (await Ed25519KeyIdentity.generate(
-    new Uint8Array(
-      fromHex('foo23342sd-234-234a-asdf-asdf-asdf-4frsefrsdf-weafasdfe-easdfee'),
-    ),
+    new Uint8Array(fromHex('foo23342sd-234-234a-asdf-asdf-asdf-4frsefrsdf-weafasdfe-easdfee')),
   )) as unknown as Identity;
 
   const agent = new HttpAgent({ host: 'http://127.0.0.1:4943', fetch, identity });

@@ -38,9 +38,9 @@ export enum NodeType {
 }
 
 export type NodePath = Array<Uint8Array | string>;
-export type NodeLabel = (Uint8Array) & { __nodeLabel__: void };
-export type NodeValue = (Uint8Array) & { __nodeValue__: void };
-export type NodeHash = (Uint8Array) & { __nodeHash__: void };
+export type NodeLabel = Uint8Array & { __nodeLabel__: void };
+export type NodeValue = Uint8Array & { __nodeValue__: void };
+export type NodeHash = Uint8Array & { __nodeHash__: void };
 
 export type EmptyHashTree = [NodeType.Empty];
 export type ForkHashTree = [NodeType.Fork, HashTree, HashTree];

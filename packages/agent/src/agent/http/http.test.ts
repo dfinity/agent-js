@@ -173,13 +173,7 @@ test('queries with the same content should have the same signature', async () =>
     sender: principal,
   });
 
-  const paths = [
-    [
-      utf8ToBytes('request_status'),
-      requestId,
-      utf8ToBytes('reply'),
-    ],
-  ];
+  const paths = [[utf8ToBytes('request_status'), requestId, utf8ToBytes('reply')]];
 
   const response1 = await httpAgent.readState(canisterId, { paths });
   const response2 = await httpAgent.readState(canisterId, { paths });
@@ -240,13 +234,7 @@ test('readState should not call transformers if request is passed', async () => 
     sender: principal,
   });
 
-  const paths = [
-    [
-      utf8ToBytes('request_status'),
-      requestId,
-      utf8ToBytes('reply'),
-    ],
-  ];
+  const paths = [[utf8ToBytes('request_status'), requestId, utf8ToBytes('reply')]];
 
   const request = await httpAgent.createReadStateRequest({ paths });
   expect(transformMock).toHaveBeenCalledTimes(1);
@@ -1425,7 +1413,7 @@ export async function fetchCloner(
 ): Promise<Response> {
   const response = await fetch(request, init);
   const cloned = response.clone();
-  const responseBuffer =  uint8FromBufLike(await cloned.arrayBuffer());
+  const responseBuffer = uint8FromBufLike(await cloned.arrayBuffer());
 
   const mock = {
     headers: [...response.headers.entries()],

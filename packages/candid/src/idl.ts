@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Principal as PrincipalId } from '@dfinity/principal';
 import { JsonValue } from './types';
-import { concat, PipeArrayBuffer as Pipe,  uint8ToDataView } from './utils/buffer';
+import { concat, PipeArrayBuffer as Pipe, uint8ToDataView } from './utils/buffer';
 import { idlLabelToId } from './utils/hash';
 import {
   lebDecode,
@@ -772,8 +772,8 @@ export class VecClass<T> extends ConstructType<T[]> {
       this._type instanceof FixedNatClass
         ? this._type._bits
         : this._type instanceof FixedIntClass
-        ? this._type._bits
-        : 0;
+          ? this._type._bits
+          : 0;
 
     if (
       (ArrayBuffer.isView(x) && bits == (x as any).BYTES_PER_ELEMENT * 8) ||
@@ -1527,7 +1527,11 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
     return '(' + types.map((t, i) => t.valueToString(v[i])).join(', ') + ')';
   }
 
-  constructor(public argTypes: Type[], public retTypes: Type[], public annotations: string[] = []) {
+  constructor(
+    public argTypes: Type[],
+    public retTypes: Type[],
+    public annotations: string[] = [],
+  ) {
     super();
   }
 
@@ -1566,7 +1570,7 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
   }
 
   public decodeValue(b: Pipe, t: Type): [PrincipalId, string] {
-    const tt = t instanceof RecClass ? t.getType() ?? t : t;
+    const tt = t instanceof RecClass ? (t.getType() ?? t) : t;
     if (!subtype(tt, this)) {
       throw new Error(
         `Cannot decode function reference at type ${this.display()} from wire type ${tt.display()}`,
@@ -1659,7 +1663,7 @@ export class ServiceClass extends ConstructType<PrincipalId> {
   }
 
   public decodeValue(b: Pipe, t: Type): PrincipalId {
-    const tt = t instanceof RecClass ? t.getType() ?? t : t;
+    const tt = t instanceof RecClass ? (t.getType() ?? t) : t;
     if (!subtype(tt, this)) {
       throw new Error(
         `Cannot decode service reference at type ${this.display()} from wire type ${tt.display()}`,

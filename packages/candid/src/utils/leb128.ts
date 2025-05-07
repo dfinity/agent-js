@@ -167,7 +167,6 @@ export function writeUIntLE(value: bigint | number, byteLength: number): Uint8Ar
   return writeIntLE(value, byteLength);
 }
 
-
 /**
  *
  * @param value - bigint or number
