@@ -9,13 +9,14 @@ import {
   requestIdOf,
   TrustError,
   MissingSignatureErrorCode,
+  AgentLog,
 } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
 import { describe, it, expect, vi, test } from 'vitest';
 import { makeAgent } from '../utils/agent';
-import { AgentLog } from '@dfinity/agent/src/observable';
+import { waitForAndRunTimers } from '../utils/test';
 
 const { defaultStrategy, pollForResponse } = polling;
 
@@ -27,8 +28,6 @@ const createWhoamiActor = async (identity: Identity) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }) as unknown as any;
   };
-  vi.useFakeTimers();
-  new Date(Date.now());
 
   const agent = await makeAgent({ host: 'https://icp-api.io', identity });
 
@@ -114,7 +113,6 @@ describe('controllers', () => {
 
 describe('call forwarding', () => {
   it('should handle call forwarding', async () => {
-    vi.useRealTimers();
     const forwardedOptions = {
       canisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
       methodName: 'inc_read',
@@ -138,7 +136,7 @@ describe('call forwarding', () => {
       agent,
       Principal.fromText(forwardedOptions.effectiveCanisterId),
       requestId,
-      defaultStrategy(),
+      { strategy: defaultStrategy() },
     );
     expect(certificate).toBeTruthy();
     expect(reply).toBeTruthy();
@@ -154,7 +152,7 @@ test('it should succeed when setting an expiry in the near future', async () => 
 
   await agent.syncTime();
 
-  expect(
+  await expect(
     agent.call('tnnnb-2yaaa-aaaab-qaiiq-cai', {
       methodName: 'inc_read',
       arg: fromHex('4449444c0000'),
@@ -171,7 +169,7 @@ test('it should succeed when setting an expiry in the future', async () => {
 
   await agent.syncTime();
 
-  expect(
+  await expect(
     agent.call('tnnnb-2yaaa-aaaab-qaiiq-cai', {
       methodName: 'inc_read',
       arg: fromHex('4449444c0000'),
@@ -181,7 +179,7 @@ test('it should succeed when setting an expiry in the future', async () => {
 });
 
 test('it should fail when setting an expiry in the far future', async () => {
-  expect(
+  await expect(
     HttpAgent.create({
       host: 'https://icp-api.io',
       ingressExpiryInMinutes: 100,
@@ -215,23 +213,26 @@ test('it should allow you to set an incorrect root key', async () => {
 });
 
 test('should allow you to sync time when the system time is over 5 minutes apart from the replica time', async () => {
-  vi.useRealTimers();
-  vi.spyOn(Date, 'now').mockImplementation(() => 0);
-  new Date(Date.now()); //?
-  global.clearTimeout = vi.fn();
+  vi.useFakeTimers();
+  vi.setSystemTime(0);
   const agent = new HttpAgent({ fetch: fetch });
   const logs: AgentLog[] = [];
   agent.log.subscribe(log => logs.push(log));
   await agent.syncTime();
-  await agent
-    .call(Principal.managementCanister(), {
-      methodName: 'test',
-      arg: new Uint8Array().buffer,
-    })
-    // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
-    .catch(function (_) {});
+
+  await Promise.all([
+    agent
+      .call(Principal.managementCanister(), {
+        methodName: 'test',
+        arg: new Uint8Array().buffer,
+      })
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      .catch(function (_) {}),
+    waitForAndRunTimers(3),
+  ]);
 
   expect(logs[1].level).toBe('info');
   expect(logs[1].message.startsWith('Syncing time: offset of')).toBe(true);
-  console.log(logs[1]);
+
+  vi.useRealTimers();
 });

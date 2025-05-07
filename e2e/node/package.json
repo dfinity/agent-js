@@ -5,13 +5,10 @@
   "type": "module",
   "scripts": {
     "ci": "npm run e2e",
-    "e2e": "vitest",
+    "e2e": "vitest run",
     "lint:fix": "npm run lint -- --fix",
     "lint": "eslint --ext '.js,.jsx,.ts,.tsx' basic canisters utils *.ts",
-    "mitm": "MITM=true vitest ./basic/mitm.test.ts",
-    "build": "",
-    "test:coverage": "",
-    "test": ""
+    "mitm": "MITM=true vitest ./basic/mitm.test.ts"
   },
   "dependencies": {
     "@dfinity/agent": "^2.4.1",
@@ -38,7 +35,9 @@
     "text-encoding": "^0.7.0",
     "ts-node": "^10.8.2",
     "typescript": "^5.7.2",
-    "vitest": "^3.0.8"
+    "vitest": "^3.0.8",
+    "express": "^5.1.0",
+    "@types/express": "^5.0.1"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "4.6.1"

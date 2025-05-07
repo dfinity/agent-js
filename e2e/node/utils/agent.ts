@@ -10,16 +10,11 @@ if (Number.isNaN(port)) {
 }
 
 export const makeAgent = async (options?: HttpAgentOptions) => {
-  const agent = new HttpAgent({
+  return await HttpAgent.create({
     host: `http://127.0.0.1:${process.env.REPLICA_PORT ?? 4943}`,
+    shouldFetchRootKey: true,
     ...options,
   });
-  try {
-    await agent.fetchRootKey();
-  } catch {
-    //
-  }
-  return agent;
 };
 
 const agent = makeAgent();
