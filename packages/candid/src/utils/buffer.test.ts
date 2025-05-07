@@ -1,13 +1,12 @@
 import {
   PipeArrayBuffer,
-  fromHex,
-  toHex,
   concat,
   uint8FromBufLike,
   compare,
   uint8Equals,
   uint8ToDataView,
 } from './buffer';
+import { hexToBytes, bytesToHex } from '@noble/hashes/utils';
 
 describe('PipeArrayBuffer', () => {
   test('can read', () => {
@@ -113,13 +112,13 @@ describe('PipeArrayBuffer', () => {
 
 describe('fromHex and toHex', () => {
   test('fromHex', () => {
-    expect(new Uint8Array(fromHex('000102030405060708090A0B0C0D0E0F10'))).toEqual(
+    expect(new Uint8Array(hexToBytes('000102030405060708090A0B0C0D0E0F10'))).toEqual(
       new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]),
     );
   });
 
   test('fromHex (2)', () => {
-    expect(new Uint8Array(fromHex('FFFEFDFCFBFAF9F8F7F6F5F4F3F2F1F0'))).toEqual(
+    expect(new Uint8Array(hexToBytes('FFFEFDFCFBFAF9F8F7F6F5F4F3F2F1F0'))).toEqual(
       new Uint8Array([
         255, 254, 253, 252, 251, 250, 249, 248, 247, 246, 245, 244, 243, 242, 241, 240,
       ]),
@@ -128,27 +127,27 @@ describe('fromHex and toHex', () => {
 
   test('toHex', () => {
     expect(
-      toHex(new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])),
+      bytesToHex(new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])),
     ).toEqual('000102030405060708090a0b0c0d0e0f10');
   });
 
   test('fromHex with invalid input', () => {
-    expect(() => fromHex('not a hex string')).toThrow('Invalid hexadecimal string.');
-    expect(() => fromHex('0102ZX')).toThrow('Invalid hexadecimal string.');
+    expect(() => hexToBytes('not a hex string')).toThrow();
+    expect(() => hexToBytes('0102ZX')).toThrow();
   });
 
   test('fromHex with empty string', () => {
-    expect(new Uint8Array(fromHex(''))).toEqual(new Uint8Array([]));
+    expect(new Uint8Array(hexToBytes(''))).toEqual(new Uint8Array([]));
   });
 
   test('toHex with empty array', () => {
-    expect(toHex(new Uint8Array([]))).toEqual('');
+    expect(bytesToHex(new Uint8Array([]))).toEqual('');
   });
 
   test('roundtrip conversion', () => {
     const original = new Uint8Array([42, 255, 0, 127, 128]);
-    const hex = toHex(original);
-    const converted = fromHex(hex);
+    const hex = bytesToHex(original);
+    const converted = hexToBytes(hex);
     expect(new Uint8Array(converted)).toEqual(original);
   });
 });

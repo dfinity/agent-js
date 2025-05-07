@@ -5,19 +5,19 @@
  */
 import * as IDL from './idl';
 import { Principal } from '@dfinity/principal';
-import { fromHex, toHex } from './utils/buffer';
+import { hexToBytes, bytesToHex } from '@noble/hashes/utils';
 import { idlLabelToId } from './utils/hash';
 
 function testEncode(typ: IDL.Type, val: any, hex: string, _str: string) {
-  expect(toHex(IDL.encode([typ], [val]))).toEqual(hex);
+  expect(bytesToHex(IDL.encode([typ], [val]))).toEqual(hex);
 }
 
 function testDecode(typ: IDL.Type, val: any, hex: string, _str: string) {
-  expect(IDL.decode([typ], fromHex(hex))[0]).toEqual(val);
+  expect(IDL.decode([typ], hexToBytes(hex))[0]).toEqual(val);
 }
 
 function testDecodeFail(typ: IDL.Type, hex: string, _str: string) {
-  expect(() => IDL.decode([typ], fromHex(hex))[0]).toThrow();
+  expect(() => IDL.decode([typ], hexToBytes(hex))[0]).toThrow();
 }
 
 function test_(typ: IDL.Type, val: any, hex: string, str: string) {
@@ -26,8 +26,8 @@ function test_(typ: IDL.Type, val: any, hex: string, str: string) {
 }
 
 function test_args(typs: IDL.Type[], vals: any[], hex: string, _str: string) {
-  expect(IDL.encode(typs, vals)).toEqual(fromHex(hex));
-  expect(IDL.decode(typs, fromHex(hex))).toEqual(vals);
+  expect(IDL.encode(typs, vals)).toEqual(hexToBytes(hex));
+  expect(IDL.decode(typs, hexToBytes(hex))).toEqual(vals);
 }
 
 function hashedPropertyName(name: string) {
@@ -36,16 +36,16 @@ function hashedPropertyName(name: string) {
 
 test('IDL encoding (magic number)', () => {
   // Wrong magic number
-  expect(() => IDL.decode([IDL.Nat], fromHex('2a'))).toThrow(
+  expect(() => IDL.decode([IDL.Nat], hexToBytes('2a'))).toThrow(
     /Message length smaller than magic number/,
   );
-  expect(() => IDL.decode([IDL.Nat], fromHex('4449444d2a'))).toThrow(/Wrong magic number:/);
+  expect(() => IDL.decode([IDL.Nat], hexToBytes('4449444d2a'))).toThrow(/Wrong magic number:/);
 });
 
 test('IDL encoding (empty)', () => {
   // Empty
   expect(() => IDL.encode([IDL.Empty], [undefined])).toThrow(/Invalid empty argument:/);
-  expect(() => IDL.decode([IDL.Empty], fromHex('4449444c00016f'))).toThrow(
+  expect(() => IDL.decode([IDL.Empty], hexToBytes('4449444c00016f'))).toThrow(
     /Empty cannot appear as an output/,
   );
 });
@@ -66,9 +66,9 @@ test('IDL encoding (text)', () => {
   );
   expect(() => IDL.encode([IDL.Text], [0])).toThrow(/Invalid text argument/);
   expect(() => IDL.encode([IDL.Text], [null])).toThrow(/Invalid text argument/);
-  expect(() => IDL.decode([IDL.Vec(IDL.Nat8)], fromHex('4449444c00017107486920e298830a'))).toThrow(
-    /type mismatch: type on the wire text, expect type vec nat8/,
-  );
+  expect(() =>
+    IDL.decode([IDL.Vec(IDL.Nat8)], hexToBytes('4449444c00017107486920e298830a')),
+  ).toThrow(/type mismatch: type on the wire text, expect type vec nat8/);
 });
 
 test('IDL encoding (int)', () => {
@@ -85,7 +85,7 @@ test('IDL encoding (int)', () => {
   test_(IDL.Int, BigInt(-1234567890), '4449444c00017caefaa7b37b', 'Negative Int');
   test_(IDL.Opt(IDL.Int), [BigInt(42)], '4449444c016e7c0100012a', 'Nested Int');
   testEncode(IDL.Opt(IDL.Int), [42], '4449444c016e7c0100012a', 'Nested Int (number)');
-  expect(() => IDL.decode([IDL.Int], fromHex('4449444c00017d2a'))).toThrow(
+  expect(() => IDL.decode([IDL.Int], hexToBytes('4449444c00017d2a'))).toThrow(
     /type mismatch: type on the wire nat, expect type int/,
   );
 });
@@ -327,7 +327,7 @@ test('IDL encoding (principal)', () => {
   expect(() => IDL.encode([IDL.Principal], ['w7x7r-cok77-xa'])).toThrow(
     /Invalid principal argument/,
   );
-  expect(() => IDL.decode([IDL.Principal], fromHex('4449444c00016803caffee'))).toThrow(
+  expect(() => IDL.decode([IDL.Principal], hexToBytes('4449444c00016803caffee'))).toThrow(
     /Cannot decode principal/,
   );
 });
@@ -484,11 +484,11 @@ test('decode / encode unknown variant', () => {
   const decodedType = IDL.Variant({ _24860_: IDL.Text, _5048165_: IDL.Text });
   const encoded = '4449444c016b029cc20171e58eb4027101000004676f6f64';
 
-  const value = IDL.decode([IDL.Unknown], fromHex(encoded))[0] as any;
+  const value = IDL.decode([IDL.Unknown], hexToBytes(encoded))[0] as any;
   expect(value[hashedPropertyName('ok')]).toEqual('good');
   expect(value.type()).toEqual(decodedType);
 
-  const reencoded = toHex(IDL.encode([value.type()], [value]));
+  const reencoded = bytesToHex(IDL.encode([value.type()], [value]));
   expect(reencoded).toEqual(encoded);
 });
 
@@ -497,87 +497,90 @@ test('throw on serializing unknown', () => {
 });
 
 test('decode unknown text', () => {
-  const text = IDL.decode([IDL.Unknown], fromHex('4449444c00017107486920e298830a'))[0] as any;
+  const text = IDL.decode([IDL.Unknown], hexToBytes('4449444c00017107486920e298830a'))[0] as any;
   expect(text.valueOf()).toEqual('Hi ☃\n');
   expect(text.type().name).toEqual(IDL.Text.name);
 });
 
 test('decode unknown int', () => {
-  const int = IDL.decode([IDL.Unknown], fromHex('4449444c00017c2a'))[0] as any;
+  const int = IDL.decode([IDL.Unknown], hexToBytes('4449444c00017c2a'))[0] as any;
   expect(int.valueOf()).toEqual(BigInt(42));
   expect(int.type().name).toEqual(IDL.Int.name);
 });
 
 test('decode unknown nat', () => {
-  const nat = IDL.decode([IDL.Unknown], fromHex('4449444c00017d2a'))[0] as any;
+  const nat = IDL.decode([IDL.Unknown], hexToBytes('4449444c00017d2a'))[0] as any;
   expect(nat.valueOf()).toEqual(BigInt(42));
   expect(nat.type().name).toEqual(IDL.Nat.name);
 });
 
 test('decode unknown null', () => {
-  const value = IDL.decode([IDL.Unknown], fromHex('4449444c00017f'))[0] as any;
+  const value = IDL.decode([IDL.Unknown], hexToBytes('4449444c00017f'))[0] as any;
   // expect(value.valueOf()).toEqual(null); TODO: This does not hold. What do we do about this?
   expect(value.type().name).toEqual(IDL.Null.name);
 });
 
 test('decode unknown bool', () => {
-  const value = IDL.decode([IDL.Unknown], fromHex('4449444c00017e01'))[0] as any;
+  const value = IDL.decode([IDL.Unknown], hexToBytes('4449444c00017e01'))[0] as any;
   expect(value.valueOf()).toEqual(true);
   expect(value.type().name).toEqual(IDL.Bool.name);
 });
 
 test('decode unknown fixed-width number', () => {
-  const int8 = IDL.decode([IDL.Unknown], fromHex('4449444c0001777f'))[0] as any;
+  const int8 = IDL.decode([IDL.Unknown], hexToBytes('4449444c0001777f'))[0] as any;
   expect(int8.valueOf()).toEqual(127);
   expect(int8.type().name).toEqual(IDL.Int8.name);
 
-  const int32 = IDL.decode([IDL.Unknown], fromHex('4449444c000175d2029649'))[0] as any;
+  const int32 = IDL.decode([IDL.Unknown], hexToBytes('4449444c000175d2029649'))[0] as any;
   expect(int32.valueOf()).toEqual(1234567890);
   expect(int32.type().name).toEqual(IDL.Int32.name);
 
-  const int64 = IDL.decode([IDL.Unknown], fromHex('4449444c0001742a00000000000000'))[0] as any;
+  const int64 = IDL.decode([IDL.Unknown], hexToBytes('4449444c0001742a00000000000000'))[0] as any;
   expect(int64.valueOf()).toEqual(BigInt(42));
   expect(int64.type().name).toEqual(IDL.Int64.name);
 
-  const nat8 = IDL.decode([IDL.Unknown], fromHex('4449444c00017b2a'))[0] as any;
+  const nat8 = IDL.decode([IDL.Unknown], hexToBytes('4449444c00017b2a'))[0] as any;
   expect(nat8.valueOf()).toEqual(42);
   expect(nat8.type().name).toEqual(IDL.Nat8.name);
 
-  const nat32 = IDL.decode([IDL.Unknown], fromHex('4449444c0001792a000000'))[0] as any;
+  const nat32 = IDL.decode([IDL.Unknown], hexToBytes('4449444c0001792a000000'))[0] as any;
   expect(nat32.valueOf()).toEqual(42);
   expect(nat32.type().name).toEqual(IDL.Nat32.name);
 
-  const nat64 = IDL.decode([IDL.Unknown], fromHex('4449444c000178d202964900000000'))[0] as any;
+  const nat64 = IDL.decode([IDL.Unknown], hexToBytes('4449444c000178d202964900000000'))[0] as any;
   expect(nat64.valueOf()).toEqual(BigInt(1234567890));
   expect(nat64.type().name).toEqual(IDL.Nat64.name);
 });
 
 test('decode unknown float', () => {
-  const float64 = IDL.decode([IDL.Unknown], fromHex('4449444c0001720000000000001840'))[0] as any;
+  const float64 = IDL.decode([IDL.Unknown], hexToBytes('4449444c0001720000000000001840'))[0] as any;
   expect(float64.valueOf()).toEqual(6);
   expect(float64.type().name).toEqual(IDL.Float64.name);
 
-  const nan = IDL.decode([IDL.Unknown], fromHex('4449444c000172000000000000f87f'))[0] as any;
+  const nan = IDL.decode([IDL.Unknown], hexToBytes('4449444c000172000000000000f87f'))[0] as any;
   expect(nan.valueOf()).toEqual(Number.NaN);
   expect(nan.type().name).toEqual(IDL.Float64.name);
 
-  const infinity = IDL.decode([IDL.Unknown], fromHex('4449444c000172000000000000f07f'))[0] as any;
+  const infinity = IDL.decode(
+    [IDL.Unknown],
+    hexToBytes('4449444c000172000000000000f07f'),
+  )[0] as any;
   expect(infinity.valueOf()).toEqual(Number.POSITIVE_INFINITY);
   expect(infinity.type().name).toEqual(IDL.Float64.name);
 });
 
 test('decode unknown vec of tuples', () => {
   const encoded = '4449444c026c02007c01716d000101012a0474657874';
-  const value = IDL.decode([IDL.Unknown], fromHex(encoded))[0] as any;
+  const value = IDL.decode([IDL.Unknown], hexToBytes(encoded))[0] as any;
   expect(value).toEqual([[BigInt(42), 'text']]);
-  const reencoded = toHex(IDL.encode([value.type()], [value]));
+  const reencoded = bytesToHex(IDL.encode([value.type()], [value]));
   expect(reencoded).toEqual(encoded);
 });
 
 test('decode unknown service', () => {
   const value = IDL.decode(
     [IDL.Unknown],
-    fromHex('4449444c026a0171017d00690103666f6f0001010103caffee'),
+    hexToBytes('4449444c026a0171017d00690103666f6f0001010103caffee'),
   )[0] as any;
   expect(value).toEqual(Principal.fromText('w7x7r-cok77-xa'));
   expect(value.type()).toEqual(IDL.Service({ foo: IDL.Func([IDL.Text], [IDL.Nat], []) }));
@@ -586,7 +589,7 @@ test('decode unknown service', () => {
 test('decode unknown func', () => {
   const value = IDL.decode(
     [IDL.Unknown],
-    fromHex('4449444c016a0171017d01010100010103caffee03666f6f'),
+    hexToBytes('4449444c016a0171017d01010100010103caffee03666f6f'),
   )[0] as any;
   expect(value).toEqual([Principal.fromText('w7x7r-cok77-xa'), 'foo']);
   expect(value.type()).toEqual(IDL.Func([IDL.Text], [IDL.Nat], ['query']));
@@ -600,15 +603,15 @@ test('decode / encode unknown mutual recursive lists', () => {
   List2.fill(IDL.Record({ head: IDL.Int, tail: List1 }));
 
   const encoded = '4449444c026e016c02a0d2aca8047c90eddae7040001000101010200';
-  const value = IDL.decode([IDL.Unknown], fromHex(encoded))[0] as any;
+  const value = IDL.decode([IDL.Unknown], hexToBytes(encoded))[0] as any;
   expect(value).toEqual([
     { _1158359328_: BigInt(1), _1291237008_: [{ _1158359328_: BigInt(2), _1291237008_: [] }] },
   ]);
 
-  const reencoded = toHex(IDL.encode([value.type()], [value]));
+  const reencoded = bytesToHex(IDL.encode([value.type()], [value]));
   // expect(reencoded).toEqual(encoded); does not hold because type table is different
   // however the result is still compatible with original types:
-  const value2 = IDL.decode([List1], fromHex(reencoded))[0];
+  const value2 = IDL.decode([List1], hexToBytes(reencoded))[0];
   expect(value2).toEqual([{ head: BigInt(1), tail: [{ head: BigInt(2), tail: [] }] }]);
 });
 
@@ -641,17 +644,17 @@ test('decode / encode unknown nested record', () => {
   const nestedValue = { foo: 42, bar: true };
   const value = { foo: 42, bar: nestedValue, baz: nestedValue, bib: nestedValue };
 
-  const decodedValue = IDL.decode([recordUnknownType], fromHex(encoded))[0] as any;
+  const decodedValue = IDL.decode([recordUnknownType], hexToBytes(encoded))[0] as any;
   expect(decodedValue).toHaveProperty('bar');
   expect(decodedValue.bar[hashedPropertyName('foo')]).toEqual(42);
   expect(decodedValue.bar[hashedPropertyName('bar')]).toEqual(true);
   expect(decodedValue.baz).toEqual(value.baz);
   expect(decodedValue.bar.type()).toEqual(nestedHashedType);
 
-  const reencoded = toHex(IDL.encode([recordHashedType], [decodedValue]));
+  const reencoded = bytesToHex(IDL.encode([recordHashedType], [decodedValue]));
   // expect(reencoded).toEqual(encoded); does not hold because type table is different
   // however the result is still compatible with original types:
-  const decodedValue2 = IDL.decode([recordType], fromHex(reencoded))[0] as any;
+  const decodedValue2 = IDL.decode([recordType], hexToBytes(reencoded))[0] as any;
   expect(decodedValue2).toEqual(value);
 });
 
@@ -665,7 +668,7 @@ test('should correctly decode expected optional fields with lower hash than requ
   });
   const encoded =
     '4449444c036c04a2f5ed880471c6a4a19806019ce9c69906029aa1b2f90c7c6d7f6e7e010003666f6f000101c801';
-  const value = IDL.decode([HttpResponse], fromHex(encoded))[0];
+  const value = IDL.decode([HttpResponse], hexToBytes(encoded))[0];
   expect(value).toEqual({
     body: 'foo',
     headers: [],
