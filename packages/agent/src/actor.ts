@@ -16,7 +16,7 @@ import {
   UnexpectedErrorCode,
   UnknownError,
 } from './errors';
-import { IDL, uint8FromBufLike } from '@dfinity/candid';
+import { IDL } from '@dfinity/candid';
 import { pollForResponse, PollingOptions, DEFAULT_POLLING_OPTIONS } from './polling';
 import { Principal } from '@dfinity/principal';
 import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from './certificate';
@@ -24,6 +24,7 @@ import managementCanisterIdl from './canisters/management_idl';
 import _SERVICE, { canister_install_mode, canister_settings } from './canisters/management_service';
 import { HttpAgent } from './agent/http';
 import { utf8ToBytes } from '@noble/hashes/utils';
+import { uint8FromBufLike } from './utils/buffer';
 
 /**
  * Configuration to make calls to the Replica.

@@ -5,7 +5,6 @@ import { Actor } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import { AssetManager } from '@dfinity/assets';
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
-import { uint8FromBufLike } from '@dfinity/candid';
 
 /**
  * Create (pseudo) random bytes Readable

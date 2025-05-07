@@ -1,10 +1,11 @@
 import { Principal } from '@dfinity/principal';
 import { HttpDetailsResponse, NodeSignature, ReplicaRejectCode } from './agent/api';
 import { RequestId } from './request_id';
-import { toHex, uint8FromBufLike } from '@dfinity/candid';
 import { Expiry, RequestStatusResponseStatus } from './agent/http';
 import { HttpHeaderField } from './agent/http/types';
 import { LookupPathStatus, LookupSubtreeStatus } from './certificate';
+import { bytesToHex } from '@noble/hashes/utils';
+import { uint8FromBufLike } from './utils/buffer';
 
 export enum ErrorKindEnum {
   Trust = 'Trust',
@@ -43,9 +44,9 @@ abstract class ErrorCode {
     if (this.requestContext) {
       errorMessage +=
         `\nRequest context:\n` +
-        `  Request ID (hex): ${this.requestContext.requestId ? toHex(this.requestContext.requestId) : 'undefined'}\n` +
-        `  Sender pubkey (hex): ${toHex(uint8FromBufLike(this.requestContext.senderPubKey))}\n` +
-        `  Sender signature (hex): ${toHex(uint8FromBufLike(this.requestContext.senderSignature))}\n` +
+        `  Request ID (hex): ${this.requestContext.requestId ? bytesToHex(this.requestContext.requestId) : 'undefined'}\n` +
+        `  Sender pubkey (hex): ${bytesToHex(this.requestContext.senderPubKey)}\n` +
+        `  Sender signature (hex): ${bytesToHex(this.requestContext.senderSignature)}\n` +
         `  Ingress expiry: ${this.requestContext.ingressExpiry.toString()}`;
     }
     if (this.callContext) {
@@ -244,7 +245,7 @@ export class CertificateNotAuthorizedErrorCode extends ErrorCode {
   }
 
   public toErrorMessage(): string {
-    return `The certificate contains a delegation that does not include the canister ${this.canisterId.toText()} in the canister_ranges field. Subnet ID: 0x${toHex(this.subnetId)}`;
+    return `The certificate contains a delegation that does not include the canister ${this.canisterId.toText()} in the canister_ranges field. Subnet ID: 0x${bytesToHex(this.subnetId)}`;
   }
 }
 
@@ -376,7 +377,7 @@ export class CborDecodeErrorCode extends ErrorCode {
   }
 
   public toErrorMessage(): string {
-    return `Failed to decode CBOR: ${this.error}, input: ${toHex(this.input)}`;
+    return `Failed to decode CBOR: ${this.error}, input: ${bytesToHex(this.input)}`;
   }
 }
 
@@ -408,7 +409,7 @@ export class TimeoutWaitingForResponseErrorCode extends ErrorCode {
   public toErrorMessage(): string {
     let errorMessage = `${this.message}\n`;
     if (this.requestId) {
-      errorMessage += `  Request ID: ${toHex(this.requestId)}\n`;
+      errorMessage += `  Request ID: ${bytesToHex(this.requestId)}\n`;
     }
     if (this.status) {
       errorMessage += `  Request status: ${this.status}\n`;
@@ -433,7 +434,7 @@ export class CertifiedRejectErrorCode extends ErrorCode {
   public toErrorMessage(): string {
     return (
       `The replica returned a rejection error:\n` +
-      `  Request ID: ${toHex(this.requestId)}\n` +
+      `  Request ID: ${bytesToHex(this.requestId)}\n` +
       `  Reject code: ${this.rejectCode}\n` +
       `  Reject text: ${this.rejectMessage}\n` +
       `  Error code: ${this.rejectErrorCode}\n`
@@ -458,7 +459,7 @@ export class UncertifiedRejectErrorCode extends ErrorCode {
   public toErrorMessage(): string {
     return (
       `The replica returned a rejection error:\n` +
-      `  Request ID: ${toHex(this.requestId)}\n` +
+      `  Request ID: ${bytesToHex(this.requestId)}\n` +
       `  Reject code: ${this.rejectCode}\n` +
       `  Reject text: ${this.rejectMessage}\n` +
       `  Error code: ${this.rejectErrorCode}\n`
@@ -477,7 +478,7 @@ export class RequestStatusDoneNoReplyErrorCode extends ErrorCode {
   public toErrorMessage(): string {
     return (
       `Call was marked as done but we never saw the reply:\n` +
-      `  Request ID: ${toHex(this.requestId)}\n`
+      `  Request ID: ${bytesToHex(this.requestId)}\n`
     );
   }
 }

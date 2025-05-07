@@ -8,8 +8,9 @@ import {
   unwrapDER,
   wrapDER,
 } from '@dfinity/agent';
-import { uint8Equals, fromHex, toHex, uint8FromBufLike } from '@dfinity/candid';
+import { uint8Equals, uint8FromBufLike } from '@dfinity/candid';
 import { ed25519 } from '@noble/curves/ed25519';
+import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
 
 declare type KeyLike = PublicKey | DerEncodedPublicKey | ArrayBuffer | ArrayBufferView;
 
@@ -25,7 +26,7 @@ export class Ed25519PublicKey implements PublicKey {
    */
   public static from(maybeKey: unknown): Ed25519PublicKey {
     if (typeof maybeKey === 'string') {
-      const key = fromHex(maybeKey);
+      const key = hexToBytes(maybeKey);
       return this.fromRaw(key);
     } else if (isObject(maybeKey)) {
       const key = maybeKey as KeyLike;
@@ -132,8 +133,8 @@ export class Ed25519KeyIdentity extends SignIdentity {
   public static fromParsedJson(obj: JsonnableEd25519KeyIdentity): Ed25519KeyIdentity {
     const [publicKeyDer, privateKeyRaw] = obj;
     return new Ed25519KeyIdentity(
-      Ed25519PublicKey.fromDer(fromHex(publicKeyDer) as DerEncodedPublicKey),
-      fromHex(privateKeyRaw),
+      Ed25519PublicKey.fromDer(hexToBytes(publicKeyDer) as DerEncodedPublicKey),
+      hexToBytes(privateKeyRaw),
     );
   }
 
@@ -172,7 +173,7 @@ export class Ed25519KeyIdentity extends SignIdentity {
    * Serialize this key to JSON.
    */
   public toJSON(): JsonnableEd25519KeyIdentity {
-    return [toHex(this.#publicKey.toDer()), toHex(this.#privateKey)];
+    return [bytesToHex(this.#publicKey.toDer()), bytesToHex(this.#privateKey)];
   }
 
   /**
@@ -224,7 +225,7 @@ export class Ed25519KeyIdentity extends SignIdentity {
   ) {
     const [signature, message, publicKey] = [sig, msg, pk].map(x => {
       if (typeof x === 'string') {
-        x = fromHex(x);
+        x = hexToBytes(x);
       }
       if (x instanceof Uint8Array) {
         x = uint8FromBufLike(x.buffer);

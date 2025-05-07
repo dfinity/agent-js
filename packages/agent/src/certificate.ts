@@ -16,12 +16,12 @@ import {
   MissingLookupValueErrorCode,
 } from './errors';
 import { hash } from './request_id';
-import { uint8Equals, concat, fromHex, toHex } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import * as bls from './utils/bls';
 import { decodeTime } from './utils/leb';
 import { MANAGEMENT_CANISTER_ID } from './agent';
-import { utf8ToBytes } from '@noble/hashes/utils';
+import { bytesToHex, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
+import { concat, uint8Equals } from './utils/buffer';
 
 export interface Cert {
   tree: HashTree;
@@ -115,7 +115,7 @@ export function hashTreeToString(tree: HashTree): string {
         return JSON.stringify(tree[1]);
       }
 
-      return `pruned(${toHex(new Uint8Array(tree[1]))}`;
+      return `pruned(${bytesToHex(new Uint8Array(tree[1]))}`;
     }
     default: {
       return `unknown(${JSON.stringify(tree[0])})`;
@@ -328,7 +328,7 @@ export class Certificate {
     if (!publicKeyLookup) {
       throw TrustError.fromCode(
         new MissingLookupValueErrorCode(
-          `Could not find subnet key for subnet 0x${toHex(d.subnet_id)}`,
+          `Could not find subnet key for subnet 0x${bytesToHex(d.subnet_id)}`,
         ),
       );
     }
@@ -336,7 +336,7 @@ export class Certificate {
   }
 }
 
-const DER_PREFIX = fromHex(
+const DER_PREFIX = hexToBytes(
   '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100',
 );
 const KEY_LENGTH = 96;

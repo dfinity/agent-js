@@ -1,7 +1,8 @@
 import { Principal } from '@dfinity/principal';
 import { HttpAgentRequest } from './agent/http/types';
 import { requestIdOf } from './request_id';
-import { concat, toHex } from '@dfinity/candid';
+import { concat } from './utils/buffer';
+import { bytesToHex } from '@noble/hashes/utils';
 
 const domainSeparator = new TextEncoder().encode('\x0Aic-request');
 
@@ -143,7 +144,7 @@ export function createIdentityDescriptor(
 ): IdentityDescriptor {
   const identityIndicator: IdentityDescriptor =
     'getPublicKey' in identity
-      ? { type: 'PublicKeyIdentity', publicKey: toHex(identity.getPublicKey().toDer()) }
+      ? { type: 'PublicKeyIdentity', publicKey: bytesToHex(identity.getPublicKey().toDer()) }
       : { type: 'AnonymousIdentity' };
   return identityIndicator;
 }

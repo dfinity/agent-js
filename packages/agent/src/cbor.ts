@@ -4,8 +4,9 @@ import borc from 'borc';
 import * as cbor from 'simple-cbor';
 import { CborEncoder, SelfDescribeCborSerializer } from 'simple-cbor';
 import { Principal } from '@dfinity/principal';
-import { concat, fromHex, uint8FromBufLike, uint8ToBuf } from '@dfinity/candid';
 import { CborDecodeErrorCode, InputError } from './errors';
+import { concat, uint8FromBufLike, uint8ToBuf } from './utils/buffer';
+import { hexToBytes } from '@noble/hashes/utils';
 
 // We are using hansl/simple-cbor for CBOR serialization, to avoid issues with
 // encoding the uint64 values that the HTTP handler of the client expects for
@@ -68,11 +69,11 @@ class BigIntEncoder implements CborEncoder<bigint> {
   public encode(v: bigint): cbor.CborValue {
     // Always use a bigint encoding.
     if (v > BigInt(0)) {
-      return cbor.value.tagged(2, cbor.value.bytes(uint8ToBuf(fromHex(v.toString(16)))));
+      return cbor.value.tagged(2, cbor.value.bytes(uint8ToBuf(hexToBytes(v.toString(16)))));
     } else {
       return cbor.value.tagged(
         3,
-        cbor.value.bytes(uint8ToBuf(fromHex((BigInt('-1') * v).toString(16)))),
+        cbor.value.bytes(uint8ToBuf(hexToBytes((BigInt('-1') * v).toString(16)))),
       );
     }
   }

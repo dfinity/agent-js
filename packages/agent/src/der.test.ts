@@ -1,5 +1,5 @@
 import { encodeLenBytes, encodeLen, decodeLenBytes, decodeLen } from './der';
-import { uint8Equals } from '@dfinity/candid';
+import { uint8Equals } from './utils/buffer';
 
 describe('uint8Equals tests', () => {
   test('equal buffers', () => {

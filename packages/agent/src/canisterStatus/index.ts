@@ -29,11 +29,10 @@ import {
   LabeledHashTree,
   LookupSubtreeStatus,
 } from '../certificate';
-import { toHex } from '@dfinity/candid';
 import * as Cbor from '../cbor';
 import { decodeLeb128, decodeTime } from '../utils/leb';
 import { DerEncodedPublicKey } from '../auth';
-import { utf8ToBytes } from '@noble/hashes/utils';
+import { utf8ToBytes, bytesToHex } from '@noble/hashes/utils';
 
 /**
  * Represents the useful information about a subnet
@@ -211,7 +210,7 @@ export const request = async (options: {
               break;
             }
             case 'module_hash': {
-              status.set(path, toHex(data));
+              status.set(path, bytesToHex(data));
               break;
             }
             case 'subnet': {
@@ -238,7 +237,7 @@ export const request = async (options: {
                     break;
                   }
                   case 'hex': {
-                    status.set(path.key, toHex(data));
+                    status.set(path.key, bytesToHex(data));
                     break;
                   }
                   case 'utf-8': {

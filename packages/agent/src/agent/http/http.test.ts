@@ -21,6 +21,7 @@ import {
   type ActorSubclass,
   SignIdentity,
   Signature,
+  uint8FromBufLike,
 } from '../..';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import {
@@ -29,8 +30,7 @@ import {
   HttpFetchErrorCode,
   IdentityInvalidErrorCode,
 } from '../../errors';
-import { utf8ToBytes } from '@noble/hashes/utils';
-import { fromHex, toHex, uint8FromBufLike } from '@dfinity/candid';
+import { utf8ToBytes, bytesToHex, hexToBytes } from '@noble/hashes/utils';
 
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
@@ -509,7 +509,7 @@ describe('makeNonce', () => {
   it('should create unique values', () => {
     const nonces = new Set();
     for (let i = 0; i < 100; i++) {
-      nonces.add(toHex(makeNonce()));
+      nonces.add(bytesToHex(makeNonce()));
     }
     expect(nonces.size).toBe(100);
   });
@@ -535,10 +535,10 @@ describe('makeNonce', () => {
 
     it('should create same value using polyfill', () => {
       const spyOnSetUint32 = jest.spyOn(DataView.prototype, 'setUint32').mockImplementation();
-      const originalNonce = toHex(makeNonce());
+      const originalNonce = bytesToHex(makeNonce());
       expect(spyOnSetUint32).toHaveBeenCalledTimes(4);
 
-      const nonce = toHex(makeNonce());
+      const nonce = bytesToHex(makeNonce());
       expect(spyOnSetUint32).toHaveBeenCalledTimes(8);
 
       expect(nonce).toBe(originalNonce);
@@ -935,8 +935,8 @@ test('it should handle calls against the ic-management canister that are rejecte
   const mockFetch: jest.Mock = jest.fn(() => {
     return Promise.resolve({
       ...mockResponse,
-      body: fromHex(mockResponse.body),
-      arrayBuffer: async () => fromHex(mockResponse.body),
+      body: hexToBytes(mockResponse.body),
+      arrayBuffer: async () => hexToBytes(mockResponse.body),
     });
   });
 
@@ -984,8 +984,8 @@ test('it should handle calls against the ic-management canister that succeed', a
   const mockFetch: jest.Mock = jest.fn(() => {
     return Promise.resolve({
       ...mockResponse,
-      body: fromHex(mockResponse.body),
-      arrayBuffer: async () => fromHex(mockResponse.body),
+      body: hexToBytes(mockResponse.body),
+      arrayBuffer: async () => hexToBytes(mockResponse.body),
     });
   });
 
@@ -998,7 +998,7 @@ test('it should handle calls against the ic-management canister that succeed', a
     identity,
     fetch: mockFetch,
     host: 'http://localhost:4943',
-    rootKey: fromHex(
+    rootKey: hexToBytes(
       '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c050302010361008be882f1985cccb53fd551571a42818014835ed8f8a27767669b67dd4a836eb0d62b327e3368a80615b0e4f472c73f7917c036dc9317dcb64b319a1efa43dd7c656225c061de359db6fdf7033ac1bff24c944c145e46ebdce2093680b6209a13',
     ),
   });
@@ -1039,8 +1039,8 @@ describe('await fetching root keys before making a call to the network.', () => 
   const mockFetch: jest.Mock = jest.fn(() => {
     return Promise.resolve({
       ...mockResponse,
-      body: fromHex(mockResponse.body),
-      arrayBuffer: async () => fromHex(mockResponse.body),
+      body: hexToBytes(mockResponse.body),
+      arrayBuffer: async () => hexToBytes(mockResponse.body),
     });
   });
   it('should allow fetchRootKey to be awaited after using the constructor', async () => {
@@ -1115,8 +1115,8 @@ describe('transform', () => {
   const mockFetch: jest.Mock = jest.fn(() => {
     return Promise.resolve({
       ...mockResponse,
-      body: fromHex(mockResponse.body),
-      arrayBuffer: async () => fromHex(mockResponse.body),
+      body: hexToBytes(mockResponse.body),
+      arrayBuffer: async () => hexToBytes(mockResponse.body),
     });
   });
 
@@ -1133,7 +1133,7 @@ describe('transform', () => {
       identity,
       fetch: mockFetch,
       host: 'http://localhost:4943',
-      rootKey: fromHex(
+      rootKey: hexToBytes(
         '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c050302010361008be882f1985cccb53fd551571a42818014835ed8f8a27767669b67dd4a836eb0d62b327e3368a80615b0e4f472c73f7917c036dc9317dcb64b319a1efa43dd7c656225c061de359db6fdf7033ac1bff24c944c145e46ebdce2093680b6209a13',
       ),
     });
@@ -1219,7 +1219,7 @@ describe('error logs for bad signature', () => {
   const mockFetch: jest.Mock = jest.fn(() => {
     return Promise.resolve({
       ...badSignatureResponse,
-      body: fromHex(badSignatureResponse.body),
+      body: hexToBytes(badSignatureResponse.body),
       clone: () => {
         return {
           ...badSignatureResponse,
@@ -1349,7 +1349,7 @@ describe('error logs for bad signature', () => {
         clone: () => {
           return {
             ...badSignatureResponse,
-            body: fromHex(badSignatureResponse.body),
+            body: hexToBytes(badSignatureResponse.body),
             text: async () =>
               'Invalid signature: Invalid basic signature: Ed25519 signature could not be verified: public key 3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29, signature 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, error: A signature was invalid\n',
           };
@@ -1420,7 +1420,7 @@ export async function fetchCloner(
     ok: response.ok,
     status: response.status,
     statusText: response.statusText,
-    body: toHex(responseBuffer),
+    body: bytesToHex(responseBuffer),
     now: Date.now(),
   };
 

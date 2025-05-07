@@ -19,15 +19,15 @@ import {
   TrustError,
   UNREACHABLE_ERROR,
 } from './errors';
-import { fromHex, toHex, uint8Equals } from '@dfinity/candid';
-import { utf8ToBytes } from '@noble/hashes/utils';
+import { utf8ToBytes, hexToBytes, bytesToHex } from '@noble/hashes/utils';
+import { uint8Equals } from './utils/buffer';
 
 function label(str: string): Cert.NodeLabel {
   return utf8ToBytes(str) as Cert.NodeLabel;
 }
 
 function pruned(str: string): Cert.NodeHash {
-  return fromHex(str) as Cert.NodeHash;
+  return hexToBytes(str) as Cert.NodeHash;
 }
 
 function value(str: string): Cert.NodeValue {
@@ -42,7 +42,7 @@ function normalizeTree(tree: Cert.HashTree): string {
 }
 
 test('hash tree', async () => {
-  const cborEncode = fromHex(
+  const cborEncode = hexToBytes(
     '8301830183024161830183018302417882034568656c6c6f810083024179820345776f726c64' +
       '83024162820344676f6f648301830241638100830241648203476d6f726e696e67',
   );
@@ -74,13 +74,13 @@ test('hash tree', async () => {
   const tree: Cert.HashTree = cbor.decode(new Uint8Array(cborEncode));
   expect(normalizeTree(tree)).toEqual(normalizeTree(expected));
 
-  expect(toHex(await Cert.reconstruct(tree))).toEqual(
+  expect(bytesToHex(await Cert.reconstruct(tree))).toEqual(
     'eb5c5b2195e62d996b84c9bcc8259d19a83786a2f59e0878cec84c811f669aa0',
   );
 });
 
 test('pruned hash tree', async () => {
-  const cborEncode = fromHex(
+  const cborEncode = hexToBytes(
     '83018301830241618301820458201b4feff9bef8131788b0c9dc6dbad6e81e524249c879e9f1' +
       '0f71ce3749f5a63883024179820345776f726c6483024162820458207b32ac0c6ba8ce35ac' +
       '82c255fc7906f7fc130dab2a090f80fe12f9c2cae83ba6830182045820ec8324b8a1f1ac16' +
@@ -119,7 +119,7 @@ test('pruned hash tree', async () => {
   ];
   const tree: Cert.HashTree = cbor.decode(new Uint8Array(cborEncode));
   expect(normalizeTree(tree)).toEqual(normalizeTree(expected));
-  expect(toHex(await Cert.reconstruct(tree))).toEqual(
+  expect(bytesToHex(await Cert.reconstruct(tree))).toEqual(
     'eb5c5b2195e62d996b84c9bcc8259d19a83786a2f59e0878cec84c811f669aa0',
   );
 });
@@ -561,7 +561,7 @@ test('date lookup is consistent', async () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date(Date.parse('2022-02-17T10:17:49.668Z')));
 
-    const time = parseTimeFromCert(fromHex(SAMPLE_CERT));
+    const time = parseTimeFromCert(hexToBytes(SAMPLE_CERT));
     dateSet.add(time.toISOString());
     nowSet.add(new Date().toISOString());
   }
@@ -581,8 +581,8 @@ test('delegation works for canisters within the subnet range', async () => {
     jest.setSystemTime(new Date(Date.parse('2022-02-23T07:38:00.652Z')));
     await expect(
       Cert.Certificate.create({
-        certificate: fromHex(SAMPLE_CERT),
-        rootKey: fromHex(IC_ROOT_KEY),
+        certificate: hexToBytes(SAMPLE_CERT),
+        rootKey: hexToBytes(IC_ROOT_KEY),
         canisterId: canisterId,
         blsVerify: async () => true,
       }),
@@ -604,8 +604,8 @@ test('delegation check fails for canisters outside of the subnet range', async (
   async function certificateFails(canisterId: Principal) {
     try {
       await Cert.Certificate.create({
-        certificate: fromHex(SAMPLE_CERT),
-        rootKey: fromHex(IC_ROOT_KEY),
+        certificate: hexToBytes(SAMPLE_CERT),
+        rootKey: hexToBytes(IC_ROOT_KEY),
         canisterId: canisterId,
       });
     } catch (error) {
@@ -625,14 +625,14 @@ type FakeCert = {
 };
 
 test('certificate verification fails for an invalid signature', async () => {
-  const badCert: FakeCert = cbor.decode(fromHex(SAMPLE_CERT));
+  const badCert: FakeCert = cbor.decode(hexToBytes(SAMPLE_CERT));
   badCert.signature = new ArrayBuffer(badCert.signature.byteLength);
   const badCertEncoded = cbor.encode(badCert);
   expect.assertions(2);
   try {
     await Cert.Certificate.create({
       certificate: badCertEncoded,
-      rootKey: fromHex(IC_ROOT_KEY),
+      rootKey: hexToBytes(IC_ROOT_KEY),
       canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
     });
   } catch (error) {
@@ -642,7 +642,7 @@ test('certificate verification fails for an invalid signature', async () => {
 });
 
 test('certificate verification fails if the time of the certificate is > 5 minutes in the past', async () => {
-  const badCert: FakeCert = cbor.decode(fromHex(SAMPLE_CERT));
+  const badCert: FakeCert = cbor.decode(hexToBytes(SAMPLE_CERT));
   const badCertEncoded = cbor.encode(badCert);
 
   const tenMinutesFuture = Date.parse('2022-02-23T07:48:00.652Z');
@@ -651,7 +651,7 @@ test('certificate verification fails if the time of the certificate is > 5 minut
   try {
     await Cert.Certificate.create({
       certificate: badCertEncoded,
-      rootKey: fromHex(IC_ROOT_KEY),
+      rootKey: hexToBytes(IC_ROOT_KEY),
       canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
       blsVerify: async () => true,
     });
@@ -662,7 +662,7 @@ test('certificate verification fails if the time of the certificate is > 5 minut
 });
 
 test('certificate verification fails if the time of the certificate is > 5 minutes in the future', async () => {
-  const badCert: FakeCert = cbor.decode(fromHex(SAMPLE_CERT));
+  const badCert: FakeCert = cbor.decode(hexToBytes(SAMPLE_CERT));
   const badCertEncoded = cbor.encode(badCert);
   const tenMinutesPast = Date.parse('2022-02-23T07:28:00.652Z');
   jest.setSystemTime(tenMinutesPast);
@@ -670,7 +670,7 @@ test('certificate verification fails if the time of the certificate is > 5 minut
   try {
     await Cert.Certificate.create({
       certificate: badCertEncoded,
-      rootKey: fromHex(IC_ROOT_KEY),
+      rootKey: hexToBytes(IC_ROOT_KEY),
       canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
       blsVerify: async () => true,
     });
@@ -705,7 +705,7 @@ test('certificate verification fails on nested delegations', async () => {
   try {
     await Cert.Certificate.create({
       certificate: overlyNested,
-      rootKey: fromHex(IC_ROOT_KEY),
+      rootKey: hexToBytes(IC_ROOT_KEY),
       canisterId: canisterId,
     });
   } catch (error) {
@@ -715,7 +715,7 @@ test('certificate verification fails on nested delegations', async () => {
   try {
     await Cert.Certificate.create({
       certificate: overlyNested,
-      rootKey: fromHex(IC_ROOT_KEY),
+      rootKey: hexToBytes(IC_ROOT_KEY),
       canisterId: canisterId,
     });
   } catch (error) {

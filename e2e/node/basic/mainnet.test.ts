@@ -9,7 +9,7 @@ import {
   TrustError,
   MissingSignatureErrorCode,
 } from '@dfinity/agent';
-import { fromHex, IDL } from '@dfinity/candid';
+import { IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
 import { describe, it, expect, vi, test } from 'vitest';
@@ -126,7 +126,7 @@ describe('call forwarding', () => {
       Principal.fromText(forwardedOptions.canisterId),
       {
         methodName: forwardedOptions.methodName,
-        arg: fromHex(forwardedOptions.arg),
+        arg: hexToBytes(forwardedOptions.arg),
         effectiveCanisterId: Principal.fromText(forwardedOptions.effectiveCanisterId),
       },
     );
@@ -155,7 +155,7 @@ test('it should succeed when setting an expiry in the near future', async () => 
   expect(
     agent.call('tnnnb-2yaaa-aaaab-qaiiq-cai', {
       methodName: 'inc_read',
-      arg: fromHex('4449444c0000'),
+      arg: hexToBytes('4449444c0000'),
       effectiveCanisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
     }),
   ).resolves.toBeDefined();
@@ -172,7 +172,7 @@ test('it should succeed when setting an expiry in the future', async () => {
   expect(
     agent.call('tnnnb-2yaaa-aaaab-qaiiq-cai', {
       methodName: 'inc_read',
-      arg: fromHex('4449444c0000'),
+      arg: hexToBytes('4449444c0000'),
       effectiveCanisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
     }),
   ).resolves.toBeDefined();

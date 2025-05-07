@@ -7,8 +7,8 @@ import {
   DER_COSE_OID,
 } from '@dfinity/agent';
 import borc from 'borc';
-import { randomBytes } from '@noble/hashes/utils';
-import { fromHex, toHex, uint8FromBufLike } from '@dfinity/candid';
+import { bytesToHex, hexToBytes, randomBytes } from '@noble/hashes/utils';
+import { uint8FromBufLike } from '@dfinity/candid';
 
 function _coseToDerEncodedBlob(cose: Uint8Array): DerEncodedPublicKey {
   return wrapDER(cose, DER_COSE_OID) as DerEncodedPublicKey;
@@ -146,7 +146,7 @@ export class WebAuthnIdentity extends SignIdentity {
       throw new Error('Invalid JSON string.');
     }
 
-    return new this(fromHex(rawId), fromHex(publicKey), undefined);
+    return new this(hexToBytes(rawId), hexToBytes(publicKey), undefined);
   }
 
   /**
@@ -247,8 +247,8 @@ export class WebAuthnIdentity extends SignIdentity {
    */
   public toJSON(): JsonnableWebAuthnIdentity {
     return {
-      publicKey: toHex(this._publicKey.getCose()),
-      rawId: toHex(this.rawId),
+      publicKey: bytesToHex(this._publicKey.getCose()),
+      rawId: bytesToHex(this.rawId),
     };
   }
 }

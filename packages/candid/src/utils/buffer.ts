@@ -13,37 +13,6 @@ export function concat(...uint8Arrays: Uint8Array[]): Uint8Array {
 }
 
 /**
- * Transforms a Uint8Array to an hexadecimal string. This will use the Uint8Array as an Uint8Array.
- * @param uint8Array The Uint8Array to return the hexadecimal string of.
- */
-export function toHex(uint8Array: Uint8Array): string {
-  return [...uint8FromBufLike(uint8Array)].map(x => x.toString(16).padStart(2, '0')).join('');
-}
-
-const hexRe = new RegExp(/^[0-9a-fA-F]+$/);
-
-/**
- * Transforms a hexadecimal string into a Uint8Array.
- * @param hex The hexadecimal string to use.
- */
-export function fromHex(hex: string): Uint8Array {
-  if (hex === '') {
-    return new Uint8Array(0);
-  }
-  if (!hexRe.test(hex)) {
-    throw new Error('Invalid hexadecimal string.');
-  }
-  const buffer = [...hex]
-    .reduce((acc, curr, i) => {
-      acc[(i / 2) | 0] = (acc[(i / 2) | 0] || '') + curr;
-      return acc;
-    }, [] as string[])
-    .map(x => Number.parseInt(x, 16));
-
-  return new Uint8Array(buffer);
-}
-
-/**
  * A class that abstracts a pipe-like Uint8Array.
  */
 export class PipeArrayBuffer {
@@ -249,16 +218,4 @@ export function uint8ToDataView(uint8: Uint8Array): DataView {
     throw new Error('Input must be a Uint8Array');
   }
   return new DataView(uint8.buffer, uint8.byteOffset, uint8.byteLength);
-}
-
-/**
- * Returns a true ArrayBuffer from a Uint8Array, as Uint8Array.buffer is unsafe.
- * @param {Uint8Array} arr Uint8Array to convert
- * @returns ArrayBuffer
- */
-export function uint8ToBuf(arr: Uint8Array): ArrayBuffer {
-  const buf = new ArrayBuffer(arr.byteLength);
-  const view = new Uint8Array(buf);
-  view.set(arr);
-  return buf;
 }

@@ -1,4 +1,4 @@
-import { JsonObject, uint8Equals } from '@dfinity/candid';
+import { JsonObject } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import {
   HashTreeDecodeErrorCode,
@@ -29,7 +29,6 @@ import {
 import { AnonymousIdentity, Identity } from '../../auth';
 import * as cbor from '../../cbor';
 import { RequestId, hashOfMap, requestIdOf } from '../../request_id';
-import { uint8FromBufLike, concat, fromHex } from '@dfinity/candid';
 import {
   Agent,
   ApiQueryResponse,
@@ -62,6 +61,8 @@ import { Ed25519PublicKey } from '../../public_key';
 import { ObservableLog } from '../../observable';
 import { BackoffStrategy, BackoffStrategyFactory, ExponentialBackoff } from '../../polling/backoff';
 import { decodeTime } from '../../utils/leb';
+import { hexToBytes } from '@noble/hashes/utils';
+import { concat, uint8Equals, uint8FromBufLike } from '../../utils/buffer';
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
 
@@ -316,7 +317,7 @@ export class HttpAgent implements Agent {
     } else if (this.#shouldFetchRootKey) {
       this.rootKey = null;
     } else {
-      this.rootKey = fromHex(IC_ROOT_KEY);
+      this.rootKey = hexToBytes(IC_ROOT_KEY);
     }
 
     const host = determineHost(options.host);

@@ -1,8 +1,7 @@
-import { getManagementCanister } from '@dfinity/agent';
+import { getManagementCanister, uint8FromBufLike } from '@dfinity/agent';
 import { describe, it, expect } from 'vitest';
 import logsActor from '../canisters/logs';
 import { makeAgent } from '../utils/agent';
-import { uint8FromBufLike } from '@dfinity/candid';
 
 describe('canister logs', () => {
   it('should make requests to the management canister', async () => {

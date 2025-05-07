@@ -5,11 +5,13 @@ import {
   requestIdOf,
   Signature,
   SignIdentity,
+  uint8ToBuf,
 } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import * as cbor from 'simple-cbor';
 import { PartialIdentity } from './partial';
-import { uint8FromBufLike, toHex, fromHex, uint8ToBuf } from '@dfinity/candid';
+import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
+import { uint8FromBufLike } from '@dfinity/candid';
 
 const domainSeparator = new TextEncoder().encode('\x1Aic-request-auth-delegation');
 const requestDomainSeparator = new TextEncoder().encode('\x0Aic-request');
@@ -19,7 +21,7 @@ function _parseBlob(value: unknown): Uint8Array {
     throw new Error('Invalid public key.');
   }
 
-  return fromHex(value);
+  return hexToBytes(value);
 }
 
 /**
@@ -54,7 +56,7 @@ export class Delegation {
     // with an OID). After de-hex, if it's not obvious what it is, it's an ArrayBuffer.
     return {
       expiration: this.expiration.toString(16),
-      pubkey: toHex(this.pubkey),
+      pubkey: bytesToHex(this.pubkey),
       ...(this.targets && { targets: this.targets.map(p => p.toHex()) }),
     };
   }
@@ -245,15 +247,15 @@ export class DelegationChain {
         return {
           delegation: {
             expiration: delegation.expiration.toString(16),
-            pubkey: toHex(delegation.pubkey),
+            pubkey: bytesToHex(delegation.pubkey),
             ...(targets && {
               targets: targets.map(t => t.toHex()),
             }),
           },
-          signature: toHex(signature),
+          signature: bytesToHex(signature),
         };
       }),
-      publicKey: toHex(this.publicKey),
+      publicKey: bytesToHex(this.publicKey),
     };
   }
 }

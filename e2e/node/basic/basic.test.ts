@@ -10,7 +10,6 @@ import { Principal } from '@dfinity/principal';
 import agent from '../utils/agent';
 import { test, expect } from 'vitest';
 import { utf8ToBytes } from '@noble/hashes/utils';
-import { uint8FromBufLike } from '@dfinity/candid';
 
 /**
  * Util for determining the default effective canister id, necessary for pocketic
@@ -63,7 +62,7 @@ test('read_state', async () => {
   expect(rawTime.value).toBeInstanceOf(Uint8Array);
 
   const decoded = new IDL.NatClass().decodeValue(
-    new PipeArrayBuffer(uint8FromBufLike(rawTime.value)),
+    new PipeArrayBuffer(rawTime.value),
     IDL.Nat,
   );
   const time = Number(decoded) / 1e9;
@@ -96,7 +95,7 @@ test('read_state with passed request', async () => {
   expect(rawTime.value).toBeInstanceOf(Uint8Array);
 
   const decoded = new IDL.NatClass().decodeValue(
-    new PipeArrayBuffer(uint8FromBufLike(rawTime.value)),
+    new PipeArrayBuffer(rawTime.value),
     IDL.Nat,
   );
   const time = Number(decoded) / 1e9;

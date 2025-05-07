@@ -1,10 +1,10 @@
-import { uint8Equals } from '@dfinity/candid';
 import {
   DerDecodeErrorCode,
   DerDecodeLengthMismatchErrorCode,
   DerEncodeErrorCode,
   InputError,
 } from './errors';
+import { uint8Equals } from './utils/buffer';
 
 export const encodeLenBytes = (len: number): number => {
   if (len <= 0x7f) {

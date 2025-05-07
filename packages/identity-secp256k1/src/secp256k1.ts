@@ -2,12 +2,12 @@
 import { DerEncodedPublicKey, KeyPair, Signature, PublicKey, SignIdentity } from '@dfinity/agent';
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { sha256 } from '@noble/hashes/sha256';
-import { randomBytes } from '@noble/hashes/utils';
+import { bytesToHex, hexToBytes, randomBytes } from '@noble/hashes/utils';
 import * as bip39 from '@scure/bip39';
 import { HDKey } from '@scure/bip32';
 import { SECP256K1_OID, unwrapDER, wrapDER } from './der';
 import { pemToSecretKey } from './pem';
-import { fromHex, toHex, uint8FromBufLike } from '@dfinity/candid';
+import { uint8FromBufLike } from '@dfinity/candid';
 
 declare type PublicKeyHex = string;
 declare type SecretKeyHex = string;
@@ -35,7 +35,7 @@ export class Secp256k1PublicKey implements PublicKey {
    */
   public static from(maybeKey: unknown): Secp256k1PublicKey {
     if (typeof maybeKey === 'string') {
-      const key = fromHex(maybeKey);
+      const key = hexToBytes(maybeKey);
       return this.fromRaw(key);
     } else if (isObject(maybeKey)) {
       const key = maybeKey as KeyLike;
@@ -132,8 +132,8 @@ export class Secp256k1KeyIdentity extends SignIdentity {
   public static fromParsedJson(obj: JsonableSecp256k1Identity): Secp256k1KeyIdentity {
     const [publicKeyRaw, privateKeyRaw] = obj;
     return new Secp256k1KeyIdentity(
-      Secp256k1PublicKey.fromRaw(fromHex(publicKeyRaw)),
-      fromHex(privateKeyRaw),
+      Secp256k1PublicKey.fromRaw(hexToBytes(publicKeyRaw)),
+      hexToBytes(privateKeyRaw),
     );
   }
 
@@ -228,7 +228,7 @@ export class Secp256k1KeyIdentity extends SignIdentity {
    * @returns {JsonableSecp256k1Identity} JsonableSecp256k1Identity
    */
   public toJSON(): JsonableSecp256k1Identity {
-    return [toHex(this._publicKey.toRaw()), toHex(this._privateKey)];
+    return [bytesToHex(this._publicKey.toRaw()), bytesToHex(this._privateKey)];
   }
 
   /**

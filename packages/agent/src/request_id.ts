@@ -1,8 +1,9 @@
-import { lebEncode, uint8FromBufLike, concat, compare } from '@dfinity/candid';
+import { lebEncode, concat, compare } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import borc from 'borc';
 import { sha256 } from '@noble/hashes/sha256';
 import { HashValueErrorCode, InputError } from './errors';
+import { uint8FromBufLike } from './utils/buffer';
 
 export type RequestId = Uint8Array & { __requestId__: void };
 

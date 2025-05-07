@@ -11,8 +11,7 @@ import {
   reconstruct,
   LookupPathStatus,
 } from '@dfinity/agent';
-import { lebDecode } from '@dfinity/candid';
-import { PipeArrayBuffer } from '@dfinity/candid/lib/cjs/utils/buffer';
+import { lebDecode, PipeArrayBuffer, compare } from '@dfinity/candid';
 import { AssetsCanisterRecord, getAssetsCanister } from './canisters/assets';
 import { sha256 } from '@noble/hashes/sha256';
 import { BatchOperationKind } from './canisters/assets_service';
@@ -24,7 +23,6 @@ import { ReadablePath } from './readable/readablePath';
 import { ReadableBytes } from './readable/readableBytes';
 import { limit, LimitFn } from './utils/limit';
 import fs from 'fs';
-import { compare } from '@dfinity/candid';
 
 /**
  * Supported content encodings by asset canister
