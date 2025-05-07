@@ -840,6 +840,7 @@ export class HttpAgent implements Agent {
       throw ProtocolError.fromCode(new HttpV3ApiNotSupportedErrorCode());
     }
 
+    // The error message comes from https://github.com/dfinity/ic/blob/23d5990bfc5277c32e54f0087b5a38fa412171e1/rs/validator/src/ingress_validation.rs#L233
     if (responseText.startsWith('Invalid request expiry: ')) {
       throw InputError.fromCode(
         new IngressExpiryInvalidErrorCode(responseText, this.#maxIngressExpiryInMinutes),
