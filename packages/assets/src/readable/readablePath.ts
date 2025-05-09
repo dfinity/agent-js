@@ -2,6 +2,7 @@ import { Readable } from './readable';
 import mime from 'mime/lite';
 import fs from 'fs';
 import path from 'path';
+import { uint8FromBufLike } from '@dfinity/agent';
 
 export class ReadablePath implements Readable {
   private readonly _path: string;
@@ -77,7 +78,7 @@ export class ReadablePath implements Readable {
         return;
       }
       const buffer = Buffer.alloc(end - start);
-      fs.read(this._fd, buffer, 0, end - start, start, (err: unknown) => {
+      fs.read(this._fd, uint8FromBufLike(buffer), 0, end - start, start, (err: unknown) => {
         if (err) {
           reject(err);
           return;

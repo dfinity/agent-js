@@ -1,36 +1,27 @@
 /* eslint-disable no-underscore-dangle */
-import {
-  DerEncodedPublicKey,
-  KeyPair,
-  Signature,
-  uint8ToBuf,
-  bufFromBufLike,
-  fromHex,
-  toHex,
-  PublicKey,
-  SignIdentity,
-} from '@dfinity/agent';
+import { DerEncodedPublicKey, KeyPair, Signature, PublicKey, SignIdentity } from '@dfinity/agent';
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { sha256 } from '@noble/hashes/sha256';
-import { randomBytes } from '@noble/hashes/utils';
+import { bytesToHex, hexToBytes, randomBytes } from '@noble/hashes/utils';
 import * as bip39 from '@scure/bip39';
 import { HDKey } from '@scure/bip32';
 import { SECP256K1_OID, unwrapDER, wrapDER } from './der';
 import { pemToSecretKey } from './pem';
+import { uint8FromBufLike } from '@dfinity/candid';
 
 declare type PublicKeyHex = string;
 declare type SecretKeyHex = string;
 export declare type JsonableSecp256k1Identity = [PublicKeyHex, SecretKeyHex];
 
-declare type KeyLike = PublicKey | DerEncodedPublicKey | ArrayBuffer | ArrayBufferView;
+declare type KeyLike = PublicKey | DerEncodedPublicKey | ArrayBuffer | ArrayBufferView | Uint8Array;
 
 function isObject(value: unknown) {
   return value !== null && typeof value === 'object';
 }
 
 export class Secp256k1PublicKey implements PublicKey {
-  public static fromRaw(rawKey: ArrayBuffer): Secp256k1PublicKey {
-    return new Secp256k1PublicKey(bufFromBufLike(rawKey));
+  public static fromRaw(rawKey: Uint8Array): Secp256k1PublicKey {
+    return new Secp256k1PublicKey(uint8FromBufLike(rawKey));
   }
 
   public static fromDer(derKey: DerEncodedPublicKey): Secp256k1PublicKey {
@@ -44,7 +35,7 @@ export class Secp256k1PublicKey implements PublicKey {
    */
   public static from(maybeKey: unknown): Secp256k1PublicKey {
     if (typeof maybeKey === 'string') {
-      const key = fromHex(maybeKey);
+      const key = hexToBytes(maybeKey);
       return this.fromRaw(key);
     } else if (isObject(maybeKey)) {
       const key = maybeKey as KeyLike;
@@ -52,33 +43,33 @@ export class Secp256k1PublicKey implements PublicKey {
         return this.fromDer(key as DerEncodedPublicKey);
       } else if (ArrayBuffer.isView(key)) {
         const view = key as ArrayBufferView;
-        return this.fromRaw(bufFromBufLike(view.buffer));
+        return this.fromRaw(uint8FromBufLike(view.buffer));
       } else if (key instanceof ArrayBuffer) {
-        return this.fromRaw(key);
-      } else if ('rawKey' in key) {
-        return this.fromRaw(key.rawKey as ArrayBuffer);
+        return this.fromRaw(uint8FromBufLike(key));
+      } else if ('rawKey' in key && key['rawKey'] !== undefined) {
+        return this.fromRaw(key.rawKey);
       } else if ('derKey' in key) {
         return this.fromDer(key.derKey as DerEncodedPublicKey);
       } else if ('toDer' in key) {
-        return this.fromDer(key.toDer() as ArrayBuffer);
+        return this.fromDer(key.toDer());
       }
     }
     throw new Error('Cannot construct Secp256k1PublicKey from the provided key.');
   }
 
-  private static derEncode(publicKey: ArrayBuffer): DerEncodedPublicKey {
-    const key = bufFromBufLike(wrapDER(publicKey, SECP256K1_OID).buffer) as DerEncodedPublicKey;
+  private static derEncode(publicKey: Uint8Array): DerEncodedPublicKey {
+    const key = uint8FromBufLike(wrapDER(publicKey, SECP256K1_OID).buffer) as DerEncodedPublicKey;
     key.__derEncodedPublicKey__ = undefined;
     return key;
   }
 
-  private static derDecode(key: DerEncodedPublicKey): ArrayBuffer {
+  private static derDecode(key: DerEncodedPublicKey): Uint8Array {
     return unwrapDER(key, SECP256K1_OID);
   }
 
-  #rawKey: ArrayBuffer;
+  #rawKey: Uint8Array;
 
-  public get rawKey(): ArrayBuffer {
+  public get rawKey(): Uint8Array {
     return this.#rawKey;
   }
 
@@ -89,8 +80,8 @@ export class Secp256k1PublicKey implements PublicKey {
   }
 
   // `fromRaw` and `fromDer` should be used for instantiation, not this constructor.
-  private constructor(key: ArrayBuffer) {
-    this.#rawKey = bufFromBufLike(key);
+  private constructor(key: Uint8Array) {
+    this.#rawKey = uint8FromBufLike(key);
     this.#derKey = Secp256k1PublicKey.derEncode(key);
   }
 
@@ -98,7 +89,7 @@ export class Secp256k1PublicKey implements PublicKey {
     return this.derKey;
   }
 
-  public toRaw(): ArrayBuffer {
+  public toRaw(): Uint8Array {
     return this.rawKey;
   }
 }
@@ -141,8 +132,8 @@ export class Secp256k1KeyIdentity extends SignIdentity {
   public static fromParsedJson(obj: JsonableSecp256k1Identity): Secp256k1KeyIdentity {
     const [publicKeyRaw, privateKeyRaw] = obj;
     return new Secp256k1KeyIdentity(
-      Secp256k1PublicKey.fromRaw(fromHex(publicKeyRaw)),
-      fromHex(privateKeyRaw),
+      Secp256k1PublicKey.fromRaw(hexToBytes(publicKeyRaw)),
+      hexToBytes(privateKeyRaw),
     );
   }
 
@@ -159,20 +150,20 @@ export class Secp256k1KeyIdentity extends SignIdentity {
 
   /**
    * generates an identity from a public and private key. Please ensure that you are generating these keys securely and protect the user's private key
-   * @param {ArrayBuffer} publicKey - ArrayBuffer
-   * @param {ArrayBuffer} privateKey - ArrayBuffer
+   * @param {Uint8Array} publicKey - Uint8Array
+   * @param {Uint8Array} privateKey - Uint8Array
    * @returns {Secp256k1KeyIdentity} Secp256k1KeyIdentity
    */
-  public static fromKeyPair(publicKey: ArrayBuffer, privateKey: ArrayBuffer): Secp256k1KeyIdentity {
+  public static fromKeyPair(publicKey: Uint8Array, privateKey: Uint8Array): Secp256k1KeyIdentity {
     return new Secp256k1KeyIdentity(Secp256k1PublicKey.fromRaw(publicKey), privateKey);
   }
 
   /**
    * generates an identity from an existing secret key, and is the correct method to generate an identity from a seed phrase. Please ensure you protect the user's private key.
-   * @param {ArrayBuffer} secretKey - ArrayBuffer
+   * @param {Uint8Array} secretKey - Uint8Array
    * @returns {Secp256k1KeyIdentity} - Secp256k1KeyIdentity
    */
-  public static fromSecretKey(secretKey: ArrayBuffer): Secp256k1KeyIdentity {
+  public static fromSecretKey(secretKey: Uint8Array): Secp256k1KeyIdentity {
     const publicKey = secp256k1.getPublicKey(new Uint8Array(secretKey), false);
     const identity = Secp256k1KeyIdentity.fromKeyPair(publicKey, new Uint8Array(secretKey));
     return identity;
@@ -209,7 +200,7 @@ export class Secp256k1KeyIdentity extends SignIdentity {
       throw new Error('Failed to derive private key from seed phrase');
     }
 
-    return Secp256k1KeyIdentity.fromSecretKey(bufFromBufLike(addrnode.privateKey));
+    return Secp256k1KeyIdentity.fromSecretKey(uint8FromBufLike(addrnode.privateKey));
   }
 
   /**
@@ -224,7 +215,10 @@ export class Secp256k1KeyIdentity extends SignIdentity {
 
   _publicKey: Secp256k1PublicKey;
 
-  protected constructor(publicKey: Secp256k1PublicKey, protected _privateKey: ArrayBuffer) {
+  protected constructor(
+    publicKey: Secp256k1PublicKey,
+    protected _privateKey: Uint8Array,
+  ) {
     super();
     this._publicKey = publicKey;
   }
@@ -234,7 +228,7 @@ export class Secp256k1KeyIdentity extends SignIdentity {
    * @returns {JsonableSecp256k1Identity} JsonableSecp256k1Identity
    */
   public toJSON(): JsonableSecp256k1Identity {
-    return [toHex(this._publicKey.toRaw()), toHex(this._privateKey)];
+    return [bytesToHex(this._publicKey.toRaw()), bytesToHex(this._privateKey)];
   }
 
   /**
@@ -258,17 +252,15 @@ export class Secp256k1KeyIdentity extends SignIdentity {
 
   /**
    * Signs a blob of data, with this identity's private key.
-   * @param {ArrayBuffer} challenge - challenge to sign with this identity's secretKey, producing a signature
+   * @param {Uint8Array} challenge - challenge to sign with this identity's secretKey, producing a signature
    * @returns {Promise<Signature>} signature
    */
-  public async sign(challenge: ArrayBuffer): Promise<Signature> {
+  public async sign(challenge: Uint8Array): Promise<Signature> {
     const hash = sha256.create();
     hash.update(new Uint8Array(challenge));
-    const signature = uint8ToBuf(
-      secp256k1
-        .sign(new Uint8Array(hash.digest()), new Uint8Array(this._privateKey))
-        .toCompactRawBytes(),
-    );
+    const signature = secp256k1
+      .sign(new Uint8Array(hash.digest()), new Uint8Array(this._privateKey))
+      .toCompactRawBytes();
     return signature as Signature;
   }
 }

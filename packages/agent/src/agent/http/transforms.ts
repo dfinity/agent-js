@@ -62,7 +62,7 @@ export class Expiry {
     return cbor.value.u64(this.__expiry__.toString(16), 16);
   }
 
-  public toHash(): ArrayBuffer {
+  public toHash(): Uint8Array {
     return lebEncode(this.__expiry__);
   }
 

@@ -39,12 +39,11 @@ const lookUpTable: Uint32Array = new Uint32Array([
  * Calculate the CRC32 of an ArrayBufferLike.
  * @param buf The BufferLike to calculate the CRC32 of.
  */
-export function getCrc32(buf: ArrayBufferLike): number {
-  const b = new Uint8Array(buf);
+export function getCrc32(buf: Uint8Array): number {
   let crc = -1;
 
-  for (let i = 0; i < b.length; i++) {
-    const byte = b[i];
+  for (let i = 0; i < buf.length; i++) {
+    const byte = buf[i];
     const t = (byte ^ crc) & 0xff;
     crc = lookUpTable[t] ^ (crc >>> 8);
   }

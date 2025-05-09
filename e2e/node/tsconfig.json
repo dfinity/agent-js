@@ -14,5 +14,9 @@
     "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true
   },
-  "references": [{ "path": "../../packages/agent" }, { "path": "../../packages/identity" }, { "path": "../../packages/candid" }]
+  "references": [
+    { "path": "../../packages/agent" },
+    { "path": "../../packages/identity" },
+    { "path": "../../packages/candid" }
+  ]
 }

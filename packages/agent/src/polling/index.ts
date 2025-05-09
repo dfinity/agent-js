@@ -1,5 +1,4 @@
 import { RequestId } from '../request_id';
-import { strToUtf8 } from '../utils/buffer';
 import { CreateCertificateOptions, Certificate, lookupResultToBuffer } from '../certificate';
 import { Agent, ReadStateResponse } from '../agent/api';
 import { Principal } from '@dfinity/principal';
@@ -19,6 +18,7 @@ export * as strategy from './strategy';
 import { defaultStrategy } from './strategy';
 import { ReadRequestType, ReadStateRequest } from '../agent/http/types';
 import { RequestStatusResponseStatus } from '../agent';
+import { utf8ToBytes } from '@noble/hashes/utils';
 export { defaultStrategy } from './strategy';
 
 export type PollStrategy = (
@@ -130,9 +130,9 @@ export async function pollForResponse(
   options: PollingOptions = {},
 ): Promise<{
   certificate: Certificate;
-  reply: ArrayBuffer;
+  reply: Uint8Array;
 }> {
-  const path = [strToUtf8('request_status'), requestId];
+  const path = [utf8ToBytes('request_status'), requestId];
 
   let state: ReadStateResponse;
   let currentRequest: ReadStateRequest | undefined;
@@ -160,7 +160,7 @@ export async function pollForResponse(
     blsVerify: options.blsVerify,
   });
 
-  const maybeBuf = lookupResultToBuffer(cert.lookup_path([...path, strToUtf8('status')]));
+  const maybeBuf = lookupResultToBuffer(cert.lookup_path([...path, utf8ToBytes('status')]));
   let status;
   if (typeof maybeBuf === 'undefined') {
     // Missing requestId means we need to wait
@@ -225,7 +225,7 @@ export async function pollForResponse(
  * @returns The read state request.
  */
 export async function constructRequest(options: {
-  paths: ArrayBuffer[][];
+  paths: Uint8Array[][];
   agent: Agent;
   pollingOptions: PollingOptions;
 }): Promise<ReadStateRequest> {

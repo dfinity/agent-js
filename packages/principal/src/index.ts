@@ -107,8 +107,7 @@ export class Principal {
     view.setUint32(0, getCrc32(this._arr));
     const checksum = new Uint8Array(checksumArrayBuf);
 
-    const bytes = Uint8Array.from(this._arr);
-    const array = new Uint8Array([...checksum, ...bytes]);
+    const array = new Uint8Array([...checksum, ...this._arr]);
 
     const result = encode(array);
     const matches = result.match(/.{1,5}/g);

@@ -57,8 +57,8 @@ test('AgentError', () => {
   expect(errorCode.toString().includes('\nCall context:')).toBe(false);
   errorCode.requestContext = {
     requestId: undefined,
-    senderPubKey: new ArrayBuffer(1),
-    senderSignature: new ArrayBuffer(1),
+    senderPubKey: new Uint8Array(1),
+    senderSignature: new Uint8Array(1),
     ingressExpiry: Expiry.fromDeltaInMilliseconds(1),
   };
   expect(errorCode.requestContext).toBeDefined();
@@ -94,7 +94,7 @@ test('AgentError', () => {
 });
 
 test('Error code certification', () => {
-  const requestId = new ArrayBuffer(16) as RequestId;
+  const requestId = new Uint8Array(16) as RequestId;
   const rejectCode = ReplicaRejectCode.CanisterReject;
   const rejectMessage = 'message';
   const rejectErrorCode = '42';

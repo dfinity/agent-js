@@ -1,4 +1,5 @@
 import { DerEncodedPublicKey, PublicKey, Signature, SignIdentity } from '@dfinity/agent';
+import { uint8FromBufLike } from '@dfinity/candid';
 
 /**
  * Options used in a {@link ECDSAKeyIdentity}
@@ -64,10 +65,13 @@ export class ECDSAKeyIdentity extends SignIdentity {
       extractable,
       keyUsages,
     );
-    const derKey = (await effectiveCrypto.exportKey(
-      'spki',
-      keyPair.publicKey,
-    )) as DerEncodedPublicKey;
+    const derKey: DerEncodedPublicKey = uint8FromBufLike(
+      await effectiveCrypto.exportKey('spki', keyPair.publicKey),
+    );
+
+    Object.assign(derKey, {
+      __derEncodedPublicKey__: undefined,
+    });
 
     return new this(keyPair, derKey, effectiveCrypto);
   }
@@ -83,10 +87,12 @@ export class ECDSAKeyIdentity extends SignIdentity {
     subtleCrypto?: SubtleCrypto,
   ): Promise<ECDSAKeyIdentity> {
     const effectiveCrypto = _getEffectiveCrypto(subtleCrypto);
-    const derKey = (await effectiveCrypto.exportKey(
-      'spki',
-      keyPair.publicKey,
-    )) as DerEncodedPublicKey;
+    const derKey: DerEncodedPublicKey = uint8FromBufLike(
+      await effectiveCrypto.exportKey('spki', keyPair.publicKey),
+    );
+    Object.assign(derKey, {
+      __derEncodedPublicKey__: undefined,
+    });
     return new ECDSAKeyIdentity(keyPair, derKey, effectiveCrypto);
   }
 
@@ -133,12 +139,18 @@ export class ECDSAKeyIdentity extends SignIdentity {
    * @param {ArrayBuffer} challenge - challenge to sign with this identity's secretKey, producing a signature
    * @returns {Promise<Signature>} signature
    */
-  public async sign(challenge: ArrayBuffer): Promise<Signature> {
+  public async sign(challenge: Uint8Array): Promise<Signature> {
     const params: EcdsaParams = {
       name: 'ECDSA',
       hash: { name: 'SHA-256' },
     };
-    const signature = await this._subtleCrypto.sign(params, this._keyPair.privateKey, challenge);
+    const signature = uint8FromBufLike(
+      await this._subtleCrypto.sign(params, this._keyPair.privateKey, challenge),
+    );
+
+    Object.assign(signature, {
+      __signature__: undefined,
+    });
 
     return signature as Signature;
   }

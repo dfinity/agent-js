@@ -63,7 +63,7 @@ export interface CallRequest extends Record<string, any> {
   request_type: SubmitRequestType.Call;
   canister_id: Principal;
   method_name: string;
-  arg: ArrayBuffer;
+  arg: Uint8Array;
   sender: Uint8Array | Principal;
   ingress_expiry: Expiry;
   nonce?: Nonce;
@@ -86,7 +86,7 @@ export interface QueryRequest extends Record<string, any> {
   request_type: ReadRequestType.Query;
   canister_id: Principal;
   method_name: string;
-  arg: ArrayBuffer;
+  arg: Uint8Array;
   sender: Uint8Array | Principal;
   ingress_expiry: Expiry;
   nonce?: Nonce;
@@ -95,7 +95,7 @@ export interface QueryRequest extends Record<string, any> {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface ReadStateRequest extends Record<string, any> {
   request_type: ReadRequestType.ReadState;
-  paths: ArrayBuffer[][];
+  paths: Uint8Array[][];
   ingress_expiry: Expiry;
   sender: Uint8Array | Principal;
 }
@@ -122,5 +122,5 @@ export function makeNonce(): Nonce {
   view.setUint32(8, rand3);
   view.setUint32(12, rand4);
 
-  return new Uint8Array(buffer) as Nonce;
+  return Object.assign(new Uint8Array(buffer), { __nonce__: undefined });
 }

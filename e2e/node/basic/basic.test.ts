@@ -4,12 +4,12 @@ import {
   LookupPathResultFound,
   LookupPathStatus,
   getManagementCanister,
-  strToUtf8,
 } from '@dfinity/agent';
 import { IDL, PipeArrayBuffer } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import agent from '../utils/agent';
 import { test, expect } from 'vitest';
+import { utf8ToBytes } from '@noble/hashes/utils';
 
 /**
  * Util for determining the default effective canister id, necessary for pocketic
@@ -40,7 +40,7 @@ test('read_state', async () => {
   const ecid = await getDefaultEffectiveCanisterId();
   const resolvedAgent = await agent;
   const now = Date.now() / 1000;
-  const path = [strToUtf8('time')];
+  const path = [utf8ToBytes('time')];
   const response = await resolvedAgent.readState(ecid, {
     paths: [path],
   });
@@ -50,7 +50,7 @@ test('read_state', async () => {
     rootKey: resolvedAgent.rootKey,
     canisterId: ecid,
   });
-  expect(cert.lookup_path([strToUtf8('Time')])).toEqual({
+  expect(cert.lookup_path([utf8ToBytes('Time')])).toEqual({
     status: LookupPathStatus.Unknown,
   });
 
@@ -59,7 +59,7 @@ test('read_state', async () => {
   expect(rawTime.status).toEqual(LookupPathStatus.Found);
   rawTime = rawTime as LookupPathResultFound;
 
-  expect(rawTime.value).toBeInstanceOf(ArrayBuffer);
+  expect(rawTime.value).toBeInstanceOf(Uint8Array);
 
   const decoded = new IDL.NatClass().decodeValue(new PipeArrayBuffer(rawTime.value), IDL.Nat);
   const time = Number(decoded) / 1e9;
@@ -70,7 +70,7 @@ test('read_state', async () => {
 test('read_state with passed request', async () => {
   const resolvedAgent = await agent;
   const now = Date.now() / 1000;
-  const path = [strToUtf8('time')];
+  const path = [utf8ToBytes('time')];
   const canisterId = await getDefaultEffectiveCanisterId();
   const request = await resolvedAgent.createReadStateRequest({ paths: [path] });
   const response = await resolvedAgent.readState(canisterId, { paths: [path] }, undefined, request);
@@ -80,7 +80,7 @@ test('read_state with passed request', async () => {
     rootKey: resolvedAgent.rootKey,
     canisterId: canisterId,
   });
-  expect(cert.lookup_path([strToUtf8('Time')])).toEqual({
+  expect(cert.lookup_path([utf8ToBytes('Time')])).toEqual({
     status: LookupPathStatus.Unknown,
   });
 
@@ -89,7 +89,7 @@ test('read_state with passed request', async () => {
   expect(rawTime.status).toEqual(LookupPathStatus.Found);
   rawTime = rawTime as LookupPathResultFound;
 
-  expect(rawTime.value).toBeInstanceOf(ArrayBuffer);
+  expect(rawTime.value).toBeInstanceOf(Uint8Array);
 
   const decoded = new IDL.NatClass().decodeValue(new PipeArrayBuffer(rawTime.value), IDL.Nat);
   const time = Number(decoded) / 1e9;
