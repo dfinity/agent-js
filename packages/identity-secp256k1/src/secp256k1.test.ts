@@ -51,11 +51,26 @@ describe('Secp256k1PublicKey Tests', () => {
     });
   });
 
+  const hexRe = new RegExp(/^[0-9a-fA-F]+$/);
+  function fromHex(hex: string): Uint8Array {
+    if (!hexRe.test(hex)) {
+      throw new Error('Invalid hexadecimal string.');
+    }
+    const buffer = [...hex]
+      .reduce((acc, curr, i) => {
+        acc[(i / 2) | 0] = (acc[(i / 2) | 0] || '') + curr;
+        return acc;
+      }, [] as string[])
+      .map(x => Number.parseInt(x, 16));
+  
+    return new Uint8Array(buffer);
+  }
+
   test('DER decoding of invalid keys', async () => {
     // Too short.
     expect(() => {
       Secp256k1PublicKey.fromDer(
-        hexToBytes(
+        fromHex(
           '3056301006072a8648ce3d020106052b8104000a0342000401ec030acd7d1199f73ae3469329c114944e0693c89502f850bcc6bad397a5956767c79b410c29ac6f587eec84878020fdb54ba002a79b02aa153fe47b6',
         ) as DerEncodedPublicKey,
       );
@@ -63,7 +78,7 @@ describe('Secp256k1PublicKey Tests', () => {
     // Too long.
     expect(() => {
       Secp256k1PublicKey.fromDer(
-        hexToBytes(
+        fromHex(
           '3056301006072a8648ce3d020106052b8104000a0342000401ec030acd7d1199f73ae3469329c114944e0693c89502f850bcc6bad397a5956767c79b410c29ac6f587eec84878020fdb54ba002a79b02aa153fe47b6ffd33' +
             '1b42211ce',
         ) as DerEncodedPublicKey,
@@ -241,7 +256,7 @@ describe('public key serialization from various types', () => {
     expect(shouldFail).toThrow('Cannot construct Secp256k1PublicKey from the provided key.');
 
     const shouldFailHex = () => Secp256k1PublicKey.from('not a hex string');
-    expect(shouldFailHex).toThrow('Invalid hexadecimal string');
+    expect(shouldFailHex).toThrow('hex string expected');
   });
 
   it('should throw an error serializing a too short seed phrase', () => {
