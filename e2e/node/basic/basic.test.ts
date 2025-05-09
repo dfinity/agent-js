@@ -61,10 +61,7 @@ test('read_state', async () => {
 
   expect(rawTime.value).toBeInstanceOf(Uint8Array);
 
-  const decoded = new IDL.NatClass().decodeValue(
-    new PipeArrayBuffer(rawTime.value),
-    IDL.Nat,
-  );
+  const decoded = new IDL.NatClass().decodeValue(new PipeArrayBuffer(rawTime.value), IDL.Nat);
   const time = Number(decoded) / 1e9;
   // The diff between decoded time and local time is within 5s
   expect(Math.abs(time - now) < 5).toBe(true);
@@ -94,10 +91,7 @@ test('read_state with passed request', async () => {
 
   expect(rawTime.value).toBeInstanceOf(Uint8Array);
 
-  const decoded = new IDL.NatClass().decodeValue(
-    new PipeArrayBuffer(rawTime.value),
-    IDL.Nat,
-  );
+  const decoded = new IDL.NatClass().decodeValue(new PipeArrayBuffer(rawTime.value), IDL.Nat);
   const time = Number(decoded) / 1e9;
   // The diff between decoded time and local time is within 5s
   expect(Math.abs(time - now) < 5).toBe(true);

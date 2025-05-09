@@ -15,6 +15,7 @@ import { Principal } from '@dfinity/principal';
 import { describe, it, expect, vi, test } from 'vitest';
 import { makeAgent } from '../utils/agent';
 import { AgentLog } from '@dfinity/agent/src/observable';
+import { hexToBytes } from '@noble/hashes/utils';
 
 const { pollForResponse } = polling;
 

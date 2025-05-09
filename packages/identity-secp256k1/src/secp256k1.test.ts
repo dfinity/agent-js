@@ -62,7 +62,7 @@ describe('Secp256k1PublicKey Tests', () => {
         return acc;
       }, [] as string[])
       .map(x => Number.parseInt(x, 16));
-  
+
     return new Uint8Array(buffer);
   }
 

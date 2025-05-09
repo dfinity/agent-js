@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, unlinkSync } from 'fs';
 import path from 'path';
 import agent from '../utils/agent';
-import { Actor } from '@dfinity/agent';
+import { Actor, uint8FromBufLike } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import { AssetManager } from '@dfinity/assets';
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
