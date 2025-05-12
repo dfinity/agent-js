@@ -5,7 +5,6 @@ import { Expiry, RequestStatusResponseStatus } from './agent/http';
 import { HttpHeaderField } from './agent/http/types';
 import { LookupPathStatus, LookupSubtreeStatus } from './certificate';
 import { bytesToHex } from '@noble/hashes/utils';
-import { uint8FromBufLike } from './utils/buffer';
 
 export enum ErrorKindEnum {
   Trust = 'Trust',
