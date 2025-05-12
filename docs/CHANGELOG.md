@@ -4,6 +4,7 @@
 
 ### Changed
 
+- test: removes backwards comatibility test for `Actor` with `v1` HttpAgent due to breaking interface changes.
 - feat!: changes all @dfinity/candid interfaces to `Uint8Array<ArrayBuffer>` instead of `ArrayBuffer` to make the API more consistent.
 - feat!: replaces `fromHex` and `toHex` utils with `bytesToHex` and `hexToBytes` from `@noble/hashes/utils` to take advantage of existing dependencies.
 - chore: removes unused `bs58check` dependency from `@dfinity/identity-secp256k1`
