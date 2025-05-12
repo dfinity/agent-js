@@ -1,6 +1,7 @@
 import { Actor } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
+import { ICManagementCanister } from "@dfinity/ic-management";
 import { readFileSync } from 'fs';
 import path from 'path';
 import agent from '../utils/agent';
@@ -22,10 +23,15 @@ export default async function (): Promise<{
   idl: IDL.InterfaceFactory;
 }> {
   if (!cache) {
-    const module = readFileSync(path.join(__dirname, 'identity.wasm'));
+    const management = ICManagementCanister.create({
+      agent: await agent,
+    });
+    const wasmModule = new Uint8Array(readFileSync(path.join(__dirname, 'identity.wasm')));
 
-    const canisterId = await Actor.createCanister({ agent: await agent });
-    await Actor.install({ module }, { canisterId, agent: await agent });
+    const canisterId = await management.createCanister();
+    await management.installCode({canisterId, wasmModule, mode: { install: null }, arg: new Uint8Array(0)});
+
+    
     const idl: IDL.InterfaceFactory = ({ IDL }) => {
       return IDL.Service({
         whoami: IDL.Func([], [IDL.Principal], []),

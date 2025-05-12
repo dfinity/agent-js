@@ -21,6 +21,7 @@
     "whatwg-fetch": "^3.6.2"
   },
   "devDependencies": {
+    "@dfinity/ic-management": "^6.1.1",
     "@peculiar/webcrypto": "^1.4.0",
     "@tsconfig/node16": "^1.0.3",
     "@tsconfig/node17": "^1.0.1",
