@@ -14,4 +14,5 @@ module.exports = {
   collectCoverageFrom: ['src/**/*.{ts,tsx}'],
   displayName: packageName,
   rootDir: '../..',
+  prettierPath: null,
 };

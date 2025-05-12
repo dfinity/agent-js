@@ -380,6 +380,22 @@ export class CborDecodeErrorCode extends ErrorCode {
   }
 }
 
+export class CborEncodeErrorCode extends ErrorCode {
+  public name = 'CborEncodeErrorCode';
+
+  constructor(
+    public readonly error: unknown,
+    public readonly value: unknown,
+  ) {
+    super();
+    Object.setPrototypeOf(this, CborEncodeErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    return `Failed to encode CBOR: ${this.error}, input: ${this.value}`;
+  }
+}
+
 export class HexDecodeErrorCode extends ErrorCode {
   public name = 'HexDecodeErrorCode';
 

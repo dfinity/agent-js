@@ -110,7 +110,6 @@ function isSignedReadStateRequestWithExpiry(
     isObjectWithProperty(value.body.content, 'ingress_expiry') &&
     typeof value.body.content.ingress_expiry === 'object' &&
     value.body.content.ingress_expiry !== null &&
-    hasFunction(value.body.content.ingress_expiry, 'toCBOR') &&
     hasFunction(value.body.content.ingress_expiry, 'toHash')
   );
 }
