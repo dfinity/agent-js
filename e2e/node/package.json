@@ -24,6 +24,7 @@
   "devDependencies": {
     "@dfinity/ic-management": "^6.1.1",
     "@noble/hashes": "^1.8.0",
+    "@dfinity/ic-management": "^6.1.1",
     "@peculiar/webcrypto": "^1.4.0",
     "@tsconfig/node16": "^1.0.3",
     "@tsconfig/node17": "^1.0.1",
