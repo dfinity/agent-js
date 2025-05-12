@@ -20,8 +20,8 @@ import { Principal } from '@dfinity/principal';
 import * as bls from './utils/bls';
 import { decodeTime } from './utils/leb';
 import { MANAGEMENT_CANISTER_ID } from './agent';
-import { bytesToHex, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
-import { concat, uint8Equals } from './utils/buffer';
+import { bytesToHex, concatBytes, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
+import { uint8Equals } from './utils/buffer';
 
 export interface Cert {
   tree: HashTree;
@@ -245,7 +245,7 @@ export class Certificate {
     const derKey = await this._checkDelegationAndGetKey(this.cert.delegation);
     const sig = this.cert.signature;
     const key = extractDER(derKey);
-    const msg = concat(domain_sep('ic-state-root'), rootHash);
+    const msg = concatBytes(domain_sep('ic-state-root'), rootHash);
     let sigVer = false;
 
     const lookupTime = lookupResultToBuffer(this.lookup_path(['time']));
@@ -382,12 +382,12 @@ export async function reconstruct(t: HashTree): Promise<Uint8Array> {
     case NodeType.Pruned:
       return t[1];
     case NodeType.Leaf:
-      return hash(concat(domain_sep('ic-hashtree-leaf'), t[1]));
+      return hash(concatBytes(domain_sep('ic-hashtree-leaf'), t[1]));
     case NodeType.Labeled:
-      return hash(concat(domain_sep('ic-hashtree-labeled'), t[1], await reconstruct(t[2])));
+      return hash(concatBytes(domain_sep('ic-hashtree-labeled'), t[1], await reconstruct(t[2])));
     case NodeType.Fork:
       return hash(
-        concat(domain_sep('ic-hashtree-fork'), await reconstruct(t[1]), await reconstruct(t[2])),
+        concatBytes(domain_sep('ic-hashtree-fork'), await reconstruct(t[1]), await reconstruct(t[2])),
       );
     default:
       throw UNREACHABLE_ERROR;
@@ -397,7 +397,7 @@ export async function reconstruct(t: HashTree): Promise<Uint8Array> {
 function domain_sep(s: string): Uint8Array {
   const len = new Uint8Array([s.length]);
   const str = new TextEncoder().encode(s);
-  return concat(len, str);
+  return concatBytes(len, str);
 }
 
 function pathToLabel(path: NodePath): NodeLabel {

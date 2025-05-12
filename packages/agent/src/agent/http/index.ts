@@ -61,8 +61,8 @@ import { Ed25519PublicKey } from '../../public_key';
 import { ObservableLog } from '../../observable';
 import { BackoffStrategy, BackoffStrategyFactory, ExponentialBackoff } from '../../polling/backoff';
 import { decodeTime } from '../../utils/leb';
-import { hexToBytes } from '@noble/hashes/utils';
-import { concat, uint8Equals, uint8FromBufLike } from '../../utils/buffer';
+import { concatBytes, hexToBytes } from '@noble/hashes/utils';
+import { uint8Equals, uint8FromBufLike } from '../../utils/buffer';
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
 
@@ -1036,7 +1036,7 @@ export class HttpAgent implements Agent {
         throw UnknownError.fromCode(new UnexpectedErrorCode(`Unknown status: ${status}`));
       }
 
-      const separatorWithHash = concat(domainSeparator, hash);
+      const separatorWithHash = concatBytes(domainSeparator, hash);
 
       // FIX: check for match without verifying N times
       const pubKey = subnetStatus?.nodeKeys.get(nodeId);

@@ -1,9 +1,10 @@
-import { lebEncode, concat, compare } from '@dfinity/candid';
+import { lebEncode, compare } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import borc from 'borc';
 import { sha256 } from '@noble/hashes/sha256';
 import { HashValueErrorCode, InputError } from './errors';
 import { uint8FromBufLike } from './utils/buffer';
+import { concatBytes } from '@noble/hashes/utils';
 
 export type RequestId = Uint8Array & { __requestId__: void };
 
@@ -36,7 +37,7 @@ export function hashValue(value: unknown): Uint8Array {
     return hash(uint8FromBufLike(value));
   } else if (Array.isArray(value)) {
     const vals = value.map(hashValue);
-    return hash(concat(...vals));
+    return hash(concatBytes(...vals));
   } else if (value && typeof value === 'object' && (value as Principal)._isPrincipal) {
     return hash((value as Principal).toUint8Array());
   } else if (
@@ -97,7 +98,7 @@ export function hashOfMap(map: Record<string, unknown>): Uint8Array {
     return compare(k1, k2);
   });
 
-  const concatenated: Uint8Array = concat(...sorted.map(x => concat(...x)));
+  const concatenated: Uint8Array = concatBytes(...sorted.map(x => concatBytes(...x)));
   const result = hash(concatenated);
   return result;
 }
