@@ -8,7 +8,7 @@ import {
   fromHex,
   toHex,
 } from '@dfinity/agent';
-import borc from 'borc';
+import * as cbor from '@dfinity/cbor';
 import { randomBytes } from '@noble/hashes/utils';
 import { bufFromBufLike } from '@dfinity/candid';
 
@@ -168,7 +168,8 @@ export class WebAuthnIdentity extends SignIdentity {
     }
 
     // Parse the attestationObject as CBOR.
-    const attObject = borc.decodeFirst(bufFromBufLike(response.attestationObject));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const attObject = cbor.decode<any>(new Uint8Array(response.attestationObject));
 
     return new this(
       creds.rawId,
@@ -224,17 +225,15 @@ export class WebAuthnIdentity extends SignIdentity {
 
     const response = result.response as AuthenticatorAssertionResponse;
 
-    const cbor = borc.encode(
-      new borc.Tagged(55799, {
-        authenticator_data: new Uint8Array(response.authenticatorData),
-        client_data_json: new TextDecoder().decode(response.clientDataJSON),
-        signature: new Uint8Array(response.signature),
-      }),
-    );
-    if (!cbor) {
+    const encoded = cbor.encode({
+      authenticator_data: response.authenticatorData,
+      client_data_json: new TextDecoder().decode(response.clientDataJSON),
+      signature: response.signature,
+    });
+    if (!encoded) {
       throw new Error('failed to encode cbor');
     }
-    return cbor.buffer as Signature;
+    return encoded.buffer as Signature;
   }
 
   /**

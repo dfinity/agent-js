@@ -9,7 +9,6 @@ import {
   toHex,
 } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
-import * as cbor from 'simple-cbor';
 import { PartialIdentity } from './partial';
 import { bufFromBufLike } from '@dfinity/candid';
 
@@ -36,19 +35,6 @@ export class Delegation {
     public readonly expiration: bigint,
     public readonly targets?: Principal[],
   ) {}
-
-  public toCBOR(): cbor.CborValue {
-    // Expiration field needs to be encoded as a u64 specifically.
-    return cbor.value.map({
-      pubkey: cbor.value.bytes(this.pubkey),
-      expiration: cbor.value.u64(this.expiration.toString(16), 16),
-      ...(this.targets && {
-        targets: cbor.value.array(
-          this.targets.map(t => cbor.value.bytes(bufFromBufLike(t.toUint8Array()))),
-        ),
-      }),
-    });
-  }
 
   public toJSON(): JsonnableDelegation {
     // every string should be hex and once-de-hexed,

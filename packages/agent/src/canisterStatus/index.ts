@@ -30,7 +30,7 @@ import {
   LookupSubtreeStatus,
 } from '../certificate';
 import { bufFromBufLike, strToUtf8, toHex } from '../utils/buffer';
-import * as Cbor from '../cbor';
+import * as cbor from '../cbor';
 import { decodeLeb128, decodeTime } from '../utils/leb';
 import { DerEncodedPublicKey } from '../auth';
 
@@ -210,7 +210,7 @@ export const request = async (options: {
               break;
             }
             case 'module_hash': {
-              status.set(path, decodeHex(data));
+              status.set(path, toHex(data));
               break;
             }
             case 'subnet': {
@@ -233,11 +233,11 @@ export const request = async (options: {
                     break;
                   }
                   case 'cbor': {
-                    status.set(path.key, decodeCbor(data));
+                    status.set(path.key, cbor.decode(data));
                     break;
                   }
                   case 'hex': {
-                    status.set(path.key, decodeHex(data));
+                    status.set(path.key, toHex(data));
                     break;
                   }
                   case 'utf-8': {
@@ -280,7 +280,7 @@ export const fetchNodeKeys = (
   if (!canisterId._isPrincipal) {
     throw InputError.fromCode(new UnexpectedErrorCode('Invalid canisterId'));
   }
-  const cert: Cert = Cbor.decode(bufFromBufLike(certificate));
+  const cert: Cert = cbor.decode(bufFromBufLike(certificate));
   const tree = cert.tree;
   let delegation = cert.delegation;
   let subnetId: Principal;
@@ -395,23 +395,14 @@ export const encodePath = (path: Path, canisterId: Principal): ArrayBuffer[] => 
   );
 };
 
-const decodeHex = (buf: ArrayBuffer): string => {
-  return toHex(buf);
-};
-
-const decodeCbor = (buf: ArrayBuffer): ArrayBuffer[] => {
-  return Cbor.decode(buf);
-};
-
 const decodeUtf8 = (buf: ArrayBuffer): string => {
   return new TextDecoder().decode(buf);
 };
 
 // Controllers are CBOR-encoded buffers
 const decodeControllers = (buf: ArrayBuffer): Principal[] => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const controllersRaw = decodeCbor(buf);
-  return controllersRaw.map((buf: ArrayBuffer) => {
-    return Principal.fromUint8Array(new Uint8Array(buf));
+  const controllersRaw = cbor.decode<Uint8Array[]>(buf);
+  return controllersRaw.map(buf => {
+    return Principal.fromUint8Array(buf);
   });
 };

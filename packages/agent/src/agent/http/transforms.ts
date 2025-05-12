@@ -1,5 +1,4 @@
 import { lebEncode } from '@dfinity/candid';
-import * as cbor from 'simple-cbor';
 import {
   Endpoint,
   HttpAgentRequest,
@@ -57,9 +56,8 @@ export class Expiry {
     return new Expiry(rounded_down_nanos);
   }
 
-  public toCBOR(): cbor.CborValue {
-    // TODO: change this to take the minimum amount of space (it always takes 8 bytes now).
-    return cbor.value.u64(this.__expiry__.toString(16), 16);
+  public toBigInt(): bigint {
+    return this.__expiry__;
   }
 
   public toHash(): ArrayBuffer {

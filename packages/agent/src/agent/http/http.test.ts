@@ -95,6 +95,7 @@ test('call', async () => {
   const { requestId } = await httpAgent.call(canisterId, {
     methodName,
     arg,
+    nonce,
   });
 
   const mockPartialRequest = {
@@ -104,9 +105,9 @@ test('call', async () => {
     // We need a request id for the signature and at the same time we
     // are checking that signature does not impact the request id.
     arg,
-    nonce,
     sender: principal,
     ingress_expiry: Expiry.fromDeltaInMilliseconds(300000),
+    nonce,
   };
 
   const mockPartialsRequestId = requestIdOf(mockPartialRequest);
@@ -344,6 +345,7 @@ test('use anonymous principal if unspecified', async () => {
   const { requestId } = await httpAgent.call(canisterId, {
     methodName,
     arg,
+    nonce,
   });
 
   const mockPartialRequest: CallRequest = {
@@ -353,9 +355,9 @@ test('use anonymous principal if unspecified', async () => {
     // We need a request id for the signature and at the same time we
     // are checking that signature does not impact the request id.
     arg,
-    nonce,
     sender: principal,
     ingress_expiry: Expiry.fromDeltaInMilliseconds(300000),
+    nonce,
   };
 
   const mockPartialsRequestId = requestIdOf(mockPartialRequest);
@@ -701,7 +703,7 @@ test('should adjust the Expiry if the clock is more than 30 seconds behind', asy
 
   const requestBody: any = cbor.decode(mockFetch.mock.calls[0][1].body);
 
-  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1260000000000`);
+  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1260000000000n`);
 
   jest.resetModules();
 });
@@ -737,7 +739,7 @@ test('should adjust the Expiry if the clock is more than 30 seconds ahead', asyn
 
   const requestBody: any = cbor.decode(mockFetch.mock.calls[0][1].body);
 
-  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1200000000000`);
+  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1200000000000n`);
 
   jest.resetModules();
 });

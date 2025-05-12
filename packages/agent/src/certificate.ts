@@ -526,7 +526,10 @@ export function lookup_path(path: NodePath, tree: HashTree): LookupResult {
         if (tree[1] instanceof Uint8Array) {
           return {
             status: LookupPathStatus.Found,
-            value: tree[1].buffer,
+            value: tree[1].buffer.slice(
+              tree[1].byteOffset,
+              tree[1].byteLength + tree[1].byteOffset,
+            ),
           };
         }
 
@@ -774,7 +777,7 @@ export function check_canister_ranges(params: {
     );
   }
 
-  const ranges_arr: Array<[Uint8Array, Uint8Array]> = cbor.decode(rangeLookup.value);
+  const ranges_arr = cbor.decode<Array<[Uint8Array, Uint8Array]>>(rangeLookup.value);
   const ranges: Array<[Principal, Principal]> = ranges_arr.map(v => [
     Principal.fromUint8Array(v[0]),
     Principal.fromUint8Array(v[1]),

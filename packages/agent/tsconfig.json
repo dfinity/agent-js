@@ -21,7 +21,8 @@
     "inlineSources": true,
     "strict": true,
     "target": "es2017",
-    "tsBuildInfoFile": "./build_info.json"
+    "tsBuildInfoFile": "./build_info.json",
+    "skipLibCheck": true
   },
   "include": ["types/*", "src/**/*.ts"],
   "exclude": ["**/src/**/__certificates__/**", "**/src/**/*.test.ts"]
