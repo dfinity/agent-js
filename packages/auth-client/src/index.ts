@@ -37,7 +37,7 @@ export {
 } from './storage';
 export { IdbKeyVal, DBCreateOptions } from './db';
 
-const IDENTITY_PROVIDER_DEFAULT = 'https://identity.ic0.app';
+const IDENTITY_PROVIDER_DEFAULT = 'https://identity.internetcomputer.org';
 const IDENTITY_PROVIDER_ENDPOINT = '#authorize';
 
 const ECDSA_KEY_LABEL = 'ECDSA';
@@ -100,7 +100,7 @@ export type OnErrorFunc = (error?: string) => void | Promise<void>;
 export interface AuthClientLoginOptions {
   /**
    * Identity provider
-   * @default "https://identity.ic0.app"
+   * @default "https://identity.internetcomputer.org"
    */
   identityProvider?: string | URL;
   /**
@@ -319,7 +319,7 @@ export class AuthClient {
         key = null;
       }
     }
-    let idleManager: IdleManager | undefined = undefined;
+    let idleManager: IdleManager | undefined;
     if (options.idleOptions?.disableIdle) {
       idleManager = undefined;
     }
@@ -387,13 +387,13 @@ export class AuthClient {
           signedDelegation.delegation.expiration,
           signedDelegation.delegation.targets,
         ),
-        signature: signedDelegation.signature.buffer as Signature,
+        signature: signedDelegation.signature as Signature,
       };
     });
 
     const delegationChain = DelegationChain.fromDelegations(
       delegations,
-      message.userPublicKey.buffer as DerEncodedPublicKey,
+      message.userPublicKey as DerEncodedPublicKey,
     );
 
     const key = this._key;
@@ -523,7 +523,7 @@ export class AuthClient {
           // IDP is ready. Send a message to request authorization.
           const request: InternetIdentityAuthRequest = {
             kind: 'authorize-client',
-            sessionPublicKey: new Uint8Array(this._key?.getPublicKey().toDer() as ArrayBuffer),
+            sessionPublicKey: new Uint8Array(this._key?.getPublicKey().toDer()),
             maxTimeToLive: options?.maxTimeToLive,
             allowPinAuthentication: options?.allowPinAuthentication,
             derivationOrigin: options?.derivationOrigin?.toString(),

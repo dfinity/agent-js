@@ -1,5 +1,7 @@
-import { DerEncodedPublicKey, PublicKey, fromHex, toHex } from '@dfinity/agent';
+import { DerEncodedPublicKey, PublicKey } from '@dfinity/agent';
 import { Ed25519KeyIdentity, Ed25519PublicKey } from './ed25519';
+import { uint8FromBufLike } from '@dfinity/agent';
+import { hexToBytes, bytesToHex } from '@noble/hashes/utils';
 
 const testVectors: Array<[string, string]> = [
   [
@@ -19,16 +21,16 @@ const testVectors: Array<[string, string]> = [
 describe('Ed25519PublicKey Tests', () => {
   test('DER encoding of ED25519 keys', async () => {
     testVectors.forEach(([rawPublicKeyHex, derEncodedPublicKeyHex]) => {
-      const publicKey = Ed25519PublicKey.fromRaw(fromHex(rawPublicKeyHex));
-      const expectedDerPublicKey = fromHex(derEncodedPublicKeyHex);
-      expect(publicKey.toDer()).toEqual(expectedDerPublicKey);
+      const publicKey = Ed25519PublicKey.fromRaw(hexToBytes(rawPublicKeyHex));
+      const expectedDerPublicKey = hexToBytes(derEncodedPublicKeyHex);
+      expect(publicKey.toDer().toString()).toEqual(expectedDerPublicKey.toString());
     });
   });
 
   test('DER decoding of ED25519 keys', async () => {
     testVectors.forEach(([rawPublicKeyHex, derEncodedPublicKeyHex]) => {
-      const derPublicKey = fromHex(derEncodedPublicKeyHex) as DerEncodedPublicKey;
-      const expectedPublicKey = fromHex(rawPublicKeyHex);
+      const derPublicKey = hexToBytes(derEncodedPublicKeyHex) as DerEncodedPublicKey;
+      const expectedPublicKey = hexToBytes(rawPublicKeyHex);
       expect(new Uint8Array(Ed25519PublicKey.fromDer(derPublicKey).toRaw())).toEqual(
         new Uint8Array(expectedPublicKey),
       );
@@ -39,7 +41,7 @@ describe('Ed25519PublicKey Tests', () => {
     // Too short.
     expect(() => {
       Ed25519PublicKey.fromDer(
-        fromHex(
+        hexToBytes(
           '302A300506032B6570032100B3997656BA51FF6DA37B61D8D549EC80717266ECF48FB5DA52B65441263484',
         ) as DerEncodedPublicKey,
       );
@@ -47,7 +49,7 @@ describe('Ed25519PublicKey Tests', () => {
     // Too long.
     expect(() => {
       Ed25519PublicKey.fromDer(
-        fromHex(
+        hexToBytes(
           '302A300506032B6570032100B3997656BA51FF6DA37B61D8D549EC8071726' +
             '6ECF48FB5DA52B654412634844C00',
         ) as DerEncodedPublicKey,
@@ -57,7 +59,7 @@ describe('Ed25519PublicKey Tests', () => {
     // Invalid DER-encoding.
     expect(() => {
       Ed25519PublicKey.fromDer(
-        fromHex(
+        hexToBytes(
           '002A300506032B6570032100B3997656BA51FF6DA37B61D8D549EC80717266ECF48FB5DA52B654412634844C',
         ) as DerEncodedPublicKey,
       );
@@ -89,7 +91,7 @@ describe('Ed25519KeyIdentity tests', () => {
       const shortArray = new Uint8Array(secretKey).subarray(1, 32);
       Ed25519KeyIdentity.fromSecretKey(Uint8Array.from(shortArray).subarray(1, 32));
     };
-    expect(shouldFail).toThrowError('private key expected 32 bytes, got 30');
+    expect(shouldFail).toThrow('private key expected 32 bytes, got 30');
   });
 
   test('can encode and decode to/from JSON', async () => {
@@ -107,10 +109,10 @@ describe('Ed25519KeyIdentity tests', () => {
     const identity = Ed25519KeyIdentity.generate();
     const message = new TextEncoder().encode('Hello, World!');
 
-    const signature = await identity.sign(message);
+    const signature = await identity.sign(uint8FromBufLike(message));
     const pubkey = identity.getPublicKey();
 
-    const isValid = Ed25519KeyIdentity.verify(message, signature, pubkey.rawKey);
+    const isValid = Ed25519KeyIdentity.verify(signature, message, pubkey.rawKey);
 
     expect(isValid).toBe(true);
   });
@@ -120,13 +122,15 @@ describe('Ed25519KeyIdentity tests', () => {
     const key2 = Ed25519KeyIdentity.generate();
     expect(key1.toJSON().toString()).not.toEqual(key2.toJSON().toString());
   });
-  
+
   it('should warn if the key is an Uint8Array consisting of all zeroes', () => {
     const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     const baseKey = new Uint8Array(new Array(32).fill(0));
     Ed25519KeyIdentity.generate(baseKey);
-    expect(consoleSpy).toHaveBeenCalledWith("Seed is all zeros. This is not a secure seed. Please provide a seed with sufficient entropy if this is a production environment.");
+    expect(consoleSpy).toHaveBeenCalledWith(
+      'Seed is all zeros. This is not a secure seed. Please provide a seed with sufficient entropy if this is a production environment.',
+    );
   });
 });
 
@@ -139,8 +143,8 @@ test('from JSON', async () => {
   const identity = Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
 
   const msg = new TextEncoder().encode('Hello, World!');
-  const signature = await identity.sign(msg);
-  const isValid = Ed25519KeyIdentity.verify(msg, signature, identity.getPublicKey().rawKey);
+  const signature = await identity.sign(uint8FromBufLike(msg));
+  const isValid = Ed25519KeyIdentity.verify(signature, msg, identity.getPublicKey().rawKey);
   expect(isValid).toBe(true);
 });
 
@@ -171,7 +175,7 @@ describe('public key serialization from various types', () => {
   });
   it('should serialize from a hex string', () => {
     const baseKey = Ed25519KeyIdentity.generate();
-    const publicKey = toHex(baseKey.getPublicKey().toRaw());
+    const publicKey = bytesToHex(baseKey.getPublicKey().toRaw());
     const newKey = Ed25519PublicKey.from(publicKey);
     expect(newKey).toBeDefined();
   });
@@ -181,6 +185,6 @@ describe('public key serialization from various types', () => {
     expect(shouldFail).toThrow('Cannot construct Ed25519PublicKey from the provided key.');
 
     const shouldFailHex = () => Ed25519PublicKey.from('not a hex string');
-    expect(shouldFailHex).toThrow('Invalid hexadecimal string');
+    expect(shouldFailHex).toThrow('hex string expected');
   });
 });

@@ -1,13 +1,13 @@
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
-import { AgentCallError, HttpAgent, HttpDetailsResponse, Nonce, SubmitResponse } from './agent';
+import { HttpAgent, Nonce, SubmitResponse } from './agent';
 import { Expiry } from './agent/http/transforms';
 import { CallRequest, SubmitRequestType, UnSigned } from './agent/http/types';
 import * as cbor from './cbor';
 import { requestIdOf } from './request_id';
 import * as pollingImport from './polling';
 import { ActorConfig } from './actor';
-import { UpdateCallRejectedError } from './errors';
+import { CertifiedRejectErrorCode, RejectError, UnexpectedErrorCode, UnknownError } from './errors';
 
 const importActor = async (mockUpdatePolling?: () => void) => {
   jest.dontMock('./polling');
@@ -97,7 +97,7 @@ describe('makeActor', () => {
     const arg = IDL.encode([IDL.Text], [argValue]);
 
     const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
-    const principal = await Principal.anonymous();
+    const principal = Principal.anonymous();
     const sender = principal.toUint8Array();
 
     const nonces = [
@@ -116,7 +116,7 @@ describe('makeActor', () => {
         arg,
         nonce: nonces[0],
         sender,
-        ingress_expiry: new Expiry(300000),
+        ingress_expiry: Expiry.fromDeltaInMilliseconds(300000),
       },
     } as UnSigned<CallRequest>;
 
@@ -128,7 +128,7 @@ describe('makeActor', () => {
         arg,
         nonce: nonces[0],
         sender,
-        ingress_expiry: new Expiry(300000),
+        ingress_expiry: Expiry.fromDeltaInMilliseconds(300000),
       },
     } as UnSigned<CallRequest>;
 
@@ -139,9 +139,16 @@ describe('makeActor', () => {
     const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
     const reply = await actor.greet(argValue);
 
+    expect.assertions(13);
+
     expect(reply).toEqual(IDL.decode([IDL.Text], expectedReplyArg)[0]);
 
-    await expect(async () => actor.error()).rejects.toThrow(UpdateCallRejectedError);
+    try {
+      await actor.error();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RejectError);
+      expect(error.cause.code).toBeInstanceOf(CertifiedRejectErrorCode);
+    }
 
     const { calls } = mockFetch.mock;
 
@@ -168,7 +175,7 @@ describe('makeActor', () => {
           content: {
             request_type: 'request_status',
             request_id: expectedCallRequestId,
-            ingress_expiry: new Expiry(300000),
+            ingress_expiry: Expiry.fromDeltaInMilliseconds(300000),
           },
         }),
       },
@@ -184,7 +191,7 @@ describe('makeActor', () => {
         content: {
           request_type: 'request_status',
           request_id: expectedCallRequestId,
-          ingress_expiry: new Expiry(300000),
+          ingress_expiry: Expiry.fromDeltaInMilliseconds(300000),
         },
       }),
     });
@@ -199,7 +206,7 @@ describe('makeActor', () => {
         content: {
           request_type: 'request_status',
           request_id: expectedCallRequestId,
-          ingress_expiry: new Expiry(300000),
+          ingress_expiry: Expiry.fromDeltaInMilliseconds(300000),
         },
       }),
     });
@@ -214,7 +221,7 @@ describe('makeActor', () => {
         content: {
           request_type: 'request_status',
           request_id: expectedCallRequestId,
-          ingress_expiry: new Expiry(300000),
+          ingress_expiry: Expiry.fromDeltaInMilliseconds(300000),
         },
       }),
     });
@@ -315,8 +322,8 @@ describe('makeActor', () => {
           "canister_id": {
             "__principal__": "2chl6-4hpzw-vqaaa-aaaaa-c",
           },
-          "ingress_expiry": Expiry {
-            "_value": 1200000000000n,
+          "ingress_expiry": {
+            "__expiry__": "1200000000000",
           },
           "method_name": "greet",
           "request_type": "query",
@@ -365,23 +372,159 @@ describe('makeActor', () => {
     };
     const { Actor } = await importActor();
     const config = { agent: httpAgent } as unknown as ActorConfig;
-    expect(() => Actor.createActor(actorInterface, config)).toThrowError(
+    expect(() => Actor.createActor(actorInterface, config)).toThrow(
       'Canister ID is required, but received undefined instead. If you are using automatically generated declarations, this may be because your application is not setting the canister ID in process.env correctly.',
     );
+  });
+  it('should properly handle preSignReadStateRequest option', async () => {
+    // Mock response value
+    const canisterDecodedReturnValue = 'Hello, World!';
+    const expectedReplyArg = IDL.encode([IDL.Text], [canisterDecodedReturnValue]);
+
+    // Mock the polling module with a spy to track calls
+    const mockPollForResponse = jest.fn(async () => {
+      return { certificate: undefined, reply: expectedReplyArg };
+    });
+
+    // Import actor with mocked polling
+    const { Actor } = await importActor(() =>
+      jest.doMock('./polling', () => ({
+        ...pollingImport,
+        pollForResponse: mockPollForResponse,
+      })),
+    );
+
+    // Create a simple actor interface
+    const actorInterface = () => {
+      return IDL.Service({
+        greet: IDL.Func([IDL.Text], [IDL.Text]),
+      });
+    };
+
+    // Mock the fetch implementation for the call
+    const mockFetch = jest.fn(() => {
+      return Promise.resolve(
+        new Response(null, {
+          status: 202,
+          statusText: 'accepted',
+        }),
+      );
+    });
+
+    const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+    const httpAgent = new HttpAgent({ fetch: mockFetch });
+
+    // Create actor with preSignReadStateRequest enabled
+    const actor = Actor.createActor(actorInterface, {
+      canisterId,
+      agent: httpAgent,
+      pollingOptions: {
+        preSignReadStateRequest: true,
+      },
+    });
+
+    // Make the call
+    const reply = await actor.greet('Name');
+
+    // Verify the result is as expected
+    expect(reply).toEqual(canisterDecodedReturnValue);
+
+    // Verify pollForResponse was called with preSignReadStateRequest option
+    expect(mockPollForResponse).toHaveBeenCalledTimes(1);
+    expect(mockPollForResponse.mock.calls.length).toBeGreaterThan(0);
+
+    // Use any to handle the mock call structure
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const callArgs = mockPollForResponse.mock.calls[0] as any[];
+    // Options should be the 4th argument (index 3)
+    if (callArgs.length > 3) {
+      const pollOptions = callArgs[3];
+      expect(pollOptions.preSignReadStateRequest).toBe(true);
+    } else {
+      fail('pollOptions was not passed to pollForResponse');
+    }
+  });
+
+  it('should allow method-specific pollingOptions override with withOptions', async () => {
+    // Mock response value
+    const canisterDecodedReturnValue = 'Hello, World!';
+    const expectedReplyArg = IDL.encode([IDL.Text], [canisterDecodedReturnValue]);
+
+    // Mock the polling module with a spy to track calls
+    const mockPollForResponse = jest.fn(async () => {
+      return { certificate: undefined, reply: expectedReplyArg };
+    });
+
+    // Import actor with mocked polling
+    const { Actor } = await importActor(() =>
+      jest.doMock('./polling', () => ({
+        ...pollingImport,
+        pollForResponse: mockPollForResponse,
+      })),
+    );
+
+    // Create a simple actor interface
+    const actorInterface = () => {
+      return IDL.Service({
+        greet: IDL.Func([IDL.Text], [IDL.Text]),
+      });
+    };
+
+    // Mock the fetch implementation for the call
+    const mockFetch = jest.fn(() => {
+      return Promise.resolve(
+        new Response(null, {
+          status: 202,
+          statusText: 'accepted',
+        }),
+      );
+    });
+
+    const canisterId = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
+    const httpAgent = new HttpAgent({ fetch: mockFetch });
+
+    // Create actor without preSignReadStateRequest at actor level
+    const actor = Actor.createActor(actorInterface, {
+      canisterId,
+      agent: httpAgent,
+    });
+
+    // Custom polling strategy
+    const customStrategy = jest.fn(() => Promise.resolve());
+
+    // Call with method-specific options
+    const reply = await actor.greet.withOptions({
+      pollingOptions: {
+        preSignReadStateRequest: true,
+        strategy: customStrategy,
+      },
+    })('Name');
+
+    // Verify the result is as expected
+    expect(reply).toEqual(canisterDecodedReturnValue);
+
+    // Verify pollForResponse was called with the right options
+    expect(mockPollForResponse).toHaveBeenCalledTimes(1);
+    expect(mockPollForResponse.mock.calls.length).toBeGreaterThan(0);
+
+    // Use any to handle the mock call structure
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const callArgs = mockPollForResponse.mock.calls[0] as any[];
+    // Options should be the 4th argument (index 3)
+    if (callArgs.length > 3) {
+      const pollOptions = callArgs[3];
+      expect(pollOptions.preSignReadStateRequest).toBe(true);
+      expect(pollOptions.strategy).toBe(customStrategy);
+    } else {
+      fail('pollOptions was not passed to pollForResponse');
+    }
   });
 });
 
 test('it should preserve errors from call', async () => {
   const httpAgent = {
     call: () => {
-      throw new AgentCallError(
-        'test error',
-        {} as unknown as HttpDetailsResponse,
-        'request id',
-        'pubkey',
-        'senderSig',
-        'ingressExpiry',
-      );
+      throw UnknownError.fromCode(new UnexpectedErrorCode('test error'));
     },
   };
   const actorInterface = () => {
@@ -392,12 +535,13 @@ test('it should preserve errors from call', async () => {
   const { Actor } = await importActor();
   const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
   const config = { agent: httpAgent, canisterId } as unknown as ActorConfig;
-  const testActor = await Actor.createActor(actorInterface, config);
+  const testActor = Actor.createActor(actorInterface, config);
+  expect.assertions(2);
   try {
-    await testActor.greet('foo'); //?
+    await testActor.greet('foo');
   } catch (error) {
-    expect(error.message).toBe('test error');
-    expect(error instanceof AgentCallError).toBe(true);
+    expect(error).toBeInstanceOf(UnknownError);
+    expect(error.cause.code).toBeInstanceOf(UnexpectedErrorCode);
   }
 });
 

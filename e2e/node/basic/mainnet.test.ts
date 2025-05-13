@@ -4,9 +4,10 @@ import {
   HttpAgent,
   Identity,
   CanisterStatus,
-  fromHex,
   polling,
   requestIdOf,
+  TrustError,
+  MissingSignatureErrorCode,
 } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
@@ -14,8 +15,9 @@ import { Principal } from '@dfinity/principal';
 import { describe, it, expect, vi, test } from 'vitest';
 import { makeAgent } from '../utils/agent';
 import { AgentLog } from '@dfinity/agent/src/observable';
+import { hexToBytes } from '@noble/hashes/utils';
 
-const { defaultStrategy, pollForResponse } = polling;
+const { pollForResponse } = polling;
 
 const createWhoamiActor = async (identity: Identity) => {
   const canisterId = 'ivcos-eqaaa-aaaab-qablq-cai';
@@ -125,7 +127,7 @@ describe('call forwarding', () => {
       Principal.fromText(forwardedOptions.canisterId),
       {
         methodName: forwardedOptions.methodName,
-        arg: fromHex(forwardedOptions.arg),
+        arg: hexToBytes(forwardedOptions.arg),
         effectiveCanisterId: Principal.fromText(forwardedOptions.effectiveCanisterId),
       },
     );
@@ -136,7 +138,6 @@ describe('call forwarding', () => {
       agent,
       Principal.fromText(forwardedOptions.effectiveCanisterId),
       requestId,
-      defaultStrategy(),
     );
     expect(certificate).toBeTruthy();
     expect(reply).toBeTruthy();
@@ -155,7 +156,7 @@ test('it should succeed when setting an expiry in the near future', async () => 
   expect(
     agent.call('tnnnb-2yaaa-aaaab-qaiiq-cai', {
       methodName: 'inc_read',
-      arg: fromHex('4449444c0000'),
+      arg: hexToBytes('4449444c0000'),
       effectiveCanisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
     }),
   ).resolves.toBeDefined();
@@ -172,7 +173,7 @@ test('it should succeed when setting an expiry in the future', async () => {
   expect(
     agent.call('tnnnb-2yaaa-aaaab-qaiiq-cai', {
       methodName: 'inc_read',
-      arg: fromHex('4449444c0000'),
+      arg: hexToBytes('4449444c0000'),
       effectiveCanisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
     }),
   ).resolves.toBeDefined();
@@ -201,7 +202,15 @@ test('it should allow you to set an incorrect root key', async () => {
     canisterId: Principal.fromText('rrkah-fqaaa-aaaaa-aaaaq-cai'),
   });
 
-  expect(actor.whoami).rejects.toThrowError(`Invalid certificate:`);
+  expect.assertions(3);
+  try {
+    await actor.whoami();
+  } catch (error) {
+    expect(error).toBeInstanceOf(TrustError);
+    const errorCode = (error as TrustError).cause.code;
+    expect(errorCode).toBeInstanceOf(MissingSignatureErrorCode);
+    expect(errorCode.requestContext).toBeDefined();
+  }
 });
 
 test('should allow you to sync time when the system time is over 5 minutes apart from the replica time', async () => {
@@ -211,12 +220,12 @@ test('should allow you to sync time when the system time is over 5 minutes apart
   global.clearTimeout = vi.fn();
   const agent = new HttpAgent({ fetch: fetch });
   const logs: AgentLog[] = [];
-  agent.log.subscribe(log => logs.push(log));
+  agent.log.subscribe(log => logs.push(log as AgentLog));
   await agent.syncTime();
   await agent
     .call(Principal.managementCanister(), {
       methodName: 'test',
-      arg: new Uint8Array().buffer,
+      arg: new Uint8Array(),
     })
     // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
     .catch(function (_) {});

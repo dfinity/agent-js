@@ -1,22 +1,38 @@
 /** @module CanisterStatus */
 import { Principal } from '@dfinity/principal';
-import { AgentError } from '../errors';
+import {
+  CertificateVerificationErrorCode,
+  MissingRootKeyErrorCode,
+  CertificateNotAuthorizedErrorCode,
+  LookupErrorCode,
+  DerKeyLengthMismatchErrorCode,
+  ExternalError,
+  ProtocolError,
+  TrustError,
+  AgentError,
+  UnknownError,
+  HashTreeDecodeErrorCode,
+  UnexpectedErrorCode,
+  InputError,
+} from '../errors';
 import { HttpAgent } from '../agent/http';
 import {
   Cert,
   Certificate,
   CreateCertificateOptions,
-  HashTree,
   flatten_forks,
   check_canister_ranges,
-  LookupStatus,
+  LookupPathStatus,
   lookup_path,
   lookupResultToBuffer,
+  lookup_subtree,
+  LabeledHashTree,
+  LookupSubtreeStatus,
 } from '../certificate';
-import { toHex } from '../utils/buffer';
 import * as Cbor from '../cbor';
 import { decodeLeb128, decodeTime } from '../utils/leb';
-import { DerEncodedPublicKey } from '..';
+import { DerEncodedPublicKey } from '../auth';
+import { utf8ToBytes, bytesToHex } from '@noble/hashes/utils';
 
 /**
  * Represents the useful information about a subnet
@@ -44,9 +60,9 @@ export type SubnetStatus = {
  */
 export type Status =
   | string
-  | ArrayBuffer
+  | Uint8Array
   | Date
-  | ArrayBuffer[]
+  | Uint8Array[]
   | Principal[]
   | SubnetStatus
   | bigint
@@ -55,16 +71,16 @@ export type Status =
 /**
  * Interface to define a custom path. Nested paths will be represented as individual buffers, and can be created from text using TextEncoder.
  * @param {string} key the key to use to access the returned value in the canisterStatus map
- * @param {ArrayBuffer[]} path the path to the desired value, represented as an array of buffers
+ * @param {Uint8Array[]} path the path to the desired value, represented as an array of buffers
  * @param {string} decodeStrategy the strategy to use to decode the returned value
  */
 export class CustomPath implements CustomPath {
   public key: string;
-  public path: ArrayBuffer[] | string;
+  public path: Uint8Array[] | string;
   public decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'utf-8' | 'raw';
   constructor(
     key: string,
-    path: ArrayBuffer[] | string,
+    path: Uint8Array[] | string,
     decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'utf-8' | 'raw',
   ) {
     this.key = key;
@@ -82,7 +98,7 @@ export class CustomPath implements CustomPath {
 export interface MetaData {
   kind: 'metadata';
   key: string;
-  path: string | ArrayBuffer;
+  path: string | Uint8Array;
   decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'utf-8' | 'raw';
 }
 
@@ -146,7 +162,7 @@ export const request = async (options: {
           paths: [encodedPaths[index]],
         });
         if (agent.rootKey == null) {
-          throw new Error('Agent is missing root key');
+          throw ExternalError.fromCode(new MissingRootKeyErrorCode());
         }
         const cert = await Certificate.create({
           certificate: response.certificate,
@@ -158,7 +174,7 @@ export const request = async (options: {
         const lookup = (cert: Certificate, path: Path) => {
           if (path === 'subnet') {
             if (agent.rootKey == null) {
-              throw new Error('Agent is missing root key');
+              throw ExternalError.fromCode(new MissingRootKeyErrorCode());
             }
             const data = fetchNodeKeys(response.certificate, canisterId, agent.rootKey);
             return {
@@ -168,7 +184,7 @@ export const request = async (options: {
           } else {
             return {
               path: path,
-              data: lookupResultToBuffer(cert.lookup(encodePath(path, canisterId))),
+              data: lookupResultToBuffer(cert.lookup_path(encodePath(path, canisterId))),
             };
           }
         };
@@ -194,7 +210,7 @@ export const request = async (options: {
               break;
             }
             case 'module_hash': {
-              status.set(path, decodeHex(data));
+              status.set(path, bytesToHex(data));
               break;
             }
             case 'subnet': {
@@ -217,15 +233,15 @@ export const request = async (options: {
                     break;
                   }
                   case 'cbor': {
-                    status.set(path.key, decodeCbor(data));
+                    status.set(path.key, Cbor.decode(data));
                     break;
                   }
                   case 'hex': {
-                    status.set(path.key, decodeHex(data));
+                    status.set(path.key, bytesToHex(data));
                     break;
                   }
                   case 'utf-8': {
-                    status.set(path.key, decodeUtf8(data));
+                    status.set(path.key, new TextDecoder().decode(data));
                   }
                 }
               }
@@ -234,8 +250,8 @@ export const request = async (options: {
         }
       } catch (error) {
         // Break on signature verification errors
-        if ((error as AgentError)?.message?.includes('Invalid certificate')) {
-          throw new AgentError((error as AgentError).message);
+        if (error instanceof AgentError && error.hasCode(CertificateVerificationErrorCode)) {
+          throw error;
         }
         if (typeof path !== 'string' && 'key' in path && 'path' in path) {
           status.set(path.key, null);
@@ -257,14 +273,14 @@ export const request = async (options: {
 };
 
 export const fetchNodeKeys = (
-  certificate: ArrayBuffer,
+  certificate: Uint8Array,
   canisterId: Principal,
-  root_key?: ArrayBuffer | Uint8Array,
+  root_key?: Uint8Array,
 ): SubnetStatus => {
   if (!canisterId._isPrincipal) {
-    throw new Error('Invalid canisterId');
+    throw InputError.fromCode(new UnexpectedErrorCode('Invalid canisterId'));
   }
-  const cert = Cbor.decode(new Uint8Array(certificate)) as Cert;
+  const cert: Cert = Cbor.decode(certificate);
   const tree = cert.tree;
   let delegation = cert.delegation;
   let subnetId: Principal;
@@ -277,7 +293,7 @@ export const fetchNodeKeys = (
     subnetId = Principal.selfAuthenticating(new Uint8Array(root_key));
     delegation = {
       subnet_id: subnetId.toUint8Array(),
-      certificate: new ArrayBuffer(0),
+      certificate: new Uint8Array(0),
     };
   }
   // otherwise use default NNS subnet id
@@ -289,36 +305,43 @@ export const fetchNodeKeys = (
     );
     delegation = {
       subnet_id: subnetId.toUint8Array(),
-      certificate: new ArrayBuffer(0),
+      certificate: new Uint8Array(0),
     };
   }
 
   const canisterInRange = check_canister_ranges({ canisterId, subnetId, tree });
   if (!canisterInRange) {
-    throw new Error('Canister not in range');
+    throw TrustError.fromCode(
+      new CertificateNotAuthorizedErrorCode(canisterId, delegation.subnet_id),
+    );
   }
 
-  const subnetLookupResult = lookup_path(['subnet', delegation.subnet_id, 'node'], tree);
-  if (subnetLookupResult.status !== LookupStatus.Found) {
-    throw new Error('Node not found');
+  const subnetLookupResult = lookup_subtree(['subnet', delegation.subnet_id, 'node'], tree);
+  if (subnetLookupResult.status !== LookupSubtreeStatus.Found) {
+    throw ProtocolError.fromCode(new LookupErrorCode('Node not found', subnetLookupResult.status));
   }
-  if (subnetLookupResult.value instanceof ArrayBuffer) {
-    throw new Error('Invalid node tree');
+  if (subnetLookupResult.value instanceof Uint8Array) {
+    throw UnknownError.fromCode(new HashTreeDecodeErrorCode('Invalid node tree'));
   }
 
-  const nodeForks = flatten_forks(subnetLookupResult.value);
+  // The forks are all labeled trees with the <node_id> label
+  const nodeForks = flatten_forks(subnetLookupResult.value) as Array<LabeledHashTree>;
   const nodeKeys = new Map<string, DerEncodedPublicKey>();
 
   nodeForks.forEach(fork => {
-    const node_id = Principal.from(new Uint8Array(fork[1] as ArrayBuffer)).toText();
-    const publicKeyLookupResult = lookup_path(['public_key'], fork[2] as HashTree);
-    if (publicKeyLookupResult.status !== LookupStatus.Found) {
-      throw new Error('Public key not found');
+    const node_id = Principal.from(new Uint8Array(fork[1])).toText();
+    const publicKeyLookupResult = lookup_path(['public_key'], fork[2]);
+    if (publicKeyLookupResult.status !== LookupPathStatus.Found) {
+      throw ProtocolError.fromCode(
+        new LookupErrorCode('Public key not found', publicKeyLookupResult.status),
+      );
     }
 
-    const derEncodedPublicKey = publicKeyLookupResult.value as ArrayBuffer;
+    const derEncodedPublicKey = publicKeyLookupResult.value;
     if (derEncodedPublicKey.byteLength !== 44) {
-      throw new Error('Invalid public key length');
+      throw ProtocolError.fromCode(
+        new DerKeyLengthMismatchErrorCode(44, derEncodedPublicKey.byteLength),
+      );
     } else {
       nodeKeys.set(node_id, derEncodedPublicKey as DerEncodedPublicKey);
     }
@@ -330,33 +353,33 @@ export const fetchNodeKeys = (
   };
 };
 
-export const encodePath = (path: Path, canisterId: Principal): ArrayBuffer[] => {
-  const encoder = new TextEncoder();
-
-  const encode = (arg: string): ArrayBuffer => {
-    return new DataView(encoder.encode(arg).buffer).buffer;
-  };
-  const canisterBuffer = new DataView(canisterId.toUint8Array().buffer).buffer;
+export const encodePath = (path: Path, canisterId: Principal): Uint8Array[] => {
+  const canisterUint8Array = canisterId.toUint8Array();
   switch (path) {
     case 'time':
-      return [encode('time')];
+      return [utf8ToBytes('time')];
     case 'controllers':
-      return [encode('canister'), canisterBuffer, encode('controllers')];
+      return [utf8ToBytes('canister'), canisterUint8Array, utf8ToBytes('controllers')];
     case 'module_hash':
-      return [encode('canister'), canisterBuffer, encode('module_hash')];
+      return [utf8ToBytes('canister'), canisterUint8Array, utf8ToBytes('module_hash')];
     case 'subnet':
-      return [encode('subnet')];
+      return [utf8ToBytes('subnet')];
     case 'candid':
-      return [encode('canister'), canisterBuffer, encode('metadata'), encode('candid:service')];
+      return [
+        utf8ToBytes('canister'),
+        canisterUint8Array,
+        utf8ToBytes('metadata'),
+        utf8ToBytes('candid:service'),
+      ];
     default: {
       // Check for CustomPath signature
       if ('key' in path && 'path' in path) {
         // For simplified metadata queries
-        if (typeof path['path'] === 'string' || path['path'] instanceof ArrayBuffer) {
+        if (typeof path['path'] === 'string' || path['path'] instanceof Uint8Array) {
           const metaPath = path.path;
-          const encoded = typeof metaPath === 'string' ? encode(metaPath) : metaPath;
+          const encoded = typeof metaPath === 'string' ? utf8ToBytes(metaPath) : metaPath;
 
-          return [encode('canister'), canisterBuffer, encode('metadata'), encoded];
+          return [utf8ToBytes('canister'), canisterUint8Array, utf8ToBytes('metadata'), encoded];
 
           // For non-metadata, return the provided custompath
         } else {
@@ -365,27 +388,17 @@ export const encodePath = (path: Path, canisterId: Principal): ArrayBuffer[] => 
       }
     }
   }
-  throw new Error(
-    `An unexpeected error was encountered while encoding your path for canister status. Please ensure that your path, ${path} was formatted correctly.`,
+  throw UnknownError.fromCode(
+    new UnexpectedErrorCode(
+      `Error while encoding your path for canister status. Please ensure that your path ${path} was formatted correctly.`,
+    ),
   );
 };
 
-const decodeHex = (buf: ArrayBuffer): string => {
-  return toHex(buf);
-};
-
-const decodeCbor = (buf: ArrayBuffer): ArrayBuffer[] => {
-  return Cbor.decode(buf);
-};
-
-const decodeUtf8 = (buf: ArrayBuffer): string => {
-  return new TextDecoder().decode(buf);
-};
-
 // Controllers are CBOR-encoded buffers
-const decodeControllers = (buf: ArrayBuffer): Principal[] => {
+const decodeControllers = (buf: Uint8Array): Principal[] => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const controllersRaw = decodeCbor(buf);
+  const controllersRaw: ArrayBuffer[] = Cbor.decode(buf);
   return controllersRaw.map((buf: ArrayBuffer) => {
     return Principal.fromUint8Array(new Uint8Array(buf));
   });

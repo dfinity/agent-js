@@ -419,7 +419,7 @@ function setup(options?: { onAuthRequest?: () => void }) {
   global.addEventListener = jest.fn((_, callback) => {
     // eslint-disable-next-line
     // @ts-ignore
-    idpMock = new IdpMock(callback, 'https://identity.ic0.app');
+    idpMock = new IdpMock(callback, 'https://identity.internetcomputer.org');
   });
 
   // Mock window.open and window.postMessage since we can't open windows here.
@@ -458,7 +458,7 @@ describe('Auth Client login', () => {
     global.open = jest.fn();
     await client.login();
     expect(global.open).toBeCalledWith(
-      'https://identity.ic0.app/#authorize',
+      'https://identity.internetcomputer.org/#authorize',
       'idpWindow',
       undefined,
     );
@@ -469,7 +469,7 @@ describe('Auth Client login', () => {
       windowOpenerFeatures: 'toolbar=0,location=0,menubar=0',
     });
     expect(global.open).toBeCalledWith(
-      'https://identity.ic0.app/#authorize',
+      'https://identity.internetcomputer.org/#authorize',
       'idpWindow',
       'toolbar=0,location=0,menubar=0',
     );

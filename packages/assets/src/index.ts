@@ -4,17 +4,14 @@ import {
   ActorSubclass,
   Cbor as cbor,
   Certificate,
-  compare,
-  getDefaultAgent,
   HashTree,
+  HttpAgent,
   lookup_path,
   lookupResultToBuffer,
-  LookupStatus,
   reconstruct,
-  uint8ToBuf,
+  LookupPathStatus,
 } from '@dfinity/agent';
-import { lebDecode } from '@dfinity/candid';
-import { PipeArrayBuffer } from '@dfinity/candid/lib/cjs/utils/buffer';
+import { lebDecode, PipeArrayBuffer, compare } from '@dfinity/candid';
 import { AssetsCanisterRecord, getAssetsCanister } from './canisters/assets';
 import { sha256 } from '@noble/hashes/sha256';
 import { BatchOperationKind } from './canisters/assets_service';
@@ -334,7 +331,7 @@ class AssetManagerBatch {
         }),
       );
       await readable.close();
-      const headers: [] | [[string,string][]] = config?.headers ? [config.headers] : [];
+      const headers: [] | [[string, string][]] = config?.headers ? [config.headers] : [];
       return [
         {
           CreateAsset: { key, content_type: config?.contentType ?? readable.contentType, headers },
@@ -496,7 +493,7 @@ class Asset {
    */
   public async isCertified(): Promise<boolean> {
     // Below implementation is based on Internet Computer service worker
-    const agent = Actor.agentOf(this._actor) ?? getDefaultAgent();
+    const agent = Actor.agentOf(this._actor) ?? new HttpAgent();
     const canisterId = Actor.canisterIdOf(this._actor);
 
     if (!agent.rootKey) {
@@ -548,8 +545,8 @@ class Asset {
     }
 
     // Check certificate time
-    const timeLookup = cert.lookup(['time']);
-    if (timeLookup.status !== LookupStatus.Found || !(timeLookup.value instanceof ArrayBuffer)) {
+    const timeLookup = cert.lookup_path(['time']);
+    if (timeLookup.status !== LookupPathStatus.Found || !(timeLookup.value instanceof Uint8Array)) {
       return false;
     }
 
@@ -563,9 +560,9 @@ class Asset {
 
     const hashTree: HashTree = cbor.decode(new Uint8Array(tree));
     const reconstructed = await reconstruct(hashTree);
-    const witness = cert.lookup(['canister', canisterId.toUint8Array(), 'certified_data']);
+    const witness = cert.lookup_path(['canister', canisterId.toUint8Array(), 'certified_data']);
 
-    if (witness.status !== LookupStatus.Found || !(witness.value instanceof ArrayBuffer)) {
+    if (witness.status !== LookupPathStatus.Found || !(witness.value instanceof Uint8Array)) {
       // Could not find certified data for this canister in the certificate
       return false;
     }
@@ -579,7 +576,7 @@ class Asset {
     // Lookup hash of asset in tree
     const treeSha = lookupResultToBuffer(lookup_path(['http_assets', this._key], hashTree));
 
-    return !!treeSha && !!this.sha256 && compare(this.sha256.buffer, treeSha) === 0;
+    return !!treeSha && !!this.sha256 && compare(this.sha256, treeSha) === 0;
   }
 
   /**
@@ -596,6 +593,6 @@ class Asset {
     } else {
       await this.getChunks((_, chunk) => hash.update(chunk), true);
     }
-    return compare(uint8ToBuf(this.sha256), uint8ToBuf(hash.digest())) === 0;
+    return compare(this.sha256, hash.digest()) === 0;
   }
 }

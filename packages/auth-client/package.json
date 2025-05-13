@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/auth-client",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to provide a simple integration with an IC Internet Identity",
@@ -39,16 +39,16 @@
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
     "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js",
     "size-limit": "size-limit",
-    "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
+    "lint": "eslint 'src' 'types' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/auth-client --excludeInternal",
     "test": "jest",
     "test:coverage": "jest --collectCoverage"
   },
   "peerDependencies": {
-    "@dfinity/agent": "^2.4.0",
-    "@dfinity/identity": "^2.4.0",
-    "@dfinity/principal": "^2.4.0"
+    "@dfinity/agent": "^2.4.1",
+    "@dfinity/identity": "^2.4.1",
+    "@dfinity/principal": "^2.4.1"
   },
   "dependencies": {
     "idb": "^7.0.2"
@@ -67,7 +67,8 @@
     "stream": "^0.0.2",
     "text-encoding": "^0.7.0",
     "ts-node": "^10.8.2",
-    "typedoc": "^0.22.11",
+    "typedoc": "^0.28.2",
+    "typescript": "^5.8.3",
     "whatwg-fetch": "^3.0.0"
   },
   "size-limit": [

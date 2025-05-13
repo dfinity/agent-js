@@ -5,15 +5,13 @@ import {
   SignIdentity,
   wrapDER,
   DER_COSE_OID,
-  fromHex,
-  toHex,
 } from '@dfinity/agent';
 import borc from 'borc';
-import { randomBytes } from '@noble/hashes/utils';
-import { bufFromBufLike } from '@dfinity/candid';
+import { bytesToHex, hexToBytes, randomBytes } from '@noble/hashes/utils';
+import { uint8FromBufLike } from '@dfinity/candid';
 
-function _coseToDerEncodedBlob(cose: ArrayBuffer): DerEncodedPublicKey {
-  return wrapDER(cose, DER_COSE_OID).buffer as DerEncodedPublicKey;
+function _coseToDerEncodedBlob(cose: Uint8Array): DerEncodedPublicKey {
+  return wrapDER(cose, DER_COSE_OID) as DerEncodedPublicKey;
 }
 
 type PublicKeyCredentialWithAttachment = PublicKeyCredential & {
@@ -23,6 +21,8 @@ type PublicKeyCredentialWithAttachment = PublicKeyCredential & {
   // Note: `null` is included here as a possible value because Edge set this value to null in the
   // past.
   authenticatorAttachment: AuthenticatorAttachment | undefined | null;
+  // Explicitly including toJSON method from the base PublicKeyCredential interface
+  toJSON: () => Record<string, unknown>;
 };
 
 /**
@@ -34,7 +34,7 @@ type PublicKeyCredentialWithAttachment = PublicKeyCredential & {
  * @param authData The authData field of the attestation response.
  * @returns The COSE key of the authData.
  */
-function _authDataToCose(authData: ArrayBuffer): ArrayBuffer {
+function _authDataToCose(authData: Uint8Array): Uint8Array {
   const dataView = new DataView(new ArrayBuffer(2));
   const idLenBytes = authData.slice(53, 55);
   [...new Uint8Array(idLenBytes)].forEach((v, i) => dataView.setUint8(i, v));
@@ -47,7 +47,7 @@ function _authDataToCose(authData: ArrayBuffer): ArrayBuffer {
 export class CosePublicKey implements PublicKey {
   protected _encodedKey: DerEncodedPublicKey;
 
-  public constructor(protected _cose: ArrayBuffer) {
+  public constructor(protected _cose: Uint8Array) {
     this._encodedKey = _coseToDerEncodedBlob(_cose);
   }
 
@@ -55,7 +55,7 @@ export class CosePublicKey implements PublicKey {
     return this._encodedKey;
   }
 
-  public getCose(): ArrayBuffer {
+  public getCose(): Uint8Array {
     return this._cose;
   }
 }
@@ -119,7 +119,8 @@ async function _createCredential(
     authenticatorAttachment: creds.authenticatorAttachment,
     getClientExtensionResults: creds.getClientExtensionResults,
     // Some password managers will return a Uint8Array, so we ensure we return an ArrayBuffer.
-    rawId: bufFromBufLike(creds.rawId),
+    rawId: creds.rawId,
+    toJSON: creds.toJSON.bind(creds), // Ensure the toJSON method is included
   };
 }
 
@@ -145,7 +146,7 @@ export class WebAuthnIdentity extends SignIdentity {
       throw new Error('Invalid JSON string.');
     }
 
-    return new this(fromHex(rawId), fromHex(publicKey), undefined);
+    return new this(hexToBytes(rawId), hexToBytes(publicKey), undefined);
   }
 
   /**
@@ -167,10 +168,10 @@ export class WebAuthnIdentity extends SignIdentity {
     }
 
     // Parse the attestationObject as CBOR.
-    const attObject = borc.decodeFirst(new Uint8Array(response.attestationObject));
+    const attObject = borc.decodeFirst(response.attestationObject);
 
     return new this(
-      creds.rawId,
+      uint8FromBufLike(creds.rawId),
       _authDataToCose(attObject.authData),
       creds.authenticatorAttachment ?? undefined,
     );
@@ -179,8 +180,8 @@ export class WebAuthnIdentity extends SignIdentity {
   protected _publicKey: CosePublicKey;
 
   public constructor(
-    public readonly rawId: ArrayBuffer,
-    cose: ArrayBuffer,
+    public readonly rawId: Uint8Array,
+    cose: Uint8Array,
     protected authenticatorAttachment: AuthenticatorAttachment | undefined,
   ) {
     super();
@@ -203,7 +204,7 @@ export class WebAuthnIdentity extends SignIdentity {
     return this.authenticatorAttachment;
   }
 
-  public async sign(blob: ArrayBuffer): Promise<Signature> {
+  public async sign(blob: Uint8Array): Promise<Signature> {
     const result = (await navigator.credentials.get({
       publicKey: {
         allowCredentials: [
@@ -230,10 +231,15 @@ export class WebAuthnIdentity extends SignIdentity {
         signature: new Uint8Array(response.signature),
       }),
     );
+
+    Object.assign(cbor, {
+      __signature__: undefined,
+    });
+
     if (!cbor) {
       throw new Error('failed to encode cbor');
     }
-    return cbor.buffer as Signature;
+    return cbor as Signature;
   }
 
   /**
@@ -241,8 +247,8 @@ export class WebAuthnIdentity extends SignIdentity {
    */
   public toJSON(): JsonnableWebAuthnIdentity {
     return {
-      publicKey: toHex(this._publicKey.getCose()),
-      rawId: toHex(this.rawId),
+      publicKey: bytesToHex(this._publicKey.getCose()),
+      rawId: bytesToHex(this.rawId),
     };
   }
 }

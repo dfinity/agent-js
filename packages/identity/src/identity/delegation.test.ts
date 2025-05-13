@@ -91,11 +91,11 @@ test('DelegationChain can be serialized to and from JSON', async () => {
     return value;
   });
   const rootToMiddleActual = DelegationChain.fromJSON(rootToMiddleJson);
-  expect(rootToMiddleActual).toEqual(rootToMiddle);
+  expect(rootToMiddleActual.toJSON()).toMatchObject(rootToMiddle.toJSON());
 
   const middleToBottomJson = JSON.stringify(middleToBottom);
   const middleToBottomActual = DelegationChain.fromJSON(middleToBottomJson);
-  expect(middleToBottomActual).toEqual(middleToBottom);
+  expect(middleToBottomActual.toJSON()).toEqual(middleToBottom.toJSON());
 });
 
 test('Delegation Chain can sign', async () => {
@@ -116,9 +116,9 @@ test('Delegation Chain can sign', async () => {
   const signature = await identity.sign(new Uint8Array([1, 2, 3]));
 
   const isValid = Ed25519KeyIdentity.verify(
-    new Uint8Array([1, 2, 3]),
     signature,
-    middle.getPublicKey().rawKey as Uint8Array,
+    new Uint8Array([1, 2, 3]),
+    middle.getPublicKey().rawKey,
   );
   expect(isValid).toBe(true);
   expect(middle.toJSON()[1].length).toBe(64);

@@ -1,4 +1,10 @@
-import { bufEquals } from './utils/buffer';
+import {
+  DerDecodeErrorCode,
+  DerDecodeLengthMismatchErrorCode,
+  DerEncodeErrorCode,
+  InputError,
+} from './errors';
+import { uint8Equals } from './utils/buffer';
 
 export const encodeLenBytes = (len: number): number => {
   if (len <= 0x7f) {
@@ -10,7 +16,7 @@ export const encodeLenBytes = (len: number): number => {
   } else if (len <= 0xffffff) {
     return 4;
   } else {
-    throw new Error('Length too long (> 4 bytes)');
+    throw InputError.fromCode(new DerEncodeErrorCode('Length too long (> 4 bytes)'));
   }
 };
 
@@ -34,17 +40,17 @@ export const encodeLen = (buf: Uint8Array, offset: number, len: number): number 
     buf[offset + 3] = len;
     return 4;
   } else {
-    throw new Error('Length too long (> 4 bytes)');
+    throw InputError.fromCode(new DerEncodeErrorCode('Length too long (> 4 bytes)'));
   }
 };
 
 export const decodeLenBytes = (buf: Uint8Array, offset: number): number => {
   if (buf[offset] < 0x80) return 1;
-  if (buf[offset] === 0x80) throw new Error('Invalid length 0');
+  if (buf[offset] === 0x80) throw InputError.fromCode(new DerDecodeErrorCode('Invalid length 0'));
   if (buf[offset] === 0x81) return 2;
   if (buf[offset] === 0x82) return 3;
   if (buf[offset] === 0x83) return 4;
-  throw new Error('Length too long (> 4 bytes)');
+  throw InputError.fromCode(new DerDecodeErrorCode('Length too long (> 4 bytes)'));
 };
 
 export const decodeLen = (buf: Uint8Array, offset: number): number => {
@@ -54,7 +60,7 @@ export const decodeLen = (buf: Uint8Array, offset: number): number => {
   else if (lenBytes === 3) return (buf[offset + 1] << 8) + buf[offset + 2];
   else if (lenBytes === 4)
     return (buf[offset + 1] << 16) + (buf[offset + 2] << 8) + buf[offset + 3];
-  throw new Error('Length too long (> 4 bytes)');
+  throw InputError.fromCode(new DerDecodeErrorCode('Length too long (> 4 bytes)'));
 };
 
 /**
@@ -89,11 +95,10 @@ export const SECP256K1_OID = Uint8Array.from([
 /**
  * Wraps the given `payload` in a DER encoding tagged with the given encoded `oid` like so:
  * `SEQUENCE(oid, BITSTRING(payload))`
- *
  * @param payload The payload to encode as the bit string
  * @param oid The DER encoded (and SEQUENCE wrapped!) OID to tag the payload with
  */
-export function wrapDER(payload: ArrayBuffer, oid: Uint8Array): Uint8Array {
+export function wrapDER(payload: Uint8Array, oid: Uint8Array): Uint8Array {
   // The Bit String header needs to include the unused bit count byte in its length
   const bitStringHeaderLength = 2 + encodeLenBytes(payload.byteLength + 1);
   const len = oid.byteLength + bitStringHeaderLength + payload.byteLength;
@@ -122,16 +127,15 @@ export function wrapDER(payload: ArrayBuffer, oid: Uint8Array): Uint8Array {
  * Extracts a payload from the given `derEncoded` data, and checks that it was tagged with the given `oid`.
  *
  * `derEncoded = SEQUENCE(oid, BITSTRING(payload))`
- *
  * @param derEncoded The DER encoded and tagged data
  * @param oid The DER encoded (and SEQUENCE wrapped!) expected OID
  * @returns The unwrapped payload
  */
-export const unwrapDER = (derEncoded: ArrayBuffer, oid: Uint8Array): Uint8Array => {
+export const unwrapDER = (derEncoded: Uint8Array, oid: Uint8Array): Uint8Array => {
   let offset = 0;
   const expect = (n: number, msg: string) => {
     if (buf[offset++] !== n) {
-      throw new Error('Expected: ' + msg);
+      throw InputError.fromCode(new DerDecodeErrorCode(`Expected ${msg} at offset ${offset}`));
     }
   };
 
@@ -139,8 +143,8 @@ export const unwrapDER = (derEncoded: ArrayBuffer, oid: Uint8Array): Uint8Array 
   expect(0x30, 'sequence');
   offset += decodeLenBytes(buf, offset);
 
-  if (!bufEquals(buf.slice(offset, offset + oid.byteLength), oid)) {
-    throw new Error('Not the expected OID.');
+  if (!uint8Equals(buf.slice(offset, offset + oid.byteLength), oid)) {
+    throw InputError.fromCode(new DerDecodeErrorCode('Not the expected OID.'));
   }
   offset += oid.byteLength;
 
@@ -150,9 +154,7 @@ export const unwrapDER = (derEncoded: ArrayBuffer, oid: Uint8Array): Uint8Array 
   expect(0x00, '0 padding');
   const result = buf.slice(offset);
   if (payloadLen !== result.length) {
-    throw new Error(
-      `DER payload mismatch: Expected length ${payloadLen} actual length ${result.length}`,
-    );
+    throw InputError.fromCode(new DerDecodeLengthMismatchErrorCode(payloadLen, result.length));
   }
   return result;
 };

@@ -10,21 +10,21 @@ export class PartialIdentity implements Identity {
   /**
    * The raw public key of this identity.
    */
-  get rawKey(): ArrayBuffer | undefined {
+  get rawKey(): Uint8Array | undefined {
     return this.#inner.rawKey;
   }
 
   /**
    * The DER-encoded public key of this identity.
    */
-  get derKey(): ArrayBuffer | undefined {
+  get derKey(): Uint8Array | undefined {
     return this.#inner.derKey;
   }
 
   /**
    * The DER-encoded public key of this identity.
    */
-  public toDer(): ArrayBuffer {
+  public toDer(): Uint8Array {
     return this.#inner.toDer();
   }
 
@@ -39,7 +39,10 @@ export class PartialIdentity implements Identity {
    * The {@link Principal} of this identity.
    */
   public getPrincipal(): Principal {
-    return Principal.from(this.#inner.rawKey);
+    if (!this.#inner.rawKey) {
+      throw new Error('Cannot get principal from a public key without a raw key.');
+    }
+    return Principal.fromUint8Array(new Uint8Array(this.#inner.rawKey));
   }
 
   /**

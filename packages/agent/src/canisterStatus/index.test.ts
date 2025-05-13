@@ -1,15 +1,15 @@
 import { request, Path, encodePath, fetchNodeKeys } from './index';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
-import { fromHexString } from '@dfinity/candid';
 import { Identity } from '../auth';
 import fetch from 'isomorphic-fetch';
 import { HttpAgent } from '../agent';
-import { fromHex, toHex } from '../utils/buffer';
 import * as Cert from '../certificate';
+import { hexToBytes, bytesToHex } from '@noble/hashes/utils';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { goldenCertificates } from '../agent/http/__certificates__/goldenCertificates';
+import { utf8ToBytes } from '@noble/hashes/utils';
 
 const IC_ROOT_KEY =
   '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100814' +
@@ -30,11 +30,7 @@ const certificateTime = Date.parse('2022-05-19T20:58:22.596Z');
 jest.setSystemTime(certificateTime);
 
 // Utils
-const encoder = new TextEncoder();
-const encode = (arg: string): ArrayBuffer => {
-  return new DataView(encoder.encode(arg).buffer).buffer;
-};
-const canisterBuffer = new DataView(testPrincipal.toUint8Array().buffer).buffer;
+const canisterBuffer = testPrincipal.toUint8Array();
 
 /* Produced by deploying a dfx new canister and requesting
   | 'time'
@@ -55,36 +51,31 @@ const testCases = [
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const getRealStatus = async () => {
   const identity = (await Ed25519KeyIdentity.generate(
-    new Uint8Array(
-      fromHexString('foo23342sd-234-234a-asdf-asdf-asdf-4frsefrsdf-weafasdfe-easdfee'),
-    ),
+    new Uint8Array(hexToBytes('foo23342sd-234-234a-asdf-asdf-asdf-4frsefrsdf-weafasdfe-easdfee')),
   )) as unknown as Identity;
 
   const agent = new HttpAgent({ host: 'http://127.0.0.1:4943', fetch, identity });
   await agent.fetchRootKey();
-  const canisterBuffer = new DataView(testPrincipal.toUint8Array().buffer).buffer;
-  canisterBuffer;
   const response = await agent.readState(
     testPrincipal,
     // Note: subnet is not currently working due to a bug
     {
       paths: [
         encodePath('time', testPrincipal),
-        [encode('canister'), canisterBuffer, encode('controllers')],
-        [encode('canister'), canisterBuffer, encode('module_hash')],
+        [utf8ToBytes('canister'), canisterBuffer, utf8ToBytes('controllers')],
+        [utf8ToBytes('canister'), canisterBuffer, utf8ToBytes('module_hash')],
         encodePath('candid', testPrincipal),
       ],
     },
-    identity,
   );
-  console.log(toHex(response.certificate));
+  console.log(bytesToHex(response.certificate));
 };
 
 // Mocked status using precomputed certificate
 const getStatus = async (paths: Path[]) => {
   const agent = new HttpAgent({ host: 'https://ic0.app' });
   agent.readState = jest.fn(() =>
-    Promise.resolve({ certificate: fromHex(testCases[0].certificate) }),
+    Promise.resolve({ certificate: hexToBytes(testCases[0].certificate) }),
   );
 
   return await request({
@@ -116,14 +107,14 @@ describe('Canister Status utility', () => {
     const status = await getStatus([
       {
         key: 'time',
-        path: [new DataView(new TextEncoder().encode('time').buffer).buffer],
+        path: [utf8ToBytes('time')],
         decodeStrategy: 'leb128',
       },
     ]);
     const statusRaw = await getStatus([
       {
         key: 'time',
-        path: [new DataView(new TextEncoder().encode('time').buffer).buffer],
+        path: [utf8ToBytes('time')],
         decodeStrategy: 'raw',
       },
     ]);
@@ -138,14 +129,14 @@ describe('Canister Status utility', () => {
     const statusHex = await getStatus([
       {
         key: 'time',
-        path: [new DataView(new TextEncoder().encode('time').buffer).buffer],
+        path: [utf8ToBytes('time')],
         decodeStrategy: 'hex',
       },
     ]);
     const statusCBOR = await getStatus([
       {
         key: 'Controller',
-        path: [encode('canister'), canisterBuffer, encode('controllers')],
+        path: [utf8ToBytes('canister'), canisterBuffer, utf8ToBytes('controllers')],
         decodeStrategy: 'cbor',
       },
     ]);
@@ -167,7 +158,7 @@ describe('Canister Status utility', () => {
     const statusEncoded = await getStatus([
       {
         kind: 'metadata',
-        path: encode('candid:service'),
+        path: utf8ToBytes('candid:service'),
         key: 'candid',
         decodeStrategy: 'hex',
       },
@@ -189,7 +180,7 @@ describe('Canister Status utility', () => {
       'subnet',
       {
         key: 'asdf',
-        path: [new DataView(new TextEncoder().encode('asdf').buffer).buffer],
+        path: [utf8ToBytes('asdf')],
         decodeStrategy: 'hex',
       },
     ]);
@@ -208,15 +199,15 @@ describe('node keys', () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date(Date.parse('2023-09-27T19:38:58.129Z')));
     await Cert.Certificate.create({
-      certificate: fromHex(mainnetApplication),
+      certificate: hexToBytes(mainnetApplication),
       canisterId: Principal.fromText('erxue-5aaaa-aaaab-qaagq-cai'),
-      rootKey: fromHex(IC_ROOT_KEY),
+      rootKey: hexToBytes(IC_ROOT_KEY),
     });
 
     const nodeKeys = fetchNodeKeys(
-      fromHex(mainnetApplication),
+      hexToBytes(mainnetApplication),
       Principal.fromText('erxue-5aaaa-aaaab-qaagq-cai'),
-      fromHex(IC_ROOT_KEY),
+      hexToBytes(IC_ROOT_KEY),
     );
     expect(nodeKeys).toMatchSnapshot();
   });
@@ -226,15 +217,15 @@ describe('node keys', () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date(Date.parse('2023-09-27T19:58:19.412Z')));
     await Cert.Certificate.create({
-      certificate: fromHex(mainnetSystem),
+      certificate: hexToBytes(mainnetSystem),
       canisterId: Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai'),
-      rootKey: fromHex(IC_ROOT_KEY),
+      rootKey: hexToBytes(IC_ROOT_KEY),
     });
 
     const nodeKeys = fetchNodeKeys(
-      fromHex(mainnetSystem),
+      hexToBytes(mainnetSystem),
       Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai'),
-      fromHex(IC_ROOT_KEY),
+      hexToBytes(IC_ROOT_KEY),
     );
     expect(nodeKeys).toMatchSnapshot();
   });
@@ -244,15 +235,15 @@ describe('node keys', () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date(Date.parse('2023-09-27T20:14:59.406Z')));
     await Cert.Certificate.create({
-      certificate: fromHex(localApplication),
+      certificate: hexToBytes(localApplication),
       canisterId: Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai'),
-      rootKey: fromHex(IC_ROOT_KEY),
+      rootKey: hexToBytes(IC_ROOT_KEY),
     });
 
     const nodeKeys = fetchNodeKeys(
-      fromHex(localApplication),
+      hexToBytes(localApplication),
       Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai'),
-      fromHex(IC_ROOT_KEY),
+      hexToBytes(IC_ROOT_KEY),
     );
     expect(nodeKeys).toMatchSnapshot();
   });
@@ -262,15 +253,15 @@ describe('node keys', () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date(Date.parse('2023-09-27T20:15:03.406Z')));
     await Cert.Certificate.create({
-      certificate: fromHex(localSystem),
+      certificate: hexToBytes(localSystem),
       canisterId: Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai'),
-      rootKey: fromHex(IC_ROOT_KEY),
+      rootKey: hexToBytes(IC_ROOT_KEY),
     });
 
     const nodeKeys = fetchNodeKeys(
-      fromHex(localSystem),
+      hexToBytes(localSystem),
       Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai'),
-      fromHex(IC_ROOT_KEY),
+      hexToBytes(IC_ROOT_KEY),
     );
     expect(nodeKeys).toMatchSnapshot();
   });

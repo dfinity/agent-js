@@ -1,24 +1,31 @@
 import * as cbor from './cbor';
-import { AgentError } from './errors';
+import {
+  CertificateHasTooManyDelegationsErrorCode,
+  CertificateNotAuthorizedErrorCode,
+  CertificateTimeErrorCode,
+  CertificateVerificationErrorCode,
+  DerKeyLengthMismatchErrorCode,
+  DerPrefixMismatchErrorCode,
+  ProtocolError,
+  LookupErrorCode,
+  TrustError,
+  UnknownError,
+  HashTreeDecodeErrorCode,
+  UNREACHABLE_ERROR,
+  MalformedLookupFoundValueErrorCode,
+  MissingLookupValueErrorCode,
+} from './errors';
 import { hash } from './request_id';
-import { bufEquals, concat, fromHex, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
 import * as bls from './utils/bls';
 import { decodeTime } from './utils/leb';
 import { MANAGEMENT_CANISTER_ID } from './agent';
-
-/**
- * A certificate may fail verification with respect to the provided public key
- */
-export class CertificateVerificationError extends AgentError {
-  constructor(reason: string) {
-    super(`Invalid certificate: ${reason}`);
-  }
-}
+import { bytesToHex, concatBytes, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
+import { uint8Equals } from './utils/buffer';
 
 export interface Cert {
   tree: HashTree;
-  signature: ArrayBuffer;
+  signature: Uint8Array;
   delegation?: Delegation;
 }
 
@@ -30,18 +37,27 @@ export enum NodeType {
   Pruned = 4,
 }
 
-export type NodeLabel = ArrayBuffer | Uint8Array;
+export type NodePath = Array<Uint8Array | string>;
+export type NodeLabel = Uint8Array & { __nodeLabel__: void };
+export type NodeValue = Uint8Array & { __nodeValue__: void };
+export type NodeHash = Uint8Array & { __nodeHash__: void };
+
+export type EmptyHashTree = [NodeType.Empty];
+export type ForkHashTree = [NodeType.Fork, HashTree, HashTree];
+export type LabeledHashTree = [NodeType.Labeled, NodeLabel, HashTree];
+export type LeafHashTree = [NodeType.Leaf, NodeValue];
+export type PrunedHashTree = [NodeType.Pruned, NodeHash];
 
 export type HashTree =
-  | [NodeType.Empty]
-  | [NodeType.Fork, HashTree, HashTree]
-  | [NodeType.Labeled, NodeLabel, HashTree]
-  | [NodeType.Leaf, NodeLabel]
-  | [NodeType.Pruned, NodeLabel];
+  | EmptyHashTree
+  | ForkHashTree
+  | LabeledHashTree
+  | LeafHashTree
+  | PrunedHashTree;
 
 /**
  * Make a human readable string out of a hash tree.
- * @param tree
+ * @param tree The hash tree to convert to a string
  */
 export function hashTreeToString(tree: HashTree): string {
   const indent = (s: string) =>
@@ -49,10 +65,11 @@ export function hashTreeToString(tree: HashTree): string {
       .split('\n')
       .map(x => '  ' + x)
       .join('\n');
-  function labelToString(label: ArrayBuffer): string {
+  function labelToString(label: Uint8Array): string {
     const decoder = new TextDecoder(undefined, { fatal: true });
     try {
       return JSON.stringify(decoder.decode(label));
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       return `data(...${label.byteLength} bytes)`;
     }
@@ -62,26 +79,28 @@ export function hashTreeToString(tree: HashTree): string {
     case NodeType.Empty:
       return '()';
     case NodeType.Fork: {
-      if (tree[1] instanceof Array && tree[2] instanceof ArrayBuffer) {
+      if (tree[1] instanceof Array && tree[2] instanceof Uint8Array) {
         const left = hashTreeToString(tree[1]);
         const right = hashTreeToString(tree[2]);
         return `sub(\n left:\n${indent(left)}\n---\n right:\n${indent(right)}\n)`;
       } else {
-        throw new Error('Invalid tree structure for fork');
+        throw UnknownError.fromCode(new HashTreeDecodeErrorCode('Invalid tree structure for fork'));
       }
     }
     case NodeType.Labeled: {
-      if (tree[1] instanceof ArrayBuffer && tree[2] instanceof ArrayBuffer) {
+      if (tree[1] instanceof Uint8Array && tree[2] instanceof Uint8Array) {
         const label = labelToString(tree[1]);
         const sub = hashTreeToString(tree[2]);
         return `label(\n label:\n${indent(label)}\n sub:\n${indent(sub)}\n)`;
       } else {
-        throw new Error('Invalid tree structure for labeled');
+        throw UnknownError.fromCode(
+          new HashTreeDecodeErrorCode('Invalid tree structure for labeled'),
+        );
       }
     }
     case NodeType.Leaf: {
       if (!tree[1]) {
-        throw new Error('Invalid tree structure for leaf');
+        throw UnknownError.fromCode(new HashTreeDecodeErrorCode('Invalid tree structure for leaf'));
       } else if (Array.isArray(tree[1])) {
         return JSON.stringify(tree[1]);
       }
@@ -89,12 +108,14 @@ export function hashTreeToString(tree: HashTree): string {
     }
     case NodeType.Pruned: {
       if (!tree[1]) {
-        throw new Error('Invalid tree structure for pruned');
+        throw UnknownError.fromCode(
+          new HashTreeDecodeErrorCode('Invalid tree structure for pruned'),
+        );
       } else if (Array.isArray(tree[1])) {
         return JSON.stringify(tree[1]);
       }
 
-      return `pruned(${toHex(new Uint8Array(tree[1]))}`;
+      return `pruned(${bytesToHex(new Uint8Array(tree[1]))}`;
     }
     default: {
       return `unknown(${JSON.stringify(tree[0])})`;
@@ -103,15 +124,13 @@ export function hashTreeToString(tree: HashTree): string {
 }
 
 interface Delegation extends Record<string, unknown> {
-  subnet_id: ArrayBuffer;
-  certificate: ArrayBuffer;
+  subnet_id: Uint8Array;
+  certificate: Uint8Array;
 }
 
-function isBufferGreaterThan(a: ArrayBuffer, b: ArrayBuffer): boolean {
-  const a8 = new Uint8Array(a);
-  const b8 = new Uint8Array(b);
-  for (let i = 0; i < a8.length; i++) {
-    if (a8[i] > b8[i]) {
+function isBufferGreaterThan(a: Uint8Array, b: Uint8Array): boolean {
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] > b[i]) {
       return true;
     }
   }
@@ -124,12 +143,12 @@ export interface CreateCertificateOptions {
   /**
    * The bytes encoding the certificate to be verified
    */
-  certificate: ArrayBuffer;
+  certificate: Uint8Array;
   /**
    * The root key against which to verify the certificate
    * (normally, the root key of the IC main network)
    */
-  rootKey: ArrayBuffer;
+  rootKey: Uint8Array;
   /**
    * The effective canister ID of the request when verifying a response, or
    * the signing canister ID when verifying a certified variable.
@@ -159,15 +178,14 @@ export class Certificate {
   #disableTimeVerification: boolean = false;
 
   /**
-   * Create a new instance of a certificate, automatically verifying it. Throws a
-   * CertificateVerificationError if the certificate cannot be verified.
+   * Create a new instance of a certificate, automatically verifying it.
    * @constructs  Certificate
    * @param {CreateCertificateOptions} options {@link CreateCertificateOptions}
-   * @param {ArrayBuffer} options.certificate The bytes of the certificate
-   * @param {ArrayBuffer} options.rootKey The root key to verify against
+   * @param {Uint8Array} options.certificate The bytes of the certificate
+   * @param {Uint8Array} options.rootKey The root key to verify against
    * @param {Principal} options.canisterId The effective or signing canister ID
    * @param {number} options.maxAgeInMinutes The maximum age of the certificate in minutes. Default is 5 minutes.
-   * @throws {CertificateVerificationError}
+   * @throws if the certificate cannot be verified
    */
   public static async create(options: CreateCertificateOptions): Promise<Certificate> {
     const cert = Certificate.createUnverified(options);
@@ -192,8 +210,8 @@ export class Certificate {
   }
 
   private constructor(
-    certificate: ArrayBuffer,
-    private _rootKey: ArrayBuffer,
+    certificate: Uint8Array,
+    private _rootKey: Uint8Array,
     private _canisterId: Principal,
     private _blsVerify: VerifyFunc,
     // Default to 5 minutes
@@ -204,13 +222,22 @@ export class Certificate {
     this.cert = cbor.decode(new Uint8Array(certificate));
   }
 
-  public lookup(path: Array<ArrayBuffer | string>): LookupResult {
-    // constrain the type of the result, so that empty HashTree is undefined
+  /**
+   * Lookup a path in the certificate tree, using {@link lookup_path}.
+   * @param path The path to lookup.
+   * @returns The result of the lookup.
+   */
+  public lookup_path(path: NodePath): LookupResult {
     return lookup_path(path, this.cert.tree);
   }
 
-  public lookup_label(label: ArrayBuffer): LookupResult {
-    return this.lookup([label]);
+  /**
+   * Lookup a subtree in the certificate tree, using {@link lookup_subtree}.
+   * @param path The path to lookup.
+   * @returns The result of the lookup.
+   */
+  public lookup_subtree(path: NodePath): SubtreeLookupResult {
+    return lookup_subtree(path, this.cert.tree);
   }
 
   private async verify(): Promise<void> {
@@ -218,13 +245,15 @@ export class Certificate {
     const derKey = await this._checkDelegationAndGetKey(this.cert.delegation);
     const sig = this.cert.signature;
     const key = extractDER(derKey);
-    const msg = concat(domain_sep('ic-state-root'), rootHash);
+    const msg = concatBytes(domain_sep('ic-state-root'), rootHash);
     let sigVer = false;
 
-    const lookupTime = lookupResultToBuffer(this.lookup(['time']));
+    const lookupTime = lookupResultToBuffer(this.lookup_path(['time']));
     if (!lookupTime) {
       // Should never happen - time is always present in IC certificates
-      throw new CertificateVerificationError('Certificate does not contain a time');
+      throw ProtocolError.fromCode(
+        new CertificateVerificationErrorCode('Certificate does not contain a time'),
+      );
     }
 
     // Certificate time verification checks
@@ -238,38 +267,35 @@ export class Certificate {
       const certTime = decodeTime(lookupTime);
 
       if (certTime.getTime() < earliestCertificateTime) {
-        throw new CertificateVerificationError(
-          `Certificate is signed more than ${this._maxAgeInMinutes} minutes in the past. Certificate time: ` +
-            certTime.toISOString() +
-            ' Current time: ' +
-            new Date(now).toISOString(),
+        throw TrustError.fromCode(
+          new CertificateTimeErrorCode(this._maxAgeInMinutes, certTime, new Date(now), 'past'),
         );
       } else if (certTime.getTime() > fiveMinutesFromNow) {
-        throw new CertificateVerificationError(
-          'Certificate is signed more than 5 minutes in the future. Certificate time: ' +
-            certTime.toISOString() +
-            ' Current time: ' +
-            new Date(now).toISOString(),
+        throw TrustError.fromCode(
+          new CertificateTimeErrorCode(5, certTime, new Date(now), 'future'),
         );
       }
     }
 
     try {
       sigVer = await this._blsVerify(new Uint8Array(key), new Uint8Array(sig), new Uint8Array(msg));
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       sigVer = false;
     }
     if (!sigVer) {
-      throw new CertificateVerificationError('Signature verification failed');
+      throw TrustError.fromCode(
+        new CertificateVerificationErrorCode('Signature verification failed'),
+      );
     }
   }
 
-  private async _checkDelegationAndGetKey(d?: Delegation): Promise<ArrayBuffer> {
+  private async _checkDelegationAndGetKey(d?: Delegation): Promise<Uint8Array> {
     if (!d) {
       return this._rootKey;
     }
 
-    const cert: Certificate = await Certificate.createUnverified({
+    const cert = Certificate.createUnverified({
       certificate: d.certificate,
       rootKey: this._rootKey,
       canisterId: this._canisterId,
@@ -279,7 +305,7 @@ export class Certificate {
     });
 
     if (cert.cert.delegation) {
-      throw new CertificateVerificationError('Delegation certificates cannot be nested');
+      throw ProtocolError.fromCode(new CertificateHasTooManyDelegationsErrorCode());
     }
 
     await cert.verify();
@@ -291,213 +317,327 @@ export class Certificate {
         tree: cert.cert.tree,
       });
       if (!canisterInRange) {
-        throw new CertificateVerificationError(
-          `Canister ${this._canisterId} not in range of delegations for subnet 0x${toHex(
-            d.subnet_id,
-          )}`,
+        throw TrustError.fromCode(
+          new CertificateNotAuthorizedErrorCode(this._canisterId, d.subnet_id),
         );
       }
     }
     const publicKeyLookup = lookupResultToBuffer(
-      cert.lookup(['subnet', d.subnet_id, 'public_key']),
+      cert.lookup_path(['subnet', d.subnet_id, 'public_key']),
     );
     if (!publicKeyLookup) {
-      throw new Error(`Could not find subnet key for subnet 0x${toHex(d.subnet_id)}`);
+      throw TrustError.fromCode(
+        new MissingLookupValueErrorCode(
+          `Could not find subnet key for subnet 0x${bytesToHex(d.subnet_id)}`,
+        ),
+      );
     }
     return publicKeyLookup;
   }
 }
 
-const DER_PREFIX = fromHex(
+const DER_PREFIX = hexToBytes(
   '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100',
 );
 const KEY_LENGTH = 96;
 
-function extractDER(buf: ArrayBuffer): ArrayBuffer {
+function extractDER(buf: Uint8Array): Uint8Array {
   const expectedLength = DER_PREFIX.byteLength + KEY_LENGTH;
   if (buf.byteLength !== expectedLength) {
-    throw new TypeError(`BLS DER-encoded public key must be ${expectedLength} bytes long`);
+    throw ProtocolError.fromCode(new DerKeyLengthMismatchErrorCode(expectedLength, buf.byteLength));
   }
   const prefix = buf.slice(0, DER_PREFIX.byteLength);
-  if (!bufEquals(prefix, DER_PREFIX)) {
-    throw new TypeError(
-      `BLS DER-encoded public key is invalid. Expect the following prefix: ${DER_PREFIX}, but get ${prefix}`,
-    );
+  if (!uint8Equals(prefix, DER_PREFIX)) {
+    throw ProtocolError.fromCode(new DerPrefixMismatchErrorCode(DER_PREFIX, prefix));
   }
 
   return buf.slice(DER_PREFIX.byteLength);
 }
 
 /**
- * utility function to constrain the type of a path
- * @param {ArrayBuffer | HashTree | undefined} result - the result of a lookup
- * @returns ArrayBuffer or Undefined
+ * Utility function to constrain the type of a lookup result
+ * @param result the result of a lookup
+ * @returns {Uint8Array | undefined} the value if the lookup was found, `undefined` otherwise
  */
-export function lookupResultToBuffer(result: LookupResult): ArrayBuffer | undefined {
-  if (result.status !== LookupStatus.Found) {
+export function lookupResultToBuffer(result: LookupResult): Uint8Array | undefined {
+  if (result.status !== LookupPathStatus.Found) {
     return undefined;
   }
 
-  if (result.value instanceof ArrayBuffer) {
-    return result.value;
-  }
-
+  // Attepmt to decode the value as a Uint8Array
   if (result.value instanceof Uint8Array) {
-    return result.value.buffer;
+    return result.value;
   }
 
   return undefined;
 }
 
 /**
- * @param t
+ * @param t The hash tree to reconstruct
  */
-export async function reconstruct(t: HashTree): Promise<ArrayBuffer> {
+export async function reconstruct(t: HashTree): Promise<Uint8Array> {
   switch (t[0]) {
     case NodeType.Empty:
       return hash(domain_sep('ic-hashtree-empty'));
     case NodeType.Pruned:
-      return t[1] as ArrayBuffer;
+      return t[1];
     case NodeType.Leaf:
-      return hash(concat(domain_sep('ic-hashtree-leaf'), t[1] as ArrayBuffer));
+      return hash(concatBytes(domain_sep('ic-hashtree-leaf'), t[1]));
     case NodeType.Labeled:
-      return hash(
-        concat(
-          domain_sep('ic-hashtree-labeled'),
-          t[1] as ArrayBuffer,
-          await reconstruct(t[2] as HashTree),
-        ),
-      );
+      return hash(concatBytes(domain_sep('ic-hashtree-labeled'), t[1], await reconstruct(t[2])));
     case NodeType.Fork:
       return hash(
-        concat(
-          domain_sep('ic-hashtree-fork'),
-          await reconstruct(t[1] as HashTree),
-          await reconstruct(t[2] as HashTree),
-        ),
+        concatBytes(domain_sep('ic-hashtree-fork'), await reconstruct(t[1]), await reconstruct(t[2])),
       );
     default:
-      throw new Error('unreachable');
+      throw UNREACHABLE_ERROR;
   }
 }
 
-function domain_sep(s: string): ArrayBuffer {
+function domain_sep(s: string): Uint8Array {
   const len = new Uint8Array([s.length]);
   const str = new TextEncoder().encode(s);
-  return concat(len, str);
+  return concatBytes(len, str);
 }
 
-export enum LookupStatus {
-  Unknown = 'unknown',
-  Absent = 'absent',
-  Found = 'found',
+function pathToLabel(path: NodePath): NodeLabel {
+  return (typeof path[0] === 'string' ? utf8ToBytes(path[0]) : path[0]) as NodeLabel;
 }
 
-export interface LookupResultAbsent {
-  status: LookupStatus.Absent;
+export enum LookupPathStatus {
+  Unknown = 'Unknown',
+  Absent = 'Absent',
+  Found = 'Found',
+  Error = 'Error',
 }
 
-export interface LookupResultUnknown {
-  status: LookupStatus.Unknown;
+export interface LookupPathResultAbsent {
+  status: LookupPathStatus.Absent;
 }
 
-export interface LookupResultFound {
-  status: LookupStatus.Found;
-  value: ArrayBuffer | HashTree;
+export interface LookupPathResultUnknown {
+  status: LookupPathStatus.Unknown;
 }
 
-export type LookupResult = LookupResultAbsent | LookupResultUnknown | LookupResultFound;
-
-enum LabelLookupStatus {
-  Less = 'less',
-  Greater = 'greater',
+export interface LookupPathResultFound {
+  status: LookupPathStatus.Found;
+  value: Uint8Array;
 }
 
-interface LookupResultGreater {
-  status: LabelLookupStatus.Greater;
+export interface LookupPathResultError {
+  status: LookupPathStatus.Error;
 }
 
-interface LookupResultLess {
-  status: LabelLookupStatus.Less;
+export type LookupResult =
+  | LookupPathResultAbsent
+  | LookupPathResultUnknown
+  | LookupPathResultFound
+  | LookupPathResultError;
+
+export enum LookupSubtreeStatus {
+  Absent = 'Absent',
+  Unknown = 'Unknown',
+  Found = 'Found',
 }
 
-type LabelLookupResult = LookupResult | LookupResultGreater | LookupResultLess;
+export interface LookupSubtreeResultAbsent {
+  status: LookupSubtreeStatus.Absent;
+}
 
-export function lookup_path(path: Array<ArrayBuffer | string>, tree: HashTree): LookupResult {
+export interface LookupSubtreeResultUnknown {
+  status: LookupSubtreeStatus.Unknown;
+}
+
+export interface LookupSubtreeResultFound {
+  status: LookupSubtreeStatus.Found;
+  value: HashTree;
+}
+
+export type SubtreeLookupResult =
+  | LookupSubtreeResultAbsent
+  | LookupSubtreeResultUnknown
+  | LookupSubtreeResultFound;
+
+export enum LookupLabelStatus {
+  Absent = 'Absent',
+  Unknown = 'Unknown',
+  Found = 'Found',
+  Less = 'Less',
+  Greater = 'Greater',
+}
+
+export interface LookupLabelResultAbsent {
+  status: LookupLabelStatus.Absent;
+}
+
+export interface LookupLabelResultUnknown {
+  status: LookupLabelStatus.Unknown;
+}
+
+export interface LookupLabelResultFound {
+  status: LookupLabelStatus.Found;
+  value: HashTree;
+}
+
+export interface LookupLabelResultGreater {
+  status: LookupLabelStatus.Greater;
+}
+
+export interface LookupLabelResultLess {
+  status: LookupLabelStatus.Less;
+}
+
+export type LabelLookupResult =
+  | LookupLabelResultAbsent
+  | LookupLabelResultUnknown
+  | LookupLabelResultFound
+  | LookupLabelResultGreater
+  | LookupLabelResultLess;
+
+/**
+ * Lookup a path in a tree. If the path is a subtree, use {@link lookup_subtree} instead.
+ * @param path the path to look up
+ * @param tree the tree to search
+ * @returns {LookupResult} the result of the lookup
+ */
+export function lookup_path(path: NodePath, tree: HashTree): LookupResult {
   if (path.length === 0) {
     switch (tree[0]) {
+      case NodeType.Empty: {
+        return {
+          status: LookupPathStatus.Absent,
+        };
+      }
+
       case NodeType.Leaf: {
         if (!tree[1]) {
-          throw new Error('Invalid tree structure for leaf');
-        }
-
-        if (tree[1] instanceof ArrayBuffer) {
-          return {
-            status: LookupStatus.Found,
-            value: tree[1],
-          };
+          throw UnknownError.fromCode(
+            new HashTreeDecodeErrorCode('Invalid tree structure for leaf'),
+          );
         }
 
         if (tree[1] instanceof Uint8Array) {
           return {
-            status: LookupStatus.Found,
-            value: tree[1].buffer,
+            status: LookupPathStatus.Found,
+            value: tree[1],
           };
         }
 
+        throw UNREACHABLE_ERROR;
+      }
+
+      case NodeType.Pruned: {
         return {
-          status: LookupStatus.Found,
-          value: tree[1],
+          status: LookupPathStatus.Unknown,
+        };
+      }
+
+      case NodeType.Labeled:
+      case NodeType.Fork: {
+        return {
+          status: LookupPathStatus.Error,
         };
       }
 
       default: {
-        return {
-          status: LookupStatus.Found,
-          value: tree,
-        };
+        throw UNREACHABLE_ERROR;
       }
     }
   }
 
-  const label = typeof path[0] === 'string' ? new TextEncoder().encode(path[0]) : path[0];
+  const label = pathToLabel(path);
   const lookupResult = find_label(label, tree);
 
   switch (lookupResult.status) {
-    case LookupStatus.Found: {
-      return lookup_path(path.slice(1), lookupResult.value as HashTree);
+    case LookupLabelStatus.Found: {
+      return lookup_path(path.slice(1), lookupResult.value);
     }
 
-    case LabelLookupStatus.Greater:
-    case LabelLookupStatus.Less: {
+    case LookupLabelStatus.Absent:
+    case LookupLabelStatus.Greater:
+    case LookupLabelStatus.Less: {
       return {
-        status: LookupStatus.Absent,
+        status: LookupPathStatus.Absent,
+      };
+    }
+
+    case LookupLabelStatus.Unknown: {
+      return {
+        status: LookupPathStatus.Unknown,
       };
     }
 
     default: {
-      return lookupResult;
+      throw UNREACHABLE_ERROR;
+    }
+  }
+}
+
+/**
+ * Lookup a subtree in a tree.
+ * @param path the path to look up
+ * @param tree the tree to search
+ * @returns {SubtreeLookupResult} the result of the lookup
+ */
+export function lookup_subtree(path: NodePath, tree: HashTree): SubtreeLookupResult {
+  if (path.length === 0) {
+    return {
+      status: LookupSubtreeStatus.Found,
+      value: tree,
+    };
+  }
+
+  const label = pathToLabel(path);
+  const lookupResult = find_label(label, tree);
+
+  switch (lookupResult.status) {
+    case LookupLabelStatus.Found: {
+      return lookup_subtree(path.slice(1), lookupResult.value);
+    }
+
+    case LookupLabelStatus.Unknown: {
+      return {
+        status: LookupSubtreeStatus.Unknown,
+      };
+    }
+
+    case LookupLabelStatus.Absent:
+    case LookupLabelStatus.Greater:
+    case LookupLabelStatus.Less: {
+      return {
+        status: LookupSubtreeStatus.Absent,
+      };
+    }
+
+    default: {
+      throw UNREACHABLE_ERROR;
     }
   }
 }
 
 /**
  * If the tree is a fork, flatten it into an array of trees
- * @param t - the tree to flatten
- * @returns HashTree[] - the flattened tree
+ * @param {HashTree} t the tree to flatten
+ * @returns {HashTree[]} the flattened tree
  */
-export function flatten_forks(t: HashTree): HashTree[] {
+export function flatten_forks(t: HashTree): Array<LabeledHashTree | LeafHashTree | PrunedHashTree> {
   switch (t[0]) {
     case NodeType.Empty:
       return [];
     case NodeType.Fork:
-      return flatten_forks(t[1] as HashTree).concat(flatten_forks(t[2] as HashTree));
+      return flatten_forks(t[1]).concat(flatten_forks(t[2]));
     default:
       return [t];
   }
 }
 
-export function find_label(label: ArrayBuffer, tree: HashTree): LabelLookupResult {
+/**
+ * Find a label in a tree
+ * @param label the label to find
+ * @param tree the tree to search
+ * @returns {LabelLookupResult} the result of the label lookup
+ */
+export function find_label(label: NodeLabel, tree: HashTree): LabelLookupResult {
   switch (tree[0]) {
     // if we have a labelled node, compare the node's label to the one we are
     // looking for
@@ -506,15 +646,15 @@ export function find_label(label: ArrayBuffer, tree: HashTree): LabelLookupResul
       // we need to keep searching
       if (isBufferGreaterThan(label, tree[1])) {
         return {
-          status: LabelLookupStatus.Greater,
+          status: LookupLabelStatus.Greater,
         };
       }
 
       // if the label we're searching for is equal this node's label, we can
       // stop searching and return the found node
-      if (bufEquals(label, tree[1])) {
+      if (uint8Equals(label, tree[1])) {
         return {
-          status: LookupStatus.Found,
+          status: LookupLabelStatus.Found,
           value: tree[2],
         };
       }
@@ -523,25 +663,25 @@ export function find_label(label: ArrayBuffer, tree: HashTree): LabelLookupResul
       // node's label, then it's less than this node's label, and we can stop
       // searching because we've looked too far
       return {
-        status: LabelLookupStatus.Less,
+        status: LookupLabelStatus.Less,
       };
 
     // if we have a fork node, we need to search both sides, starting with the left
-    case NodeType.Fork:
+    case NodeType.Fork: {
       // search in the left node
       const leftLookupResult = find_label(label, tree[1]);
 
       switch (leftLookupResult.status) {
         // if the label we're searching for is greater than the left node lookup,
         // we need to search the right node
-        case LabelLookupStatus.Greater: {
+        case LookupLabelStatus.Greater: {
           const rightLookupResult = find_label(label, tree[2]);
 
           // if the label we're searching for is less than the right node lookup,
           // then we can stop searching and say that the label is provably Absent
-          if (rightLookupResult.status === LabelLookupStatus.Less) {
+          if (rightLookupResult.status === LookupLabelStatus.Less) {
             return {
-              status: LookupStatus.Absent,
+              status: LookupLabelStatus.Absent,
             };
           }
 
@@ -552,14 +692,14 @@ export function find_label(label: ArrayBuffer, tree: HashTree): LabelLookupResul
 
         // if the left node returns an uncertain result, we need to search the
         // right node
-        case LookupStatus.Unknown: {
-          let rightLookupResult = find_label(label, tree[2]);
+        case LookupLabelStatus.Unknown: {
+          const rightLookupResult = find_label(label, tree[2]);
 
           // if the label we're searching for is less than the right node lookup,
           // then we also need to return an uncertain result
-          if (rightLookupResult.status === LabelLookupStatus.Less) {
+          if (rightLookupResult.status === LookupLabelStatus.Less) {
             return {
-              status: LookupStatus.Unknown,
+              status: LookupLabelStatus.Unknown,
             };
           }
 
@@ -576,28 +716,31 @@ export function find_label(label: ArrayBuffer, tree: HashTree): LabelLookupResul
           return leftLookupResult;
         }
       }
+    }
 
     // if we encounter a Pruned node, we can't know for certain if the label
     // we're searching for is present or not
     case NodeType.Pruned:
       return {
-        status: LookupStatus.Unknown,
+        status: LookupLabelStatus.Unknown,
       };
 
     // if the current node is Empty, or a Leaf, we can stop searching because
     // we know for sure that the label we're searching for is not present
     default:
       return {
-        status: LookupStatus.Absent,
+        status: LookupLabelStatus.Absent,
       };
   }
 }
 
 /**
- * Check if a canister falls within a range of canisters
- * @param canisterId Principal
- * @param ranges [Principal, Principal][]
- * @returns
+ * Check if a canister ID falls within the canister ranges of a given subnet
+ * @param params the parameters with which to check the canister ranges
+ * @param params.canisterId the canister ID to check
+ * @param params.subnetId the subnet ID from which to check the canister ranges
+ * @param params.tree the hash tree in which to lookup the subnet's canister ranges
+ * @returns {boolean} `true` if the canister is in the range, `false` otherwise
  */
 export function check_canister_ranges(params: {
   canisterId: Principal;
@@ -607,8 +750,21 @@ export function check_canister_ranges(params: {
   const { canisterId, subnetId, tree } = params;
   const rangeLookup = lookup_path(['subnet', subnetId.toUint8Array(), 'canister_ranges'], tree);
 
-  if (rangeLookup.status !== LookupStatus.Found || !(rangeLookup.value instanceof ArrayBuffer)) {
-    throw new Error(`Could not find canister ranges for subnet ${subnetId}`);
+  if (rangeLookup.status !== LookupPathStatus.Found) {
+    throw ProtocolError.fromCode(
+      new LookupErrorCode(
+        `Could not find canister ranges for subnet ${subnetId.toText()}`,
+        rangeLookup.status,
+      ),
+    );
+  }
+
+  if (!(rangeLookup.value instanceof Uint8Array)) {
+    throw ProtocolError.fromCode(
+      new MalformedLookupFoundValueErrorCode(
+        `Could not find canister ranges for subnet ${subnetId.toText()}`,
+      ),
+    );
   }
 
   const ranges_arr: Array<[Uint8Array, Uint8Array]> = cbor.decode(rangeLookup.value);

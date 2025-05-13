@@ -6,7 +6,7 @@ export const JSON_KEY_PRINCIPAL = '__principal__';
 const SELF_AUTHENTICATING_SUFFIX = 2;
 const ANONYMOUS_SUFFIX = 4;
 
-const MANAGEMENT_CANISTER_PRINCIPAL_HEX_STR = 'aaaaa-aa';
+const MANAGEMENT_CANISTER_PRINCIPAL_TEXT_STR = 'aaaaa-aa';
 
 const fromHexString = (hexString: string) =>
   new Uint8Array((hexString.match(/.{1,2}/g) ?? []).map(byte => parseInt(byte, 16)));
@@ -28,7 +28,7 @@ export class Principal {
    * @returns {Principal} principal of the management canister
    */
   public static managementCanister(): Principal {
-    return this.fromHex(MANAGEMENT_CANISTER_PRINCIPAL_HEX_STR);
+    return this.fromText(MANAGEMENT_CANISTER_PRINCIPAL_TEXT_STR);
   }
 
   public static selfAuthenticating(publicKey: Uint8Array): Principal {
@@ -107,8 +107,7 @@ export class Principal {
     view.setUint32(0, getCrc32(this._arr));
     const checksum = new Uint8Array(checksumArrayBuf);
 
-    const bytes = Uint8Array.from(this._arr);
-    const array = new Uint8Array([...checksum, ...bytes]);
+    const array = new Uint8Array([...checksum, ...this._arr]);
 
     const result = encode(array);
     const matches = result.match(/.{1,5}/g);

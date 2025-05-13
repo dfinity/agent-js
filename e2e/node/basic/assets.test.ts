@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, unlinkSync } from 'fs';
 import path from 'path';
 import agent from '../utils/agent';
-import { Actor } from '@dfinity/agent';
+import { Actor, uint8FromBufLike } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import { AssetManager } from '@dfinity/assets';
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
@@ -68,7 +68,7 @@ describe('assets', () => {
   };
 
   beforeAll(async () => {
-    const module = readFileSync(path.join(__dirname, '../canisters/assets.wasm'));
+    const module = uint8FromBufLike(readFileSync(path.join(__dirname, '../canisters/assets.wasm')));
     canisterId = await Actor.createCanister({ agent: await agent });
     await Actor.install({ module }, { canisterId, agent: await agent });
   });
@@ -103,7 +103,7 @@ describe('assets', () => {
 
     // Batch store A and B assets and delete X asset
     const readables = [randomBytesReadable('A.bin', 1000), randomBytesReadable('B.bin', 1000)];
-    await batch.delete(`/${x.fileName}`);
+    batch.delete(`/${x.fileName}`);
     await Promise.all(readables.map(readable => batch.store(readable)));
     await batch.commit();
     await expect(

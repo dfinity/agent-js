@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/candid",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to work with candid interfaces",
@@ -39,7 +39,7 @@
     "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js",
     "size-limit": "size-limit",
     "ci": "npm run prettier && npm run lint && npm run test",
-    "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
+    "lint": "eslint 'src' 'types' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/candid --excludeInternal",
     "prettier": "prettier --check \"src/**/*.ts\"",
@@ -48,7 +48,7 @@
     "test:coverage": "jest --collectCoverage"
   },
   "peerDependencies": {
-    "@dfinity/principal": "^2.4.0"
+    "@dfinity/principal": "^2.4.1"
   },
   "devDependencies": {
     "@types/jest": "^29.5.5",
@@ -62,7 +62,8 @@
     "size-limit": "^8.2.6",
     "text-encoding": "^0.7.0",
     "ts-node": "^10.8.2",
-    "typedoc": "^0.22.11",
+    "typedoc": "^0.28.2",
+    "typescript": "^5.8.3",
     "whatwg-fetch": "^3.0.0"
   },
   "size-limit": [

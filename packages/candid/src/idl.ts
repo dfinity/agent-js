@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Principal as PrincipalId } from '@dfinity/principal';
 import { JsonValue } from './types';
-import { concat, PipeArrayBuffer as Pipe } from './utils/buffer';
+import { concat, PipeArrayBuffer as Pipe, uint8ToDataView } from './utils/buffer';
 import { idlLabelToId } from './utils/hash';
 import {
   lebDecode,
@@ -55,14 +55,14 @@ function zipWith<TX, TY, TR>(xs: TX[], ys: TY[], f: (a: TX, b: TY) => TR): TR[] 
  */
 class TypeTable {
   // List of types. Needs to be an array as the index needs to be stable.
-  private _typs: ArrayBuffer[] = [];
+  private _typs: Uint8Array[] = [];
   private _idx = new Map<string, number>();
 
   public has(obj: ConstructType) {
     return this._idx.has(obj.name);
   }
 
-  public add<T>(type: ConstructType<T>, buf: ArrayBuffer) {
+  public add<T>(type: ConstructType<T>, buf: Uint8Array) {
     const idx = this._typs.length;
     this._idx.set(type.name, idx);
     this._typs.push(buf);
@@ -84,13 +84,13 @@ class TypeTable {
     this._idx.delete(knot);
   }
 
-  public encode() {
+  public encode(): Uint8Array {
     const len = lebEncode(this._typs.length);
     const buf = concat(...this._typs);
     return concat(len, buf);
   }
 
-  public indexOf(typeName: string) {
+  public indexOf(typeName: string): Uint8Array {
     if (!this._idx.has(typeName)) {
       throw new Error('Missing type index for ' + typeName);
     }
@@ -206,13 +206,13 @@ export abstract class Type<T = any> {
    * encodeValue() from different types.
    * @internal
    */
-  public abstract encodeValue(x: T): ArrayBuffer;
+  public abstract encodeValue(x: T): Uint8Array;
 
   /**
    * Implement `I` in the IDL spec.
    * Encode this type for the type table.
    */
-  public abstract encodeType(typeTable: TypeTable): ArrayBuffer;
+  public abstract encodeType(typeTable: TypeTable): Uint8Array;
 
   public abstract checkType(t: Type): Type;
 
@@ -370,11 +370,11 @@ export class BoolClass extends PrimitiveType<boolean> {
     throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
-  public encodeValue(x: boolean): ArrayBuffer {
+  public encodeValue(x: boolean): Uint8Array {
     return new Uint8Array([x ? 1 : 0]);
   }
 
-  public encodeType() {
+  public encodeType(): Uint8Array {
     return slebEncode(IDLTypeIds.Bool);
   }
 
@@ -408,11 +408,11 @@ export class NullClass extends PrimitiveType<null> {
     throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
-  public encodeValue() {
-    return new ArrayBuffer(0);
+  public encodeValue(): Uint8Array {
+    return new Uint8Array(0);
   }
 
-  public encodeType() {
+  public encodeType(): Uint8Array {
     return slebEncode(IDLTypeIds.Null);
   }
 
@@ -438,11 +438,11 @@ export class ReservedClass extends PrimitiveType<any> {
     return true;
   }
 
-  public encodeValue() {
-    return new ArrayBuffer(0);
+  public encodeValue(): Uint8Array {
+    return new Uint8Array(0);
   }
 
-  public encodeType() {
+  public encodeType(): Uint8Array {
     return slebEncode(IDLTypeIds.Reserved);
   }
 
@@ -513,7 +513,7 @@ export class IntClass extends PrimitiveType<bigint> {
     throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
-  public encodeValue(x: bigint | number) {
+  public encodeValue(x: bigint | number): Uint8Array {
     return slebEncode(x);
   }
 
@@ -550,7 +550,7 @@ export class NatClass extends PrimitiveType<bigint> {
     throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
-  public encodeValue(x: bigint | number) {
+  public encodeValue(x: bigint | number): Uint8Array {
     return lebEncode(x);
   }
 
@@ -576,7 +576,7 @@ export class NatClass extends PrimitiveType<bigint> {
  * Represents an IDL Float
  */
 export class FloatClass extends PrimitiveType<number> {
-  constructor(private _bits: number) {
+  constructor(public readonly _bits: number) {
     super();
     if (_bits !== 32 && _bits !== 64) {
       throw new Error('not a valid float type');
@@ -599,10 +599,10 @@ export class FloatClass extends PrimitiveType<number> {
     } else {
       view.setFloat64(0, x, true);
     }
-    return buf;
+    return new Uint8Array(buf);
   }
 
-  public encodeType() {
+  public encodeType(): Uint8Array {
     const opcode = this._bits === 32 ? IDLTypeIds.Float32 : IDLTypeIds.Float64;
     return slebEncode(opcode);
   }
@@ -610,7 +610,7 @@ export class FloatClass extends PrimitiveType<number> {
   public decodeValue(b: Pipe, t: Type) {
     this.checkType(t);
     const bytes = safeRead(b, this._bits / 8);
-    const view = new DataView(bytes);
+    const view = uint8ToDataView(bytes);
     if (this._bits === 32) {
       return view.getFloat32(0, true);
     } else {
@@ -755,7 +755,7 @@ export class VecClass<T> extends ConstructType<T[]> {
   // to be backward compatible.
   private _blobOptimization = false;
 
-  constructor(protected _type: Type<T>) {
+  constructor(public _type: Type<T>) {
     super();
     if (_type instanceof FixedNatClass && _type._bits === 8) {
       this._blobOptimization = true;
@@ -772,8 +772,8 @@ export class VecClass<T> extends ConstructType<T[]> {
       this._type instanceof FixedNatClass
         ? this._type._bits
         : this._type instanceof FixedIntClass
-        ? this._type._bits
-        : 0;
+          ? this._type._bits
+          : 0;
 
     if (
       (ArrayBuffer.isView(x) && bits == (x as any).BYTES_PER_ELEMENT * 8) ||
@@ -791,15 +791,50 @@ export class VecClass<T> extends ConstructType<T[]> {
     throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
-  public encodeValue(x: T[]) {
+  public encodeValue(x: T[]): Uint8Array {
     const len = lebEncode(x.length);
     if (this._blobOptimization) {
       return concat(len, new Uint8Array(x as unknown as number[]));
     }
+
     if (ArrayBuffer.isView(x)) {
-      return concat(len, new Uint8Array(x.buffer));
+      // Handle TypedArrays with endianness concerns
+      if (x instanceof Int16Array || x instanceof Uint16Array) {
+        const buffer = new DataView(new ArrayBuffer(x.length * 2));
+        for (let i = 0; i < x.length; i++) {
+          if (x instanceof Int16Array) {
+            buffer.setInt16(i * 2, x[i], true); // true = little-endian
+          } else {
+            buffer.setUint16(i * 2, x[i], true);
+          }
+        }
+        return concat(len, new Uint8Array(buffer.buffer));
+      } else if (x instanceof Int32Array || x instanceof Uint32Array) {
+        const buffer = new DataView(new ArrayBuffer(x.length * 4));
+        for (let i = 0; i < x.length; i++) {
+          if (x instanceof Int32Array) {
+            buffer.setInt32(i * 4, x[i], true);
+          } else {
+            buffer.setUint32(i * 4, x[i], true);
+          }
+        }
+        return concat(len, new Uint8Array(buffer.buffer));
+      } else if (x instanceof BigInt64Array || x instanceof BigUint64Array) {
+        const buffer = new DataView(new ArrayBuffer(x.length * 8));
+        for (let i = 0; i < x.length; i++) {
+          if (x instanceof BigInt64Array) {
+            buffer.setBigInt64(i * 8, x[i], true);
+          } else {
+            buffer.setBigUint64(i * 8, x[i], true);
+          }
+        }
+        return concat(len, new Uint8Array(buffer.buffer));
+      } else {
+        // For Uint8Array, Int8Array, etc. that don't have endianness concerns
+        return concat(len, new Uint8Array(x.buffer, x.byteOffset, x.byteLength));
+      }
     }
-    const buf = new Pipe(new ArrayBuffer(len.byteLength + x.length), 0);
+    const buf = new Pipe(new Uint8Array(len.byteLength + x.length), 0);
     buf.write(len);
     for (const d of x) {
       const encoded = this._type.encodeValue(d);
@@ -828,13 +863,18 @@ export class VecClass<T> extends ConstructType<T[]> {
         return new Uint8Array(b.read(len)) as unknown as T[];
       }
       if (this._type._bits == 16) {
-        return new Uint16Array(b.read(len * 2)) as unknown as T[];
+        const bytes = b.read(len * 2);
+        // Check if we need to swap bytes for endianness
+        const u16 = new Uint16Array(bytes.buffer, bytes.byteOffset, len);
+        return u16 as unknown as T[];
       }
       if (this._type._bits == 32) {
-        return new Uint32Array(b.read(len * 4)) as unknown as T[];
+        const bytes = b.read(len * 4);
+        const u32 = new Uint32Array(bytes.buffer, bytes.byteOffset, len);
+        return u32 as unknown as T[];
       }
       if (this._type._bits == 64) {
-        return new BigUint64Array(b.read(len * 8)) as unknown as T[];
+        return new BigUint64Array(b.read(len * 8).buffer) as unknown as T[];
       }
     }
 
@@ -843,13 +883,37 @@ export class VecClass<T> extends ConstructType<T[]> {
         return new Int8Array(b.read(len)) as unknown as T[];
       }
       if (this._type._bits == 16) {
-        return new Int16Array(b.read(len * 2)) as unknown as T[];
+        const bytes = b.read(len * 2);
+        // Create a DataView to properly handle endianness
+        const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+
+        // Create result array with correct endianness
+        const result = new Int16Array(len);
+        for (let i = 0; i < len; i++) {
+          // Read each value as little-endian (Candid wire format is little-endian)
+          result[i] = view.getInt16(i * 2, true);
+        }
+        return result as unknown as T[];
       }
       if (this._type._bits == 32) {
-        return new Int32Array(b.read(len * 4)) as unknown as T[];
+        const bytes = b.read(len * 4);
+        const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+
+        const result = new Int32Array(len);
+        for (let i = 0; i < len; i++) {
+          result[i] = view.getInt32(i * 4, true);
+        }
+        return result as unknown as T[];
       }
       if (this._type._bits == 64) {
-        return new BigInt64Array(b.read(len * 8)) as unknown as T[];
+        const bytes = b.read(len * 8);
+        const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+
+        const result = new BigInt64Array(len);
+        for (let i = 0; i < len; i++) {
+          result[i] = view.getBigInt64(i * 8, true);
+        }
+        return result as unknown as T[];
       }
     }
 
@@ -879,7 +943,7 @@ export class VecClass<T> extends ConstructType<T[]> {
  * @param {Type} t
  */
 export class OptClass<T> extends ConstructType<[T] | []> {
-  constructor(protected _type: Type<T>) {
+  constructor(public _type: Type<T>) {
     super();
   }
 
@@ -899,7 +963,7 @@ export class OptClass<T> extends ConstructType<[T] | []> {
     throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
-  public encodeValue(x: [T] | []) {
+  public encodeValue(x: [T] | []): Uint8Array {
     if (x.length === 0) {
       return new Uint8Array([0]);
     } else {
@@ -917,11 +981,11 @@ export class OptClass<T> extends ConstructType<[T] | []> {
 
   public decodeValue(b: Pipe, t: Type): [T] | [] {
     if (t instanceof NullClass) {
-      return []
+      return [];
     }
 
     if (t instanceof ReservedClass) {
-      return []
+      return [];
     }
 
     let wireType = t;
@@ -944,7 +1008,7 @@ export class OptClass<T> extends ConstructType<[T] | []> {
             // Attempt to decode a value using the `_type` of the current instance
             const v = this._type.decodeValue(b, wireType._type);
             return [v];
-          } catch (e : any) {
+          } catch (e: any) {
             // If an error occurs during decoding, restore the Pipe `b` to its previous state
             b.restore(checkpoint);
             // Skip the value at the current wire type to advance the Pipe `b` position
@@ -956,9 +1020,12 @@ export class OptClass<T> extends ConstructType<[T] | []> {
         default:
           throw new Error('Not an option value');
       }
-    } else if
+    } else if (
       // this check corresponds to `not (null <: <t>)` in the spec
-      (this._type instanceof NullClass || this._type instanceof OptClass || this._type instanceof ReservedClass) {
+      this._type instanceof NullClass ||
+      this._type instanceof OptClass ||
+      this._type instanceof ReservedClass
+    ) {
       // null <: <t> :
       // skip value at wire type (to advance b) and return "null", i.e. []
       const skipped = wireType.decodeValue(b, wireType);
@@ -968,13 +1035,13 @@ export class OptClass<T> extends ConstructType<[T] | []> {
       // try constituent type
       const checkpoint = b.save();
       try {
-        const v = this._type.decodeValue(b, t)
+        const v = this._type.decodeValue(b, t);
         return [v];
-      } catch (e : any) {
+      } catch (e: any) {
         // decoding failed, but this is opt, so return "null", i.e. []
         b.restore(checkpoint);
         // skip value at wire type (to advance b)
-        const skipped = wireType.decodeValue(b, t)
+        const skipped = wireType.decodeValue(b, t);
         // return "null"
         return [];
       }
@@ -1003,7 +1070,7 @@ export class OptClass<T> extends ConstructType<[T] | []> {
  * @param {object} [fields] - mapping of function name to Type
  */
 export class RecordClass extends ConstructType<Record<string, any>> {
-  protected readonly _fields: Array<[string, Type]>;
+  public readonly _fields: Array<[string, Type]>;
 
   constructor(fields: Record<string, Type> = {}) {
     super();
@@ -1046,7 +1113,7 @@ export class RecordClass extends ConstructType<Record<string, any>> {
     throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
-  public encodeValue(x: Record<string, any>) {
+  public encodeValue(x: Record<string, any>): Uint8Array {
     const values = this._fields.map(([key]) => x[key]);
     const bufs = zipWith(this._fields, values, ([, c], d) => c.encodeValue(d));
     return concat(...bufs);
@@ -1117,6 +1184,14 @@ export class RecordClass extends ConstructType<Record<string, any>> {
     return x;
   }
 
+  get fieldsAsObject(): Record<string, Type> {
+    const fields: Record<string, Type> = {};
+    for (const [name, ty] of this._fields) {
+      fields[name] = ty;
+    }
+    return fields;
+  }
+
   get name() {
     const fields = this._fields.map(([key, value]) => key + ':' + value.name);
     return `record {${fields.join('; ')}}`;
@@ -1171,7 +1246,7 @@ export class TupleClass<T extends any[]> extends RecordClass {
     throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
-  public encodeValue(x: any[]) {
+  public encodeValue(x: any[]): Uint8Array {
     const bufs = zipWith(this._components, x, (c, d) => c.encodeValue(d));
     return concat(...bufs);
   }
@@ -1212,7 +1287,7 @@ export class TupleClass<T extends any[]> extends RecordClass {
  * @param {object} [fields] - mapping of function name to Type
  */
 export class VariantClass extends ConstructType<Record<string, any>> {
-  private readonly _fields: Array<[string, Type]>;
+  public readonly _fields: Array<[string, Type]>;
 
   constructor(fields: Record<string, Type> = {}) {
     super();
@@ -1312,6 +1387,14 @@ export class VariantClass extends ConstructType<Record<string, any>> {
     }
     throw new Error('Variant has no data: ' + x);
   }
+
+  get alternativesAsObject(): Record<string, Type> {
+    const alternatives: Record<string, Type> = {};
+    for (const [name, ty] of this._fields) {
+      alternatives[name] = ty;
+    }
+    return alternatives;
+  }
 }
 
 /**
@@ -1321,7 +1404,7 @@ export class VariantClass extends ConstructType<Record<string, any>> {
 export class RecClass<T = any> extends ConstructType<T> {
   private static _counter = 0;
   private _id = RecClass._counter++;
-  private _type: ConstructType<T> | undefined = undefined;
+  private _type: ConstructType<T> | undefined;
 
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     if (!this._type) {
@@ -1408,13 +1491,12 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
     throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
-  public encodeValue(x: PrincipalId): ArrayBuffer {
+  public encodeValue(x: PrincipalId): Uint8Array {
     const buf = x.toUint8Array();
     const len = lebEncode(buf.byteLength);
     return concat(new Uint8Array([1]), len, buf);
   }
-
-  public encodeType() {
+  public encodeType(): Uint8Array {
     return slebEncode(IDLTypeIds.Principal);
   }
 
@@ -1445,7 +1527,11 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
     return '(' + types.map((t, i) => t.valueToString(v[i])).join(', ') + ')';
   }
 
-  constructor(public argTypes: Type[], public retTypes: Type[], public annotations: string[] = []) {
+  constructor(
+    public argTypes: Type[],
+    public retTypes: Type[],
+    public annotations: string[] = [],
+  ) {
     super();
   }
 
@@ -1483,7 +1569,13 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
     T.add(this, concat(opCode, argLen, args, retLen, rets, annLen, anns));
   }
 
-  public decodeValue(b: Pipe): [PrincipalId, string] {
+  public decodeValue(b: Pipe, t: Type): [PrincipalId, string] {
+    const tt = t instanceof RecClass ? (t.getType() ?? t) : t;
+    if (!subtype(tt, this)) {
+      throw new Error(
+        `Cannot decode function reference at type ${this.display()} from wire type ${tt.display()}`,
+      );
+    }
     const x = safeReadUint8(b);
     if (x !== 1) {
       throw new Error('Cannot decode function reference');
@@ -1516,7 +1608,7 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
     return `(${args}) → (${rets})${annon}`;
   }
 
-  private encodeAnnotation(ann: string): ArrayBuffer {
+  private encodeAnnotation(ann: string): Uint8Array {
     if (ann === 'query') {
       return new Uint8Array([1]);
     } else if (ann === 'oneway') {
@@ -1551,7 +1643,7 @@ export class ServiceClass extends ConstructType<PrincipalId> {
     throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
-  public encodeValue(x: PrincipalId) {
+  public encodeValue(x: PrincipalId): Uint8Array {
     const buf = x.toUint8Array();
     const len = lebEncode(buf.length);
     return concat(new Uint8Array([1]), len, buf);
@@ -1570,7 +1662,13 @@ export class ServiceClass extends ConstructType<PrincipalId> {
     T.add(this, concat(opCode, len, ...meths));
   }
 
-  public decodeValue(b: Pipe): PrincipalId {
+  public decodeValue(b: Pipe, t: Type): PrincipalId {
+    const tt = t instanceof RecClass ? (t.getType() ?? t) : t;
+    if (!subtype(tt, this)) {
+      throw new Error(
+        `Cannot decode service reference at type ${this.display()} from wire type ${tt.display()}`,
+      );
+    }
     return decodePrincipalId(b);
   }
   get name() {
@@ -1580,6 +1678,14 @@ export class ServiceClass extends ConstructType<PrincipalId> {
 
   public valueToString(x: PrincipalId) {
     return `service "${x.toText()}"`;
+  }
+
+  public fieldsAsObject() {
+    const fields: Record<string, Type> = {};
+    for (const [name, ty] of this._fields) {
+      fields[name] = ty;
+    }
+    return fields;
   }
 }
 
@@ -1602,9 +1708,9 @@ function toReadableString(x: unknown): string {
  * Encode a array of values
  * @param argTypes - array of Types
  * @param args - array of values
- * @returns {ArrayBuffer} serialised value
+ * @returns {Uint8Array} serialised value
  */
-export function encode(argTypes: Array<Type<any>>, args: any[]): ArrayBuffer {
+export function encode(argTypes: Array<Type<any>>, args: any[]): Uint8Array {
   if (args.length < argTypes.length) {
     throw Error('Wrong number of message arguments');
   }
@@ -1638,7 +1744,7 @@ export function encode(argTypes: Array<Type<any>>, args: any[]): ArrayBuffer {
  * @param bytes - hex-encoded string, or buffer.
  * @returns Value deserialised to JS type
  */
-export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
+export function decode(retTypes: Type[], bytes: Uint8Array): JsonValue[] {
   const b = new Pipe(bytes);
 
   if (bytes.byteLength < magicNumber.length) {
@@ -1875,21 +1981,26 @@ export function decode(retTypes: Type[], bytes: ArrayBuffer): JsonValue[] {
     }
   });
 
+  resetSubtypeCache();
   const types = rawTypes.map(t => getType(t));
-  const output = retTypes.map((t, i) => {
-    return t.decodeValue(b, types[i]);
-  });
+  try {
+    const output = retTypes.map((t, i) => {
+      return t.decodeValue(b, types[i]);
+    });
 
-  // skip unused values
-  for (let ind = retTypes.length; ind < types.length; ind++) {
-    types[ind].decodeValue(b, types[ind]);
+    // skip unused values
+    for (let ind = retTypes.length; ind < types.length; ind++) {
+      types[ind].decodeValue(b, types[ind]);
+    }
+
+    if (b.byteLength > 0) {
+      throw new Error('decode: Left-over bytes');
+    }
+
+    return output;
+  } finally {
+    resetSubtypeCache();
   }
-
-  if (b.byteLength > 0) {
-    throw new Error('decode: Left-over bytes');
-  }
-
-  return output;
 }
 
 /**
@@ -2028,4 +2139,175 @@ export function Func(args: Type[], ret: Type[], annotations: string[] = []): Fun
  */
 export function Service(t: Record<string, FuncClass>): ServiceClass {
   return new ServiceClass(t);
+}
+
+/**
+ * The list of relations between types we assume to hold. Uses the types .name property as key
+ */
+class Relations {
+  private rels: Map<string, Map<string, boolean>>;
+
+  constructor(relations = new Map()) {
+    this.rels = relations;
+  }
+
+  copy(): Relations {
+    const copy = new Map();
+    for (const [key, value] of this.rels.entries()) {
+      const valCopy = new Map(value);
+      copy.set(key, valCopy);
+    }
+    return new Relations(copy);
+  }
+
+  /// Returns whether we know for sure that a relation holds or doesn't (`true` or `false`), or
+  /// if we don't know yet (`undefined`)
+  known(t1: Type, t2: Type): boolean | undefined {
+    return this.rels.get(t1.name)?.get(t2.name);
+  }
+
+  addNegative(t1: Type, t2: Type) {
+    this.addNames(t1.name, t2.name, false);
+  }
+
+  add(t1: Type, t2: Type) {
+    this.addNames(t1.name, t2.name, true);
+  }
+
+  display(): string {
+    let result = '';
+    for (const [t1, v] of this.rels) {
+      for (const [t2, known] of v) {
+        const subty = known ? ':<' : '!<:';
+        result += `${t1} ${subty} ${t2}\n`;
+      }
+    }
+    return result;
+  }
+
+  private addNames(t1: string, t2: string, isSubtype: boolean) {
+    const t1Map = this.rels.get(t1);
+    if (t1Map == undefined) {
+      const newMap = new Map();
+      newMap.set(t2, isSubtype);
+      this.rels.set(t1, newMap);
+    } else {
+      t1Map.set(t2, isSubtype);
+    }
+  }
+}
+
+/// `subtypeCache` holds subtyping relations we've previously computed while decoding a message
+let subtypeCache: Relations = new Relations();
+
+/** Resets the global subtyping cache */
+export function resetSubtypeCache() {
+  subtypeCache = new Relations();
+}
+
+function eqFunctionAnnotations(t1: FuncClass, t2: FuncClass): boolean {
+  const t1Annotations = new Set(t1.annotations);
+  const t2Annotations = new Set(t2.annotations);
+  if (t1Annotations.size !== t2Annotations.size) {
+    return false;
+  }
+  for (const a of t1Annotations) {
+    if (!t2Annotations.has(a)) return false;
+  }
+  return true;
+}
+
+function canBeOmmitted(t: Type) {
+  return t instanceof OptClass || t instanceof NullClass || t instanceof ReservedClass;
+}
+
+/**
+ * Subtyping on Candid types t1 <: t2 (Exported for testing)
+ * @param t1 The potential subtype
+ * @param t2 The potential supertype
+ */
+export function subtype(t1: Type, t2: Type): boolean {
+  const relations = subtypeCache.copy();
+  const isSubtype = subtype_(relations, t1, t2);
+  if (isSubtype) {
+    subtypeCache.add(t1, t2);
+  } else {
+    subtypeCache.addNegative(t1, t2);
+  }
+  return isSubtype;
+}
+
+function subtype_(relations: Relations, t1: Type, t2: Type): boolean {
+  if (t1.name === t2.name) return true;
+  const known = relations.known(t1, t2);
+  if (known !== undefined) return known;
+  relations.add(t1, t2);
+
+  if (t2 instanceof ReservedClass) return true;
+  if (t1 instanceof EmptyClass) return true;
+  if (t1 instanceof NatClass && t2 instanceof IntClass) return true;
+  if (t1 instanceof VecClass && t2 instanceof VecClass)
+    return subtype_(relations, t1._type, t2._type);
+  if (t2 instanceof OptClass) return true;
+  if (t1 instanceof RecordClass && t2 instanceof RecordClass) {
+    const t1Object = t1.fieldsAsObject;
+    for (const [name, ty2] of t2._fields) {
+      const ty1 = t1Object[name];
+      if (!ty1) {
+        if (!canBeOmmitted(ty2)) return false;
+      } else {
+        if (!subtype_(relations, ty1, ty2)) return false;
+      }
+    }
+    return true;
+  }
+
+  if (t1 instanceof FuncClass && t2 instanceof FuncClass) {
+    if (!eqFunctionAnnotations(t1, t2)) return false;
+    for (let i = 0; i < t1.argTypes.length; i++) {
+      const argTy1 = t1.argTypes[i];
+      if (i < t2.argTypes.length) {
+        if (!subtype_(relations, t2.argTypes[i], argTy1)) return false;
+      } else {
+        if (!canBeOmmitted(argTy1)) return false;
+      }
+    }
+    for (let i = 0; i < t2.retTypes.length; i++) {
+      const retTy2 = t2.retTypes[i];
+      if (i < t1.retTypes.length) {
+        if (!subtype_(relations, t1.retTypes[i], retTy2)) return false;
+      } else {
+        if (!canBeOmmitted(retTy2)) return false;
+      }
+    }
+    return true;
+  }
+
+  if (t1 instanceof VariantClass && t2 instanceof VariantClass) {
+    const t2Object = t2.alternativesAsObject;
+    for (const [name, ty1] of t1._fields) {
+      const ty2 = t2Object[name];
+      if (!ty2) return false;
+      if (!subtype_(relations, ty1, ty2)) return false;
+    }
+    return true;
+  }
+
+  if (t1 instanceof ServiceClass && t2 instanceof ServiceClass) {
+    const t1Object = t1.fieldsAsObject();
+    for (const [name, ty2] of t2._fields) {
+      const ty1 = t1Object[name];
+      if (!ty1) return false;
+      if (!subtype_(relations, ty1, ty2)) return false;
+    }
+    return true;
+  }
+
+  if (t1 instanceof RecClass) {
+    return subtype_(relations, t1.getType()!, t2);
+  }
+  if (t2 instanceof RecClass) {
+    return subtype_(relations, t1, t2.getType()!);
+  }
+  return false;
 }

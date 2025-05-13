@@ -6,9 +6,8 @@ import { Actor, ActorSubclass } from './actor';
 
 /**
  * Retrieves the Candid interface for the specified canister.
- *
- * @param agent The agent to use for the request (usually an `HttpAgent`)
  * @param canisterId A string corresponding to the canister ID
+ * @param agent The agent to use for the request (usually an `HttpAgent`)
  * @returns Candid source code
  */
 export async function fetchCandid(canisterId: string, agent?: HttpAgent): Promise<string> {

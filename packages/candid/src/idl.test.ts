@@ -5,15 +5,19 @@
  */
 import * as IDL from './idl';
 import { Principal } from '@dfinity/principal';
-import { fromHexString, toHexString } from './utils/buffer';
+import { hexToBytes, bytesToHex } from '@noble/hashes/utils';
 import { idlLabelToId } from './utils/hash';
 
 function testEncode(typ: IDL.Type, val: any, hex: string, _str: string) {
-  expect(toHexString(IDL.encode([typ], [val]))).toEqual(hex);
+  expect(bytesToHex(IDL.encode([typ], [val]))).toEqual(hex);
 }
 
 function testDecode(typ: IDL.Type, val: any, hex: string, _str: string) {
-  expect(IDL.decode([typ], fromHexString(hex))[0]).toEqual(val);
+  expect(IDL.decode([typ], hexToBytes(hex))[0]).toEqual(val);
+}
+
+function testDecodeFail(typ: IDL.Type, hex: string, _str: string) {
+  expect(() => IDL.decode([typ], hexToBytes(hex))[0]).toThrow();
 }
 
 function test_(typ: IDL.Type, val: any, hex: string, str: string) {
@@ -22,8 +26,8 @@ function test_(typ: IDL.Type, val: any, hex: string, str: string) {
 }
 
 function test_args(typs: IDL.Type[], vals: any[], hex: string, _str: string) {
-  expect(IDL.encode(typs, vals)).toEqual(fromHexString(hex));
-  expect(IDL.decode(typs, fromHexString(hex))).toEqual(vals);
+  expect(IDL.encode(typs, vals)).toEqual(hexToBytes(hex));
+  expect(IDL.decode(typs, hexToBytes(hex))).toEqual(vals);
 }
 
 function hashedPropertyName(name: string) {
@@ -32,16 +36,16 @@ function hashedPropertyName(name: string) {
 
 test('IDL encoding (magic number)', () => {
   // Wrong magic number
-  expect(() => IDL.decode([IDL.Nat], fromHexString('2a'))).toThrow(
+  expect(() => IDL.decode([IDL.Nat], hexToBytes('2a'))).toThrow(
     /Message length smaller than magic number/,
   );
-  expect(() => IDL.decode([IDL.Nat], fromHexString('4449444d2a'))).toThrow(/Wrong magic number:/);
+  expect(() => IDL.decode([IDL.Nat], hexToBytes('4449444d2a'))).toThrow(/Wrong magic number:/);
 });
 
 test('IDL encoding (empty)', () => {
   // Empty
   expect(() => IDL.encode([IDL.Empty], [undefined])).toThrow(/Invalid empty argument:/);
-  expect(() => IDL.decode([IDL.Empty], fromHexString('4449444c00016f'))).toThrow(
+  expect(() => IDL.decode([IDL.Empty], hexToBytes('4449444c00016f'))).toThrow(
     /Empty cannot appear as an output/,
   );
 });
@@ -63,7 +67,7 @@ test('IDL encoding (text)', () => {
   expect(() => IDL.encode([IDL.Text], [0])).toThrow(/Invalid text argument/);
   expect(() => IDL.encode([IDL.Text], [null])).toThrow(/Invalid text argument/);
   expect(() =>
-    IDL.decode([IDL.Vec(IDL.Nat8)], fromHexString('4449444c00017107486920e298830a')),
+    IDL.decode([IDL.Vec(IDL.Nat8)], hexToBytes('4449444c00017107486920e298830a')),
   ).toThrow(/type mismatch: type on the wire text, expect type vec nat8/);
 });
 
@@ -81,7 +85,7 @@ test('IDL encoding (int)', () => {
   test_(IDL.Int, BigInt(-1234567890), '4449444c00017caefaa7b37b', 'Negative Int');
   test_(IDL.Opt(IDL.Int), [BigInt(42)], '4449444c016e7c0100012a', 'Nested Int');
   testEncode(IDL.Opt(IDL.Int), [42], '4449444c016e7c0100012a', 'Nested Int (number)');
-  expect(() => IDL.decode([IDL.Int], fromHexString('4449444c00017d2a'))).toThrow(
+  expect(() => IDL.decode([IDL.Int], hexToBytes('4449444c00017d2a'))).toThrow(
     /type mismatch: type on the wire nat, expect type int/,
   );
 });
@@ -168,8 +172,8 @@ test('IDL encoding (arraybuffer)', () => {
   );
   test_(
     IDL.Vec(IDL.Int16),
-    new Int16Array([0, 1, 2, 3, 32767, -1]),
-    '4449444c016d760100060000010002000300ff7fffff',
+    new Int16Array([0, 0, 1, 0, 2, 0, 3, 0, 255, 127, 255, 255]),
+    '4449444c016d7601000c00000000010000000200000003000000ff007f00ff00ff00',
     'Array of Int16s',
   );
   test_(
@@ -323,7 +327,7 @@ test('IDL encoding (principal)', () => {
   expect(() => IDL.encode([IDL.Principal], ['w7x7r-cok77-xa'])).toThrow(
     /Invalid principal argument/,
   );
-  expect(() => IDL.decode([IDL.Principal], fromHexString('4449444c00016803caffee'))).toThrow(
+  expect(() => IDL.decode([IDL.Principal], hexToBytes('4449444c00016803caffee'))).toThrow(
     /Cannot decode principal/,
   );
 });
@@ -361,7 +365,8 @@ test('IDL encoding (service)', () => {
   testDecode(
     IDL.Service({ foo: IDL.Func([IDL.Text], [IDL.Nat], []) }),
     Principal.fromText('w7x7r-cok77-xa'),
-    '4449444c02690103666f6f016a0171017d0001010103caffee',
+    // didc encode -t "(service { foo : (text) -> (nat) })" "(service \"w7x7r-cok77-xa\")"
+    '4449444c02690103666f6f016a0171017d0001000103caffee',
     'service',
   );
   test_(
@@ -479,11 +484,11 @@ test('decode / encode unknown variant', () => {
   const decodedType = IDL.Variant({ _24860_: IDL.Text, _5048165_: IDL.Text });
   const encoded = '4449444c016b029cc20171e58eb4027101000004676f6f64';
 
-  const value = IDL.decode([IDL.Unknown], fromHexString(encoded))[0] as any;
+  const value = IDL.decode([IDL.Unknown], hexToBytes(encoded))[0] as any;
   expect(value[hashedPropertyName('ok')]).toEqual('good');
   expect(value.type()).toEqual(decodedType);
 
-  const reencoded = toHexString(IDL.encode([value.type()], [value]));
+  const reencoded = bytesToHex(IDL.encode([value.type()], [value]));
   expect(reencoded).toEqual(encoded);
 });
 
@@ -492,82 +497,73 @@ test('throw on serializing unknown', () => {
 });
 
 test('decode unknown text', () => {
-  const text = IDL.decode([IDL.Unknown], fromHexString('4449444c00017107486920e298830a'))[0] as any;
+  const text = IDL.decode([IDL.Unknown], hexToBytes('4449444c00017107486920e298830a'))[0] as any;
   expect(text.valueOf()).toEqual('Hi ☃\n');
   expect(text.type().name).toEqual(IDL.Text.name);
 });
 
 test('decode unknown int', () => {
-  const int = IDL.decode([IDL.Unknown], fromHexString('4449444c00017c2a'))[0] as any;
+  const int = IDL.decode([IDL.Unknown], hexToBytes('4449444c00017c2a'))[0] as any;
   expect(int.valueOf()).toEqual(BigInt(42));
   expect(int.type().name).toEqual(IDL.Int.name);
 });
 
 test('decode unknown nat', () => {
-  const nat = IDL.decode([IDL.Unknown], fromHexString('4449444c00017d2a'))[0] as any;
+  const nat = IDL.decode([IDL.Unknown], hexToBytes('4449444c00017d2a'))[0] as any;
   expect(nat.valueOf()).toEqual(BigInt(42));
   expect(nat.type().name).toEqual(IDL.Nat.name);
 });
 
 test('decode unknown null', () => {
-  const value = IDL.decode([IDL.Unknown], fromHexString('4449444c00017f'))[0] as any;
+  const value = IDL.decode([IDL.Unknown], hexToBytes('4449444c00017f'))[0] as any;
   // expect(value.valueOf()).toEqual(null); TODO: This does not hold. What do we do about this?
   expect(value.type().name).toEqual(IDL.Null.name);
 });
 
 test('decode unknown bool', () => {
-  const value = IDL.decode([IDL.Unknown], fromHexString('4449444c00017e01'))[0] as any;
+  const value = IDL.decode([IDL.Unknown], hexToBytes('4449444c00017e01'))[0] as any;
   expect(value.valueOf()).toEqual(true);
   expect(value.type().name).toEqual(IDL.Bool.name);
 });
 
 test('decode unknown fixed-width number', () => {
-  const int8 = IDL.decode([IDL.Unknown], fromHexString('4449444c0001777f'))[0] as any;
+  const int8 = IDL.decode([IDL.Unknown], hexToBytes('4449444c0001777f'))[0] as any;
   expect(int8.valueOf()).toEqual(127);
   expect(int8.type().name).toEqual(IDL.Int8.name);
 
-  const int32 = IDL.decode([IDL.Unknown], fromHexString('4449444c000175d2029649'))[0] as any;
+  const int32 = IDL.decode([IDL.Unknown], hexToBytes('4449444c000175d2029649'))[0] as any;
   expect(int32.valueOf()).toEqual(1234567890);
   expect(int32.type().name).toEqual(IDL.Int32.name);
 
-  const int64 = IDL.decode(
-    [IDL.Unknown],
-    fromHexString('4449444c0001742a00000000000000'),
-  )[0] as any;
+  const int64 = IDL.decode([IDL.Unknown], hexToBytes('4449444c0001742a00000000000000'))[0] as any;
   expect(int64.valueOf()).toEqual(BigInt(42));
   expect(int64.type().name).toEqual(IDL.Int64.name);
 
-  const nat8 = IDL.decode([IDL.Unknown], fromHexString('4449444c00017b2a'))[0] as any;
+  const nat8 = IDL.decode([IDL.Unknown], hexToBytes('4449444c00017b2a'))[0] as any;
   expect(nat8.valueOf()).toEqual(42);
   expect(nat8.type().name).toEqual(IDL.Nat8.name);
 
-  const nat32 = IDL.decode([IDL.Unknown], fromHexString('4449444c0001792a000000'))[0] as any;
+  const nat32 = IDL.decode([IDL.Unknown], hexToBytes('4449444c0001792a000000'))[0] as any;
   expect(nat32.valueOf()).toEqual(42);
   expect(nat32.type().name).toEqual(IDL.Nat32.name);
 
-  const nat64 = IDL.decode(
-    [IDL.Unknown],
-    fromHexString('4449444c000178d202964900000000'),
-  )[0] as any;
+  const nat64 = IDL.decode([IDL.Unknown], hexToBytes('4449444c000178d202964900000000'))[0] as any;
   expect(nat64.valueOf()).toEqual(BigInt(1234567890));
   expect(nat64.type().name).toEqual(IDL.Nat64.name);
 });
 
 test('decode unknown float', () => {
-  const float64 = IDL.decode(
-    [IDL.Unknown],
-    fromHexString('4449444c0001720000000000001840'),
-  )[0] as any;
+  const float64 = IDL.decode([IDL.Unknown], hexToBytes('4449444c0001720000000000001840'))[0] as any;
   expect(float64.valueOf()).toEqual(6);
   expect(float64.type().name).toEqual(IDL.Float64.name);
 
-  const nan = IDL.decode([IDL.Unknown], fromHexString('4449444c000172000000000000f87f'))[0] as any;
+  const nan = IDL.decode([IDL.Unknown], hexToBytes('4449444c000172000000000000f87f'))[0] as any;
   expect(nan.valueOf()).toEqual(Number.NaN);
   expect(nan.type().name).toEqual(IDL.Float64.name);
 
   const infinity = IDL.decode(
     [IDL.Unknown],
-    fromHexString('4449444c000172000000000000f07f'),
+    hexToBytes('4449444c000172000000000000f07f'),
   )[0] as any;
   expect(infinity.valueOf()).toEqual(Number.POSITIVE_INFINITY);
   expect(infinity.type().name).toEqual(IDL.Float64.name);
@@ -575,16 +571,16 @@ test('decode unknown float', () => {
 
 test('decode unknown vec of tuples', () => {
   const encoded = '4449444c026c02007c01716d000101012a0474657874';
-  const value = IDL.decode([IDL.Unknown], fromHexString(encoded))[0] as any;
+  const value = IDL.decode([IDL.Unknown], hexToBytes(encoded))[0] as any;
   expect(value).toEqual([[BigInt(42), 'text']]);
-  const reencoded = toHexString(IDL.encode([value.type()], [value]));
+  const reencoded = bytesToHex(IDL.encode([value.type()], [value]));
   expect(reencoded).toEqual(encoded);
 });
 
 test('decode unknown service', () => {
   const value = IDL.decode(
     [IDL.Unknown],
-    fromHexString('4449444c026a0171017d00690103666f6f0001010103caffee'),
+    hexToBytes('4449444c026a0171017d00690103666f6f0001010103caffee'),
   )[0] as any;
   expect(value).toEqual(Principal.fromText('w7x7r-cok77-xa'));
   expect(value.type()).toEqual(IDL.Service({ foo: IDL.Func([IDL.Text], [IDL.Nat], []) }));
@@ -593,7 +589,7 @@ test('decode unknown service', () => {
 test('decode unknown func', () => {
   const value = IDL.decode(
     [IDL.Unknown],
-    fromHexString('4449444c016a0171017d01010100010103caffee03666f6f'),
+    hexToBytes('4449444c016a0171017d01010100010103caffee03666f6f'),
   )[0] as any;
   expect(value).toEqual([Principal.fromText('w7x7r-cok77-xa'), 'foo']);
   expect(value.type()).toEqual(IDL.Func([IDL.Text], [IDL.Nat], ['query']));
@@ -607,15 +603,15 @@ test('decode / encode unknown mutual recursive lists', () => {
   List2.fill(IDL.Record({ head: IDL.Int, tail: List1 }));
 
   const encoded = '4449444c026e016c02a0d2aca8047c90eddae7040001000101010200';
-  const value = IDL.decode([IDL.Unknown], fromHexString(encoded))[0] as any;
+  const value = IDL.decode([IDL.Unknown], hexToBytes(encoded))[0] as any;
   expect(value).toEqual([
     { _1158359328_: BigInt(1), _1291237008_: [{ _1158359328_: BigInt(2), _1291237008_: [] }] },
   ]);
 
-  const reencoded = toHexString(IDL.encode([value.type()], [value]));
+  const reencoded = bytesToHex(IDL.encode([value.type()], [value]));
   // expect(reencoded).toEqual(encoded); does not hold because type table is different
   // however the result is still compatible with original types:
-  const value2 = IDL.decode([List1], fromHexString(reencoded))[0];
+  const value2 = IDL.decode([List1], hexToBytes(reencoded))[0];
   expect(value2).toEqual([{ head: BigInt(1), tail: [{ head: BigInt(2), tail: [] }] }]);
 });
 
@@ -648,17 +644,17 @@ test('decode / encode unknown nested record', () => {
   const nestedValue = { foo: 42, bar: true };
   const value = { foo: 42, bar: nestedValue, baz: nestedValue, bib: nestedValue };
 
-  const decodedValue = IDL.decode([recordUnknownType], fromHexString(encoded))[0] as any;
+  const decodedValue = IDL.decode([recordUnknownType], hexToBytes(encoded))[0] as any;
   expect(decodedValue).toHaveProperty('bar');
   expect(decodedValue.bar[hashedPropertyName('foo')]).toEqual(42);
   expect(decodedValue.bar[hashedPropertyName('bar')]).toEqual(true);
   expect(decodedValue.baz).toEqual(value.baz);
   expect(decodedValue.bar.type()).toEqual(nestedHashedType);
 
-  const reencoded = toHexString(IDL.encode([recordHashedType], [decodedValue]));
+  const reencoded = bytesToHex(IDL.encode([recordHashedType], [decodedValue]));
   // expect(reencoded).toEqual(encoded); does not hold because type table is different
   // however the result is still compatible with original types:
-  const decodedValue2 = IDL.decode([recordType], fromHexString(reencoded))[0] as any;
+  const decodedValue2 = IDL.decode([recordType], hexToBytes(reencoded))[0] as any;
   expect(decodedValue2).toEqual(value);
 });
 
@@ -672,7 +668,7 @@ test('should correctly decode expected optional fields with lower hash than requ
   });
   const encoded =
     '4449444c036c04a2f5ed880471c6a4a19806019ce9c69906029aa1b2f90c7c6d7f6e7e010003666f6f000101c801';
-  const value = IDL.decode([HttpResponse], fromHexString(encoded))[0];
+  const value = IDL.decode([HttpResponse], hexToBytes(encoded))[0];
   expect(value).toEqual({
     body: 'foo',
     headers: [],
@@ -699,7 +695,6 @@ test('should decode matching optional fields if wire type contains additional fi
   });
 });
 
-
 describe('IDL opt variant decoding', () => {
   it('should handle matching expected and wire type variants', () => {
     testDecode(
@@ -719,17 +714,17 @@ describe('IDL opt variant decoding', () => {
   });
   it('should handle wider variant with expected tag', () => {
     testDecode(
-      IDL.Record({ a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })) }),
-      { a: [{ x: null }] },
-      '4449444c036c0161016e026b03787f797f7a7f01000100', // Motoko: {a = ?#x} : {a : ?{#x;#y;#z}}
-      'extended variant under opt expected tag',
+      IDL.Record({ a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })), b: IDL.Text }),
+      { a: [{ x: null }], b: 'abc' },
+      '4449444c036c02610162716e026b03787f797f7a7f0100010003616263', // Motoko: {a = ?#x; b = "abc"} : {a : ?{#x;#y;#z}; b :Text},
+      'same variant under opt x',
     );
   });
   it('should handle wider variant with unexpected tag', () => {
     testDecode(
-      IDL.Record({ a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })) }),
-      { a: [] },
-      '4449444c036c0161016e026b03787f797f7a7f01000102', // Motoko: {a = ?#z} : {a : ?{#x;#y;#z}}
+      IDL.Record({ a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })), b: IDL.Text }),
+      { a: [], b: 'abc' },
+      '4449444c036c02610162716e026b03787f797f7a7f0100010203616263', // Motoko: {a = ?#z; b = "abc"} : {a : ?{#x;#y;#z}; b : Text}
       'extended variant under opt unexpected tag - defaulting',
     );
   });
@@ -737,72 +732,78 @@ describe('IDL opt variant decoding', () => {
 
 describe('IDL opt edge cases', () => {
   it('should handle the option when the wire type is null type', () => {
-  testDecode(
-    IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null }))}),
-    {a: []},
-    '4449444c016c01617f0100',
-     // Motoko: {a = null} : {a : null}
-    'opt expected type null on wire',
-  )});
+    testDecode(
+      IDL.Record({ a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })) }),
+      { a: [] },
+      '4449444c016c01617f0100',
+      // Motoko: {a = null} : {a : null}
+      'opt expected type null on wire',
+    );
+  });
   it('should handle the option when the wire type is reserved', () => {
-  testDecode(
-    IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null }))}),
-    {a: []},
-    '4449444c016c0161700100',
-    // Motoko: {a = (): Any} : {a : Any}
-    'opt expected type reserved on wire',
-  )});
+    testDecode(
+      IDL.Record({ a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })) }),
+      { a: [] },
+      '4449444c016c0161700100',
+      // Motoko: {a = (): Any} : {a : Any}
+      'opt expected type reserved on wire',
+    );
+  });
   it('should handle the option when the wire typ is non-optioned', () => {
-  testDecode(
-    IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null }))}),
-    {a: [{x: null}]},
-    `4449444c026c0161016b02787f797f010000`,
-    // Motoko: {a = #x } : {a : {#x;#y}}
-    'opt expected type non-opt on wire',
-  )});
+    testDecode(
+      IDL.Record({ a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })) }),
+      { a: [{ x: null }] },
+      `4449444c026c0161016b02787f797f010000`,
+      // Motoko: {a = #x } : {a : {#x;#y}}
+      'opt expected type non-opt on wire',
+    );
+  });
   it('should handle the option when the wire typ is an non-optioned wider variant with expected tag', () => {
-  testDecode(
-    IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null }))}),
-    {a: [{x: null}]},
-    `4449444c026c0161016b03787f797f7a7f010000`,
-    // Motoko: {a = #x } : {a : {#x;#y;#z}}
-    'opt expected, wire type non-opt, extended, with expected tag',
-  )});
+    testDecode(
+      IDL.Record({ a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })), b: IDL.Text }),
+      { a: [{ x: null }], b: 'abc' },
+      `4449444c026c02610162716b03787f797f7a7f01000003616263`,
+      // Motoko: {a = #x; b = "abc" } : {a : {#x;#y;#z}; b  : Text}
+      'opt expected, wire type non-opt, extended, with expected tag',
+    );
+  });
   it('should handle the option when the wire typ is an non-optioned wider variant with unexpected tag, defaulting', () => {
-  testDecode(
-    IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null }))}),
-    {a: []},
-    `4449444c026c0161016b03787f797f7a7f010002`,
-    // Motoko: {a = #z} : {a : {#x;#y;#z}}
-    'opt expected, wire type non-opt, extended, with unexpected tag, defaulting',
-  )});
+    testDecode(
+      IDL.Record({ a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })), b: IDL.Text }),
+      { a: [], b: 'abc' },
+      `4449444c026c02610162716b03787f797f7a7f01000203616263`,
+      // Motoko: {a = #z; b = "abc"} : {a : Nat; b : Text}
+      'opt expected, wire type non-opt, extended, with unexpected tag - defaulting',
+    );
+  });
   it('should handle the option when the expected type is opt null, wire type is non-opt', () => {
-  testDecode(
-    IDL.Record({a: IDL.Opt(IDL.Variant({ a: IDL.Opt(IDL.Null) }))}),
-    {a: []},
-    `4449444c016c01617d010001`,
-    // Motoko: {a = 1} : {a : Nat }
-    'opt expected, wire type non-opt, other type - defaulting',
-  )});
+    testDecode(
+      IDL.Record({ a: IDL.Opt(IDL.Variant({ a: IDL.Opt(IDL.Null) })), b: IDL.Text }),
+      { a: [], b: 'abc' },
+      `4449444c036c02610162716e026b03787f797f7a7f0100010203616263`,
+      // Motoko: {a = 1; b = "abc"} : {a : Nat; b : Text }
+      'opt expected, wire type non-opt, other type - defaulting',
+    );
+  });
   it('should handle the option when the expected type is opt opt Nat, wire type is non-opt', () => {
-  testDecode(
-    IDL.Record({a: IDL.Opt(IDL.Variant({ a: IDL.Opt(IDL.Opt(IDL.Nat)) }))}),
-    {a: []},
-    `4449444c016c01617d010001`,
-    // Motoko: {a = 1} : {a : Nat }
-    'opt expected, wire type non-opt, other type - defaulting',
-  )});
+    testDecode(
+      IDL.Record({ a: IDL.Opt(IDL.Variant({ a: IDL.Opt(IDL.Opt(IDL.Nat)) })), b: IDL.Text }),
+      { a: [], b: 'abc' },
+      `4449444c016c02617d627101000103616263`,
+      // Motoko: {a = 1; b = "abc"} : {a : Nat; b : Text }
+      'opt expected, wire type non-opt, other type - defaulting',
+    );
+  });
   it('should handle the option when the expected type is opt reserved, wire type is non-opt', () => {
-  testDecode(
-    IDL.Record({a: IDL.Opt(IDL.Reserved)}),
-    {a: []},
-    `4449444c016c01617d010001`,
-    // Motoko: {a = 1} : {a : Nat }
-    'opt expected, wire type non-opt, other type - defaulting',
-  )});
+    testDecode(
+      IDL.Record({ a: IDL.Opt(IDL.Reserved), b: IDL.Text }),
+      { a: [], b: 'abc' },
+      `4449444c016c02617d627101000103616263`,
+      // Motoko: {a = 1; b = "abc"} : {a : Nat; b : Text }
+      'opt expected, wire type non-opt, other type - defaulting',
+    );
+  });
 });
-
-
 
 /* The following suites are similar to the previous two but require more decoding of a Text value following the optional value.
    Tests decoding resumed correctly after any skip
@@ -811,16 +812,22 @@ describe('IDL opt edge cases', () => {
 describe('IDL opt variant decoding (embedded)', () => {
   it('should handle matching expected and wire type variants', () => {
     testDecode(
-      IDL.Record({ a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null, z: IDL.Null })), b : IDL.Text }),
-      { a: [{ x: null }], b: "abc" },
+      IDL.Record({
+        a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null, z: IDL.Null })),
+        b: IDL.Text,
+      }),
+      { a: [{ x: null }], b: 'abc' },
       '4449444c036c02610162716e026b03787f797f7a7f0100010003616263', // Motoko: {a = ?#x; b = "abc"} : {a : ?{#x;#y;#z}; b :Text},
       'same variant under opt x',
     );
   });
   it('should handle matching expected and wire type variants', () => {
     testDecode(
-      IDL.Record({ a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null, z: IDL.Null })), b : IDL.Text }),
-      { a: [{ z: null }], b: "abc" },
+      IDL.Record({
+        a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null, z: IDL.Null })),
+        b: IDL.Text,
+      }),
+      { a: [{ z: null }], b: 'abc' },
       '4449444c036c02610162716e026b03787f797f7a7f0100010203616263', // Motoko: {a = ?#z; b = "abc"} : {a : ?{#x;#y;#z}; b : Text}
       'same variant under opt z',
     );
@@ -828,7 +835,7 @@ describe('IDL opt variant decoding (embedded)', () => {
   it('should handle wider variant with expected tag', () => {
     testDecode(
       IDL.Record({ a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })), b: IDL.Text }),
-      { a: [{ x: null }], b: "abc" },
+      { a: [{ x: null }], b: 'abc' },
       '4449444c036c02610162716e026b03787f797f7a7f0100010003616263', // Motoko: {a = ?#x; b = "abc"} : {a : ?{#x;#y;#z}; b : Text}
       'extended variant under opt expected tag',
     );
@@ -836,7 +843,7 @@ describe('IDL opt variant decoding (embedded)', () => {
   it('should handle wider variant with unexpected tag', () => {
     testDecode(
       IDL.Record({ a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })), b: IDL.Text }),
-      { a: [], b: "abc" },
+      { a: [], b: 'abc' },
       '4449444c036c02610162716e026b03787f797f7a7f0100010203616263', // Motoko: {a = ?#z; b = "abc"} : {a : ?{#x;#y;#z}; b : Text}
       'extended variant under opt unexpected tag - defaulting',
     );
@@ -845,67 +852,317 @@ describe('IDL opt variant decoding (embedded)', () => {
 
 describe('IDL opt edge cases (embedded)', () => {
   it('should handle the option when the wire type is null type', () => {
-  testDecode(
-    IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })), b : IDL.Text}),
-    {a: [], b: "abc"},
-    '4449444c016c02617f6271010003616263',
-     // Motoko: {a = null; b = "abc"} : {a : null; b: Text}
-    'opt expected type null on wire',
-  )});
+    testDecode(
+      IDL.Record({ a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })), b: IDL.Text }),
+      { a: [], b: 'abc' },
+      '4449444c016c02617f6271010003616263',
+      // Motoko: {a = null; b = "abc"} : {a : null; b: Text}
+      'opt expected type null on wire',
+    );
+  });
   it('should handle the option when the wire type is reserved', () => {
-  testDecode(
-    IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })), b : IDL.Text}),
-    {a: [], b: "abc"},
-    '4449444c016c0261706271010003616263',
-    // Motoko: {a = (): Any; b = "abc"} : {a : Any; b : Text}
-    'opt expected type reserved on wire',
-  )});
+    testDecode(
+      IDL.Record({ a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })), b: IDL.Text }),
+      { a: [], b: 'abc' },
+      '4449444c016c0261706271010003616263',
+      // Motoko: {a = (): Any; b = "abc"} : {a : Any; b : Text}
+      'opt expected type reserved on wire',
+    );
+  });
   it('should handle the option when the wire typ is non-optioned', () => {
-  testDecode(
-    IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })), b : IDL.Text}),
-    {a: [{x: null}], b: "abc"},
-    `4449444c026c02610162716b02787f797f01000003616263`,
-    // Motoko: {a = #x; b = "abc" } : {a : {#x;#y}; b : Text}
-    'opt expected type non-opt on wire',
-  )});
+    testDecode(
+      IDL.Record({ a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })), b: IDL.Text }),
+      { a: [{ x: null }], b: 'abc' },
+      `4449444c026c02610162716b02787f797f01000003616263`,
+      // Motoko: {a = #x; b = "abc" } : {a : {#x;#y}; b : Text}
+      'opt expected type non-opt on wire',
+    );
+  });
   it('should handle the option when the wire typ is an non-optioned wider variant with expected tag', () => {
-  testDecode(
-    IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })), b : IDL.Text}),
-    {a: [{x: null}], b: "abc"},
-    `4449444c026c02610162716b03787f797f7a7f01000003616263`,
-    // Motoko: {a = #x; b = "abc" } : {a : {#x;#y;#z}; b  : Text}
-    'opt expected, wire type non-opt, extended, with expected tag',
-  )});
+    testDecode(
+      IDL.Record({ a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })), b: IDL.Text }),
+      { a: [{ x: null }], b: 'abc' },
+      `4449444c026c02610162716b03787f797f7a7f01000003616263`,
+      // Motoko: {a = #x; b = "abc" } : {a : {#x;#y;#z}; b  : Text}
+      'opt expected, wire type non-opt, extended, with expected tag',
+    );
+  });
   it('should handle the option when the wire typ is an non-optioned wider variant with unexpected tag, defaulting', () => {
-  testDecode(
-    IDL.Record({a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })), b : IDL.Text}),
-    {a: [], b: "abc"},
-    `4449444c026c02610162716b03787f797f7a7f01000203616263`,
-    // Motoko: {a = #z; b = "abc"} : {a : Nat; b : Text}
-    'opt expected, wire type non-opt, extended, with unexpected tag - defaulting',
-  )});
+    testDecode(
+      IDL.Record({ a: IDL.Opt(IDL.Variant({ x: IDL.Null, y: IDL.Null })), b: IDL.Text }),
+      { a: [], b: 'abc' },
+      `4449444c026c02610162716b03787f797f7a7f01000203616263`,
+      // Motoko: {a = #z; b = "abc"} : {a : Nat; b : Text}
+      'opt expected, wire type non-opt, extended, with unexpected tag - defaulting',
+    );
+  });
   it('should handle the option when the expected type is opt null, wire type is non-opt', () => {
-  testDecode(
-    IDL.Record({a: IDL.Opt(IDL.Variant({ a: IDL.Opt(IDL.Null) })), b : IDL.Text}),
-    {a: [], b: "abc"},
-    `4449444c036c02610162716e026b03787f797f7a7f0100010203616263`,
-    // Motoko: {a = 1; b = "abc"} : {a : Nat; b : Text }
-    'opt expected, wire type non-opt, other type - defaulting',
-  )});
+    testDecode(
+      IDL.Record({ a: IDL.Opt(IDL.Variant({ a: IDL.Opt(IDL.Null) })), b: IDL.Text }),
+      { a: [], b: 'abc' },
+      `4449444c036c02610162716e026b03787f797f7a7f0100010203616263`,
+      // Motoko: {a = 1; b = "abc"} : {a : Nat; b : Text }
+      'opt expected, wire type non-opt, other type - defaulting',
+    );
+  });
   it('should handle the option when the expected type is opt opt Nat, wire type is non-opt', () => {
-  testDecode(
-    IDL.Record({a: IDL.Opt(IDL.Variant({ a: IDL.Opt(IDL.Opt(IDL.Nat)) })), b : IDL.Text}),
-    {a: [], b: "abc"},
-    `4449444c016c02617d627101000103616263`,
-    // Motoko: {a = 1; b = "abc"} : {a : Nat; b : Text }
-    'opt expected, wire type non-opt, other type - defaulting',
-  )});
+    testDecode(
+      IDL.Record({ a: IDL.Opt(IDL.Variant({ a: IDL.Opt(IDL.Opt(IDL.Nat)) })), b: IDL.Text }),
+      { a: [], b: 'abc' },
+      `4449444c016c02617d627101000103616263`,
+      // Motoko: {a = 1; b = "abc"} : {a : Nat; b : Text }
+      'opt expected, wire type non-opt, other type - defaulting',
+    );
+  });
   it('should handle the option when the expected type is opt reserved, wire type is non-opt', () => {
-  testDecode(
-    IDL.Record({a: IDL.Opt(IDL.Reserved), b: IDL.Text}),
-    {a: [], b: "abc"},
-    `4449444c016c02617d627101000103616263`,
-    // Motoko: {a = 1; b = "abc"} : {a : Nat; b : Text }
-    'opt expected, wire type non-opt, other type - defaulting',
-  )});
+    testDecode(
+      IDL.Record({ a: IDL.Opt(IDL.Reserved), b: IDL.Text }),
+      { a: [], b: 'abc' },
+      `4449444c016c02617d627101000103616263`,
+      // Motoko: {a = 1; b = "abc"} : {a : Nat; b : Text }
+      'opt expected, wire type non-opt, other type - defaulting',
+    );
+  });
+});
+
+function testSub(t1: IDL.Type, t2: IDL.Type) {
+  it(`${t1.display()} <: ${t2.display()}`, () => {
+    IDL.resetSubtypeCache();
+    expect(IDL.subtype(t1, t2)).toEqual(true);
+  });
+}
+
+function testSubFail(t1: IDL.Type, t2: IDL.Type) {
+  it(`not ${t1.display()} <: ${t2.display()}`, () => {
+    IDL.resetSubtypeCache();
+    expect(IDL.subtype(t1, t2)).toEqual(false);
+  });
+}
+
+function testReflexive(t: IDL.Type) {
+  testSub(t, t);
+}
+
+describe('IDL subtyping', () => {
+  describe('Subtyping is reflexive', () => {
+    testReflexive(IDL.Bool);
+    testReflexive(IDL.Empty);
+    testReflexive(IDL.Null);
+    testReflexive(IDL.Principal);
+    testReflexive(IDL.Reserved);
+    testReflexive(IDL.Text);
+    testReflexive(IDL.Unknown);
+
+    testReflexive(IDL.Nat);
+    testReflexive(IDL.Nat8);
+    testReflexive(IDL.Nat16);
+    testReflexive(IDL.Nat32);
+    testReflexive(IDL.Nat64);
+
+    testReflexive(IDL.Int);
+    testReflexive(IDL.Int8);
+    testReflexive(IDL.Int16);
+    testReflexive(IDL.Int32);
+    testReflexive(IDL.Int64);
+
+    testReflexive(IDL.Float32);
+    testReflexive(IDL.Float64);
+  });
+
+  describe('Subtyping on Vecs', () => {
+    testReflexive(IDL.Vec(IDL.Nat));
+    testSub(IDL.Vec(IDL.Nat), IDL.Vec(IDL.Int));
+    testSubFail(IDL.Vec(IDL.Int), IDL.Vec(IDL.Nat));
+  });
+
+  describe('Subtyping on Options', () => {
+    // Because of some of the more "special" rules around Option types
+    // it turns out _any_ type is a subtype of _any_ optional type
+    testReflexive(IDL.Opt(IDL.Nat));
+    testSub(IDL.Opt(IDL.Nat), IDL.Opt(IDL.Int));
+    testSub(IDL.Opt(IDL.Int), IDL.Opt(IDL.Nat));
+    testSub(IDL.Nat, IDL.Opt(IDL.Int));
+    testSub(IDL.Opt(IDL.Nat), IDL.Opt(IDL.Opt(IDL.Int)));
+  });
+
+  describe('Subtyping on Records', () => {
+    testReflexive(IDL.Record({}));
+    testReflexive(IDL.Record({ a: IDL.Nat }));
+
+    // Subtyping on individual fields
+    testSub(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Int }));
+    testSubFail(IDL.Record({ a: IDL.Int }), IDL.Record({ a: IDL.Nat }));
+
+    // Width subtyping
+    testSub(IDL.Record({ a: IDL.Nat, b: IDL.Nat }), IDL.Record({ a: IDL.Nat }));
+    testSubFail(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Nat, b: IDL.Nat }));
+
+    // Opt, Null, or Reserved fields are allowed to be missing
+    testSub(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Nat, b: IDL.Opt(IDL.Nat) }));
+    testSub(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Nat, b: IDL.Null }));
+    testSub(IDL.Record({ a: IDL.Nat }), IDL.Record({ a: IDL.Nat, b: IDL.Reserved }));
+  });
+
+  describe('Subtyping on Functions', () => {
+    testReflexive(IDL.Func([], []));
+    testReflexive(IDL.Func([IDL.Nat], [IDL.Int]));
+
+    // Arg types are contravariant
+    testSub(IDL.Func([IDL.Int], []), IDL.Func([IDL.Nat], []));
+    // Trailing arguments are allowed to be missing on the incoming type
+    testSub(IDL.Func([IDL.Int], []), IDL.Func([IDL.Nat, IDL.Nat], []));
+    // Trailing arguments are allowed to be missing if they are opt/null/reserved on the expected type
+    testSub(IDL.Func([IDL.Int, IDL.Opt(IDL.Nat)], []), IDL.Func([IDL.Nat], []));
+    testSub(IDL.Func([IDL.Int, IDL.Null], []), IDL.Func([IDL.Nat], []));
+    testSub(IDL.Func([IDL.Int, IDL.Reserved], []), IDL.Func([IDL.Nat], []));
+    // Non-opt/null/reserved arguments are not allowed to be missing on the expected type
+    testSubFail(IDL.Func([IDL.Nat, IDL.Nat], []), IDL.Func([IDL.Nat], []));
+
+    // Return types are covariant
+    testSub(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int]));
+    // Trailing results are allowed to be missing on the expected type
+    testSub(IDL.Func([], [IDL.Nat, IDL.Nat]), IDL.Func([], [IDL.Int]));
+    // Trailing results are allowed to be missing if they are opt/null/reserved on the expected type
+    testSub(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int, IDL.Opt(IDL.Int)]));
+    testSub(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int, IDL.Null]));
+    testSub(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int, IDL.Reserved]));
+    // Non-opt/null/reserved results are not allowed to be missing on the expected type
+    testSubFail(IDL.Func([], [IDL.Nat]), IDL.Func([], [IDL.Int, IDL.Int]));
+  });
+
+  describe('Subtyping on variants', () => {
+    testReflexive(IDL.Variant({}));
+    testReflexive(IDL.Variant({ a: IDL.Nat }));
+
+    // Subtyping on individual alternatives happens pointwise
+    testSub(IDL.Variant({ a: IDL.Nat }), IDL.Variant({ a: IDL.Int }));
+    testSubFail(IDL.Variant({ a: IDL.Int }), IDL.Variant({ a: IDL.Nat }));
+
+    // Width subtyping
+    testSub(IDL.Variant({ a: IDL.Nat }), IDL.Variant({ a: IDL.Nat, b: IDL.Nat }));
+    testSubFail(IDL.Variant({ a: IDL.Nat, b: IDL.Nat }), IDL.Variant({ a: IDL.Nat }));
+  });
+
+  describe('Subtyping on services', () => {
+    testReflexive(IDL.Service({}));
+    testReflexive(IDL.Service({ f: IDL.Func([], []) }));
+
+    // Subtyping on service methods happens pointwise
+    testSub(
+      IDL.Service({ f: IDL.Func([IDL.Int], [IDL.Nat]) }),
+      IDL.Service({ f: IDL.Func([IDL.Nat], [IDL.Int]) }),
+    );
+    testSubFail(
+      IDL.Service({ f: IDL.Func([IDL.Nat], [IDL.Int]) }),
+      IDL.Service({ f: IDL.Func([IDL.Int], [IDL.Nat]) }),
+    );
+
+    // Width subtyping
+    testSub(
+      IDL.Service({ f: IDL.Func([], []), g: IDL.Func([], []) }),
+      IDL.Service({ f: IDL.Func([], []) }),
+    );
+    testSubFail(
+      IDL.Service({ f: IDL.Func([], []) }),
+      IDL.Service({ f: IDL.Func([], []), g: IDL.Func([], []) }),
+    );
+  });
+
+  describe('Subtyping on recursive types', () => {
+    const IntList = IDL.Rec();
+    IntList.fill(IDL.Opt(IDL.Record({ head: IDL.Int, tail: IntList })));
+    const NatList = IDL.Rec();
+    NatList.fill(IDL.Opt(IDL.Record({ head: IDL.Nat, tail: NatList })));
+    testSub(NatList, IntList);
+
+    const Even = IDL.Rec();
+    const Odd = IDL.Rec();
+    Even.fill(IDL.Tuple(Odd));
+    Odd.fill(IDL.Tuple(Even));
+
+    testSub(IDL.Tuple(Even), Odd);
+    testSub(IDL.Tuple(IDL.Tuple(Odd)), Odd);
+  });
+
+  describe('decoding function/service references', () => {
+    const principal = Principal.fromText('w7x7r-cok77-xa');
+    it('checks subtyping when decoding function references', () => {
+      testDecode(
+        IDL.Func([IDL.Int], [IDL.Nat]),
+        [principal, 'myFunc'],
+        // didc encode -t "(func (int) -> (nat))" "(func \"w7x7r-cok77-xa\" . \"myFunc\")"
+        `4449444c016a017c017d000100010103caffee066d7946756e63`,
+        'expects subtyping check to succeed',
+      );
+
+      testDecode(
+        IDL.Opt(IDL.Func([IDL.Int], [IDL.Nat])),
+        [],
+        // didc encode -t "(opt func (nat) -> (nat))" "(opt func \"w7x7r-cok77-xa\" . \"myFunc\")"
+        `4449444c026e016a017d017d00010001010103caffee066d7946756e63`,
+        'expects failed subtype check under option to default to null',
+      );
+
+      testDecode(
+        IDL.Record({
+          optF: IDL.Opt(IDL.Func([IDL.Int], [IDL.Nat])),
+        }),
+        { optF: [] },
+        // didc encode -t "(record { optF : func (nat) -> (nat) })" "(record { optF = func \"w7x7r-cok77-xa\" . \"myFunc\" })"
+        `4449444c026c01b3a1d0cd04016a017d017d000100010103caffee066d7946756e63`,
+        'expects failed subtype check under option to default to null',
+      );
+
+      testDecodeFail(
+        IDL.Func([IDL.Int], [IDL.Nat]),
+        // didc encode -t "(func (nat) -> (nat))" "(func \"w7x7r-cok77-xa\" . \"myFunc\")"
+        `4449444c016a017d017d000100010103caffee066d7946756e63`,
+        'expects subtyping check to fail',
+      );
+    });
+    it('checks subtyping when decoding service references', () => {
+      testDecode(
+        IDL.Service({
+          f: IDL.Func([IDL.Int], [IDL.Nat]),
+        }),
+        principal,
+        // didc encode -t "(service { f : (int) -> (nat) })" "(service \"w7x7r-cok77-xa\")"
+        `4449444c0269010166016a017c017d0001000103caffee`,
+        'expects subtyping check to succeed',
+      );
+
+      testDecode(
+        IDL.Opt(
+          IDL.Service({
+            f: IDL.Func([IDL.Int], [IDL.Nat]),
+          }),
+        ),
+        [],
+        // didc encode -t "(service { f : (nat) -> (nat) })" "(service \"w7x7r-cok77-xa\")"
+        `4449444c0269010166016a017d017d0001000103caffee`,
+        'expects subtyping check to fail',
+      );
+
+      testDecode(
+        IDL.Opt(
+          IDL.Service({
+            f: IDL.Func([IDL.Int], [IDL.Nat]),
+          }),
+        ),
+        [],
+        // didc encode -t "(opt service { f : (nat) -> (nat) })" "(opt service \"w7x7r-cok77-xa\")"
+        `4449444c036e0169010166026a017d017d000100010103caffee`,
+        'expects subtyping check to fail',
+      );
+
+      testDecodeFail(
+        IDL.Service({
+          f: IDL.Func([IDL.Int], [IDL.Nat]),
+        }),
+        // didc encode -t "(service { f : (nat) -> (nat) })" "(service \"w7x7r-cok77-xa\")"
+        `4449444c0269010166016a017d017d0001000103caffee`,
+        'expects subtyping check to fail',
+      );
+    });
+  });
 });

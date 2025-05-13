@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/agent",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to interact with the Internet Computer",
@@ -39,16 +39,15 @@
     "build": "tsc -b && tsc -p tsconfig-cjs.json",
     "build:watch": "tsc -b --watch",
     "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js",
-    "eslint:fix": "npm run lint -- --fix",
-    "eslint": "eslint --ext '.js,.jsx,.ts,.tsx' src/index.ts src/auth.ts src/request_id.ts src/request_id.test.ts",
-    "lint": "npm run eslint",
+    "lint:fix": "npm run lint -- --fix",
+    "lint": "eslint 'src' 'types' --ext '.js,.jsx,.ts,.tsx'",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/agent --excludeInternal",
     "test": "jest",
     "test:coverage": "jest --collectCoverage"
   },
   "peerDependencies": {
-    "@dfinity/candid": "^2.4.0",
-    "@dfinity/principal": "^2.4.0"
+    "@dfinity/candid": "^2.4.1",
+    "@dfinity/principal": "^2.4.1"
   },
   "dependencies": {
     "@noble/curves": "^1.4.0",
@@ -70,7 +69,8 @@
     "size-limit": "^8.2.6",
     "text-encoding": "^0.7.0",
     "ts-node": "^10.8.2",
-    "typedoc": "^0.22.11",
+    "typedoc": "^0.28.2",
+    "typescript": "^5.8.3",
     "whatwg-fetch": "^3.0.0"
   },
   "size-limit": [

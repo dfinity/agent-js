@@ -1,8 +1,9 @@
-import { DerEncodedPublicKey, PublicKey, fromHex, toHex } from '@dfinity/agent';
+import { DerEncodedPublicKey, PublicKey } from '@dfinity/agent';
 import { randomBytes } from 'crypto';
 import { sha256 } from '@noble/hashes/sha256';
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { Secp256k1KeyIdentity, Secp256k1PublicKey } from './secp256k1';
+import { hexToBytes, bytesToHex } from '@noble/curves/abstract/utils';
 
 // DER KEY SECP256K1 PREFIX = 3056301006072a8648ce3d020106052b8104000a03420004
 // These test vectors contain the hex encoding of the corresponding raw and DER versions
@@ -35,7 +36,7 @@ const goldenSeed = '8caa0410fa5955c05d6877801806f627e5dd313957a59c70f8d8ef252a48
 describe('Secp256k1PublicKey Tests', () => {
   test('create from an existing public key', () => {
     testVectors.forEach(([rawPublicKeyHex]) => {
-      const publicKey: PublicKey = Secp256k1PublicKey.fromRaw(fromHex(rawPublicKeyHex));
+      const publicKey: PublicKey = Secp256k1PublicKey.fromRaw(hexToBytes(rawPublicKeyHex));
 
       const newKey = Secp256k1PublicKey.from(publicKey);
       expect(newKey).toMatchSnapshot();
@@ -44,11 +45,26 @@ describe('Secp256k1PublicKey Tests', () => {
 
   test('DER encoding of SECP256K1 keys', async () => {
     testVectors.forEach(([rawPublicKeyHex, derEncodedPublicKeyHex]) => {
-      const publicKey = Secp256k1PublicKey.fromRaw(fromHex(rawPublicKeyHex));
-      const expectedDerPublicKey = fromHex(derEncodedPublicKeyHex);
-      expect(publicKey.toDer()).toEqual(expectedDerPublicKey);
+      const publicKey = Secp256k1PublicKey.fromRaw(hexToBytes(rawPublicKeyHex));
+      const expectedDerPublicKey = hexToBytes(derEncodedPublicKeyHex);
+      expect(publicKey.toDer().toString()).toEqual(expectedDerPublicKey.toString());
     });
   });
+
+  const hexRe = new RegExp(/^[0-9a-fA-F]+$/);
+  function fromHex(hex: string): Uint8Array {
+    if (!hexRe.test(hex)) {
+      throw new Error('Invalid hexadecimal string.');
+    }
+    const buffer = [...hex]
+      .reduce((acc, curr, i) => {
+        acc[(i / 2) | 0] = (acc[(i / 2) | 0] || '') + curr;
+        return acc;
+      }, [] as string[])
+      .map(x => Number.parseInt(x, 16));
+
+    return new Uint8Array(buffer);
+  }
 
   test('DER decoding of invalid keys', async () => {
     // Too short.
@@ -58,7 +74,7 @@ describe('Secp256k1PublicKey Tests', () => {
           '3056301006072a8648ce3d020106052b8104000a0342000401ec030acd7d1199f73ae3469329c114944e0693c89502f850bcc6bad397a5956767c79b410c29ac6f587eec84878020fdb54ba002a79b02aa153fe47b6',
         ) as DerEncodedPublicKey,
       );
-    }).toThrowError('DER payload mismatch: Expected length 65 actual length 63');
+    }).toThrow('DER payload mismatch: Expected length 65 actual length 63');
     // Too long.
     expect(() => {
       Secp256k1PublicKey.fromDer(
@@ -67,16 +83,16 @@ describe('Secp256k1PublicKey Tests', () => {
             '1b42211ce',
         ) as DerEncodedPublicKey,
       );
-    }).toThrowError('DER payload mismatch: Expected length 65 actual length 70');
+    }).toThrow('DER payload mismatch: Expected length 65 actual length 70');
 
     // Invalid DER-encoding.
     expect(() => {
       Secp256k1PublicKey.fromDer(
-        fromHex(
+        hexToBytes(
           '0693c89502f850bcc6bad397a5956767c79b410c29ac6f54fdac09ea93a1b9b744b5f19f091ada7978ceb2f045875bca8ef9b75fa8061704e76de023c6a23d77a118c5c8d0f5efaf0dbbfcc3702d5590604717f639f6f00d',
         ) as DerEncodedPublicKey,
       );
-    }).toThrowError('Expected: sequence');
+    }).toThrow('Expected: sequence');
   });
 });
 
@@ -101,7 +117,7 @@ describe('Secp256k1KeyIdentity Tests', () => {
       return Secp256k1KeyIdentity.fromJSON(json);
     };
 
-    expect(shouldFail).toThrowError('Deserialization error: JSON must have at least 2 items.');
+    expect(shouldFail).toThrow('Deserialization error: JSON must have at least 2 items.');
   });
 
   test('fromJSON rejects if supplied is not an array', () => {
@@ -111,7 +127,7 @@ describe('Secp256k1KeyIdentity Tests', () => {
       return Secp256k1KeyIdentity.fromJSON(json);
     };
 
-    expect(shouldFail).toThrowError('Deserialization error: Invalid JSON type for string');
+    expect(shouldFail).toThrow('Deserialization error: Invalid JSON type for string');
   });
 
   test('fromSecretKey should generate an identity', () => {
@@ -126,11 +142,11 @@ describe('Secp256k1KeyIdentity Tests', () => {
   });
 
   test('generation from a seed should be supported', () => {
-    const seed = new Uint8Array(fromHex(goldenSeed));
+    const seed = new Uint8Array(hexToBytes(goldenSeed));
     const identity = Secp256k1KeyIdentity.generate(seed);
     const publicKey = identity.getKeyPair().publicKey as Secp256k1PublicKey;
     publicKey.toRaw();
-    expect(toHex(publicKey.toRaw())).toEqual(
+    expect(bytesToHex(publicKey.toRaw())).toEqual(
       '04e2abe3b762fe0553f690d25f5100259b7eaeb3e476df6bd3dfc1d27e5dae56dad5a84f70bd87acc95ad54af0285f28c2be1e3b2f62a28a2fbad9fe44c84dc904',
     );
   });
@@ -138,7 +154,7 @@ describe('Secp256k1KeyIdentity Tests', () => {
   test('generation from seed rejects if the length is invalid', () => {
     const invalidSeed = new Uint8Array(randomBytes(64));
     const shouldFail = () => Secp256k1KeyIdentity.generate(invalidSeed);
-    expect(shouldFail).toThrowError('Secp256k1 Seed needs');
+    expect(shouldFail).toThrow('Secp256k1 Seed needs');
   });
 
   test('generation from a seed phrase', () => {
@@ -161,7 +177,7 @@ describe('Secp256k1KeyIdentity Tests', () => {
       const shortArray = new Uint8Array(secretKey).subarray(1, 32);
       Secp256k1KeyIdentity.fromSecretKey(Uint8Array.from(shortArray).subarray(1, 32));
     };
-    expect(shouldFail).toThrowError('private key must be 32 bytes, hex or bigint, not object');
+    expect(shouldFail).toThrow('private key must be 32 bytes, hex or bigint, not object');
   });
 
   test('getKeyPair should return a copy of the key pair', () => {
@@ -212,8 +228,6 @@ describe('public key serialization from various types', () => {
   it('should serialize from a raw key', () => {
     const baseKey = Secp256k1KeyIdentity.generate();
     const publicKey = baseKey.getPublicKey().rawKey;
-    ArrayBuffer.isView(publicKey);
-    publicKey instanceof ArrayBuffer;
 
     const newKey = Secp256k1PublicKey.from(publicKey);
     expect(newKey).toBeDefined();
@@ -232,7 +246,7 @@ describe('public key serialization from various types', () => {
   });
   it('should serialize from a hex string', () => {
     const baseKey = Secp256k1KeyIdentity.generate();
-    const publicKey = toHex(baseKey.getPublicKey().toRaw());
+    const publicKey = bytesToHex(baseKey.getPublicKey().toRaw());
     const newKey = Secp256k1PublicKey.from(publicKey);
     expect(newKey).toBeDefined();
   });
@@ -242,7 +256,7 @@ describe('public key serialization from various types', () => {
     expect(shouldFail).toThrow('Cannot construct Secp256k1PublicKey from the provided key.');
 
     const shouldFailHex = () => Secp256k1PublicKey.from('not a hex string');
-    expect(shouldFailHex).toThrow('Invalid hexadecimal string');
+    expect(shouldFailHex).toThrow('hex string expected');
   });
 
   it('should throw an error serializing a too short seed phrase', () => {

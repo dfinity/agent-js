@@ -1,4 +1,4 @@
-import { CanisterStatus, HttpAgent } from '@dfinity/agent';
+import { AgentError, CanisterStatus, HttpAgent } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import counter from '../canisters/counter';
 import { makeAgent } from '../utils/agent';
@@ -26,23 +26,16 @@ describe('canister status', () => {
       host: `http://127.0.0.1:${process.env.REPLICA_PORT ?? 4943}`,
       verifyQuerySignatures: false,
     });
-    const shouldThrow = async () => {
-      // eslint-disable-next-line no-useless-catch
-      try {
-        const request = await CanisterStatus.request({
-          canisterId: Principal.from(counterObj.canisterId),
-          agent,
-          paths: ['controllers'],
-        }).catch(error => {
-          throw error;
-        });
-        console.log(request);
-      } catch (error) {
-        throw error;
-      }
-    };
-
-    expect(shouldThrow).rejects.toThrow();
+    expect.assertions(1);
+    try {
+      await CanisterStatus.request({
+        canisterId: Principal.from(counterObj.canisterId),
+        agent,
+        paths: ['controllers'],
+      });
+    } catch (error) {
+      expect(error).toBeInstanceOf(AgentError);
+    }
   });
   it('should fetch the subnet id of a given canister', async () => {
     const counterObj = await (await counter)();

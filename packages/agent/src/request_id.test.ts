@@ -1,12 +1,12 @@
 // https://github.com/dfinity-lab/dfinity/blob/5fef1450c9ab16ccf18381379149e504b11c8218/docs/spec/public/index.adoc#request-ids
 import { Principal } from '@dfinity/principal';
 import { hash, hashValue, requestIdOf } from './request_id';
-import { fromHex, toHex } from './utils/buffer';
 import borc from 'borc';
+import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
 
-const testHashOfBlob = async (input: ArrayBuffer, expected: string) => {
+const testHashOfBlob = async (input: Uint8Array, expected: string) => {
   const hashed = await hash(input);
-  const hex = toHex(hashed);
+  const hex = bytesToHex(hashed);
   expect(hex).toBe(expected);
 };
 
@@ -72,17 +72,17 @@ test('requestIdOf', async () => {
 
   const requestId = requestIdOf(request);
 
-  expect(toHex(requestId)).toEqual(
+  expect(bytesToHex(requestId)).toEqual(
     '8781291c347db32a9d8c10eb62b710fce5a93be676474c42babc74c51858f94b',
   );
 });
 
-test.skip('requestIdOf for sender_delegation signature', async () => {
+test('requestIdOf for sender_delegation signature', async () => {
   // this is what replica wants
   const expectedHashBytes = 'f0c66015041eccb5528fc7fd817bb4d0707369d7e1383d3cdaa074b2b2236824';
   const delegation1 = {
     expiration: BigInt('1611365875951000000'),
-    pubkey: fromHex(
+    pubkey: hexToBytes(
       '302a300506032b6570032100819d9fe3ac251039f934cdc925da0b019848af9d650d4136fb5d955cff17f78e',
     ),
     targets: [
@@ -91,57 +91,57 @@ test.skip('requestIdOf for sender_delegation signature', async () => {
     ],
   };
   const delegation1ActualHashBytes = requestIdOf(delegation1);
-  expect(toHex(delegation1ActualHashBytes)).toEqual(expectedHashBytes);
+  expect(bytesToHex(delegation1ActualHashBytes)).toEqual(expectedHashBytes);
 
   // Note: this uses `bigint` and blobs, which the rest of this lib uses too.
   // Make sure this works before `delegation1` above (with BigInt)
   const delegation2 = {
     ...delegation1,
     pubkey: delegation1.pubkey,
-    targets: delegation1.targets.map(t => t),
+    targets: delegation1.targets,
     expiration: BigInt(delegation1.expiration.toString()),
   };
   const delegation2ActualHashBytes = requestIdOf(delegation2);
-  expect(toHex(delegation2ActualHashBytes)).toEqual(toHex(delegation1ActualHashBytes));
+  expect(bytesToHex(delegation2ActualHashBytes)).toEqual(bytesToHex(delegation1ActualHashBytes));
 
   // This one uses Principals as targets
   const delegation3 = {
     ...delegation1,
-    targets: delegation1.targets.map(t => Principal.fromText(t.toString())),
+    targets: delegation1.targets.map(t => Principal.fromUint8Array(t)),
   };
   const delegation3ActualHashBytes = requestIdOf(delegation3);
-  expect(toHex(delegation3ActualHashBytes)).toEqual(toHex(delegation1ActualHashBytes));
+  expect(bytesToHex(delegation3ActualHashBytes)).toEqual(bytesToHex(delegation1ActualHashBytes));
 });
 
 describe('hashValue', () => {
   it('should hash a string', () => {
     const value = hashValue('test');
-    expect(value instanceof ArrayBuffer).toBe(true);
+    expect(value instanceof Uint8Array).toBe(true);
   });
   it('should hash a borc tagged value', () => {
     const tagged = hashValue(new borc.Tagged(42, 'hello'));
-    expect(tagged instanceof ArrayBuffer).toBe(true);
+    expect(tagged instanceof Uint8Array).toBe(true);
   });
   it('should hash a number', () => {
     const value = hashValue(7);
-    expect(value instanceof ArrayBuffer).toBe(true);
+    expect(value instanceof Uint8Array).toBe(true);
   });
   it('should hash an array', () => {
     const value = hashValue([7]);
-    expect(value instanceof ArrayBuffer).toBe(true);
+    expect(value instanceof Uint8Array).toBe(true);
   });
   it('should hash a bigint', () => {
     const value = hashValue(BigInt(7));
-    expect(value instanceof ArrayBuffer).toBe(true);
+    expect(value instanceof Uint8Array).toBe(true);
   });
   it('should hash objects using HashOfMap on their contents', () => {
     const value = hashValue({ foo: 'bar' });
-    expect(value instanceof ArrayBuffer).toBe(true);
+    expect(value instanceof Uint8Array).toBe(true);
   });
   it('should throw otherwise', () => {
     const shouldThrow = () => {
       hashValue(() => undefined);
     };
-    expect(shouldThrow).toThrowError('Attempt to hash');
+    expect(shouldThrow).toThrow('Attempt to hash');
   });
 });
