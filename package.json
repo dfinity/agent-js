@@ -69,8 +69,8 @@
     "test": "jest",
     "test-size": "esbuild",
     "prepare": "husky install",
-    "prettier:check": "npx -p prettier -p pretty-quick pretty-quick --check",
-    "prettier:format": "npx -p prettier -p pretty-quick pretty-quick",
+    "prettier:check": "npx -p prettier -p pretty-quick pretty-quick --check --branch main",
+    "prettier:format": "npx -p prettier -p pretty-quick pretty-quick --branch main",
     "postversion": "npm run prettier:format"
   },
   "repository": {

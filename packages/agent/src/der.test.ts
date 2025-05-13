@@ -1,21 +1,21 @@
 import { encodeLenBytes, encodeLen, decodeLenBytes, decodeLen } from './der';
-import { bufEquals } from './utils/buffer';
+import { uint8Equals } from './utils/buffer';
 
-describe('bufEquals tests', () => {
+describe('uint8Equals tests', () => {
   test('equal buffers', () => {
-    const buf1 = Uint8Array.from([0, 0, 0, 1]).buffer;
-    const buf2 = Uint8Array.from([0, 0, 0, 1]).buffer;
-    expect(bufEquals(buf1, buf2)).toBe(true);
+    const buf1 = Uint8Array.from([0, 0, 0, 1]);
+    const buf2 = Uint8Array.from([0, 0, 0, 1]);
+    expect(uint8Equals(buf1, buf2)).toBe(true);
   });
   test('rejects buffers with different lengths', () => {
-    const buf1 = Uint8Array.from([0, 0, 0, 0, 1]).buffer;
-    const buf2 = Uint8Array.from([0, 0, 0, 1]).buffer;
-    expect(bufEquals(buf1, buf2)).toBe(false);
+    const buf1 = Uint8Array.from([0, 0, 0, 0, 1]);
+    const buf2 = Uint8Array.from([0, 0, 0, 1]);
+    expect(uint8Equals(buf1, buf2)).toBe(false);
   });
   test('rejects buffers with different values', () => {
-    const buf1 = Uint8Array.from([0, 0, 0, 2]).buffer;
-    const buf2 = Uint8Array.from([0, 0, 0, 1]).buffer;
-    expect(bufEquals(buf1, buf2)).toBe(false);
+    const buf1 = Uint8Array.from([0, 0, 0, 2]);
+    const buf2 = Uint8Array.from([0, 0, 0, 1]);
+    expect(uint8Equals(buf1, buf2)).toBe(false);
   });
 });
 

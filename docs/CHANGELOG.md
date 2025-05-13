@@ -5,6 +5,8 @@
 ### Changed
 
 - chore!: removes management canister from @dfinity/agent in favor of @dfinity/ic-management
+- feat!: changes all @dfinity/candid interfaces to `Uint8Array<ArrayBuffer>` instead of `ArrayBuffer` to make the API more consistent.
+- feat!: replaces `fromHex` and `toHex` utils with `bytesToHex` and `hexToBytes` from `@noble/hashes/utils` to take advantage of existing dependencies.
 - chore: removes unused `bs58check` dependency from `@dfinity/identity-secp256k1`
 - feat!: changes polling strategy for `read_state` requests to support presigned requests. By default, `read_state` requests will create a new signature with a new ingress expiry each time they are made. However, the new `preSignReadStateRequest` will make one signature and use it for all polling requests. This is useful for hardware wallets or other external signing solutions that make signing cumbersome.
   - pollForResponse now moves `strategy`, `request`, and `preSignReadStateRequest` to the `options: PollingOptions` object
@@ -31,6 +33,7 @@
 
 - feat: introduces the `lookup_subtree` standalone function and `Certificate` class method.
 - chore: formatting files and changelog
+- test: removes backwards comatibility test for `Actor` with `v1` HttpAgent due to breaking interface changes.
 - fix: Check subtyping relationship when decoding function or service references
   - This means we now follow the Candid spec more closely, and reduces the risk of calling services with the wrong argument types
 

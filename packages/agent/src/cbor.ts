@@ -4,8 +4,9 @@ import borc from 'borc';
 import * as cbor from 'simple-cbor';
 import { CborEncoder, SelfDescribeCborSerializer } from 'simple-cbor';
 import { Principal } from '@dfinity/principal';
-import { concat, fromHex } from './utils/buffer';
 import { CborDecodeErrorCode, InputError } from './errors';
+import { concat, uint8FromBufLike, uint8ToBuf } from './utils/buffer';
+import { hexToBytes } from '@noble/hashes/utils';
 
 // We are using hansl/simple-cbor for CBOR serialization, to avoid issues with
 // encoding the uint64 values that the HTTP handler of the client expects for
@@ -28,7 +29,7 @@ class PrincipalEncoder implements CborEncoder<Principal> {
   }
 
   public encode(v: Principal): cbor.CborValue {
-    return cbor.value.bytes(v.toUint8Array());
+    return cbor.value.bytes(uint8ToBuf(v.toUint8Array()));
   }
 }
 
@@ -47,7 +48,7 @@ class BufferEncoder implements CborEncoder<ArrayBuffer> {
   }
 
   public encode(v: ArrayBuffer): cbor.CborValue {
-    return cbor.value.bytes(new Uint8Array(v));
+    return cbor.value.bytes(v);
   }
 }
 
@@ -68,9 +69,12 @@ class BigIntEncoder implements CborEncoder<bigint> {
   public encode(v: bigint): cbor.CborValue {
     // Always use a bigint encoding.
     if (v > BigInt(0)) {
-      return cbor.value.tagged(2, cbor.value.bytes(fromHex(v.toString(16))));
+      return cbor.value.tagged(2, cbor.value.bytes(uint8ToBuf(hexToBytes(v.toString(16)))));
     } else {
-      return cbor.value.tagged(3, cbor.value.bytes(fromHex((BigInt('-1') * v).toString(16))));
+      return cbor.value.tagged(
+        3,
+        cbor.value.bytes(uint8ToBuf(hexToBytes((BigInt('-1') * v).toString(16)))),
+      );
     }
   }
 }
@@ -90,8 +94,8 @@ export enum CborTag {
  * @param value The value to encode
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function encode(value: any): ArrayBuffer {
-  return serializer.serialize(value);
+export function encode(value: any): Uint8Array {
+  return uint8FromBufLike(serializer.serialize(value));
 }
 
 function decodePositiveBigInt(buf: Uint8Array): bigint {
@@ -104,15 +108,15 @@ function decodePositiveBigInt(buf: Uint8Array): bigint {
   return res;
 }
 
-// A BORC subclass that decodes byte strings to ArrayBuffer instead of the Buffer class.
+// A BORC subclass that decodes byte strings to Uint8Array instead of the Buffer class.
 class Uint8ArrayDecoder extends borc.Decoder {
-  public createByteString(raw: ArrayBuffer[]): ArrayBuffer {
+  public createByteString(raw: Uint8Array[]): Uint8Array {
     return concat(...raw);
   }
 
-  public createByteStringFromHeap(start: number, end: number): ArrayBuffer {
+  public createByteStringFromHeap(start: number, end: number): Uint8Array {
     if (start === end) {
-      return new ArrayBuffer(0);
+      return new Uint8Array(0);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -124,7 +128,7 @@ class Uint8ArrayDecoder extends borc.Decoder {
  * Decode a CBOR encoded value into a JavaScript value.
  * @param input The CBOR encoded value
  */
-export function decode<T>(input: ArrayBuffer): T {
+export function decode<T>(input: Uint8Array): T {
   const buffer = new Uint8Array(input);
   const decoder = new Uint8ArrayDecoder({
     size: buffer.byteLength,

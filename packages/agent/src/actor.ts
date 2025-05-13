@@ -16,12 +16,13 @@ import {
   UnexpectedErrorCode,
   UnknownError,
 } from './errors';
-import { bufFromBufLike, IDL } from '@dfinity/candid';
+import { IDL } from '@dfinity/candid';
 import { pollForResponse, PollingOptions, DEFAULT_POLLING_OPTIONS } from './polling';
 import { Principal } from '@dfinity/principal';
-import { strToUtf8 } from './utils/buffer';
 import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from './certificate';
 import { HttpAgent } from './agent/http';
+import { utf8ToBytes } from '@noble/hashes/utils';
+import { uint8FromBufLike } from './utils/buffer';
 
 /**
  * Configuration to make calls to the Replica.
@@ -303,7 +304,7 @@ export class Actor {
 // IDL functions can have multiple return values, so decoding always
 // produces an array. Ensure that functions with single or zero return
 // values behave as expected.
-function decodeReturnValue(types: IDL.Type[], msg: ArrayBuffer) {
+function decodeReturnValue(types: IDL.Type[], msg: Uint8Array) {
   const returnValues = IDL.decode(types, msg);
   switch (returnValues.length) {
     case 0:
@@ -409,7 +410,7 @@ function _createActorMethod(
         arg,
         effectiveCanisterId: ecid,
       });
-      let reply: ArrayBuffer | undefined;
+      let reply: Uint8Array | undefined;
       let certificate: Certificate | undefined;
       if (isV3ResponseBody(response.body)) {
         if (agent.rootKey == null) {
@@ -417,12 +418,12 @@ function _createActorMethod(
         }
         const cert = response.body.certificate;
         certificate = await Certificate.create({
-          certificate: bufFromBufLike(cert),
+          certificate: uint8FromBufLike(cert),
           rootKey: agent.rootKey,
           canisterId: Principal.from(canisterId),
           blsVerify,
         });
-        const path = [strToUtf8('request_status'), requestId];
+        const path = [utf8ToBytes('request_status'), requestId];
         const status = new TextDecoder().decode(
           lookupResultToBuffer(certificate.lookup_path([...path, 'status'])),
         );
