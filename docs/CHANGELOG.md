@@ -30,6 +30,7 @@
 - feat!: makes `lookup_path` compliant with the [IC Interface Specification](https://github.com/dfinity/portal/blob/8015a4ab50232176723ffd95e32a02f1bf7fef30/docs/references/ic-interface-spec.md?plain=1#L3069). Renames the `lookup` method of the `Certificate` class into `lookup_path`, for consistency.
 - feat!: removes the `lookup_label` method from the `Certificate` class.
 
+- fix: AuthClient `isAuthenticated` now correctly returns false if the delegation chain is invalid; eg: expired session
 - feat: introduces the `lookup_subtree` standalone function and `Certificate` class method.
 - chore: formatting files and changelog
 - test: removes backwards comatibility test for `Actor` with `v1` HttpAgent due to breaking interface changes.
@@ -45,6 +46,7 @@
 - fix: fixes a bug in the Ed25519KeyIdentity verify implementation where the argument order was incorrect
 - fix: fixes a bug in the `Principal` library where the management canister id util was incorrectly importing using `fromHex`
 - feat: change auth-client's default identity provider url
+
 
 ## [2.4.0] - 2025-03-24
 
