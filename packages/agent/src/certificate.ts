@@ -16,15 +16,16 @@ import {
   MissingLookupValueErrorCode,
 } from './errors';
 import { hash } from './request_id';
-import { bufEquals, concat, fromHex, strToUtf8, toHex } from './utils/buffer';
 import { Principal } from '@dfinity/principal';
 import * as bls from './utils/bls';
 import { decodeTime } from './utils/leb';
 import { MANAGEMENT_CANISTER_ID } from './agent';
+import { bytesToHex, concatBytes, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
+import { uint8Equals } from './utils/buffer';
 
 export interface Cert {
   tree: HashTree;
-  signature: ArrayBuffer;
+  signature: Uint8Array;
   delegation?: Delegation;
 }
 
@@ -36,10 +37,10 @@ export enum NodeType {
   Pruned = 4,
 }
 
-export type NodePath = Array<ArrayBuffer | string>;
-export type NodeLabel = (ArrayBuffer | Uint8Array) & { __nodeLabel__: void };
-export type NodeValue = (ArrayBuffer | Uint8Array) & { __nodeValue__: void };
-export type NodeHash = (ArrayBuffer | Uint8Array) & { __nodeHash__: void };
+export type NodePath = Array<Uint8Array | string>;
+export type NodeLabel = Uint8Array & { __nodeLabel__: void };
+export type NodeValue = Uint8Array & { __nodeValue__: void };
+export type NodeHash = Uint8Array & { __nodeHash__: void };
 
 export type EmptyHashTree = [NodeType.Empty];
 export type ForkHashTree = [NodeType.Fork, HashTree, HashTree];
@@ -64,7 +65,7 @@ export function hashTreeToString(tree: HashTree): string {
       .split('\n')
       .map(x => '  ' + x)
       .join('\n');
-  function labelToString(label: ArrayBuffer): string {
+  function labelToString(label: Uint8Array): string {
     const decoder = new TextDecoder(undefined, { fatal: true });
     try {
       return JSON.stringify(decoder.decode(label));
@@ -78,7 +79,7 @@ export function hashTreeToString(tree: HashTree): string {
     case NodeType.Empty:
       return '()';
     case NodeType.Fork: {
-      if (tree[1] instanceof Array && tree[2] instanceof ArrayBuffer) {
+      if (tree[1] instanceof Array && tree[2] instanceof Uint8Array) {
         const left = hashTreeToString(tree[1]);
         const right = hashTreeToString(tree[2]);
         return `sub(\n left:\n${indent(left)}\n---\n right:\n${indent(right)}\n)`;
@@ -87,7 +88,7 @@ export function hashTreeToString(tree: HashTree): string {
       }
     }
     case NodeType.Labeled: {
-      if (tree[1] instanceof ArrayBuffer && tree[2] instanceof ArrayBuffer) {
+      if (tree[1] instanceof Uint8Array && tree[2] instanceof Uint8Array) {
         const label = labelToString(tree[1]);
         const sub = hashTreeToString(tree[2]);
         return `label(\n label:\n${indent(label)}\n sub:\n${indent(sub)}\n)`;
@@ -114,7 +115,7 @@ export function hashTreeToString(tree: HashTree): string {
         return JSON.stringify(tree[1]);
       }
 
-      return `pruned(${toHex(new Uint8Array(tree[1]))}`;
+      return `pruned(${bytesToHex(new Uint8Array(tree[1]))}`;
     }
     default: {
       return `unknown(${JSON.stringify(tree[0])})`;
@@ -123,15 +124,13 @@ export function hashTreeToString(tree: HashTree): string {
 }
 
 interface Delegation extends Record<string, unknown> {
-  subnet_id: ArrayBuffer;
-  certificate: ArrayBuffer;
+  subnet_id: Uint8Array;
+  certificate: Uint8Array;
 }
 
-function isBufferGreaterThan(a: ArrayBuffer, b: ArrayBuffer): boolean {
-  const a8 = new Uint8Array(a);
-  const b8 = new Uint8Array(b);
-  for (let i = 0; i < a8.length; i++) {
-    if (a8[i] > b8[i]) {
+function isBufferGreaterThan(a: Uint8Array, b: Uint8Array): boolean {
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] > b[i]) {
       return true;
     }
   }
@@ -144,12 +143,12 @@ export interface CreateCertificateOptions {
   /**
    * The bytes encoding the certificate to be verified
    */
-  certificate: ArrayBuffer;
+  certificate: Uint8Array;
   /**
    * The root key against which to verify the certificate
    * (normally, the root key of the IC main network)
    */
-  rootKey: ArrayBuffer;
+  rootKey: Uint8Array;
   /**
    * The effective canister ID of the request when verifying a response, or
    * the signing canister ID when verifying a certified variable.
@@ -182,8 +181,8 @@ export class Certificate {
    * Create a new instance of a certificate, automatically verifying it.
    * @constructs  Certificate
    * @param {CreateCertificateOptions} options {@link CreateCertificateOptions}
-   * @param {ArrayBuffer} options.certificate The bytes of the certificate
-   * @param {ArrayBuffer} options.rootKey The root key to verify against
+   * @param {Uint8Array} options.certificate The bytes of the certificate
+   * @param {Uint8Array} options.rootKey The root key to verify against
    * @param {Principal} options.canisterId The effective or signing canister ID
    * @param {number} options.maxAgeInMinutes The maximum age of the certificate in minutes. Default is 5 minutes.
    * @throws if the certificate cannot be verified
@@ -211,8 +210,8 @@ export class Certificate {
   }
 
   private constructor(
-    certificate: ArrayBuffer,
-    private _rootKey: ArrayBuffer,
+    certificate: Uint8Array,
+    private _rootKey: Uint8Array,
     private _canisterId: Principal,
     private _blsVerify: VerifyFunc,
     // Default to 5 minutes
@@ -246,7 +245,7 @@ export class Certificate {
     const derKey = await this._checkDelegationAndGetKey(this.cert.delegation);
     const sig = this.cert.signature;
     const key = extractDER(derKey);
-    const msg = concat(domain_sep('ic-state-root'), rootHash);
+    const msg = concatBytes(domain_sep('ic-state-root'), rootHash);
     let sigVer = false;
 
     const lookupTime = lookupResultToBuffer(this.lookup_path(['time']));
@@ -291,7 +290,7 @@ export class Certificate {
     }
   }
 
-  private async _checkDelegationAndGetKey(d?: Delegation): Promise<ArrayBuffer> {
+  private async _checkDelegationAndGetKey(d?: Delegation): Promise<Uint8Array> {
     if (!d) {
       return this._rootKey;
     }
@@ -329,7 +328,7 @@ export class Certificate {
     if (!publicKeyLookup) {
       throw TrustError.fromCode(
         new MissingLookupValueErrorCode(
-          `Could not find subnet key for subnet 0x${toHex(d.subnet_id)}`,
+          `Could not find subnet key for subnet 0x${bytesToHex(d.subnet_id)}`,
         ),
       );
     }
@@ -337,18 +336,18 @@ export class Certificate {
   }
 }
 
-const DER_PREFIX = fromHex(
+const DER_PREFIX = hexToBytes(
   '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100',
 );
 const KEY_LENGTH = 96;
 
-function extractDER(buf: ArrayBuffer): ArrayBuffer {
+function extractDER(buf: Uint8Array): Uint8Array {
   const expectedLength = DER_PREFIX.byteLength + KEY_LENGTH;
   if (buf.byteLength !== expectedLength) {
     throw ProtocolError.fromCode(new DerKeyLengthMismatchErrorCode(expectedLength, buf.byteLength));
   }
   const prefix = buf.slice(0, DER_PREFIX.byteLength);
-  if (!bufEquals(prefix, DER_PREFIX)) {
+  if (!uint8Equals(prefix, DER_PREFIX)) {
     throw ProtocolError.fromCode(new DerPrefixMismatchErrorCode(DER_PREFIX, prefix));
   }
 
@@ -358,14 +357,15 @@ function extractDER(buf: ArrayBuffer): ArrayBuffer {
 /**
  * Utility function to constrain the type of a lookup result
  * @param result the result of a lookup
- * @returns {ArrayBuffer | undefined} the value if the lookup was found, `undefined` otherwise
+ * @returns {Uint8Array | undefined} the value if the lookup was found, `undefined` otherwise
  */
-export function lookupResultToBuffer(result: LookupResult): ArrayBuffer | undefined {
+export function lookupResultToBuffer(result: LookupResult): Uint8Array | undefined {
   if (result.status !== LookupPathStatus.Found) {
     return undefined;
   }
 
-  if (result.value instanceof ArrayBuffer) {
+  // Attepmt to decode the value as a Uint8Array
+  if (result.value instanceof Uint8Array) {
     return result.value;
   }
 
@@ -375,33 +375,33 @@ export function lookupResultToBuffer(result: LookupResult): ArrayBuffer | undefi
 /**
  * @param t The hash tree to reconstruct
  */
-export async function reconstruct(t: HashTree): Promise<ArrayBuffer> {
+export async function reconstruct(t: HashTree): Promise<Uint8Array> {
   switch (t[0]) {
     case NodeType.Empty:
       return hash(domain_sep('ic-hashtree-empty'));
     case NodeType.Pruned:
       return t[1];
     case NodeType.Leaf:
-      return hash(concat(domain_sep('ic-hashtree-leaf'), t[1]));
+      return hash(concatBytes(domain_sep('ic-hashtree-leaf'), t[1]));
     case NodeType.Labeled:
-      return hash(concat(domain_sep('ic-hashtree-labeled'), t[1], await reconstruct(t[2])));
+      return hash(concatBytes(domain_sep('ic-hashtree-labeled'), t[1], await reconstruct(t[2])));
     case NodeType.Fork:
       return hash(
-        concat(domain_sep('ic-hashtree-fork'), await reconstruct(t[1]), await reconstruct(t[2])),
+        concatBytes(domain_sep('ic-hashtree-fork'), await reconstruct(t[1]), await reconstruct(t[2])),
       );
     default:
       throw UNREACHABLE_ERROR;
   }
 }
 
-function domain_sep(s: string): ArrayBuffer {
+function domain_sep(s: string): Uint8Array {
   const len = new Uint8Array([s.length]);
   const str = new TextEncoder().encode(s);
-  return concat(len, str);
+  return concatBytes(len, str);
 }
 
 function pathToLabel(path: NodePath): NodeLabel {
-  return (typeof path[0] === 'string' ? strToUtf8(path[0]) : path[0]) as NodeLabel;
+  return (typeof path[0] === 'string' ? utf8ToBytes(path[0]) : path[0]) as NodeLabel;
 }
 
 export enum LookupPathStatus {
@@ -421,7 +421,7 @@ export interface LookupPathResultUnknown {
 
 export interface LookupPathResultFound {
   status: LookupPathStatus.Found;
-  value: ArrayBuffer;
+  value: Uint8Array;
 }
 
 export interface LookupPathResultError {
@@ -435,9 +435,9 @@ export type LookupResult =
   | LookupPathResultError;
 
 export enum LookupSubtreeStatus {
-  Absent = 'absent',
-  Unknown = 'unknown',
-  Found = 'found',
+  Absent = 'Absent',
+  Unknown = 'Unknown',
+  Found = 'Found',
 }
 
 export interface LookupSubtreeResultAbsent {
@@ -459,11 +459,11 @@ export type SubtreeLookupResult =
   | LookupSubtreeResultFound;
 
 export enum LookupLabelStatus {
-  Absent = 'absent',
-  Unknown = 'unknown',
-  Found = 'found',
-  Less = 'less',
-  Greater = 'greater',
+  Absent = 'Absent',
+  Unknown = 'Unknown',
+  Found = 'Found',
+  Less = 'Less',
+  Greater = 'Greater',
 }
 
 export interface LookupLabelResultAbsent {
@@ -516,17 +516,10 @@ export function lookup_path(path: NodePath, tree: HashTree): LookupResult {
           );
         }
 
-        if (tree[1] instanceof ArrayBuffer) {
-          return {
-            status: LookupPathStatus.Found,
-            value: tree[1],
-          };
-        }
-
         if (tree[1] instanceof Uint8Array) {
           return {
             status: LookupPathStatus.Found,
-            value: tree[1].buffer,
+            value: tree[1],
           };
         }
 
@@ -659,7 +652,7 @@ export function find_label(label: NodeLabel, tree: HashTree): LabelLookupResult 
 
       // if the label we're searching for is equal this node's label, we can
       // stop searching and return the found node
-      if (bufEquals(label, tree[1])) {
+      if (uint8Equals(label, tree[1])) {
         return {
           status: LookupLabelStatus.Found,
           value: tree[2],
@@ -766,7 +759,7 @@ export function check_canister_ranges(params: {
     );
   }
 
-  if (!(rangeLookup.value instanceof ArrayBuffer)) {
+  if (!(rangeLookup.value instanceof Uint8Array)) {
     throw ProtocolError.fromCode(
       new MalformedLookupFoundValueErrorCode(
         `Could not find canister ranges for subnet ${subnetId.toText()}`,

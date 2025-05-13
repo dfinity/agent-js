@@ -4,7 +4,7 @@ import {
   DerEncodeErrorCode,
   InputError,
 } from './errors';
-import { bufEquals } from './utils/buffer';
+import { uint8Equals } from './utils/buffer';
 
 export const encodeLenBytes = (len: number): number => {
   if (len <= 0x7f) {
@@ -98,7 +98,7 @@ export const SECP256K1_OID = Uint8Array.from([
  * @param payload The payload to encode as the bit string
  * @param oid The DER encoded (and SEQUENCE wrapped!) OID to tag the payload with
  */
-export function wrapDER(payload: ArrayBuffer, oid: Uint8Array): Uint8Array {
+export function wrapDER(payload: Uint8Array, oid: Uint8Array): Uint8Array {
   // The Bit String header needs to include the unused bit count byte in its length
   const bitStringHeaderLength = 2 + encodeLenBytes(payload.byteLength + 1);
   const len = oid.byteLength + bitStringHeaderLength + payload.byteLength;
@@ -131,7 +131,7 @@ export function wrapDER(payload: ArrayBuffer, oid: Uint8Array): Uint8Array {
  * @param oid The DER encoded (and SEQUENCE wrapped!) expected OID
  * @returns The unwrapped payload
  */
-export const unwrapDER = (derEncoded: ArrayBuffer, oid: Uint8Array): Uint8Array => {
+export const unwrapDER = (derEncoded: Uint8Array, oid: Uint8Array): Uint8Array => {
   let offset = 0;
   const expect = (n: number, msg: string) => {
     if (buf[offset++] !== n) {
@@ -143,7 +143,7 @@ export const unwrapDER = (derEncoded: ArrayBuffer, oid: Uint8Array): Uint8Array 
   expect(0x30, 'sequence');
   offset += decodeLenBytes(buf, offset);
 
-  if (!bufEquals(buf.slice(offset, offset + oid.byteLength), oid)) {
+  if (!uint8Equals(buf.slice(offset, offset + oid.byteLength), oid)) {
     throw InputError.fromCode(new DerDecodeErrorCode('Not the expected OID.'));
   }
   offset += oid.byteLength;

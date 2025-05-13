@@ -1,10 +1,10 @@
 import { Principal } from '@dfinity/principal';
 import { HttpDetailsResponse, NodeSignature, ReplicaRejectCode } from './agent/api';
 import { RequestId } from './request_id';
-import { toHex } from './utils/buffer';
 import { Expiry, RequestStatusResponseStatus } from './agent/http';
 import { HttpHeaderField } from './agent/http/types';
 import { LookupPathStatus, LookupSubtreeStatus } from './certificate';
+import { bytesToHex } from '@noble/hashes/utils';
 
 export enum ErrorKindEnum {
   Trust = 'Trust',
@@ -19,8 +19,8 @@ export enum ErrorKindEnum {
 
 export type RequestContext = {
   requestId?: RequestId;
-  senderPubKey: ArrayBuffer;
-  senderSignature: ArrayBuffer;
+  senderPubKey: Uint8Array;
+  senderSignature: Uint8Array;
   ingressExpiry: Expiry;
 };
 
@@ -43,9 +43,9 @@ abstract class ErrorCode {
     if (this.requestContext) {
       errorMessage +=
         `\nRequest context:\n` +
-        `  Request ID (hex): ${this.requestContext.requestId ? toHex(this.requestContext.requestId) : 'undefined'}\n` +
-        `  Sender pubkey (hex): ${toHex(this.requestContext.senderPubKey)}\n` +
-        `  Sender signature (hex): ${toHex(this.requestContext.senderSignature)}\n` +
+        `  Request ID (hex): ${this.requestContext.requestId ? bytesToHex(this.requestContext.requestId) : 'undefined'}\n` +
+        `  Sender pubkey (hex): ${bytesToHex(this.requestContext.senderPubKey)}\n` +
+        `  Sender signature (hex): ${bytesToHex(this.requestContext.senderSignature)}\n` +
         `  Ingress expiry: ${this.requestContext.ingressExpiry.toString()}`;
     }
     if (this.callContext) {
@@ -237,14 +237,14 @@ export class CertificateNotAuthorizedErrorCode extends ErrorCode {
 
   constructor(
     public readonly canisterId: Principal,
-    public readonly subnetId: ArrayBuffer,
+    public readonly subnetId: Uint8Array,
   ) {
     super();
     Object.setPrototypeOf(this, CertificateNotAuthorizedErrorCode.prototype);
   }
 
   public toErrorMessage(): string {
-    return `The certificate contains a delegation that does not include the canister ${this.canisterId.toText()} in the canister_ranges field. Subnet ID: 0x${toHex(this.subnetId)}`;
+    return `The certificate contains a delegation that does not include the canister ${this.canisterId.toText()} in the canister_ranges field. Subnet ID: 0x${bytesToHex(this.subnetId)}`;
   }
 }
 
@@ -310,8 +310,8 @@ export class DerPrefixMismatchErrorCode extends ErrorCode {
   public name = 'DerPrefixMismatchErrorCode';
 
   constructor(
-    public readonly expectedPrefix: ArrayBuffer,
-    public readonly actualPrefix: ArrayBuffer,
+    public readonly expectedPrefix: Uint8Array,
+    public readonly actualPrefix: Uint8Array,
   ) {
     super();
     Object.setPrototypeOf(this, DerPrefixMismatchErrorCode.prototype);
@@ -376,7 +376,7 @@ export class CborDecodeErrorCode extends ErrorCode {
   }
 
   public toErrorMessage(): string {
-    return `Failed to decode CBOR: ${this.error}, input: ${toHex(this.input)}`;
+    return `Failed to decode CBOR: ${this.error}, input: ${bytesToHex(this.input)}`;
   }
 }
 
@@ -408,7 +408,7 @@ export class TimeoutWaitingForResponseErrorCode extends ErrorCode {
   public toErrorMessage(): string {
     let errorMessage = `${this.message}\n`;
     if (this.requestId) {
-      errorMessage += `  Request ID: ${toHex(this.requestId)}\n`;
+      errorMessage += `  Request ID: ${bytesToHex(this.requestId)}\n`;
     }
     if (this.status) {
       errorMessage += `  Request status: ${this.status}\n`;
@@ -433,7 +433,7 @@ export class CertifiedRejectErrorCode extends ErrorCode {
   public toErrorMessage(): string {
     return (
       `The replica returned a rejection error:\n` +
-      `  Request ID: ${toHex(this.requestId)}\n` +
+      `  Request ID: ${bytesToHex(this.requestId)}\n` +
       `  Reject code: ${this.rejectCode}\n` +
       `  Reject text: ${this.rejectMessage}\n` +
       `  Error code: ${this.rejectErrorCode}\n`
@@ -458,7 +458,7 @@ export class UncertifiedRejectErrorCode extends ErrorCode {
   public toErrorMessage(): string {
     return (
       `The replica returned a rejection error:\n` +
-      `  Request ID: ${toHex(this.requestId)}\n` +
+      `  Request ID: ${bytesToHex(this.requestId)}\n` +
       `  Reject code: ${this.rejectCode}\n` +
       `  Reject text: ${this.rejectMessage}\n` +
       `  Error code: ${this.rejectErrorCode}\n`
@@ -477,7 +477,7 @@ export class RequestStatusDoneNoReplyErrorCode extends ErrorCode {
   public toErrorMessage(): string {
     return (
       `Call was marked as done but we never saw the reply:\n` +
-      `  Request ID: ${toHex(this.requestId)}\n`
+      `  Request ID: ${bytesToHex(this.requestId)}\n`
     );
   }
 }

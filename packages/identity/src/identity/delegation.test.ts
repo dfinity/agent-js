@@ -2,7 +2,6 @@ import { Principal } from '@dfinity/principal';
 import { DelegationChain, DelegationIdentity, PartialDelegationIdentity } from './delegation';
 import { Ed25519KeyIdentity } from './ed25519';
 import { Ed25519PublicKey } from '@dfinity/agent';
-import { bufFromBufLike } from '@dfinity/candid';
 
 function createIdentity(seed: number): Ed25519KeyIdentity {
   const s = new Uint8Array([seed, ...new Array(31).fill(0)]);
@@ -92,11 +91,11 @@ test('DelegationChain can be serialized to and from JSON', async () => {
     return value;
   });
   const rootToMiddleActual = DelegationChain.fromJSON(rootToMiddleJson);
-  expect(rootToMiddleActual).toEqual(rootToMiddle);
+  expect(rootToMiddleActual.toJSON()).toMatchObject(rootToMiddle.toJSON());
 
   const middleToBottomJson = JSON.stringify(middleToBottom);
   const middleToBottomActual = DelegationChain.fromJSON(middleToBottomJson);
-  expect(middleToBottomActual).toEqual(middleToBottom);
+  expect(middleToBottomActual.toJSON()).toEqual(middleToBottom.toJSON());
 });
 
 test('Delegation Chain can sign', async () => {
@@ -114,12 +113,12 @@ test('Delegation Chain can sign', async () => {
 
   const identity = DelegationIdentity.fromDelegation(middle, rootToMiddle);
 
-  const signature = await identity.sign(bufFromBufLike(new Uint8Array([1, 2, 3])));
+  const signature = await identity.sign(new Uint8Array([1, 2, 3]));
 
   const isValid = Ed25519KeyIdentity.verify(
     signature,
     new Uint8Array([1, 2, 3]),
-    bufFromBufLike(middle.getPublicKey().rawKey),
+    middle.getPublicKey().rawKey,
   );
   expect(isValid).toBe(true);
   expect(middle.toJSON()[1].length).toBe(64);
@@ -127,7 +126,7 @@ test('Delegation Chain can sign', async () => {
 
 describe('PartialDelegationIdentity', () => {
   it('should create a partial identity from a public key and a delegation chain', async () => {
-    const key = Ed25519PublicKey.fromRaw(bufFromBufLike(new Uint8Array(32).fill(0)));
+    const key = Ed25519PublicKey.fromRaw(new Uint8Array(32).fill(0));
     const signingIdentity = Ed25519KeyIdentity.generate(new Uint8Array(32).fill(1));
     const chain = await DelegationChain.create(signingIdentity, key, new Date(1609459200000));
 
@@ -146,7 +145,7 @@ describe('PartialDelegationIdentity', () => {
     );
   });
   it('should throw an error if one attempts to sign', async () => {
-    const key = Ed25519PublicKey.fromRaw(bufFromBufLike(new Uint8Array(32).fill(0)));
+    const key = Ed25519PublicKey.fromRaw(new Uint8Array(32).fill(0));
     const signingIdentity = Ed25519KeyIdentity.generate(new Uint8Array(32).fill(1));
     const chain = await DelegationChain.create(signingIdentity, key, new Date(1609459200000));
 

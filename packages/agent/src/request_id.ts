@@ -1,18 +1,19 @@
-import { lebEncode } from '@dfinity/candid';
+import { lebEncode, compare } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import borc from 'borc';
 import { sha256 } from '@noble/hashes/sha256';
-import { compare, concat, uint8ToBuf } from './utils/buffer';
 import { HashValueErrorCode, InputError } from './errors';
+import { uint8FromBufLike } from './utils/buffer';
+import { concatBytes } from '@noble/hashes/utils';
 
-export type RequestId = ArrayBuffer & { __requestId__: void };
+export type RequestId = Uint8Array & { __requestId__: void };
 
 /**
  * sha256 hash the provided Buffer
  * @param data - input to hash function
  */
-export function hash(data: ArrayBuffer): ArrayBuffer {
-  return uint8ToBuf(sha256.create().update(new Uint8Array(data)).digest());
+export function hash(data: Uint8Array): Uint8Array {
+  return sha256.create().update(uint8FromBufLike(data)).digest();
 }
 
 interface ToHashable {
@@ -24,7 +25,7 @@ interface ToHashable {
  * @param value unknown value
  * @returns ArrayBuffer
  */
-export function hashValue(value: unknown): ArrayBuffer {
+export function hashValue(value: unknown): Uint8Array {
   if (value instanceof borc.Tagged) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return hashValue((value as any).value);
@@ -32,11 +33,11 @@ export function hashValue(value: unknown): ArrayBuffer {
     return hashString(value);
   } else if (typeof value === 'number') {
     return hash(lebEncode(value));
-  } else if (value instanceof ArrayBuffer || ArrayBuffer.isView(value)) {
-    return hash(value as ArrayBuffer);
+  } else if (value instanceof Uint8Array || ArrayBuffer.isView(value)) {
+    return hash(uint8FromBufLike(value));
   } else if (Array.isArray(value)) {
     const vals = value.map(hashValue);
-    return hash(concat(...vals));
+    return hash(concatBytes(...vals));
   } else if (value && typeof value === 'object' && (value as Principal)._isPrincipal) {
     return hash((value as Principal).toUint8Array());
   } else if (
@@ -60,7 +61,7 @@ export function hashValue(value: unknown): ArrayBuffer {
   throw InputError.fromCode(new HashValueErrorCode(value));
 }
 
-const hashString = (value: string): ArrayBuffer => {
+const hashString = (value: string): Uint8Array => {
   const encoded = new TextEncoder().encode(value);
   return hash(encoded);
 };
@@ -81,23 +82,23 @@ export function requestIdOf(request: Record<string, unknown>): RequestId {
  * @param map - Any non-nested object
  * @returns ArrayBuffer
  */
-export function hashOfMap(map: Record<string, unknown>): ArrayBuffer {
-  const hashed: Array<[ArrayBuffer, ArrayBuffer]> = Object.entries(map)
+export function hashOfMap(map: Record<string, unknown>): Uint8Array {
+  const hashed: Array<[Uint8Array, Uint8Array]> = Object.entries(map)
     .filter(([, value]) => value !== undefined)
     .map(([key, value]: [string, unknown]) => {
       const hashedKey = hashString(key);
       const hashedValue = hashValue(value);
 
-      return [hashedKey, hashedValue] as [ArrayBuffer, ArrayBuffer];
+      return [hashedKey, hashedValue] as [Uint8Array, Uint8Array];
     });
 
-  const traversed: Array<[ArrayBuffer, ArrayBuffer]> = hashed;
+  const traversed: Array<[Uint8Array, Uint8Array]> = hashed;
 
-  const sorted: Array<[ArrayBuffer, ArrayBuffer]> = traversed.sort(([k1], [k2]) => {
+  const sorted: Array<[Uint8Array, Uint8Array]> = traversed.sort(([k1], [k2]) => {
     return compare(k1, k2);
   });
 
-  const concatenated: ArrayBuffer = concat(...sorted.map(x => concat(...x)));
+  const concatenated: Uint8Array = concatBytes(...sorted.map(x => concatBytes(...x)));
   const result = hash(concatenated);
   return result;
 }
