@@ -4,7 +4,6 @@
 
 ### Changed
 
-- test: removes backwards comatibility test for `Actor` with `v1` HttpAgent due to breaking interface changes.
 - feat!: changes all @dfinity/candid interfaces to `Uint8Array<ArrayBuffer>` instead of `ArrayBuffer` to make the API more consistent.
 - feat!: replaces `fromHex` and `toHex` utils with `bytesToHex` and `hexToBytes` from `@noble/hashes/utils` to take advantage of existing dependencies.
 - chore: removes unused `bs58check` dependency from `@dfinity/identity-secp256k1`
@@ -33,6 +32,7 @@
 
 - feat: introduces the `lookup_subtree` standalone function and `Certificate` class method.
 - chore: formatting files and changelog
+- test: removes backwards comatibility test for `Actor` with `v1` HttpAgent due to breaking interface changes.
 - fix: Check subtyping relationship when decoding function or service references
   - This means we now follow the Candid spec more closely, and reduces the risk of calling services with the wrong argument types
 
