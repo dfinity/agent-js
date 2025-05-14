@@ -4,7 +4,6 @@ import {
   HttpAgent,
   Identity,
   CanisterStatus,
-  fromHex,
   polling,
   requestIdOf,
   TrustError,
@@ -17,8 +16,9 @@ import { Principal } from '@dfinity/principal';
 import { describe, it, expect, vi, test } from 'vitest';
 import { makeAgent } from '../utils/agent';
 import { waitForAndRunTimers } from '../utils/test';
+import { hexToBytes } from '@noble/hashes/utils';
 
-const { defaultStrategy, pollForResponse } = polling;
+const { pollForResponse } = polling;
 
 const createWhoamiActor = async (identity: Identity) => {
   const canisterId = 'ivcos-eqaaa-aaaab-qablq-cai';
@@ -125,7 +125,7 @@ describe('call forwarding', () => {
       Principal.fromText(forwardedOptions.canisterId),
       {
         methodName: forwardedOptions.methodName,
-        arg: fromHex(forwardedOptions.arg),
+        arg: hexToBytes(forwardedOptions.arg),
         effectiveCanisterId: Principal.fromText(forwardedOptions.effectiveCanisterId),
       },
     );
@@ -136,7 +136,6 @@ describe('call forwarding', () => {
       agent,
       Principal.fromText(forwardedOptions.effectiveCanisterId),
       requestId,
-      { strategy: defaultStrategy() },
     );
     expect(certificate).toBeTruthy();
     expect(reply).toBeTruthy();
@@ -155,7 +154,7 @@ test('it should succeed when setting an expiry in the near future', async () => 
   await expect(
     agent.call('tnnnb-2yaaa-aaaab-qaiiq-cai', {
       methodName: 'inc_read',
-      arg: fromHex('4449444c0000'),
+      arg: hexToBytes('4449444c0000'),
       effectiveCanisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
     }),
   ).resolves.toBeDefined();
@@ -172,7 +171,7 @@ test('it should succeed when setting an expiry in the future', async () => {
   await expect(
     agent.call('tnnnb-2yaaa-aaaab-qaiiq-cai', {
       methodName: 'inc_read',
-      arg: fromHex('4449444c0000'),
+      arg: hexToBytes('4449444c0000'),
       effectiveCanisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
     }),
   ).resolves.toBeDefined();
@@ -217,14 +216,14 @@ test('should allow you to sync time when the system time is over 5 minutes apart
   vi.setSystemTime(0);
   const agent = new HttpAgent({ fetch: fetch });
   const logs: AgentLog[] = [];
-  agent.log.subscribe(log => logs.push(log));
+  agent.log.subscribe(log => logs.push(log as AgentLog));
   await agent.syncTime();
 
   await Promise.all([
     agent
       .call(Principal.managementCanister(), {
         methodName: 'test',
-        arg: new Uint8Array().buffer,
+        arg: new Uint8Array(),
       })
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .catch(function (_) {}),

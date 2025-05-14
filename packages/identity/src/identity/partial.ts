@@ -10,21 +10,21 @@ export class PartialIdentity implements Identity {
   /**
    * The raw public key of this identity.
    */
-  get rawKey(): ArrayBuffer | undefined {
+  get rawKey(): Uint8Array | undefined {
     return this.#inner.rawKey;
   }
 
   /**
    * The DER-encoded public key of this identity.
    */
-  get derKey(): ArrayBuffer | undefined {
+  get derKey(): Uint8Array | undefined {
     return this.#inner.derKey;
   }
 
   /**
    * The DER-encoded public key of this identity.
    */
-  public toDer(): ArrayBuffer {
+  public toDer(): Uint8Array {
     return this.#inner.toDer();
   }
 

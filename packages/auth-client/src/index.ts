@@ -28,7 +28,13 @@ import {
 } from './storage';
 import { PartialIdentity } from '@dfinity/identity/lib/cjs/identity/partial';
 
-export { AuthClientStorage, IdbStorage, LocalStorage, KEY_STORAGE_DELEGATION, KEY_STORAGE_KEY } from './storage';
+export {
+  AuthClientStorage,
+  IdbStorage,
+  LocalStorage,
+  KEY_STORAGE_DELEGATION,
+  KEY_STORAGE_KEY,
+} from './storage';
 export { IdbKeyVal, DBCreateOptions } from './db';
 
 const IDENTITY_PROVIDER_DEFAULT = 'https://identity.internetcomputer.org';
@@ -381,13 +387,13 @@ export class AuthClient {
           signedDelegation.delegation.expiration,
           signedDelegation.delegation.targets,
         ),
-        signature: signedDelegation.signature.buffer as Signature,
+        signature: signedDelegation.signature as Signature,
       };
     });
 
     const delegationChain = DelegationChain.fromDelegations(
       delegations,
-      message.userPublicKey.buffer as DerEncodedPublicKey,
+      message.userPublicKey as DerEncodedPublicKey,
     );
 
     const key = this._key;
@@ -429,7 +435,11 @@ export class AuthClient {
   }
 
   public async isAuthenticated(): Promise<boolean> {
-    return !this.getIdentity().getPrincipal().isAnonymous() && this._chain !== null;
+    return (
+      !this.getIdentity().getPrincipal().isAnonymous() &&
+      this._chain !== null &&
+      isDelegationValid(this._chain)
+    );
   }
 
   /**
@@ -513,7 +523,7 @@ export class AuthClient {
           // IDP is ready. Send a message to request authorization.
           const request: InternetIdentityAuthRequest = {
             kind: 'authorize-client',
-            sessionPublicKey: new Uint8Array(this._key?.getPublicKey().toDer() as ArrayBuffer),
+            sessionPublicKey: new Uint8Array(this._key?.getPublicKey().toDer()),
             maxTimeToLive: options?.maxTimeToLive,
             allowPinAuthentication: options?.allowPinAuthentication,
             derivationOrigin: options?.derivationOrigin?.toString(),
