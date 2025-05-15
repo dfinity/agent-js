@@ -1,0 +1,25 @@
+{
+  "canisters": {
+    "assets": {
+      "type": "custom",
+      "wasm": "canisters/assets.wasm",
+      "candid": "canisters/assets.did"
+    },
+    "counter": {
+      "type": "motoko",
+      "main": "canisters/counter.mo"
+    },
+    "trap": {
+      "type": "motoko",
+      "main": "canisters/trap.mo"
+    }
+  },
+  "defaults": {
+    "build": {
+      "packtool": "",
+      "args": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
