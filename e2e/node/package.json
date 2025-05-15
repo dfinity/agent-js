@@ -18,13 +18,10 @@
     "@dfinity/assets": "^2.4.1",
     "@dfinity/candid": "^2.4.1",
     "@dfinity/identity": "^2.4.1",
-    "@dfinity/principal": "^2.4.1",
-    "whatwg-fetch": "^3.6.2"
+    "@dfinity/principal": "^2.4.1"
   },
   "devDependencies": {
-    "@dfinity/ic-management": "^6.1.1",
     "@noble/hashes": "^1.8.0",
-    "@dfinity/ic-management": "^6.1.1",
     "@peculiar/webcrypto": "^1.4.0",
     "@tsconfig/node16": "^1.0.3",
     "@tsconfig/node17": "^1.0.1",
@@ -33,6 +30,7 @@
     "@types/text-encoding": "^0.0.36",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
+    "dotenv": "^16.5.0",
     "esbuild": "^0.25.1",
     "isomorphic-fetch": "^3.0.0",
     "locus": "^2.0.4",
