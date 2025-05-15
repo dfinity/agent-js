@@ -98,7 +98,7 @@ export function hashOfMap(map: Record<string, unknown>): Uint8Array {
     return compare(k1, k2);
   });
 
-  const concatenated: Uint8Array = concatBytes(...sorted.map(x => concatBytes(...x)));
+  const concatenated = concatBytes(...sorted.map(x => concatBytes(...x)));
   const result = hash(concatenated);
   return result;
 }
