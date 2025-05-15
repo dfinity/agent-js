@@ -1,10 +1,12 @@
 import { existsSync, readFileSync, unlinkSync } from 'fs';
 import path from 'path';
 import agent from '../utils/agent';
-import { Actor, uint8FromBufLike } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import { AssetManager } from '@dfinity/assets';
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
+import { Ed25519KeyIdentity } from '@dfinity/identity';
+import { Actor, HttpAgent } from '@dfinity/agent';
+import { execSync } from 'child_process';
 
 /**
  * Create (pseudo) random bytes Readable
@@ -34,6 +36,19 @@ const randomBytesReadable = (fileName: string, length: number) => {
 };
 
 /**
+ * Create a reproducible identity from a seed string
+ */
+function createTestIdentity() {
+  // Convert 'test' to Uint8Array (seed)
+  const seed = new TextEncoder().encode('test');
+  // Pad to required length (32 bytes)
+  const paddedSeed = new Uint8Array(32);
+  paddedSeed.set(seed);
+
+  return Ed25519KeyIdentity.generate(paddedSeed);
+}
+
+/**
  * File paths used in file read/write tests
  */
 const testFile = {
@@ -43,12 +58,15 @@ const testFile = {
 
 describe('assets', () => {
   let canisterId: Principal;
+  let testIdentity: Ed25519KeyIdentity;
+  let testAgent: HttpAgent;
 
   const testRandomBytes = async (fileName: string, length: number) => {
     const assetManager = new AssetManager({
       canisterId,
-      agent: await agent,
+      agent: testAgent,
     });
+
     const readable = randomBytesReadable(fileName, length);
     const key = await assetManager.store(readable);
     const asset = await assetManager.get(key);
@@ -68,16 +86,63 @@ describe('assets', () => {
   };
 
   beforeAll(async () => {
-    const module = uint8FromBufLike(readFileSync(path.join(__dirname, '../canisters/assets.wasm')));
-    canisterId = await Actor.createCanister({ agent: await agent });
-    await Actor.install({ module }, { canisterId, agent: await agent });
+    // Use the hardcoded assets canister ID
+    const assetsCanisterId =
+      process.env.ASSETS_CANISTER_ID || execSync('dfx canister id assets').toString().trim();
+    canisterId = Principal.fromText(assetsCanisterId);
+
+    // Create a reproducible identity for our tests
+    testIdentity = createTestIdentity();
+
+    // Create an agent with this identity
+    testAgent = new HttpAgent({
+      host: 'http://localhost:4943',
+      identity: testIdentity,
+    });
+    await testAgent.fetchRootKey();
+
+    // Get the default agent for authorization
+    const defaultAgent = await agent;
+
+    // Authorize our test identity on the assets canister
+    // Create a simple IDL factory for the authorize method
+    const idlFactory = ({ IDL }) => {
+      return IDL.Service({
+        authorize: IDL.Func([IDL.Principal], [], []),
+      });
+    };
+
+    const authorizeActor = Actor.createActor(idlFactory, {
+      agent: defaultAgent,
+      canisterId,
+    });
+
+    try {
+      await authorizeActor.authorize(testIdentity.getPrincipal());
+      console.log(`Authorized test identity: ${testIdentity.getPrincipal().toString()}`);
+    } catch (error) {
+      console.error(`Failed to authorize test identity: ${error}`);
+      throw error;
+    }
   });
 
   afterEach(async () => {
-    const assetManager = new AssetManager({ canisterId, agent: await agent });
-    await assetManager.clear();
-    if (existsSync(testFile.target)) {
-      unlinkSync(testFile.target);
+    try {
+      // Use the test identity's agent to clean up with clear()
+      const assetManager = new AssetManager({
+        canisterId,
+        agent: testAgent,
+      });
+
+      // Now we can use clear() since we have the proper permissions
+      await assetManager.clear();
+
+      if (existsSync(testFile.target)) {
+        unlinkSync(testFile.target);
+      }
+    } catch (error) {
+      console.error(`Cleanup failed: ${error}`);
+      // Don't fail tests on cleanup errors
     }
   });
 
@@ -94,7 +159,7 @@ describe('assets', () => {
   );
 
   it('batch process assets and verify asset list', async () => {
-    const assetManager = new AssetManager({ canisterId, agent: await agent });
+    const assetManager = new AssetManager({ canisterId, agent: testAgent });
     const batch = assetManager.batch();
 
     // Initial X asset
@@ -114,7 +179,7 @@ describe('assets', () => {
   it('read file from disk, store as asset, get asset, write file to disk and compare files', async () => {
     const assetManager = new AssetManager({
       canisterId,
-      agent: await agent,
+      agent: testAgent,
       // Make sure files are read and written in chunks during this test
       maxSingleFileSize: 200,
       maxChunkSize: 200,

@@ -1,9 +1,10 @@
 {
   "canisters": {
     "assets": {
-      "type": "custom",
-      "wasm": "canisters/assets.wasm",
-      "candid": "canisters/assets.did"
+      "type": "assets",
+      "source": [
+        ""
+      ]
     },
     "counter": {
       "type": "motoko",
