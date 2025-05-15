@@ -115,11 +115,12 @@ describe('controllers', () => {
 describe('call forwarding', () => {
   it('should handle call forwarding', async () => {
     vi.useRealTimers();
+    const counterCanisterId = 'tnnnb-2yaaa-aaaab-qaiiq-cai';
     const forwardedOptions = {
-      canisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
+      canisterId: counterCanisterId,
       methodName: 'inc_read',
       arg: '4449444c0000',
-      effectiveCanisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
+      effectiveCanisterId: counterCanisterId,
     };
 
     const agent = new HttpAgent({ host: 'https://icp-api.io' });
@@ -152,12 +153,13 @@ test('it should succeed when setting an expiry in the near future', async () => 
   });
 
   await agent.syncTime();
+  const counterCanisterId = 'tnnnb-2yaaa-aaaab-qaiiq-cai';
 
-  expect(
-    agent.call('tnnnb-2yaaa-aaaab-qaiiq-cai', {
+  await expect(
+    agent.call(counterCanisterId, {
       methodName: 'inc_read',
       arg: hexToBytes('4449444c0000'),
-      effectiveCanisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
+      effectiveCanisterId: counterCanisterId,
     }),
   ).resolves.toBeDefined();
 });
@@ -169,18 +171,19 @@ test('it should succeed when setting an expiry in the future', async () => {
   });
 
   await agent.syncTime();
+  const counterCanisterId = 'tnnnb-2yaaa-aaaab-qaiiq-cai';
 
-  expect(
-    agent.call('tnnnb-2yaaa-aaaab-qaiiq-cai', {
+  await expect(
+    agent.call(counterCanisterId, {
       methodName: 'inc_read',
       arg: hexToBytes('4449444c0000'),
-      effectiveCanisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
+      effectiveCanisterId: counterCanisterId,
     }),
   ).resolves.toBeDefined();
 });
 
 test('it should fail when setting an expiry in the far future', async () => {
-  expect(
+  await expect(
     HttpAgent.create({
       host: 'https://icp-api.io',
       ingressExpiryInMinutes: 100,

@@ -1,6 +1,7 @@
 import { createActor } from '../canisters/declarations/counter/index';
 import { test, expect, TestAPI } from 'vitest';
 import { makeAgent } from '../utils/agent';
+import { execSync } from 'child_process';
 import {
   CertificateVerificationErrorCode,
   QuerySignatureVerificationFailedErrorCode,
@@ -13,7 +14,9 @@ if (!process.env['MITM']) {
 }
 
 mitmTest('mitm greet', { timeout: 30000 }, async () => {
-  const counter = createActor('tnnnb-2yaaa-aaaab-qaiiq-cai', {
+  const counterCanisterId =
+    process.env.COUNTER_CANISTER_ID || execSync('dfx canister id counter').toString().trim();
+  const counter = createActor(counterCanisterId, {
     agent: await makeAgent({
       host: 'http://127.0.0.1:8888',
       verifyQuerySignatures: false,
@@ -30,7 +33,9 @@ mitmTest('mitm greet', { timeout: 30000 }, async () => {
 });
 
 mitmTest('mitm with query verification', async () => {
-  const counter = createActor('tnnnb-2yaaa-aaaab-qaiiq-cai', {
+  const counterCanisterId =
+    process.env.COUNTER_CANISTER_ID || execSync('dfx canister id counter').toString().trim();
+  const counter = createActor(counterCanisterId, {
     agent: await makeAgent({
       host: 'http://127.0.0.1:8888',
       verifyQuerySignatures: true,
