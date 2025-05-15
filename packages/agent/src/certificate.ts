@@ -364,7 +364,6 @@ export function lookupResultToBuffer(result: LookupResult): Uint8Array | undefin
     return undefined;
   }
 
-  // Attepmt to decode the value as a Uint8Array
   if (result.value instanceof Uint8Array) {
     return result.value;
   }
