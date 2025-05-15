@@ -11,7 +11,6 @@ import { Principal } from '@dfinity/principal';
 import * as cbor from 'simple-cbor';
 import { PartialIdentity } from './partial';
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
-import { uint8FromBufLike } from '@dfinity/candid';
 
 const domainSeparator = new TextEncoder().encode('\x1Aic-request-auth-delegation');
 const requestDomainSeparator = new TextEncoder().encode('\x0Aic-request');
@@ -115,7 +114,7 @@ async function _createSingleDelegation(
     ...domainSeparator,
     ...new Uint8Array(requestIdOf({ ...delegation })),
   ]);
-  const signature = await from.sign(uint8FromBufLike(challenge));
+  const signature = await from.sign(challenge);
 
   return {
     delegation,
@@ -308,9 +307,7 @@ export class DelegationIdentity extends SignIdentity {
       body: {
         content: body,
         sender_sig: await this.sign(
-          uint8FromBufLike(
-            new Uint8Array([...requestDomainSeparator, ...new Uint8Array(requestId)]),
-          ),
+          new Uint8Array([...requestDomainSeparator, ...new Uint8Array(requestId)]),
         ),
         sender_delegation: this._delegation.delegations,
         sender_pubkey: this._delegation.publicKey,

@@ -24,7 +24,6 @@ import managementCanisterIdl from './canisters/management_idl';
 import _SERVICE, { canister_install_mode, canister_settings } from './canisters/management_service';
 import { HttpAgent } from './agent/http';
 import { utf8ToBytes } from '@noble/hashes/utils';
-import { uint8FromBufLike } from './utils/buffer';
 
 /**
  * Configuration to make calls to the Replica.
@@ -503,7 +502,7 @@ function _createActorMethod(
         }
         const cert = response.body.certificate;
         certificate = await Certificate.create({
-          certificate: uint8FromBufLike(cert),
+          certificate: cert,
           rootKey: agent.rootKey,
           canisterId: Principal.from(canisterId),
           blsVerify,

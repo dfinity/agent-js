@@ -13,7 +13,7 @@ export type RequestId = Uint8Array & { __requestId__: void };
  * @param data - input to hash function
  */
 export function hash(data: Uint8Array): Uint8Array {
-  return sha256.create().update(uint8FromBufLike(data)).digest();
+  return sha256.create().update(data).digest();
 }
 
 interface ToHashable {

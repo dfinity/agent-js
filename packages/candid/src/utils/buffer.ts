@@ -6,7 +6,7 @@ export function concat(...uint8Arrays: Uint8Array[]): Uint8Array {
   const result = new Uint8Array(uint8Arrays.reduce((acc, curr) => acc + curr.byteLength, 0));
   let index = 0;
   for (const b of uint8Arrays) {
-    result.set(uint8FromBufLike(new Uint8Array(b)), index);
+    result.set(b, index);
     index += b.byteLength;
   }
   return result;

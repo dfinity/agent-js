@@ -1105,7 +1105,7 @@ export class HttpAgent implements Agent {
     function getRequestId(fields: ReadStateOptions): RequestId | undefined {
       for (const path of fields.paths) {
         const [pathName, value] = path;
-        const request_status = uint8FromBufLike(new TextEncoder().encode('request_status'));
+        const request_status = new TextEncoder().encode('request_status');
         if (uint8Equals(pathName, request_status)) {
           return value as RequestId;
         }
