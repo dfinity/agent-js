@@ -1,6 +1,6 @@
 import { AgentError, CanisterStatus, HttpAgent } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
-import counter from '../canisters/counter';
+import { execSync } from 'child_process';
 import { makeAgent } from '../utils/agent';
 import { describe, it, afterEach, expect } from 'vitest';
 
@@ -9,11 +9,12 @@ afterEach(async () => {
 });
 describe('canister status', () => {
   it('should fetch successfully', async () => {
-    const counterObj = await (await counter)();
+    const counterCanisterId =
+      process.env.COUNTER_CANISTER_ID || execSync('dfx canister id counter').toString().trim();
     const agent = await makeAgent();
     await agent.fetchRootKey();
     const request = await CanisterStatus.request({
-      canisterId: Principal.from(counterObj.canisterId),
+      canisterId: Principal.fromText(counterCanisterId),
       agent,
       paths: ['controllers'],
     });
@@ -21,7 +22,8 @@ describe('canister status', () => {
     expect(Array.isArray(request.get('controllers'))).toBe(true);
   });
   it('should throw an error if fetchRootKey has not been called', async () => {
-    const counterObj = await (await counter)();
+    const counterCanisterId =
+      process.env.COUNTER_CANISTER_ID || execSync('dfx canister id counter').toString().trim();
     const agent = new HttpAgent({
       host: `http://127.0.0.1:${process.env.REPLICA_PORT ?? 4943}`,
       verifyQuerySignatures: false,
@@ -29,7 +31,7 @@ describe('canister status', () => {
     expect.assertions(1);
     try {
       await CanisterStatus.request({
-        canisterId: Principal.from(counterObj.canisterId),
+        canisterId: Principal.fromText(counterCanisterId),
         agent,
         paths: ['controllers'],
       });
@@ -38,11 +40,12 @@ describe('canister status', () => {
     }
   });
   it('should fetch the subnet id of a given canister', async () => {
-    const counterObj = await (await counter)();
+    const counterCanisterId =
+      process.env.COUNTER_CANISTER_ID || execSync('dfx canister id counter').toString().trim();
     const agent = await makeAgent();
     await agent.fetchRootKey();
     const statusMap = await CanisterStatus.request({
-      canisterId: Principal.from(counterObj.canisterId),
+      canisterId: Principal.fromText(counterCanisterId),
       agent,
       paths: ['subnet'],
     });
