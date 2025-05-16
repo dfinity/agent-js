@@ -1,6 +1,6 @@
 import { decode, encode } from './utils/base32';
 import { getCrc32 } from './utils/getCrc';
-import { sha224 } from './utils/sha224';
+import { sha224 } from '@noble/hashes/sha2';
 
 export const JSON_KEY_PRINCIPAL = '__principal__';
 const SELF_AUTHENTICATING_SUFFIX = 2;

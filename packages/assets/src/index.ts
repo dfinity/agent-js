@@ -13,7 +13,7 @@ import {
 } from '@dfinity/agent';
 import { lebDecode, PipeArrayBuffer, compare } from '@dfinity/candid';
 import { AssetsCanisterRecord, getAssetsCanister } from './canisters/assets';
-import { sha256 } from '@noble/hashes/sha256';
+import { sha256 } from '@noble/hashes/sha2';
 import { BatchOperationKind } from './canisters/assets_service';
 import { isReadable, Readable } from './readable/readable';
 import { ReadableFile } from './readable/readableFile';
@@ -201,7 +201,7 @@ export class AssetManager {
         await readable.open();
         const bytes = await readable.slice(0, readable.length);
         await readable.close();
-        const hash = config?.sha256 ?? sha256.create().update(new Uint8Array(bytes)).digest();
+        const hash = config?.sha256 ?? sha256(new Uint8Array(bytes));
         return this._actor.store({
           key,
           content: bytes,
