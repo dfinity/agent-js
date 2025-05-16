@@ -1,14 +1,7 @@
 import { Actor, ActorSubclass, HttpAgentOptions, Agent, ActorConfig } from '@dfinity/agent';
-import { Principal } from '@dfinity/principal';
-import agent, { makeAgent } from '../utils/agent';
+import { makeAgent } from '../utils/agent';
 import { _SERVICE } from './declarations/counter';
 import { execSync } from 'child_process';
-
-let cache: {
-  canisterId: Principal;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  actor: any;
-} | null = null;
 
 export const idl = ({ IDL }) => {
   return IDL.Service({
@@ -21,38 +14,27 @@ export const idl = ({ IDL }) => {
   });
 };
 
-export const counterCanisterId = Principal.from(process.env.COUNTER_CANISTER_ID ?? execSync('dfx canister id counter').toString().trim());
+export const counterCanisterId =
+  process.env.COUNTER_CANISTER_ID ?? execSync('dfx canister id counter').toString().trim();
 
-/**
- * Create a counter Actor + canisterId
- */
-export default async function (): Promise<{
-  canisterId: Principal;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  actor: any;
-}> {
-  if (!cache) {
+export const counter2CanisterId =
+  process.env.COUNTER2_CANISTER_ID ?? execSync('dfx canister id counter2').toString().trim();
 
-
-    cache = {
-      canisterId: counterCanisterId,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      actor: Actor.createActor(idl, { canisterId: counterCanisterId, agent: await agent }) as any,
-    };
-  }
-
-  return cache;
-}
-
-export const createActor = async (canisterId, options?: {
-  agentOptions?:HttpAgentOptions
-  actorOptions?: ActorConfig
-  agent?: Agent
-}) => {
-  const effectiveAgent = options?.agent
-    ? await agent
-    : await makeAgent(options?.agentOptions,
-      );
+export const createActor = async (
+  canisterId,
+  options?: {
+    agentOptions?: HttpAgentOptions;
+    actorOptions?: ActorConfig;
+    agent?: Agent;
+  },
+) => {
+  const effectiveAgent = options?.agent ? options.agent : await makeAgent(options?.agentOptions);
 
   return Actor.createActor(idl, { canisterId, agent: effectiveAgent }) as ActorSubclass<_SERVICE>;
 };
+
+// Export the counter actor directly
+export const counterActor = await createActor(counterCanisterId);
+
+// Export the counter2 actor directly
+export const counter2Actor = await createActor(counter2CanisterId);

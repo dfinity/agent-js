@@ -1,10 +1,8 @@
 import { Actor } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
-import { ICManagementCanister } from "@dfinity/ic-management";
-import { readFileSync } from 'fs';
-import path from 'path';
 import agent from '../utils/agent';
+import { execSync } from 'child_process';
 
 let cache: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -23,13 +21,9 @@ export default async function (): Promise<{
   idl: IDL.InterfaceFactory;
 }> {
   if (!cache) {
-    const management = ICManagementCanister.create({
-      agent: await agent,
-    });
-    const wasmModule = new Uint8Array(readFileSync(path.join(__dirname, 'identity.wasm')));
-
-    const canisterId = await management.createCanister();
-    await management.installCode({canisterId, wasmModule, mode: { install: null }, arg: new Uint8Array(0)});
+    const canisterId = Principal.fromText(
+      process.env.WHOAMI_CANISTER_ID ?? execSync('dfx canister id whoami').toString().trim(),
+    );
 
     
     const idl: IDL.InterfaceFactory = ({ IDL }) => {

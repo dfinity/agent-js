@@ -1,4 +1,4 @@
-import { test, expect, vi, describe, beforeEach } from 'vitest';
+import { test, expect, vi, describe, afterAll, beforeAll } from 'vitest';
 import { createActor } from '../canisters/counter';
 import { Actor, HttpAgent } from '@dfinity/agent';
 import { execSync } from 'child_process';
@@ -44,22 +44,39 @@ function indexOfQueryResponse(history: Response[]) {
   return history.findIndex(response => response.url.endsWith('query'));
 }
 
-const watermarkCanisterId =
-  process.env.WATERMARK_CANISTER_ID ?? execSync('dfx canister id watermark').toString().trim();
+const watermark1CanisterId =
+  process.env.WATERMARK_CANISTER_ID ?? execSync('dfx canister id watermark1').toString().trim();
+const watermark2CanisterId =
+  process.env.WATERMARK_CANISTER_ID ?? execSync('dfx canister id watermark2').toString().trim();
+const watermark3CanisterId =
+  process.env.WATERMARK_CANISTER_ID ?? execSync('dfx canister id watermark3').toString().trim();
 
-const watermarkActor = await createActor(watermarkCanisterId);
+const watermark1Actor = await createActor(watermark1CanisterId);
+const watermark2Actor = await createActor(watermark2CanisterId);
+const watermark3Actor = await createActor(watermark3CanisterId);
 
 describe.sequential('watermark', () => {
-
-  beforeEach(async () => {
-    // Reset the watermark actor to its initial state
-    await watermarkActor.write(0n);
+  beforeAll(async () => {
+    // Reset the watermark actors to their initial state before starting tests
+    await watermark1Actor.write(0n);
+    await watermark2Actor.write(0n);
+    await watermark3Actor.write(0n);
   });
 
-  test.only('basic', async () => {
+  afterAll(async () => {
+    // Reset the watermark actors to their initial state
+    await watermark1Actor.write(0n);
+    await watermark2Actor.write(0n);
+    await watermark3Actor.write(0n);
+  });
+
+  test('basic', async () => {
+    // Reset state for this specific test
+    await watermark1Actor.write(0n);
+
     const fetchProxy = new FetchProxy();
 
-    const actor = await createActor(watermarkCanisterId, {
+    const actor = await createActor(watermark1CanisterId, {
       agentOptions: {
         fetch: fetchProxy.fetch.bind(fetchProxy),
         verifyQuerySignatures: true,
@@ -72,10 +89,13 @@ describe.sequential('watermark', () => {
     expect(fetchProxy.calls).toBe(2);
   }, 10_000);
 
-  test.only('replay queries only', async () => {
+  test('replay queries only', async () => {
+    // Reset state for this specific test
+    await watermark2Actor.write(0n);
+
     const fetchProxy = new FetchProxy();
 
-    const actor = await createActor(watermarkCanisterId, {
+    const actor = await createActor(watermark2CanisterId, {
       agentOptions: {
         fetch: fetchProxy.fetch.bind(fetchProxy),
         verifyQuerySignatures: true,
@@ -96,11 +116,13 @@ describe.sequential('watermark', () => {
     expect(fetchProxy.calls).toBe(3);
   }, 10_000);
 
-  test.only('replay attack', async () => {
-    await watermarkActor.write(0n);
+  test('replay attack', async () => {
+    // Reset state for this specific test
+    await watermark3Actor.write(0n);
+
     const fetchProxy = new FetchProxy();
 
-    const actor = await createActor(watermarkCanisterId, {
+    const actor = await createActor(watermark3CanisterId, {
       agentOptions: {
         verifyQuerySignatures: true,
         fetch: fetchProxy.fetch.bind(fetchProxy),
