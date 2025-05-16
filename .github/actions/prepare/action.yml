@@ -1,0 +1,21 @@
+name: Prepare
+
+description: Select Node.js version and install dependencies
+
+inputs:
+  node-version:
+    description: 'Node.js version'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Use Node.js ${{ inputs.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Install dependencies
+      shell: bash
+      run: npm ci

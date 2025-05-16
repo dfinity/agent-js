@@ -26,10 +26,9 @@ jobs:
         run: |
           gh release edit "${{ env.VERSION_TAG }}" --draft=false --prerelease=false --latest=true
 
-      - uses: actions/setup-node@v4
+      - uses: ./.github/actions/prepare
         with:
-          node-version: '20.x'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: '22.x'
       - name: Cache node modules
         id: cache-npm
         uses: actions/cache@v4
@@ -47,7 +46,6 @@ jobs:
         name: List the state of node modules
         continue-on-error: true
         run: npm list
-      - run: npm ci
       - run: npm run build -ws
       - run: npm audit
       - run: npm publish -ws
