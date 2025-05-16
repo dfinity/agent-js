@@ -5,7 +5,7 @@
 ### Changed
 
 - feat!: changes all @dfinity/candid interfaces to `Uint8Array<ArrayBuffer>` instead of `ArrayBuffer` to make the API more consistent.
-- feat!: replaces `fromHex` and `toHex` utils with `bytesToHex` and `hexToBytes` from `@noble/hashes/utils` to take advantage of existing dependencies.
+- feat!: replaces `fromHex`, `toHex`, `concat` utils with `bytesToHex`, `hexToBytes`, and `concatBytes` from `@noble/hashes/utils` respectively, to take advantage of existing dependencies.
 - chore: removes unused `bs58check` dependency from `@dfinity/identity-secp256k1`
 - feat!: changes polling strategy for `read_state` requests to support presigned requests. By default, `read_state` requests will create a new signature with a new ingress expiry each time they are made. However, the new `preSignReadStateRequest` will make one signature and use it for all polling requests. This is useful for hardware wallets or other external signing solutions that make signing cumbersome.
   - pollForResponse now moves `strategy`, `request`, and `preSignReadStateRequest` to the `options: PollingOptions` object
@@ -46,7 +46,6 @@
 - fix: fixes a bug in the Ed25519KeyIdentity verify implementation where the argument order was incorrect
 - fix: fixes a bug in the `Principal` library where the management canister id util was incorrectly importing using `fromHex`
 - feat: change auth-client's default identity provider url
-
 
 ## [2.4.0] - 2025-03-24
 
