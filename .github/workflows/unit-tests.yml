@@ -35,7 +35,7 @@ jobs:
       - run: npm install
 
       # build monorepo incl. each subpackage
-      - run: npm run build --workspaces --if-present
+      - run: npm run build
 
       # test monorepo incl. each subpackage
       - run: npm run test
