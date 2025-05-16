@@ -1,10 +1,8 @@
-import { Actor, ActorSubclass, HttpAgentOptions, Agent } from '@dfinity/agent';
+import { Actor, ActorSubclass, HttpAgentOptions, Agent, ActorConfig } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
-import { readFileSync } from 'fs';
-import path from 'path';
 import agent, { makeAgent } from '../utils/agent';
 import { _SERVICE } from './declarations/counter';
-import { getDefaultEffectiveCanisterId } from '../basic/basic.test';
+import { execSync } from 'child_process';
 
 let cache: {
   canisterId: Principal;
@@ -23,6 +21,8 @@ export const idl = ({ IDL }) => {
   });
 };
 
+export const counterCanisterId = Principal.from(process.env.COUNTER_CANISTER_ID ?? execSync('dfx canister id counter').toString().trim());
+
 /**
  * Create a counter Actor + canisterId
  */
@@ -32,40 +32,27 @@ export default async function (): Promise<{
   actor: any;
 }> {
   if (!cache) {
-    const module = readFileSync(path.join(__dirname, 'counter.wasm'));
 
-    const canisterId = await Actor.createCanister({ agent: await agent });
-    await Actor.install({ module }, { canisterId, agent: await agent });
 
     cache = {
-      canisterId,
+      canisterId: counterCanisterId,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      actor: Actor.createActor(idl, { canisterId, agent: await agent }) as any,
+      actor: Actor.createActor(idl, { canisterId: counterCanisterId, agent: await agent }) as any,
     };
   }
 
   return cache;
 }
 
-export const createActor = async (options?: HttpAgentOptions, agent?: Agent) => {
-  const module = readFileSync(path.join(__dirname, 'counter.wasm'));
-  const effectiveAgent = agent
-    ? agent
-    : await makeAgent({
-        ...options,
-      });
-  try {
-    if (!options?.host?.includes('icp-api')) {
-      await effectiveAgent.fetchRootKey();
-    }
-  } catch {
-    //
-  }
+export const createActor = async (canisterId, options?: {
+  agentOptions?:HttpAgentOptions
+  actorOptions?: ActorConfig
+  agent?: Agent
+}) => {
+  const effectiveAgent = options?.agent
+    ? await agent
+    : await makeAgent(options?.agentOptions,
+      );
 
-  const canisterId = await Actor.createCanister({
-    agent: effectiveAgent,
-    effectiveCanisterId: await getDefaultEffectiveCanisterId(),
-  });
-  await Actor.install({ module }, { canisterId, agent: effectiveAgent });
   return Actor.createActor(idl, { canisterId, agent: effectiveAgent }) as ActorSubclass<_SERVICE>;
 };

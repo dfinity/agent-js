@@ -1,6 +1,7 @@
-import { test, expect, vi } from 'vitest';
+import { test, expect, vi, describe, beforeEach } from 'vitest';
 import { createActor } from '../canisters/counter';
 import { Actor, HttpAgent } from '@dfinity/agent';
+import { execSync } from 'child_process';
 
 class FetchProxy {
   #history: Response[] = [];
@@ -15,7 +16,7 @@ class FetchProxy {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = await(global.fetch as any)(...args);
+    const response = await (global.fetch as any)(...args);
     this.#history.push(response);
     return response.clone();
   }
@@ -43,115 +44,135 @@ function indexOfQueryResponse(history: Response[]) {
   return history.findIndex(response => response.url.endsWith('query'));
 }
 
-test('basic', async () => {
-  const fetchProxy = new FetchProxy();
+const watermarkCanisterId =
+  process.env.WATERMARK_CANISTER_ID ?? execSync('dfx canister id watermark').toString().trim();
 
-  const actor = await createActor({
-    fetch: fetchProxy.fetch.bind(fetchProxy),
-    verifyQuerySignatures: true,
+const watermarkActor = await createActor(watermarkCanisterId);
+
+describe.sequential('watermark', () => {
+
+  beforeEach(async () => {
+    // Reset the watermark actor to its initial state
+    await watermarkActor.write(0n);
   });
 
-  fetchProxy.clearHistory();
-  const startValue = await actor.read();
-  expect(startValue).toBe(0n);
-  expect(fetchProxy.calls).toBe(2);
-}, 10_000);
+  test.only('basic', async () => {
+    const fetchProxy = new FetchProxy();
 
-test('replay queries only', async () => {
-  const fetchProxy = new FetchProxy();
+    const actor = await createActor(watermarkCanisterId, {
+      agentOptions: {
+        fetch: fetchProxy.fetch.bind(fetchProxy),
+        verifyQuerySignatures: true,
+      },
+    });
 
-  const actor = await createActor({
-    fetch: fetchProxy.fetch.bind(fetchProxy),
-    verifyQuerySignatures: true,
-  });
+    fetchProxy.clearHistory();
+    const startValue = await actor.read();
+    expect(startValue).toBe(0n);
+    expect(fetchProxy.calls).toBe(2);
+  }, 10_000);
 
-  fetchProxy.clearHistory();
-  const startValue = await actor.read();
-  expect(startValue).toBe(0n);
-  expect(fetchProxy.calls).toBe(2);
+  test.only('replay queries only', async () => {
+    const fetchProxy = new FetchProxy();
 
-  const queryResponseIndex = indexOfQueryResponse(fetchProxy.history);
+    const actor = await createActor(watermarkCanisterId, {
+      agentOptions: {
+        fetch: fetchProxy.fetch.bind(fetchProxy),
+        verifyQuerySignatures: true,
+      },
+    });
 
-  fetchProxy.replayFromHistory(queryResponseIndex);
+    fetchProxy.clearHistory();
+    const startValue = await actor.read();
+    expect(startValue).toBe(0n);
+    expect(fetchProxy.calls).toBe(2);
 
-  const startValue2 = await actor.read();
-  expect(startValue2).toBe(0n);
-  expect(fetchProxy.calls).toBe(3);
-}, 10_000);
+    const queryResponseIndex = indexOfQueryResponse(fetchProxy.history);
 
-test('replay attack', async () => {
-  const fetchProxy = new FetchProxy();
+    fetchProxy.replayFromHistory(queryResponseIndex);
 
-  const actor = await createActor({
-    verifyQuerySignatures: true,
-    fetch: fetchProxy.fetch.bind(fetchProxy),
-    backoffStrategy: () => ({
-      next: () => 0,
-    }),
-  });
+    const startValue2 = await actor.read();
+    expect(startValue2).toBe(0n);
+    expect(fetchProxy.calls).toBe(3);
+  }, 10_000);
 
-  const agent = Actor.agentOf(actor) as HttpAgent;
-  const logFn = vi.fn();
-  agent.log.subscribe(logFn);
+  test.only('replay attack', async () => {
+    await watermarkActor.write(0n);
+    const fetchProxy = new FetchProxy();
 
-  fetchProxy.clearHistory();
-  const startValue = await actor.read();
-  expect(startValue).toBe(0n);
+    const actor = await createActor(watermarkCanisterId, {
+      agentOptions: {
+        verifyQuerySignatures: true,
+        fetch: fetchProxy.fetch.bind(fetchProxy),
+        backoffStrategy: () => ({
+          next: () => 0,
+        }),
+      },
+    });
 
-  // 1: make query
-  // 2: fetch subnet keys
-  expect(fetchProxy.calls).toBe(2);
+    const agent = Actor.agentOf(actor) as HttpAgent;
+    const logFn = vi.fn();
+    agent.log.subscribe(logFn);
 
-  const startValue2 = await actor.read();
-  expect(startValue2).toBe(0n);
-  expect(fetchProxy.calls).toBe(3);
+    fetchProxy.clearHistory();
+    const startValue = await actor.read();
+    expect(startValue).toBe(0n);
 
-  await actor.inc();
+    // 1: make query
+    // 2: fetch subnet keys
+    expect(fetchProxy.calls).toBe(2);
 
-  // wait 1 second
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  const startValue3 = await actor.read();
-  expect(startValue3).toBe(1n);
+    const startValue2 = await actor.read();
+    expect(startValue2).toBe(0n);
+    expect(fetchProxy.calls).toBe(3);
 
-  const queryResponseIndex = indexOfQueryResponse(fetchProxy.history);
-  console.log(queryResponseIndex);
+    await actor.inc();
 
-  fetchProxy.replayFromHistory(queryResponseIndex);
+    // wait 1 second
+    // await new Promise(resolve => setTimeout(resolve, 1000));
+    const startValue3 = await actor.read();
+    expect(startValue3).toBe(1n);
 
-  // The number of calls should be 4 or more, depending on whether the test environment is using v3 or v2
-  const usingV2 =
-    findV2inCalls(
-      fetchProxy.history.map(response => {
-        return [response.url];
-      }),
-    ) !== -1;
-  if (usingV2) {
-    // TODO - pin to 5 once dfx v0.23.0 is released
-    // the replayed request should throw an error
-    expect(fetchProxy.calls).toBe(5);
-  } else {
-    expect(fetchProxy.calls).toBeGreaterThanOrEqual(5);
-  }
+    const queryResponseIndex = indexOfQueryResponse(fetchProxy.history);
+    console.log(queryResponseIndex);
 
-  await expect(actor.read()).rejects.toThrowError(
-    'Timestamp failed to pass the watermark after retrying the configured 3 times. We cannot guarantee the integrity of the response since it could be a replay attack.',
-  );
+    fetchProxy.replayFromHistory(queryResponseIndex);
 
-  // TODO - pin to 9 once dfx v0.23.0 is released
-  if (usingV2) {
-    // the replayed request should throw an error
-    // The agent should should have made 4 additional requests (3 retries + 1 original request)
-    expect(fetchProxy.calls).toBe(9);
-  } else {
-    expect(fetchProxy.calls).toBeGreaterThanOrEqual(9);
-  }
-}, 10_000);
-
-const findV2inCalls = (calls: [string][]) => {
-  for (let i = 0; i < calls.length; i++) {
-    if (calls[i][0].includes('v2')) {
-      return i;
+    // The number of calls should be 4 or more, depending on whether the test environment is using v3 or v2
+    const usingV2 =
+      findV2inCalls(
+        fetchProxy.history.map(response => {
+          return [response.url];
+        }),
+      ) !== -1;
+    if (usingV2) {
+      // TODO - pin to 5 once dfx v0.23.0 is released
+      // the replayed request should throw an error
+      expect(fetchProxy.calls).toBe(5);
+    } else {
+      expect(fetchProxy.calls).toBeGreaterThanOrEqual(5);
     }
-  }
-  return -1;
-};
+
+    await expect(actor.read()).rejects.toThrowError(
+      'Timestamp failed to pass the watermark after retrying the configured 3 times. We cannot guarantee the integrity of the response since it could be a replay attack.',
+    );
+
+    // TODO - pin to 9 once dfx v0.23.0 is released
+    if (usingV2) {
+      // the replayed request should throw an error
+      // The agent should should have made 4 additional requests (3 retries + 1 original request)
+      expect(fetchProxy.calls).toBe(9);
+    } else {
+      expect(fetchProxy.calls).toBeGreaterThanOrEqual(9);
+    }
+  }, 10_000);
+
+  const findV2inCalls = (calls: [string][]) => {
+    for (let i = 0; i < calls.length; i++) {
+      if (calls[i][0].includes('v2')) {
+        return i;
+      }
+    }
+    return -1;
+  };
+});

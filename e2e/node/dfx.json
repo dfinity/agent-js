@@ -10,6 +10,10 @@
       "type": "motoko",
       "main": "canisters/counter.mo"
     },
+    "watermark": {
+      "type": "motoko",
+      "main": "canisters/counter.mo"
+    },
     "trap": {
       "type": "motoko",
       "main": "canisters/trap.mo"
