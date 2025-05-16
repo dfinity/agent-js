@@ -6,7 +6,6 @@
 
 - feat!: changes all @dfinity/candid interfaces to `Uint8Array<ArrayBuffer>` instead of `ArrayBuffer` to make the API more consistent.
 - feat!: replaces `fromHex` and `toHex` utils with `bytesToHex` and `hexToBytes` from `@noble/hashes/utils` to take advantage of existing dependencies.
-- chore: removes unused `bs58check` dependency from `@dfinity/identity-secp256k1`
 - feat!: changes polling strategy for `read_state` requests to support presigned requests. By default, `read_state` requests will create a new signature with a new ingress expiry each time they are made. However, the new `preSignReadStateRequest` will make one signature and use it for all polling requests. This is useful for hardware wallets or other external signing solutions that make signing cumbersome.
   - pollForResponse now moves `strategy`, `request`, and `preSignReadStateRequest` to the `options: PollingOptions` object
   - new export: `PollingOptions` type
@@ -29,7 +28,9 @@
 - feat!: refactors `Expiry` class to use static factory methods and add JSON serialization/deserialization.
 - feat!: makes `lookup_path` compliant with the [IC Interface Specification](https://github.com/dfinity/portal/blob/8015a4ab50232176723ffd95e32a02f1bf7fef30/docs/references/ic-interface-spec.md?plain=1#L3069). Renames the `lookup` method of the `Certificate` class into `lookup_path`, for consistency.
 - feat!: removes the `lookup_label` method from the `Certificate` class.
+- feat!: replaces `hash` with `sha256` from `@noble/hashes/sha2` to take advantage of existing dependencies
 
+- chore: removes unused `bs58check` dependency from `@dfinity/identity-secp256k1`
 - fix: AuthClient `isAuthenticated` now correctly returns false if the delegation chain is invalid; eg: expired session
 - feat: introduces the `lookup_subtree` standalone function and `Certificate` class method.
 - chore: formatting files and changelog
@@ -46,7 +47,6 @@
 - fix: fixes a bug in the Ed25519KeyIdentity verify implementation where the argument order was incorrect
 - fix: fixes a bug in the `Principal` library where the management canister id util was incorrectly importing using `fromHex`
 - feat: change auth-client's default identity provider url
-
 
 ## [2.4.0] - 2025-03-24
 
