@@ -23,8 +23,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node }}
-        uses: actions/setup-node@v4
+      - uses: ./.github/actions/prepare
         with:
           node-version: ${{ matrix.node }}
 
@@ -45,11 +44,9 @@ jobs:
         name: List the state of node modules
         continue-on-error: true
         run: npm list
-      - run: npm ci
-      - run: npm run build -ws
 
       # build monorepo incl. each subpackage
-      - run: npm run build --workspaces --if-present
+      - run: npm run build
 
       - uses: dfinity/setup-dfx@main
 
