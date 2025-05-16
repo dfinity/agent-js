@@ -1,7 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 import { DerEncodedPublicKey, KeyPair, Signature, PublicKey, SignIdentity } from '@dfinity/agent';
 import { secp256k1 } from '@noble/curves/secp256k1';
-import { sha256 } from '@noble/hashes/sha256';
+import { sha256 } from '@noble/hashes/sha2';
 import { bytesToHex, hexToBytes, randomBytes } from '@noble/hashes/utils';
 import * as bip39 from '@scure/bip39';
 import { HDKey } from '@scure/bip32';
@@ -252,13 +252,12 @@ export class Secp256k1KeyIdentity extends SignIdentity {
 
   /**
    * Signs a blob of data, with this identity's private key.
-   * @param {Uint8Array} challenge - challenge to sign with this identity's secretKey, producing a signature
+   * @param {Uint8Array} data - bytes to hash and sign with this identity's secretKey, producing a signature
    * @returns {Promise<Signature>} signature
    */
-  public async sign(challenge: Uint8Array): Promise<Signature> {
-    const hash = sha256.create();
-    hash.update(challenge);
-    const signature = secp256k1.sign(hash.digest(), this._privateKey).toCompactRawBytes();
+  public async sign(data: Uint8Array): Promise<Signature> {
+    const challenge = sha256(data);
+    const signature = secp256k1.sign(challenge, this._privateKey).toCompactRawBytes();
     return signature as Signature;
   }
 }
