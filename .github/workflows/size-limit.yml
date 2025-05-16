@@ -7,11 +7,7 @@ jobs:
       CI_JOB_NUMBER: 1
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/prepare
-        with:
-          node-version-file: '.nvmrc'
 
-      # commented out until the job can be configured
       - uses: andresz1/size-limit-action@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
