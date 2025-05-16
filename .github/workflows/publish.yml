@@ -28,7 +28,7 @@ jobs:
 
       - uses: ./.github/actions/prepare
         with:
-          node-version: '22.x'
+          node-version-file: '.nvmrc'
       - name: Cache node modules
         id: cache-npm
         uses: actions/cache@v4

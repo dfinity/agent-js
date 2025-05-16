@@ -5,7 +5,12 @@ description: Select Node.js version and install dependencies
 inputs:
   node-version:
     description: 'Node.js version'
-    required: true
+    required: false
+    type: string
+  node-version-file:
+    description: 'Path to the Node.js version file'
+    required: false
+    type: string
 
 runs:
   using: composite
