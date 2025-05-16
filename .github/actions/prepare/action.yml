@@ -4,17 +4,24 @@ description: Select Node.js version and install dependencies
 
 inputs:
   node-version:
-    description: 'Node.js version'
+    description: 'Node.js version. Must be specified if node-version-file is not specified.'
     required: false
     type: string
   node-version-file:
-    description: 'Path to the Node.js version file'
+    description: 'Path to the Node.js version file. Must be specified if node-version is not specified.'
     required: false
     type: string
 
 runs:
   using: composite
   steps:
+    - name: Check inputs
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.node-version }}" ] && [ -z "${{ inputs.node-version-file }}" ]; then
+          echo "Error: node-version or node-version-file must be specified"
+          exit 1
+        fi
     - name: Use Node.js ${{ inputs.node-version }}
       uses: actions/setup-node@v4
       with:
