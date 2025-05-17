@@ -51,8 +51,10 @@ describe('Secp256k1PublicKey Tests', () => {
     });
   });
 
-  const hexRe = new RegExp(/^[0-9a-fA-F]+$/);
+  // we have to keep this function because the hex strings are do not have a valid padding,
+  // and we cannot use `hexToBytes` from `@noble/hashes/utils`
   function fromHex(hex: string): Uint8Array {
+    const hexRe = new RegExp(/^[0-9a-fA-F]+$/);
     if (!hexRe.test(hex)) {
       throw new Error('Invalid hexadecimal string.');
     }
