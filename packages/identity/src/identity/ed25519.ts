@@ -128,7 +128,7 @@ export class Ed25519KeyIdentity extends SignIdentity {
       sk[i] = seed[i];
     }
 
-    const pk = uint8FromBufLike(ed25519.getPublicKey(sk));
+    const pk = ed25519.getPublicKey(sk);
     return Ed25519KeyIdentity.fromKeyPair(pk, sk);
   }
 
