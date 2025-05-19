@@ -22,7 +22,6 @@ import { Principal } from '@dfinity/principal';
 import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from './certificate';
 import { HttpAgent } from './agent/http';
 import { utf8ToBytes } from '@noble/hashes/utils';
-import { uint8FromBufLike } from './utils/buffer';
 
 /**
  * Configuration to make calls to the Replica.
