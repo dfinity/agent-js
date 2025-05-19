@@ -4,6 +4,11 @@ export * from './agent/http/transforms';
 export * from './agent/http/types';
 export * from './auth';
 export * from './certificate';
+export {
+  IC_REQUEST_DOMAIN_SEPARATOR,
+  IC_RESPONSE_DOMAIN_SEPARATOR,
+  IC_REQUEST_AUTH_DELEGATION_DOMAIN_SEPARATOR,
+} from './constants';
 export * from './der';
 export * from './errors';
 export * from './fetch_candid';

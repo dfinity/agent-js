@@ -39,7 +39,7 @@
     "prettier": "^3.3.3",
     "prettier-plugin-motoko": "^0.8.4",
     "pretty-quick": "^4.0.0",
-    "release-it": "^18.1.2",
+    "release-it": "^19.0.2",
     "size-limit": "^11.1.6",
     "size-limit-node-esbuild": "^0.3.0",
     "ts-jest": "^29.1.1",
@@ -71,7 +71,8 @@
     "prepare": "husky install",
     "prettier:check": "npx -p prettier -p pretty-quick pretty-quick --check --branch main",
     "prettier:format": "npx -p prettier -p pretty-quick pretty-quick --branch main",
-    "postversion": "npm run prettier:format"
+    "postversion": "npm run prettier:format",
+    "update-management-idl": "ts-node bin/update-management-idl.ts"
   },
   "repository": {
     "type": "git",

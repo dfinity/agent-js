@@ -2,9 +2,7 @@ import { Principal } from '@dfinity/principal';
 import { HttpAgentRequest } from './agent/http/types';
 import { requestIdOf } from './request_id';
 import { bytesToHex, concatBytes } from '@noble/hashes/utils';
-
-const domainSeparator = new TextEncoder().encode('\x0Aic-request');
-
+import { IC_REQUEST_DOMAIN_SEPARATOR } from './constants';
 /**
  * A Key Pair, containing a secret and public key.
  */
@@ -94,7 +92,7 @@ export abstract class SignIdentity implements Identity {
       body: {
         content: body,
         sender_pubkey: this.getPublicKey().toDer(),
-        sender_sig: await this.sign(concatBytes(domainSeparator, requestId)),
+        sender_sig: await this.sign(concatBytes(IC_REQUEST_DOMAIN_SEPARATOR, requestId)),
       },
     };
   }

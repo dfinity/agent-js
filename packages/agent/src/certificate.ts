@@ -15,13 +15,13 @@ import {
   MalformedLookupFoundValueErrorCode,
   MissingLookupValueErrorCode,
 } from './errors';
-import { hash } from './request_id';
 import { Principal } from '@dfinity/principal';
 import * as bls from './utils/bls';
 import { decodeTime } from './utils/leb';
 import { MANAGEMENT_CANISTER_ID } from './agent';
 import { bytesToHex, concatBytes, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
 import { uint8Equals } from './utils/buffer';
+import { sha256 } from '@noble/hashes/sha2';
 
 export interface Cert {
   tree: HashTree;
@@ -364,7 +364,6 @@ export function lookupResultToBuffer(result: LookupResult): Uint8Array | undefin
     return undefined;
   }
 
-  // Attepmt to decode the value as a Uint8Array
   if (result.value instanceof Uint8Array) {
     return result.value;
   }
@@ -378,16 +377,20 @@ export function lookupResultToBuffer(result: LookupResult): Uint8Array | undefin
 export async function reconstruct(t: HashTree): Promise<Uint8Array> {
   switch (t[0]) {
     case NodeType.Empty:
-      return hash(domain_sep('ic-hashtree-empty'));
+      return sha256(domain_sep('ic-hashtree-empty'));
     case NodeType.Pruned:
       return t[1];
     case NodeType.Leaf:
-      return hash(concatBytes(domain_sep('ic-hashtree-leaf'), t[1]));
+      return sha256(concatBytes(domain_sep('ic-hashtree-leaf'), t[1]));
     case NodeType.Labeled:
-      return hash(concatBytes(domain_sep('ic-hashtree-labeled'), t[1], await reconstruct(t[2])));
+      return sha256(concatBytes(domain_sep('ic-hashtree-labeled'), t[1], await reconstruct(t[2])));
     case NodeType.Fork:
-      return hash(
-        concatBytes(domain_sep('ic-hashtree-fork'), await reconstruct(t[1]), await reconstruct(t[2])),
+      return sha256(
+        concatBytes(
+          domain_sep('ic-hashtree-fork'),
+          await reconstruct(t[1]),
+          await reconstruct(t[2]),
+        ),
       );
     default:
       throw UNREACHABLE_ERROR;

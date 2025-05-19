@@ -34,20 +34,6 @@ export function uint8FromBufLike(
 }
 
 /**
- * Concatenate multiple Uint8Arrays.
- * @param uint8Arrays The Uint8Arrays to concatenate.
- */
-export function concat(...uint8Arrays: Uint8Array[]): Uint8Array {
-  const result = new Uint8Array(uint8Arrays.reduce((acc, curr) => acc + curr.byteLength, 0));
-  let index = 0;
-  for (const b of uint8Arrays) {
-    result.set(uint8FromBufLike(new Uint8Array(b)), index);
-    index += b.byteLength;
-  }
-  return result;
-}
-
-/**
  * Returns a true ArrayBuffer from a Uint8Array, as Uint8Array.buffer is unsafe.
  * @param {Uint8Array} arr Uint8Array to convert
  * @returns ArrayBuffer

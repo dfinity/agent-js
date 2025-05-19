@@ -31,7 +31,10 @@
 - feat!: refactors `Expiry` class to use static factory methods and add JSON serialization/deserialization.
 - feat!: makes `lookup_path` compliant with the [IC Interface Specification](https://github.com/dfinity/portal/blob/8015a4ab50232176723ffd95e32a02f1bf7fef30/docs/references/ic-interface-spec.md?plain=1#L3069). Renames the `lookup` method of the `Certificate` class into `lookup_path`, for consistency.
 - feat!: removes the `lookup_label` method from the `Certificate` class.
+- feat!: replaces `hash` with `sha256` from `@noble/hashes/sha2` to take advantage of existing dependencies
 
+- chore: removes unused `bs58check` dependency from `@dfinity/identity-secp256k1`
+- fix: AuthClient `isAuthenticated` now correctly returns false if the delegation chain is invalid; eg: expired session
 - feat: introduces the `lookup_subtree` standalone function and `Certificate` class method.
 - chore: formatting files and changelog
 - test: removes backwards comatibility test for `Actor` with `v1` HttpAgent due to breaking interface changes.

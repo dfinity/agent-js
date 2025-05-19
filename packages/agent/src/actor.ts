@@ -418,7 +418,7 @@ function _createActorMethod(
         }
         const cert = response.body.certificate;
         certificate = await Certificate.create({
-          certificate: uint8FromBufLike(cert),
+          certificate: cert,
           rootKey: agent.rootKey,
           canisterId: Principal.from(canisterId),
           blsVerify,

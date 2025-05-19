@@ -70,7 +70,7 @@ export class Ed25519PublicKey implements PublicKey {
     if (unwrapped.length !== this.RAW_KEY_LENGTH) {
       throw new Error('An Ed25519 public key must be exactly 32bytes long');
     }
-    return uint8FromBufLike(unwrapped);
+    return unwrapped;
   }
 
   #rawKey: Uint8Array;
@@ -124,7 +124,9 @@ export class Ed25519KeyIdentity extends SignIdentity {
       );
     }
     const sk = new Uint8Array(32);
-    for (let i = 0; i < 32; i++) sk[i] = new Uint8Array(seed)[i];
+    for (let i = 0; i < 32; i++) {
+      sk[i] = seed[i];
+    }
 
     const pk = uint8FromBufLike(ed25519.getPublicKey(sk));
     return Ed25519KeyIdentity.fromKeyPair(pk, sk);
@@ -155,7 +157,7 @@ export class Ed25519KeyIdentity extends SignIdentity {
   }
 
   public static fromSecretKey(secretKey: Uint8Array): Ed25519KeyIdentity {
-    const publicKey = ed25519.getPublicKey(new Uint8Array(secretKey));
+    const publicKey = ed25519.getPublicKey(secretKey);
     return Ed25519KeyIdentity.fromKeyPair(publicKey, secretKey);
   }
 
@@ -166,7 +168,7 @@ export class Ed25519KeyIdentity extends SignIdentity {
   protected constructor(publicKey: PublicKey, privateKey: Uint8Array) {
     super();
     this.#publicKey = Ed25519PublicKey.from(publicKey);
-    this.#privateKey = new Uint8Array(privateKey);
+    this.#privateKey = privateKey;
   }
 
   /**
@@ -198,9 +200,8 @@ export class Ed25519KeyIdentity extends SignIdentity {
    * @param challenge - challenge to sign with this identity's secretKey, producing a signature
    */
   public async sign(challenge: Uint8Array): Promise<Signature> {
-    const blob = new Uint8Array(challenge);
     // Some implementations of Ed25519 private keys append a public key to the end of the private key. We only want the private key.
-    const signature = ed25519.sign(blob, this.#privateKey.slice(0, 32));
+    const signature = ed25519.sign(challenge, this.#privateKey.slice(0, 32));
     // add { __signature__: void; } to the signature to make it compatible with the agent
 
     Object.defineProperty(signature, '__signature__', {
@@ -227,10 +228,7 @@ export class Ed25519KeyIdentity extends SignIdentity {
       if (typeof x === 'string') {
         x = hexToBytes(x);
       }
-      if (x instanceof Uint8Array) {
-        x = uint8FromBufLike(x.buffer);
-      }
-      return new Uint8Array(x);
+      return uint8FromBufLike(x);
     });
     return ed25519.verify(signature, message, publicKey);
   }
