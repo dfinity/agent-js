@@ -15,7 +15,7 @@ if (!process.env['MITM']) {
 
 mitmTest('mitm greet', { timeout: 30000 }, async () => {
   const counterCanisterId =
-    process.env.COUNTER_CANISTER_ID || execSync('dfx canister id counter').toString().trim();
+    process.env.COUNTER_CANISTER_ID || execSync('dfx canister id counter --network ic').toString().trim();
   const counter = createActor(counterCanisterId, {
     agent: await makeAgent({
       host: 'http://127.0.0.1:8888',
