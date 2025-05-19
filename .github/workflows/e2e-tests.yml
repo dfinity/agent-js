@@ -58,16 +58,24 @@ jobs:
         run: |
           dfx start --background
 
+      - name: change directory
+        run: cd e2e/node
+
       - name: deploy canisters
         run: |
-          dfx deploy counter
-          dfx deploy trap
+          dfx deploy
+
+      - name: uthorize asset manager
+        run: |
+          dfx canister call assets authorize '(principal "n7obp-cx27z-e4ytc-ipt7n-urffz-txqa5-el2vn-7vpqc-jjoh3-wrob6-bqe")'
 
       - name: Node.js e2e tests
-        run: npm run e2e --workspace e2e/node
+        run: npm run e2e
         env:
           CI: true
           REPLICA_PORT: 4943
+
+      - run: popd
 
   aggregate:
     name: e2e:required
