@@ -25,7 +25,6 @@ export default async function (): Promise<{
       process.env.WHOAMI_CANISTER_ID ?? execSync('dfx canister id whoami').toString().trim(),
     );
 
-    
     const idl: IDL.InterfaceFactory = ({ IDL }) => {
       return IDL.Service({
         whoami: IDL.Func([], [IDL.Principal], []),

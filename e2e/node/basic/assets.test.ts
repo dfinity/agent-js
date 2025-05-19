@@ -48,7 +48,7 @@ utf8ToBytes('test').forEach((byte, i) => {
 });
 
 // yields n7obp-cx27z-e4ytc-ipt7n-urffz-txqa5-el2vn-7vpqc-jjoh3-wrob6-bqe
-const identity = Ed25519KeyIdentity.generate(seed); 
+const identity = Ed25519KeyIdentity.generate(seed);
 
 const agent = await makeAgent({
   identity,
@@ -81,9 +81,9 @@ describe('assets', () => {
   };
 
   beforeAll(async () => {
-    canisterId = process.env.ASSETS_CANISTER_ID ? Principal.fromText(process.env.ASSETS_CANISTER_ID) : Principal.fromText(
-      execSync('dfx canister id assets').toString().trim(),
-    );
+    canisterId = process.env.ASSETS_CANISTER_ID
+      ? Principal.fromText(process.env.ASSETS_CANISTER_ID)
+      : Principal.fromText(execSync('dfx canister id assets').toString().trim());
   });
 
   afterEach(async () => {

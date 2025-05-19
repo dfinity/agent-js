@@ -13,12 +13,7 @@ import { Principal } from '@dfinity/principal';
 import { RequestId, requestIdOf } from '../../request_id';
 
 import { JSDOM } from 'jsdom';
-import {
-  AnonymousIdentity,
-  SignIdentity,
-  Signature,
-  uint8FromBufLike,
-} from '../..';
+import { AnonymousIdentity, SignIdentity, Signature, uint8FromBufLike } from '../..';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import {
   AgentError,
