@@ -35,26 +35,26 @@ const randomBytesReadable = (fileName: string, length: number) => {
   };
 };
 
-/**
- * File paths used in file read/write tests
- */
-const testFile = {
-  source: path.join(__dirname, '../package.json'),
-  target: path.join(__dirname, '../package_copy.json'),
-};
-const seed = new Uint8Array(32);
-utf8ToBytes('test').forEach((byte, i) => {
-  seed[i] = byte;
-});
+describe('assets', async () => {
+  /**
+   * File paths used in file read/write tests
+   */
+  const testFile = {
+    source: path.join(__dirname, '../package.json'),
+    target: path.join(__dirname, '../package_copy.json'),
+  };
+  const seed = new Uint8Array(32);
+  utf8ToBytes('test').forEach((byte, i) => {
+    seed[i] = byte;
+  });
 
-// yields n7obp-cx27z-e4ytc-ipt7n-urffz-txqa5-el2vn-7vpqc-jjoh3-wrob6-bqe
-const identity = Ed25519KeyIdentity.generate(seed);
+  // yields n7obp-cx27z-e4ytc-ipt7n-urffz-txqa5-el2vn-7vpqc-jjoh3-wrob6-bqe
+  const identity = Ed25519KeyIdentity.generate(seed);
 
-const agent = await makeAgent({
-  identity,
-});
+  const agent = await makeAgent({
+    identity,
+  });
 
-describe('assets', () => {
   let canisterId: Principal;
 
   const testRandomBytes = async (fileName: string, length: number) => {
