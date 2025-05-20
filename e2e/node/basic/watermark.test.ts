@@ -1,7 +1,7 @@
 import { test, expect, vi, describe, afterAll, beforeAll } from 'vitest';
 import { createActor } from '../canisters/counter';
 import { Actor, HttpAgent } from '@dfinity/agent';
-import { execSync } from 'child_process';
+import { getCanisterId } from '../utils/canisterid';
 
 class FetchProxy {
   #history: Response[] = [];
@@ -43,17 +43,10 @@ class FetchProxy {
 function indexOfQueryResponse(history: Response[]) {
   return history.findIndex(response => response.url.endsWith('query'));
 }
-
-const watermark1CanisterId =
-  process.env.WATERMARK_CANISTER_ID ?? execSync('dfx canister id watermark1').toString().trim();
-const watermark2CanisterId =
-  process.env.WATERMARK_CANISTER_ID ?? execSync('dfx canister id watermark2').toString().trim();
-const watermark3CanisterId =
-  process.env.WATERMARK_CANISTER_ID ?? execSync('dfx canister id watermark3').toString().trim();
-
-const watermark1Actor = await createActor(watermark1CanisterId);
-const watermark2Actor = await createActor(watermark2CanisterId);
-const watermark3Actor = await createActor(watermark3CanisterId);
+  
+const watermark1Actor = await createActor(getCanisterId('watermark1'));
+const watermark2Actor = await createActor(getCanisterId('watermark2'));
+const watermark3Actor = await createActor( getCanisterId('watermark3'));
 
 describe.sequential('watermark', () => {
   beforeAll(async () => {

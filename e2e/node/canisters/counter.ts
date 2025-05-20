@@ -1,7 +1,7 @@
 import { Actor, ActorSubclass, HttpAgentOptions, Agent, ActorConfig } from '@dfinity/agent';
 import { makeAgent } from '../utils/agent';
 import { _SERVICE } from './declarations/counter';
-import { execSync } from 'child_process';
+import { getCanisterId } from '../utils/canisterid';
 
 export const idl = ({ IDL }) => {
   return IDL.Service({
@@ -15,10 +15,10 @@ export const idl = ({ IDL }) => {
 };
 
 export const counterCanisterId =
-  process.env.COUNTER_CANISTER_ID ?? execSync('dfx canister id counter').toString().trim();
+  getCanisterId('counter');
 
 export const counter2CanisterId =
-  process.env.COUNTER2_CANISTER_ID ?? execSync('dfx canister id counter2').toString().trim();
+  getCanisterId('counter2');
 
 export const createActor = async (
   canisterId,

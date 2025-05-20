@@ -3,10 +3,10 @@ import path from 'path';
 import { makeAgent } from '../utils/agent';
 import { Principal } from '@dfinity/principal';
 import { AssetManager } from '@dfinity/assets';
-import { describe, it, expect, beforeAll, afterEach } from 'vitest';
-import { execSync } from 'child_process';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { utf8ToBytes } from '@noble/hashes/utils';
+import { getCanisterId } from '../utils/canisterid';
 
 /**
  * Create (pseudo) random bytes Readable
@@ -80,10 +80,8 @@ describe('assets', async () => {
     await expect(assetManager.get(key)).rejects.toThrow(/asset not found/);
   };
 
-  beforeAll(async () => {
-    canisterId = process.env.ASSETS_CANISTER_ID
-      ? Principal.fromText(process.env.ASSETS_CANISTER_ID)
-      : Principal.fromText(execSync('dfx canister id assets').toString().trim());
+  beforeEach(async () => {
+    canisterId = getCanisterId('assets');
   });
 
   afterEach(async () => {

@@ -2,7 +2,7 @@ import { Actor } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import agent from '../utils/agent';
-import { execSync } from 'child_process';
+import { getCanisterId } from '../utils/canisterid';
 
 let cache: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,9 +21,7 @@ export default async function (): Promise<{
   idl: IDL.InterfaceFactory;
 }> {
   if (!cache) {
-    const canisterId = Principal.fromText(
-      process.env.WHOAMI_CANISTER_ID ?? execSync('dfx canister id whoami').toString().trim(),
-    );
+    const canisterId = getCanisterId('whoami');
 
     const idl: IDL.InterfaceFactory = ({ IDL }) => {
       return IDL.Service({
