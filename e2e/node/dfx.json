@@ -2,7 +2,7 @@
   "canisters": {
     "assets": {
       "type": "assets",
-      "source": [""]
+      "source": ["canisters/assets"]
     },
     "counter": {
       "type": "motoko",

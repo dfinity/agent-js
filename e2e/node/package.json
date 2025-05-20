@@ -6,10 +6,12 @@
   "scripts": {
     "ci": "npm run e2e",
     "e2e": "vitest",
+    "poste2e": "dfx killall",
     "lint:fix": "npm run lint -- --fix",
     "lint": "eslint --ext '.js,.jsx,.ts,.tsx' basic canisters utils *.ts",
     "mitm": "MITM=true vitest ./basic/mitm.test.ts",
     "build": "",
+    "setup": "dfx killall; dfx start --background --clean; dfx deploy; dfx canister call assets authorize '(principal \"n7obp-cx27z-e4ytc-ipt7n-urffz-txqa5-el2vn-7vpqc-jjoh3-wrob6-bqe\")'",
     "test:coverage": "",
     "test": ""
   },

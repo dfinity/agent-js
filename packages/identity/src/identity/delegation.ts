@@ -13,6 +13,7 @@ import { Principal } from '@dfinity/principal';
 import * as cbor from 'simple-cbor';
 import { PartialIdentity } from './partial';
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
+
 function _parseBlob(value: unknown): Uint8Array {
   if (typeof value !== 'string' || value.length < 64) {
     throw new Error('Invalid public key.');

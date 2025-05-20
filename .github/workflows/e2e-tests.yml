@@ -53,17 +53,7 @@ jobs:
       - name: running dfx
         id: dfx
         run: |
-          dfx start --background
-
-      - name: deploy canisters
-        working-directory: e2e/node
-        run: |
-          dfx deploy
-
-      - name: authorize asset manager
-        working-directory: e2e/node
-        run: |
-          dfx canister call assets authorize '(principal "n7obp-cx27z-e4ytc-ipt7n-urffz-txqa5-el2vn-7vpqc-jjoh3-wrob6-bqe")'
+          npm run setup
 
       - name: Node.js e2e tests
         working-directory: e2e/node

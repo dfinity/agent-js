@@ -39,8 +39,9 @@ There are two sets of e2e tests in this repository. They are located in `e2e/bro
 To run the e2e node tests, you can run 
   
 ```bash
-dfx start --background --clean
-npm run e2e --workspace e2e/node
+cd e2e/node
+npm run setup
+npm run e2e
 dfx stop
 ```
 
