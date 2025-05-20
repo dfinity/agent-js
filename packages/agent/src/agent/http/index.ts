@@ -545,7 +545,7 @@ export class HttpAgent implements Agent {
     submit.nonce = nonce;
 
     /**
-     * Converts an ArrayBuffer or Uint8Array to a Nonce type.
+     * Converts a Uint8Array to a Nonce type.
      * @param buf - The buffer to convert.
      * @returns The buffer as a Nonce.
      */
@@ -1305,8 +1305,9 @@ export class HttpAgent implements Agent {
         }
       })();
 
-    await this.#syncTimePromise;
-    this.#syncTimePromise = null;
+    await this.#syncTimePromise.finally(() => {
+      this.#syncTimePromise = null;
+    });
   }
 
   public async status(): Promise<JsonObject> {
@@ -1337,11 +1338,11 @@ export class HttpAgent implements Agent {
         this.rootKey = (value as JsonObject & { root_key: Uint8Array }).root_key;
         return this.rootKey;
       })();
-    const result = await this.#rootKeyPromise;
 
     // clear rootkey promise and return result
-    this.#rootKeyPromise = null;
-    return result;
+    return await this.#rootKeyPromise.finally(() => {
+      this.#rootKeyPromise = null;
+    });
   }
 
   async #asyncGuard(canisterIdOverride?: Principal): Promise<void> {

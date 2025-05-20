@@ -50,7 +50,7 @@ test('read_state', async () => {
     rootKey: resolvedAgent.rootKey,
     canisterId: ecid,
   });
-  expect(cert.lookup_path([utf8ToBytes('Time')])).toEqual({
+  expect(cert.lookup_path(path)).toEqual({
     status: LookupPathStatus.Unknown,
   });
 
@@ -64,7 +64,7 @@ test('read_state', async () => {
   const decoded = new IDL.NatClass().decodeValue(new PipeArrayBuffer(rawTime.value), IDL.Nat);
   const time = Number(decoded) / 1e9;
   // The diff between decoded time and local time is within 5s
-  expect(Math.abs(time - now) < 5).toBe(true);
+  expect(Math.abs(time - now)).toBeLessThan(5);
 });
 
 test('read_state with passed request', async () => {
@@ -94,7 +94,7 @@ test('read_state with passed request', async () => {
   const decoded = new IDL.NatClass().decodeValue(new PipeArrayBuffer(rawTime.value), IDL.Nat);
   const time = Number(decoded) / 1e9;
   // The diff between decoded time and local time is within 5s
-  expect(Math.abs(time - now) < 5).toBe(true);
+  expect(Math.abs(time - now)).toBeLessThan(5);
 });
 
 test('withOptions', async () => {

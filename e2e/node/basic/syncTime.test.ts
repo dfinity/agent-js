@@ -89,7 +89,7 @@ describe('syncTime', () => {
         {
           nonce,
           sender,
-          pubKey: new Uint8Array(identity.getPublicKey().toDer()),
+          pubKey: identity.getPublicKey().toDer(),
           signature,
         },
         'V3 call body',
@@ -148,7 +148,7 @@ describe('syncTime', () => {
         {
           nonce,
           sender,
-          pubKey: new Uint8Array(identity.getPublicKey().toDer()),
+          pubKey: identity.getPublicKey().toDer(),
           signature,
         },
         'V3 call body',
@@ -163,7 +163,7 @@ describe('syncTime', () => {
         {
           sender: anonIdentity.getPrincipal(),
         },
-        'V3 read state body one',
+        'V2 read state body one',
       );
       expectV2ReadStateRequest(
         mockReplica.getV2ReadStateReq(canisterId.toString(), 1),
@@ -312,7 +312,7 @@ describe('syncTime', () => {
         {
           nonce,
           sender: identity.getPrincipal(),
-          pubKey: new Uint8Array(identity.getPublicKey().toDer()),
+          pubKey: identity.getPublicKey().toDer(),
           signature,
         },
         'V3 call body',
@@ -382,7 +382,7 @@ describe('syncTime', () => {
         {
           nonce,
           sender,
-          pubKey: new Uint8Array(identity.getPublicKey().toDer()),
+          pubKey: identity.getPublicKey().toDer(),
           signature,
         },
         'V3 call body',
@@ -433,7 +433,7 @@ describe('syncTime', () => {
         {
           nonce,
           sender,
-          pubKey: new Uint8Array(identity.getPublicKey().toDer()),
+          pubKey: identity.getPublicKey().toDer(),
           signature,
         },
         'V3 call body',
@@ -459,7 +459,7 @@ function expectV3CallRequest(
   expect(actual.content.nonce).toEqual(expected.nonce);
   expect(actual.content.sender).toEqual(expected.sender.toUint8Array());
   expect(actual.sender_pubkey).toEqual(expected.pubKey);
-  expect(actual.sender_sig).toEqual(new Uint8Array(expected.signature));
+  expect(actual.sender_sig).toEqual(expected.signature);
 
   expect(actual).toMatchSnapshot(
     {

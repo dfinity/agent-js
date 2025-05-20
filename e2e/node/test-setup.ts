@@ -16,9 +16,13 @@ import fetch from 'isomorphic-fetch';
 global.fetch = fetch;
 
 import { subtle } from 'crypto';
+import { expect } from 'vitest';
+import { uint8Equals } from '@dfinity/candid';
 
 // make global.crypto writeable
 Object.defineProperty(global, 'crypto', {
   writable: true,
   value: { ...global.crypto, subtle },
 });
+
+expect.addEqualityTesters([uint8Equals]);

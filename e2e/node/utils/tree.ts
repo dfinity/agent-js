@@ -1,7 +1,6 @@
 import {
   EmptyHashTree,
   ForkHashTree,
-  fromHex,
   HashTree,
   LabeledHashTree,
   LeafHashTree,
@@ -12,9 +11,9 @@ import {
   PrunedHashTree,
   RequestId,
   RequestStatusResponseStatus,
-  strToUtf8,
 } from '@dfinity/agent';
 import { lebEncode } from '@dfinity/candid';
+import { hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
 
 /**
  * Creates an empty hash tree.
@@ -36,26 +35,23 @@ export function fork(l: HashTree, r: HashTree): ForkHashTree {
 
 /**
  * Creates a labeled hash tree.
- * @param {string | Uint8Array | ArrayBuffer | NodeLabel} l - The label for the tree.
+ * @param {string | Uint8Array | NodeLabel} l - The label for the tree.
  * @param {HashTree} e - The subtree associated with the label.
  * @returns {LabeledHashTree} A labeled hash tree.
  */
-export function labeled(
-  l: string | Uint8Array | ArrayBuffer | NodeLabel,
-  e: HashTree,
-): LabeledHashTree {
-  const coerced = (typeof l === 'string' ? strToUtf8(l) : l) as NodeLabel;
+export function labeled(l: string | Uint8Array | NodeLabel, e: HashTree): LabeledHashTree {
+  const coerced = (typeof l === 'string' ? utf8ToBytes(l) : l) as NodeLabel;
 
   return [NodeType.Labeled, coerced, e];
 }
 
 /**
  * Creates a leaf hash tree.
- * @param {string | ArrayBuffer | Uint8Array | NodeValue} e - The value of the leaf.
+ * @param {string | Uint8Array | NodeValue} e - The value of the leaf.
  * @returns {LeafHashTree} A leaf hash tree.
  */
-export function leaf(e: string | ArrayBuffer | Uint8Array | NodeValue): LeafHashTree {
-  const coerced = (typeof e === 'string' ? strToUtf8(e) : e) as NodeValue;
+export function leaf(e: string | Uint8Array | NodeValue): LeafHashTree {
+  const coerced = (typeof e === 'string' ? utf8ToBytes(e) : e) as NodeValue;
 
   return [NodeType.Leaf, coerced];
 }
@@ -66,7 +62,7 @@ export function leaf(e: string | ArrayBuffer | Uint8Array | NodeValue): LeafHash
  * @returns {PrunedHashTree} A pruned hash tree.
  */
 export function pruned(e: string): PrunedHashTree {
-  return [NodeType.Pruned, fromHex(e) as NodeHash];
+  return [NodeType.Pruned, hexToBytes(e) as NodeHash];
 }
 
 function time(date: Date): Uint8Array {
@@ -75,7 +71,7 @@ function time(date: Date): Uint8Array {
 
 interface ReplyTreeOptions {
   requestId: string | Uint8Array | RequestId;
-  reply: string | ArrayBuffer;
+  reply: string | Uint8Array;
   date: Date;
 }
 
@@ -83,7 +79,7 @@ interface ReplyTreeOptions {
  * Creates a reply hash tree for a request.
  * @param {ReplyTreeOptions} options - The options for the reply tree.
  * @param {string | Uint8Array | RequestId} options.requestId - The ID of the request.
- * @param {string | ArrayBuffer} options.reply - The reply content.
+ * @param {string | Uint8Array} options.reply - The reply content.
  * @param {Date} options.date - The timestamp of the reply.
  * @returns {HashTree} A reply hash tree.
  */

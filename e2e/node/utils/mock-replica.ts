@@ -21,7 +21,7 @@ import {
 import { Principal } from '@dfinity/principal';
 import { Mock, vi } from 'vitest';
 import { createReplyTree, createTimeTree } from './tree';
-import { randomKeyPair, sign, KeyPair } from './identity';
+import { randomKeyPair, signBls, KeyPair } from './identity';
 
 export enum MockReplicaSpyType {
   CallV3 = 'CallV3',
@@ -178,11 +178,11 @@ export class MockReplica {
 interface V3ResponseOptions {
   canisterId: Principal | string;
   methodName: string;
-  arg: ArrayBuffer;
+  arg: Uint8Array;
   sender: Principal | string;
   ingressExpiryInMinutes?: number;
   timeDiffMsecs?: number;
-  reply?: string | ArrayBuffer;
+  reply?: string | Uint8Array;
   keyPair?: KeyPair;
   date?: Date;
   nonce?: Nonce;
@@ -303,5 +303,5 @@ export async function prepareV2ReadStateTimeResponse({
 async function signTree(tree: HashTree, keyPair: KeyPair): Promise<Uint8Array> {
   const rootHash = await reconstruct(tree);
   const msg = concat(domain_sep('ic-state-root'), rootHash);
-  return sign(msg, keyPair.privateKey);
+  return signBls(msg, keyPair.privateKey);
 }

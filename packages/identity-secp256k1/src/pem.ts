@@ -4,9 +4,9 @@ const HEADER = `-----BEGIN EC PRIVATE KEY-----`;
 const FOOTER = `-----END EC PRIVATE KEY-----`;
 
 /**
- * Parse a PEM-encoded key into an ArrayBuffer
+ * Parse a PEM-encoded key into a Uint8Array
  * @param pem - the PEM-encoded key
- * @returns secret key as an ArrayBuffer
+ * @returns secret key as a Uint8Array
  */
 export function pemToSecretKey(pem: string): Uint8Array {
   const lines = pem.trim().split('\n');

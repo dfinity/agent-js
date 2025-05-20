@@ -31,10 +31,10 @@ export function randomKeyPair(): KeyPair {
 
 /**
  * Signs a message using the provided private key.
- * @param {Uint8Array | ArrayBuffer} message - The message to sign.
+ * @param {Uint8Array} message - The message to sign.
  * @param {Uint8Array} privateKey - The private key to sign the message with.
  * @returns {Uint8Array} The signature of the message.
  */
-export function sign(message: Uint8Array | ArrayBuffer, privateKey: Uint8Array): Uint8Array {
+export function signBls(message: Uint8Array, privateKey: Uint8Array): Uint8Array {
   return bls.signShortSignature(new Uint8Array(message), privateKey);
 }

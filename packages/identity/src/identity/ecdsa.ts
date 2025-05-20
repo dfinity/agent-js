@@ -136,7 +136,7 @@ export class ECDSAKeyIdentity extends SignIdentity {
 
   /**
    * Signs a blob of data, with this identity's private key.
-   * @param {ArrayBuffer} challenge - challenge to sign with this identity's secretKey, producing a signature
+   * @param {Uint8Array} challenge - challenge to sign with this identity's secretKey, producing a signature
    * @returns {Promise<Signature>} signature
    */
   public async sign(challenge: Uint8Array): Promise<Signature> {

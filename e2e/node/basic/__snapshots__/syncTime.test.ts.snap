@@ -92,6 +92,26 @@ exports[`syncTime > on error > should not sync time by default > V3 call body 1`
 }
 `;
 
+exports[`syncTime > on error > should sync time when the local time does not match the subnet time > V2 read state body one 1`] = `
+{
+  "content": {
+    "ingress_expiry": "1746103080000000000",
+    "paths": [
+      [
+        Uint8Array [
+          116,
+          105,
+          109,
+          101,
+        ],
+      ],
+    ],
+    "request_type": "read_state",
+    "sender": Any<Uint8Array>,
+  },
+}
+`;
+
 exports[`syncTime > on error > should sync time when the local time does not match the subnet time > V3 call body 1`] = `
 {
   "content": {

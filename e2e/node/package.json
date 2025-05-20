@@ -8,7 +8,10 @@
     "e2e": "vitest run",
     "lint:fix": "npm run lint -- --fix",
     "lint": "eslint --ext '.js,.jsx,.ts,.tsx' basic canisters utils *.ts",
-    "mitm": "MITM=true vitest ./basic/mitm.test.ts"
+    "mitm": "MITM=true vitest ./basic/mitm.test.ts",
+    "build": "",
+    "test:coverage": "",
+    "test": ""
   },
   "dependencies": {
     "@dfinity/agent": "^2.4.1",

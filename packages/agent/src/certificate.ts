@@ -397,7 +397,7 @@ export async function reconstruct(t: HashTree): Promise<Uint8Array> {
  * Creates a domain separator for hashing by encoding the input string
  * with its length as a prefix.
  * @param s - The input string to encode.
- * @returns An ArrayBuffer containing the encoded domain separator.
+ * @returns A Uint8Array containing the encoded domain separator.
  */
 export function domain_sep(s: string): Uint8Array {
   const len = new Uint8Array([s.length]);
