@@ -36,8 +36,8 @@ There are two sets of e2e tests in this repository. They are located in `e2e/bro
 
 > **Important Note:** the e2e tests do not run from the TypeScript source code of projects and must be compiled. You should run `npm run build` to compile the projects after your changes before running the tests.
 
-To run the e2e node tests, you can run 
-  
+To run the e2e node tests, you can run
+
 ```bash
 cd e2e/node
 npm run setup

@@ -44,16 +44,14 @@ function indexOfQueryResponse(history: Response[]) {
   return history.findIndex(response => response.url.endsWith('query'));
 }
 
-
-
-describe('watermark', async() => {
+describe('watermark', async () => {
   const watermark1CanisterId = getCanisterId('watermark1');
   const watermark2CanisterId = getCanisterId('watermark2');
   const watermark3CanisterId = getCanisterId('watermark3');
 
   const watermark1Actor = await createActor(watermark1CanisterId);
   const watermark2Actor = await createActor(watermark2CanisterId);
-  const watermark3Actor = await createActor( watermark3CanisterId);
+  const watermark3Actor = await createActor(watermark3CanisterId);
 
   beforeEach(async () => {
     // Reset the watermark actors to their initial state before starting tests

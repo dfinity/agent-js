@@ -14,11 +14,9 @@ export const idl = ({ IDL }) => {
   });
 };
 
-export const counterCanisterId =
-  getCanisterId('counter');
+export const counterCanisterId = getCanisterId('counter');
 
-export const counter2CanisterId =
-  getCanisterId('counter2');
+export const counter2CanisterId = getCanisterId('counter2');
 
 export const createActor = async (
   canisterId,
