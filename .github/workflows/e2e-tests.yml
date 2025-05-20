@@ -51,6 +51,7 @@ jobs:
       - uses: dfinity/setup-dfx@main
 
       - name: running dfx
+        working-directory: e2e/node
         id: dfx
         run: |
           npm run setup
