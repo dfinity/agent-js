@@ -14,7 +14,7 @@ if (!process.env['MITM']) {
 }
 
 mitmTest('mitm greet', { timeout: 30000 }, async () => {
-  const counterCanisterId = getCanisterId('counter', 'ic');
+  const counterCanisterId = getCanisterId('counter');
   const counter = createActor(counterCanisterId, {
     agent: await makeAgent({
       host: 'http://127.0.0.1:8888',

@@ -39,15 +39,21 @@ jobs:
       - uses: dfinity/setup-dfx@main
 
       - name: running dfx
+        working-directory: e2e/node
         id: dfx
         run: |
           dfx start --background
+
+      - name: deploy canisters
+        working-directory: e2e/node
+        run: |
+          dfx deploy counter
 
       - name: Running mitmdump
         id: mitmdump
         run: |
           set -ex
-          mitmdump -p 8888 --mode reverse:https://icp-api.io \
+          mitmdump -p 8888 --mode reverse:http://localhost:4943 \
             --modify-headers '/~s/Transfer-Encoding/' \
             --modify-body '/~s/Hello/Hullo' \
             &
