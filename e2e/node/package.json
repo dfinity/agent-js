@@ -6,10 +6,12 @@
   "scripts": {
     "ci": "npm run e2e",
     "e2e": "vitest",
+    "poste2e": "dfx killall",
     "lint:fix": "npm run lint -- --fix",
     "lint": "eslint --ext '.js,.jsx,.ts,.tsx' basic canisters utils *.ts",
     "mitm": "MITM=true vitest ./basic/mitm.test.ts",
     "build": "",
+    "setup": "dfx killall; dfx start --background --clean; dfx deploy; dfx canister call assets authorize '(principal \"n7obp-cx27z-e4ytc-ipt7n-urffz-txqa5-el2vn-7vpqc-jjoh3-wrob6-bqe\")'",
     "test:coverage": "",
     "test": ""
   },
@@ -18,8 +20,7 @@
     "@dfinity/assets": "^2.4.1",
     "@dfinity/candid": "^2.4.1",
     "@dfinity/identity": "^2.4.1",
-    "@dfinity/principal": "^2.4.1",
-    "whatwg-fetch": "^3.6.2"
+    "@dfinity/principal": "^2.4.1"
   },
   "devDependencies": {
     "@noble/hashes": "^1.8.0",
@@ -30,6 +31,7 @@
     "@types/text-encoding": "^0.0.36",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
+    "dotenv": "^16.5.0",
     "esbuild": "^0.25.1",
     "isomorphic-fetch": "^3.0.0",
     "locus": "^2.0.4",

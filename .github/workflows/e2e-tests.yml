@@ -51,17 +51,14 @@ jobs:
       - uses: dfinity/setup-dfx@main
 
       - name: running dfx
+        working-directory: e2e/node
         id: dfx
         run: |
-          dfx start --background
-
-      - name: deploy canisters
-        run: |
-          dfx deploy counter
-          dfx deploy trap
+          npm run setup
 
       - name: Node.js e2e tests
-        run: npm run e2e --workspace e2e/node
+        working-directory: e2e/node
+        run: npm run e2e
         env:
           CI: true
           REPLICA_PORT: 4943

@@ -3,7 +3,6 @@ export * from './agent';
 export * from './agent/http/transforms';
 export * from './agent/http/types';
 export * from './auth';
-export * from './canisters/asset';
 export * from './certificate';
 export {
   IC_REQUEST_DOMAIN_SEPARATOR,
