@@ -1,7 +1,6 @@
 import {
   AnonymousIdentity,
   CallRequest,
-  concat,
   HttpAgent,
   IC_REQUEST_DOMAIN_SEPARATOR,
   makeNonce,
@@ -14,20 +13,21 @@ import {
 import { Principal } from '@dfinity/principal';
 import { IDL } from '@dfinity/candid';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createCounterActor } from '../canisters/counter';
+import { createActor } from '../canisters/counter';
 import {
   MockReplica,
   prepareV2ReadStateTimeResponse,
   prepareV3Response,
 } from '../utils/mock-replica';
 import { randomIdentity, randomKeyPair } from '../utils/identity';
+import { concatBytes } from '@noble/hashes/utils';
 
 const INVALID_EXPIRY_ERROR =
   'Invalid request expiry: Specified ingress_expiry not within expected range: Minimum allowed expiry: 2025-05-01 23:55:18.005285297 UTC, Maximum allowed expiry: 2025-05-02 00:00:48.005285297 UTC, Provided expiry: 2025-05-01 12:38:00 UTC';
 
 describe('syncTime', () => {
   const date = new Date('2025-05-01T12:34:56.789Z');
-  const canisterId = Principal.fromHex('0');
+  const canisterId = Principal.fromText('uxrrr-q7777-77774-qaaaq-cai');
   const nonce = makeNonce();
 
   const ICP_LEDGER = 'ryjl3-tyaaa-aaaaa-aaaba-cai';
@@ -62,7 +62,7 @@ describe('syncTime', () => {
         rootKey: keyPair.publicKeyDer,
         identity,
       });
-      const actor = createCounterActor(canisterId, agent);
+      const actor = await createActor(canisterId, {agent});
       const sender = identity.getPrincipal();
 
       const { responseBody, requestId } = await prepareV3Response({
@@ -75,7 +75,7 @@ describe('syncTime', () => {
         date,
         nonce,
       });
-      const signature = await identity.sign(concat(IC_REQUEST_DOMAIN_SEPARATOR, requestId));
+      const signature = await identity.sign(concatBytes(IC_REQUEST_DOMAIN_SEPARATOR, requestId));
       mockReplica.setV3CallSpyImplOnce(canisterId.toString(), (_req, res) => {
         res.status(200).send(responseBody);
       });
@@ -102,7 +102,7 @@ describe('syncTime', () => {
         rootKey: keyPair.publicKeyDer,
         identity,
       });
-      const actor = createCounterActor(canisterId, agent);
+      const actor = await createActor(canisterId, {agent});
       const sender = identity.getPrincipal();
 
       mockReplica.setV3CallSpyImplOnce(canisterId.toString(), (_req, res) => {
@@ -132,7 +132,7 @@ describe('syncTime', () => {
         date,
         nonce,
       });
-      const signature = await identity.sign(concat(IC_REQUEST_DOMAIN_SEPARATOR, requestId));
+      const signature = await identity.sign(concatBytes(IC_REQUEST_DOMAIN_SEPARATOR, requestId));
       mockReplica.setV3CallSpyImplOnce(canisterId.toString(), (_req, res) => {
         res.status(200).send(callResponse);
       });
@@ -272,7 +272,7 @@ describe('syncTime', () => {
         identity,
         shouldSyncTime: true,
       });
-      const actor = createCounterActor(canisterId, agent);
+      const actor = await createActor(canisterId, {agent});
 
       const { responseBody: readStateResponse } = await prepareV2ReadStateTimeResponse({
         keyPair,
@@ -297,7 +297,7 @@ describe('syncTime', () => {
         date,
         nonce,
       });
-      const signature = await identity.sign(concat(IC_REQUEST_DOMAIN_SEPARATOR, requestId));
+      const signature = await identity.sign(concatBytes(IC_REQUEST_DOMAIN_SEPARATOR, requestId));
       mockReplica.setV3CallSpyImplOnce(canisterId.toString(), (_req, res) => {
         res.status(200).send(responseBody);
       });
@@ -348,7 +348,7 @@ describe('syncTime', () => {
         rootKey: keyPair.publicKeyDer,
         identity,
       });
-      const actor = createCounterActor(canisterId, agent);
+      const actor = await createActor(canisterId, {agent});
       const sender = identity.getPrincipal();
 
       const { responseBody: readStateResponse } = await prepareV2ReadStateTimeResponse({
@@ -368,7 +368,7 @@ describe('syncTime', () => {
         date,
         nonce,
       });
-      const signature = await identity.sign(concat(IC_REQUEST_DOMAIN_SEPARATOR, requestId));
+      const signature = await identity.sign(concatBytes(IC_REQUEST_DOMAIN_SEPARATOR, requestId));
       mockReplica.setV3CallSpyImplOnce(canisterId.toString(), (_req, res) => {
         res.status(200).send(responseBody);
       });
@@ -398,7 +398,7 @@ describe('syncTime', () => {
         identity,
         shouldSyncTime: false,
       });
-      const actor = createCounterActor(canisterId, agent);
+      const actor = await createActor(canisterId, {agent});
       const sender = identity.getPrincipal();
 
       const { responseBody: readStateResponse } = await prepareV2ReadStateTimeResponse({
@@ -418,7 +418,7 @@ describe('syncTime', () => {
         date,
         nonce,
       });
-      const signature = await identity.sign(concat(IC_REQUEST_DOMAIN_SEPARATOR, requestId));
+      const signature = await identity.sign(concatBytes(IC_REQUEST_DOMAIN_SEPARATOR, requestId));
       mockReplica.setV3CallSpyImplOnce(canisterId.toString(), (_req, res) => {
         res.status(200).send(responseBody);
       });

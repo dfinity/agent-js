@@ -63,7 +63,7 @@ import { BackoffStrategy, BackoffStrategyFactory, ExponentialBackoff } from '../
 import { decodeTime } from '../../utils/leb';
 import { concatBytes, hexToBytes } from '@noble/hashes/utils';
 import { uint8Equals, uint8FromBufLike } from '../../utils/buffer';
-import { IC_RESPONSE_DOMAIN_SEPARATOR } from '../../constants';
+import { IC_RESPONSE_DOMAIN_SEPARATOR } from '@dfinity/agent';
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
 

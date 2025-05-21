@@ -8,7 +8,6 @@ import {
   calculateIngressExpiry,
   Cert,
   reconstruct,
-  concat,
   domain_sep,
   Nonce,
   RequestId,
@@ -22,6 +21,7 @@ import { Principal } from '@dfinity/principal';
 import { Mock, vi } from 'vitest';
 import { createReplyTree, createTimeTree } from './tree';
 import { randomKeyPair, signBls, KeyPair } from './identity';
+import { concatBytes } from '@noble/hashes/utils';
 
 export enum MockReplicaSpyType {
   CallV3 = 'CallV3',
@@ -302,6 +302,6 @@ export async function prepareV2ReadStateTimeResponse({
 
 async function signTree(tree: HashTree, keyPair: KeyPair): Promise<Uint8Array> {
   const rootHash = await reconstruct(tree);
-  const msg = concat(domain_sep('ic-state-root'), rootHash);
+  const msg = concatBytes(domain_sep('ic-state-root'), rootHash);
   return signBls(msg, keyPair.privateKey);
 }
