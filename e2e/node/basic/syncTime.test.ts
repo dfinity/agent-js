@@ -62,7 +62,7 @@ describe('syncTime', () => {
         rootKey: keyPair.publicKeyDer,
         identity,
       });
-      const actor = await createActor(canisterId, {agent});
+      const actor = await createActor(canisterId, { agent });
       const sender = identity.getPrincipal();
 
       const { responseBody, requestId } = await prepareV3Response({
@@ -102,7 +102,7 @@ describe('syncTime', () => {
         rootKey: keyPair.publicKeyDer,
         identity,
       });
-      const actor = await createActor(canisterId, {agent});
+      const actor = await createActor(canisterId, { agent });
       const sender = identity.getPrincipal();
 
       mockReplica.setV3CallSpyImplOnce(canisterId.toString(), (_req, res) => {
@@ -272,7 +272,7 @@ describe('syncTime', () => {
         identity,
         shouldSyncTime: true,
       });
-      const actor = await createActor(canisterId, {agent});
+      const actor = await createActor(canisterId, { agent });
 
       const { responseBody: readStateResponse } = await prepareV2ReadStateTimeResponse({
         keyPair,
@@ -348,7 +348,7 @@ describe('syncTime', () => {
         rootKey: keyPair.publicKeyDer,
         identity,
       });
-      const actor = await createActor(canisterId, {agent});
+      const actor = await createActor(canisterId, { agent });
       const sender = identity.getPrincipal();
 
       const { responseBody: readStateResponse } = await prepareV2ReadStateTimeResponse({
@@ -398,7 +398,7 @@ describe('syncTime', () => {
         identity,
         shouldSyncTime: false,
       });
-      const actor = await createActor(canisterId, {agent});
+      const actor = await createActor(canisterId, { agent });
       const sender = identity.getPrincipal();
 
       const { responseBody: readStateResponse } = await prepareV2ReadStateTimeResponse({
