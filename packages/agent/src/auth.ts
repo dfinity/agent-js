@@ -2,9 +2,7 @@ import { Principal } from '@dfinity/principal';
 import { HttpAgentRequest } from './agent/http/types';
 import { requestIdOf } from './request_id';
 import { bytesToHex, concatBytes } from '@noble/hashes/utils';
-
-export const IC_REQUEST_DOMAIN_SEPARATOR = new TextEncoder().encode('\x0Aic-request');
-
+import { IC_REQUEST_DOMAIN_SEPARATOR } from './constants';
 /**
  * A Key Pair, containing a secret and public key.
  */

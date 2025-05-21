@@ -5,8 +5,8 @@ import * as cbor from 'simple-cbor';
 import { CborEncoder, SelfDescribeCborSerializer } from 'simple-cbor';
 import { Principal } from '@dfinity/principal';
 import { CborDecodeErrorCode, InputError } from './errors';
-import { concat, uint8FromBufLike, uint8ToBuf } from './utils/buffer';
-import { hexToBytes } from '@noble/hashes/utils';
+import { uint8FromBufLike, uint8ToBuf } from './utils/buffer';
+import { hexToBytes, concatBytes } from '@noble/hashes/utils';
 
 // We are using hansl/simple-cbor for CBOR serialization, to avoid issues with
 // encoding the uint64 values that the HTTP handler of the client expects for
@@ -111,7 +111,7 @@ function decodePositiveBigInt(buf: Uint8Array): bigint {
 // A BORC subclass that decodes byte strings to Uint8Array instead of the Buffer class.
 class Uint8ArrayDecoder extends borc.Decoder {
   public createByteString(raw: Uint8Array[]): Uint8Array {
-    return concat(...raw);
+    return concatBytes(...raw);
   }
 
   public createByteStringFromHeap(start: number, end: number): Uint8Array {

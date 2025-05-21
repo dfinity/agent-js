@@ -63,6 +63,7 @@ import { BackoffStrategy, BackoffStrategyFactory, ExponentialBackoff } from '../
 import { decodeTime } from '../../utils/leb';
 import { concatBytes, hexToBytes } from '@noble/hashes/utils';
 import { uint8Equals, uint8FromBufLike } from '../../utils/buffer';
+import { IC_RESPONSE_DOMAIN_SEPARATOR } from '../../constants';
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
 
@@ -1016,7 +1017,6 @@ export class HttpAgent implements Agent {
     }
     const { status, signatures = [], requestId } = queryResponse;
 
-    const domainSeparator = uint8FromBufLike(new TextEncoder().encode('\x0Bic-response'));
     for (const sig of signatures) {
       const { timestamp, identity } = sig;
       const nodeId = Principal.fromUint8Array(identity).toText();
@@ -1045,7 +1045,7 @@ export class HttpAgent implements Agent {
         throw UnknownError.fromCode(new UnexpectedErrorCode(`Unknown status: ${status}`));
       }
 
-      const separatorWithHash = concatBytes(domainSeparator, hash);
+      const separatorWithHash = concatBytes(IC_RESPONSE_DOMAIN_SEPARATOR, hash);
 
       // FIX: check for match without verifying N times
       const pubKey = subnetStatus?.nodeKeys.get(nodeId);
@@ -1113,7 +1113,7 @@ export class HttpAgent implements Agent {
     function getRequestId(fields: ReadStateOptions): RequestId | undefined {
       for (const path of fields.paths) {
         const [pathName, value] = path;
-        const request_status = uint8FromBufLike(new TextEncoder().encode('request_status'));
+        const request_status = new TextEncoder().encode('request_status');
         if (uint8Equals(pathName, request_status)) {
           return value as RequestId;
         }

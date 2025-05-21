@@ -14,6 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/prepare
+        with:
+          node-version-file: '.nvmrc'
       - name: Cache node modules
         id: cache-npm
         uses: actions/cache@v4
@@ -31,8 +34,6 @@ jobs:
         name: List the state of node modules
         continue-on-error: true
         run: npm list
-      - name: Install node dependencies
-        run: npm ci
       - name: Set up git config
         run: |
           git config author.email "${{ github.event.sender.id }}+${{ github.event.sender.login }}@users.noreply.github.com"

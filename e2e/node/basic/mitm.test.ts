@@ -6,6 +6,7 @@ import {
   QuerySignatureVerificationFailedErrorCode,
   TrustError,
 } from '@dfinity/agent';
+import { getCanisterId } from '../utils/canisterid';
 
 let mitmTest: TestAPI | typeof test.skip = test;
 if (!process.env['MITM']) {
@@ -13,7 +14,8 @@ if (!process.env['MITM']) {
 }
 
 mitmTest('mitm greet', { timeout: 30000 }, async () => {
-  const counter = createActor('tnnnb-2yaaa-aaaab-qaiiq-cai', {
+  const counterCanisterId = getCanisterId('counter');
+  const counter = createActor(counterCanisterId, {
     agent: await makeAgent({
       host: 'http://127.0.0.1:8888',
       verifyQuerySignatures: false,
@@ -30,7 +32,8 @@ mitmTest('mitm greet', { timeout: 30000 }, async () => {
 });
 
 mitmTest('mitm with query verification', async () => {
-  const counter = createActor('tnnnb-2yaaa-aaaab-qaiiq-cai', {
+  const counterCanisterId = getCanisterId('counter');
+  const counter = createActor(counterCanisterId, {
     agent: await makeAgent({
       host: 'http://127.0.0.1:8888',
       verifyQuerySignatures: true,

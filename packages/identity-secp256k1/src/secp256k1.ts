@@ -1,7 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 import { DerEncodedPublicKey, KeyPair, Signature, PublicKey, SignIdentity } from '@dfinity/agent';
 import { secp256k1 } from '@noble/curves/secp256k1';
-import { sha256 } from '@noble/hashes/sha256';
+import { sha256 } from '@noble/hashes/sha2';
 import { bytesToHex, hexToBytes, randomBytes } from '@noble/hashes/utils';
 import * as bip39 from '@scure/bip39';
 import { HDKey } from '@scure/bip32';
@@ -21,7 +21,7 @@ function isObject(value: unknown) {
 
 export class Secp256k1PublicKey implements PublicKey {
   public static fromRaw(rawKey: Uint8Array): Secp256k1PublicKey {
-    return new Secp256k1PublicKey(uint8FromBufLike(rawKey));
+    return new Secp256k1PublicKey(rawKey);
   }
 
   public static fromDer(derKey: DerEncodedPublicKey): Secp256k1PublicKey {
@@ -81,7 +81,7 @@ export class Secp256k1PublicKey implements PublicKey {
 
   // `fromRaw` and `fromDer` should be used for instantiation, not this constructor.
   private constructor(key: Uint8Array) {
-    this.#rawKey = uint8FromBufLike(key);
+    this.#rawKey = key;
     this.#derKey = Secp256k1PublicKey.derEncode(key);
   }
 
@@ -117,9 +117,9 @@ export class Secp256k1KeyIdentity extends SignIdentity {
         throw new Error('The seed is invalid.');
       }
     } else {
-      privateKey = new Uint8Array(randomBytes(32));
+      privateKey = randomBytes(32);
       while (!secp256k1.utils.isValidPrivateKey(privateKey)) {
-        privateKey = new Uint8Array(randomBytes(32));
+        privateKey = randomBytes(32);
       }
     }
 
@@ -164,8 +164,8 @@ export class Secp256k1KeyIdentity extends SignIdentity {
    * @returns {Secp256k1KeyIdentity} - Secp256k1KeyIdentity
    */
   public static fromSecretKey(secretKey: Uint8Array): Secp256k1KeyIdentity {
-    const publicKey = secp256k1.getPublicKey(new Uint8Array(secretKey), false);
-    const identity = Secp256k1KeyIdentity.fromKeyPair(publicKey, new Uint8Array(secretKey));
+    const publicKey = secp256k1.getPublicKey(secretKey, false);
+    const identity = Secp256k1KeyIdentity.fromKeyPair(publicKey, secretKey);
     return identity;
   }
 
@@ -200,7 +200,7 @@ export class Secp256k1KeyIdentity extends SignIdentity {
       throw new Error('Failed to derive private key from seed phrase');
     }
 
-    return Secp256k1KeyIdentity.fromSecretKey(uint8FromBufLike(addrnode.privateKey));
+    return Secp256k1KeyIdentity.fromSecretKey(addrnode.privateKey);
   }
 
   /**
@@ -252,15 +252,12 @@ export class Secp256k1KeyIdentity extends SignIdentity {
 
   /**
    * Signs a blob of data, with this identity's private key.
-   * @param {Uint8Array} challenge - challenge to sign with this identity's secretKey, producing a signature
+   * @param {Uint8Array} data - bytes to hash and sign with this identity's secretKey, producing a signature
    * @returns {Promise<Signature>} signature
    */
-  public async sign(challenge: Uint8Array): Promise<Signature> {
-    const hash = sha256.create();
-    hash.update(new Uint8Array(challenge));
-    const signature = secp256k1
-      .sign(new Uint8Array(hash.digest()), new Uint8Array(this._privateKey))
-      .toCompactRawBytes();
+  public async sign(data: Uint8Array): Promise<Signature> {
+    const challenge = sha256(data);
+    const signature = secp256k1.sign(challenge, this._privateKey).toCompactRawBytes();
     return signature as Signature;
   }
 }

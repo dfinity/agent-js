@@ -1,20 +1,12 @@
 import { lebEncode, compare } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import borc from 'borc';
-import { sha256 } from '@noble/hashes/sha256';
 import { HashValueErrorCode, InputError } from './errors';
 import { uint8FromBufLike } from './utils/buffer';
 import { concatBytes } from '@noble/hashes/utils';
+import { sha256 } from '@noble/hashes/sha2';
 
 export type RequestId = Uint8Array & { __requestId__: void };
-
-/**
- * sha256 hash the provided Buffer
- * @param data - input to hash function
- */
-export function hash(data: Uint8Array): Uint8Array {
-  return sha256.create().update(uint8FromBufLike(data)).digest();
-}
 
 interface ToHashable {
   toHash(): unknown;
@@ -32,14 +24,14 @@ export function hashValue(value: unknown): Uint8Array {
   } else if (typeof value === 'string') {
     return hashString(value);
   } else if (typeof value === 'number') {
-    return hash(lebEncode(value));
+    return sha256(lebEncode(value));
   } else if (value instanceof Uint8Array || ArrayBuffer.isView(value)) {
-    return hash(uint8FromBufLike(value));
+    return sha256(uint8FromBufLike(value));
   } else if (Array.isArray(value)) {
     const vals = value.map(hashValue);
-    return hash(concatBytes(...vals));
+    return sha256(concatBytes(...vals));
   } else if (value && typeof value === 'object' && (value as Principal)._isPrincipal) {
-    return hash((value as Principal).toUint8Array());
+    return sha256((value as Principal).toUint8Array());
   } else if (
     typeof value === 'object' &&
     value !== null &&
@@ -56,14 +48,14 @@ export function hashValue(value: unknown): Uint8Array {
     // Do this check much later than the other bigint check because this one is much less
     // type-safe.
     // So we want to try all the high-assurance type guards before this 'probable' one.
-    return hash(lebEncode(value));
+    return sha256(lebEncode(value));
   }
   throw InputError.fromCode(new HashValueErrorCode(value));
 }
 
 const hashString = (value: string): Uint8Array => {
   const encoded = new TextEncoder().encode(value);
-  return hash(encoded);
+  return sha256(encoded);
 };
 
 /**
@@ -98,7 +90,7 @@ export function hashOfMap(map: Record<string, unknown>): Uint8Array {
     return compare(k1, k2);
   });
 
-  const concatenated: Uint8Array = concatBytes(...sorted.map(x => concatBytes(...x)));
-  const result = hash(concatenated);
+  const concatenated = concatBytes(...sorted.map(x => concatBytes(...x)));
+  const result = sha256(concatenated);
   return result;
 }

@@ -1,6 +1,6 @@
 import { DerEncodedPublicKey, PublicKey } from '@dfinity/agent';
 import { randomBytes } from 'crypto';
-import { sha256 } from '@noble/hashes/sha256';
+import { sha256 } from '@noble/hashes/sha2';
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { Secp256k1KeyIdentity, Secp256k1PublicKey } from './secp256k1';
 import { hexToBytes, bytesToHex } from '@noble/curves/abstract/utils';
@@ -51,8 +51,10 @@ describe('Secp256k1PublicKey Tests', () => {
     });
   });
 
-  const hexRe = new RegExp(/^[0-9a-fA-F]+$/);
+  // we have to keep this function because the hex strings are do not have a valid padding,
+  // and we cannot use `hexToBytes` from `@noble/hashes/utils`
   function fromHex(hex: string): Uint8Array {
+    const hexRe = new RegExp(/^[0-9a-fA-F]+$/);
     if (!hexRe.test(hex)) {
       throw new Error('Invalid hexadecimal string.');
     }
@@ -195,13 +197,7 @@ describe('Secp256k1KeyIdentity Tests', () => {
     const message = 'Hello world. Secp256k1 test here';
     const challenge = new TextEncoder().encode(message);
     const signature = await identity.sign(challenge);
-    const hash = sha256.create();
-    hash.update(challenge);
-    const isValid = secp256k1.verify(
-      new Uint8Array(signature),
-      new Uint8Array(hash.digest()),
-      new Uint8Array(rawPublicKey),
-    );
+    const isValid = secp256k1.verify(signature, sha256(challenge), rawPublicKey);
     expect(isValid).toBe(true);
   });
 });

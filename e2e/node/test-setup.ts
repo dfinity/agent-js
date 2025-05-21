@@ -9,6 +9,8 @@
 
 // Node.js in a similar way.
 import { TextEncoder, TextDecoder } from 'text-encoding';
+import dotenv from 'dotenv';
+dotenv.config();
 global.TextDecoder = TextDecoder;
 global.TextEncoder = TextEncoder;
 

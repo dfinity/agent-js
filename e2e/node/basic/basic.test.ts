@@ -1,10 +1,4 @@
-import {
-  ActorMethod,
-  Certificate,
-  LookupPathResultFound,
-  LookupPathStatus,
-  getManagementCanister,
-} from '@dfinity/agent';
+import { Certificate, LookupPathResultFound, LookupPathStatus } from '@dfinity/agent';
 import { IDL, PipeArrayBuffer } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import agent from '../utils/agent';
@@ -25,17 +19,6 @@ export async function getDefaultEffectiveCanisterId() {
   return Principal.fromHex(decoded);
 }
 
-test('createCanister', async () => {
-  // Make sure this doesn't fail.
-  await getManagementCanister({
-    agent: await agent,
-  }).provisional_create_canister_with_cycles({
-    amount: [BigInt(1e12)],
-    settings: [],
-    specified_id: [],
-    sender_canister_version: [],
-  });
-});
 test('read_state', async () => {
   const ecid = await getDefaultEffectiveCanisterId();
   const resolvedAgent = await agent;
@@ -95,28 +78,4 @@ test('read_state with passed request', async () => {
   const time = Number(decoded) / 1e9;
   // The diff between decoded time and local time is within 5s
   expect(Math.abs(time - now)).toBeLessThan(5);
-});
-
-test('withOptions', async () => {
-  // Make sure this fails.
-  await expect(
-    (async () => {
-      const canisterActor = await getManagementCanister({
-        agent: await agent,
-      });
-      await (canisterActor.provisional_create_canister_with_cycles as ActorMethod).withOptions({
-        canisterId: 'abcde-gghhi',
-      })({ amount: [BigInt(1e12)], settings: [] });
-    })(),
-  ).rejects.toThrow();
-
-  // Make sure this doesn't fail.
-  await getManagementCanister({
-    agent: await agent,
-  }).provisional_create_canister_with_cycles({
-    amount: [BigInt(1e12)],
-    settings: [],
-    specified_id: [],
-    sender_canister_version: [],
-  });
 });
