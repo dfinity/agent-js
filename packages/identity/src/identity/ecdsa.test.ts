@@ -1,4 +1,3 @@
-import { sha256 } from '@noble/hashes/sha256';
 import { ECDSAKeyIdentity } from './ecdsa';
 import { Crypto } from '@peculiar/webcrypto';
 
@@ -11,9 +10,7 @@ describe('ECDSAKeyIdentity Tests', () => {
     const keyPair = identity.getKeyPair();
     const identity2 = await ECDSAKeyIdentity.fromKeyPair(keyPair, subtle);
 
-    expect(await identity.getPublicKey().toDer()).toStrictEqual(
-      await identity2.getPublicKey().toDer(),
-    );
+    expect(identity.getPublicKey().toDer()).toStrictEqual(identity2.getPublicKey().toDer());
   });
 
   test('getKeyPair should return a copy of the key pair', async () => {
@@ -28,8 +25,6 @@ describe('ECDSAKeyIdentity Tests', () => {
     const message = 'Hello world. ECDSA test here';
     const challenge = new TextEncoder().encode(message);
     const signature = await identity.sign(challenge);
-    const hash = sha256.create();
-    hash.update(challenge);
     const isValid = await subtle.verify(
       {
         name: 'ECDSA',

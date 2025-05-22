@@ -1,16 +1,7 @@
-import { Actor, ActorSubclass, HttpAgentOptions, Agent } from '@dfinity/agent';
-import { Principal } from '@dfinity/principal';
-import { readFileSync } from 'fs';
-import path from 'path';
-import agent, { makeAgent } from '../utils/agent';
+import { Actor, ActorSubclass, HttpAgentOptions, Agent, ActorConfig } from '@dfinity/agent';
+import { makeAgent } from '../utils/agent';
 import { _SERVICE } from './declarations/counter';
-import { getDefaultEffectiveCanisterId } from '../basic/basic.test';
-
-let cache: {
-  canisterId: Principal;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  actor: any;
-} | null = null;
+import { getCanisterId } from '../utils/canisterid';
 
 export const idl = ({ IDL }) => {
   return IDL.Service({
@@ -23,56 +14,25 @@ export const idl = ({ IDL }) => {
   });
 };
 
-/**
- * Create a counter Actor + canisterId
- */
-export default async function (): Promise<{
-  canisterId: Principal;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  actor: any;
-}> {
-  if (!cache) {
-    const module = readFileSync(path.join(__dirname, 'counter.wasm'));
+export const counterCanisterId = getCanisterId('counter');
 
-    const canisterId = await Actor.createCanister({ agent: await agent });
-    await Actor.install({ module }, { canisterId, agent: await agent });
+export const counter2CanisterId = getCanisterId('counter2');
 
-    cache = {
-      canisterId,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      actor: Actor.createActor(idl, { canisterId, agent: await agent }) as any,
-    };
-  }
+export const createActor = async (
+  canisterId,
+  options?: {
+    agentOptions?: HttpAgentOptions;
+    actorOptions?: ActorConfig;
+    agent?: Agent;
+  },
+) => {
+  const effectiveAgent = options?.agent ? options.agent : await makeAgent(options?.agentOptions);
 
-  return cache;
-}
-
-export const createActor = async (options?: HttpAgentOptions, agent?: Agent) => {
-  const module = readFileSync(path.join(__dirname, 'counter.wasm'));
-  const effectiveAgent = agent
-    ? agent
-    : await makeAgent({
-        ...options,
-      });
-  try {
-    if (!options?.host?.includes('icp-api')) {
-      await effectiveAgent.fetchRootKey();
-    }
-  } catch {
-    //
-  }
-
-  const canisterId = await Actor.createCanister({
-    agent: effectiveAgent,
-    effectiveCanisterId: await getDefaultEffectiveCanisterId(),
-  });
-  await Actor.install({ module }, { canisterId, agent: effectiveAgent });
-  return createCounterActor(canisterId, effectiveAgent);
+  return Actor.createActor(idl, { canisterId, agent: effectiveAgent }) as ActorSubclass<_SERVICE>;
 };
 
-export const createCounterActor = (
-  canisterId: string | Principal,
-  agent: Agent,
-): ActorSubclass<_SERVICE> => {
-  return Actor.createActor<_SERVICE>(idl, { canisterId, agent });
-};
+// Export the counter actor directly
+export const counterActor = await createActor(counterCanisterId);
+
+// Export the counter2 actor directly
+export const counter2Actor = await createActor(counter2CanisterId);

@@ -20,12 +20,9 @@ jobs:
           - 22
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node }}
-        uses: actions/setup-node@v4
+      - uses: ./.github/actions/prepare
         with:
           node-version: ${{ matrix.node }}
-      - run: npm install -g npm
-      - run: npm ci
       - run: npm run prettier:check
 
   aggregate:

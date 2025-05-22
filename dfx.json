@@ -2,17 +2,11 @@
   "canisters": {
     "docs": {
       "type": "assets",
-      "source": [
-        "docs"
-      ]
+      "source": ["docs"]
     },
     "counter": {
       "type": "motoko",
       "main": "e2e/node/canisters/counter.mo"
-    },
-    "trap": {
-      "type": "motoko",
-      "main": "e2e/node/canisters/trap.mo"
     }
   }
 }
