@@ -1,4 +1,3 @@
-/** @module CanisterStatus */
 import { Principal } from '@dfinity/principal';
 import {
   CertificateVerificationErrorCode,

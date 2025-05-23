@@ -19,7 +19,7 @@
   "module": "./lib/esm/index.js",
   "unpkg": "./lib/esm/index",
   "scripts": {
-    "build": "tsc -b && tsc -p tsconfig-cjs.json",
+    "build": "tsc -b && tsc -p tsconfig.cjs.json",
     "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=node",
     "size-limit": "size-limit",
     "ci": "npm run prettier && npm run lint && npm run test",

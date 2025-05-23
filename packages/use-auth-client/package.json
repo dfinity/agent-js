@@ -2,11 +2,18 @@
   "name": "@dfinity/use-auth-client",
   "version": "2.4.1",
   "description": "React hooks for using the auth client",
-  "main": "./lib/cjs/index.js",
-  "module": "./lib/esm/index.js",
-  "unpkg": "./lib/esm/index",
+  "type": "module",
+  "main": "./lib/index.js",
+  "module": "./lib/index.js",
+  "unpkg": "./lib/index",
+  "exports": {
+    ".": {
+      "import": "./lib/index.js",
+      "require": "./lib/index.js"
+    }
+  },
   "scripts": {
-    "build": "tsc -b && tsc -p tsconfig-cjs.json",
+    "build": "tsc -b",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/use-auth-client --excludeInternal",
     "test": "jest"
   },

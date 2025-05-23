@@ -1,4 +1,3 @@
-/** @module IdleManager */
 type IdleCB = () => unknown;
 export type IdleManagerOptions = {
   /**

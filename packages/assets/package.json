@@ -39,7 +39,7 @@
   "module": "./lib/esm/index.js",
   "unpkg": "./lib/esm/index",
   "scripts": {
-    "build": "tsc -b && tsc -p tsconfig-cjs.json",
+    "build": "tsc -b && tsc -p tsconfig.cjs.json",
     "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js",
     "size-limit": "size-limit",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
@@ -57,7 +57,6 @@
     "mime": "^3.0.0"
   },
   "devDependencies": {
-    "@jest/types": "^29.6.3",
     "@peculiar/webcrypto": "^1.4.0",
     "@types/mime": "^2.0.3",
     "@typescript-eslint/eslint-plugin": "^5.30.5",

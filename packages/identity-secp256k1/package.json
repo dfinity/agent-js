@@ -6,7 +6,7 @@
   "description": "JavaScript and TypeScript library to manage Secp256k1KeyIdentities for use with the Internet Computer",
   "main": "./lib/cjs/index.js",
   "scripts": {
-    "build": "tsc -b && tsc -p tsconfig-cjs.json",
+    "build": "tsc -b && tsc -p tsconfig.cjs.json",
     "lint": "eslint 'src' 'types' --ext '.js,.jsx,.ts,.tsx'",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/identity-secp256k1 --excludeInternal",
     "bundle": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=node",

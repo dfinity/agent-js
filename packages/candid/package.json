@@ -35,7 +35,7 @@
   "module": "./lib/esm/index.js",
   "unpkg": "./lib/esm/index",
   "scripts": {
-    "build": "tsc -b && tsc -p tsconfig-cjs.json",
+    "build": "tsc -b && tsc -p tsconfig.cjs.json",
     "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js",
     "size-limit": "size-limit",
     "ci": "npm run prettier && npm run lint && npm run test",
@@ -51,7 +51,6 @@
     "@dfinity/principal": "^2.4.1"
   },
   "devDependencies": {
-    "@jest/types": "^29.6.3",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
     "esbuild": "^0.25.1",

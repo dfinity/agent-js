@@ -1,9 +1,8 @@
-/** @module AuthClient */
 import {
   AnonymousIdentity,
-  DerEncodedPublicKey,
-  Identity,
-  Signature,
+  type DerEncodedPublicKey,
+  type Identity,
+  type Signature,
   SignIdentity,
 } from '@dfinity/agent';
 import {
@@ -16,9 +15,9 @@ import {
   PartialDelegationIdentity,
 } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
-import { IdleManager, IdleManagerOptions } from './idleManager';
+import { IdleManager, type IdleManagerOptions } from './idleManager';
 import {
-  AuthClientStorage,
+  type AuthClientStorage,
   IdbStorage,
   isBrowser,
   KEY_STORAGE_DELEGATION,
@@ -26,16 +25,16 @@ import {
   KEY_VECTOR,
   LocalStorage,
 } from './storage';
-import { PartialIdentity } from '@dfinity/identity/lib/cjs/identity/partial';
+import { PartialIdentity } from '@dfinity/identity';
 
 export {
-  AuthClientStorage,
+  type AuthClientStorage,
   IdbStorage,
   LocalStorage,
   KEY_STORAGE_DELEGATION,
   KEY_STORAGE_KEY,
 } from './storage';
-export { IdbKeyVal, DBCreateOptions } from './db';
+export { IdbKeyVal, type DBCreateOptions } from './db';
 
 const IDENTITY_PROVIDER_DEFAULT = 'https://identity.internetcomputer.org';
 const IDENTITY_PROVIDER_ENDPOINT = '#authorize';

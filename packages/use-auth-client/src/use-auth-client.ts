@@ -1,9 +1,9 @@
 import * as React from 'react';
 import {
   AuthClient,
-  AuthClientCreateOptions,
-  AuthClientLoginOptions,
-  InternetIdentityAuthResponseSuccess,
+  type AuthClientCreateOptions,
+  type AuthClientLoginOptions,
+  type InternetIdentityAuthResponseSuccess,
 } from '@dfinity/auth-client';
 import {
   type Identity,
@@ -12,7 +12,7 @@ import {
   type ActorConfig,
   HttpAgent,
   Actor,
-  ActorSubclass,
+  type ActorSubclass,
 } from '@dfinity/agent';
 import type { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
