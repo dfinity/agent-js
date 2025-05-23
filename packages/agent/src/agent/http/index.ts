@@ -64,6 +64,7 @@ import { decodeTime } from '../../utils/leb';
 import { concatBytes, hexToBytes } from '@noble/hashes/utils';
 import { uint8Equals, uint8FromBufLike } from '../../utils/buffer';
 import { IC_RESPONSE_DOMAIN_SEPARATOR } from '../../constants';
+import { request as canisterStatusRequest } from '../../canisterStatus';
 export * from './transforms';
 export { Nonce, makeNonce } from './types';
 
@@ -1236,7 +1237,6 @@ export class HttpAgent implements Agent {
    */
   public async syncTime(canisterId?: Principal): Promise<void> {
     await this.#rootKeyGuard();
-    const CanisterStatus = await import('../../canisterStatus');
     const callTime = Date.now();
     try {
       if (!canisterId) {
@@ -1252,7 +1252,7 @@ export class HttpAgent implements Agent {
         retryTimes: 0,
       });
 
-      const status = await CanisterStatus.request({
+      const status = await canisterStatusRequest({
         // Fall back with canisterId of the ICP Ledger
         canisterId: canisterId ?? Principal.from('ryjl3-tyaaa-aaaaa-aaaba-cai'),
         agent: anonymousAgent,

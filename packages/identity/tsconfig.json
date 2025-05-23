@@ -1,22 +1,10 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "allowJs": false,
-    "baseUrl": "./",
     "composite": true,
-    "declaration": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "incremental": true,
-    "module": "ES2020",
-    "moduleResolution": "node",
+    "baseUrl": "./",
     "outDir": "./lib/esm",
-    "resolveJsonModule": true,
-    "rootDir": "./src",
-    "sourceMap": true,
-    "inlineSources": true,
-    "strict": true,
-    "target": "es2017"
+    "rootDir": "./src"
   },
-  "include": ["types/*", "src/**/*", "client-test", "index.d.ts"]
+  "include": ["types/*", "src/**/*"]
 }
