@@ -51,7 +51,7 @@
     "@dfinity/principal": "^2.4.1"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.5",
+    "@jest/types": "^29.6.3",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
     "esbuild": "^0.25.1",
@@ -61,9 +61,8 @@
     "prettier": "^2.0.5",
     "size-limit": "^8.2.6",
     "text-encoding": "^0.7.0",
-    "ts-node": "^10.8.2",
-    "typedoc": "^0.28.2",
-    "typescript": "^5.8.3",
+    "typedoc": "^0.28.4",
+    "typescript": "5.8.3",
     "whatwg-fetch": "^3.0.0"
   },
   "size-limit": [

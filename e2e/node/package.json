@@ -38,8 +38,7 @@
     "node-webcrypto-p11": "^2.5.0",
     "size-limit": "^8.2.6",
     "text-encoding": "^0.7.0",
-    "ts-node": "^10.8.2",
-    "typescript": "^5.7.2",
+    "typescript": "5.8.3",
     "vite": "^6.3.5",
     "vitest": "^3.1.3"
   },

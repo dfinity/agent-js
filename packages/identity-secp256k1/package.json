@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "eslint": "^8.19.0",
-    "typedoc": "^0.28.2"
+    "typedoc": "^0.28.4"
   },
   "overrides": {
     "hdkey": {
