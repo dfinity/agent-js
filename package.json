@@ -59,7 +59,7 @@
   "scripts": {
     "lint:e2e": "eslint --cache --cache-location node_modules/.cache/eslint 'e2e/*/**/*.ts*'",
     "convert:changelog": "markdown-to-html --source docs/CHANGELOG.md --output docs/changelog.html",
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present; npm run bundle --workspaces --if-present",
     "bundle": "npm run build && npm run bundle --workspaces --if-present",
     "e2e": "npm run e2e --workspaces --if-present",
     "lint:fix": "",
