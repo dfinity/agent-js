@@ -33,18 +33,18 @@
     "api"
   ],
   "type": "module",
-  "main": "./lib/index.js",
-  "module": "./lib/index.js",
-  "unpkg": "./lib/index",
+  "main": "./lib/cjs/index.js",
+  "module": "./lib/esm/index.js",
+  "unpkg": "./lib/esm/index",
   "exports": {
     ".": {
-      "import": "./lib/index.js",
-      "require": "./lib/index.js"
+      "import": "./lib/esm/index.js",
+      "require": "./lib/cjs/index.js"
     }
   },
   "scripts": {
-    "build": "tsc -b",
-    "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js",
+    "build": "tsc -b && tpc -p tsconfig.cjs.json",
+    "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=browser",
     "size-limit": "size-limit",
     "lint": "eslint 'src' 'types' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",

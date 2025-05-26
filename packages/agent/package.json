@@ -35,10 +35,16 @@
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
   "unpkg": "./lib/esm/index",
+  "exports": {
+    ".": {
+      "import": "./lib/esm/index.js",
+      "require": "./lib/cjs/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc -b && tsc -p tsconfig.cjs.json",
     "build:watch": "tsc -b --watch",
-    "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js",
+    "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=browser",
     "lint:fix": "npm run lint -- --fix",
     "lint": "eslint 'src' 'types' --ext '.js,.jsx,.ts,.tsx'",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/agent --excludeInternal",

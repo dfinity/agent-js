@@ -1,9 +1,9 @@
 {
   "extends": "../../tsconfig.web.json",
   "compilerOptions": {
+    "baseUrl": "./",
     "outDir": "./lib",
     "rootDir": "./src"
   },
-  "include": ["types/*", "src/**/*"],
-  "exclude": ["src/**/*.test.ts"]
+  "include": ["types/*", "src/**/*"]
 }

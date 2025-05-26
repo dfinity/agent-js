@@ -20,5 +20,6 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
-  }
+  },
+  "exclude": ["**/src/**/*.test.ts", "**/src/**/*.spec.ts", "node_modules"]
 }

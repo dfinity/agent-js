@@ -38,9 +38,15 @@
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
   "unpkg": "./lib/esm/index",
+  "exports": {
+    ".": {
+      "import": "./lib/esm/index.js",
+      "require": "./lib/cjs/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc -b && tsc -p tsconfig.cjs.json",
-    "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js",
+    "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=browser",
     "size-limit": "size-limit",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
