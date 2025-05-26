@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.web.json",
   "compilerOptions": {
     "baseUrl": "./",
-    "outDir": "./lib",
+    "outDir": "./lib/esm",
     "rootDir": "./src"
   },
   "include": ["types/*", "src/**/*"]

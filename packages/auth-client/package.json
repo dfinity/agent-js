@@ -43,7 +43,7 @@
     }
   },
   "scripts": {
-    "build": "tsc -b && tpc -p tsconfig.cjs.json",
+    "build": "tsc -b && tsc -p tsconfig.cjs.json",
     "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=browser",
     "size-limit": "size-limit",
     "lint": "eslint 'src' 'types' --ext '.js,.jsx,.ts,.tsx'",

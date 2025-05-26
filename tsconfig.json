@@ -17,5 +17,11 @@
     "moduleResolution": "bundler",
     "target": "ES2022"
   },
-  "exclude": ["**/src/**/*.test.ts", "**/src/**/*.spec.ts", "node_modules"]
+  "exclude": [
+    "**/src/**/*.test.ts",
+    "**/src/**/*.spec.ts",
+    "node_modules",
+    "packages/**/dist",
+    "packages/**/lib"
+  ]
 }

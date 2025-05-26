@@ -12,6 +12,8 @@
     "**/src/**/__certificates__/**",
     "**/src/**/*.test.ts",
     "**/src/**/*.spec.ts",
-    "node_modules"
+    "node_modules",
+    "dist",
+    "lib"
   ]
 }
