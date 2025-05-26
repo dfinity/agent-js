@@ -1,15 +1,9 @@
 {
-  "extends": "@tsconfig/node18/tsconfig.json",
+  "extends": ["./tsconfig.json", "@tsconfig/node18/tsconfig.json"],
   "compilerOptions": {
     "module": "commonjs",
     "moduleResolution": "node10",
     "verbatimModuleSyntax": false
   },
-  "exclude": [
-    "**/src/**/*.test.ts",
-    "**/src/**/*.spec.ts",
-    "node_modules",
-    "packages/**/dist",
-    "packages/**/lib"
-  ]
+  "references": []
 }

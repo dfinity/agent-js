@@ -23,10 +23,14 @@
   },
   "exclude": [
     "**/src/**/*.test.ts",
+    "**/src/**/*.snap",
     "**/src/**/*.spec.ts",
-    "packages/**/test",
     "node_modules",
+    "packages/**/test",
     "packages/**/dist",
-    "packages/**/lib"
+    "packages/**/lib",
+    "packages/**/jest.config.ts",
+    "jest.config.base.ts",
+    "jest.config.ts"
   ]
 }

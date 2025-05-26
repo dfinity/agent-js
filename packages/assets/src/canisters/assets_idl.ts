@@ -1,8 +1,10 @@
-export const idlFactory = ({ IDL }) => {
+import type { IDL } from '@dfinity/candid';
+
+export const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
   const ClearArguments = IDL.Record({});
   const BatchId = IDL.Nat;
   const Key = IDL.Text;
-  const HeaderField = IDL.Tuple(IDL.Text, IDL.Text);  
+  const HeaderField = IDL.Tuple(IDL.Text, IDL.Text);
   const CreateAssetArguments = IDL.Record({
     key: Key,
     content_type: IDL.Text,
