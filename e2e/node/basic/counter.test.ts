@@ -1,46 +1,64 @@
 import { Actor, HttpAgent, ActorMethod } from '@dfinity/agent';
-import counterCanister, { idl } from '../canisters/counter';
-import { it, expect, describe, vi } from 'vitest';
+import { counterActor, counter2Actor, counterCanisterId, idl } from '../canisters/counter';
+import { it, expect, describe, vi, beforeAll, beforeEach, afterAll } from 'vitest';
 
-describe('counter', () => {
+describe.sequential('counter', () => {
+  beforeAll(async () => {
+    // Reset the counter to initial state before all tests
+    await counterActor.write(0n);
+  });
+
+  beforeEach(async () => {
+    // Reset the counter state before each test
+    await counterActor.write(0n);
+  });
+
+  afterAll(async () => {
+    // Reset the counter state after all tests
+    await counterActor.write(0n);
+  });
+
   it('should greet', async () => {
-    const { actor: counter } = await counterCanister();
     try {
-      expect(await counter.greet('counter')).toEqual('Hello, counter!');
+      expect(await counterActor.greet('counter')).toEqual('Hello, counter!');
     } catch (error) {
       console.error(error);
     }
   }, 40000);
   it('should submit distinct requests with nonce by default', async () => {
-    const { actor: counter } = await counterCanister();
-    const values = await Promise.all(new Array(4).fill(undefined).map(() => counter.inc_read()));
+    const values = await Promise.all(
+      new Array(4).fill(undefined).map(() => counterActor.inc_read()),
+    );
     const set1 = new Set(values);
-    const values2 = await Promise.all(new Array(4).fill(undefined).map(() => counter.inc_read()));
+    const values2 = await Promise.all(
+      new Array(4).fill(undefined).map(() => counterActor.inc_read()),
+    );
     const set2 = new Set(values2);
 
     // Sets of unique results should be the same length
     expect(set1.size).toBe(values.length);
     expect(set2.size).toEqual(values2.length);
   }, 40000);
-  it('should increment', async () => {
-    const { actor: counter } = await counterCanister();
+  it('should increment with counter2', async () => {
+    // Reset at the start of the test explicitly
+    await counter2Actor.write(0n);
 
-    await counter.write(0);
-    expect(Number(await counter.read())).toEqual(0);
-    let expected = 1;
+    // Verify initial state
+    const initialValue = Number(await counter2Actor.read());
+    expect(initialValue).toEqual(0);
+
+    // Increment and check each step
     for (let i = 0; i < 5; i++) {
-      await counter.inc();
-      expect(Number(await counter.read())).toEqual(expected);
-      expected += 1;
+      await counter2Actor.inc();
+      const newValue = Number(await counter2Actor.read());
+      expect(newValue).toEqual(i + 1);
     }
   }, 40000);
 
   it('should work with preSignReadStateRequest enabled', async () => {
-    const { canisterId } = await counterCanister();
-
     // Create counter actor with preSignReadStateRequest enabled
     const counter = await Actor.createActor(idl, {
-      canisterId,
+      canisterId: counterCanisterId,
       agent: await HttpAgent.create({
         host: 'http://localhost:4943',
         shouldFetchRootKey: true,
@@ -51,7 +69,7 @@ describe('counter', () => {
     });
 
     // Reset counter to 0
-    await counter.write(0);
+    await counter.write(0n);
     expect(Number(await counter.read())).toEqual(0);
 
     // Call inc_read which will trigger polling and use preSignReadStateRequest
@@ -65,11 +83,9 @@ describe('counter', () => {
   }, 40000);
 
   it('should allow method-specific pollingOptions override', async () => {
-    const { canisterId } = await counterCanister();
-
     // Create counter actor without preSignReadStateRequest
     const counter = await Actor.createActor(idl, {
-      canisterId,
+      canisterId: counterCanisterId,
       agent: await HttpAgent.create({
         host: 'http://localhost:4943',
         shouldFetchRootKey: true,
@@ -77,7 +93,7 @@ describe('counter', () => {
     });
 
     // Reset counter to 0
-    await counter.write(0);
+    await counter.write(0n);
     expect(Number(await counter.read())).toEqual(0);
 
     // Use withOptions to set preSignReadStateRequest for this specific call
@@ -102,7 +118,6 @@ describe('counter', () => {
 describe('retrytimes', () => {
   it('should retry after a failure', async () => {
     let count = 0;
-    const { canisterId } = await counterCanister();
     const fetchMock = vi.fn(function (...args) {
       count += 1;
       // let the first 3 requests pass, then throw an error on the call
@@ -118,7 +133,7 @@ describe('retrytimes', () => {
     });
 
     const counter = await Actor.createActor(idl, {
-      canisterId,
+      canisterId: counterCanisterId,
       agent: await HttpAgent.create({
         fetch: fetchMock as typeof fetch,
         retryTimes: 3,

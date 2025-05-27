@@ -1,26 +1,24 @@
 import {
   DerEncodedPublicKey,
-  fromHex,
   HttpAgentRequest,
   PublicKey,
   requestIdOf,
   Signature,
   SignIdentity,
-  toHex,
+  uint8ToBuf,
+  IC_REQUEST_DOMAIN_SEPARATOR,
+  IC_REQUEST_AUTH_DELEGATION_DOMAIN_SEPARATOR,
 } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import { PartialIdentity } from './partial';
-import { bufFromBufLike } from '@dfinity/candid';
+import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
 
-const domainSeparator = new TextEncoder().encode('\x1Aic-request-auth-delegation');
-const requestDomainSeparator = new TextEncoder().encode('\x0Aic-request');
-
-function _parseBlob(value: unknown): ArrayBuffer {
+function _parseBlob(value: unknown): Uint8Array {
   if (typeof value !== 'string' || value.length < 64) {
     throw new Error('Invalid public key.');
   }
 
-  return fromHex(value);
+  return hexToBytes(value);
 }
 
 /**
@@ -31,7 +29,7 @@ function _parseBlob(value: unknown): ArrayBuffer {
  */
 export class Delegation {
   constructor(
-    public readonly pubkey: ArrayBuffer,
+    public readonly pubkey: Uint8Array,
     public readonly expiration: bigint,
     public readonly targets?: Principal[],
   ) {}
@@ -42,7 +40,7 @@ export class Delegation {
     // with an OID). After de-hex, if it's not obvious what it is, it's an ArrayBuffer.
     return {
       expiration: this.expiration.toString(16),
-      pubkey: toHex(this.pubkey),
+      pubkey: bytesToHex(this.pubkey),
       ...(this.targets && { targets: this.targets.map(p => p.toHex()) }),
     };
   }
@@ -98,10 +96,10 @@ async function _createSingleDelegation(
   // besides the actualy webauthn functionality (such as `sign`). Safari will de-register
   // a user gesture if you await an async call thats not fetch, xhr, or setTimeout.
   const challenge = new Uint8Array([
-    ...domainSeparator,
+    ...IC_REQUEST_AUTH_DELEGATION_DOMAIN_SEPARATOR,
     ...new Uint8Array(requestIdOf({ ...delegation })),
   ]);
-  const signature = await from.sign(bufFromBufLike(challenge));
+  const signature = await from.sign(challenge);
 
   return {
     delegation,
@@ -233,15 +231,15 @@ export class DelegationChain {
         return {
           delegation: {
             expiration: delegation.expiration.toString(16),
-            pubkey: toHex(delegation.pubkey),
+            pubkey: bytesToHex(delegation.pubkey),
             ...(targets && {
               targets: targets.map(t => t.toHex()),
             }),
           },
-          signature: toHex(signature),
+          signature: bytesToHex(signature),
         };
       }),
-      publicKey: toHex(this.publicKey),
+      publicKey: bytesToHex(this.publicKey),
     };
   }
 }
@@ -282,7 +280,7 @@ export class DelegationIdentity extends SignIdentity {
       toDer: () => this._delegation.publicKey,
     };
   }
-  public sign(blob: ArrayBuffer): Promise<Signature> {
+  public sign(blob: Uint8Array): Promise<Signature> {
     return this._inner.sign(blob);
   }
 
@@ -294,7 +292,7 @@ export class DelegationIdentity extends SignIdentity {
       body: {
         content: body,
         sender_sig: await this.sign(
-          bufFromBufLike(new Uint8Array([...requestDomainSeparator, ...new Uint8Array(requestId)])),
+          new Uint8Array([...IC_REQUEST_DOMAIN_SEPARATOR, ...new Uint8Array(requestId)]),
         ),
         sender_delegation: this._delegation.delegations,
         sender_pubkey: this._delegation.publicKey,

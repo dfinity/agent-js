@@ -6,30 +6,32 @@
   "scripts": {
     "ci": "npm run e2e",
     "e2e": "vitest",
+    "poste2e": "dfx killall",
     "lint:fix": "npm run lint -- --fix",
     "lint": "eslint --ext '.js,.jsx,.ts,.tsx' basic canisters utils *.ts",
     "mitm": "MITM=true vitest ./basic/mitm.test.ts",
     "build": "",
+    "setup": "dfx killall; dfx start --background --clean; dfx deploy; dfx canister call assets authorize '(principal \"n7obp-cx27z-e4ytc-ipt7n-urffz-txqa5-el2vn-7vpqc-jjoh3-wrob6-bqe\")'",
     "test:coverage": "",
     "test": ""
   },
   "dependencies": {
     "@dfinity/agent": "^2.4.1",
     "@dfinity/assets": "^2.4.1",
+    "@dfinity/candid": "^2.4.1",
     "@dfinity/identity": "^2.4.1",
-    "@dfinity/principal": "^2.4.1",
-    "whatwg-fetch": "^3.6.2"
+    "@dfinity/principal": "^2.4.1"
   },
   "devDependencies": {
+    "@noble/hashes": "^1.8.0",
     "@peculiar/webcrypto": "^1.4.0",
     "@tsconfig/node16": "^1.0.3",
     "@tsconfig/node17": "^1.0.1",
-    "@types/base64-js": "^1.3.0",
     "@types/isomorphic-fetch": "^0.0.36",
     "@types/text-encoding": "^0.0.36",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
-    "agent1": "npm:@dfinity/agent@^1.4.0",
+    "dotenv": "^16.5.0",
     "esbuild": "^0.25.1",
     "isomorphic-fetch": "^3.0.0",
     "locus": "^2.0.4",
@@ -38,14 +40,10 @@
     "text-encoding": "^0.7.0",
     "ts-node": "^10.8.2",
     "typescript": "^5.7.2",
-    "vitest": "^3.0.8"
+    "vite": "^6.3.5",
+    "vitest": "^3.1.3"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "4.6.1"
-  },
-  "overrides": {
-    "vite": {
-      "rollup": "^4.22.5"
-    }
   }
 }

@@ -1,11 +1,11 @@
 import { PipeArrayBuffer, lebDecode } from '@dfinity/candid';
 
-export const decodeLeb128 = (buf: ArrayBuffer): bigint => {
+export const decodeLeb128 = (buf: Uint8Array): bigint => {
   return lebDecode(new PipeArrayBuffer(buf));
 };
 
 // time is a LEB128-encoded Nat
-export const decodeTime = (buf: ArrayBuffer): Date => {
+export const decodeTime = (buf: Uint8Array): Date => {
   const decoded = decodeLeb128(buf);
 
   // nanoseconds to milliseconds

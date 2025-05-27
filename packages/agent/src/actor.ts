@@ -16,14 +16,12 @@ import {
   UnexpectedErrorCode,
   UnknownError,
 } from './errors';
-import { bufFromBufLike, IDL } from '@dfinity/candid';
+import { IDL } from '@dfinity/candid';
 import { pollForResponse, PollingOptions, DEFAULT_POLLING_OPTIONS } from './polling';
 import { Principal } from '@dfinity/principal';
-import { strToUtf8 } from './utils/buffer';
 import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from './certificate';
-import managementCanisterIdl from './canisters/management_idl';
-import _SERVICE, { canister_install_mode, canister_settings } from './canisters/management_service';
 import { HttpAgent } from './agent/http';
+import { utf8ToBytes } from '@noble/hashes/utils';
 
 /**
  * Configuration to make calls to the Replica.
@@ -180,13 +178,6 @@ export interface CreateActorClassOpts {
   certificate?: boolean;
 }
 
-interface CreateCanisterSettings {
-  freezing_threshold?: bigint;
-  controllers?: Array<Principal>;
-  memory_allocation?: bigint;
-  compute_allocation?: bigint;
-}
-
 /**
  * An actor base class. An actor is an object containing only functions that will
  * return a promise. These functions are derived from the IDL definition.
@@ -211,82 +202,6 @@ export class Actor {
 
   public static canisterIdOf(actor: Actor): Principal {
     return Principal.from(actor[metadataSymbol].config.canisterId);
-  }
-
-  public static async install(
-    fields: {
-      module: ArrayBuffer;
-      mode?: canister_install_mode;
-      arg?: ArrayBuffer;
-    },
-    config: ActorConfig,
-  ): Promise<void> {
-    const mode = fields.mode === undefined ? { install: null } : fields.mode;
-    // Need to transform the arg into a number array.
-    const arg = fields.arg ? [...new Uint8Array(fields.arg)] : [];
-    // Same for module.
-    const wasmModule = [...new Uint8Array(fields.module)];
-    const canisterId =
-      typeof config.canisterId === 'string'
-        ? Principal.fromText(config.canisterId)
-        : config.canisterId;
-
-    await getManagementCanister(config).install_code({
-      mode,
-      arg,
-      wasm_module: wasmModule,
-      canister_id: canisterId,
-      sender_canister_version: [],
-    });
-  }
-
-  public static async createCanister(
-    config?: CallConfig,
-    settings?: CreateCanisterSettings,
-  ): Promise<Principal> {
-    function settingsToCanisterSettings(settings: CreateCanisterSettings): [canister_settings] {
-      return [
-        {
-          controllers: settings.controllers ? [settings.controllers] : [],
-          compute_allocation: settings.compute_allocation ? [settings.compute_allocation] : [],
-          freezing_threshold: settings.freezing_threshold ? [settings.freezing_threshold] : [],
-          memory_allocation: settings.memory_allocation ? [settings.memory_allocation] : [],
-          reserved_cycles_limit: [],
-          log_visibility: [],
-          wasm_memory_limit: [],
-        },
-      ];
-    }
-
-    const { canister_id: canisterId } = await getManagementCanister(
-      config || {},
-    ).provisional_create_canister_with_cycles({
-      amount: [],
-      settings: settingsToCanisterSettings(settings || {}),
-      specified_id: [],
-      sender_canister_version: [],
-    });
-
-    return canisterId;
-  }
-
-  public static async createAndInstallCanister(
-    interfaceFactory: IDL.InterfaceFactory,
-    fields: {
-      module: ArrayBuffer;
-      arg?: ArrayBuffer;
-    },
-    config?: CallConfig,
-  ): Promise<ActorSubclass> {
-    const canisterId = await this.createCanister(config);
-    await this.install(
-      {
-        ...fields,
-      },
-      { ...config, canisterId },
-    );
-
-    return this.createActor(interfaceFactory, { ...config, canisterId });
   }
 
   public static createActorClass(
@@ -388,7 +303,7 @@ export class Actor {
 // IDL functions can have multiple return values, so decoding always
 // produces an array. Ensure that functions with single or zero return
 // values behave as expected.
-function decodeReturnValue(types: IDL.Type[], msg: ArrayBuffer) {
+function decodeReturnValue(types: IDL.Type[], msg: Uint8Array) {
   const returnValues = IDL.decode(types, msg);
   switch (returnValues.length) {
     case 0:
@@ -494,7 +409,7 @@ function _createActorMethod(
         arg,
         effectiveCanisterId: ecid,
       });
-      let reply: ArrayBuffer | undefined;
+      let reply: Uint8Array | undefined;
       let certificate: Certificate | undefined;
       if (isV3ResponseBody(response.body)) {
         if (agent.rootKey == null) {
@@ -502,12 +417,12 @@ function _createActorMethod(
         }
         const cert = response.body.certificate;
         certificate = await Certificate.create({
-          certificate: bufFromBufLike(cert),
+          certificate: cert,
           rootKey: agent.rootKey,
           canisterId: Principal.from(canisterId),
           blsVerify,
         });
-        const path = [strToUtf8('request_status'), requestId];
+        const path = [utf8ToBytes('request_status'), requestId];
         const status = new TextDecoder().decode(
           lookupResultToBuffer(certificate.lookup_path([...path, 'status'])),
         );
@@ -620,50 +535,4 @@ function _createActorMethod(
     (...args: unknown[]) =>
       caller(options, ...args);
   return handler as ActorMethod;
-}
-
-export type ManagementCanisterRecord = _SERVICE;
-
-/**
- * Create a management canister actor
- * @param config - a CallConfig
- */
-export function getManagementCanister(config: CallConfig): ActorSubclass<ManagementCanisterRecord> {
-  function transform(
-    methodName: string,
-    args: Record<string, unknown> & { canister_id: string; target_canister?: unknown }[],
-  ) {
-    if (config.effectiveCanisterId) {
-      return { effectiveCanisterId: Principal.from(config.effectiveCanisterId) };
-    }
-    const first = args[0];
-    let effectiveCanisterId = Principal.fromHex('');
-    if (
-      first &&
-      typeof first === 'object' &&
-      first.target_canister &&
-      methodName === 'install_chunked_code'
-    ) {
-      effectiveCanisterId = Principal.from(first.target_canister);
-    }
-    if (first && typeof first === 'object' && first.canister_id) {
-      effectiveCanisterId = Principal.from(first.canister_id as unknown);
-    }
-    return { effectiveCanisterId };
-  }
-
-  return Actor.createActor<ManagementCanisterRecord>(managementCanisterIdl, {
-    ...config,
-    canisterId: Principal.fromHex(''),
-    ...{
-      callTransform: transform,
-      queryTransform: transform,
-    },
-  });
-}
-
-export class AdvancedActor extends Actor {
-  constructor(metadata: ActorMetadata) {
-    super(metadata);
-  }
 }

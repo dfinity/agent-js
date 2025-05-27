@@ -19,23 +19,17 @@ jobs:
         spec:
           - '0.16.1'
         node:
-          - 18
           - 20
           - 22
 
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node }}
-        uses: actions/setup-node@v4
+      - uses: ./.github/actions/prepare
         with:
           node-version: ${{ matrix.node }}
 
-      - run: npm install -g npm
-
-      - run: npm install
-
       # build monorepo incl. each subpackage
-      - run: npm run build --workspaces --if-present
+      - run: npm run build
 
       # test monorepo incl. each subpackage
       - run: npm run test

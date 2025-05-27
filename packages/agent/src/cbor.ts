@@ -41,12 +41,10 @@ export function encode(value: any): Uint8Array {
  * Decode a CBOR encoded value into a JavaScript value.
  * @param input The CBOR encoded value
  */
-export function decode<T>(input: Uint8Array | ArrayBuffer): T {
-  const bytes = input instanceof ArrayBuffer ? new Uint8Array(input) : input;
-
+export function decode<T>(input: Uint8Array): T {
   try {
-    return cbor.decode(bytes) as T;
+    return cbor.decode(input) as T;
   } catch (error: unknown) {
-    throw InputError.fromCode(new CborDecodeErrorCode(error, bytes));
+    throw InputError.fromCode(new CborDecodeErrorCode(error, input));
   }
 }

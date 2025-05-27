@@ -4,28 +4,25 @@ import {
   ActorSubclass,
   Cbor as cbor,
   Certificate,
-  compare,
   HashTree,
+  HttpAgent,
   lookup_path,
   lookupResultToBuffer,
-  LookupPathStatus,
   reconstruct,
-  uint8ToBuf,
+  LookupPathStatus,
 } from '@dfinity/agent';
-import { lebDecode } from '@dfinity/candid';
-import { PipeArrayBuffer } from '@dfinity/candid/lib/cjs/utils/buffer';
+import { lebDecode, PipeArrayBuffer, compare } from '@dfinity/candid';
 import { AssetsCanisterRecord, getAssetsCanister } from './canisters/assets';
-import { sha256 } from '@noble/hashes/sha256';
+import { sha256 } from '@noble/hashes/sha2';
 import { BatchOperationKind } from './canisters/assets_service';
-import * as base64Arraybuffer from 'base64-arraybuffer';
 import { isReadable, Readable } from './readable/readable';
 import { ReadableFile } from './readable/readableFile';
 import { ReadableBlob } from './readable/readableBlob';
 import { ReadablePath } from './readable/readablePath';
 import { ReadableBytes } from './readable/readableBytes';
 import { limit, LimitFn } from './utils/limit';
+import { base64Decode } from './utils/base64';
 import fs from 'fs';
-import { HttpAgent } from '@dfinity/agent';
 
 /**
  * Supported content encodings by asset canister
@@ -204,7 +201,7 @@ export class AssetManager {
         await readable.open();
         const bytes = await readable.slice(0, readable.length);
         await readable.close();
-        const hash = config?.sha256 ?? sha256.create().update(new Uint8Array(bytes)).digest();
+        const hash = config?.sha256 ?? sha256(new Uint8Array(bytes));
         return this._actor.store({
           key,
           content: bytes,
@@ -512,8 +509,8 @@ class Asset {
       }),
     );
 
-    let certificate: ArrayBuffer | undefined;
-    let tree: ArrayBuffer | undefined;
+    let certificate: Uint8Array | undefined;
+    let tree: Uint8Array | undefined;
     const certificateHeader = response.headers.find(
       ([key]) => key.trim().toLowerCase() === 'ic-certificate',
     );
@@ -523,7 +520,7 @@ class Asset {
     const fields = certificateHeader[1].split(/,/);
     for (const f of fields) {
       const [, name, b64Value] = [...(f.match(/^(.*)=:(.*):$/) ?? [])].map(x => x.trim());
-      const value = base64Arraybuffer.decode(b64Value);
+      const value = base64Decode(b64Value);
       if (name === 'certificate') {
         certificate = value;
       } else if (name === 'tree') {
@@ -537,7 +534,7 @@ class Asset {
     }
 
     const cert = await Certificate.create({
-      certificate: new Uint8Array(certificate),
+      certificate,
       rootKey: agent.rootKey,
       canisterId,
     }).catch(() => Promise.resolve());
@@ -549,10 +546,7 @@ class Asset {
 
     // Check certificate time
     const timeLookup = cert.lookup_path(['time']);
-    if (
-      timeLookup.status !== LookupPathStatus.Found ||
-      !(timeLookup.value instanceof ArrayBuffer)
-    ) {
+    if (timeLookup.status !== LookupPathStatus.Found || !(timeLookup.value instanceof Uint8Array)) {
       return false;
     }
 
@@ -564,11 +558,11 @@ class Asset {
       return false;
     }
 
-    const hashTree: HashTree = cbor.decode(new Uint8Array(tree));
+    const hashTree = cbor.decode<HashTree>(tree);
     const reconstructed = await reconstruct(hashTree);
     const witness = cert.lookup_path(['canister', canisterId.toUint8Array(), 'certified_data']);
 
-    if (witness.status !== LookupPathStatus.Found || !(witness.value instanceof ArrayBuffer)) {
+    if (witness.status !== LookupPathStatus.Found || !(witness.value instanceof Uint8Array)) {
       // Could not find certified data for this canister in the certificate
       return false;
     }
@@ -582,7 +576,7 @@ class Asset {
     // Lookup hash of asset in tree
     const treeSha = lookupResultToBuffer(lookup_path(['http_assets', this._key], hashTree));
 
-    return !!treeSha && !!this.sha256 && compare(this.sha256.buffer, treeSha) === 0;
+    return !!treeSha && !!this.sha256 && compare(this.sha256, treeSha) === 0;
   }
 
   /**
@@ -599,6 +593,6 @@ class Asset {
     } else {
       await this.getChunks((_, chunk) => hash.update(chunk), true);
     }
-    return compare(uint8ToBuf(this.sha256), uint8ToBuf(hash.digest())) === 0;
+    return compare(this.sha256, hash.digest()) === 0;
   }
 }

@@ -4,7 +4,6 @@ import {
   HttpAgent,
   Identity,
   CanisterStatus,
-  fromHex,
   polling,
   requestIdOf,
   TrustError,
@@ -16,8 +15,9 @@ import { Principal } from '@dfinity/principal';
 import { describe, it, expect, vi, test } from 'vitest';
 import { makeAgent } from '../utils/agent';
 import { AgentLog } from '@dfinity/agent/src/observable';
+import { hexToBytes } from '@noble/hashes/utils';
 
-const { defaultStrategy, pollForResponse } = polling;
+const { pollForResponse } = polling;
 
 const createWhoamiActor = async (identity: Identity) => {
   const canisterId = 'ivcos-eqaaa-aaaab-qablq-cai';
@@ -115,11 +115,12 @@ describe('controllers', () => {
 describe('call forwarding', () => {
   it('should handle call forwarding', async () => {
     vi.useRealTimers();
+    const counterCanisterId = 'tnnnb-2yaaa-aaaab-qaiiq-cai';
     const forwardedOptions = {
-      canisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
+      canisterId: counterCanisterId,
       methodName: 'inc_read',
       arg: '4449444c0000',
-      effectiveCanisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
+      effectiveCanisterId: counterCanisterId,
     };
 
     const agent = new HttpAgent({ host: 'https://icp-api.io' });
@@ -127,7 +128,7 @@ describe('call forwarding', () => {
       Principal.fromText(forwardedOptions.canisterId),
       {
         methodName: forwardedOptions.methodName,
-        arg: fromHex(forwardedOptions.arg),
+        arg: hexToBytes(forwardedOptions.arg),
         effectiveCanisterId: Principal.fromText(forwardedOptions.effectiveCanisterId),
       },
     );
@@ -138,7 +139,6 @@ describe('call forwarding', () => {
       agent,
       Principal.fromText(forwardedOptions.effectiveCanisterId),
       requestId,
-      defaultStrategy(),
     );
     expect(certificate).toBeTruthy();
     expect(reply).toBeTruthy();
@@ -153,12 +153,13 @@ test('it should succeed when setting an expiry in the near future', async () => 
   });
 
   await agent.syncTime();
+  const counterCanisterId = 'tnnnb-2yaaa-aaaab-qaiiq-cai';
 
-  expect(
-    agent.call('tnnnb-2yaaa-aaaab-qaiiq-cai', {
+  await expect(
+    agent.call(counterCanisterId, {
       methodName: 'inc_read',
-      arg: fromHex('4449444c0000'),
-      effectiveCanisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
+      arg: hexToBytes('4449444c0000'),
+      effectiveCanisterId: counterCanisterId,
     }),
   ).resolves.toBeDefined();
 });
@@ -170,18 +171,19 @@ test('it should succeed when setting an expiry in the future', async () => {
   });
 
   await agent.syncTime();
+  const counterCanisterId = 'tnnnb-2yaaa-aaaab-qaiiq-cai';
 
-  expect(
-    agent.call('tnnnb-2yaaa-aaaab-qaiiq-cai', {
+  await expect(
+    agent.call(counterCanisterId, {
       methodName: 'inc_read',
-      arg: fromHex('4449444c0000'),
-      effectiveCanisterId: 'tnnnb-2yaaa-aaaab-qaiiq-cai',
+      arg: hexToBytes('4449444c0000'),
+      effectiveCanisterId: counterCanisterId,
     }),
   ).resolves.toBeDefined();
 });
 
 test('it should fail when setting an expiry in the far future', async () => {
-  expect(
+  await expect(
     HttpAgent.create({
       host: 'https://icp-api.io',
       ingressExpiryInMinutes: 100,
@@ -221,12 +223,12 @@ test('should allow you to sync time when the system time is over 5 minutes apart
   global.clearTimeout = vi.fn();
   const agent = new HttpAgent({ fetch: fetch });
   const logs: AgentLog[] = [];
-  agent.log.subscribe(log => logs.push(log));
+  agent.log.subscribe(log => logs.push(log as AgentLog));
   await agent.syncTime();
   await agent
     .call(Principal.managementCanister(), {
       methodName: 'test',
-      arg: new Uint8Array().buffer,
+      arg: new Uint8Array(),
     })
     // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
     .catch(function (_) {});

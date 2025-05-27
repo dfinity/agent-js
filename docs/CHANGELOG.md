@@ -4,7 +4,9 @@
 
 ### Changed
 
-- chore: removes unused `bs58check` dependency from `@dfinity/identity-secp256k1`
+- chore!: removes management canister from @dfinity/agent in favor of @dfinity/ic-management
+- feat!: changes all @dfinity/candid interfaces to `Uint8Array<ArrayBuffer>` instead of `ArrayBuffer` to make the API more consistent.
+- feat!: replaces `fromHex`, `toHex`, `concat` utils with `bytesToHex`, `hexToBytes`, and `concatBytes` from `@noble/hashes/utils` respectively, to take advantage of existing dependencies.
 - feat!: changes polling strategy for `read_state` requests to support presigned requests. By default, `read_state` requests will create a new signature with a new ingress expiry each time they are made. However, the new `preSignReadStateRequest` will make one signature and use it for all polling requests. This is useful for hardware wallets or other external signing solutions that make signing cumbersome.
   - pollForResponse now moves `strategy`, `request`, and `preSignReadStateRequest` to the `options: PollingOptions` object
   - new export: `PollingOptions` type
@@ -27,9 +29,14 @@
 - feat!: refactors `Expiry` class to use static factory methods and add JSON serialization/deserialization.
 - feat!: makes `lookup_path` compliant with the [IC Interface Specification](https://github.com/dfinity/portal/blob/8015a4ab50232176723ffd95e32a02f1bf7fef30/docs/references/ic-interface-spec.md?plain=1#L3069). Renames the `lookup` method of the `Certificate` class into `lookup_path`, for consistency.
 - feat!: removes the `lookup_label` method from the `Certificate` class.
+- feat!: replaces `hash` with `sha256` from `@noble/hashes/sha2` to take advantage of existing dependencies
+- chore!: drops support for Node.js v19 or lower, and Node.js v21
 
+- chore: removes unused `bs58check` dependency from `@dfinity/identity-secp256k1`
+- fix: AuthClient `isAuthenticated` now correctly returns false if the delegation chain is invalid; eg: expired session
 - feat: introduces the `lookup_subtree` standalone function and `Certificate` class method.
 - chore: formatting files and changelog
+- test: removes backwards comatibility test for `Actor` with `v1` HttpAgent due to breaking interface changes.
 - fix: Check subtyping relationship when decoding function or service references
   - This means we now follow the Candid spec more closely, and reduces the risk of calling services with the wrong argument types
 

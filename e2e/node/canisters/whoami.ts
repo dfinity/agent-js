@@ -1,9 +1,8 @@
 import { Actor } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
-import { readFileSync } from 'fs';
-import path from 'path';
 import agent from '../utils/agent';
+import { getCanisterId } from '../utils/canisterid';
 
 let cache: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,10 +21,8 @@ export default async function (): Promise<{
   idl: IDL.InterfaceFactory;
 }> {
   if (!cache) {
-    const module = readFileSync(path.join(__dirname, 'identity.wasm'));
+    const canisterId = getCanisterId('whoami');
 
-    const canisterId = await Actor.createCanister({ agent: await agent });
-    await Actor.install({ module }, { canisterId, agent: await agent });
     const idl: IDL.InterfaceFactory = ({ IDL }) => {
       return IDL.Service({
         whoami: IDL.Func([], [IDL.Principal], []),

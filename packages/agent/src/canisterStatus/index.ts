@@ -29,10 +29,10 @@ import {
   LabeledHashTree,
   LookupSubtreeStatus,
 } from '../certificate';
-import { bufFromBufLike, strToUtf8, toHex } from '../utils/buffer';
 import * as cbor from '../cbor';
 import { decodeLeb128, decodeTime } from '../utils/leb';
 import { DerEncodedPublicKey } from '../auth';
+import { utf8ToBytes, bytesToHex } from '@noble/hashes/utils';
 
 /**
  * Represents the useful information about a subnet
@@ -60,9 +60,9 @@ export type SubnetStatus = {
  */
 export type Status =
   | string
-  | ArrayBuffer
+  | Uint8Array
   | Date
-  | ArrayBuffer[]
+  | Uint8Array[]
   | Principal[]
   | SubnetStatus
   | bigint
@@ -71,16 +71,16 @@ export type Status =
 /**
  * Interface to define a custom path. Nested paths will be represented as individual buffers, and can be created from text using TextEncoder.
  * @param {string} key the key to use to access the returned value in the canisterStatus map
- * @param {ArrayBuffer[]} path the path to the desired value, represented as an array of buffers
+ * @param {Uint8Array[]} path the path to the desired value, represented as an array of buffers
  * @param {string} decodeStrategy the strategy to use to decode the returned value
  */
 export class CustomPath implements CustomPath {
   public key: string;
-  public path: ArrayBuffer[] | string;
+  public path: Uint8Array[] | string;
   public decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'utf-8' | 'raw';
   constructor(
     key: string,
-    path: ArrayBuffer[] | string,
+    path: Uint8Array[] | string,
     decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'utf-8' | 'raw',
   ) {
     this.key = key;
@@ -98,7 +98,7 @@ export class CustomPath implements CustomPath {
 export interface MetaData {
   kind: 'metadata';
   key: string;
-  path: string | ArrayBuffer;
+  path: string | Uint8Array;
   decodeStrategy: 'cbor' | 'hex' | 'leb128' | 'utf-8' | 'raw';
 }
 
@@ -210,7 +210,7 @@ export const request = async (options: {
               break;
             }
             case 'module_hash': {
-              status.set(path, toHex(data));
+              status.set(path, bytesToHex(data));
               break;
             }
             case 'subnet': {
@@ -237,11 +237,11 @@ export const request = async (options: {
                     break;
                   }
                   case 'hex': {
-                    status.set(path.key, toHex(data));
+                    status.set(path.key, bytesToHex(data));
                     break;
                   }
                   case 'utf-8': {
-                    status.set(path.key, decodeUtf8(data));
+                    status.set(path.key, new TextDecoder().decode(data));
                   }
                 }
               }
@@ -273,14 +273,14 @@ export const request = async (options: {
 };
 
 export const fetchNodeKeys = (
-  certificate: ArrayBuffer,
+  certificate: Uint8Array,
   canisterId: Principal,
-  root_key?: ArrayBuffer | Uint8Array,
+  root_key?: Uint8Array,
 ): SubnetStatus => {
   if (!canisterId._isPrincipal) {
     throw InputError.fromCode(new UnexpectedErrorCode('Invalid canisterId'));
   }
-  const cert: Cert = cbor.decode(bufFromBufLike(certificate));
+  const cert = cbor.decode<Cert>(certificate);
   const tree = cert.tree;
   let delegation = cert.delegation;
   let subnetId: Principal;
@@ -292,8 +292,8 @@ export const fetchNodeKeys = (
   else if (!delegation && typeof root_key !== 'undefined') {
     subnetId = Principal.selfAuthenticating(new Uint8Array(root_key));
     delegation = {
-      subnet_id: bufFromBufLike(subnetId.toUint8Array()),
-      certificate: new ArrayBuffer(0),
+      subnet_id: subnetId.toUint8Array(),
+      certificate: new Uint8Array(0),
     };
   }
   // otherwise use default NNS subnet id
@@ -304,8 +304,8 @@ export const fetchNodeKeys = (
       ).toUint8Array(),
     );
     delegation = {
-      subnet_id: bufFromBufLike(subnetId.toUint8Array()),
-      certificate: new ArrayBuffer(0),
+      subnet_id: subnetId.toUint8Array(),
+      certificate: new Uint8Array(0),
     };
   }
 
@@ -320,7 +320,7 @@ export const fetchNodeKeys = (
   if (subnetLookupResult.status !== LookupSubtreeStatus.Found) {
     throw ProtocolError.fromCode(new LookupErrorCode('Node not found', subnetLookupResult.status));
   }
-  if (subnetLookupResult.value instanceof ArrayBuffer) {
+  if (subnetLookupResult.value instanceof Uint8Array) {
     throw UnknownError.fromCode(new HashTreeDecodeErrorCode('Invalid node tree'));
   }
 
@@ -353,33 +353,33 @@ export const fetchNodeKeys = (
   };
 };
 
-export const encodePath = (path: Path, canisterId: Principal): ArrayBuffer[] => {
-  const canisterBuffer = bufFromBufLike(canisterId.toUint8Array());
+export const encodePath = (path: Path, canisterId: Principal): Uint8Array[] => {
+  const canisterUint8Array = canisterId.toUint8Array();
   switch (path) {
     case 'time':
-      return [strToUtf8('time')];
+      return [utf8ToBytes('time')];
     case 'controllers':
-      return [strToUtf8('canister'), canisterBuffer, strToUtf8('controllers')];
+      return [utf8ToBytes('canister'), canisterUint8Array, utf8ToBytes('controllers')];
     case 'module_hash':
-      return [strToUtf8('canister'), canisterBuffer, strToUtf8('module_hash')];
+      return [utf8ToBytes('canister'), canisterUint8Array, utf8ToBytes('module_hash')];
     case 'subnet':
-      return [strToUtf8('subnet')];
+      return [utf8ToBytes('subnet')];
     case 'candid':
       return [
-        strToUtf8('canister'),
-        canisterBuffer,
-        strToUtf8('metadata'),
-        strToUtf8('candid:service'),
+        utf8ToBytes('canister'),
+        canisterUint8Array,
+        utf8ToBytes('metadata'),
+        utf8ToBytes('candid:service'),
       ];
     default: {
       // Check for CustomPath signature
       if ('key' in path && 'path' in path) {
         // For simplified metadata queries
-        if (typeof path['path'] === 'string' || path['path'] instanceof ArrayBuffer) {
+        if (typeof path['path'] === 'string' || path['path'] instanceof Uint8Array) {
           const metaPath = path.path;
-          const encoded = typeof metaPath === 'string' ? strToUtf8(metaPath) : metaPath;
+          const encoded = typeof metaPath === 'string' ? utf8ToBytes(metaPath) : metaPath;
 
-          return [strToUtf8('canister'), canisterBuffer, strToUtf8('metadata'), encoded];
+          return [utf8ToBytes('canister'), canisterUint8Array, utf8ToBytes('metadata'), encoded];
 
           // For non-metadata, return the provided custompath
         } else {
@@ -395,12 +395,8 @@ export const encodePath = (path: Path, canisterId: Principal): ArrayBuffer[] => 
   );
 };
 
-const decodeUtf8 = (buf: ArrayBuffer): string => {
-  return new TextDecoder().decode(buf);
-};
-
 // Controllers are CBOR-encoded buffers
-const decodeControllers = (buf: ArrayBuffer): Principal[] => {
+const decodeControllers = (buf: Uint8Array): Principal[] => {
   const controllersRaw = cbor.decode<Uint8Array[]>(buf);
   return controllersRaw.map(buf => {
     return Principal.fromUint8Array(buf);

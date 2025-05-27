@@ -1,10 +1,12 @@
 import { existsSync, readFileSync, unlinkSync } from 'fs';
 import path from 'path';
-import agent from '../utils/agent';
-import { Actor } from '@dfinity/agent';
+import { makeAgent } from '../utils/agent';
 import { Principal } from '@dfinity/principal';
 import { AssetManager } from '@dfinity/assets';
-import { describe, it, expect, beforeAll, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { Ed25519KeyIdentity } from '@dfinity/identity';
+import { utf8ToBytes } from '@noble/hashes/utils';
+import { getCanisterId } from '../utils/canisterid';
 
 /**
  * Create (pseudo) random bytes Readable
@@ -33,21 +35,32 @@ const randomBytesReadable = (fileName: string, length: number) => {
   };
 };
 
-/**
- * File paths used in file read/write tests
- */
-const testFile = {
-  source: path.join(__dirname, '../package.json'),
-  target: path.join(__dirname, '../package_copy.json'),
-};
+describe('assets', async () => {
+  /**
+   * File paths used in file read/write tests
+   */
+  const testFile = {
+    source: path.join(__dirname, '../package.json'),
+    target: path.join(__dirname, '../package_copy.json'),
+  };
+  const seed = new Uint8Array(32);
+  utf8ToBytes('test').forEach((byte, i) => {
+    seed[i] = byte;
+  });
 
-describe('assets', () => {
+  // yields n7obp-cx27z-e4ytc-ipt7n-urffz-txqa5-el2vn-7vpqc-jjoh3-wrob6-bqe
+  const identity = Ed25519KeyIdentity.generate(seed);
+
+  const agent = await makeAgent({
+    identity,
+  });
+
   let canisterId: Principal;
 
   const testRandomBytes = async (fileName: string, length: number) => {
     const assetManager = new AssetManager({
       canisterId,
-      agent: await agent,
+      agent,
     });
     const readable = randomBytesReadable(fileName, length);
     const key = await assetManager.store(readable);
@@ -67,10 +80,8 @@ describe('assets', () => {
     await expect(assetManager.get(key)).rejects.toThrow(/asset not found/);
   };
 
-  beforeAll(async () => {
-    const module = readFileSync(path.join(__dirname, '../canisters/assets.wasm'));
-    canisterId = await Actor.createCanister({ agent: await agent });
-    await Actor.install({ module }, { canisterId, agent: await agent });
+  beforeEach(async () => {
+    canisterId = getCanisterId('assets');
   });
 
   afterEach(async () => {
@@ -114,7 +125,7 @@ describe('assets', () => {
   it('read file from disk, store as asset, get asset, write file to disk and compare files', async () => {
     const assetManager = new AssetManager({
       canisterId,
-      agent: await agent,
+      agent,
       // Make sure files are read and written in chunks during this test
       maxSingleFileSize: 200,
       maxChunkSize: 200,

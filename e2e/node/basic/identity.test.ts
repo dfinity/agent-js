@@ -9,7 +9,7 @@ import {
 } from '@dfinity/identity';
 import { Secp256k1KeyIdentity } from '@dfinity/identity-secp256k1';
 import agent, { makeAgent } from '../utils/agent';
-import identityCanister from '../canisters/identity';
+import whoamiCanister from '../canisters/whoami';
 import { test, expect } from 'vitest';
 
 function createIdentity(seed: number): SignIdentity {
@@ -24,11 +24,7 @@ function createSecpIdentity(seed: number): SignIdentity {
   return Secp256k1KeyIdentity.generate(new Uint8Array(seed1));
 }
 
-async function createIdentityActor(
-  seed: number,
-  canisterId: Principal,
-  idl,
-): Promise<any> {
+async function createIdentityActor(seed: number, canisterId: Principal, idl): Promise<any> {
   const identity = createIdentity(seed);
   const agent1 = await makeAgent({ identity });
   return Actor.createActor(idl, {
@@ -76,19 +72,8 @@ async function createEcdsaIdentityActor(
   }) as any;
 }
 
-async function installIdentityCanister(): Promise<{
-  canisterId: Principal;
-  idl;
-}> {
-  const { canisterId, idl } = await identityCanister();
-  return {
-    canisterId,
-    idl,
-  };
-}
-
 test('identity: query and call gives same principal', async () => {
-  const { canisterId, idl } = await installIdentityCanister();
+  const { canisterId, idl } = await whoamiCanister();
   const identity = Actor.createActor(idl, {
     canisterId,
     agent: await agent,
@@ -99,7 +84,7 @@ test('identity: query and call gives same principal', async () => {
 }, 30000);
 
 test('identity: two different Ed25519 keys should have a different principal', async () => {
-  const { canisterId, idl } = await installIdentityCanister();
+  const { canisterId, idl } = await whoamiCanister();
   const identity1 = await createIdentityActor(0, canisterId, idl);
   const identity2 = await createIdentityActor(1, canisterId, idl);
 
@@ -107,8 +92,9 @@ test('identity: two different Ed25519 keys should have a different principal', a
   const principal2 = await identity2.whoami_query();
   expect(principal1).not.toEqual(principal2);
 }, 30000);
+
 test('identity: two different Secp256k1 keys should have a different principal', async () => {
-  const { canisterId, idl } = await installIdentityCanister();
+  const { canisterId, idl } = await whoamiCanister();
   // Seeded identity
   const identity1 = await createSecp256k1IdentityActor(canisterId, idl, 0);
   // Unseeded identity
@@ -120,7 +106,7 @@ test('identity: two different Secp256k1 keys should have a different principal',
 }, 30000);
 
 test('identity: two different Ecdsa keys should have a different principal', async () => {
-  const { canisterId, idl } = await installIdentityCanister();
+  const { canisterId, idl } = await whoamiCanister();
   const identity1 = await createEcdsaIdentityActor(canisterId, idl);
   const identity2 = await createEcdsaIdentityActor(canisterId, idl);
 
@@ -130,7 +116,7 @@ test('identity: two different Ecdsa keys should have a different principal', asy
 }, 30000);
 
 test('delegation: principal is the same between delegated keys with secp256k1', async () => {
-  const { canisterId, idl } = await installIdentityCanister();
+  const { canisterId, idl } = await whoamiCanister();
 
   const masterKey = createSecpIdentity(2);
   const sessionKey = createSecpIdentity(3);
@@ -164,7 +150,7 @@ test('delegation: principal is the same between delegated keys with secp256k1', 
 }, 30000);
 
 test('delegation: principal is the same between delegated keys', async () => {
-  const { canisterId, idl } = await installIdentityCanister();
+  const { canisterId, idl } = await whoamiCanister();
 
   const masterKey = createIdentity(2);
   const sessionKey = createIdentity(3);
@@ -198,7 +184,7 @@ test('delegation: principal is the same between delegated keys', async () => {
 }, 30000);
 
 test('delegation: works with 3 keys', async () => {
-  const { canisterId, idl } = await installIdentityCanister();
+  const { canisterId, idl } = await whoamiCanister();
 
   const rootKey = createIdentity(4);
   const middleKey = createIdentity(5);
@@ -248,7 +234,7 @@ test('delegation: works with 3 keys', async () => {
 }, 30000);
 
 test('delegation: works with 4 keys', async () => {
-  const { canisterId, idl } = await installIdentityCanister();
+  const { canisterId, idl } = await whoamiCanister();
 
   const rootKey = createIdentity(7);
   const middleKey = createIdentity(8);

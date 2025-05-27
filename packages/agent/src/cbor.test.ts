@@ -6,10 +6,10 @@ test('round trip', () => {
   interface Data {
     a: number;
     b: string;
-    c: ArrayBuffer;
+    c: Uint8Array;
     d: { four: string };
     e: Principal;
-    f: ArrayBuffer;
+    f: Uint8Array;
     g: bigint;
   }
 

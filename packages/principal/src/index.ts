@@ -1,18 +1,13 @@
 import { decode, encode } from './utils/base32';
 import { getCrc32 } from './utils/getCrc';
-import { sha224 } from './utils/sha224';
+import { sha224 } from '@noble/hashes/sha2';
+import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
 
 export const JSON_KEY_PRINCIPAL = '__principal__';
 const SELF_AUTHENTICATING_SUFFIX = 2;
 const ANONYMOUS_SUFFIX = 4;
 
 const MANAGEMENT_CANISTER_PRINCIPAL_TEXT_STR = 'aaaaa-aa';
-
-const fromHexString = (hexString: string) =>
-  new Uint8Array((hexString.match(/.{1,2}/g) ?? []).map(byte => parseInt(byte, 16)));
-
-const toHexString = (bytes: Uint8Array) =>
-  bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
 
 export type JsonnablePrincipal = {
   [JSON_KEY_PRINCIPAL]: string;
@@ -53,7 +48,7 @@ export class Principal {
   }
 
   public static fromHex(hex: string): Principal {
-    return new this(fromHexString(hex));
+    return new this(hexToBytes(hex));
   }
 
   public static fromText(text: string): Principal {
@@ -98,7 +93,7 @@ export class Principal {
   }
 
   public toHex(): string {
-    return toHexString(this._arr).toUpperCase();
+    return bytesToHex(this._arr).toUpperCase();
   }
 
   public toText(): string {
@@ -107,8 +102,7 @@ export class Principal {
     view.setUint32(0, getCrc32(this._arr));
     const checksum = new Uint8Array(checksumArrayBuf);
 
-    const bytes = Uint8Array.from(this._arr);
-    const array = new Uint8Array([...checksum, ...bytes]);
+    const array = new Uint8Array([...checksum, ...this._arr]);
 
     const result = encode(array);
     const matches = result.match(/.{1,5}/g);

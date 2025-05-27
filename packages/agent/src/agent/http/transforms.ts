@@ -60,7 +60,7 @@ export class Expiry {
     return this.__expiry__;
   }
 
-  public toHash(): ArrayBuffer {
+  public toHash(): Uint8Array {
     return lebEncode(this.__expiry__);
   }
 
