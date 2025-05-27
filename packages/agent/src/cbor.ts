@@ -1,8 +1,11 @@
 import { Principal } from '@dfinity/principal';
-import { Delegation } from '@dfinity/identity';
 import * as cbor from '@dfinity/cbor';
 import { CborDecodeErrorCode, CborEncodeErrorCode, InputError } from './errors';
 import { Expiry } from './agent';
+
+function isJsonnable(value: unknown): value is { toJSON: () => object } {
+  return typeof value === 'object' && value !== null && 'toJSON' in value;
+}
 
 /**
  * Encode a JavaScript value into CBOR.
@@ -11,7 +14,7 @@ import { Expiry } from './agent';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function encode(value: any): Uint8Array {
   try {
-    return cbor.encode<Principal>(value, value => {
+    return cbor.encode(value, value => {
       if (value instanceof Principal) {
         return value.toUint8Array();
       }
@@ -20,14 +23,8 @@ export function encode(value: any): Uint8Array {
         return value.toBigInt();
       }
 
-      if (value instanceof Delegation) {
-        return {
-          pubkey: value.pubkey,
-          expiration: value.expiration,
-          ...(value.targets && {
-            targets: value.targets,
-          }),
-        };
+      if (isJsonnable(value)) {
+        return value.toJSON();
       }
 
       return value;

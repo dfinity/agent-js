@@ -14,6 +14,7 @@ import {
   Ed25519KeyIdentity,
   ECDSAKeyIdentity,
   PartialDelegationIdentity,
+  PartialIdentity,
 } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
 import { IdleManager, IdleManagerOptions } from './idleManager';
@@ -26,7 +27,6 @@ import {
   KEY_VECTOR,
   LocalStorage,
 } from './storage';
-import { PartialIdentity } from '@dfinity/identity/lib/cjs/identity/partial';
 
 export {
   AuthClientStorage,

@@ -33,6 +33,10 @@ export class Delegation {
     public readonly targets?: Principal[],
   ) {}
 
+  /**
+   * Used to CBOR-encode the delegation.
+   * @returns A JSON representation of the delegation.
+   */
   public toJSON(): JsonnableDelegation {
     // every string should be hex and once-de-hexed,
     // discoverable what it is (e.g. de-hex to get JSON with a 'type' property, or de-hex to DER
