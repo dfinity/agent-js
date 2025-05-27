@@ -5,7 +5,6 @@ import {
   requestIdOf,
   Signature,
   SignIdentity,
-  uint8ToBuf,
   IC_REQUEST_DOMAIN_SEPARATOR,
   IC_REQUEST_AUTH_DELEGATION_DOMAIN_SEPARATOR,
 } from '@dfinity/agent';
