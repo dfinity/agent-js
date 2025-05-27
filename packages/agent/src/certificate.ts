@@ -219,7 +219,7 @@ export class Certificate {
     disableTimeVerification: boolean = false,
   ) {
     this.#disableTimeVerification = disableTimeVerification;
-    this.cert = cbor.decode(new Uint8Array(certificate));
+    this.cert = cbor.decode(certificate);
   }
 
   /**

@@ -16,7 +16,8 @@
     "sourceMap": true,
     "inlineSources": true,
     "strict": true,
-    "target": "es2017"
+    "target": "es2017",
+    "skipLibCheck": true
   },
   "include": ["types/*", "src/**/*"],
   "references": [{ "path": "../agent" }, { "path": "../identity" }]
