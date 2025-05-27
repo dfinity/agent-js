@@ -17,7 +17,7 @@
     ]
   },
   "dependencies": {
-    "@dfinity/cbor": "file:../cbor"
+    "@dfinity/cbor": "^0.1.0"
   },
   "devDependencies": {
     "@jest/types": "^29.6.3",
