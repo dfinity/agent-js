@@ -11,6 +11,7 @@ import {
 import { Principal } from '@dfinity/principal';
 import { PartialIdentity } from './partial';
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
+import { type CborValue } from '@dfinity/cbor';
 
 function _parseBlob(value: unknown): Uint8Array {
   if (typeof value !== 'string' || value.length < 64) {
@@ -34,9 +35,18 @@ export class Delegation {
   ) {}
 
   /**
-   * Used to CBOR-encode the delegation.
-   * @returns A JSON representation of the delegation.
+   * @returns A representation of the delegation that can be used to CBOR-encode it.
    */
+  public toCborReplacer(): CborValue {
+    return {
+      pubkey: this.pubkey,
+      expiration: this.expiration,
+      ...(this.targets && {
+        targets: this.targets,
+      }),
+    };
+  }
+
   public toJSON(): JsonnableDelegation {
     // every string should be hex and once-de-hexed,
     // discoverable what it is (e.g. de-hex to get JSON with a 'type' property, or de-hex to DER

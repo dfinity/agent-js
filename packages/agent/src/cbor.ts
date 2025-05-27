@@ -3,8 +3,8 @@ import * as cbor from '@dfinity/cbor';
 import { CborDecodeErrorCode, CborEncodeErrorCode, InputError } from './errors';
 import { Expiry } from './agent';
 
-function isJsonnable(value: unknown): value is { toJSON: () => object } {
-  return typeof value === 'object' && value !== null && 'toJSON' in value;
+function hasCborReplacerMethod(value: unknown): value is { toCborReplacer: () => cbor.CborValue } {
+  return typeof value === 'object' && value !== null && 'toCborReplacer' in value;
 }
 
 /**
@@ -23,8 +23,8 @@ export function encode(value: any): Uint8Array {
         return value.toBigInt();
       }
 
-      if (isJsonnable(value)) {
-        return value.toJSON();
+      if (hasCborReplacerMethod(value)) {
+        return value.toCborReplacer();
       }
 
       return value;
