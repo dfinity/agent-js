@@ -1,11 +1,15 @@
 {
   "extends": "../../tsconfig.test.json",
+  "compilerOptions": {
+    "types": ["jest", "jsdom"]
+  },
   "include": [
     "src/**/*.ts",
+    "types/*",
     "FixJSDOMEnvironment.ts",
     "test-setup.ts",
     "jest.config.ts",
     "../../jest.config.base.ts"
   ],
-  "exclude": ["node_modules", "dist", "lib"]
+  "exclude": ["node_modules", "dist", "lib", "**/*.snap"]
 }

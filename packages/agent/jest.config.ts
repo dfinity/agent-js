@@ -12,6 +12,7 @@ const config: Config.InitialOptions = {
   setupFiles: [`<rootDir>/packages/${packageName}/test-setup.ts`],
   collectCoverageFrom: ['src/**/*.{ts,tsx}'],
   displayName: packageName,
+  prettierPath: null, // see https://jestjs.io/docs/configuration/#prettierpath-string
   rootDir: '../..',
 };
 

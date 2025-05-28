@@ -1,15 +1,16 @@
 import baseConfig from '../../jest.config.base';
 import { Crypto } from '@peculiar/webcrypto';
-import { createDefaultEsmPreset } from 'ts-jest';
+import { createDefaultPreset } from 'ts-jest';
 import type { Config } from '@jest/types';
 
 const packageName = 'auth-client';
 
 const config: Config.InitialOptions = {
   ...baseConfig,
-  ...createDefaultEsmPreset({
+  ...createDefaultPreset({
     tsconfig: `<rootDir>/packages/${packageName}/tsconfig.test.json`,
   }),
+  roots: [`<rootDir>/packages/${packageName}`],
   moduleDirectories: ['node_modules'],
   modulePaths: [`<rootDir>/packages/${packageName}/src/`],
   setupFiles: [`<rootDir>/packages/${packageName}/test-setup.ts`],

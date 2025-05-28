@@ -14,9 +14,8 @@
     "packages/**/test-setup.ts",
     "packages/**/setupTests.ts",
     "packages/**/jest.config.ts",
-    "packages/**/src/types/",
-    "packages/**/src/**/*.test.ts",
-    "packages/**/src/**/*.spec.ts",
+    "packages/**/types/*",
+    "packages/**/src/**/*.ts",
     "test",
     "jest.config.base.ts",
     "jest.config.ts"

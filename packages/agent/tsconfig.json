@@ -12,6 +12,9 @@
     "**/src/**/__certificates__/**",
     "**/src/**/*.test.ts",
     "**/src/**/*.spec.ts",
+    "**/src/**/*.snap",
+    "jest.config.ts",
+    "test-setup.ts",
     "node_modules",
     "dist",
     "lib"
