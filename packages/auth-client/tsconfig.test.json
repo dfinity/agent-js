@@ -3,11 +3,6 @@
   "compilerOptions": {
     "types": ["jest", "jsdom"]
   },
-  "include": [
-    "src/**/*.ts",
-    "types/*",
-    "FixJSDOMEnvironment.ts",
-    "test-setup.ts"
-  ],
+  "include": ["src/**/*.ts", "types/*", "FixJSDOMEnvironment.ts", "test-setup.ts"],
   "exclude": ["node_modules", "dist", "lib", "**/*.snap"]
 }
