@@ -11,7 +11,5 @@ dist/
 # Cannot ignore .d.ts files in types/
 !types/**/*.d.ts
 
-# Cannot ignore setup files for webpack and jest, which are still JavaScript.
-!webpack.config.js
+# Cannot ignore setup files for jest, which are still JavaScript.
 !jest.config.js
-!test-setup.js

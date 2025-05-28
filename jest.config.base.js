@@ -1,12 +1,12 @@
-import type { Config } from '@jest/types';
 import { createDefaultPreset } from 'ts-jest';
 
-const config: Config.InitialOptions = {
+/** @type {import('jest').Config} */
+const baseConfig = {
   ...createDefaultPreset({
     tsconfig: '<rootDir>/tsconfig.test.json',
   }),
   testPathIgnorePatterns: ['/node_modules/', '/lib/', '/dist/', '/docs/'],
-  testMatch: ['**/src/**/?(*.)+(spec|test).[jt]s?(x)'],
+  testMatch: ['**/src/**/?(*.)+(spec|test).[jt]s'],
   moduleNameMapper: {
     '^@dfinity/agent$': '<rootDir>/packages/agent/src/index.ts',
     '^@dfinity/assets$': '<rootDir>/packages/assets/src/index.ts',
@@ -18,4 +18,4 @@ const config: Config.InitialOptions = {
   },
 };
 
-export default config;
+export { baseConfig };

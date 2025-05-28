@@ -1,11 +1,11 @@
-import baseConfig from '../../jest.config.base';
+import { baseConfig } from '../../jest.config.base.js';
 import { Crypto } from '@peculiar/webcrypto';
 import { createDefaultPreset } from 'ts-jest';
-import type { Config } from '@jest/types';
 
 const packageName = 'auth-client';
 
-const config: Config.InitialOptions = {
+/** @type {import('jest').Config} */
+const config = {
   ...baseConfig,
   ...createDefaultPreset({
     tsconfig: `<rootDir>/packages/${packageName}/tsconfig.test.json`,
@@ -25,4 +25,4 @@ const config: Config.InitialOptions = {
   rootDir: '../..',
 };
 
-export default config;
+export default () => config;

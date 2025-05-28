@@ -24,13 +24,11 @@
     "packages/**/test",
     "packages/**/dist",
     "packages/**/lib",
-    "packages/**/*.snap",
-    "packages/**/jest.config.ts",
-    "jest.config.ts",
-    "jest.config.base.ts"
+    "packages/**/*.snap"
   ],
   "references": [
     { "path": "./tsconfig.test.json" },
-    { "path": "./packages/auth-client/tsconfig.test.json" }
+    { "path": "./packages/auth-client/tsconfig.test.json" },
+    { "path": "./packages/use-auth-client/tsconfig.test.json" }
   ]
 }

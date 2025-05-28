@@ -7,9 +7,7 @@
     "src/**/*.ts",
     "types/*",
     "FixJSDOMEnvironment.ts",
-    "test-setup.ts",
-    "jest.config.ts",
-    "../../jest.config.base.ts"
+    "test-setup.ts"
   ],
   "exclude": ["node_modules", "dist", "lib", "**/*.snap"]
 }

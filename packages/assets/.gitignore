@@ -7,3 +7,6 @@ dist/
 
 # generated docs
 /docs/reference
+
+# Cannot ignore setup files for jest, which are still JavaScript.
+!jest.config.js
