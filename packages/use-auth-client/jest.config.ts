@@ -1,6 +1,14 @@
+import baseConfig from '../../jest.config.base';
+import { createDefaultPreset } from 'ts-jest';
+const packageName = 'use-auth-client';
+
 module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: './FixJSDOMEnvironment.ts',
-  roots: ['<rootDir>/test'],
-  setupFilesAfterEnv: ['<rootDir>/setupTests.ts'],
+  ...baseConfig,
+  testEnvironment: `<rootDir>/packages/${packageName}/FixJSDOMEnvironment.ts`,
+  roots: [`<rootDir>/packages/${packageName}/test`],
+  setupFilesAfterEnv: [`<rootDir>/packages/${packageName}/setupTests.ts`],
+  rootDir: '../..',
+  ...createDefaultPreset({
+    tsconfig: `<rootDir>/packages/${packageName}/tsconfig.test.json`,
+  }),
 };

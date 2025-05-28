@@ -18,16 +18,19 @@
     "target": "ES2022"
   },
   "exclude": [
-    "**/src/**/*.test.ts",
-    "**/src/**/*.snap",
-    "**/src/**/*.spec.ts",
     "node_modules",
+    "packages/**/src/**/*.test.ts",
+    "packages/**/src/**/*.spec.ts",
     "packages/**/test",
     "packages/**/dist",
     "packages/**/lib",
+    "packages/**/*.snap",
     "packages/**/jest.config.ts",
-    "jest.config.base.ts",
     "jest.config.ts",
-    "packages/**/*.snap"
+    "jest.config.base.ts"
+  ],
+  "references": [
+    { "path": "./tsconfig.test.json" },
+    { "path": "./packages/auth-client/tsconfig.test.json" }
   ]
 }

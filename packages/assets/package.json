@@ -64,7 +64,7 @@
   },
   "devDependencies": {
     "@peculiar/webcrypto": "^1.4.0",
-    "@types/mime": "^2.0.3",
+    "@types/mime": "^3.0.4",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
     "@web-std/file": "^3.0.2",

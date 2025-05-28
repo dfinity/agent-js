@@ -1,7 +1,7 @@
-// jest.config.js
 import baseConfig from './jest.config.base';
+import type { Config } from '@jest/types';
 
-module.exports = {
+const config: Config.InitialOptions = {
   ...baseConfig,
   projects: ['<rootDir>/packages/*/jest.config.ts'],
   moduleNameMapper: {
@@ -10,3 +10,5 @@ module.exports = {
   moduleDirectories: ['node_modules'],
   collectCoverageFrom: ['<rootDir>/packages/*/src/**/*.{ts,tsx}'],
 };
+
+export default config;

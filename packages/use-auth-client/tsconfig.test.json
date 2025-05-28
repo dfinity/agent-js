@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.test.json",
+  "include": [
+    "test/**/*.ts",
+    "test/**/*.tsx",
+    "FixJSDOMEnvironment.ts",
+    "setupTests.ts",
+    "jest.config.ts",
+    "../../jest.config.base.ts"
+  ],
+  "exclude": ["node_modules", "dist", "lib", "examples"]
+}

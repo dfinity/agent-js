@@ -1,16 +1,19 @@
 import baseConfig from '../../jest.config.base';
 import { Crypto } from '@peculiar/webcrypto';
+import { createDefaultEsmPreset } from 'ts-jest';
+import type { Config } from '@jest/types';
+
 const packageName = 'auth-client';
 
-module.exports = {
-  testEnvironment: './FixJSDOMEnvironment.ts',
+const config: Config.InitialOptions = {
   ...baseConfig,
+  ...createDefaultEsmPreset({
+    tsconfig: `<rootDir>/packages/${packageName}/tsconfig.test.json`,
+  }),
   moduleDirectories: ['node_modules'],
   modulePaths: [`<rootDir>/packages/${packageName}/src/`],
-  setupFiles: [`./test-setup.ts`],
-  transform: {
-    '^.+\\.ts$': 'ts-jest',
-  },
+  setupFiles: [`<rootDir>/packages/${packageName}/test-setup.ts`],
+  testEnvironment: `<rootDir>/packages/${packageName}/FixJSDOMEnvironment.ts`,
   collectCoverageFrom: ['src/**/*.{ts,tsx}'],
   displayName: packageName,
   globals: {
@@ -18,4 +21,7 @@ module.exports = {
       crypto: new Crypto(),
     },
   },
+  rootDir: '../..',
 };
+
+export default config;

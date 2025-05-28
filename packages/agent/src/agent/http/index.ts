@@ -66,7 +66,7 @@ import { uint8Equals, uint8FromBufLike } from '../../utils/buffer';
 import { IC_RESPONSE_DOMAIN_SEPARATOR } from '../../constants';
 import { request as canisterStatusRequest } from '../../canisterStatus';
 export * from './transforms';
-export { Nonce, makeNonce } from './types';
+export { type Nonce, makeNonce } from './types';
 
 export enum RequestStatusResponseStatus {
   Received = 'received',
