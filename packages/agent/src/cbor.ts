@@ -3,18 +3,28 @@ import * as cbor from '@dfinity/cbor';
 import { CborDecodeErrorCode, CborEncodeErrorCode, InputError } from './errors';
 import { Expiry } from './agent';
 
-function hasCborReplacerMethod(value: unknown): value is { toCborReplacer: () => cbor.CborValue } {
-  return typeof value === 'object' && value !== null && 'toCborReplacer' in value;
+/**
+ * Used to extend classes that need to provide a custom value for the CBOR encoding process.
+ */
+export abstract class ToCborValue {
+  /**
+   * Returns a value that can be encoded with CBOR. Typically called in the replacer function of the {@link encode} function.
+   */
+  public abstract toCborValue(): cbor.CborValue;
+}
+
+function hasCborValueMethod(value: unknown): value is ToCborValue {
+  return typeof value === 'object' && value !== null && 'toCborValue' in value;
 }
 
 /**
- * Encode a JavaScript value into CBOR.
+ * Encode a JavaScript value into CBOR. If the value is an instance of {@link ToCborValue},
+ * the {@link ToCborValue.toCborValue} method will be called to get the value to encode.
  * @param value The value to encode
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function encode(value: any): Uint8Array {
+export function encode(value: unknown): Uint8Array {
   try {
-    return cbor.encode(value, value => {
+    return cbor.encodeWithSelfDescribedTag(value, value => {
       if (value instanceof Principal) {
         return value.toUint8Array();
       }
@@ -23,13 +33,13 @@ export function encode(value: any): Uint8Array {
         return value.toBigInt();
       }
 
-      if (hasCborReplacerMethod(value)) {
-        return value.toCborReplacer();
+      if (hasCborValueMethod(value)) {
+        return value.toCborValue();
       }
 
       return value;
     });
-  } catch (error: unknown) {
+  } catch (error) {
     throw InputError.fromCode(new CborEncodeErrorCode(error, value));
   }
 }
@@ -41,7 +51,13 @@ export function encode(value: any): Uint8Array {
 export function decode<T>(input: Uint8Array): T {
   try {
     return cbor.decode(input) as T;
-  } catch (error: unknown) {
+  } catch (error) {
     throw InputError.fromCode(new CborDecodeErrorCode(error, input));
   }
 }
+
+// Not strictly necessary, we're just keeping it for backwards compatibility.
+export const Cbor = {
+  encode,
+  decode,
+};

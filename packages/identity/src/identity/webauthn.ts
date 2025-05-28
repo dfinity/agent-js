@@ -5,9 +5,9 @@ import {
   SignIdentity,
   wrapDER,
   DER_COSE_OID,
+  Cbor,
 } from '@dfinity/agent';
-import * as cbor from '@dfinity/cbor';
-import { bytesToHex, hexToBytes, randomBytes } from '@noble/hashes/utils';
+import { bytesToHex, hexToBytes, randomBytes, bytesToUtf8 } from '@noble/hashes/utils';
 import { uint8FromBufLike } from '@dfinity/candid';
 
 function _coseToDerEncodedBlob(cose: Uint8Array): DerEncodedPublicKey {
@@ -168,8 +168,9 @@ export class WebAuthnIdentity extends SignIdentity {
     }
 
     // Parse the attestationObject as CBOR.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const attObject = cbor.decode<any>(new Uint8Array(response.attestationObject));
+    const attObject = Cbor.decode<{ authData: Uint8Array }>(
+      new Uint8Array(response.attestationObject),
+    );
 
     return new this(
       uint8FromBufLike(creds.rawId),
@@ -225,9 +226,9 @@ export class WebAuthnIdentity extends SignIdentity {
 
     const response = result.response as AuthenticatorAssertionResponse;
 
-    const encoded = cbor.encode({
+    const encoded = Cbor.encode({
       authenticator_data: response.authenticatorData,
-      client_data_json: new TextDecoder().decode(response.clientDataJSON),
+      client_data_json: bytesToUtf8(new Uint8Array(response.clientDataJSON)),
       signature: response.signature,
     });
 

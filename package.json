@@ -16,9 +16,6 @@
       "e2e/node"
     ]
   },
-  "dependencies": {
-    "@dfinity/cbor": "^0.1.0"
-  },
   "devDependencies": {
     "@jest/types": "^29.6.3",
     "@size-limit/esbuild": "^11.2.0",

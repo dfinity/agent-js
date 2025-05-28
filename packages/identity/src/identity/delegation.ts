@@ -7,11 +7,11 @@ import {
   SignIdentity,
   IC_REQUEST_DOMAIN_SEPARATOR,
   IC_REQUEST_AUTH_DELEGATION_DOMAIN_SEPARATOR,
+  ToCborValue,
 } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import { PartialIdentity } from './partial';
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
-import { type CborValue } from '@dfinity/cbor';
 
 function _parseBlob(value: unknown): Uint8Array {
   if (typeof value !== 'string' || value.length < 64) {
@@ -27,17 +27,14 @@ function _parseBlob(value: unknown): Uint8Array {
  *
  * {@see DelegationChain}
  */
-export class Delegation {
+export class Delegation implements ToCborValue {
   constructor(
     public readonly pubkey: Uint8Array,
     public readonly expiration: bigint,
     public readonly targets?: Principal[],
   ) {}
 
-  /**
-   * @returns A representation of the delegation that can be used to CBOR-encode it.
-   */
-  public toCborReplacer(): CborValue {
+  public toCborValue() {
     return {
       pubkey: this.pubkey,
       expiration: this.expiration,
