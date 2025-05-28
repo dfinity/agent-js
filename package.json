@@ -18,7 +18,6 @@
   },
   "type": "module",
   "devDependencies": {
-    "@jest/types": "^29.6.3",
     "@size-limit/esbuild": "^11.2.0",
     "@size-limit/preset-small-lib": "^11.1.6",
     "@tsconfig/node18": "^18.2.4",

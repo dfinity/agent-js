@@ -59,7 +59,6 @@
   },
   "devDependencies": {
     "@peculiar/webcrypto": "^1.4.0",
-    "@swc/core": "^1.11.29",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
     "esbuild": "^0.25.1",
