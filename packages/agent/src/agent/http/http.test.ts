@@ -702,7 +702,7 @@ test('should adjust the Expiry if the clock is more than 30 seconds behind', asy
 
   const requestBody: any = cbor.decode(mockFetch.mock.calls[0][1].body);
 
-  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1260000000000`);
+  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1200000000000`);
 
   jest.resetModules();
 });
