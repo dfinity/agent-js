@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ESNext",
+    "types": ["vitest"]
+  },
+  "include": ["utils/**/*.ts", "canisters/**/*.ts", "basic/**/*.ts", "test-setup.ts"]
+}

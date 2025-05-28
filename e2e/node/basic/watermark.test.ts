@@ -8,7 +8,7 @@ class FetchProxy {
   #calls = 0;
   #replyIndex: number | null = null;
 
-  async fetch(...args): Promise<Response> {
+  async fetch(...args: Parameters<typeof global.fetch>): Promise<Response> {
     this.#calls++;
     if (this.#replyIndex !== null) {
       const response = this.#history[this.#replyIndex].clone();

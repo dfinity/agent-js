@@ -27,6 +27,7 @@
     "@peculiar/webcrypto": "^1.4.0",
     "@tsconfig/node16": "^1.0.3",
     "@tsconfig/node17": "^1.0.1",
+    "@tsconfig/node22": "^22.0.2",
     "@types/isomorphic-fetch": "^0.0.36",
     "@types/text-encoding": "^0.0.36",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
