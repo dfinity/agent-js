@@ -24,7 +24,7 @@ function hasCborValueMethod(value: unknown): value is ToCborValue {
  */
 export function encode(value: unknown): Uint8Array {
   try {
-    return cbor.encode(value, value => {
+    return cbor.encodeWithSelfDescribedTag(value, value => {
       if (value instanceof Principal) {
         return value.toUint8Array();
       }
