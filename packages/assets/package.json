@@ -38,21 +38,14 @@
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
   "browser": {
-    ".": "./lib/browser/index.js",
-    "fs": "./lib/browser/utils/browserShim.js",
-    "path": "./lib/browser/utils/browserShim.js"
+    ".": "./lib/esm/index.js",
+    "fs": "./lib/esm/utils/browserShim.js",
+    "path": "./lib/esm/utils/browserShim.js"
   },
   "unpkg": "./lib/esm/index",
-  "exports": {
-    ".": {
-      "browser": "./lib/browser/index.js",
-      "import": "./lib/esm/index.js",
-      "require": "./lib/cjs/index.js"
-    }
-  },
   "scripts": {
-    "build": "tsc -b && tsc -p tsconfig.cjs.json && tsc -p tsconfig.web.json",
-    "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=browser --tsconfig=./tsconfig.web.json",
+    "build": "tsc -b && tsc -p tsconfig.cjs.json",
+    "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=browser",
     "size-limit": "size-limit",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",

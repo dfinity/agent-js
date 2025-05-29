@@ -1,9 +1,0 @@
-{
-  "extends": "../../tsconfig.web.json",
-  "compilerOptions": {
-    "baseUrl": ".",
-    "outDir": "./lib/browser",
-    "rootDir": "./src"
-  },
-  "exclude": ["node_modules", "dist", "lib", "test-setup.ts", "**/*.test.ts", "**/*.spec.ts"]
-}
