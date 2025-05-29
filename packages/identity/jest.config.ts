@@ -1,9 +1,9 @@
-import { baseConfig } from '../../jest.config.base.js';
+import type { Config } from 'jest';
+import { baseConfig } from '../../jest.config.base';
 
-const packageName = 'candid';
+const packageName = 'identity';
 
-/** @type {import('jest').Config} */
-const config = {
+const config: Config = {
   ...baseConfig,
   roots: [`<rootDir>/packages/${packageName}`],
   moduleDirectories: ['node_modules'],
