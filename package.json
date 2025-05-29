@@ -66,7 +66,7 @@
     "release": "release-it",
     "size": "size-limit --json",
     "test:coverage": "",
-    "test": "jest",
+    "test": "./jest-runner.mjs --config=jest.config.ts --no-watchman",
     "prepare": "husky install",
     "prettier:check": "npx -p prettier -p pretty-quick pretty-quick --check --branch main",
     "prettier:format": "npx -p prettier -p pretty-quick pretty-quick --branch main",
