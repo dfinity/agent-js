@@ -25,11 +25,11 @@ function hasCborValueMethod(value: unknown): value is ToCborValue {
 export function encode(value: unknown): Uint8Array {
   try {
     return cbor.encodeWithSelfDescribedTag(value, value => {
-      if (value instanceof Principal) {
+      if (Principal.isPrincipal(value)) {
         return value.toUint8Array();
       }
 
-      if (value instanceof Expiry) {
+      if (Expiry.isExpiry(value)) {
         return value.toBigInt();
       }
 

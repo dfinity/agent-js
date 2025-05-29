@@ -36,12 +36,8 @@ export class Principal {
       return Principal.fromText(other);
     } else if (Object.getPrototypeOf(other) === Uint8Array.prototype) {
       return new Principal(other as Uint8Array);
-    } else if (
-      typeof other === 'object' &&
-      other !== null &&
-      (other as Principal)._isPrincipal === true
-    ) {
-      return new Principal((other as Principal)._arr);
+    } else if (Principal.isPrincipal(other)) {
+      return new Principal(other._arr);
     }
 
     throw new Error(`Impossible to convert ${JSON.stringify(other)} to Principal.`);
@@ -78,6 +74,18 @@ export class Principal {
 
   public static fromUint8Array(arr: Uint8Array): Principal {
     return new this(arr);
+  }
+
+  public static isPrincipal(other: unknown): other is Principal {
+    return (
+      other instanceof Principal ||
+      (typeof other === 'object' &&
+        other !== null &&
+        '_isPrincipal' in other &&
+        other['_isPrincipal'] === true &&
+        '_arr' in other &&
+        other['_arr'] instanceof Uint8Array)
+    );
   }
 
   public readonly _isPrincipal = true;

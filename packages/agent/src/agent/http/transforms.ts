@@ -21,6 +21,8 @@ export type JsonnableExpiry = {
 };
 
 export class Expiry {
+  public readonly _isExpiry = true;
+
   private constructor(private readonly __expiry__: bigint) {}
 
   /**
@@ -93,6 +95,18 @@ export class Expiry {
     }
     throw new InputError(
       new ExpiryJsonDeserializeErrorCode(`The input does not contain the key ${JSON_KEY_EXPIRY}`),
+    );
+  }
+
+  public static isExpiry(other: unknown): other is Expiry {
+    return (
+      other instanceof Expiry ||
+      (typeof other === 'object' &&
+        other !== null &&
+        '_isExpiry' in other &&
+        other['_isExpiry'] === true &&
+        '__expiry__' in other &&
+        typeof other['__expiry__'] === 'bigint')
     );
   }
 }
