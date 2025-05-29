@@ -99,7 +99,7 @@ class TypeTable {
 }
 
 export abstract class Visitor<D, R> {
-  public visitType<T>(t: Type<T>, data: D): R {
+  public visitType<T>(_t: Type<T>, _data: D): R {
     throw new Error('Not implemented');
   }
   public visitPrimitive<T>(t: PrimitiveType<T>, data: D): R {
@@ -145,23 +145,23 @@ export abstract class Visitor<D, R> {
   public visitConstruct<T>(t: ConstructType<T>, data: D): R {
     return this.visitType(t, data);
   }
-  public visitVec<T>(t: VecClass<T>, ty: Type<T>, data: D): R {
+  public visitVec<T>(t: VecClass<T>, _ty: Type<T>, data: D): R {
     return this.visitConstruct(t, data);
   }
-  public visitOpt<T>(t: OptClass<T>, ty: Type<T>, data: D): R {
+  public visitOpt<T>(t: OptClass<T>, _ty: Type<T>, data: D): R {
     return this.visitConstruct(t, data);
   }
-  public visitRecord(t: RecordClass, fields: Array<[string, Type]>, data: D): R {
+  public visitRecord(t: RecordClass, _fields: Array<[string, Type]>, data: D): R {
     return this.visitConstruct(t, data);
   }
   public visitTuple<T extends any[]>(t: TupleClass<T>, components: Type[], data: D): R {
     const fields: Array<[string, Type]> = components.map((ty, i) => [`_${i}_`, ty]);
     return this.visitRecord(t, fields, data);
   }
-  public visitVariant(t: VariantClass, fields: Array<[string, Type]>, data: D): R {
+  public visitVariant(t: VariantClass, _fields: Array<[string, Type]>, data: D): R {
     return this.visitConstruct(t, data);
   }
-  public visitRec<T>(t: RecClass<T>, ty: ConstructType<T>, data: D): R {
+  public visitRec<T>(_t: RecClass<T>, ty: ConstructType<T>, data: D): R {
     return this.visitConstruct(ty, data);
   }
   public visitFunc(t: FuncClass, data: D): R {
@@ -229,8 +229,7 @@ export abstract class PrimitiveType<T = any> extends Type<T> {
     return t;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public _buildTypeTableImpl(typeTable: TypeTable): void {
+  public _buildTypeTableImpl(_typeTable: TypeTable): void {
     // No type table encoding for Primitive types.
     return;
   }
@@ -295,7 +294,7 @@ export class EmptyClass extends PrimitiveType<never> {
  * Unknown cannot be serialized and attempting to do so will throw an error.
  */
 export class UnknownClass extends Type {
-  public checkType(t: Type): Type {
+  public checkType(_t: Type): Type {
     throw new Error('Method not implemented for unknown.');
   }
 
@@ -416,7 +415,7 @@ export class NullClass extends PrimitiveType<null> {
     return slebEncode(IDLTypeIds.Null);
   }
 
-  public decodeValue(b: Pipe, t: Type) {
+  public decodeValue(_b: Pipe, t: Type) {
     this.checkType(t);
     return null;
   }
@@ -434,7 +433,7 @@ export class ReservedClass extends PrimitiveType<any> {
     return v.visitReserved(this, d);
   }
 
-  public covariant(x: any): x is any {
+  public covariant(_x: any): _x is any {
     return true;
   }
 
@@ -1012,7 +1011,7 @@ export class OptClass<T> extends ConstructType<[T] | []> {
             // If an error occurs during decoding, restore the Pipe `b` to its previous state
             b.restore(checkpoint);
             // Skip the value at the current wire type to advance the Pipe `b` position
-            const skipped = wireType._type.decodeValue(b, wireType._type);
+            wireType._type.decodeValue(b, wireType._type);
             // Return an empty array to indicate a `none` value
             return [];
           }
@@ -1028,7 +1027,7 @@ export class OptClass<T> extends ConstructType<[T] | []> {
     ) {
       // null <: <t> :
       // skip value at wire type (to advance b) and return "null", i.e. []
-      const skipped = wireType.decodeValue(b, wireType);
+      wireType.decodeValue(b, wireType);
       return [];
     } else {
       // not (null <: t) :
@@ -1041,7 +1040,7 @@ export class OptClass<T> extends ConstructType<[T] | []> {
         // decoding failed, but this is opt, so return "null", i.e. []
         b.restore(checkpoint);
         // skip value at wire type (to advance b)
-        const skipped = wireType.decodeValue(b, t);
+        wireType.decodeValue(b, t);
         // return "null"
         return [];
       }

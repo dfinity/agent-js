@@ -250,8 +250,6 @@ export class AssetManager {
     return new Asset(
       this._actor,
       this._limit,
-      this._maxSingleFileSize,
-      this._maxChunkSize,
       key,
       acceptEncodings ?? ['identity'],
       data.content,
@@ -394,8 +392,6 @@ class Asset {
   constructor(
     private readonly _actor: ActorSubclass<AssetsCanisterRecord>,
     private readonly _limit: LimitFn,
-    private readonly _maxSingleFileSize: number,
-    private readonly _maxChunkSize: number,
     private readonly _key: string,
     private readonly _acceptEncodings: ContentEncoding[],
     private readonly _content: Uint8Array,

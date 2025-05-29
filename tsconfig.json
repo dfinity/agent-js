@@ -10,9 +10,16 @@
     "sourceMap": true,
     "inlineSources": true,
     "useDefineForClassFields": false,
-    "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": false,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
   },
   "exclude": [
     "node_modules",

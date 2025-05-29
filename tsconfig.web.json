@@ -22,12 +22,12 @@
     "noUncheckedSideEffectImports": true
   },
   "exclude": [
-    "**/src/**/*.test.ts",
-    "**/src/**/*.snap",
-    "**/src/**/*.spec.ts",
-    "node_modules",
+    "packages/**/src/**/*.test.ts",
+    "packages/**/src/**/*.spec.ts",
+    "packages/**/src/**/*.snap",
     "packages/**/test",
     "packages/**/dist",
-    "packages/**/lib"
+    "packages/**/lib",
+    "node_modules"
   ]
 }

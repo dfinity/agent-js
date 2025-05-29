@@ -1100,7 +1100,7 @@ export class HttpAgent implements Agent {
   public async readState(
     canisterId: Principal | string,
     fields: ReadStateOptions,
-    identity?: Identity | Promise<Identity>,
+    _identity?: Identity | Promise<Identity>,
     // eslint-disable-next-line
     request?: any,
   ): Promise<ReadStateResponse> {

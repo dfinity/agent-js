@@ -58,7 +58,7 @@ export function conditionalDelay(condition: Predicate<boolean>, timeInMsec: numb
 export function maxAttempts(count: number): PollStrategy {
   let attempts = count;
   return async (
-    canisterId: Principal,
+    _canisterId: Principal,
     requestId: RequestId,
     status: RequestStatusResponseStatus,
   ) => {
@@ -89,7 +89,7 @@ export function throttle(throttleInMsec: number): PollStrategy {
 export function timeout(timeInMsec: number): PollStrategy {
   const end = Date.now() + timeInMsec;
   return async (
-    canisterId: Principal,
+    _canisterId: Principal,
     requestId: RequestId,
     status: RequestStatusResponseStatus,
   ) => {
