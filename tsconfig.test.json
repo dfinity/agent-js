@@ -17,5 +17,5 @@
     "packages/**/src/**/*.ts",
     "test"
   ],
-  "exclude": ["node_modules", "dist", "lib", "packages/**/*.snap"]
+  "exclude": ["node_modules", "dist", "lib", "packages/**/*.snap", "e2e/**"]
 }

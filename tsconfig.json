@@ -31,7 +31,8 @@
     "packages/**/test",
     "packages/**/dist",
     "packages/**/lib",
-    "packages/**/*.snap"
+    "packages/**/*.snap",
+    "e2e/**"
   ],
   "references": [
     { "path": "./tsconfig.test.json" },

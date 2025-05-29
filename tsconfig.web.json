@@ -28,6 +28,7 @@
     "packages/**/test",
     "packages/**/dist",
     "packages/**/lib",
-    "node_modules"
+    "node_modules",
+    "e2e/**"
   ]
 }
