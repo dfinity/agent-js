@@ -1,5 +1,11 @@
 /* eslint-disable no-underscore-dangle */
-import { DerEncodedPublicKey, KeyPair, Signature, PublicKey, SignIdentity } from '@dfinity/agent';
+import {
+  type DerEncodedPublicKey,
+  type KeyPair,
+  type Signature,
+  type PublicKey,
+  SignIdentity,
+} from '@dfinity/agent';
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { sha256 } from '@noble/hashes/sha2';
 import { bytesToHex, hexToBytes, randomBytes } from '@noble/hashes/utils';

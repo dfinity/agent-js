@@ -7,18 +7,21 @@
 // Note that we can use webpack configuration to make some features available to
 // Node.js in a similar way.
 
-import mime from 'mime-types';
+import mime from 'mime';
+import { TextEncoder, TextDecoder } from 'text-encoding';
+import { Crypto } from '@peculiar/webcrypto';
+import { Blob, File } from '@web-std/file';
+import 'whatwg-fetch';
 
-global.crypto = require('@peculiar/webcrypto');
-global.TextEncoder = require('text-encoding').TextEncoder;
-global.TextDecoder = require('text-encoding').TextDecoder;
-global.MessageChannel = require('worker_threads').MessageChannel;
-global.Blob = require('@web-std/file').Blob;
-// @ts-ignore File polyfill with additional mime type polyfill
-global.File = class FilePolyfill extends require('@web-std/file').File {
-  constructor(init: BlobPart[], name?: string, options?: FilePropertyBag | undefined) {
-    super(init, name, options);
-    this._type = mime.lookup(name) || 'application/octet-stream';
+global.crypto = new Crypto();
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
+global.Blob = Blob;
+global.File = class FilePolyfill extends File {
+  constructor(init: BlobPart[], name: string, options?: FilePropertyBag | undefined) {
+    super(init, name, {
+      ...options,
+      type: mime.getType(name ?? '') || 'application/octet-stream',
+    });
   }
 };
-require('whatwg-fetch');

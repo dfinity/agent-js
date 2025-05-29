@@ -1,4 +1,9 @@
-import { DerEncodedPublicKey, PublicKey, Signature, SignIdentity } from '@dfinity/agent';
+import {
+  type DerEncodedPublicKey,
+  type PublicKey,
+  type Signature,
+  SignIdentity,
+} from '@dfinity/agent';
 import { uint8FromBufLike } from '@dfinity/candid';
 
 /**

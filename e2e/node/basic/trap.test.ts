@@ -8,6 +8,7 @@ import {
 } from '@dfinity/agent';
 import util from 'util';
 import exec from 'child_process';
+import { IDL } from '@dfinity/candid';
 const execAsync = util.promisify(exec.exec);
 
 // eslint-disable-next-line prefer-const
@@ -19,7 +20,7 @@ try {
   ({ stdout } = await execAsync('dfx canister id trap'));
 }
 
-export const idlFactory = ({ IDL }) => {
+export const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
   return IDL.Service({
     Throw: IDL.Func([], [], []),
     test: IDL.Func([], [], []),

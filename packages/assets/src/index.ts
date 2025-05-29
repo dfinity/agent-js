@@ -1,10 +1,10 @@
 import {
   Actor,
-  ActorConfig,
-  ActorSubclass,
+  type ActorConfig,
+  type ActorSubclass,
   Cbor as cbor,
   Certificate,
-  HashTree,
+  type HashTree,
   HttpAgent,
   lookup_path,
   lookupResultToBuffer,
@@ -12,15 +12,15 @@ import {
   LookupPathStatus,
 } from '@dfinity/agent';
 import { lebDecode, PipeArrayBuffer, compare } from '@dfinity/candid';
-import { AssetsCanisterRecord, getAssetsCanister } from './canisters/assets';
+import { type AssetsCanisterRecord, getAssetsCanister } from './canisters/assets';
 import { sha256 } from '@noble/hashes/sha2';
-import { BatchOperationKind } from './canisters/assets_service';
-import { isReadable, Readable } from './readable/readable';
+import { type BatchOperationKind } from './canisters/assets_service';
+import { isReadable, type Readable } from './readable/readable';
 import { ReadableFile } from './readable/readableFile';
 import { ReadableBlob } from './readable/readableBlob';
 import { ReadablePath } from './readable/readablePath';
 import { ReadableBytes } from './readable/readableBytes';
-import { limit, LimitFn } from './utils/limit';
+import { limit, type LimitFn } from './utils/limit';
 import { base64Decode } from './utils/base64';
 import fs from 'fs';
 
@@ -250,8 +250,6 @@ export class AssetManager {
     return new Asset(
       this._actor,
       this._limit,
-      this._maxSingleFileSize,
-      this._maxChunkSize,
       key,
       acceptEncodings ?? ['identity'],
       data.content,
@@ -394,8 +392,6 @@ class Asset {
   constructor(
     private readonly _actor: ActorSubclass<AssetsCanisterRecord>,
     private readonly _limit: LimitFn,
-    private readonly _maxSingleFileSize: number,
-    private readonly _maxChunkSize: number,
     private readonly _key: string,
     private readonly _acceptEncodings: ContentEncoding[],
     private readonly _content: Uint8Array,

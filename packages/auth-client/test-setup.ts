@@ -7,13 +7,14 @@
 // Note that we can use webpack configuration to make some features available to
 // Node.js in a similar way.
 import 'fake-indexeddb/auto';
-global.TextEncoder = require('text-encoding').TextEncoder;
-global.TextDecoder = require('text-encoding').TextDecoder;
-require('whatwg-fetch');
-
+import { TextEncoder, TextDecoder } from 'text-encoding';
 import { Crypto } from '@peculiar/webcrypto';
-const crypto = new Crypto();
+import 'whatwg-fetch';
 
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
+
+const crypto = new Crypto();
 Object.defineProperty(globalThis, 'crypto', {
   value: crypto,
 });

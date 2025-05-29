@@ -1,7 +1,7 @@
 import {
-  DerEncodedPublicKey,
-  PublicKey,
-  Signature,
+  type DerEncodedPublicKey,
+  type PublicKey,
+  type Signature,
   SignIdentity,
   wrapDER,
   DER_COSE_OID,
@@ -232,14 +232,17 @@ export class WebAuthnIdentity extends SignIdentity {
       }),
     );
 
-    Object.assign(cbor, {
-      __signature__: undefined,
-    });
-
     if (!cbor) {
       throw new Error('failed to encode cbor');
     }
-    return cbor as Signature;
+
+    const signature = new Uint8Array(cbor); // TODO: remove after #1015 is merged
+
+    Object.assign(signature, {
+      __signature__: undefined,
+    });
+
+    return signature as Signature;
   }
 
   /**

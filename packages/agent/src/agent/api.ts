@@ -1,8 +1,8 @@
 import { Principal } from '@dfinity/principal';
-import { RequestId } from '../request_id';
-import { JsonObject } from '@dfinity/candid';
-import { Identity } from '../auth';
-import { CallRequest, HttpHeaderField, QueryRequest } from './http/types';
+import { type RequestId } from '../request_id';
+import { type JsonObject } from '@dfinity/candid';
+import { type Identity } from '../auth';
+import type { CallRequest, HttpHeaderField, QueryRequest } from './http/types';
 
 /**
  * Codes used by the replica for rejecting a message.

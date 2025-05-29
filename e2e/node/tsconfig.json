@@ -1,22 +1,10 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "@tsconfig/node22/tsconfig.json",
   "compilerOptions": {
-    "incremental": true,
-    "target": "ESNext",
-    "module": "ESNext",
-    "lib": ["ESNext"],
-    "declaration": true,
-    "sourceMap": true,
-    "tsBuildInfoFile": "./build_info.json",
-    "strict": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "moduleResolution": "node",
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "allowJs": true,
+    "rootDir": "."
   },
-  "references": [
-    { "path": "../../packages/agent" },
-    { "path": "../../packages/identity" },
-    { "path": "../../packages/candid" }
-  ]
+  "include": ["utils/**/*.ts", "canisters/**/*.ts", "basic/**/*.ts"],
+  "references": [{ "path": "./tsconfig.test.json" }]
 }

@@ -14,5 +14,4 @@ Object.defineProperty(global, 'console', {
   value: { ...global.console, log: jest.fn(), warn: jest.fn(), error: jest.fn() },
 });
 
-  
 global.TextEncoder = TextEncoder;

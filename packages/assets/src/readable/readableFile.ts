@@ -1,4 +1,4 @@
-import { Readable } from './readable';
+import { type Readable } from './readable';
 
 export class ReadableFile implements Readable {
   private readonly _file: File;

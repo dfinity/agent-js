@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "esModuleInterop": true,
+    "verbatimModuleSyntax": false,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "module": "CommonJS",
+    "moduleResolution": "node10",
+    "types": ["jest"]
+  },
+  "include": [
+    "packages/**/test-setup.ts",
+    "packages/**/setupTests.ts",
+    "packages/**/types/*",
+    "packages/**/src/**/*.ts",
+    "test"
+  ],
+  "exclude": ["node_modules", "dist", "lib", "packages/**/*.snap", "e2e/**"]
+}

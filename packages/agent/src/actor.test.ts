@@ -147,7 +147,7 @@ describe('makeActor', () => {
       await actor.error();
     } catch (error) {
       expect(error).toBeInstanceOf(RejectError);
-      expect(error.cause.code).toBeInstanceOf(CertifiedRejectErrorCode);
+      expect((error as RejectError).cause.code).toBeInstanceOf(CertifiedRejectErrorCode);
     }
 
     const { calls } = mockFetch.mock;
@@ -337,7 +337,8 @@ describe('makeActor', () => {
     `);
     expect(replyUpdateWithHttpDetails.result).toEqual(canisterDecodedReturnValue);
 
-    replyUpdateWithHttpDetails.httpDetails['requestDetails']['nonce'] = new Uint8Array();
+    // @ts-expect-error - `requestDetails` is not inside the type. TODO: fix this
+    replyUpdateWithHttpDetails.httpDetails['requestDetails']['nonce'] = new Uint8Array() as Nonce;
 
     expect(replyUpdateWithHttpDetails.httpDetails).toMatchSnapshot();
   });
@@ -541,7 +542,7 @@ test('it should preserve errors from call', async () => {
     await testActor.greet('foo');
   } catch (error) {
     expect(error).toBeInstanceOf(UnknownError);
-    expect(error.cause.code).toBeInstanceOf(UnexpectedErrorCode);
+    expect((error as UnknownError).cause.code).toBeInstanceOf(UnexpectedErrorCode);
   }
 });
 

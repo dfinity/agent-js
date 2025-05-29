@@ -1,9 +1,11 @@
 import { Actor, ActorSubclass, HttpAgentOptions, Agent, ActorConfig } from '@dfinity/agent';
 import { makeAgent } from '../utils/agent';
-import { _SERVICE } from './declarations/counter';
+import { type _SERVICE } from './declarations/counter/counter.did';
 import { getCanisterId } from '../utils/canisterid';
+import { IDL } from '@dfinity/candid';
+import { Principal } from '@dfinity/principal';
 
-export const idl = ({ IDL }) => {
+export const idl: IDL.InterfaceFactory = ({ IDL }) => {
   return IDL.Service({
     inc: IDL.Func([], [], []),
     inc_read: IDL.Func([], [IDL.Nat], []),
@@ -19,7 +21,7 @@ export const counterCanisterId = getCanisterId('counter');
 export const counter2CanisterId = getCanisterId('counter2');
 
 export const createActor = async (
-  canisterId,
+  canisterId: Principal,
   options?: {
     agentOptions?: HttpAgentOptions;
     actorOptions?: ActorConfig;

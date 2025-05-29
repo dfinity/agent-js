@@ -1,4 +1,4 @@
-import { createActor } from '../canisters/declarations/counter/index';
+import { createActor } from '../canisters/declarations/counter';
 import { test, expect, TestAPI } from 'vitest';
 import { makeAgent } from '../utils/agent';
 import {
@@ -26,7 +26,7 @@ mitmTest('mitm greet', { timeout: 30000 }, async () => {
     await counter.greet('counter');
   } catch (error) {
     expect(error).toBeInstanceOf(TrustError);
-    expect(error.cause.code).toBeInstanceOf(CertificateVerificationErrorCode);
+    expect((error as TrustError).cause.code).toBeInstanceOf(CertificateVerificationErrorCode);
   }
   expect(await counter.queryGreet('counter')).toEqual('Hullo, counter!');
 });
@@ -44,7 +44,7 @@ mitmTest('mitm with query verification', async () => {
     await counter.greet('counter');
   } catch (error) {
     expect(error).toBeInstanceOf(TrustError);
-    expect(error.cause.code).toBeInstanceOf(CertificateVerificationErrorCode);
+    expect((error as TrustError).cause.code).toBeInstanceOf(CertificateVerificationErrorCode);
   }
   try {
     await counter.queryGreet('counter');

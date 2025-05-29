@@ -9,7 +9,9 @@ test('ilog2', () => {
   expect(() => ilog2(1.5)).toThrow(
     'The number 1.5 cannot be converted to a BigInt because it is not an integer',
   );
-  expect(() => (ilog2 as (any) => number)('abc')).toThrow('Cannot convert abc to a BigInt');
+  expect(() => (ilog2 as (input: unknown) => number)('abc')).toThrow(
+    'Cannot convert abc to a BigInt',
+  );
 });
 
 test('iexp2', () => {
@@ -20,7 +22,9 @@ test('iexp2', () => {
   expect(() => iexp2(1.5)).toThrow(
     'The number 1.5 cannot be converted to a BigInt because it is not an integer',
   );
-  expect(() => (ilog2 as (any) => number)('abc')).toThrow('Cannot convert abc to a BigInt');
+  expect(() => (ilog2 as (input: unknown) => number)('abc')).toThrow(
+    'Cannot convert abc to a BigInt',
+  );
 });
 
 test('ilog2 and iexp2', () => {

@@ -1,9 +1,9 @@
 import {
-  DerEncodedPublicKey,
-  HttpAgentRequest,
-  PublicKey,
+  type DerEncodedPublicKey,
+  type HttpAgentRequest,
+  type PublicKey,
   requestIdOf,
-  Signature,
+  type Signature,
   SignIdentity,
   uint8ToBuf,
   IC_REQUEST_DOMAIN_SEPARATOR,
