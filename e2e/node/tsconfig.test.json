@@ -2,9 +2,9 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "composite": true,
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "target": "ESNext",
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
+    "target": "ES2022",
     "types": ["vitest"]
   },
   "include": ["utils/**/*.ts", "canisters/**/*.ts", "basic/**/*.ts", "test-setup.ts"]

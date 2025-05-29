@@ -1,7 +1,7 @@
 import { Principal } from '@dfinity/principal';
 import { RequestStatusResponseStatus } from '../agent';
-import { PollStrategy } from './index';
-import { RequestId } from '../request_id';
+import { type PollStrategy } from './index';
+import { type RequestId } from '../request_id';
 import { ProtocolError, TimeoutWaitingForResponseErrorCode } from '../errors';
 
 export type Predicate<T> = (

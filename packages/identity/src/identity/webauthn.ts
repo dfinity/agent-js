@@ -1,7 +1,7 @@
 import {
-  DerEncodedPublicKey,
-  PublicKey,
-  Signature,
+  type DerEncodedPublicKey,
+  type PublicKey,
+  type Signature,
   SignIdentity,
   wrapDER,
   DER_COSE_OID,

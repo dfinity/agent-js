@@ -1,4 +1,4 @@
-import { DerEncodedPublicKey, PublicKey } from './auth';
+import { type DerEncodedPublicKey, type PublicKey } from './auth';
 import { ED25519_OID, unwrapDER, wrapDER } from './der';
 import { DerDecodeErrorCode, InputError } from './errors';
 

@@ -1,8 +1,8 @@
 import {
-  DerEncodedPublicKey,
-  KeyPair,
-  PublicKey,
-  Signature,
+  type DerEncodedPublicKey,
+  type KeyPair,
+  type PublicKey,
+  type Signature,
   SignIdentity,
   ED25519_OID,
   unwrapDER,

@@ -1,4 +1,4 @@
-import { JsonObject } from '@dfinity/candid';
+import { type JsonObject } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import {
   HashTreeDecodeErrorCode,
@@ -26,40 +26,44 @@ import {
   AgentError,
   MalformedLookupFoundValueErrorCode,
 } from '../../errors';
-import { AnonymousIdentity, Identity } from '../../auth';
+import { AnonymousIdentity, type Identity } from '../../auth';
 import * as cbor from '../../cbor';
-import { RequestId, hashOfMap, requestIdOf } from '../../request_id';
+import { type RequestId, hashOfMap, requestIdOf } from '../../request_id';
 import {
-  Agent,
-  ApiQueryResponse,
-  QueryFields,
-  QueryResponse,
-  ReadStateOptions,
-  ReadStateResponse,
-  SubmitResponse,
-  v3ResponseBody,
+  type Agent,
+  type ApiQueryResponse,
+  type QueryFields,
+  type QueryResponse,
+  type ReadStateOptions,
+  type ReadStateResponse,
+  type SubmitResponse,
+  type v3ResponseBody,
 } from '../api';
 import { Expiry, httpHeadersTransform, makeNonceTransform } from './transforms';
 import {
-  CallRequest,
+  type CallRequest,
   Endpoint,
-  HttpAgentRequest,
-  HttpAgentRequestTransformFn,
-  HttpAgentSubmitRequest,
+  type HttpAgentRequest,
+  type HttpAgentRequestTransformFn,
+  type HttpAgentSubmitRequest,
   makeNonce,
-  Nonce,
-  QueryRequest,
+  type Nonce,
+  type QueryRequest,
   ReadRequestType,
   SubmitRequestType,
-  ReadStateRequest,
+  type ReadStateRequest,
 } from './types';
-import { SubnetStatus, request } from '../../canisterStatus';
-import { HashTree, lookup_path, LookupPathStatus } from '../../certificate';
+import { type SubnetStatus, request } from '../../canisterStatus';
+import { type HashTree, lookup_path, LookupPathStatus } from '../../certificate';
 import { ed25519 } from '@noble/curves/ed25519';
 import { ExpirableMap } from '../../utils/expirableMap';
 import { Ed25519PublicKey } from '../../public_key';
 import { ObservableLog } from '../../observable';
-import { BackoffStrategy, BackoffStrategyFactory, ExponentialBackoff } from '../../polling/backoff';
+import {
+  type BackoffStrategy,
+  type BackoffStrategyFactory,
+  ExponentialBackoff,
+} from '../../polling/backoff';
 import { decodeTime } from '../../utils/leb';
 import { concatBytes, hexToBytes } from '@noble/hashes/utils';
 import { uint8Equals, uint8FromBufLike } from '../../utils/buffer';

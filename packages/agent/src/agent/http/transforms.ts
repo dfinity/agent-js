@@ -2,11 +2,11 @@ import { lebEncode } from '@dfinity/candid';
 import * as cbor from 'simple-cbor';
 import {
   Endpoint,
-  HttpAgentRequest,
-  HttpAgentRequestTransformFn,
-  HttpHeaderField,
+  type HttpAgentRequest,
+  type HttpAgentRequestTransformFn,
+  type HttpHeaderField,
   makeNonce,
-  Nonce,
+  type Nonce,
 } from './types';
 import { ExpiryJsonDeserializeErrorCode, InputError } from '../../errors';
 

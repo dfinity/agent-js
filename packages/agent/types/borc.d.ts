@@ -5,7 +5,7 @@ declare module 'borc' {
     constructor(opts: { size: number; tags: Record<number, (val: any) => any> });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    decodeFirst(input: ArrayBuffer): any;
+    decodeFirst(input: Uint8Array | ArrayBuffer): any;
   }
 
   export class Tagged {
@@ -20,7 +20,7 @@ declare module 'borc' {
     Decoder: typeof Decoder;
     Tagged: typeof Tagged;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    decodeFirst(input: ArrayBuffer): any;
+    decodeFirst(input: Uint8Array | ArrayBuffer): any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     encode(o: any): Uint8Array;
   }
