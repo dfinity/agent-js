@@ -104,9 +104,9 @@ export class Expiry {
       (typeof other === 'object' &&
         other !== null &&
         '_isExpiry' in other &&
-        other['_isExpiry'] === true &&
+        (other as { _isExpiry: boolean })['_isExpiry'] === true &&
         '__expiry__' in other &&
-        typeof other['__expiry__'] === 'bigint')
+        typeof (other as { __expiry__: bigint })['__expiry__'] === 'bigint')
     );
   }
 }

@@ -82,9 +82,9 @@ export class Principal {
       (typeof other === 'object' &&
         other !== null &&
         '_isPrincipal' in other &&
-        other['_isPrincipal'] === true &&
+        (other as { _isPrincipal: boolean })['_isPrincipal'] === true &&
         '_arr' in other &&
-        other['_arr'] instanceof Uint8Array)
+        (other as { _arr: Uint8Array })['_arr'] instanceof Uint8Array)
     );
   }
 
