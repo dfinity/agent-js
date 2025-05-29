@@ -1,10 +1,10 @@
-import type { Config } from 'jest';
-import { baseConfig } from '../../jest.config.base';
+import { baseConfig } from '../../jest.config.base.js';
 import { createDefaultPreset } from 'ts-jest';
 
 const packageName = 'use-auth-client';
 
-const config: Config = {
+/** @type {import('jest').Config} */
+const config = {
   ...baseConfig,
   ...createDefaultPreset({
     tsconfig: `<rootDir>/packages/${packageName}/tsconfig.test.json`,

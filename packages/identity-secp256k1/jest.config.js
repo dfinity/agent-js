@@ -1,9 +1,9 @@
-import type { Config } from 'jest';
-import { baseConfig } from '../../jest.config.base';
+import { baseConfig } from '../../jest.config.base.js';
 
 const packageName = 'identity-secp256k1';
 
-const config: Config = {
+/** @type {import('jest').Config} */
+const config = {
   ...baseConfig,
   roots: [`<rootDir>/packages/${packageName}`],
   fakeTimers: { enableGlobally: true },

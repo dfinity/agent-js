@@ -1,7 +1,7 @@
-import type { Config } from 'jest';
 import { createDefaultPreset } from 'ts-jest';
 
-export const baseConfig: Config = {
+/** @type {import('jest').Config} */
+const baseConfig = {
   ...createDefaultPreset({
     tsconfig: '<rootDir>/tsconfig.test.json',
   }),
@@ -17,3 +17,5 @@ export const baseConfig: Config = {
     '^@dfinity/principal$': '<rootDir>/packages/principal/src/index.ts',
   },
 };
+
+export { baseConfig };

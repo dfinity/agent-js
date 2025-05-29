@@ -1,9 +1,10 @@
-import type { Config } from 'jest';
-import { baseConfig } from '../../jest.config.base';
+import { baseConfig } from '../../jest.config.base.js';
+import { createDefaultEsmPreset } from 'ts-jest';
 
-const packageName = 'candid';
+const packageName = 'assets';
 
-const config: Config = {
+/** @type {import('jest').Config} */
+const config = {
   ...baseConfig,
   roots: [`<rootDir>/packages/${packageName}`],
   moduleDirectories: ['node_modules'],
@@ -12,6 +13,9 @@ const config: Config = {
   collectCoverageFrom: ['src/**/*.{ts,tsx}'],
   displayName: packageName,
   rootDir: '../..',
+  ...createDefaultEsmPreset({
+    tsconfig: '<rootDir>/tsconfig.test.json',
+  }),
 };
 
 export default config;

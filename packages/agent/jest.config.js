@@ -1,16 +1,18 @@
-import type { Config } from 'jest';
-import { baseConfig } from '../../jest.config.base';
+import { baseConfig } from '../../jest.config.base.js';
 
-const packageName = 'principal';
+const packageName = 'agent';
 
-const config: Config = {
+/** @type {import('jest').Config} */
+const config = {
   ...baseConfig,
   roots: [`<rootDir>/packages/${packageName}`],
+  fakeTimers: { enableGlobally: true },
   moduleDirectories: ['node_modules'],
   modulePaths: [`<rootDir>/packages/${packageName}/src/`],
   setupFiles: [`<rootDir>/packages/${packageName}/test-setup.ts`],
   collectCoverageFrom: ['src/**/*.{ts,tsx}'],
   displayName: packageName,
+  prettierPath: null, // see https://jestjs.io/docs/configuration/#prettierpath-string
   rootDir: '../..',
 };
 

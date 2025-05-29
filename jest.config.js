@@ -1,11 +1,11 @@
-import type { Config } from 'jest';
-import { baseConfig } from './jest.config.base';
-
-// Using .ts files for Jest configs might cause issues related to ts-node.
+// Using .ts files for Jest configs gives a lot of problems, especially related to ts-node.
 // This issue gives an overview of the problems: https://github.com/jestjs/jest/issues/11453, even if it's closed.
-// We've now converted to TypeScript files but keep this comment for reference.
+// For this reason, we're using .js files instead.
 
-const config: Config = {
+import { baseConfig } from './jest.config.base.js';
+
+/** @type {import('jest').Config} */
+const config = {
   ...baseConfig,
   projects: ['<rootDir>/packages/*'],
   moduleDirectories: ['node_modules'],
