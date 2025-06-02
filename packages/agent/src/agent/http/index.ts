@@ -53,7 +53,7 @@ import {
   SubmitRequestType,
   type ReadStateRequest,
 } from './types';
-import { type SubnetStatus, request } from '../../canisterStatus';
+import { type SubnetStatus, request as canisterStatusRequest } from '../../canisterStatus';
 import { type HashTree, lookup_path, LookupPathStatus } from '../../certificate';
 import { ed25519 } from '@noble/curves/ed25519';
 import { ExpirableMap } from '../../utils/expirableMap';
@@ -68,7 +68,6 @@ import { decodeTime } from '../../utils/leb';
 import { concatBytes, hexToBytes } from '@noble/hashes/utils';
 import { uint8Equals, uint8FromBufLike } from '../../utils/buffer';
 import { IC_RESPONSE_DOMAIN_SEPARATOR } from '../../constants';
-import { request as canisterStatusRequest } from '../../canisterStatus';
 export * from './transforms';
 export { type Nonce, makeNonce } from './types';
 
@@ -1345,7 +1344,7 @@ export class HttpAgent implements Agent {
   public async fetchSubnetKeys(canisterId: Principal | string) {
     await this.#rootKeyGuard();
     const effectiveCanisterId: Principal = Principal.from(canisterId);
-    const response = await request({
+    const response = await canisterStatusRequest({
       canisterId: effectiveCanisterId,
       paths: ['subnet'],
       agent: this,
