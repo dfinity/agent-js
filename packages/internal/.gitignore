@@ -1,0 +1,4 @@
+build_info.json
+**/*.js
+**/*.js.map
+**/*.d.ts

@@ -1,11 +1,13 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "composite": true,
     "baseUrl": "./",
     "outDir": "lib/esm",
-    "rootDir": "./src",
-    "tsBuildInfoFile": "./build_info.json"
+    "tsBuildInfoFile": "./build_info.json",
+
+    "paths": {
+      "@dfinity/internal/*": ["../internal/src/*"]
+    }
   },
   "include": ["types/*", "src/**/*.ts"],
   "exclude": [

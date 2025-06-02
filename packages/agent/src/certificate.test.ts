@@ -20,7 +20,7 @@ import {
   UNREACHABLE_ERROR,
 } from './errors';
 import { utf8ToBytes, hexToBytes, bytesToHex } from '@noble/hashes/utils';
-import { uint8Equals } from './utils/buffer';
+import { uint8Equals } from '@dfinity/internal/bytes';
 
 function label(str: string): Cert.NodeLabel {
   return utf8ToBytes(str) as Cert.NodeLabel;

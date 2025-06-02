@@ -5,7 +5,7 @@ import * as cbor from 'simple-cbor';
 import { type CborEncoder, SelfDescribeCborSerializer } from 'simple-cbor';
 import { Principal } from '@dfinity/principal';
 import { CborDecodeErrorCode, InputError } from './errors';
-import { uint8FromBufLike, uint8ToBuf } from './utils/buffer';
+import { uint8FromBufLike, uint8ToBuf } from '@dfinity/internal/bytes';
 import { hexToBytes, concatBytes } from '@noble/hashes/utils';
 
 // We are using hansl/simple-cbor for CBOR serialization, to avoid issues with

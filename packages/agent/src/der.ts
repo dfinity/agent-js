@@ -4,8 +4,7 @@ import {
   DerEncodeErrorCode,
   InputError,
 } from './errors';
-import { uint8Equals } from './utils/buffer';
-
+import { uint8Equals } from '@dfinity/internal/bytes';
 export const encodeLenBytes = (len: number): number => {
   if (len <= 0x7f) {
     return 1;

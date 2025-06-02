@@ -13,10 +13,14 @@
       "packages/assets",
       "packages/identity-secp256k1",
       "packages/use-auth-client",
+      "packages/internal",
       "e2e/node"
     ]
   },
   "type": "module",
+  "dependencies": {
+    "@dfinity/internal": "*"
+  },
   "devDependencies": {
     "@size-limit/esbuild": "^11.2.0",
     "@size-limit/preset-small-lib": "^11.1.6",

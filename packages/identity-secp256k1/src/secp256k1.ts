@@ -13,7 +13,7 @@ import * as bip39 from '@scure/bip39';
 import { HDKey } from '@scure/bip32';
 import { SECP256K1_OID, unwrapDER, wrapDER } from './der';
 import { pemToSecretKey } from './pem';
-import { uint8FromBufLike } from '@dfinity/candid';
+import { uint8FromBufLike } from '@dfinity/internal/bytes';
 
 declare type PublicKeyHex = string;
 declare type SecretKeyHex = string;

@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Principal as PrincipalId } from '@dfinity/principal';
+import { concat, uint8ToDataView } from '@dfinity/internal/bytes';
 import { type JsonValue } from './types';
-import { concat, PipeArrayBuffer as Pipe, uint8ToDataView } from './utils/buffer';
+import { PipeArrayBuffer as Pipe } from './utils/buffer';
 import { idlLabelToId } from './utils/hash';
 import {
   lebDecode,

@@ -66,7 +66,7 @@ import {
 } from '../../polling/backoff';
 import { decodeTime } from '../../utils/leb';
 import { concatBytes, hexToBytes } from '@noble/hashes/utils';
-import { uint8Equals, uint8FromBufLike } from '../../utils/buffer';
+import { uint8Equals, uint8FromBufLike } from '@dfinity/internal/bytes';
 import { IC_RESPONSE_DOMAIN_SEPARATOR } from '../../constants';
 import { request as canisterStatusRequest } from '../../canisterStatus';
 export * from './transforms';

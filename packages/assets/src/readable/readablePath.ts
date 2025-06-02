@@ -2,7 +2,7 @@ import { type Readable } from './readable';
 import mime from 'mime/lite';
 import fs from 'fs';
 import path from 'path';
-import { uint8FromBufLike } from '@dfinity/agent';
+import { uint8FromBufLike } from '@dfinity/internal/bytes';
 
 export class ReadablePath implements Readable {
   private readonly _path: string;

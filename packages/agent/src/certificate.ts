@@ -20,7 +20,7 @@ import * as bls from './utils/bls';
 import { decodeTime } from './utils/leb';
 import { MANAGEMENT_CANISTER_ID } from './agent';
 import { bytesToHex, concatBytes, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
-import { uint8Equals } from './utils/buffer';
+import { uint8Equals } from '@dfinity/internal/bytes';
 import { sha256 } from '@noble/hashes/sha2';
 
 export interface Cert {

@@ -5,7 +5,6 @@ import {
   requestIdOf,
   type Signature,
   SignIdentity,
-  uint8ToBuf,
   IC_REQUEST_DOMAIN_SEPARATOR,
   IC_REQUEST_AUTH_DELEGATION_DOMAIN_SEPARATOR,
 } from '@dfinity/agent';
@@ -13,7 +12,7 @@ import { Principal } from '@dfinity/principal';
 import * as cbor from 'simple-cbor';
 import { PartialIdentity } from './partial';
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
-
+import { uint8ToBuf } from '@dfinity/internal/bytes';
 function _parseBlob(value: unknown): Uint8Array {
   if (typeof value !== 'string' || value.length < 64) {
     throw new Error('Invalid public key.');

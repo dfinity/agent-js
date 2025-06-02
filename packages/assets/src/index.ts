@@ -11,7 +11,8 @@ import {
   reconstruct,
   LookupPathStatus,
 } from '@dfinity/agent';
-import { lebDecode, PipeArrayBuffer, compare } from '@dfinity/candid';
+import { lebDecode, PipeArrayBuffer } from '@dfinity/candid';
+import { compare } from '@dfinity/internal/bytes';
 import { type AssetsCanisterRecord, getAssetsCanister } from './canisters/assets';
 import { sha256 } from '@noble/hashes/sha2';
 import { type BatchOperationKind } from './canisters/assets_service';

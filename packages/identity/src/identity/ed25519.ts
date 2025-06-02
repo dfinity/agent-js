@@ -8,7 +8,7 @@ import {
   unwrapDER,
   wrapDER,
 } from '@dfinity/agent';
-import { uint8Equals, uint8FromBufLike } from '@dfinity/candid';
+import { uint8Equals, uint8FromBufLike } from '@dfinity/internal/bytes';
 import { ed25519 } from '@noble/curves/ed25519';
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
 

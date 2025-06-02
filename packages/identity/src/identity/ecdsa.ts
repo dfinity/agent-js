@@ -4,7 +4,7 @@ import {
   type Signature,
   SignIdentity,
 } from '@dfinity/agent';
-import { uint8FromBufLike } from '@dfinity/candid';
+import { uint8FromBufLike } from '@dfinity/internal/bytes';
 
 /**
  * Options used in a {@link ECDSAKeyIdentity}

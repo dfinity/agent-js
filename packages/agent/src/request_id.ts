@@ -1,8 +1,8 @@
-import { lebEncode, compare } from '@dfinity/candid';
+import { lebEncode } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import borc from 'borc';
 import { HashValueErrorCode, InputError } from './errors';
-import { uint8FromBufLike } from './utils/buffer';
+import { uint8FromBufLike, compare } from '@dfinity/internal/bytes';
 import { concatBytes } from '@noble/hashes/utils';
 import { sha256 } from '@noble/hashes/sha2';
 

@@ -22,7 +22,11 @@
 
     "module": "ES2022",
     "moduleResolution": "node10",
-    "target": "ES2022"
+    "target": "ES2022",
+
+    "paths": {
+      "@dfinity/internal/*": ["./packages/internal/src/*"]
+    }
   },
   "exclude": [
     "node_modules",
