@@ -23,6 +23,12 @@ import {
 } from '../../errors';
 import { utf8ToBytes, bytesToHex, hexToBytes } from '@noble/hashes/utils';
 
+import { request as canisterStatusRequest } from '../../canisterStatus';
+jest.mock('../../canisterStatus');
+const mockedCanisterStatusRequest = canisterStatusRequest as jest.MockedFunction<
+  typeof canisterStatusRequest
+>;
+
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;
@@ -675,21 +681,11 @@ test('should adjust the Expiry if the clock is more than 30 seconds behind', asy
   const mockFetch = jest.fn();
 
   const replicaTime = new Date(Date.now() + 31_000);
-  jest.mock('../../canisterStatus', () => {
-    return {
-      request: () => {
-        return {
-          // 31 seconds ahead
-          get: () => replicaTime,
-        };
-      },
-    };
-  });
-  await import('../../canisterStatus');
-  const { HttpAgent } = await import('../index');
+  mockedCanisterStatusRequest.mockResolvedValue(new Map([['time', BigInt(replicaTime.getTime())]]));
 
-  const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
+  const agent = HttpAgent.createSync({ host: HTTP_AGENT_HOST, fetch: mockFetch });
 
+  // Make sure the time is synced
   await agent.syncTime();
 
   await agent
@@ -700,32 +696,22 @@ test('should adjust the Expiry if the clock is more than 30 seconds behind', asy
     // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
     .catch(function (_) {});
 
-  const requestBody: any = cbor.decode(mockFetch.mock.calls[0][1].body);
+  const requestBody = cbor.decode<Envelope<CallRequest>>(mockFetch.mock.calls[0][1].body);
 
-  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1200000000000`);
+  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1260000000000`);
 
   jest.resetModules();
 });
 
-// TODO - fix broken test
 test('should adjust the Expiry if the clock is more than 30 seconds ahead', async () => {
   const mockFetch = jest.fn();
 
   const replicaTime = new Date(Date.now() - 31_000);
-  jest.mock('../../canisterStatus', () => {
-    return {
-      request: () => {
-        return {
-          // 31 seconds behind
-          get: () => replicaTime,
-        };
-      },
-    };
-  });
-  await import('../../canisterStatus');
-  const { HttpAgent } = await import('../index');
+  mockedCanisterStatusRequest.mockResolvedValue(new Map([['time', BigInt(replicaTime.getTime())]]));
 
-  const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
+  const agent = HttpAgent.createSync({ host: HTTP_AGENT_HOST, fetch: mockFetch });
+
+  // Make sure the time is synced
   await agent.syncTime();
 
   await agent
@@ -736,7 +722,7 @@ test('should adjust the Expiry if the clock is more than 30 seconds ahead', asyn
     // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
     .catch(function (_) {});
 
-  const requestBody: any = cbor.decode(mockFetch.mock.calls[0][1].body);
+  const requestBody = cbor.decode<Envelope<CallRequest>>(mockFetch.mock.calls[0][1].body);
 
   expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1200000000000`);
 
