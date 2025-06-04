@@ -15,7 +15,7 @@ interface ToHashable {
 /**
  *
  * @param value unknown value
- * @returns ArrayBuffer
+ * @returns Uint8Array
  */
 export function hashValue(value: unknown): Uint8Array {
   if (value instanceof borc.Tagged) {
@@ -69,10 +69,10 @@ export function requestIdOf(request: Record<string, unknown>): RequestId {
 }
 
 /**
- * Hash a map into an ArrayBuffer using the representation-independent-hash function.
+ * Hash a map into a Uint8Array using the representation-independent-hash function.
  * https://sdk.dfinity.org/docs/interface-spec/index.html#hash-of-map
  * @param map - Any non-nested object
- * @returns ArrayBuffer
+ * @returns Uint8Array
  */
 export function hashOfMap(map: Record<string, unknown>): Uint8Array {
   const hashed: Array<[Uint8Array, Uint8Array]> = Object.entries(map)

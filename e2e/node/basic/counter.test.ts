@@ -120,8 +120,8 @@ describe('retrytimes', () => {
     let count = 0;
     const fetchMock = vi.fn(function (...args) {
       count += 1;
-      // let the first 3 requests pass, then throw an error on the call
-      if (count === 3) {
+      // let the first request pass, then fail the first 2 retries, then pass the final retry
+      if (count >= 2 && count <= 4) {
         return new Response('Test error - ignore', {
           status: 500,
           statusText: 'Internal Server Error',
@@ -145,21 +145,11 @@ describe('retrytimes', () => {
     const result = await counter.greet('counter');
     expect(result).toEqual('Hello, counter!');
 
-    // The number of calls should be 4 or more, depending on whether the test environment is using v3 or v2
-    if (findV2inCalls(fetchMock.mock.calls as [string, Request][]) === -1) {
-      // TODO - pin to 4 once dfx v0.23.0 is released
-      expect(fetchMock.mock.calls.length).toBe(4);
-    } else {
-      expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(4);
-    }
+    // expected calls:
+    // - status call
+    // - canister call that fails
+    // - two retries that fail
+    // - canister call that succeeds
+    expect(fetchMock.mock.calls.length).toBe(5);
   }, 40000);
 });
-
-const findV2inCalls = (calls: [string, Request][]) => {
-  for (let i = 0; i < calls.length; i++) {
-    if (calls[i][0].includes('v2')) {
-      return i;
-    }
-  }
-  return -1;
-};

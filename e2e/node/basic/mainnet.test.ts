@@ -8,13 +8,14 @@ import {
   requestIdOf,
   TrustError,
   MissingSignatureErrorCode,
+  AgentLog,
 } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
 import { describe, it, expect, vi, test } from 'vitest';
 import { makeAgent } from '../utils/agent';
-import { AgentLog } from '@dfinity/agent';
+import { waitForAndRunTimers } from '../utils/test';
 import { hexToBytes } from '@noble/hashes/utils';
 
 const { pollForResponse } = polling;
@@ -27,8 +28,6 @@ const createWhoamiActor = async (identity: Identity) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }) as unknown as any;
   };
-  vi.useFakeTimers();
-  new Date(Date.now());
 
   const agent = await makeAgent({ host: 'https://icp-api.io', identity });
 
@@ -217,23 +216,26 @@ test('it should allow you to set an incorrect root key', async () => {
 });
 
 test('should allow you to sync time when the system time is over 5 minutes apart from the replica time', async () => {
-  vi.useRealTimers();
-  vi.spyOn(Date, 'now').mockImplementation(() => 0);
-  new Date(Date.now()); //?
-  global.clearTimeout = vi.fn();
+  vi.useFakeTimers();
+  vi.setSystemTime(0);
   const agent = new HttpAgent({ fetch: fetch });
   const logs: AgentLog[] = [];
   agent.log.subscribe(log => logs.push(log as AgentLog));
   await agent.syncTime();
-  await agent
-    .call(Principal.managementCanister(), {
-      methodName: 'test',
-      arg: new Uint8Array(),
-    })
-    // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
-    .catch(function (_) {});
+
+  await Promise.all([
+    agent
+      .call(Principal.managementCanister(), {
+        methodName: 'test',
+        arg: new Uint8Array(),
+      })
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      .catch(function (_) {}),
+    waitForAndRunTimers(3),
+  ]);
 
   expect(logs[1].level).toBe('info');
   expect(logs[1].message.startsWith('Syncing time: offset of')).toBe(true);
-  console.log(logs[1]);
+
+  vi.useRealTimers();
 });

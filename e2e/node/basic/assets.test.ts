@@ -85,7 +85,7 @@ describe('assets', async () => {
   });
 
   afterEach(async () => {
-    const assetManager = new AssetManager({ canisterId, agent: await agent });
+    const assetManager = new AssetManager({ canisterId, agent });
     await assetManager.clear();
     if (existsSync(testFile.target)) {
       unlinkSync(testFile.target);
@@ -105,7 +105,7 @@ describe('assets', async () => {
   );
 
   it('batch process assets and verify asset list', async () => {
-    const assetManager = new AssetManager({ canisterId, agent: await agent });
+    const assetManager = new AssetManager({ canisterId, agent });
     const batch = assetManager.batch();
 
     // Initial X asset
