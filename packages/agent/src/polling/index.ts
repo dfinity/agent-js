@@ -1,6 +1,6 @@
-import { RequestId } from '../request_id';
-import { CreateCertificateOptions, Certificate, lookupResultToBuffer } from '../certificate';
-import { Agent, ReadStateResponse } from '../agent/api';
+import { type RequestId } from '../request_id';
+import { type CreateCertificateOptions, Certificate, lookupResultToBuffer } from '../certificate';
+import { type Agent, type ReadStateResponse } from '../agent/api';
 import { Principal } from '@dfinity/principal';
 import {
   CertifiedRejectErrorCode,
@@ -16,7 +16,7 @@ import {
 
 export * as strategy from './strategy';
 import { defaultStrategy } from './strategy';
-import { ReadRequestType, ReadStateRequest } from '../agent/http/types';
+import { ReadRequestType, type ReadStateRequest } from '../agent/http/types';
 import { RequestStatusResponseStatus } from '../agent';
 import { utf8ToBytes } from '@noble/hashes/utils';
 export { defaultStrategy } from './strategy';

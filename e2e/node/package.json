@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "ci": "npm run e2e",
-    "e2e": "vitest run",
+    "e2e": "vitest",
     "poste2e": "dfx killall",
     "lint:fix": "npm run lint -- --fix",
     "lint": "eslint --ext '.js,.jsx,.ts,.tsx' basic canisters utils *.ts",
@@ -25,8 +25,7 @@
   "devDependencies": {
     "@noble/hashes": "^1.8.0",
     "@peculiar/webcrypto": "^1.4.0",
-    "@tsconfig/node16": "^1.0.3",
-    "@tsconfig/node17": "^1.0.1",
+    "@tsconfig/node22": "^22.0.2",
     "@types/isomorphic-fetch": "^0.0.36",
     "@types/text-encoding": "^0.0.36",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
@@ -38,10 +37,7 @@
     "node-webcrypto-p11": "^2.5.0",
     "size-limit": "^8.2.6",
     "text-encoding": "^0.7.0",
-    "ts-node": "^10.8.2",
-    "typescript": "^5.7.2",
-    "express": "^5.1.0",
-    "@types/express": "^5.0.1",
+    "typescript": "5.8.3",
     "vite": "^6.3.5",
     "vitest": "^3.1.3"
   },

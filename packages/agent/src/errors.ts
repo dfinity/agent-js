@@ -1,8 +1,8 @@
 import { Principal } from '@dfinity/principal';
-import { HttpDetailsResponse, NodeSignature, ReplicaRejectCode } from './agent/api';
-import { RequestId } from './request_id';
-import { Expiry, RequestStatusResponseStatus } from './agent/http';
-import { HttpHeaderField } from './agent/http/types';
+import { type HttpDetailsResponse, type NodeSignature, type ReplicaRejectCode } from './agent/api';
+import { type RequestId } from './request_id';
+import { type Expiry, type RequestStatusResponseStatus } from './agent/http';
+import { type HttpHeaderField } from './agent/http/types';
 import { LookupPathStatus, LookupSubtreeStatus } from './certificate';
 import { bytesToHex } from '@noble/hashes/utils';
 

@@ -1,4 +1,3 @@
-/** @module CanisterStatus */
 import { Principal } from '@dfinity/principal';
 import {
   CertificateVerificationErrorCode,
@@ -17,21 +16,21 @@ import {
 } from '../errors';
 import { HttpAgent } from '../agent/http';
 import {
-  Cert,
+  type Cert,
   Certificate,
-  CreateCertificateOptions,
+  type CreateCertificateOptions,
   flatten_forks,
   check_canister_ranges,
   LookupPathStatus,
   lookup_path,
   lookupResultToBuffer,
   lookup_subtree,
-  LabeledHashTree,
+  type LabeledHashTree,
   LookupSubtreeStatus,
 } from '../certificate';
 import * as Cbor from '../cbor';
 import { decodeLeb128, decodeTime } from '../utils/leb';
-import { DerEncodedPublicKey } from '../auth';
+import { type DerEncodedPublicKey } from '../auth';
 import { utf8ToBytes, bytesToHex } from '@noble/hashes/utils';
 
 /**

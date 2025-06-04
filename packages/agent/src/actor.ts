@@ -1,6 +1,6 @@
 import {
-  Agent,
-  HttpDetailsResponse,
+  type Agent,
+  type HttpDetailsResponse,
   isV2ResponseBody,
   isV3ResponseBody,
   QueryResponseStatus,
@@ -17,9 +17,9 @@ import {
   UnknownError,
 } from './errors';
 import { IDL } from '@dfinity/candid';
-import { pollForResponse, PollingOptions, DEFAULT_POLLING_OPTIONS } from './polling';
+import { pollForResponse, type PollingOptions, DEFAULT_POLLING_OPTIONS } from './polling';
 import { Principal } from '@dfinity/principal';
-import { Certificate, CreateCertificateOptions, lookupResultToBuffer } from './certificate';
+import { Certificate, type CreateCertificateOptions, lookupResultToBuffer } from './certificate';
 import { HttpAgent } from './agent/http';
 import { utf8ToBytes } from '@noble/hashes/utils';
 

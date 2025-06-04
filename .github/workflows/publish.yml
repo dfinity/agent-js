@@ -46,8 +46,7 @@ jobs:
         name: List the state of node modules
         continue-on-error: true
         run: npm list
-      - run: npm ci
-      - run: npm run build
+      - run: npm run build -ws
       - run: npm audit
       - run: npm publish -ws
         env:

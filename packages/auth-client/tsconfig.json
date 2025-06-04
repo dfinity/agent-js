@@ -1,23 +1,9 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.web.json",
   "compilerOptions": {
-    "allowJs": false,
     "baseUrl": "./",
-    "composite": true,
-    "declaration": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "incremental": true,
-    "module": "ES2020",
-    "moduleResolution": "node",
-    "outDir": "./lib/esm",
-    "resolveJsonModule": true,
-    "rootDir": "./src",
-    "sourceMap": true,
-    "inlineSources": true,
-    "strict": true,
-    "target": "es2017"
+    "outDir": "./lib",
+    "rootDir": "./src"
   },
-  "include": ["types/*", "src/**/*"],
-  "references": [{ "path": "../agent" }, { "path": "../identity" }]
+  "include": ["types/*", "src/**/*"]
 }

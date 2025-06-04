@@ -1,18 +1,10 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.web.json",
   "compilerOptions": {
-    "allowJs": true,
-    "esModuleInterop": true,
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "node",
-    "lib": ["es5", "es2015", "dom"],
-    "jsx": "react",
-    "rootDir": "./src",
-    "baseUrl": "./",
-    "declaration": true,
-    "outDir": "lib/esm"
+    "jsx": "react-jsx",
+    "outDir": "./lib",
+    "rootDir": "./src"
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "test"]
+  "exclude": ["node_modules", "dist", "lib", "examples", "FixJSDOMEnvironment.ts", "setupTests.ts"]
 }

@@ -194,7 +194,7 @@ test('it should allow you to set an incorrect root key', async () => {
   const agent = HttpAgent.createSync({
     rootKey: new Uint8Array(31),
   });
-  const idlFactory = ({ IDL }) =>
+  const idlFactory: IDL.InterfaceFactory = ({ IDL }) =>
     IDL.Service({
       whoami: IDL.Func([], [IDL.Principal], ['query']),
     });

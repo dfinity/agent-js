@@ -1,4 +1,4 @@
-import { Readable } from './readable';
+import { type Readable } from './readable';
 import mime from 'mime/lite';
 import fs from 'fs';
 import path from 'path';
