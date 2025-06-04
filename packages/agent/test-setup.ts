@@ -8,14 +8,14 @@
 // Node.js in a similar way.
 
 import { Crypto } from '@peculiar/webcrypto';
-global.crypto = new Crypto();
-import { TextEncoder } from 'text-encoding';
-global.TextEncoder = TextEncoder;
-import { TextDecoder } from 'text-encoding';
-global.TextDecoder = TextDecoder;
-
+import { TextDecoder, TextEncoder } from 'text-encoding';
 import fetch from 'isomorphic-fetch';
+
+global.crypto = new Crypto();
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
 global.fetch = fetch;
+
 Object.defineProperty(global, 'performance', {
   writable: true,
   value: { ...global.performance },
