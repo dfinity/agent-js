@@ -1,17 +1,19 @@
-import baseConfig from '../../jest.config.base';
+import { baseConfig } from '../../jest.config.base.js';
+
 const packageName = 'identity-secp256k1';
 
-module.exports = {
+/** @type {import('jest').Config} */
+const config = {
   ...baseConfig,
   roots: [`<rootDir>/packages/${packageName}`],
   fakeTimers: { enableGlobally: true },
   moduleDirectories: ['node_modules'],
   modulePaths: [`<rootDir>/packages/${packageName}/src/`],
   setupFiles: [`<rootDir>/packages/${packageName}/test-setup.ts`],
-  transform: {
-    '^.+\\.ts$': 'ts-jest',
-  },
   collectCoverageFrom: ['src/**/*.{ts,tsx}'],
   displayName: packageName,
   rootDir: '../..',
+  prettierPath: null,
 };
+
+export default config;

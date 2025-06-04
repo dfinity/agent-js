@@ -1,16 +1,17 @@
-import baseConfig from '../../jest.config.base';
-const packageName = 'assets';
+import { baseConfig } from '../../jest.config.base.js';
 
-module.exports = {
+const packageName = 'identity';
+
+/** @type {import('jest').Config} */
+const config = {
   ...baseConfig,
   roots: [`<rootDir>/packages/${packageName}`],
   moduleDirectories: ['node_modules'],
   modulePaths: [`<rootDir>/packages/${packageName}/src/`],
   setupFiles: [`<rootDir>/packages/${packageName}/test-setup.ts`],
-  transform: {
-    '^.+\\.ts$': 'ts-jest',
-  },
   collectCoverageFrom: ['src/**/*.{ts,tsx}'],
   displayName: packageName,
   rootDir: '../..',
 };
+
+export default config;

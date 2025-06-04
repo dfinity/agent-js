@@ -1,15 +1,42 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "commonjs",
-    // Required for buffer-pipe
+    "rootDir": ".",
+    "allowJs": false,
+    "declaration": true,
+    "forceConsistentCasingInFileNames": true,
+    "incremental": true,
+    "resolveJsonModule": true,
+    "sourceMap": true,
+    "inlineSources": true,
+    "useDefineForClassFields": false,
     "esModuleInterop": true,
-    "lib": ["dom", "ES2020"],
-    "rootDir": "."
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": false,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+
+    "module": "ES2022",
+    "moduleResolution": "node10",
+    "target": "ES2022"
   },
-  "files": [],
-  "references": [{ "path": "packages/agent" }, { "path": "packages/identity" }],
-  "include": ["packages/**/types/*"],
-  "resolveJsonModule": true,
-  "exclude": ["**/src/**/*.test.ts"]
+  "exclude": [
+    "node_modules",
+    "packages/**/src/**/*.test.ts",
+    "packages/**/src/**/*.spec.ts",
+    "packages/**/test",
+    "packages/**/dist",
+    "packages/**/lib",
+    "packages/**/*.snap",
+    "e2e/**"
+  ],
+  "references": [
+    { "path": "./tsconfig.test.json" },
+    { "path": "./packages/auth-client/tsconfig.test.json" },
+    { "path": "./packages/use-auth-client/tsconfig.test.json" }
+  ]
 }

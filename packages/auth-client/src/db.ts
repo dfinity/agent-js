@@ -1,4 +1,4 @@
-import { openDB, IDBPDatabase } from 'idb';
+import { openDB, type IDBPDatabase } from 'idb';
 import { DB_VERSION, isBrowser, KEY_STORAGE_DELEGATION, KEY_STORAGE_KEY } from './storage';
 
 type Database = IDBPDatabase<unknown>;
@@ -68,13 +68,20 @@ export class IdbKeyVal {
    * @constructs an {@link IdbKeyVal}
    */
   public static async create(options?: DBCreateOptions): Promise<IdbKeyVal> {
-    const { dbName = AUTH_DB_NAME, storeName = OBJECT_STORE_NAME, version = DB_VERSION } = options ?? {};
+    const {
+      dbName = AUTH_DB_NAME,
+      storeName = OBJECT_STORE_NAME,
+      version = DB_VERSION,
+    } = options ?? {};
     const db = await _openDbStore(dbName, storeName, version);
     return new IdbKeyVal(db, storeName);
   }
 
   // Do not use - instead prefer create
-  private constructor(private _db: Database, private _storeName: string) {}
+  private constructor(
+    private _db: Database,
+    private _storeName: string,
+  ) {}
 
   /**
    * Basic setter

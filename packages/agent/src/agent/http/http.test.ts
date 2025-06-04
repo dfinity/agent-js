@@ -23,6 +23,12 @@ import {
 } from '../../errors';
 import { utf8ToBytes, bytesToHex, hexToBytes } from '@noble/hashes/utils';
 
+import { request as canisterStatusRequest } from '../../canisterStatus';
+jest.mock('../../canisterStatus');
+const mockedCanisterStatusRequest = canisterStatusRequest as jest.MockedFunction<
+  typeof canisterStatusRequest
+>;
+
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;
@@ -482,7 +488,7 @@ describe('replace identity', () => {
       });
     } catch (error) {
       expect(error).toBeInstanceOf(AgentError);
-      expect(error.cause.code).toBeInstanceOf(IdentityInvalidErrorCode);
+      expect((error as AgentError).cause.code).toBeInstanceOf(IdentityInvalidErrorCode);
     }
 
     // Then, add new identity
@@ -585,8 +591,8 @@ describe('retry failures', () => {
       await performCall();
     } catch (error) {
       expect(error).toBeInstanceOf(AgentError);
-      expect(error.cause.code).toBeInstanceOf(HttpErrorCode);
-      expect(error.cause.code.requestContext).toBeDefined();
+      expect((error as AgentError).cause.code).toBeInstanceOf(HttpErrorCode);
+      expect((error as AgentError).cause.code.requestContext).toBeDefined();
     }
     expect(mockFetch.mock.calls.length).toBe(1);
   });
@@ -614,8 +620,8 @@ describe('retry failures', () => {
       });
     } catch (error) {
       expect(error).toBeInstanceOf(AgentError);
-      expect(error.cause.code).toBeInstanceOf(HttpErrorCode);
-      expect(error.cause.code.requestContext).toBeDefined();
+      expect((error as AgentError).cause.code).toBeInstanceOf(HttpErrorCode);
+      expect((error as AgentError).cause.code.requestContext).toBeDefined();
       // One try + three retries
       expect(mockFetch.mock.calls.length).toEqual(4);
     }
@@ -675,21 +681,11 @@ test('should adjust the Expiry if the clock is more than 30 seconds behind', asy
   const mockFetch = jest.fn();
 
   const replicaTime = new Date(Date.now() + 31_000);
-  jest.mock('../../canisterStatus', () => {
-    return {
-      request: () => {
-        return {
-          // 31 seconds ahead
-          get: () => replicaTime,
-        };
-      },
-    };
-  });
-  await import('../../canisterStatus');
-  const { HttpAgent } = await import('../index');
+  mockedCanisterStatusRequest.mockResolvedValue(new Map([['time', BigInt(replicaTime.getTime())]]));
 
-  const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
+  const agent = HttpAgent.createSync({ host: HTTP_AGENT_HOST, fetch: mockFetch });
 
+  // Make sure the time is synced
   await agent.syncTime();
 
   await agent
@@ -700,32 +696,22 @@ test('should adjust the Expiry if the clock is more than 30 seconds behind', asy
     // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
     .catch(function (_) {});
 
-  const requestBody = cbor.decode<any>(mockFetch.mock.calls[0][1].body);
+  const requestBody = cbor.decode<Envelope<CallRequest>>(mockFetch.mock.calls[0][1].body);
 
   expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1260000000000n`);
 
   jest.resetModules();
 });
 
-// TODO - fix broken test
 test('should adjust the Expiry if the clock is more than 30 seconds ahead', async () => {
   const mockFetch = jest.fn();
 
   const replicaTime = new Date(Date.now() - 31_000);
-  jest.mock('../../canisterStatus', () => {
-    return {
-      request: () => {
-        return {
-          // 31 seconds behind
-          get: () => replicaTime,
-        };
-      },
-    };
-  });
-  await import('../../canisterStatus');
-  const { HttpAgent } = await import('../index');
+  mockedCanisterStatusRequest.mockResolvedValue(new Map([['time', BigInt(replicaTime.getTime())]]));
 
-  const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: mockFetch });
+  const agent = HttpAgent.createSync({ host: HTTP_AGENT_HOST, fetch: mockFetch });
+
+  // Make sure the time is synced
   await agent.syncTime();
 
   await agent
@@ -736,7 +722,7 @@ test('should adjust the Expiry if the clock is more than 30 seconds ahead', asyn
     // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
     .catch(function (_) {});
 
-  const requestBody = cbor.decode<any>(mockFetch.mock.calls[0][1].body);
+  const requestBody = cbor.decode<Envelope<CallRequest>>(mockFetch.mock.calls[0][1].body);
 
   expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1200000000000n`);
 
@@ -833,7 +819,7 @@ describe('default host', () => {
         hostname: host,
         protocol: 'https:',
       } as any;
-      const agent = await HttpAgent.createSync({ fetch: jest.fn() });
+      const agent = HttpAgent.createSync({ fetch: jest.fn() });
       expect(agent.host.toString()).toBe(`https://${host}/`);
     }
   });
@@ -848,7 +834,7 @@ describe('default host', () => {
         protocol: 'http:',
         port: '4943',
       } as any;
-      const agent = await HttpAgent.createSync({ fetch: jest.fn() });
+      const agent = HttpAgent.createSync({ fetch: jest.fn() });
       expect(agent.host.toString()).toBe(`http://${host}:4943/`);
     }
   });
@@ -1048,8 +1034,8 @@ describe('error logs for bad signature', () => {
       });
     } catch (error) {
       expect(error).toBeInstanceOf(AgentError);
-      expect(error.cause.code).toBeInstanceOf(HttpErrorCode);
-      expect(error.cause.code.requestContext).toBeDefined();
+      expect((error as AgentError).cause.code).toBeInstanceOf(HttpErrorCode);
+      expect((error as AgentError).cause.code.requestContext).toBeDefined();
     }
     expect(JSON.stringify(logs[0])).toMatchSnapshot();
     expect(logs[0].error).toBeInstanceOf(AgentError);
@@ -1093,8 +1079,8 @@ describe('error logs for bad signature', () => {
       });
     } catch (error) {
       expect(error).toBeInstanceOf(AgentError);
-      expect(error.cause.code).toBeInstanceOf(HttpFetchErrorCode);
-      expect(error.cause.code.requestContext).toBeDefined();
+      expect((error as AgentError).cause.code).toBeInstanceOf(HttpFetchErrorCode);
+      expect((error as AgentError).cause.code.requestContext).toBeDefined();
     }
     expect(JSON.stringify(logs[0])).toMatchSnapshot();
     expect(logs[0].error).toBeInstanceOf(AgentError);
@@ -1166,8 +1152,8 @@ describe('error logs for bad signature', () => {
       await agent.readState(canisterId, { paths: [[path, requestId]] });
     } catch (error) {
       expect(error).toBeInstanceOf(AgentError);
-      expect(error.cause.code).toBeInstanceOf(HttpErrorCode);
-      expect(error.cause.code.requestContext).toBeDefined();
+      expect((error as AgentError).cause.code).toBeInstanceOf(HttpErrorCode);
+      expect((error as AgentError).cause.code.requestContext).toBeDefined();
     }
     expect(logs[0].error).toBeInstanceOf(AgentError);
     expect(logs[0].error.cause.code).toBeInstanceOf(HttpErrorCode);

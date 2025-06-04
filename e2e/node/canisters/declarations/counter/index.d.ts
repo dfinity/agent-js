@@ -1,8 +1,8 @@
-import type { ActorSubclass, HttpAgentOptions, ActorConfig, Agent } from '@dfinity/agent';
+import type { ActorSubclass, HttpAgentOptions, ActorConfig, Agent, Actor } from '@dfinity/agent';
 import type { Principal } from '@dfinity/principal';
 import type { IDL } from '@dfinity/candid';
 
-import { _SERVICE } from './counter.did';
+import { type _SERVICE } from './counter.did';
 
 export declare const idlFactory: IDL.InterfaceFactory;
 export declare const canisterId: string;
@@ -24,7 +24,6 @@ export declare interface CreateActorOptions {
 
 /**
  * Intializes an {@link ActorSubclass}, configured with the provided SERVICE interface of a canister.
- * @constructs {@link ActorSubClass}
  * @param {string | Principal} canisterId - ID of the canister the {@link Actor} will talk to
  * @param {CreateActorOptions} options - see {@link CreateActorOptions}
  * @param {CreateActorOptions["agent"]} options.agent - a pre-configured agent you'd like to use. Supercedes agentOptions
@@ -40,6 +39,5 @@ export declare const createActor: (
 
 /**
  * Intialized Actor using default settings, ready to talk to a canister using its candid interface
- * @constructs {@link ActorSubClass}
  */
 export declare const counter: ActorSubclass<_SERVICE>;
