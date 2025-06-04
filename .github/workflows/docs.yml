@@ -16,7 +16,7 @@ jobs:
 
       - uses: ./.github/actions/prepare
         with:
-          node-version: 22
+          node-version-file: '.nvmrc'
 
       - run: npm run build
 
