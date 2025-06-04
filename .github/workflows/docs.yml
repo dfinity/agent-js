@@ -1,0 +1,34 @@
+name: Test Docs Build
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - edited
+      - synchronize
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/prepare
+        with:
+          node-version-file: '.nvmrc'
+
+      - run: npm run build
+
+      - name: Generate docs
+        run: npm run make:docs
+
+  aggregate:
+    name: docs:required
+    if: ${{ always() }}
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: check build docs result
+        if: ${{ needs.test.result != 'success' }}
+        run: exit 1
