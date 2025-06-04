@@ -602,11 +602,10 @@ export class HttpAgent implements Agent {
 
       const response = await request;
       const responseBuffer = uint8FromBufLike(await response.arrayBuffer());
-      const responseBody = (
+      const responseBody =
         response.status === 200 && responseBuffer.byteLength > 0
-          ? cbor.decode(responseBuffer)
-          : null
-      ) as SubmitResponse['response']['body'];
+          ? cbor.decode<SubmitResponse['response']['body']>(responseBuffer)
+          : null;
 
       // Update the watermark with the latest time from consensus
       if (responseBody && 'certificate' in (responseBody as v3ResponseBody)) {
@@ -707,7 +706,7 @@ export class HttpAgent implements Agent {
         },
       );
       if (fetchResponse.status === 200) {
-        const queryResponse: QueryResponse = cbor.decode(
+        const queryResponse = cbor.decode<QueryResponse>(
           uint8FromBufLike(await fetchResponse.arrayBuffer()),
         );
         response = {
@@ -1167,7 +1166,7 @@ export class HttpAgent implements Agent {
           ),
         );
       }
-      const decodedResponse: ReadStateResponse = cbor.decode(
+      const decodedResponse = cbor.decode<ReadStateResponse>(
         uint8FromBufLike(await response.arrayBuffer()),
       );
 
@@ -1201,7 +1200,7 @@ export class HttpAgent implements Agent {
   public async parseTimeFromResponse(response: { certificate: Uint8Array }): Promise<number> {
     let tree: HashTree;
     if (response.certificate) {
-      const decoded: { tree: HashTree } | undefined = cbor.decode(response.certificate);
+      const decoded = cbor.decode<{ tree: HashTree } | undefined>(response.certificate);
       if (decoded && 'tree' in decoded) {
         tree = decoded.tree;
       } else {

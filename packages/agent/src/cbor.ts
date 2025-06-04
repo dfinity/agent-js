@@ -1,126 +1,46 @@
-// This file is based on:
-// https://github.com/dfinity-lab/dfinity/blob/9bca65f8edd65701ea6bdb00e0752f9186bbc893/docs/spec/public/index.adoc#cbor-encoding-of-requests-and-responses
-import borc from 'borc';
-import * as cbor from 'simple-cbor';
-import { type CborEncoder, SelfDescribeCborSerializer } from 'simple-cbor';
 import { Principal } from '@dfinity/principal';
-import { CborDecodeErrorCode, InputError } from './errors';
-import { uint8FromBufLike, uint8ToBuf } from './utils/buffer';
-import { hexToBytes, concatBytes } from '@noble/hashes/utils';
+import * as cbor from '@dfinity/cbor';
+import { CborDecodeErrorCode, CborEncodeErrorCode, InputError } from './errors';
+import { Expiry } from './agent';
 
-// We are using hansl/simple-cbor for CBOR serialization, to avoid issues with
-// encoding the uint64 values that the HTTP handler of the client expects for
-// canister IDs. However, simple-cbor does not yet provide deserialization so
-// we are using `Uint8Array` so that we can use the dignifiedquire/borc CBOR
-// decoder.
-
-class PrincipalEncoder implements CborEncoder<Principal> {
-  public get name() {
-    return 'Principal';
-  }
-
-  public get priority() {
-    return 0;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public match(value: any): boolean {
-    return value && value._isPrincipal === true;
-  }
-
-  public encode(v: Principal): cbor.CborValue {
-    return cbor.value.bytes(uint8ToBuf(v.toUint8Array()));
-  }
+/**
+ * Used to extend classes that need to provide a custom value for the CBOR encoding process.
+ */
+export abstract class ToCborValue {
+  /**
+   * Returns a value that can be encoded with CBOR. Typically called in the replacer function of the {@link encode} function.
+   */
+  public abstract toCborValue(): cbor.CborValue;
 }
 
-class BufferEncoder implements CborEncoder<ArrayBuffer> {
-  public get name() {
-    return 'Buffer';
-  }
-
-  public get priority() {
-    return 1;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public match(value: any): boolean {
-    return value instanceof ArrayBuffer || ArrayBuffer.isView(value);
-  }
-
-  public encode(v: ArrayBuffer): cbor.CborValue {
-    return cbor.value.bytes(v);
-  }
-}
-
-class BigIntEncoder implements CborEncoder<bigint> {
-  public get name() {
-    return 'BigInt';
-  }
-
-  public get priority() {
-    return 1;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public match(value: any): boolean {
-    return typeof value === `bigint`;
-  }
-
-  public encode(v: bigint): cbor.CborValue {
-    // Always use a bigint encoding.
-    if (v > BigInt(0)) {
-      return cbor.value.tagged(2, cbor.value.bytes(uint8ToBuf(hexToBytes(v.toString(16)))));
-    } else {
-      return cbor.value.tagged(
-        3,
-        cbor.value.bytes(uint8ToBuf(hexToBytes((BigInt('-1') * v).toString(16)))),
-      );
-    }
-  }
-}
-
-const serializer = SelfDescribeCborSerializer.withDefaultEncoders(true);
-serializer.addEncoder(new PrincipalEncoder());
-serializer.addEncoder(new BufferEncoder());
-serializer.addEncoder(new BigIntEncoder());
-
-export enum CborTag {
-  Uint64LittleEndian = 71,
-  Semantic = 55799,
+function hasCborValueMethod(value: unknown): value is ToCborValue {
+  return typeof value === 'object' && value !== null && 'toCborValue' in value;
 }
 
 /**
- * Encode a JavaScript value into CBOR.
+ * Encode a JavaScript value into CBOR. If the value is an instance of {@link ToCborValue},
+ * the {@link ToCborValue.toCborValue} method will be called to get the value to encode.
  * @param value The value to encode
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function encode(value: any): Uint8Array {
-  return uint8FromBufLike(serializer.serialize(value));
-}
+export function encode(value: unknown): Uint8Array {
+  try {
+    return cbor.encodeWithSelfDescribedTag(value, value => {
+      if (Principal.isPrincipal(value)) {
+        return value.toUint8Array();
+      }
 
-function decodePositiveBigInt(buf: Uint8Array): bigint {
-  const len = buf.byteLength;
-  let res = BigInt(0);
-  for (let i = 0; i < len; i++) {
-    res = res * BigInt(0x100) + BigInt(buf[i]);
-  }
+      if (Expiry.isExpiry(value)) {
+        return value.toBigInt();
+      }
 
-  return res;
-}
+      if (hasCborValueMethod(value)) {
+        return value.toCborValue();
+      }
 
-// A BORC subclass that decodes byte strings to Uint8Array instead of the Buffer class.
-class Uint8ArrayDecoder extends borc.Decoder {
-  public createByteString(raw: Uint8Array[]): Uint8Array {
-    return concatBytes(...raw);
-  }
-
-  public createByteStringFromHeap(start: number, end: number): Uint8Array {
-    if (start === end) {
-      return new Uint8Array(0);
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return new Uint8Array((this as any)._heap.slice(start, end));
+      return value;
+    });
+  } catch (error) {
+    throw InputError.fromCode(new CborEncodeErrorCode(error, value));
   }
 }
 
@@ -129,20 +49,15 @@ class Uint8ArrayDecoder extends borc.Decoder {
  * @param input The CBOR encoded value
  */
 export function decode<T>(input: Uint8Array): T {
-  const buffer = new Uint8Array(input);
-  const decoder = new Uint8ArrayDecoder({
-    size: buffer.byteLength,
-    tags: {
-      // Override tags 2 and 3 for BigInt support (borc supports only BigNumber).
-      2: val => decodePositiveBigInt(val),
-      3: val => -decodePositiveBigInt(val),
-      [CborTag.Semantic]: (value: T): T => value,
-    },
-  });
-
   try {
-    return decoder.decodeFirst(buffer);
-  } catch (error: unknown) {
-    throw InputError.fromCode(new CborDecodeErrorCode(error, buffer));
+    return cbor.decode(input) as T;
+  } catch (error) {
+    throw InputError.fromCode(new CborDecodeErrorCode(error, input));
   }
 }
+
+// Not strictly necessary, we're just keeping it for backwards compatibility.
+export const Cbor = {
+  encode,
+  decode,
+};

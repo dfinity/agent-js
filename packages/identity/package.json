@@ -50,8 +50,7 @@
     "@dfinity/principal": "^2.4.1"
   },
   "dependencies": {
-    "@noble/curves": "^1.2.0",
-    "borc": "^2.1.1"
+    "@noble/curves": "^1.2.0"
   },
   "devDependencies": {
     "@noble/hashes": "^1.8.0",

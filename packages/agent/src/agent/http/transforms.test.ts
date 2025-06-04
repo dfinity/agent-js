@@ -58,3 +58,22 @@ test('should serialize and deserialize expiry', () => {
     expect(inputError.message).toContain('The input does not contain the key __expiry__');
   }
 });
+
+test('isExpiry', () => {
+  expect(Expiry.isExpiry(Expiry.fromDeltaInMilliseconds(1000))).toBe(true);
+  const jsonExpiryString = JSON.stringify(Expiry.fromDeltaInMilliseconds(1000).toJSON());
+  expect(Expiry.isExpiry(Expiry.fromJSON(jsonExpiryString))).toBe(true);
+  expect(Expiry.isExpiry({ _isExpiry: true, __expiry__: BigInt(1000) })).toBe(true);
+
+  expect(Expiry.isExpiry({ _isExpiry: true, __expiry__: 1 })).toBe(false);
+  expect(Expiry.isExpiry({ _isExpiry: true })).toBe(false);
+  expect(Expiry.isExpiry({ _isExpiry: true, __expiry__: 'not a bigint' })).toBe(false);
+  expect(Expiry.isExpiry({ _isExpiry: true, __expiry__: new Uint8Array([0x04]) })).toBe(false);
+  expect(Expiry.isExpiry({ _isExpiry: true, __expiry__: new ArrayBuffer(1) })).toBe(false);
+  expect(Expiry.isExpiry({ _isExpiry: true, __expiry__: null })).toBe(false);
+  expect(Expiry.isExpiry(jsonExpiryString)).toBe(false);
+  expect(Expiry.isExpiry({})).toBe(false);
+  expect(Expiry.isExpiry(new Uint8Array([0x04]))).toBe(false);
+  expect(Expiry.isExpiry('')).toBe(false);
+  expect(Expiry.isExpiry(null)).toBe(false);
+});

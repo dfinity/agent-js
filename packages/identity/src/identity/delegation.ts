@@ -5,12 +5,11 @@ import {
   requestIdOf,
   type Signature,
   SignIdentity,
-  uint8ToBuf,
   IC_REQUEST_DOMAIN_SEPARATOR,
   IC_REQUEST_AUTH_DELEGATION_DOMAIN_SEPARATOR,
+  ToCborValue,
 } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
-import * as cbor from 'simple-cbor';
 import { PartialIdentity } from './partial';
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
 
@@ -28,24 +27,21 @@ function _parseBlob(value: unknown): Uint8Array {
  *
  * {@see DelegationChain}
  */
-export class Delegation {
+export class Delegation implements ToCborValue {
   constructor(
     public readonly pubkey: Uint8Array,
     public readonly expiration: bigint,
     public readonly targets?: Principal[],
   ) {}
 
-  public toCBOR(): cbor.CborValue {
-    // Expiration field needs to be encoded as a u64 specifically.
-    return cbor.value.map({
-      pubkey: cbor.value.bytes(uint8ToBuf(this.pubkey)),
-      expiration: cbor.value.u64(this.expiration.toString(16), 16),
+  public toCborValue() {
+    return {
+      pubkey: this.pubkey,
+      expiration: this.expiration,
       ...(this.targets && {
-        targets: cbor.value.array(
-          this.targets.map(t => cbor.value.bytes(uint8ToBuf(t.toUint8Array()))),
-        ),
+        targets: this.targets,
       }),
-    });
+    };
   }
 
   public toJSON(): JsonnableDelegation {

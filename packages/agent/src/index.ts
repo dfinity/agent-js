@@ -29,5 +29,5 @@ export * as CanisterStatus from './canisterStatus';
  * The primary method for this namespace is {@link CanisterStatus.request}
  */
 
-export * as Cbor from './cbor';
+export { Cbor, ToCborValue } from './cbor';
 export * from './polling';
