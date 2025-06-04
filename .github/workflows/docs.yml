@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: 22
 
-      # - run: npm run build # TODO: uncomment this
+      - run: npm run build
 
       - name: Generate docs
         run: npm run make:docs
