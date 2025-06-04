@@ -13,9 +13,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: ./.github/actions/prepare
         with:
           node-version: 22
+
+      # - run: npm run build # TODO: uncomment this
+
       - name: Generate docs
         run: npm run make:docs
 

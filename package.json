@@ -62,7 +62,7 @@
     "e2e": "npm run e2e --workspaces --if-present",
     "lint:fix": "",
     "lint": "npm run lint --workspaces --if-present -- --max-warnings=0",
-    "make:docs": "npm run make:docs/reference --workspaces --if-present; npm run convert:changelog",
+    "make:docs": "npm run make:docs/reference --workspaces --if-present && npm run convert:changelog",
     "release": "release-it",
     "size": "size-limit --json",
     "test:coverage": "",
