@@ -610,7 +610,7 @@ test('delegation check fails for canisters outside of the subnet range', async (
       });
     } catch (error) {
       expect(error).toBeInstanceOf(TrustError);
-      expect(error.cause.code).toBeInstanceOf(CertificateNotAuthorizedErrorCode);
+      expect((error as TrustError).cause.code).toBeInstanceOf(CertificateNotAuthorizedErrorCode);
     }
   }
   expect.assertions(4);
@@ -637,7 +637,7 @@ test('certificate verification fails for an invalid signature', async () => {
     });
   } catch (error) {
     expect(error).toBeInstanceOf(TrustError);
-    expect(error.cause.code).toBeInstanceOf(CertificateVerificationErrorCode);
+    expect((error as TrustError).cause.code).toBeInstanceOf(CertificateVerificationErrorCode);
   }
 });
 
@@ -657,7 +657,7 @@ test('certificate verification fails if the time of the certificate is > 5 minut
     });
   } catch (error) {
     expect(error).toBeInstanceOf(TrustError);
-    expect(error.cause.code).toBeInstanceOf(CertificateTimeErrorCode);
+    expect((error as TrustError).cause.code).toBeInstanceOf(CertificateTimeErrorCode);
   }
 });
 
@@ -676,7 +676,7 @@ test('certificate verification fails if the time of the certificate is > 5 minut
     });
   } catch (error) {
     expect(error).toBeInstanceOf(TrustError);
-    expect(error.cause.code).toBeInstanceOf(CertificateTimeErrorCode);
+    expect((error as TrustError).cause.code).toBeInstanceOf(CertificateTimeErrorCode);
   }
 });
 
@@ -710,7 +710,9 @@ test('certificate verification fails on nested delegations', async () => {
     });
   } catch (error) {
     expect(error).toBeInstanceOf(ProtocolError);
-    expect(error.cause.code).toBeInstanceOf(CertificateHasTooManyDelegationsErrorCode);
+    expect((error as ProtocolError).cause.code).toBeInstanceOf(
+      CertificateHasTooManyDelegationsErrorCode,
+    );
   }
   try {
     await Cert.Certificate.create({
@@ -720,6 +722,8 @@ test('certificate verification fails on nested delegations', async () => {
     });
   } catch (error) {
     expect(error).toBeInstanceOf(ProtocolError);
-    expect(error.cause.code).toBeInstanceOf(CertificateHasTooManyDelegationsErrorCode);
+    expect((error as ProtocolError).cause.code).toBeInstanceOf(
+      CertificateHasTooManyDelegationsErrorCode,
+    );
   }
 });

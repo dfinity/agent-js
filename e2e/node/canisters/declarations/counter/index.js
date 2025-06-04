@@ -1,4 +1,5 @@
-import { Actor, ActorMethod, HttpAgent } from '@dfinity/agent';
+/* eslint-env node */
+import { Actor, HttpAgent } from '@dfinity/agent';
 
 // Imports and re-exports candid interface
 import { idlFactory } from './counter.did.js';
@@ -12,7 +13,7 @@ export { idlFactory } from './counter.did.js';
 export const canisterId = process.env.CANISTER_ID_COUNTER || process.env.COUNTER_CANISTER_ID;
 
 export const createActor = (canisterId, options = {}) => {
-  const agent = options.agent || new HttpAgent({ ...options.agentOptions });
+  const agent = options.agent || HttpAgent.createSync({ ...options.agentOptions });
 
   if (options.agent && options.agentOptions) {
     console.warn(
@@ -35,12 +36,3 @@ export const createActor = (canisterId, options = {}) => {
     ...options.actorOptions,
   });
 };
-
-export interface _SERVICE {
-  greet: ActorMethod<[string], string>;
-  inc: ActorMethod<[], undefined>;
-  inc_read: ActorMethod<[], bigint>;
-  queryGreet: ActorMethod<[string], string>;
-  read: ActorMethod<[], bigint>;
-  write: ActorMethod<[bigint], undefined>;
-}

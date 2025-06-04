@@ -14,7 +14,7 @@ import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
 import { describe, it, expect, vi, test } from 'vitest';
 import { makeAgent } from '../utils/agent';
-import { AgentLog } from '@dfinity/agent/src/observable';
+import { AgentLog } from '@dfinity/agent';
 import { hexToBytes } from '@noble/hashes/utils';
 
 const { pollForResponse } = polling;
@@ -195,7 +195,7 @@ test('it should allow you to set an incorrect root key', async () => {
   const agent = HttpAgent.createSync({
     rootKey: new Uint8Array(31),
   });
-  const idlFactory = ({ IDL }) =>
+  const idlFactory: IDL.InterfaceFactory = ({ IDL }) =>
     IDL.Service({
       whoami: IDL.Func([], [IDL.Principal], ['query']),
     });

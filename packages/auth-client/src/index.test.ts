@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import 'fake-indexeddb/auto';
 import { Actor, HttpAgent } from '@dfinity/agent';
-import { AgentError } from '@dfinity/agent/lib/cjs/errors';
+import { AgentError } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { DelegationChain, Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
 import { AuthClient, ERROR_USER_INTERRUPT, IdbStorage } from './index';
 import {
-  AuthClientStorage,
+  type AuthClientStorage,
   KEY_STORAGE_DELEGATION,
   KEY_STORAGE_KEY,
   LocalStorage,

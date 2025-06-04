@@ -1,16 +1,18 @@
 import * as React from 'react';
 import { render, screen, cleanup } from '@testing-library/react';
 import { useAuthClient } from '../src/use-auth-client';
-import { describe, it, jest, afterEach } from '@jest/globals';
+import { describe, it, jest, afterEach, expect } from '@jest/globals';
+import { IDL } from '@dfinity/candid';
+
+interface GenericComponentProps {
+  children?: React.ReactNode;
+}
 
 afterEach(cleanup);
 
 describe('useAuthClient', () => {
   it('should return an authClient object with the expected properties', async () => {
-    interface Props {
-      children?: React.ReactNode;
-    }
-    const Component: React.FC<Props> = () => {
+    const Component: React.FC<GenericComponentProps> = () => {
       const { isAuthenticated, login, logout } = useAuthClient();
       return (
         <div>
@@ -29,14 +31,10 @@ describe('useAuthClient', () => {
     ).toHaveTextContent('false');
   });
   it('should support configs for multiple actors', async () => {
-    interface Props {
-      children?: React.ReactNode;
-    }
-
-    const idlFactory = ({ IDL }) => {
+    const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
       return IDL.Service({ whoami: IDL.Func([], [IDL.Principal], ['query']) });
     };
-    const Component: React.FC<Props> = () => {
+    const Component: React.FC<GenericComponentProps> = () => {
       const { actors } = useAuthClient({
         actorOptions: {
           actor1: {

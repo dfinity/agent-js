@@ -3,12 +3,6 @@ import { Crypto } from '@peculiar/webcrypto';
 import { randomInt } from 'node:crypto';
 
 const webcrypto = new Crypto();
-beforeEach(() => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (global as any).window = undefined;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (global as any).crypto = undefined;
-});
 
 function isInteger(num: number) {
   if (typeof num !== 'number') return false;
@@ -23,6 +17,17 @@ function isInteger(num: number) {
 }
 
 describe('randomNumber', () => {
+  beforeEach(() => {
+    Object.defineProperty(global, 'crypto', {
+      value: undefined,
+      writable: true,
+    });
+    Object.defineProperty(global, 'window', {
+      value: undefined,
+      writable: true,
+    });
+  });
+
   it('should use window.crypto if available', () => {
     global.window = {
       crypto: {
@@ -55,10 +60,6 @@ describe('randomNumber', () => {
     expect(result).toBeLessThanOrEqual(0xffffffff);
   });
   it('should use Math.random if nothing else is available', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (global as any).window = undefined;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (global as any).crypto = undefined;
     const result = randomNumber();
     expect(isInteger(result)).toBe(true);
     expect(result).toBeLessThanOrEqual(0xffffffff);

@@ -1,4 +1,4 @@
-import { JsonObject } from '@dfinity/candid';
+import { type JsonObject } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
 import {
   HashTreeDecodeErrorCode,
@@ -26,46 +26,50 @@ import {
   AgentError,
   MalformedLookupFoundValueErrorCode,
 } from '../../errors';
-import { AnonymousIdentity, Identity } from '../../auth';
+import { AnonymousIdentity, type Identity } from '../../auth';
 import * as cbor from '../../cbor';
-import { RequestId, hashOfMap, requestIdOf } from '../../request_id';
+import { type RequestId, hashOfMap, requestIdOf } from '../../request_id';
 import {
-  Agent,
-  ApiQueryResponse,
-  QueryFields,
-  QueryResponse,
-  ReadStateOptions,
-  ReadStateResponse,
-  SubmitResponse,
-  v3ResponseBody,
+  type Agent,
+  type ApiQueryResponse,
+  type QueryFields,
+  type QueryResponse,
+  type ReadStateOptions,
+  type ReadStateResponse,
+  type SubmitResponse,
+  type v3ResponseBody,
 } from '../api';
 import { Expiry, httpHeadersTransform, makeNonceTransform } from './transforms';
 import {
-  CallRequest,
+  type CallRequest,
   Endpoint,
-  HttpAgentRequest,
-  HttpAgentRequestTransformFn,
-  HttpAgentSubmitRequest,
+  type HttpAgentRequest,
+  type HttpAgentRequestTransformFn,
+  type HttpAgentSubmitRequest,
   makeNonce,
-  Nonce,
-  QueryRequest,
+  type Nonce,
+  type QueryRequest,
   ReadRequestType,
   SubmitRequestType,
-  ReadStateRequest,
+  type ReadStateRequest,
 } from './types';
-import { SubnetStatus, request } from '../../canisterStatus';
-import { HashTree, lookup_path, LookupPathStatus } from '../../certificate';
+import { type SubnetStatus, request as canisterStatusRequest } from '../../canisterStatus';
+import { type HashTree, lookup_path, LookupPathStatus } from '../../certificate';
 import { ed25519 } from '@noble/curves/ed25519';
 import { ExpirableMap } from '../../utils/expirableMap';
 import { Ed25519PublicKey } from '../../public_key';
 import { ObservableLog } from '../../observable';
-import { BackoffStrategy, BackoffStrategyFactory, ExponentialBackoff } from '../../polling/backoff';
+import {
+  type BackoffStrategy,
+  type BackoffStrategyFactory,
+  ExponentialBackoff,
+} from '../../polling/backoff';
 import { decodeTime } from '../../utils/leb';
 import { concatBytes, hexToBytes } from '@noble/hashes/utils';
 import { uint8Equals, uint8FromBufLike } from '../../utils/buffer';
 import { IC_RESPONSE_DOMAIN_SEPARATOR } from '../../constants';
 export * from './transforms';
-export { Nonce, makeNonce } from './types';
+export { type Nonce, makeNonce } from './types';
 
 export enum RequestStatusResponseStatus {
   Received = 'received',
@@ -1095,7 +1099,7 @@ export class HttpAgent implements Agent {
   public async readState(
     canisterId: Principal | string,
     fields: ReadStateOptions,
-    identity?: Identity | Promise<Identity>,
+    _identity?: Identity | Promise<Identity>,
     // eslint-disable-next-line
     request?: any,
   ): Promise<ReadStateResponse> {
@@ -1236,7 +1240,6 @@ export class HttpAgent implements Agent {
    */
   public async syncTime(canisterId?: Principal): Promise<void> {
     await this.#rootKeyGuard();
-    const CanisterStatus = await import('../../canisterStatus');
     const callTime = Date.now();
     try {
       if (!canisterId) {
@@ -1252,7 +1255,7 @@ export class HttpAgent implements Agent {
         retryTimes: 0,
       });
 
-      const status = await CanisterStatus.request({
+      const status = await canisterStatusRequest({
         // Fall back with canisterId of the ICP Ledger
         canisterId: canisterId ?? Principal.from('ryjl3-tyaaa-aaaaa-aaaba-cai'),
         agent: anonymousAgent,
@@ -1341,7 +1344,7 @@ export class HttpAgent implements Agent {
   public async fetchSubnetKeys(canisterId: Principal | string) {
     await this.#rootKeyGuard();
     const effectiveCanisterId: Principal = Principal.from(canisterId);
-    const response = await request({
+    const response = await canisterStatusRequest({
       canisterId: effectiveCanisterId,
       paths: ['subnet'],
       agent: this,

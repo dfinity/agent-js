@@ -1,7 +1,7 @@
 import { Principal } from '@dfinity/principal';
 import { RequestStatusResponseStatus } from '../agent';
-import { PollStrategy } from './index';
-import { RequestId } from '../request_id';
+import { type PollStrategy } from './index';
+import { type RequestId } from '../request_id';
 import { ProtocolError, TimeoutWaitingForResponseErrorCode } from '../errors';
 
 export type Predicate<T> = (
@@ -58,7 +58,7 @@ export function conditionalDelay(condition: Predicate<boolean>, timeInMsec: numb
 export function maxAttempts(count: number): PollStrategy {
   let attempts = count;
   return async (
-    canisterId: Principal,
+    _canisterId: Principal,
     requestId: RequestId,
     status: RequestStatusResponseStatus,
   ) => {
@@ -89,7 +89,7 @@ export function throttle(throttleInMsec: number): PollStrategy {
 export function timeout(timeInMsec: number): PollStrategy {
   const end = Date.now() + timeInMsec;
   return async (
-    canisterId: Principal,
+    _canisterId: Principal,
     requestId: RequestId,
     status: RequestStatusResponseStatus,
   ) => {

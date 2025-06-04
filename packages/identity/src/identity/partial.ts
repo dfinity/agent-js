@@ -1,4 +1,4 @@
-import { Identity, PublicKey } from '@dfinity/agent';
+import { type Identity, type PublicKey } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 
 /**

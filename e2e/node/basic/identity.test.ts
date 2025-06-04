@@ -11,6 +11,7 @@ import { Secp256k1KeyIdentity } from '@dfinity/identity-secp256k1';
 import agent, { makeAgent } from '../utils/agent';
 import whoamiCanister from '../canisters/whoami';
 import { test, expect } from 'vitest';
+import { IDL } from '@dfinity/candid';
 
 function createIdentity(seed: number): SignIdentity {
   const seed1 = new Array(32).fill(0);
@@ -24,7 +25,11 @@ function createSecpIdentity(seed: number): SignIdentity {
   return Secp256k1KeyIdentity.generate(new Uint8Array(seed1));
 }
 
-async function createIdentityActor(seed: number, canisterId: Principal, idl): Promise<any> {
+async function createIdentityActor(
+  seed: number,
+  canisterId: Principal,
+  idl: IDL.InterfaceFactory,
+): Promise<any> {
   const identity = createIdentity(seed);
   const agent1 = await makeAgent({ identity });
   return Actor.createActor(idl, {
@@ -35,7 +40,7 @@ async function createIdentityActor(seed: number, canisterId: Principal, idl): Pr
 
 async function createSecp256k1IdentityActor(
   canisterId: Principal,
-  idl,
+  idl: IDL.InterfaceFactory,
   seed?: number,
 ): Promise<any> {
   let seed1: Uint8Array | undefined;
@@ -54,7 +59,7 @@ async function createSecp256k1IdentityActor(
 
 async function createEcdsaIdentityActor(
   canisterId: Principal,
-  idl,
+  idl: IDL.InterfaceFactory,
   identity?: SignIdentity,
 ): Promise<any> {
   let effectiveIdentity: SignIdentity;
