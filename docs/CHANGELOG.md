@@ -39,6 +39,7 @@
 - test: removes backwards comatibility test for `Actor` with `v1` HttpAgent due to breaking interface changes.
 - fix: Check subtyping relationship when decoding function or service references
   - This means we now follow the Candid spec more closely, and reduces the risk of calling services with the wrong argument types
+- fix: retry requests that fail due to a malformed response body
 
 ## [2.4.1] - 2025-04-10
 

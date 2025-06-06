@@ -621,7 +621,7 @@ describe('retry failures', () => {
       expect(error).toBeInstanceOf(AgentError);
       expect((error as AgentError).cause.code).toBeInstanceOf(HttpErrorCode);
       expect((error as AgentError).cause.code.requestContext).toBeDefined();
-      // One try + three retries
+      // First call + three retries
       expect(mockFetch.mock.calls.length).toEqual(4);
     }
   });
@@ -670,7 +670,7 @@ describe('retry failures', () => {
     };
 
     expect(resultForSnapshot).toMatchSnapshot();
-    // One try + three retries
+    // First call + three retries
     expect(mockFetch.mock.calls.length).toBe(4);
   });
 });
@@ -869,7 +869,7 @@ test('retry requests that fail due to a network failure', async () => {
     expect(error).toBeInstanceOf(AgentError);
     expect((error as AgentError).cause.code).toBeInstanceOf(HttpFetchErrorCode);
     expect((error as AgentError).cause.code.requestContext).toBeDefined();
-    // One try + three retries
+    // First call + three retries
     expect(mockFetch.mock.calls.length).toBe(4);
   }
 });
