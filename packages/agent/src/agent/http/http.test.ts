@@ -905,11 +905,10 @@ describe('read response body', () => {
     it('should retry requests that fail due to malformed response body with 200 status code', async () => {
       const mockFetch = mockFetchWithArrayBufferError(200);
 
-      const retryTimes = 3;
       const agent = HttpAgent.createSync({
         host: HTTP_AGENT_HOST,
         fetch: mockFetch,
-        retryTimes,
+        retryTimes: 3,
         shouldFetchRootKey: false,
       });
 
@@ -924,18 +923,17 @@ describe('read response body', () => {
         expect((error as AgentError).cause.code).toBeInstanceOf(HttpFetchErrorCode);
         expect((error as AgentError).cause.code.requestContext).toBeDefined();
         // First call + three retries
-        expect(mockFetch.mock.calls.length).toEqual(retryTimes + 1);
+        expect(mockFetch.mock.calls.length).toEqual(4);
       }
     });
 
     it('should not retry requests that fail due to malformed response body with 202 status code', async () => {
       const mockFetch = mockFetchWithArrayBufferError(202);
 
-      const retryTimes = 3;
       const agent = HttpAgent.createSync({
         host: HTTP_AGENT_HOST,
         fetch: mockFetch,
-        retryTimes,
+        retryTimes: 3,
         shouldFetchRootKey: false,
       });
 
