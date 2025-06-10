@@ -1251,7 +1251,6 @@ export class HttpAgent implements Agent {
       this.#syncTimePromise ??
       (async () => {
         await this.#rootKeyGuard();
-        const CanisterStatus = await import('../../canisterStatus');
         const callTime = Date.now();
         try {
           if (!canisterIdOverride) {
@@ -1274,7 +1273,7 @@ export class HttpAgent implements Agent {
             Array(3)
               .fill(null)
               .map(async () => {
-                const status = await CanisterStatus.request({
+                const status = await canisterStatusRequest({
                   canisterId,
                   agent: anonymousAgent,
                   paths: ['time'],
