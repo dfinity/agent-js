@@ -30,6 +30,7 @@ import { AnonymousIdentity, type Identity } from '../../auth';
 import * as cbor from '../../cbor';
 import { type RequestId, hashOfMap, requestIdOf } from '../../request_id';
 import {
+  isV3ResponseBody,
   type Agent,
   type ApiQueryResponse,
   type QueryFields,
@@ -37,7 +38,6 @@ import {
   type ReadStateOptions,
   type ReadStateResponse,
   type SubmitResponse,
-  type v3ResponseBody,
 } from '../api';
 import { Expiry, httpHeadersTransform, makeNonceTransform } from './transforms';
 import {
@@ -52,6 +52,7 @@ import {
   ReadRequestType,
   SubmitRequestType,
   type ReadStateRequest,
+  type HttpHeaderField,
 } from './types';
 import { type SubnetStatus, request as canisterStatusRequest } from '../../canisterStatus';
 import { type HashTree, lookup_path, LookupPathStatus } from '../../certificate';
@@ -100,6 +101,10 @@ const ICP0_SUB_DOMAIN = '.icp0.io';
 
 const ICP_API_DOMAIN = 'icp-api.io';
 const ICP_API_SUB_DOMAIN = '.icp-api.io';
+
+const HTTP_STATUS_OK = 200;
+const HTTP_STATUS_ACCEPTED = 202;
+const HTTP_STATUS_NOT_FOUND = 404;
 
 // HttpAgent options that can be used at construction.
 export interface HttpAgentOptions {
@@ -590,24 +595,21 @@ export class HttpAgent implements Agent {
         });
       };
 
-      const request = this.#requestAndRetry({
-        request: callSync ? requestSync : requestAsync,
+      const requestFn = callSync ? requestSync : requestAsync;
+      const { responseBodyBytes, ...response } = await this.#requestAndRetry({
+        requestFn,
         backoff,
         tries: 0,
       });
 
-      const response = await request;
-      const responseBuffer = uint8FromBufLike(await response.arrayBuffer());
       const responseBody = (
-        response.status === 200 && responseBuffer.byteLength > 0
-          ? cbor.decode(responseBuffer)
-          : null
+        responseBodyBytes.byteLength > 0 ? cbor.decode(responseBodyBytes) : null
       ) as SubmitResponse['response']['body'];
 
       // Update the watermark with the latest time from consensus
-      if (responseBody && 'certificate' in (responseBody as v3ResponseBody)) {
+      if (responseBody && isV3ResponseBody(responseBody)) {
         const time = await this.parseTimeFromResponse({
-          certificate: (responseBody as v3ResponseBody).certificate,
+          certificate: responseBody.certificate,
         });
         this.#waterMark = time;
       }
@@ -615,11 +617,8 @@ export class HttpAgent implements Agent {
       return {
         requestId,
         response: {
-          ok: response.ok,
-          status: response.status,
-          statusText: response.statusText,
+          ...response,
           body: responseBody,
-          headers: httpHeadersTransform(response.headers),
         },
         requestDetails: submit,
       };
@@ -707,7 +706,7 @@ export class HttpAgent implements Agent {
           body,
         },
       );
-      if (fetchResponse.status === 200) {
+      if (fetchResponse.status === HTTP_STATUS_OK) {
         const queryResponse: QueryResponse = cbor.decode(
           uint8FromBufLike(await fetchResponse.arrayBuffer()),
         );
@@ -799,12 +798,29 @@ export class HttpAgent implements Agent {
     return response;
   }
 
+  /**
+   * Makes a request and retries if it fails.
+   * @param args - The arguments for the request.
+   * @param args.requestFn - A function that returns a Promise resolving to a Response.
+   * @param args.backoff - The backoff strategy to use for retries.
+   * @param args.tries - The number of retry attempts made so far.
+   * @returns The response from the request, if the status is 200 or 202.
+   * See the https://internetcomputer.org/docs/references/ic-interface-spec#http-interface for details on the response statuses.
+   * @throws {ProtocolError} if the response status is not 200 or 202, and the retry limit has been reached.
+   * @throws {TransportError} if the request fails, and the retry limit has been reached.
+   */
   async #requestAndRetry(args: {
-    request: () => Promise<Response>;
+    requestFn: () => Promise<Response>;
     backoff: BackoffStrategy;
     tries: number;
-  }): Promise<Response> {
-    const { request, backoff, tries } = args;
+  }): Promise<{
+    ok: boolean;
+    status: number;
+    statusText: string;
+    responseBodyBytes: Uint8Array;
+    headers: HttpHeaderField[];
+  }> {
+    const { requestFn, backoff, tries } = args;
     const delay = tries === 0 ? 0 : backoff.next();
 
     // If delay is null, the backoff strategy is exhausted due to a maximum number of retries, duration, or other reason
@@ -822,29 +838,43 @@ export class HttpAgent implements Agent {
       await new Promise(resolve => setTimeout(resolve, delay));
     }
 
-    let response: Response | undefined;
+    let response: Response;
+    let responseBodyBytes = new Uint8Array();
     try {
-      response = await request();
+      response = await requestFn();
+      // According to the spec, only 200 responses have a non-empty body
+      if (response.status === HTTP_STATUS_OK) {
+        // Consume the response body, to ensure that the response is not closed unexpectedly
+        responseBodyBytes = uint8FromBufLike(await response.clone().arrayBuffer());
+      }
     } catch (error) {
-      if (this.#retryTimes > tries) {
+      if (tries < this.#retryTimes) {
         this.log.warn(
           `Caught exception while attempting to make request:\n` +
             `  ${error}\n` +
             `  Retrying request.`,
         );
         // Delay the request by the configured backoff strategy
-        return await this.#requestAndRetry({ request, backoff, tries: tries + 1 });
+        return await this.#requestAndRetry({ requestFn, backoff, tries: tries + 1 });
       }
       throw TransportError.fromCode(new HttpFetchErrorCode(error));
     }
 
-    if (response.ok) {
-      return response;
+    const headers = httpHeadersTransform(response.headers);
+
+    if (response.status === HTTP_STATUS_OK || response.status === HTTP_STATUS_ACCEPTED) {
+      return {
+        ok: response.ok, // should always be true
+        status: response.status,
+        statusText: response.statusText,
+        responseBodyBytes,
+        headers,
+      };
     }
 
-    const responseText = await response.clone().text();
+    const responseText = await response.text();
 
-    if (response.status === 404 && response.url.includes('api/v3')) {
+    if (response.status === HTTP_STATUS_NOT_FOUND && response.url.includes('api/v3')) {
       throw ProtocolError.fromCode(new HttpV3ApiNotSupportedErrorCode());
     }
 
@@ -856,16 +886,11 @@ export class HttpAgent implements Agent {
     }
 
     if (tries < this.#retryTimes) {
-      return await this.#requestAndRetry({ request, backoff, tries: tries + 1 });
+      return await this.#requestAndRetry({ requestFn, backoff, tries: tries + 1 });
     }
 
     throw ProtocolError.fromCode(
-      new HttpErrorCode(
-        response.status,
-        response.statusText,
-        httpHeadersTransform(response.headers),
-        responseText,
-      ),
+      new HttpErrorCode(response.status, response.statusText, headers, responseText),
     );
   }
 
@@ -1114,8 +1139,8 @@ export class HttpAgent implements Agent {
     await this.#rootKeyGuard();
     const canister = Principal.from(canisterId);
 
-    function getRequestId(fields: ReadStateOptions): RequestId | undefined {
-      for (const path of fields.paths) {
+    function getRequestId(options: ReadStateOptions): RequestId | undefined {
+      for (const path of options.paths) {
         const [pathName, value] = path;
         const request_status = new TextEncoder().encode('request_status');
         if (uint8Equals(pathName, request_status)) {
@@ -1151,8 +1176,8 @@ export class HttpAgent implements Agent {
 
     const backoff = this.#backoffStrategy();
     try {
-      const response = await this.#requestAndRetry({
-        request: () =>
+      const { responseBodyBytes } = await this.#requestAndRetry({
+        requestFn: () =>
           this.#fetch(
             '' + new URL(`/api/v2/canister/${canister.toString()}/read_state`, this.host),
             {
@@ -1165,19 +1190,7 @@ export class HttpAgent implements Agent {
         tries: 0,
       });
 
-      if (!response.ok) {
-        throw ProtocolError.fromCode(
-          new HttpErrorCode(
-            response.status,
-            response.statusText,
-            httpHeadersTransform(response.headers),
-            await response.text(),
-          ),
-        );
-      }
-      const decodedResponse: ReadStateResponse = cbor.decode(
-        uint8FromBufLike(await response.arrayBuffer()),
-      );
+      const decodedResponse: ReadStateResponse = cbor.decode(responseBodyBytes);
 
       this.log.print('Read state response:', decodedResponse);
       const parsedTime = await this.parseTimeFromResponse(decodedResponse);
@@ -1322,13 +1335,13 @@ export class HttpAgent implements Agent {
 
     this.log.print(`fetching "/api/v2/status"`);
     const backoff = this.#backoffStrategy();
-    const response = await this.#requestAndRetry({
+    const { responseBodyBytes } = await this.#requestAndRetry({
       backoff,
-      request: () =>
+      requestFn: () =>
         this.#fetch('' + new URL(`/api/v2/status`, this.host), { headers, ...this.#fetchOptions }),
       tries: 0,
     });
-    return cbor.decode(uint8FromBufLike(await response.arrayBuffer()));
+    return cbor.decode(responseBodyBytes);
   }
 
   public async fetchRootKey(): Promise<Uint8Array> {

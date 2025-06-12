@@ -60,7 +60,6 @@ afterEach(() => {
     /** suppress warnings for pending timers */
   });
   jest.runOnlyPendingTimers();
-  jest.useRealTimers();
 });
 
 test('call', async () => {
@@ -616,7 +615,7 @@ describe('retry failures', () => {
       expect(error).toBeInstanceOf(AgentError);
       expect((error as AgentError).cause.code).toBeInstanceOf(HttpErrorCode);
       expect((error as AgentError).cause.code.requestContext).toBeDefined();
-      // One try + three retries
+      // First call + three retries
       expect(mockFetch.mock.calls.length).toEqual(4);
     }
   });
@@ -665,7 +664,7 @@ describe('retry failures', () => {
     };
 
     expect(resultForSnapshot).toMatchSnapshot();
-    // One try + three retries
+    // First call + three retries
     expect(mockFetch.mock.calls.length).toBe(4);
   });
 });
@@ -802,16 +801,216 @@ test('retry requests that fail due to a network failure', async () => {
 
   agent.rootKey = new Uint8Array(32);
 
-  expect.assertions(1);
+  expect.assertions(4);
   try {
     await agent.call(Principal.managementCanister(), {
       methodName: 'test',
       arg: new Uint8Array(),
     });
-  } catch {
-    // One try + three retries
+  } catch (error) {
+    expect(error).toBeInstanceOf(AgentError);
+    expect((error as AgentError).cause.code).toBeInstanceOf(HttpFetchErrorCode);
+    expect((error as AgentError).cause.code.requestContext).toBeDefined();
+    // First call + three retries
     expect(mockFetch.mock.calls.length).toBe(4);
   }
+});
+
+describe('read response body', () => {
+  describe('response.arrayBuffer() throws', () => {
+    const mockFetchWithArrayBufferError = (status: number): jest.Mock =>
+      jest.fn(() => {
+        const ok = true;
+        const statusText = '';
+        const headers = new Headers();
+        const arrayBuffer = async () => {
+          throw new Error('Malformed response body');
+        };
+        return Promise.resolve({
+          ok,
+          status,
+          statusText,
+          headers,
+          arrayBuffer,
+          clone: () => {
+            return {
+              ok,
+              status,
+              statusText,
+              headers,
+              arrayBuffer,
+            };
+          },
+        });
+      });
+
+    it('should retry requests that fail due to malformed response body with 200 status code', async () => {
+      const mockFetch = mockFetchWithArrayBufferError(200);
+
+      const agent = HttpAgent.createSync({
+        host: HTTP_AGENT_HOST,
+        fetch: mockFetch,
+        retryTimes: 3,
+        shouldFetchRootKey: false,
+      });
+
+      expect.assertions(4);
+      try {
+        await agent.call(Principal.managementCanister(), {
+          methodName: 'test',
+          arg: new Uint8Array(),
+        });
+      } catch (error) {
+        expect(error).toBeInstanceOf(AgentError);
+        expect((error as AgentError).cause.code).toBeInstanceOf(HttpFetchErrorCode);
+        expect((error as AgentError).cause.code.requestContext).toBeDefined();
+        // First call + three retries
+        expect(mockFetch.mock.calls.length).toEqual(4);
+      }
+    });
+
+    it('should not retry requests that fail due to malformed response body with 202 status code', async () => {
+      const mockFetch = mockFetchWithArrayBufferError(202);
+
+      const agent = HttpAgent.createSync({
+        host: HTTP_AGENT_HOST,
+        fetch: mockFetch,
+        retryTimes: 3,
+        shouldFetchRootKey: false,
+      });
+
+      const response = await agent.call(Principal.managementCanister(), {
+        methodName: 'test',
+        arg: new Uint8Array(),
+      });
+
+      expect(response.response.ok).toEqual(true);
+      expect(response.response.status).toEqual(202);
+      expect(response.response.statusText).toEqual('');
+      expect(response.response.headers.length).toEqual(0);
+      expect(mockFetch.mock.calls.length).toEqual(1);
+    });
+  });
+
+  describe('response.arrayBuffer() returns a valid ArrayBuffer', () => {
+    const mockFetchWithStatus = (
+      status: number,
+      arrayBuffer: jest.Mock,
+      text?: jest.Mock,
+    ): jest.Mock =>
+      jest.fn(() => {
+        const ok = true;
+        const statusText = '';
+        const headers = new Headers();
+        return Promise.resolve({
+          ok,
+          status,
+          statusText,
+          headers,
+          arrayBuffer,
+          text,
+          clone: () => {
+            return {
+              ok,
+              status,
+              statusText,
+              headers,
+              arrayBuffer,
+              text,
+            };
+          },
+        });
+      });
+
+    it('should not call response.arrayBuffer() if the response is 202', async () => {
+      const mockArrayBuffer: jest.Mock = jest.fn(() => {
+        return Promise.resolve(new ArrayBuffer(0));
+      });
+      const mockFetch = mockFetchWithStatus(202, mockArrayBuffer);
+
+      const agent = HttpAgent.createSync({
+        host: HTTP_AGENT_HOST,
+        retryTimes: 0,
+        shouldFetchRootKey: false,
+        fetch: mockFetch,
+      });
+
+      const response = await agent.call(Principal.managementCanister(), {
+        methodName: 'test',
+        arg: new Uint8Array(),
+      });
+
+      expect(response.response.ok).toEqual(true);
+      expect(response.response.status).toEqual(202);
+      expect(response.response.body).toEqual(null);
+      expect(mockArrayBuffer.mock.calls.length).toEqual(0);
+      expect(mockFetch.mock.calls.length).toEqual(1);
+    });
+
+    it('should call response.text() if the response is 40x', async () => {
+      const mockArrayBuffer: jest.Mock = jest.fn(() => {
+        return Promise.resolve(new ArrayBuffer(0));
+      });
+      const mockText: jest.Mock = jest.fn(() => {
+        return Promise.resolve('test');
+      });
+      const mockFetch = mockFetchWithStatus(400, mockArrayBuffer, mockText);
+
+      const agent = HttpAgent.createSync({
+        host: HTTP_AGENT_HOST,
+        retryTimes: 0,
+        shouldFetchRootKey: false,
+        fetch: mockFetch,
+      });
+
+      expect.assertions(6);
+      try {
+        await agent.call(Principal.managementCanister(), {
+          methodName: 'test',
+          arg: new Uint8Array(),
+        });
+      } catch (error) {
+        expect(error).toBeInstanceOf(AgentError);
+        expect((error as AgentError).cause.code).toBeInstanceOf(HttpErrorCode);
+        expect((error as AgentError).cause.code.requestContext).toBeDefined();
+        expect(mockText.mock.calls.length).toEqual(1);
+        expect(mockArrayBuffer.mock.calls.length).toEqual(0);
+        expect(mockFetch.mock.calls.length).toEqual(1);
+      }
+    });
+
+    it('should call response.text() if the response is 50x', async () => {
+      const mockArrayBuffer: jest.Mock = jest.fn(() => {
+        return Promise.resolve(new ArrayBuffer(0));
+      });
+      const mockText: jest.Mock = jest.fn(() => {
+        return Promise.resolve('test');
+      });
+      const mockFetch = mockFetchWithStatus(500, mockArrayBuffer, mockText);
+
+      const agent = HttpAgent.createSync({
+        host: HTTP_AGENT_HOST,
+        retryTimes: 0,
+        shouldFetchRootKey: false,
+        fetch: mockFetch,
+      });
+
+      expect.assertions(6);
+      try {
+        await agent.call(Principal.managementCanister(), {
+          methodName: 'test',
+          arg: new Uint8Array(),
+        });
+      } catch (error) {
+        expect(error).toBeInstanceOf(AgentError);
+        expect((error as AgentError).cause.code).toBeInstanceOf(HttpErrorCode);
+        expect((error as AgentError).cause.code.requestContext).toBeDefined();
+        expect(mockText.mock.calls.length).toEqual(1);
+        expect(mockArrayBuffer.mock.calls.length).toEqual(0);
+        expect(mockFetch.mock.calls.length).toEqual(1);
+      }
+    });
+  });
 });
 
 test.todo('retry query signature validation after refreshing the subnet node keys');
@@ -843,10 +1042,21 @@ describe('await fetching root keys before making a call to the network.', () => 
   jest.useFakeTimers();
   // Mock the fetch implementation, resolving a pre-calculated response
   const mockFetch: jest.Mock = jest.fn(() => {
+    const body = hexToBytes(mockResponse.body);
+    const arrayBuffer = async (): Promise<ArrayBuffer> => {
+      return body.buffer;
+    };
     return Promise.resolve({
       ...mockResponse,
-      body: hexToBytes(mockResponse.body),
-      arrayBuffer: async () => hexToBytes(mockResponse.body),
+      body,
+      arrayBuffer,
+      clone: () => {
+        return {
+          ...mockResponse,
+          body,
+          arrayBuffer,
+        };
+      },
     });
   });
   it('should allow fetchRootKey to be awaited after using the constructor', async () => {
@@ -914,22 +1124,29 @@ describe('error logs for bad signature', () => {
     now: 1738349617614,
   };
   const mockFetch: jest.Mock = jest.fn(() => {
+    const body = hexToBytes(badSignatureResponse.body);
+    const arrayBuffer = async (): Promise<ArrayBuffer> => {
+      return hexToBytes(badSignatureResponse.body).buffer;
+    };
+    const text = async () => {
+      return 'Invalid signature: Invalid basic signature: Ed25519 signature could not be verified: public key 3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29, signature 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, error: A signature was invalid\n';
+    };
     return Promise.resolve({
       ...badSignatureResponse,
-      body: hexToBytes(badSignatureResponse.body),
+      body,
+      arrayBuffer,
+      text,
       clone: () => {
         return {
           ...badSignatureResponse,
-          text: async () =>
-            'Invalid signature: Invalid basic signature: Ed25519 signature could not be verified: public key 3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29, signature 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, error: A signature was invalid\n',
+          body,
+          arrayBuffer,
+          text,
         };
       },
     });
   });
   it('should throw call errors if provided an invalid signature', async () => {
-    jest.useRealTimers();
-    // jest.setSystemTime(badSignatureResponse.now);
-
     jest.spyOn(Date, 'now').mockImplementation(() => 1738362489290);
     global.clearTimeout = jest.fn();
 
@@ -1016,12 +1233,12 @@ describe('error logs for bad signature', () => {
       });
     } catch (error) {
       expect(error).toBeInstanceOf(AgentError);
-      expect((error as AgentError).cause.code).toBeInstanceOf(HttpFetchErrorCode);
+      expect((error as AgentError).cause.code).toBeInstanceOf(HttpErrorCode);
       expect((error as AgentError).cause.code.requestContext).toBeDefined();
     }
     expect(JSON.stringify(logs[0])).toMatchSnapshot();
     expect(logs[0].error).toBeInstanceOf(AgentError);
-    expect(logs[0].error.cause.code).toBeInstanceOf(HttpFetchErrorCode);
+    expect(logs[0].error.cause.code).toBeInstanceOf(HttpErrorCode);
     expect(logs[0].error.cause.code.requestContext).toBeDefined();
   });
 
@@ -1041,14 +1258,24 @@ describe('error logs for bad signature', () => {
     };
 
     const mockFetch: jest.Mock = jest.fn(() => {
+      const body = hexToBytes(badSignatureResponse.body);
+      const arrayBuffer = async (): Promise<ArrayBuffer> => {
+        return hexToBytes(badSignatureResponse.body).buffer;
+      };
+      const text = async () => {
+        return 'Invalid signature: Invalid basic signature: Ed25519 signature could not be verified: public key 3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29, signature 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, error: A signature was invalid\n';
+      };
       return Promise.resolve({
         ...clonedReadStateResponse,
+        body,
+        arrayBuffer,
+        text,
         clone: () => {
           return {
             ...badSignatureResponse,
-            body: hexToBytes(badSignatureResponse.body),
-            text: async () =>
-              'Invalid signature: Invalid basic signature: Ed25519 signature could not be verified: public key 3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29, signature 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, error: A signature was invalid\n',
+            body,
+            arrayBuffer,
+            text,
           };
         },
       });
@@ -1067,7 +1294,6 @@ describe('error logs for bad signature', () => {
     });
 
     const canisterId: Principal = Principal.fromText('2chl6-4hpzw-vqaaa-aaaaa-c');
-    jest.useRealTimers();
 
     jest.spyOn(Date, 'now').mockImplementation(() => 1738880304205);
 
