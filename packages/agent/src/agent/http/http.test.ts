@@ -23,12 +23,6 @@ import {
 } from '../../errors';
 import { utf8ToBytes, bytesToHex, hexToBytes } from '@noble/hashes/utils';
 
-import { request as canisterStatusRequest } from '../../canisterStatus';
-jest.mock('../../canisterStatus');
-const mockedCanisterStatusRequest = canisterStatusRequest as jest.MockedFunction<
-  typeof canisterStatusRequest
->;
-
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);
 window.fetch = global.fetch;
 (global as any).window = window;
@@ -676,58 +670,6 @@ describe('retry failures', () => {
 });
 jest.useFakeTimers({ legacyFakeTimers: true });
 
-test('should adjust the Expiry if the clock is more than 30 seconds behind', async () => {
-  const mockFetch = jest.fn();
-
-  const replicaTime = new Date(Date.now() + 31_000);
-  mockedCanisterStatusRequest.mockResolvedValue(new Map([['time', BigInt(replicaTime.getTime())]]));
-
-  const agent = HttpAgent.createSync({ host: HTTP_AGENT_HOST, fetch: mockFetch });
-
-  // Make sure the time is synced
-  await agent.syncTime();
-
-  await agent
-    .call(Principal.managementCanister(), {
-      methodName: 'test',
-      arg: new Uint8Array(),
-    })
-    // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
-    .catch(function (_) {});
-
-  const requestBody = cbor.decode<Envelope<CallRequest>>(mockFetch.mock.calls[0][1].body);
-
-  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1260000000000`);
-
-  jest.resetModules();
-});
-
-test('should adjust the Expiry if the clock is more than 30 seconds ahead', async () => {
-  const mockFetch = jest.fn();
-
-  const replicaTime = new Date(Date.now() - 31_000);
-  mockedCanisterStatusRequest.mockResolvedValue(new Map([['time', BigInt(replicaTime.getTime())]]));
-
-  const agent = HttpAgent.createSync({ host: HTTP_AGENT_HOST, fetch: mockFetch });
-
-  // Make sure the time is synced
-  await agent.syncTime();
-
-  await agent
-    .call(Principal.managementCanister(), {
-      methodName: 'test',
-      arg: new Uint8Array(),
-    })
-    // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
-    .catch(function (_) {});
-
-  const requestBody = cbor.decode<Envelope<CallRequest>>(mockFetch.mock.calls[0][1].body);
-
-  expect(requestBody.content.ingress_expiry).toMatchInlineSnapshot(`1200000000000`);
-
-  jest.resetModules();
-});
-
 test('should fetch with given call options and fetch options', async () => {
   const mockFetch: jest.Mock = jest.fn(() => {
     const body = cbor.encode({});
@@ -852,7 +794,7 @@ test('retry requests that fail due to a network failure', async () => {
     return { hasRef: () => false } as NodeJS.Timeout;
   });
 
-  const agent = new HttpAgent({
+  const agent = HttpAgent.createSync({
     host: HTTP_AGENT_HOST,
     fetch: mockFetch,
   });
@@ -1072,11 +1014,6 @@ describe('read response body', () => {
 });
 
 test.todo('retry query signature validation after refreshing the subnet node keys');
-
-test('it should log errors to console if the option is set', async () => {
-  const agent = new HttpAgent({ host: HTTP_AGENT_HOST, fetch: jest.fn(), logToConsole: true });
-  await agent.syncTime();
-});
 
 test('it should fail when setting an expiry in the past', async () => {
   expect(() =>

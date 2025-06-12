@@ -1,13 +1,8 @@
-import { request, Path, encodePath, fetchNodeKeys } from './index';
-import { Ed25519KeyIdentity } from '@dfinity/identity';
+import { request, Path, fetchNodeKeys } from './index';
 import { Principal } from '@dfinity/principal';
-import { Identity } from '../auth';
-import fetch from 'isomorphic-fetch';
 import { HttpAgent } from '../agent';
 import * as Cert from '../certificate';
-import { hexToBytes, bytesToHex } from '@noble/hashes/utils';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
+import { hexToBytes } from '@noble/hashes/utils';
 import { goldenCertificates } from '../agent/http/__certificates__/goldenCertificates';
 import { utf8ToBytes } from '@noble/hashes/utils';
 
@@ -46,30 +41,6 @@ const testCases = [
       'd9d9f7a2647472656583018301830183024863616e697374657283018301820458204c805d47bd74dbcd6c8ce23ebd2e8287c453895165db6b81d93f1daf1b12004683024a0000000000000001010183018301820458205a1ee5770842c74b6749f4d72e3c1b8c0dafdaff48e113d19da4fda687df0636830183024b636f6e74726f6c6c657273820351d9d9f78241044a000000000000000001018302486d657461646174618301830182045820e8071e9c904063629f9ab66d4a447b7a881a964d16757762f424d2ef6c6a776b83024e63616e6469643a736572766963658203584774797065204578616d706c65203d20746578743b0a73657276696365203a207b0a202067726565743a20284578616d706c6529202d3e202874657874292071756572793b0a7d0a820458203676da3cc701ead8143596204d845c31a11d483dccffd5f80e5530660322212883024b6d6f64756c655f6861736882035820896f6c079f96bc3cbef782af1ab1b52847f04700ff916eb49425566995a9a064820458202d41b194a0931a274d874a4de945f104fbcf45de1bb201ec2bbdcb036c21fb0f82045820aa2f527164a8e4d898febf2bc0a8a4f95da58c3b62c6e4185e610e7b40dc615082045820fa572fdf7872444dba23377a8a426906c4314a61ef470df0af1b173b13abe949830182045820ec68f8bfb2a3f70cf8d3d427ff595e6ddb5d4230a8c3ca1d3ccb06e7694fd83283024474696d6582034980f485e1a4a6a7f816697369676e61747572655830adbb57f847e2656f248d3eec467af3c89eb5c63fa8d56bd3a3f48e3f3c570e50d0f824502fc69772d0d637190c52e4e4',
   },
 ];
-
-// Used for repopulating the certificate
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const getRealStatus = async () => {
-  const identity = (await Ed25519KeyIdentity.generate(
-    new Uint8Array(hexToBytes('foo23342sd-234-234a-asdf-asdf-asdf-4frsefrsdf-weafasdfe-easdfee')),
-  )) as unknown as Identity;
-
-  const agent = new HttpAgent({ host: 'http://127.0.0.1:4943', fetch, identity });
-  await agent.fetchRootKey();
-  const response = await agent.readState(
-    testPrincipal,
-    // Note: subnet is not currently working due to a bug
-    {
-      paths: [
-        encodePath('time', testPrincipal),
-        [utf8ToBytes('canister'), canisterBuffer, utf8ToBytes('controllers')],
-        [utf8ToBytes('canister'), canisterBuffer, utf8ToBytes('module_hash')],
-        encodePath('candid', testPrincipal),
-      ],
-    },
-  );
-  console.log(bytesToHex(response.certificate));
-};
 
 // Mocked status using precomputed certificate
 const getStatus = async (paths: Path[]) => {
