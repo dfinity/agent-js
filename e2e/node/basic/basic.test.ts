@@ -23,9 +23,11 @@ test('read_state', async () => {
   const ecid = await getDefaultEffectiveCanisterId();
   const resolvedAgent = await agent;
   const now = Date.now() / 1000;
-  const path = [utf8ToBytes('time')];
+  const validTimePath = [utf8ToBytes('time')];
+  const invalidTimePath = [utf8ToBytes('Time')];
+
   const response = await resolvedAgent.readState(ecid, {
-    paths: [path],
+    paths: [validTimePath],
   });
   if (resolvedAgent.rootKey == null) throw new Error(`The agent doesn't have a root key yet`);
   const cert = await Certificate.create({
@@ -34,10 +36,14 @@ test('read_state', async () => {
     canisterId: ecid,
   });
 
-  const timeLookup = cert.lookup_path(path);
+  const timeLookup = cert.lookup_path(validTimePath);
   expect(timeLookup).toEqual({
     status: LookupPathStatus.Found,
     value: expect.any(Uint8Array),
+  });
+
+  expect(cert.lookup_path(invalidTimePath)).toEqual({
+    status: LookupPathStatus.Unknown,
   });
 
   const decoded = new IDL.NatClass().decodeValue(
