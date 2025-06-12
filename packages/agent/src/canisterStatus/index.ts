@@ -147,22 +147,20 @@ export const request = async (options: {
   const canisterId = Principal.from(options.canisterId);
 
   const uniquePaths = [...new Set(paths)];
-
-  // Map path options to their correct formats
-  const encodedPaths = uniquePaths.map(path => {
-    return encodePath(path, canisterId);
-  });
   const status = new Map<string | Path, Status>();
 
   const promises = uniquePaths.map((path, index) => {
+    const encodedPath = encodePath(path, canisterId);
+
     return (async () => {
       try {
         const response = await agent.readState(canisterId, {
-          paths: [encodedPaths[index]],
+          paths: [encodedPath],
         });
         if (agent.rootKey == null) {
           throw ExternalError.fromCode(new MissingRootKeyErrorCode());
         }
+
         const cert = await Certificate.create({
           certificate: response.certificate,
           rootKey: agent.rootKey,
@@ -177,13 +175,13 @@ export const request = async (options: {
             }
             const data = fetchNodeKeys(response.certificate, canisterId, agent.rootKey);
             return {
-              path: path,
+              path,
               data,
             };
           } else {
             return {
-              path: path,
-              data: lookupResultToBuffer(cert.lookup_path(encodePath(path, canisterId))),
+              path,
+              data: lookupResultToBuffer(cert.lookup_path(encodedPath)),
             };
           }
         };
