@@ -1222,7 +1222,7 @@ export class HttpAgent implements Agent {
   public async parseTimeFromResponse(response: { certificate: Uint8Array }): Promise<number> {
     let tree: HashTree;
     if (response.certificate) {
-      const decoded: { tree: HashTree } | undefined = cbor.decode(response.certificate);
+      const decoded = cbor.decode<{ tree: HashTree } | undefined>(response.certificate);
       if (decoded && 'tree' in decoded) {
         tree = decoded.tree;
       } else {

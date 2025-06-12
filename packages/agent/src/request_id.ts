@@ -1,6 +1,5 @@
 import { lebEncode, compare } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
-import borc from 'borc';
 import { HashValueErrorCode, InputError } from './errors';
 import { uint8FromBufLike } from './utils/buffer';
 import { concatBytes } from '@noble/hashes/utils';
@@ -18,10 +17,7 @@ interface ToHashable {
  * @returns Uint8Array
  */
 export function hashValue(value: unknown): Uint8Array {
-  if (value instanceof borc.Tagged) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return hashValue((value as any).value);
-  } else if (typeof value === 'string') {
+  if (typeof value === 'string') {
     return hashString(value);
   } else if (typeof value === 'number') {
     return sha256(lebEncode(value));

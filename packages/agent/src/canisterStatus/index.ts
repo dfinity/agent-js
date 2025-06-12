@@ -28,7 +28,7 @@ import {
   type LabeledHashTree,
   LookupSubtreeStatus,
 } from '../certificate';
-import * as Cbor from '../cbor';
+import * as cbor from '../cbor';
 import { decodeLeb128, decodeTime } from '../utils/leb';
 import { type DerEncodedPublicKey } from '../auth';
 import { utf8ToBytes, bytesToHex } from '@noble/hashes/utils';
@@ -230,7 +230,7 @@ export const request = async (options: {
                     break;
                   }
                   case 'cbor': {
-                    status.set(path.key, Cbor.decode(data));
+                    status.set(path.key, cbor.decode(data));
                     break;
                   }
                   case 'hex': {
@@ -277,7 +277,7 @@ export const fetchNodeKeys = (
   if (!canisterId._isPrincipal) {
     throw InputError.fromCode(new UnexpectedErrorCode('Invalid canisterId'));
   }
-  const cert: Cert = Cbor.decode(certificate);
+  const cert = cbor.decode<Cert>(certificate);
   const tree = cert.tree;
   let delegation = cert.delegation;
   let subnetId: Principal;
@@ -394,9 +394,8 @@ export const encodePath = (path: Path, canisterId: Principal): Uint8Array[] => {
 
 // Controllers are CBOR-encoded buffers
 const decodeControllers = (buf: Uint8Array): Principal[] => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const controllersRaw: ArrayBuffer[] = Cbor.decode(buf);
-  return controllersRaw.map((buf: ArrayBuffer) => {
-    return Principal.fromUint8Array(new Uint8Array(buf));
+  const controllersRaw = cbor.decode<Uint8Array[]>(buf);
+  return controllersRaw.map(buf => {
+    return Principal.fromUint8Array(buf);
   });
 };
