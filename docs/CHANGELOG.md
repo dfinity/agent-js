@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.0.0-beta.0] - 2025-06-17
+
 ### Changed
 
 - chore!: removes management canister from @dfinity/agent in favor of @dfinity/ic-management
