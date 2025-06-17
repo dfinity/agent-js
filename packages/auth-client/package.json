@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/auth-client",
-  "version": "2.4.1",
+  "version": "3.0.0-beta.0",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to provide a simple integration with an IC Internet Identity",
@@ -50,9 +50,9 @@
     "test:coverage": "jest --collectCoverage"
   },
   "peerDependencies": {
-    "@dfinity/agent": "^2.4.1",
-    "@dfinity/identity": "^2.4.1",
-    "@dfinity/principal": "^2.4.1"
+    "@dfinity/agent": "^3.0.0-beta.0",
+    "@dfinity/identity": "^3.0.0-beta.0",
+    "@dfinity/principal": "^3.0.0-beta.0"
   },
   "dependencies": {
     "idb": "^7.0.2"

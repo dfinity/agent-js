@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/use-auth-client",
-  "version": "2.4.1",
+  "version": "3.0.0-beta.0",
   "description": "React hooks for using the auth client",
   "main": "./lib/index.js",
   "module": "./lib/index.js",
@@ -47,11 +47,11 @@
     "directory": "packages/use-auth-client"
   },
   "dependencies": {
-    "@dfinity/agent": "^2.4.1",
-    "@dfinity/auth-client": "^2.4.1",
-    "@dfinity/candid": "^2.4.1",
-    "@dfinity/identity": "^2.4.1",
-    "@dfinity/principal": "^2.4.1",
+    "@dfinity/agent": "^3.0.0-beta.0",
+    "@dfinity/auth-client": "^3.0.0-beta.0",
+    "@dfinity/candid": "^3.0.0-beta.0",
+    "@dfinity/identity": "^3.0.0-beta.0",
+    "@dfinity/principal": "^3.0.0-beta.0",
     "react": ">16.8"
   },
   "devDependencies": {
