@@ -3,15 +3,18 @@
 exports[`syncTime > on async creation > should sync time on when enabled > V3 read state body one 1`] = `
 {
   "content": {
-    "ingress_expiry": "1746103080000000000",
+    "ingress_expiry": 1746103080000000000n,
     "paths": [
       [
-        Uint8Array [
-          116,
-          105,
-          109,
-          101,
-        ],
+        {
+          "data": [
+            116,
+            105,
+            109,
+            101,
+          ],
+          "type": "Buffer",
+        },
       ],
     ],
     "request_type": "read_state",
@@ -23,15 +26,18 @@ exports[`syncTime > on async creation > should sync time on when enabled > V3 re
 exports[`syncTime > on async creation > should sync time on when enabled > V3 read state body three 1`] = `
 {
   "content": {
-    "ingress_expiry": "1746103080000000000",
+    "ingress_expiry": 1746103080000000000n,
     "paths": [
       [
-        Uint8Array [
-          116,
-          105,
-          109,
-          101,
-        ],
+        {
+          "data": [
+            116,
+            105,
+            109,
+            101,
+          ],
+          "type": "Buffer",
+        },
       ],
     ],
     "request_type": "read_state",
@@ -43,15 +49,18 @@ exports[`syncTime > on async creation > should sync time on when enabled > V3 re
 exports[`syncTime > on async creation > should sync time on when enabled > V3 read state body two 1`] = `
 {
   "content": {
-    "ingress_expiry": "1746103080000000000",
+    "ingress_expiry": 1746103080000000000n,
     "paths": [
       [
-        Uint8Array [
-          116,
-          105,
-          109,
-          101,
-        ],
+        {
+          "data": [
+            116,
+            105,
+            109,
+            101,
+          ],
+          "type": "Buffer",
+        },
       ],
     ],
     "request_type": "read_state",
@@ -63,34 +72,40 @@ exports[`syncTime > on async creation > should sync time on when enabled > V3 re
 exports[`syncTime > on error > should not sync time by default > V3 call body 1`] = `
 {
   "content": {
-    "arg": Uint8Array [
-      68,
-      73,
-      68,
-      76,
-      0,
-      1,
-      113,
-      5,
-      119,
-      111,
-      114,
-      108,
-      100,
-    ],
-    "canister_id": Uint8Array [
-      255,
-      255,
-      255,
-      255,
-      255,
-      144,
-      0,
-      1,
-      1,
-      1,
-    ],
-    "ingress_expiry": "1746103080000000000",
+    "arg": {
+      "data": [
+        68,
+        73,
+        68,
+        76,
+        0,
+        1,
+        113,
+        5,
+        119,
+        111,
+        114,
+        108,
+        100,
+      ],
+      "type": "Buffer",
+    },
+    "canister_id": {
+      "data": [
+        255,
+        255,
+        255,
+        255,
+        255,
+        144,
+        0,
+        1,
+        1,
+        1,
+      ],
+      "type": "Buffer",
+    },
+    "ingress_expiry": 1746103080000000000n,
     "method_name": "greet",
     "nonce": Any<Uint8Array>,
     "request_type": "call",
@@ -104,15 +119,18 @@ exports[`syncTime > on error > should not sync time by default > V3 call body 1`
 exports[`syncTime > on error > should sync time when the local time does not match the subnet time > V2 read state body one 1`] = `
 {
   "content": {
-    "ingress_expiry": "1746103080000000000",
+    "ingress_expiry": 1746103080000000000n,
     "paths": [
       [
-        Uint8Array [
-          116,
-          105,
-          109,
-          101,
-        ],
+        {
+          "data": [
+            116,
+            105,
+            109,
+            101,
+          ],
+          "type": "Buffer",
+        },
       ],
     ],
     "request_type": "read_state",
@@ -124,34 +142,40 @@ exports[`syncTime > on error > should sync time when the local time does not mat
 exports[`syncTime > on error > should sync time when the local time does not match the subnet time > V3 call body 1`] = `
 {
   "content": {
-    "arg": Uint8Array [
-      68,
-      73,
-      68,
-      76,
-      0,
-      1,
-      113,
-      5,
-      119,
-      111,
-      114,
-      108,
-      100,
-    ],
-    "canister_id": Uint8Array [
-      255,
-      255,
-      255,
-      255,
-      255,
-      144,
-      0,
-      1,
-      1,
-      1,
-    ],
-    "ingress_expiry": "1746103080000000000",
+    "arg": {
+      "data": [
+        68,
+        73,
+        68,
+        76,
+        0,
+        1,
+        113,
+        5,
+        119,
+        111,
+        114,
+        108,
+        100,
+      ],
+      "type": "Buffer",
+    },
+    "canister_id": {
+      "data": [
+        255,
+        255,
+        255,
+        255,
+        255,
+        144,
+        0,
+        1,
+        1,
+        1,
+      ],
+      "type": "Buffer",
+    },
+    "ingress_expiry": 1746103080000000000n,
     "method_name": "greet",
     "nonce": Any<Uint8Array>,
     "request_type": "call",
@@ -165,15 +189,18 @@ exports[`syncTime > on error > should sync time when the local time does not mat
 exports[`syncTime > on error > should sync time when the local time does not match the subnet time > V3 read state body three 1`] = `
 {
   "content": {
-    "ingress_expiry": "1746103080000000000",
+    "ingress_expiry": 1746103080000000000n,
     "paths": [
       [
-        Uint8Array [
-          116,
-          105,
-          109,
-          101,
-        ],
+        {
+          "data": [
+            116,
+            105,
+            109,
+            101,
+          ],
+          "type": "Buffer",
+        },
       ],
     ],
     "request_type": "read_state",
@@ -185,15 +212,18 @@ exports[`syncTime > on error > should sync time when the local time does not mat
 exports[`syncTime > on error > should sync time when the local time does not match the subnet time > V3 read state body two 1`] = `
 {
   "content": {
-    "ingress_expiry": "1746103080000000000",
+    "ingress_expiry": 1746103080000000000n,
     "paths": [
       [
-        Uint8Array [
-          116,
-          105,
-          109,
-          101,
-        ],
+        {
+          "data": [
+            116,
+            105,
+            109,
+            101,
+          ],
+          "type": "Buffer",
+        },
       ],
     ],
     "request_type": "read_state",
@@ -205,34 +235,40 @@ exports[`syncTime > on error > should sync time when the local time does not mat
 exports[`syncTime > on first call > should not sync time by default > V3 call body 1`] = `
 {
   "content": {
-    "arg": Uint8Array [
-      68,
-      73,
-      68,
-      76,
-      0,
-      1,
-      113,
-      5,
-      119,
-      111,
-      114,
-      108,
-      100,
-    ],
-    "canister_id": Uint8Array [
-      255,
-      255,
-      255,
-      255,
-      255,
-      144,
-      0,
-      1,
-      1,
-      1,
-    ],
-    "ingress_expiry": "1746103080000000000",
+    "arg": {
+      "data": [
+        68,
+        73,
+        68,
+        76,
+        0,
+        1,
+        113,
+        5,
+        119,
+        111,
+        114,
+        108,
+        100,
+      ],
+      "type": "Buffer",
+    },
+    "canister_id": {
+      "data": [
+        255,
+        255,
+        255,
+        255,
+        255,
+        144,
+        0,
+        1,
+        1,
+        1,
+      ],
+      "type": "Buffer",
+    },
+    "ingress_expiry": 1746103080000000000n,
     "method_name": "greet",
     "nonce": Any<Uint8Array>,
     "request_type": "call",
@@ -246,34 +282,40 @@ exports[`syncTime > on first call > should not sync time by default > V3 call bo
 exports[`syncTime > on first call > should not sync time when explicitly disabled > V3 call body 1`] = `
 {
   "content": {
-    "arg": Uint8Array [
-      68,
-      73,
-      68,
-      76,
-      0,
-      1,
-      113,
-      5,
-      119,
-      111,
-      114,
-      108,
-      100,
-    ],
-    "canister_id": Uint8Array [
-      255,
-      255,
-      255,
-      255,
-      255,
-      144,
-      0,
-      1,
-      1,
-      1,
-    ],
-    "ingress_expiry": "1746103080000000000",
+    "arg": {
+      "data": [
+        68,
+        73,
+        68,
+        76,
+        0,
+        1,
+        113,
+        5,
+        119,
+        111,
+        114,
+        108,
+        100,
+      ],
+      "type": "Buffer",
+    },
+    "canister_id": {
+      "data": [
+        255,
+        255,
+        255,
+        255,
+        255,
+        144,
+        0,
+        1,
+        1,
+        1,
+      ],
+      "type": "Buffer",
+    },
+    "ingress_expiry": 1746103080000000000n,
     "method_name": "greet",
     "nonce": Any<Uint8Array>,
     "request_type": "call",
@@ -287,34 +329,40 @@ exports[`syncTime > on first call > should not sync time when explicitly disable
 exports[`syncTime > on first call > should sync time when enabled > V3 call body 1`] = `
 {
   "content": {
-    "arg": Uint8Array [
-      68,
-      73,
-      68,
-      76,
-      0,
-      1,
-      113,
-      5,
-      119,
-      111,
-      114,
-      108,
-      100,
-    ],
-    "canister_id": Uint8Array [
-      255,
-      255,
-      255,
-      255,
-      255,
-      144,
-      0,
-      1,
-      1,
-      1,
-    ],
-    "ingress_expiry": "1746103080000000000",
+    "arg": {
+      "data": [
+        68,
+        73,
+        68,
+        76,
+        0,
+        1,
+        113,
+        5,
+        119,
+        111,
+        114,
+        108,
+        100,
+      ],
+      "type": "Buffer",
+    },
+    "canister_id": {
+      "data": [
+        255,
+        255,
+        255,
+        255,
+        255,
+        144,
+        0,
+        1,
+        1,
+        1,
+      ],
+      "type": "Buffer",
+    },
+    "ingress_expiry": 1746103080000000000n,
     "method_name": "greet",
     "nonce": Any<Uint8Array>,
     "request_type": "call",
@@ -328,15 +376,18 @@ exports[`syncTime > on first call > should sync time when enabled > V3 call body
 exports[`syncTime > on first call > should sync time when enabled > V3 read state body one 1`] = `
 {
   "content": {
-    "ingress_expiry": "1746103080000000000",
+    "ingress_expiry": 1746103080000000000n,
     "paths": [
       [
-        Uint8Array [
-          116,
-          105,
-          109,
-          101,
-        ],
+        {
+          "data": [
+            116,
+            105,
+            109,
+            101,
+          ],
+          "type": "Buffer",
+        },
       ],
     ],
     "request_type": "read_state",
@@ -348,15 +399,18 @@ exports[`syncTime > on first call > should sync time when enabled > V3 read stat
 exports[`syncTime > on first call > should sync time when enabled > V3 read state body three 1`] = `
 {
   "content": {
-    "ingress_expiry": "1746103080000000000",
+    "ingress_expiry": 1746103080000000000n,
     "paths": [
       [
-        Uint8Array [
-          116,
-          105,
-          109,
-          101,
-        ],
+        {
+          "data": [
+            116,
+            105,
+            109,
+            101,
+          ],
+          "type": "Buffer",
+        },
       ],
     ],
     "request_type": "read_state",
@@ -368,15 +422,18 @@ exports[`syncTime > on first call > should sync time when enabled > V3 read stat
 exports[`syncTime > on first call > should sync time when enabled > V3 read state body two 1`] = `
 {
   "content": {
-    "ingress_expiry": "1746103080000000000",
+    "ingress_expiry": 1746103080000000000n,
     "paths": [
       [
-        Uint8Array [
-          116,
-          105,
-          109,
-          101,
-        ],
+        {
+          "data": [
+            116,
+            105,
+            109,
+            101,
+          ],
+          "type": "Buffer",
+        },
       ],
     ],
     "request_type": "read_state",

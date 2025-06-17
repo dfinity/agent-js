@@ -36,6 +36,7 @@ export type MockReplicaSpy = Mock<MockReplicaSpyImpl>;
 
 export interface MockReplicaSpies {
   [MockReplicaSpyType.CallV3]?: MockReplicaSpy;
+  [MockReplicaSpyType.ReadStateV2]?: MockReplicaSpy;
 }
 
 export class MockReplica {
@@ -116,6 +117,7 @@ export class MockReplica {
       const spy = canisterSpies[spyType];
       if (!spy) {
         res.status(500).send(`No ${spyType} spy defined for canisterId: ${canisterId}.`);
+        return;
       }
 
       spy(req, res);
