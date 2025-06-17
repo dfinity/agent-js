@@ -583,7 +583,7 @@ test('delegation works for canisters within the subnet range', async () => {
       Cert.Certificate.create({
         certificate: hexToBytes(SAMPLE_CERT),
         rootKey: hexToBytes(IC_ROOT_KEY),
-        canisterId: canisterId,
+        canisterId,
         blsVerify: async () => true,
       }),
     ).resolves.not.toThrow();

@@ -91,9 +91,9 @@ test('call', async () => {
     canister_id: canisterId,
     method_name: methodName,
     arg,
-    nonce,
     sender: principal,
     ingress_expiry: Expiry.fromDeltaInMilliseconds(300000),
+    nonce,
   };
 
   const mockPartialsRequestId = requestIdOf(mockPartialRequest);
@@ -117,7 +117,7 @@ test('call', async () => {
   expect(call2.method).toEqual('POST');
 
   // Get the body from the request and ensure nonce matches
-  const requestBody = cbor.decode(call2.body) as Envelope<CallRequest>;
+  const requestBody = cbor.decode<Envelope<CallRequest>>(call2.body);
   expect(Array.from(requestBody.content.nonce!)).toHaveLength(Array.from(nonce).length);
 
   expect(call2.headers['Content-Type']).toEqual('application/cbor');
@@ -334,9 +334,9 @@ test('use anonymous principal if unspecified', async () => {
     canister_id: canisterId,
     method_name: methodName,
     arg,
-    nonce,
     sender: principal,
     ingress_expiry: Expiry.fromDeltaInMilliseconds(300000),
+    nonce,
   };
 
   const mockPartialsRequestId = requestIdOf(mockPartialRequest);
@@ -359,7 +359,7 @@ test('use anonymous principal if unspecified', async () => {
   expect(call2.method).toEqual('POST');
 
   // Get the body from the request and ensure nonce matches
-  const requestBody = cbor.decode(call2.body) as Envelope<CallRequest>;
+  const requestBody = cbor.decode<Envelope<CallRequest>>(call2.body);
   expect(Array.from(requestBody.content.nonce!)).toHaveLength(Array.from(nonce).length);
 
   expect(call2.headers['Content-Type']).toEqual('application/cbor');

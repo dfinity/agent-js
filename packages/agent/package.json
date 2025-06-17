@@ -41,7 +41,7 @@
     "build:watch": "tsc -b --watch",
     "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=browser",
     "lint:fix": "npm run lint -- --fix",
-    "lint": "eslint 'src' 'types' --ext '.js,.jsx,.ts,.tsx'",
+    "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/agent --excludeInternal",
     "test": "jest",
     "test:coverage": "jest --collectCoverage"
@@ -51,11 +51,9 @@
     "@dfinity/principal": "^2.4.1"
   },
   "dependencies": {
+    "@dfinity/cbor": "^0.2.2",
     "@noble/curves": "^1.4.0",
-    "@noble/hashes": "^1.3.1",
-    "borc": "^2.1.1",
-    "buffer": "^6.0.3",
-    "simple-cbor": "^0.4.1"
+    "@noble/hashes": "^1.3.1"
   },
   "devDependencies": {
     "@peculiar/webcrypto": "^1.4.3",

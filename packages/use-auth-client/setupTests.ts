@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { TextEncoder } from 'util';
+import { TextEncoder, TextDecoder } from 'util';
 import '@testing-library/jest-dom';
 
 import { Crypto } from '@peculiar/webcrypto';
@@ -14,4 +14,4 @@ Object.defineProperty(global, 'console', {
   value: { ...global.console, log: jest.fn(), warn: jest.fn(), error: jest.fn() },
 });
 
-global.TextEncoder = TextEncoder;
+Object.assign(global, { TextDecoder, TextEncoder });

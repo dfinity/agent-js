@@ -1,5 +1,4 @@
 import { lebEncode } from '@dfinity/candid';
-import * as cbor from 'simple-cbor';
 import {
   Endpoint,
   type HttpAgentRequest,
@@ -22,6 +21,8 @@ export type JsonnableExpiry = {
 };
 
 export class Expiry {
+  public readonly _isExpiry = true;
+
   private constructor(private readonly __expiry__: bigint) {}
 
   /**
@@ -57,9 +58,8 @@ export class Expiry {
     return new Expiry(rounded_down_nanos);
   }
 
-  public toCBOR(): cbor.CborValue {
-    // TODO: change this to take the minimum amount of space (it always takes 8 bytes now).
-    return cbor.value.u64(this.__expiry__.toString(16), 16);
+  public toBigInt(): bigint {
+    return this.__expiry__;
   }
 
   public toHash(): Uint8Array {
@@ -95,6 +95,18 @@ export class Expiry {
     }
     throw new InputError(
       new ExpiryJsonDeserializeErrorCode(`The input does not contain the key ${JSON_KEY_EXPIRY}`),
+    );
+  }
+
+  public static isExpiry(other: unknown): other is Expiry {
+    return (
+      other instanceof Expiry ||
+      (typeof other === 'object' &&
+        other !== null &&
+        '_isExpiry' in other &&
+        (other as { _isExpiry: boolean })['_isExpiry'] === true &&
+        '__expiry__' in other &&
+        typeof (other as { __expiry__: bigint })['__expiry__'] === 'bigint')
     );
   }
 }

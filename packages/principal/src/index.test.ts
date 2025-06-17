@@ -71,4 +71,20 @@ describe('Principal', () => {
     const principal = Principal.fromText('aaaaa-aa');
     expect(Principal.managementCanister()).toEqual(principal);
   });
+
+  it('isPrincipal', () => {
+    expect(Principal.isPrincipal(Principal.anonymous())).toBe(true);
+    expect(Principal.isPrincipal(Principal.fromText('ryjl3-tyaaa-aaaaa-aaaba-cai'))).toBe(true);
+    expect(Principal.isPrincipal(Principal.fromText('aaaaa-aa'))).toBe(true);
+    expect(Principal.isPrincipal(Principal.fromText('2vxsx-fae'))).toBe(true);
+    expect(Principal.isPrincipal({ _isPrincipal: true, _arr: new Uint8Array([0x04]) })).toBe(true);
+
+    expect(Principal.isPrincipal({ _isPrincipal: true, _arr: 'not a Uint8Array' })).toBe(false);
+    expect(Principal.isPrincipal({ _isPrincipal: true, _arr: new ArrayBuffer(1) })).toBe(false);
+    expect(Principal.isPrincipal({ _isPrincipal: true })).toBe(false);
+    expect(Principal.isPrincipal({})).toBe(false);
+    expect(Principal.isPrincipal(new Uint8Array([0x04]))).toBe(false);
+    expect(Principal.isPrincipal('')).toBe(false);
+    expect(Principal.isPrincipal(null)).toBe(false);
+  });
 });

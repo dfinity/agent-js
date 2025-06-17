@@ -554,7 +554,7 @@ class Asset {
       return false;
     }
 
-    const hashTree: HashTree = cbor.decode(tree);
+    const hashTree = cbor.decode<HashTree>(tree);
     const reconstructed = await reconstruct(hashTree);
     const witness = cert.lookup_path(['canister', canisterId.toUint8Array(), 'certified_data']);
 

@@ -13,6 +13,7 @@ const config = {
   collectCoverageFrom: ['src/**/*.{ts,tsx}'],
   displayName: packageName,
   rootDir: '../..',
+  prettierPath: null,
 };
 
 export default config;

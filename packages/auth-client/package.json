@@ -43,7 +43,7 @@
     "build": "tsc -b",
     "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=browser",
     "size-limit": "size-limit",
-    "lint": "eslint 'src' 'types' --ext '.js,.jsx,.ts,.tsx'",
+    "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/auth-client --excludeInternal",
     "test": "jest",
