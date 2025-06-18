@@ -39,7 +39,7 @@
   "scripts": {
     "build": "tsc -b && tsc -p tsconfig.cjs.json",
     "build:watch": "tsc -b --watch",
-    "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=browser --external:@noble/hashes",
+    "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=browser",
     "lint:fix": "npm run lint -- --fix",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/agent --excludeInternal",

@@ -12,7 +12,7 @@
     "build": "tsc -b && tsc -p tsconfig.cjs.json",
     "lint": "eslint 'src' 'types' --ext '.js,.jsx,.ts,.tsx'",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/identity-secp256k1 --excludeInternal",
-    "bundle": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=browser --external:@noble/hashes --external:@noble/curves",
+    "bundle": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=browser",
     "test": "jest",
     "test:coverage": "jest --collectCoverage"
   },
