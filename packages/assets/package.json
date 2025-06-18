@@ -45,7 +45,7 @@
   "unpkg": "./lib/esm/index",
   "scripts": {
     "build": "tsc -b && tsc -p tsconfig.cjs.json",
-    "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=browser",
+    "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=browser --external:@noble/hashes",
     "size-limit": "size-limit",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",
     "lint:fix": "npm run lint -- --fix",
