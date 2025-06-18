@@ -179,7 +179,7 @@ describe('Secp256k1KeyIdentity Tests', () => {
       const shortArray = new Uint8Array(secretKey).subarray(1, 32);
       Secp256k1KeyIdentity.fromSecretKey(Uint8Array.from(shortArray).subarray(1, 32));
     };
-    expect(shouldFail).toThrow('private key must be 32 bytes, hex or bigint, not object');
+    expect(shouldFail).toThrow('invalid private key: expected ui8a of size 32, got object'); // this error comes from @noble/curves
   });
 
   test('getKeyPair should return a copy of the key pair', () => {
