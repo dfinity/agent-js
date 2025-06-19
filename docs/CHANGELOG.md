@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [3.0.0-beta.1] - 2025-06-19
+
+- chore: update `@noble/*` dependencies
+- fix: mark `@noble/hashes` as a dependency rather than a dev dependency
+
 ## [3.0.0-beta.0] - 2025-06-17
 
 ### Changed
