@@ -47,13 +47,11 @@
   },
   "peerDependencies": {
     "@dfinity/agent": "^3.0.0-beta.1",
-    "@dfinity/principal": "^3.0.0-beta.1"
-  },
-  "dependencies": {
-    "@noble/curves": "^1.2.0"
+    "@dfinity/principal": "^3.0.0-beta.1",
+    "@noble/curves": "^1.9.2",
+    "@noble/hashes": "^1.8.0"
   },
   "devDependencies": {
-    "@noble/hashes": "^1.8.0",
     "@peculiar/webcrypto": "^1.4.0",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
