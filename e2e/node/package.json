@@ -1,7 +1,6 @@
 {
-  "private": true,
   "name": "@do-not-publish/ic-node-e2e-tests",
-  "version": "2.4.1",
+  "private": true,
   "type": "module",
   "scripts": {
     "ci": "npm run e2e",
@@ -16,11 +15,11 @@
     "test": ""
   },
   "dependencies": {
-    "@dfinity/agent": "^2.4.1",
-    "@dfinity/assets": "^2.4.1",
-    "@dfinity/candid": "^2.4.1",
-    "@dfinity/identity": "^2.4.1",
-    "@dfinity/principal": "^2.4.1"
+    "@dfinity/agent": "^3.0.0-beta.1",
+    "@dfinity/assets": "^3.0.0-beta.1",
+    "@dfinity/candid": "^3.0.0-beta.1",
+    "@dfinity/identity": "^3.0.0-beta.1",
+    "@dfinity/principal": "^3.0.0-beta.1"
   },
   "devDependencies": {
     "@noble/hashes": "^1.8.0",

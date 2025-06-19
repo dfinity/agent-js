@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/identity-secp256k1",
-  "version": "2.4.1",
+  "version": "3.0.0-beta.1",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to manage Secp256k1KeyIdentities for use with the Internet Computer",
@@ -17,7 +17,7 @@
     "test:coverage": "jest --collectCoverage"
   },
   "dependencies": {
-    "@dfinity/agent": "^2.4.1",
+    "@dfinity/agent": "^3.0.0-beta.1",
     "@scure/bip32": "^1.7.0",
     "@scure/bip39": "^1.6.0",
     "asn1js": "^3.0.5"
