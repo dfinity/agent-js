@@ -1,7 +1,6 @@
 {
-  "private": true,
   "name": "@do-not-publish/ic-node-e2e-tests",
-  "version": "3.0.0-beta.1",
+  "private": true,
   "type": "module",
   "scripts": {
     "ci": "npm run e2e",
