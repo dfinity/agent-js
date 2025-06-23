@@ -941,7 +941,7 @@ export class VecClass<T> extends ConstructType<T[]> {
  * Represents an IDL Option
  * @param {Type} t
  */
-export class OptClass<T> extends ConstructType<[T] | []> {
+export class OptClass<T> extends ConstructType<T | [T] | undefined> {
   constructor(public _type: Type<T>) {
     super();
   }
@@ -950,23 +950,42 @@ export class OptClass<T> extends ConstructType<[T] | []> {
     return v.visitOpt(this, this._type, d);
   }
 
-  public covariant(x: any): x is [T] | [] {
-    try {
-      if (Array.isArray(x) && (x.length === 0 || (x.length === 1 && this._type.covariant(x[0]))))
-        return true;
-    } catch (e: any) {
-      throw new Error(
-        `Invalid ${this.display()} argument: ${toReadableString(x)} \n\n-> ${e.message}`,
-      );
+  public covariant(x: any): x is T | [T] | undefined {
+    if(x === undefined) {
+      return true;
+    }
+    else {
+
+      try {
+        if(this._type.covariant(x)){
+          return true;
+        }
+      }
+      catch {
+        // suppress error here, we will check the array length later
+      }
+      try {
+        if (Array.isArray(x) && (x.length === 0 || (x.length === 1 && this._type.covariant(x[0]))))
+          return true;
+      } catch (e: any) {
+        throw new Error(
+          `Invalid ${this.display()} argument: ${toReadableString(x)} \n\n-> ${e.message}`,
+        );
+      }
     }
     throw new Error(`Invalid ${this.display()} argument: ${toReadableString(x)}`);
   }
 
-  public encodeValue(x: [T] | []): Uint8Array {
-    if (x.length === 0) {
+  public encodeValue(x: T | [T] | undefined): Uint8Array {
+    if (x === undefined) {
       return new Uint8Array([0]);
-    } else {
+    }
+        // unsure of how to best handle the fallback / nested case
+    else if (Array.isArray(x)) {
       return concat(new Uint8Array([1]), this._type.encodeValue(x[0]));
+    }
+    else {
+      return concat(new Uint8Array([1]), this._type.encodeValue(x));
     }
   }
 
@@ -978,13 +997,13 @@ export class OptClass<T> extends ConstructType<[T] | []> {
     typeTable.add(this, concat(opCode, buffer));
   }
 
-  public decodeValue(b: Pipe, t: Type): [T] | [] {
+  public decodeValue(b: Pipe, t: Type): T | [T] | undefined {
     if (t instanceof NullClass) {
-      return [];
+      return undefined;
     }
 
     if (t instanceof ReservedClass) {
-      return [];
+      return undefined;
     }
 
     let wireType = t;
@@ -999,21 +1018,20 @@ export class OptClass<T> extends ConstructType<[T] | []> {
     if (wireType instanceof OptClass) {
       switch (safeReadUint8(b)) {
         case 0:
-          return [];
+          return undefined;
         case 1: {
           // Save the current state of the Pipe `b` to allow rollback in case of an error
           const checkpoint = b.save();
           try {
             // Attempt to decode a value using the `_type` of the current instance
-            const v = this._type.decodeValue(b, wireType._type);
-            return [v];
+            return this._type.decodeValue(b, wireType._type);
           } catch (e: any) {
             // If an error occurs during decoding, restore the Pipe `b` to its previous state
             b.restore(checkpoint);
             // Skip the value at the current wire type to advance the Pipe `b` position
             wireType._type.decodeValue(b, wireType._type);
             // Return an empty array to indicate a `none` value
-            return [];
+            return undefined;
           }
         }
         default:
@@ -1028,21 +1046,20 @@ export class OptClass<T> extends ConstructType<[T] | []> {
       // null <: <t> :
       // skip value at wire type (to advance b) and return "null", i.e. []
       wireType.decodeValue(b, wireType);
-      return [];
+      return undefined;
     } else {
       // not (null <: t) :
       // try constituent type
       const checkpoint = b.save();
       try {
-        const v = this._type.decodeValue(b, t);
-        return [v];
+        return this._type.decodeValue(b, t);
       } catch (e: any) {
         // decoding failed, but this is opt, so return "null", i.e. []
         b.restore(checkpoint);
         // skip value at wire type (to advance b)
         wireType.decodeValue(b, t);
         // return "null"
-        return [];
+        return undefined;
       }
     }
   }
@@ -1055,11 +1072,16 @@ export class OptClass<T> extends ConstructType<[T] | []> {
     return `opt ${this._type.display()}`;
   }
 
-  public valueToString(x: [T] | []) {
-    if (x.length === 0) {
-      return 'null';
-    } else {
-      return `opt ${this._type.valueToString(x[0])}`;
+  public valueToString(x: T | [T] | undefined) {
+    if (x === undefined) {
+      return 'undefined';
+    }
+    // unsure of how to best handle the fallback / nested case
+    else if (Array.isArray(x)) {
+      return `opt ${this._type.valueToString(x[0])}`
+    }
+    else {
+      return `opt ${this._type.valueToString(x)}`;
     }
   }
 }
