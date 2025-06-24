@@ -24,19 +24,5 @@
     "moduleResolution": "node10",
     "target": "ES2022"
   },
-  "exclude": [
-    "node_modules",
-    "packages/**/src/**/*.test.ts",
-    "packages/**/src/**/*.spec.ts",
-    "packages/**/test",
-    "packages/**/dist",
-    "packages/**/lib",
-    "packages/**/*.snap",
-    "e2e/**"
-  ],
-  "references": [
-    { "path": "./tsconfig.test.json" },
-    { "path": "./packages/auth-client/tsconfig.test.json" },
-    { "path": "./packages/use-auth-client/tsconfig.test.json" }
-  ]
+  "exclude": ["bin", "node_modules", "e2e"]
 }

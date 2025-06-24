@@ -8,6 +8,7 @@
   "module": "./lib/esm/index.js",
   "browser": "./lib/esm/index.js",
   "unpkg": "./lib/esm/index",
+  "types": "./lib/esm/index.d.ts",
   "scripts": {
     "build": "tsc -b && tsc -p tsconfig.cjs.json",
     "lint": "eslint 'src' 'types' --ext '.js,.jsx,.ts,.tsx'",

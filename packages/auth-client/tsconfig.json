@@ -1,9 +1,12 @@
 {
   "extends": "../../tsconfig.web.json",
   "compilerOptions": {
-    "baseUrl": "./",
-    "outDir": "./lib",
-    "rootDir": "./src"
+    "composite": true,
+    "baseUrl": "./src",
+    "rootDir": "./src",
+    "outDir": "./lib/esm"
   },
-  "include": ["types/*", "src/**/*"]
+  "include": ["./src/**/*.ts"],
+  "exclude": ["./src/**/*.test.ts"],
+  "references": [{ "path": "../agent" }, { "path": "../identity" }, { "path": "../principal" }]
 }

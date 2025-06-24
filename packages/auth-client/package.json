@@ -39,8 +39,9 @@
       "require": "./lib/index.js"
     }
   },
+  "types": "./lib/esm/index.d.ts",
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b && tsc -p tsconfig.cjs.json",
     "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=browser",
     "size-limit": "size-limit",
     "lint": "eslint 'src' --ext '.js,.jsx,.ts,.tsx'",

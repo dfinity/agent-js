@@ -11,6 +11,7 @@
       "require": "./lib/index.js"
     }
   },
+  "types": "./lib/esm/index.d.ts",
   "scripts": {
     "build": "tsc -b",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/use-auth-client --excludeInternal",

@@ -18,23 +18,10 @@
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
   "unpkg": "./lib/esm/index",
+  "types": "./lib/esm/index.d.ts",
   "scripts": {
-    "build": "tsc -b && tsc -p tsconfig-cjs.json",
-    "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=node",
-    "size-limit": "size-limit",
-    "ci": "npm run prettier && npm run lint && npm run test",
-    "lint": "eslint 'src' 'types' --ext '.js,.jsx,.ts,.tsx'",
-    "lint:fix": "npm run lint -- --fix",
-    "make:docs/reference": "typedoc src/index.ts --out ../../docs/bls-verify --excludeInternal",
-    "test": "jest",
+    "build": "tsc -b",
     "prettier": "prettier --check \"src/**/*.ts\"",
-    "prettier:write": "npm run prettier -- --write"
-  },
-  "size-limit": [
-    {
-      "path": "./dist/index.js",
-      "limit": "100 kB",
-      "webpack": false
-    }
-  ]
+    "prettier:write": "pnpm prettier -- --write"
+  }
 }

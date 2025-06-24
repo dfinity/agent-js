@@ -1,23 +1,11 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "allowJs": true,
-    "baseUrl": "./",
-    "composite": false,
-    "declaration": false,
-    "esModuleInterop": false,
-    "forceConsistentCasingInFileNames": true,
-    "incremental": true,
-    "module": "ES2020",
-    "moduleResolution": "node",
-    "outDir": "./lib/esm",
-    "resolveJsonModule": true,
+    "composite": true,
+    "baseUrl": "./src",
     "rootDir": "./src",
-    "sourceMap": true,
-    "inlineSources": true,
-    "strict": true,
-    "target": "es2017"
+    "outDir": "./lib/esm"
   },
-  "include": ["src/**/*", "types/**/*", "amcl-js-3.0.0.tgz"],
-  "references": []
+  "include": ["./src/**/*.ts"],
+  "exclude": ["./src/**/*.test.ts"]
 }
