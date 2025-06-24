@@ -2,15 +2,10 @@
   "name": "@dfinity/use-auth-client",
   "version": "3.0.0-beta.1",
   "description": "React hooks for using the auth client",
-  "main": "./lib/index.js",
-  "module": "./lib/index.js",
-  "unpkg": "./lib/index",
-  "exports": {
-    ".": {
-      "import": "./lib/index.js",
-      "require": "./lib/index.js"
-    }
-  },
+  "main": "./lib/esm/index.js",
+  "module": "./lib/esm/index.js",
+  "browser": "./lib/esm/index.js",
+  "unpkg": "./lib/esm/index.js",
   "types": "./lib/esm/index.d.ts",
   "scripts": {
     "build": "tsc -b",

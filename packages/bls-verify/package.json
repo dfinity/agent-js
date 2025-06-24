@@ -17,7 +17,7 @@
   "type": "module",
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
-  "unpkg": "./lib/esm/index",
+  "unpkg": "./lib/esm/index.js",
   "types": "./lib/esm/index.d.ts",
   "scripts": {
     "build": "tsc -b",

@@ -32,13 +32,10 @@
     "distributed",
     "api"
   ],
-  "unpkg": "./lib/index",
-  "exports": {
-    ".": {
-      "import": "./lib/index.js",
-      "require": "./lib/index.js"
-    }
-  },
+  "main": "./lib/cjs/index.js",
+  "module": "./lib/esm/index.js",
+  "browser": "./lib/esm/index.js",
+  "unpkg": "./lib/esm/index.js",
   "types": "./lib/esm/index.d.ts",
   "scripts": {
     "build": "tsc -b && tsc -p tsconfig.cjs.json",
