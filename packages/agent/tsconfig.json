@@ -7,6 +7,6 @@
     "outDir": "./lib/esm"
   },
   "include": ["./src/**/*.ts"],
-  "exclude": ["./src/**/*.test.ts"],
+  "exclude": ["./src/**/*.test.ts", "./src/**/__certificates__"],
   "references": [{ "path": "../candid" }, { "path": "../principal" }]
 }
