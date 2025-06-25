@@ -2,10 +2,11 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "composite": true,
-    "baseUrl": "./",
-    "outDir": "./lib/esm",
+    "baseUrl": "./src",
     "rootDir": "./src",
-    "allowJs": true
+    "outDir": "./lib/esm"
   },
-  "include": ["src/**/*"]
+  "include": ["./src/**/*.ts"],
+  "exclude": ["./src/**/*.test.ts"],
+  "references": [{ "path": "../agent" }, { "path": "../principal" }]
 }

@@ -1,12 +1,6 @@
-build_info.json
 node_modules/
 dist/
-**/*.js
-**/*.js.map
-**/*.d.ts
+lib/
 
 # generated docs
 /docs/reference
-
-# Cannot ignore .d.ts files in types/
-!types/**/*.d.ts

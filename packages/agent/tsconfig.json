@@ -2,20 +2,11 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "composite": true,
-    "baseUrl": "./",
-    "outDir": "lib/esm",
+    "baseUrl": "./src",
     "rootDir": "./src",
-    "tsBuildInfoFile": "./build_info.json"
+    "outDir": "./lib/esm"
   },
-  "include": ["types/*", "src/**/*.ts"],
-  "exclude": [
-    "**/src/**/__certificates__/**",
-    "**/src/**/*.test.ts",
-    "**/src/**/*.spec.ts",
-    "**/src/**/*.snap",
-    "test-setup.ts",
-    "node_modules",
-    "dist",
-    "lib"
-  ]
+  "include": ["./src/**/*.ts"],
+  "exclude": ["./src/**/*.test.ts", "./src/**/__certificates__"],
+  "references": [{ "path": "../candid" }, { "path": "../principal" }]
 }

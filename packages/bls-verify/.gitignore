@@ -1,15 +1,9 @@
-build_info.json
 node_modules/
 dist/
-
-**/*.js.map
-**/*.d.ts
+lib/
 
 # generated docs
 /docs/reference
-
-# Cannot ignore .d.ts files in types/
-!types/**/*.d.ts
 
 # Cannot ignore setup files for webpack and jest, which are still JavaScript.
 !webpack.config.js

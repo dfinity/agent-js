@@ -2,10 +2,10 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "composite": true,
-    "baseUrl": "./",
-    "outDir": "lib/esm",
+    "baseUrl": "./src",
     "rootDir": "./src",
-    "tsBuildInfoFile": "./build_info.json"
+    "outDir": "./lib/esm"
   },
-  "include": ["src/**/*.ts", "types/*"]
+  "include": ["src/**/*.ts", "types/*"],
+  "references": [{ "path": "../agent" }, { "path": "../candid" }]
 }
