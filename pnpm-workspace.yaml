@@ -1,5 +1,12 @@
 packages:
-  - e2e/*
-  - packages/*
+  - e2e/node
+  - packages/agent
+  - packages/assets
+  - packages/auth-client
+  - packages/candid
+  - packages/identity
+  - packages/identity-secp256k1
+  - packages/principal
+  - packages/use-auth-client
 onlyBuiltDependencies:
   - esbuild

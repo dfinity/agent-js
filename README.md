@@ -61,11 +61,7 @@ commands to keep in mind;
 
 - To run the unit tests locally, you can use `pnpm test`.
 - To run e2e tests, you can use `pnpm e2e`. **WARNING:** You need to have a running
-  replica locally. In our CI runs, we use the `ic-ref` which is not (at this time) available
-  publicly. Normally you can use a replica distributed with dfx (ie. dfx start in a project),
-  but there is no guarantee that the `next` branch will work with the latest published dfx.
-  Once you have a replica running locally, you must pass the port to the e2e tests using the
-  `REPLICA_PORT` environment vairable. If that variable is not set, the tests will fail.
+  replica locally.
 
 ### bin/\* scripts
 
@@ -75,7 +71,7 @@ The following scripts can be found in [./bin](./bin):
 
 Monorepo-related scripts run in this order, but are usually invoked by `pnpm i`:
 
-- npm-postinstall - Run with `pnpm postinstall` in this monorepo package.
+- postinstall - Run with `pnpm postinstall` in this monorepo package.
   - It copies devtools dependencies from ./packages/agent-js-devtools/node_modules -> ./node_modules
 - build - Build (`pnpm build`) each subpackage in ./packages/
 - test - Run `pnpm test` in each subpackage
