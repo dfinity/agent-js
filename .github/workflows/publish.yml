@@ -26,29 +26,14 @@ jobs:
         run: |
           gh release edit "${{ env.VERSION_TAG }}" --draft=false --prerelease=false --latest=true
 
-      - uses: ./.github/actions/prepare
+      - name: Setup PNPM
+        uses: dfinity/ci-tools/actions/setup-pnpm@main
         with:
-          node-version-file: '.nvmrc'
-      - name: Cache node modules
-        id: cache-npm
-        uses: actions/cache@v4
-        env:
-          cache-name: cache-node-modules
-        with:
-          # npm cache files are stored in `~/.npm` on Linux/macOS
-          path: ~/.npm
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
-      - if: ${{ steps.cache-npm.outputs.cache-hit != 'true' }}
-        name: List the state of node modules
-        continue-on-error: true
-        run: npm list
-      - run: npm run build -ws
-      - run: npm audit
-      - run: npm publish -ws
+          node_version_file: '.nvmrc'
+          
+      - run: pnpm build
+      - run: pnpm audit
+      - run: pnpm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -56,7 +41,7 @@ jobs:
       - name: Install dfx
         run: dfinity/setup-dfx@main
       - name: Regenerate project's documentation
-        run: npm run make:docs
+        run: pnpm make:docs
       - name: Add new identity to dfx
         run: |
           echo ${{ secrets.DFX_IDENTITY_PEM }} > identity.pem

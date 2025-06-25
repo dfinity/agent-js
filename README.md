@@ -42,7 +42,6 @@ To run the e2e node tests, you can run
 cd e2e/node
 npm run setup
 npm run e2e
-dfx stop
 ```
 
 We expect you to have the replica running on port `4943`. If you are using a different port, you can set an environment variable `REPLICA_PORT` to the port number.
@@ -55,7 +54,6 @@ To run the e2e browser tests, you can run
 dfx start --background --clean
 npm run setup --workspace e2e/browser
 npm run e2e --workspace e2e/browser
-dfx stop
 ```
 
 #### Workspaces

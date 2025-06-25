@@ -191,7 +191,6 @@ export function useAuthClient(options?: UseAuthClientOptions) {
 }
 
 const createActor = async (options: CreateActorOptions) => {
-  options;
   const agent = options.agent || (await HttpAgent.create({ ...options.agentOptions }));
 
   if (options.agent && options.agentOptions) {

@@ -8,5 +8,5 @@
   },
   "include": ["./types/**/*.d.ts", "./src/**/*.ts"],
   "exclude": ["./src/**/*.test.ts"],
-  "references": [{ "path": "../agent" }, { "path": "../principal" }]
+  "references": [{ "path": "../agent" }, { "path": "../principal" }, { "path": "../candid" }]
 }
