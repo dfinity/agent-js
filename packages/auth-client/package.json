@@ -32,7 +32,7 @@
     "distributed",
     "api"
   ],
-  "main": "./lib/cjs/index.js",
+  "main": "./lib/esm/index.js",
   "module": "./lib/esm/index.js",
   "browser": "./lib/esm/index.js",
   "unpkg": "./lib/esm/index.js",
