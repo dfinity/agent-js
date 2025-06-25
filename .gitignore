@@ -127,7 +127,6 @@ docs/identity-secp256k1
 docs/identity-ledgerhq
 docs/principal
 docs/candid
-docs/bls-verify
 docs/identity-secp256k1
 docs/generated
 docs/changelog.html

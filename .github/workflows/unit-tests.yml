@@ -25,17 +25,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/prepare
+
+      - name: Setup PNPM
+        uses: dfinity/ci-tools/actions/setup-pnpm@main
         with:
-          node-version: ${{ matrix.node }}
+          node_version: ${{ matrix.node }}
 
-      # build monorepo incl. each subpackage
-      - run: npm run build
+      - run: pnpm build
 
-      # test monorepo incl. each subpackage
-      - run: npm run test
-        env:
-          CI: true
+      - run: pnpm test
 
   aggregate:
     name: unit:required

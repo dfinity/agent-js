@@ -9,7 +9,6 @@
 import 'fake-indexeddb/auto';
 import { TextEncoder, TextDecoder } from 'text-encoding';
 import { Crypto } from '@peculiar/webcrypto';
-import 'whatwg-fetch';
 
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;

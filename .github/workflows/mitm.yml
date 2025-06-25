@@ -26,12 +26,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/prepare
-        with:
-          node-version: ${{ matrix.node }}
 
-      # build monorepo incl. each subpackage
-      - run: npm run build
+      - name: Setup PNPM
+        uses: dfinity/ci-tools/actions/setup-pnpm@main
+        with:
+          node_version: ${{ matrix.node }}
+
+      - run: pnpm build
 
       - uses: actions/setup-python@v2
         with:
@@ -62,9 +63,7 @@ jobs:
           sleep 20
 
       - name: mitm e2e
-        env:
-          CI: true
-        run: npm run mitm --workspaces --if-present
+        run: pnpm run -F @e2e/node mitm
 
   aggregate:
     name: mitm:required

@@ -9,4 +9,3 @@
 
 import { Crypto } from '@peculiar/webcrypto';
 global.crypto = new Crypto();
-global.fetch = require('isomorphic-fetch');

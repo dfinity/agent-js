@@ -11,7 +11,6 @@ import exec from 'child_process';
 import { IDL } from '@dfinity/candid';
 const execAsync = util.promisify(exec.exec);
 
-// eslint-disable-next-line prefer-const
 let stdout;
 try {
   ({ stdout } = await execAsync('dfx canister id trap'));

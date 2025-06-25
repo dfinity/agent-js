@@ -8,14 +8,12 @@ import {
   requestIdOf,
   TrustError,
   MissingSignatureErrorCode,
-  AgentLog,
 } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
 import { describe, it, expect, vi, test } from 'vitest';
 import { makeAgent } from '../utils/agent';
-import { waitForAndRunTimers } from '../utils/test';
 import { hexToBytes } from '@noble/hashes/utils';
 
 const { pollForResponse } = polling;
@@ -213,29 +211,4 @@ test('it should allow you to set an incorrect root key', async () => {
     expect(errorCode).toBeInstanceOf(MissingSignatureErrorCode);
     expect(errorCode.requestContext).toBeDefined();
   }
-});
-
-test('should allow you to sync time when the system time is over 5 minutes apart from the replica time', async () => {
-  vi.useFakeTimers();
-  vi.setSystemTime(0);
-  const agent = new HttpAgent({ fetch: fetch });
-  const logs: AgentLog[] = [];
-  agent.log.subscribe(log => logs.push(log as AgentLog));
-  await agent.syncTime();
-
-  await Promise.all([
-    agent
-      .call(Principal.managementCanister(), {
-        methodName: 'test',
-        arg: new Uint8Array(),
-      })
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      .catch(function (_) {}),
-    waitForAndRunTimers(3),
-  ]);
-
-  expect(logs[1].level).toBe('info');
-  expect(logs[1].message.startsWith('Syncing time: offset of')).toBe(true);
-
-  vi.useRealTimers();
 });

@@ -20,10 +20,13 @@ jobs:
           - 22
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/prepare
+
+      - name: Setup PNPM
+        uses: dfinity/ci-tools/actions/setup-pnpm@main
         with:
-          node-version: ${{ matrix.node }}
-      - run: npm run prettier:check
+          node_version: ${{ matrix.node }}
+
+      - run: pnpm prettier:check
 
   aggregate:
     name: format:required
