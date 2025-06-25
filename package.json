@@ -52,6 +52,7 @@
     "e2e": "pnpm -r e2e",
     "test": "pnpm -r test",
     "publish": "pnpm -r publish",
+    "version": "pnpm -r version",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "make:docs": "pnpm -r make:docs/reference && pnpm run convert:changelog",

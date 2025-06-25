@@ -39,10 +39,7 @@
   "scripts": {
     "build": "tsc -b && tsc -p tsconfig.cjs.json",
     "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=browser",
-    "ci": "npm run prettier && npm run lint && npm run test",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/candid --excludeInternal",
-    "prettier": "prettier --check \"src/**/*.ts\"",
-    "prettier:write": "npm run prettier -- --write",
     "test": "jest",
     "test:coverage": "jest --collectCoverage"
   },
