@@ -8,5 +8,13 @@
   },
   "include": ["./src/**/*.ts"],
   "exclude": ["./src/**/*.test.ts"],
-  "references": [{ "path": "../candid" }, { "path": "../principal" }]
+  "references": [
+    { "path": "../agent" },
+    { "path": "../assets" },
+    { "path": "../auth-client" },
+    { "path": "../candid" },
+    { "path": "../identity" },
+    { "path": "../identity-secp256k1" },
+    { "path": "../principal" },
+  ]
 }

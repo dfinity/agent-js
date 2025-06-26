@@ -11,11 +11,7 @@
   "include": ["utils/**/*.ts", "canisters/**/*.ts", "basic/**/*.ts"],
   "exclude": [".dfx", "lib", "node_modules"],
   "references": [
-    { "path": "../../packages/agent" },
-    { "path": "../../packages/assets" },
-    { "path": "../../packages/candid" },
-    { "path": "../../packages/identity" },
-    { "path": "../../packages/identity-secp256k1" },
-    { "path": "../../packages/principal" }
+    { "path": "../../packages/icp" },
+    { "path": "../../packages/agent" }
   ]
 }

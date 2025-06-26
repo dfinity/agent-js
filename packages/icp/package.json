@@ -88,11 +88,6 @@
       "types": "./lib/esm/principal/index.d.ts",
       "import": "./lib/esm/principal/index.js",
       "require": "./lib/cjs/principal/index.js"
-    },
-    "./use-auth-client": {
-      "types": "./lib/esm/use-auth-client/index.d.ts",
-      "import": "./lib/esm/use-auth-client/index.js",
-      "require": "./lib/cjs/use-auth-client/index.js"
     }
   }
 }
