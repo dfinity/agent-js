@@ -11,32 +11,20 @@
   "types": "./lib/esm/index.d.ts",
   "scripts": {
     "build": "tsc -b && tsc -p tsconfig.cjs.json",
-    "lint": "eslint 'src' 'types' --ext '.js,.jsx,.ts,.tsx'",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/identity-secp256k1 --excludeInternal",
     "bundle": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=browser",
     "test": "jest",
     "test:coverage": "jest --collectCoverage"
   },
   "dependencies": {
-    "@dfinity/agent": "^3.0.0-beta.1",
+    "@dfinity/agent": "workspace:*",
     "@scure/bip32": "^1.7.0",
     "@scure/bip39": "^1.6.0",
     "asn1js": "^3.0.5"
   },
   "peerDependencies": {
+    "@dfinity/candid": "workspace:*",
     "@noble/curves": "^1.9.2",
     "@noble/hashes": "^1.8.0"
-  },
-  "devDependencies": {
-    "eslint": "^8.19.0",
-    "typedoc": "^0.28.4"
-  },
-  "overrides": {
-    "hdkey": {
-      "dependencies": {
-        "elliptic": "5.2.0"
-      }
-    },
-    "elliptic": "5.2.0"
   }
 }

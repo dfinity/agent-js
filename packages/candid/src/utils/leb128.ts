@@ -1,4 +1,3 @@
-/* eslint-disable no-constant-condition */
 // Note: this file uses buffer-pipe, which on Node only, uses the Node Buffer
 //       implementation, which isn't compatible with the NPM buffer package
 //       which we use everywhere else. This means that we have to transform

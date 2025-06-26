@@ -11,7 +11,6 @@ import mime from 'mime';
 import { TextEncoder, TextDecoder } from 'text-encoding';
 import { Crypto } from '@peculiar/webcrypto';
 import { Blob, File } from '@web-std/file';
-import 'whatwg-fetch';
 
 global.crypto = new Crypto();
 global.TextEncoder = TextEncoder;

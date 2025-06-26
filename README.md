@@ -9,8 +9,8 @@ This source code repository contains multiple npm packages, each under `./packag
 ### Getting Started
 
 1. Clone the git repository.
-2. Run `npm i -g npm`
-3. Run `npm install`
+2. Install the version of node specified in `.nvmrc`.
+3. Run `corepack enable` to enable `pnpm`.
 
 After that, you probably want to dive into a specific package in [./packages](./packages).
 
@@ -21,28 +21,26 @@ Running tests is a good way to get a sense of what the features will do. We try 
 Before running tests, you need to compile the packages.
 
 ```bash
-npm run build
+pnpm build
 ```
 
 This command will compile the packages and generate the output under `lib` directory in each package.
 
 #### Unit Tests
 
-To run the unit tests for all packages, run `npm test`. You can run tests for a specific package by running `npm test` in the package directory or by running `npm test --workspace=<package-name>` in the root directory.
+To run the unit tests for all packages, run `pnpm test`. You can run tests for a specific package by running `pnpm test` in the package directory or by running `pnpm -F <package-name> test` in the root directory.
 
 #### E2E Tests
 
 There are two sets of e2e tests in this repository. They are located in `e2e/browser` and `e2e/node`. The browser tests are run in a headless browser, and the node tests are run in a node environment. The node tests are faster and require less setup, but the browser tests can simulate relevant environmental conditions.
 
-> **Important Note:** the e2e tests do not run from the TypeScript source code of projects and must be compiled. You should run `npm run build` to compile the projects after your changes before running the tests.
+> **Important Note:** the e2e tests do not run from the TypeScript source code of projects and must be compiled. You should run `pnpm build` to compile the projects after your changes before running the tests.
 
 To run the e2e node tests, you can run
 
 ```bash
-cd e2e/node
-npm run setup
-npm run e2e
-dfx stop
+pnpm -F @e2e/node setup
+pnpm -F @e2e/node e2e
 ```
 
 We expect you to have the replica running on port `4943`. If you are using a different port, you can set an environment variable `REPLICA_PORT` to the port number.
@@ -52,24 +50,18 @@ We expect you to have the replica running on port `4943`. If you are using a dif
 To run the e2e browser tests, you can run
 
 ```bash
-dfx start --background --clean
-npm run setup --workspace e2e/browser
-npm run e2e --workspace e2e/browser
-dfx stop
+pnpm -F @e2e/browser setup
+pnpm -F @e2e/browser e2e
 ```
 
 #### Workspaces
 
-We use `npm` to manage this repo and its packages. A few useful
+We use `pnpm` to manage this repo and its packages. A few useful
 commands to keep in mind;
 
-- To run the unit tests locally, you can use `npm run test`.
-- To run e2e tests, you can use `npm run e2e`. **WARNING:** You need to have a running
-  replica locally. In our CI runs, we use the `ic-ref` which is not (at this time) available
-  publicly. Normally you can use a replica distributed with dfx (ie. dfx start in a project),
-  but there is no guarantee that the `next` branch will work with the latest published dfx.
-  Once you have a replica running locally, you must pass the port to the e2e tests using the
-  `REPLICA_PORT` environment vairable. If that variable is not set, the tests will fail.
+- To run the unit tests locally, you can use `pnpm test`.
+- To run e2e tests, you can use `pnpm e2e`. **WARNING:** You need to have a running
+  replica locally.
 
 ### bin/\* scripts
 
@@ -77,12 +69,12 @@ The following scripts can be found in [./bin](./bin):
 
 - update-management-idl - Update the management canister IDL in @dfinity/agent
 
-Monorepo-related scripts run in this order, but are usually invoked by `npm install`:
+Monorepo-related scripts run in this order, but are usually invoked by `pnpm i`:
 
-- npm-postinstall - Run with `npm run postinstall` in this monorepo package.
+- postinstall - Run with `pnpm postinstall` in this monorepo package.
   - It copies devtools dependencies from ./packages/agent-js-devtools/node_modules -> ./node_modules
-- build - Build (`npm run build`) each subpackage in ./packages/
-- test - Run `npm test` in each subpackage
+- build - Build (`pnpm build`) each subpackage in ./packages/
+- test - Run `pnpm test` in each subpackage
 
 ## Contributing
 

@@ -229,7 +229,7 @@ class RenderValue extends IDL.Visitor<ValueConfig, void> {
   public visitType<T>(t: IDL.Type<T>, d: ValueConfig) {
     (d.input.ui.input as HTMLInputElement).value = t.valueToString(d.value);
   }
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
+
   public visitNull(_t: IDL.NullClass, _d: ValueConfig) {}
   public visitText(_t: IDL.TextClass, d: ValueConfig) {
     (d.input.ui.input as HTMLInputElement).value = d.value;

@@ -3,8 +3,17 @@
   "compilerOptions": {
     "forceConsistentCasingInFileNames": true,
     "allowJs": true,
-    "rootDir": "."
+    "rootDir": ".",
+    "module": "preserve",
+    "moduleResolution": "bundler"
   },
   "include": ["utils/**/*.ts", "canisters/**/*.ts", "basic/**/*.ts"],
-  "references": [{ "path": "./tsconfig.test.json" }]
+  "references": [
+    { "path": "../../packages/agent" },
+    { "path": "../../packages/assets" },
+    { "path": "../../packages/candid" },
+    { "path": "../../packages/identity" },
+    { "path": "../../packages/identity-secp256k1" },
+    { "path": "../../packages/principal" }
+  ]
 }

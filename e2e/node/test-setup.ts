@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // This file may be used to polyfill features that aren't available in the test
 // environment, i.e. JSDom.
 //
@@ -9,13 +8,11 @@
 
 // Node.js in a similar way.
 import { TextEncoder, TextDecoder } from 'text-encoding';
-import fetch from 'isomorphic-fetch';
 import dotenv from 'dotenv';
 
 dotenv.config();
 global.TextDecoder = TextDecoder;
 global.TextEncoder = TextEncoder;
-global.fetch = fetch;
 
 import { subtle } from 'crypto';
 import { expect } from 'vitest';

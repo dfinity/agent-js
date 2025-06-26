@@ -14,14 +14,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ./.github/actions/prepare
+      - name: Setup PNPM
+        uses: dfinity/ci-tools/actions/setup-pnpm@main
         with:
-          node-version-file: '.nvmrc'
+          node_version_file: '.nvmrc'
 
-      - run: npm run build
+      - run: pnpm build
 
       - name: Generate docs
-        run: npm run make:docs
+        run: pnpm make:docs
 
   aggregate:
     name: docs:required

@@ -1,48 +1,26 @@
 {
-  "name": "@do-not-publish/ic-node-e2e-tests",
+  "name": "@e2e/node",
   "private": true,
   "type": "module",
   "scripts": {
-    "ci": "npm run e2e",
     "e2e": "vitest",
     "poste2e": "dfx killall",
-    "lint:fix": "npm run lint -- --fix",
-    "lint": "eslint --ext '.js,.jsx,.ts,.tsx' basic canisters utils *.ts",
     "mitm": "MITM=true vitest ./basic/mitm.test.ts",
-    "build": "",
-    "setup": "dfx killall; dfx start --background --clean; dfx deploy; dfx canister call assets authorize '(principal \"n7obp-cx27z-e4ytc-ipt7n-urffz-txqa5-el2vn-7vpqc-jjoh3-wrob6-bqe\")'",
-    "test:coverage": "",
-    "test": ""
+    "setup": "dfx killall; dfx start --background --clean; dfx deploy; dfx canister call assets authorize '(principal \"n7obp-cx27z-e4ytc-ipt7n-urffz-txqa5-el2vn-7vpqc-jjoh3-wrob6-bqe\")'"
   },
   "dependencies": {
-    "@dfinity/agent": "^3.0.0-beta.1",
-    "@dfinity/assets": "^3.0.0-beta.1",
-    "@dfinity/candid": "^3.0.0-beta.1",
-    "@dfinity/identity": "^3.0.0-beta.1",
-    "@dfinity/principal": "^3.0.0-beta.1"
+    "@dfinity/agent": "workspace:*",
+    "@dfinity/assets": "workspace:*",
+    "@dfinity/candid": "workspace:*",
+    "@dfinity/identity": "workspace:*",
+    "@dfinity/identity-secp256k1": "workspace:*",
+    "@dfinity/principal": "workspace:*"
   },
   "devDependencies": {
+    "@noble/curves": "^1.9.2",
     "@noble/hashes": "^1.8.0",
-    "@peculiar/webcrypto": "^1.4.0",
     "@tsconfig/node22": "^22.0.2",
     "@types/express": "^5.0.2",
-    "@types/isomorphic-fetch": "^0.0.36",
-    "@types/text-encoding": "^0.0.36",
-    "@typescript-eslint/eslint-plugin": "^5.30.5",
-    "@typescript-eslint/parser": "^5.30.5",
-    "dotenv": "^16.5.0",
-    "esbuild": "^0.25.1",
-    "express": "^5.1.0",
-    "isomorphic-fetch": "^3.0.0",
-    "locus": "^2.0.4",
-    "node-webcrypto-p11": "^2.5.0",
-    "size-limit": "^8.2.6",
-    "text-encoding": "^0.7.0",
-    "typescript": "5.8.3",
-    "vite": "^6.3.5",
-    "vitest": "^3.1.3"
-  },
-  "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "4.6.1"
+    "express": "^5.1.0"
   }
 }

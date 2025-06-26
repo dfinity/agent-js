@@ -25,44 +25,22 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/prepare
-        with:
-          node-version: ${{ matrix.node }}
 
-      - name: Cache node modules
-        id: cache-npm
-        uses: actions/cache@v4
-        env:
-          cache-name: cache-node-modules
+      - name: Setup PNPM
+        uses: dfinity/ci-tools/actions/setup-pnpm@main
         with:
-          # npm cache files are stored in `~/.npm` on Linux/macOS
-          path: ~/.npm
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
-      - if: ${{ steps.cache-npm.outputs.cache-hit != 'true' }}
-        name: List the state of node modules
-        continue-on-error: true
-        run: npm list
+          node_version: ${{ matrix.node }}
 
-      # build monorepo incl. each subpackage
-      - run: npm run build
+      - run: pnpm build
 
       - uses: dfinity/setup-dfx@main
 
       - name: running dfx
-        working-directory: e2e/node
-        id: dfx
-        run: |
-          npm run setup
+        run: pnpm run -F @e2e/node setup
 
       - name: Node.js e2e tests
-        working-directory: e2e/node
-        run: npm run e2e
+        run: pnpm run -F @e2e/node e2e
         env:
-          CI: true
           REPLICA_PORT: 4943
 
   aggregate:

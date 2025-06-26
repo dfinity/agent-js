@@ -4,7 +4,6 @@
 
 import fs from 'fs';
 import path from 'path';
-import { exec } from 'child_process';
 import prettier from 'prettier';
 import process from 'process';
 
@@ -17,8 +16,6 @@ const rootPackage = JSON.parse(
 );
 
 if (!rootPackage.name) throw new Error("Couldn't find root package.json");
-
-const baseVersion = rootPackage.version;
 
 const newVersion = process.argv[2];
 console.log('New version will be: ' + newVersion);

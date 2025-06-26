@@ -34,7 +34,7 @@ Please document your changes in the [CHANGELOG.md](./docs/CHANGELOG.md) file.
 
 ## Formatting
 
-To save time on formatting, we use automated formatting for this repo using prettier. You can either use git pre-commit hooks or run the command `npm exec prettier:format` before submitting your PR to have your changes pass. We check formatting on CI.
+To save time on formatting, we use automated formatting for this repo using prettier. You can either use git pre-commit hooks or run the command `pnpm prettier:format` before submitting your PR to have your changes pass. We check formatting on CI.
 
 We use GitHub Actions for Continuous Integration. As part of this, we have a workflow for releasing the package. This workflow is triggered manually and includes steps for checking out the code, setting up Node.js, installing dependencies, and running the release script.
 To trigger the release workflow, go to the "Actions" tab in the GitHub repository, select the "Release" workflow, and click on "Run workflow".
@@ -142,7 +142,7 @@ gitGraph:
     commit id: "etc, etc"
 ```
 
-The commits with red square icon, indicate the moment when release process was triggered (either by using GitHub Actionr or by running `npm run release`)
+The commits with red square icon, indicate the moment when release process was triggered (either by using GitHub Actionr or by running `pnpm release`)
 
 </details>
 
@@ -154,7 +154,7 @@ The commits with red square icon, indicate the moment when release process was t
 Yes, you can manually initiate the process. To do this, you must first install the GitHub CLI binary on your system and authenticate using `gh auth login`. After login, you can trigger the process using:
 
 ```console
-GITHUB_TOKEN="$(gh auth token)" npm run release patch # or minor/major/etc
+GITHUB_TOKEN="$(gh auth token)" pnpm release patch # or minor/major/etc
 ```
 
 </details>
@@ -202,11 +202,11 @@ Perform the following steps to manually publish a package to NPM:
 
 1. Create a branch and execute these commands:
    - `git clean -dfx`. This removes all non-tracked files and directories.
-   - `npm install`. This ensures everything is installed and up-to-date locally.
-   - `npm run build --workspaces`. This builds all applications and packages.
-   - `npm run version [patch|major|minor|version]`. This updates the version in each package.
+   - `pnpm i`. This ensures everything is installed and up-to-date locally.
+   - `pnpm build`. This builds all applications and packages.
+   - `pnpm version [patch|major|minor|version]`. This updates the version in each package.
    - Manually update the version in the root package.json file.
-   - `npm install`. This updates the packages' versions in the package-lock.json file.
+   - `pnpm i`. This updates the packages' versions in the package-lock.json file.
 2. Initiate a new release branch using `git checkout -b release/v<#.#.#>`.
 3. Stage your changes with `git add .`.
 4. Create a commit including your changes using `git commit -m 'chore: release v<#.#.#>'`.
@@ -214,8 +214,8 @@ Perform the following steps to manually publish a package to NPM:
 
 Once the changes are merged, you can publish to NPM by running:
 
-- `npm run build --workspaces`. Re-building for safety.
-- `npm publish --workspaces`. To publish packages to NPM.
+- `pnpm build`. Re-building for safety.
+- `pnpm publish`. To publish packages to NPM.
   - To do this, you will need publishing authorization under our NPM organization. Contact IT if you require access.
   - You can include the `--dry-run` flag to verify the versions and packages before actual publishing.
 
@@ -229,8 +229,8 @@ After publishing to NPM, go to https://github.com/dfinity/agent-js/releases/new,
 </summary>
 
 1. Start with a fresh clone (or execute `git clean -dfx .`)
-2. Run `npm install`
-3. Execute `npm run make:docs`
+2. Run `pnpm i`
+3. Execute `pnpm make:docs`
 4. Deploy the docs using `dfx deploy --network ic`. Note: You may need to request for permissions as a controller for the wallet that owns the docs.
 
 </details>
@@ -244,7 +244,7 @@ To deprecate a package, follow these steps
 - Remove unnecessary content, dependencies, and metadata from the package.json
 - add a `"deprecation"` tag to the package.json with instructions you want users to follow in migrating
 - remove the package as a workspace from the root `package.json`
-- the next time that agent-js releases, manually publish a new version of newly deprecated packages by incrementing the patch version and running `npm publish`
+- the next time that agent-js releases, manually publish a new version of newly deprecated packages by incrementing the patch version and running `pnpm publish`
 
 So far, the following packages were deprecated:
 
