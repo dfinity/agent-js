@@ -15,7 +15,15 @@ const compat = new FlatCompat({
 });
 
 export default defineConfig([
-  globalIgnores(['**/lib/', '**/dist/', '**/__certificates__/', '**/declarations/', '**/types/']),
+  globalIgnores([
+    'docs/',
+    '.dfx/',
+    '**/lib/',
+    '**/dist/',
+    '**/__certificates__/',
+    '**/declarations/',
+    '**/types/',
+  ]),
   {
     files: ['**/*.{ts,tsx,js,jsx}'],
 
