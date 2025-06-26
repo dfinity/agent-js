@@ -1,0 +1,98 @@
+{
+  "name": "@dfinity/icp",
+  "version": "3.0.0-beta.1",
+  "author": "DFINITY Stiftung <sdk@dfinity.org>",
+  "license": "Apache-2.0",
+  "description": "JavaScript and TypeScript library to interact with the Internet Computer",
+  "homepage": "https://internetcomputer.org",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dfinity/agent-js.git",
+    "directory": "packages/icp"
+  },
+  "bugs": {
+    "url": "https://github.com/dfinity/agent-js/issues"
+  },
+  "keywords": [
+    "internet computer",
+    "internet-computer",
+    "ic",
+    "dfinity",
+    "agent",
+    "actor",
+    "dfx",
+    "canister",
+    "candid",
+    "motoko",
+    "javascript",
+    "typescript",
+    "blockchain",
+    "crypto",
+    "distributed",
+    "api",
+    "sdk"
+  ],
+  "scripts": {
+    "build": "tsc -b && tsc -p tsconfig.cjs.json",
+    "build:watch": "tsc -b --watch",
+    "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=browser",
+    "make:docs/reference": "typedoc src/index.ts --out ../../docs/agent --excludeInternal"
+  },
+  "peerDependencies": {
+    "@dfinity/agent": "workspace:*",
+    "@dfinity/assets": "workspace:*",
+    "@dfinity/auth-client": "workspace:*",
+    "@dfinity/candid": "workspace:*",
+    "@dfinity/identity": "workspace:*",
+    "@dfinity/identity-secp256k1": "workspace:*",
+    "@dfinity/principal": "workspace:*",
+    "@dfinity/use-auth-client": "workspace:*"
+  },
+  "exports": {
+    ".": {
+      "import": "./lib/esm/index.js",
+      "require": "./lib/cjs/index.js",
+      "types": "./lib/esm/index.d.ts"
+    },
+    "./agent": {
+      "import": "./lib/esm/agent/index.js",
+      "require": "./lib/cjs/agent/index.js",
+      "types": "./lib/esm/agent/index.d.ts"
+    },
+    "./assets": {
+      "import": "./lib/esm/assets/index.js",
+      "require": "./lib/cjs/assets/index.js",
+      "types": "./lib/esm/assets/index.d.ts"
+    },
+    "./auth-client": {
+      "import": "./lib/esm/auth-client/index.js",
+      "require": "./lib/cjs/auth-client/index.js",
+      "types": "./lib/esm/auth-client/index.d.ts"
+    },
+    "./candid": {
+      "import": "./lib/esm/candid/index.js",
+      "require": "./lib/cjs/candid/index.js",
+      "types": "./lib/esm/candid/index.d.ts"
+    },
+    "./identity": {
+      "import": "./lib/esm/identity/index.js",
+      "require": "./lib/cjs/identity/index.js",
+      "types": "./lib/esm/identity/index.d.ts"
+    },
+    "./identity-secp256k1": {
+      "import": "./lib/esm/identity-secp256k1/index.js",
+      "require": "./lib/cjs/identity-secp256k1/index.js",
+      "types": "./lib/esm/identity-secp256k1/index.d.ts"
+    },
+    "./principal": {
+      "import": "./lib/esm/principal/index.js",
+      "require": "./lib/cjs/principal/index.js",
+      "types": "./lib/esm/principal/index.d.ts"
+    },
+    "./use-auth-client": {
+      "import": "./lib/esm/use-auth-client/index.js",
+      "require": "./lib/cjs/use-auth-client/index.js",
+      "types": "./lib/esm/use-auth-client/index.d.ts"
+    }
+  }
+}

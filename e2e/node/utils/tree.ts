@@ -11,8 +11,8 @@ import {
   PrunedHashTree,
   RequestId,
   RequestStatusResponseStatus,
-} from '@dfinity/agent';
-import { lebEncode } from '@dfinity/candid';
+} from '@dfinity/icp/agent';
+import { lebEncode } from '@dfinity/icp/candid';
 import { hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
 
 /**
