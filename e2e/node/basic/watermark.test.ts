@@ -1,6 +1,6 @@
 import { test, expect, vi, describe, afterAll, beforeEach } from 'vitest';
 import { createActor } from '../canisters/counter';
-import { Actor, HttpAgent } from '@dfinity/agent';
+import { Actor, HttpAgent } from '@dfinity/icp/agent';
 import { getCanisterId } from '../utils/canisterid';
 
 class FetchProxy {

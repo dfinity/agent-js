@@ -116,21 +116,9 @@ importers:
       '@dfinity/agent':
         specifier: workspace:*
         version: link:../../packages/agent
-      '@dfinity/assets':
+      '@dfinity/icp':
         specifier: workspace:*
-        version: link:../../packages/assets
-      '@dfinity/candid':
-        specifier: workspace:*
-        version: link:../../packages/candid
-      '@dfinity/identity':
-        specifier: workspace:*
-        version: link:../../packages/identity
-      '@dfinity/identity-secp256k1':
-        specifier: workspace:*
-        version: link:../../packages/identity-secp256k1
-      '@dfinity/principal':
-        specifier: workspace:*
-        version: link:../../packages/principal
+        version: link:../../packages/icp
     devDependencies:
       '@noble/curves':
         specifier: ^1.9.2
@@ -215,6 +203,33 @@ importers:
       '@dfinity/principal':
         specifier: workspace:*
         version: link:../principal
+
+  packages/icp:
+    dependencies:
+      '@dfinity/agent':
+        specifier: workspace:*
+        version: link:../agent
+      '@dfinity/assets':
+        specifier: workspace:*
+        version: link:../assets
+      '@dfinity/auth-client':
+        specifier: workspace:*
+        version: link:../auth-client
+      '@dfinity/candid':
+        specifier: workspace:*
+        version: link:../candid
+      '@dfinity/identity':
+        specifier: workspace:*
+        version: link:../identity
+      '@dfinity/identity-secp256k1':
+        specifier: workspace:*
+        version: link:../identity-secp256k1
+      '@dfinity/principal':
+        specifier: workspace:*
+        version: link:../principal
+      '@dfinity/use-auth-client':
+        specifier: workspace:*
+        version: link:../use-auth-client
 
   packages/identity:
     dependencies:

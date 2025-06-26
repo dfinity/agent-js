@@ -1,17 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Actor, SignIdentity } from '@dfinity/agent';
-import { Principal } from '@dfinity/principal';
+import { Actor, SignIdentity } from '@dfinity/icp/agent';
+import { Principal } from '@dfinity/icp/principal';
 import {
   DelegationChain,
   DelegationIdentity,
   Ed25519KeyIdentity,
   ECDSAKeyIdentity,
-} from '@dfinity/identity';
-import { Secp256k1KeyIdentity } from '@dfinity/identity-secp256k1';
+} from '@dfinity/icp/identity';
+import { Secp256k1KeyIdentity } from '@dfinity/icp/identity-secp256k1';
 import agent, { makeAgent } from '../utils/agent';
 import whoamiCanister from '../canisters/whoami';
 import { test, expect } from 'vitest';
-import { IDL } from '@dfinity/candid';
+import { IDL } from '@dfinity/icp/candid';
 
 function createIdentity(seed: number): SignIdentity {
   const seed1 = new Array(32).fill(0);

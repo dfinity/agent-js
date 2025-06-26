@@ -5,7 +5,7 @@ import {
   CertificateVerificationErrorCode,
   QuerySignatureVerificationFailedErrorCode,
   TrustError,
-} from '@dfinity/agent';
+} from '@dfinity/icp/agent';
 import { getCanisterId } from '../utils/canisterid';
 
 let mitmTest: TestAPI | typeof test.skip = test;

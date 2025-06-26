@@ -120,13 +120,11 @@ dist
 docs/agent
 docs/assets
 docs/auth-client
-docs/use-auth-client
-docs/authentication
+docs/candid
+docs/icp
 docs/identity
 docs/identity-secp256k1
-docs/identity-ledgerhq
 docs/principal
-docs/candid
-docs/identity-secp256k1
-docs/generated
+docs/use-auth-client
+
 docs/changelog.html
