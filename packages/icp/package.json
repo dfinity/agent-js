@@ -50,49 +50,49 @@
   },
   "exports": {
     ".": {
+      "types": "./lib/esm/index.d.ts",
       "import": "./lib/esm/index.js",
-      "require": "./lib/cjs/index.js",
-      "types": "./lib/esm/index.d.ts"
+      "require": "./lib/cjs/index.js"
     },
     "./agent": {
+      "types": "./lib/esm/agent/index.d.ts",
       "import": "./lib/esm/agent/index.js",
-      "require": "./lib/cjs/agent/index.js",
-      "types": "./lib/esm/agent/index.d.ts"
+      "require": "./lib/cjs/agent/index.js"
     },
     "./assets": {
+      "types": "./lib/esm/assets/index.d.ts",
       "import": "./lib/esm/assets/index.js",
-      "require": "./lib/cjs/assets/index.js",
-      "types": "./lib/esm/assets/index.d.ts"
+      "require": "./lib/cjs/assets/index.js"
     },
     "./auth-client": {
+      "types": "./lib/esm/auth-client/index.d.ts",
       "import": "./lib/esm/auth-client/index.js",
-      "require": "./lib/cjs/auth-client/index.js",
-      "types": "./lib/esm/auth-client/index.d.ts"
+      "require": "./lib/cjs/auth-client/index.js"
     },
     "./candid": {
+      "types": "./lib/esm/candid/index.d.ts",
       "import": "./lib/esm/candid/index.js",
-      "require": "./lib/cjs/candid/index.js",
-      "types": "./lib/esm/candid/index.d.ts"
+      "require": "./lib/cjs/candid/index.js"
     },
     "./identity": {
+      "types": "./lib/esm/identity/index.d.ts",
       "import": "./lib/esm/identity/index.js",
-      "require": "./lib/cjs/identity/index.js",
-      "types": "./lib/esm/identity/index.d.ts"
+      "require": "./lib/cjs/identity/index.js"
     },
     "./identity-secp256k1": {
+      "types": "./lib/esm/identity-secp256k1/index.d.ts",
       "import": "./lib/esm/identity-secp256k1/index.js",
-      "require": "./lib/cjs/identity-secp256k1/index.js",
-      "types": "./lib/esm/identity-secp256k1/index.d.ts"
+      "require": "./lib/cjs/identity-secp256k1/index.js"
     },
     "./principal": {
+      "types": "./lib/esm/principal/index.d.ts",
       "import": "./lib/esm/principal/index.js",
-      "require": "./lib/cjs/principal/index.js",
-      "types": "./lib/esm/principal/index.d.ts"
+      "require": "./lib/cjs/principal/index.js"
     },
     "./use-auth-client": {
+      "types": "./lib/esm/use-auth-client/index.d.ts",
       "import": "./lib/esm/use-auth-client/index.js",
-      "require": "./lib/cjs/use-auth-client/index.js",
-      "types": "./lib/esm/use-auth-client/index.d.ts"
+      "require": "./lib/cjs/use-auth-client/index.js"
     }
   }
 }
