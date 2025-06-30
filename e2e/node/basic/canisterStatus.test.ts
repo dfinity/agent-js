@@ -1,5 +1,5 @@
-import { AgentError, CanisterStatus, HttpAgent } from '@dfinity/agent';
-import { Principal } from '@dfinity/principal';
+import { AgentError, CanisterStatus, HttpAgent } from '@dfinity/icp/agent';
+import { Principal } from '@dfinity/icp/principal';
 import { makeAgent } from '../utils/agent';
 import { describe, it, afterEach, expect } from 'vitest';
 import { getCanisterId } from '../utils/canisterid';
