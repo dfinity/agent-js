@@ -1,5 +1,5 @@
-import { BLS12_381_G2_OID, wrapDER } from '@dfinity/agent';
-import { Ed25519KeyIdentity } from '@dfinity/identity';
+import { BLS12_381_G2_OID, wrapDER } from '@dfinity/icp/agent';
+import { Ed25519KeyIdentity } from '@dfinity/icp/identity';
 import { randomBytes } from 'crypto';
 import { bls12_381 as bls } from '@noble/curves/bls12-381';
 

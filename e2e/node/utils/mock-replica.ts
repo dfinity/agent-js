@@ -22,13 +22,13 @@ import {
   IC_RESPONSE_DOMAIN_SEPARATOR,
   QueryResponseStatus,
   ReadRequestType,
-} from '@dfinity/agent';
-import { Principal } from '@dfinity/principal';
+} from '@dfinity/icp/agent';
+import { Principal } from '@dfinity/icp/principal';
+import { Ed25519KeyIdentity } from '@dfinity/icp/identity';
 import { Mock, vi } from 'vitest';
 import { createReplyTree, createSubnetTree, createTimeTree } from './tree';
 import { randomKeyPair, signBls, KeyPair } from './identity';
 import { concatBytes, toBytes } from '@noble/hashes/utils';
-import { Ed25519KeyIdentity } from '@dfinity/identity';
 
 export enum MockReplicaSpyType {
   CallV3 = 'CallV3',

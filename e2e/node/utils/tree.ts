@@ -12,9 +12,9 @@ import {
   RequestId,
   RequestStatusResponseStatus,
   Cbor,
-} from '@dfinity/agent';
-import { lebEncode } from '@dfinity/candid';
-import { Ed25519KeyIdentity } from '@dfinity/identity';
+} from '@dfinity/icp/agent';
+import { lebEncode } from '@dfinity/icp/candid';
+import { Ed25519KeyIdentity } from '@dfinity/icp/identity';
 import { hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
 
 /**

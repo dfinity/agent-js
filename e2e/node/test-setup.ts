@@ -16,8 +16,8 @@ global.TextEncoder = TextEncoder;
 
 import { subtle } from 'crypto';
 import { expect } from 'vitest';
-import { uint8Equals } from '@dfinity/candid';
-import { Principal } from '@dfinity/principal';
+import { uint8Equals } from '@dfinity/icp/candid';
+import { Principal } from '@dfinity/icp/principal';
 
 // make global.crypto writeable
 Object.defineProperty(global, 'crypto', {
