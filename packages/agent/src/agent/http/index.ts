@@ -883,7 +883,7 @@ export class HttpAgent implements Agent {
     const sender = id.getPrincipal();
     // No need to adjust the time here because the query response comes from a single node,
     // and hence it can be different from the synced network time.
-    const ingressExpiry = calculateIngressExpiry(this.#maxIngressExpiryInMinutes, 0);
+    const ingressExpiry = Expiry.fromDeltaInMilliseconds(this.#maxIngressExpiryInMs);
 
     const request: QueryRequest = {
       request_type: ReadRequestType.Query,

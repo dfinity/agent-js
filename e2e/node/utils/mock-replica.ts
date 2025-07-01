@@ -22,6 +22,7 @@ import {
   IC_RESPONSE_DOMAIN_SEPARATOR,
   QueryResponseStatus,
   ReadRequestType,
+  Expiry,
 } from '@dfinity/icp/agent';
 import { Principal } from '@dfinity/icp/principal';
 import { Ed25519KeyIdentity } from '@dfinity/icp/identity';
@@ -433,7 +434,7 @@ export async function prepareV2QueryResponse({
   const coercedReply = reply ? toBytes(reply) : new Uint8Array();
   date = date ?? new Date();
 
-  const ingressExpiry = calculateIngressExpiry(ingressExpiryInMinutes, 0);
+  const ingressExpiry = Expiry.fromDeltaInMilliseconds(ingressExpiryInMinutes * 60 * 1000);
   const queryRequest: QueryRequest = {
     request_type: ReadRequestType.Query,
     canister_id: canisterId,
