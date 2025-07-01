@@ -1,0 +1,32 @@
+name: commitizen
+
+on:
+  merge_group:
+  pull_request:
+
+jobs:
+  check_pr_title:
+    name: check_pr_title
+    if: github.event_name == 'pull_request'
+    uses: dfinity/ci-tools/.github/workflows/check-pr-title.yaml@main
+
+  check_commit_messages:
+    name: check_commit_messages
+    if: github.event_name == 'merge_group'
+    uses: dfinity/ci-tools/.github/workflows/check-commit-messages.yaml@main
+
+  commitizen:
+    name: commitizen:required
+    runs-on: ubuntu-latest
+    needs: [check_pr_title, check_commit_messages]
+    if: always()
+    steps:
+      - name: Check previous jobs
+        run: |
+          if [[ "${{ needs.check_pr_title.result }}" == "success" || "${{ needs.check_pr_title.result }}" == "skipped" ]] &&
+             [[ "${{ needs.check_commit_messages.result }}" == "success" || "${{ needs.check_commit_messages.result }}" == "skipped" ]]; then
+            echo "All required jobs passed or were skipped."
+          else
+            echo "One or more jobs failed."
+            exit 1
+          fi

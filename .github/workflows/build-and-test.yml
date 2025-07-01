@@ -1,0 +1,218 @@
+name: Build and Test
+
+on:
+  pull_request:
+
+jobs:
+  build:
+    name: build:required
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: dfinity/ci-tools/actions/setup-pnpm@main
+        with:
+          node_version_file: '.nvmrc'
+
+      - name: Build
+        run: pnpm build
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifact
+          path: ./packages/*/lib/
+
+  tests:
+    name: tests:required
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        test_type: [unit, e2e, mitm]
+        node:
+          - 20.18 # without require(esm)
+          - 20.19 # with require(esm), see https://nodejs.org/en/blog/release/v20.19.0/#requireesm-is-now-enabled-by-default
+          - 22
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: dfinity/ci-tools/actions/setup-pnpm@main
+        with:
+          node_version: ${{ matrix.node }}
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+          path: ./packages/
+
+      - name: Setup DFX
+        if: ${{ matrix.test_type == 'mitm' || matrix.test_type == 'e2e' }}
+        uses: dfinity/setup-dfx@main
+
+      - name: Setup e2e tests
+        if: ${{ matrix.test_type == 'e2e' }}
+        run: pnpm run -F @e2e/node setup
+
+      - name: Setup mitm tests
+        if: ${{ matrix.test_type == 'mitm' }}
+        working-directory: e2e/node
+        run: |
+          dfx start --background
+          dfx deploy counter
+
+      - name: Running mitmdump
+        if: ${{ matrix.test_type == 'mitm' }}
+        run: |
+          set -ex
+          mitmdump -p 8888 --mode reverse:http://localhost:4943 \
+            --modify-headers '/~s/Transfer-Encoding/' \
+            --modify-body '/~s/Hello/Hullo' \
+            &
+          sleep 20
+
+      - name: Run unit tests
+        if: ${{ matrix.test_type == 'unit' }}
+        run: pnpm test
+
+      - name: Run e2e tests
+        if: ${{ matrix.test_type == 'e2e' }}
+        run: pnpm run -F @e2e/node e2e
+
+      - name: Run mitm tests
+        if: ${{ matrix.test_type == 'mitm' }}
+        run: pnpm run -F @e2e/node mitm
+
+      - name: Run Tests
+        run: |
+          if [ "${{ matrix.test_type }}" == "unit" ]; then
+            pnpm test;
+          elif [ "${{ matrix.test_type }}" == "e2e" ]; then
+            pnpm run -F @e2e/node e2e;
+          else
+            pnpm run -F @e2e/node mitm;
+          fi
+
+  build_docs:
+    name: build_docs:required
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: dfinity/ci-tools/actions/setup-pnpm@main
+        with:
+          node_version_file: '.nvmrc'
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+          path: ./packages/
+
+      - name: Generate docs
+        run: pnpm make:docs
+
+  size_limit:
+    name: size_limit:required
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: dfinity/ci-tools/actions/setup-pnpm@main
+        with:
+          node_version_file: '.nvmrc'
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+          path: ./packages/
+
+      - uses: andresz1/size-limit-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          build_script: bundle
+
+  attw:
+    name: attw:required
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: dfinity/ci-tools/actions/setup-pnpm@main
+        with:
+          node_version_file: '.nvmrc'
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+          path: ./packages/
+
+      - name: Display structure of downloaded files
+        run: ls -R
+
+      - name: Run attw
+        run: pnpm attw
+
+  audit:
+    name: audit:required
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: dfinity/ci-tools/actions/setup-pnpm@main
+        with:
+          node_version_file: '.nvmrc'
+
+      - name: Run audit
+        run: pnpm audit
+
+  format_check:
+    name: format_check:required
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: dfinity/ci-tools/actions/setup-pnpm@main
+        with:
+          node_version_file: '.nvmrc'
+
+      - name: Check formatting
+        run: pnpm prettier:check
+
+  lint:
+    name: lint:required
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: dfinity/ci-tools/actions/setup-pnpm@main
+        with:
+          node_version_file: '.nvmrc'
+
+      - name: Run Lint
+        run: pnpm lint
+
