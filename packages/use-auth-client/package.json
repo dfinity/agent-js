@@ -3,12 +3,13 @@
   "version": "3.0.0-beta.1",
   "description": "React hooks for using the auth client",
   "type": "module",
-  "main": "./lib/esm/index.js",
+  "browser": "./lib/esm/index.js",
   "module": "./lib/esm/index.js",
   "types": "./lib/esm/index.d.ts",
   "exports": {
     "types": "./lib/esm/index.d.ts",
-    "import": "./lib/esm/index.js"
+    "import": "./lib/esm/index.js",
+    "default": "./lib/esm/index.js"
   },
   "scripts": {
     "build": "tsc -b",
