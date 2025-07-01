@@ -4,10 +4,15 @@ import {
   prepareV2QueryResponse,
   prepareV2ReadStateSubnetResponse,
 } from '../utils/mock-replica';
-import { IDL } from '@dfinity/candid';
-import { Principal } from '@dfinity/principal';
+import { IDL } from '@dfinity/icp/candid';
+import { Principal } from '@dfinity/icp/principal';
 import { randomIdentity, randomKeyPair } from '../utils/identity';
-import { CertificateOutdatedErrorCode, HttpAgent, requestIdOf, TrustError } from '@dfinity/agent';
+import {
+  CertificateOutdatedErrorCode,
+  HttpAgent,
+  requestIdOf,
+  TrustError,
+} from '@dfinity/icp/agent';
 import { createActor } from '../canisters/counter';
 
 const MILLISECONDS_PER_MINUTE = 60 * 1000;
