@@ -21,8 +21,8 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
 
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
+    "module": "ES2022",
+    "moduleResolution": "node10",
     "target": "ES2022"
   },
   "exclude": ["bin", "node_modules", "e2e"]
