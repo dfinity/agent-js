@@ -1,4 +1,4 @@
-docs/CHANGELOG.md
+CHANGELOG.md
 package.json
 package-lock.json
 packages/*/package.json

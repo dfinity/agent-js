@@ -32,15 +32,20 @@
     "distributed",
     "api"
   ],
+  "type": "module",
   "main": "./lib/esm/index.js",
   "module": "./lib/esm/index.js",
-  "browser": "./lib/esm/index.js",
-  "unpkg": "./lib/esm/index.js",
   "types": "./lib/esm/index.d.ts",
+  "exports": {
+    "types": "./lib/esm/index.d.ts",
+    "import": "./lib/esm/index.js"
+  },
   "scripts": {
     "build": "tsc -b",
+    "build:watch": "tsc -b --watch",
     "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=browser",
     "make:docs/reference": "typedoc src/index.ts --out ../../docs/auth-client --excludeInternal",
+    "attw": "attw --pack . --profile esm-only --ignore-rules internal-resolution-error",
     "test": "jest",
     "test:coverage": "jest --collectCoverage"
   },

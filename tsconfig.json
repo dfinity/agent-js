@@ -12,6 +12,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "verbatimModuleSyntax": false,
+    "isolatedModules": true,
 
     /* Linting */
     "strict": true,
@@ -20,8 +21,8 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
 
-    "module": "ES2022",
-    "moduleResolution": "node10",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "target": "ES2022"
   },
   "exclude": ["bin", "node_modules", "e2e"]

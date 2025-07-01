@@ -31,7 +31,7 @@ export interface ReadStateOptions {
  */
 export type QueryResponse = QueryResponseReplied | QueryResponseRejected;
 
-export const enum QueryResponseStatus {
+export enum QueryResponseStatus {
   Replied = 'replied',
   Rejected = 'rejected',
 }

@@ -5,7 +5,7 @@ import { randomNumber } from '../../utils/random';
 /**
  * @internal
  */
-export const enum Endpoint {
+export enum Endpoint {
   Query = 'read',
   ReadState = 'read_state',
   Call = 'call',
@@ -75,7 +75,7 @@ export enum SubmitRequestType {
 }
 
 // The types of values allowed in the `request_type` field for read requests.
-export const enum ReadRequestType {
+export enum ReadRequestType {
   Query = 'query',
   ReadState = 'read_state',
 }
