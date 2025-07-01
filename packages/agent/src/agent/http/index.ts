@@ -25,12 +25,13 @@ import {
   HttpFetchErrorCode,
   AgentError,
   MalformedLookupFoundValueErrorCode,
+  CertificateOutdatedErrorCode,
 } from '../../errors';
 import { AnonymousIdentity, type Identity } from '../../auth';
 import * as cbor from '../../cbor';
 import { type RequestId, hashOfMap, requestIdOf } from '../../request_id';
 import {
-  isV3ResponseBody,
+  QueryResponseStatus,
   type Agent,
   type ApiQueryResponse,
   type QueryFields,
@@ -82,6 +83,7 @@ export enum RequestStatusResponseStatus {
 }
 
 const MINUTE_TO_MSECS = 60 * 1000;
+const NANOSECONDS_TO_MSECS = 1_000_000;
 
 // Root public key for the IC, encoded as hex
 export const IC_ROOT_KEY =
@@ -297,17 +299,13 @@ export class HttpAgent implements Agent {
   readonly #retryTimes; // Retry requests N times before erroring by default
   #backoffStrategy: BackoffStrategyFactory;
   readonly #maxIngressExpiryInMinutes: number;
+  get #maxIngressExpiryInMs(): number {
+    return this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS;
+  }
 
   // Public signature to help with type checking.
   public readonly _isAgent = true;
   public config: HttpAgentOptions = {};
-
-  // The UTC time in milliseconds when the latest request was made
-  #waterMark = 0;
-
-  get waterMark(): number {
-    return this.#waterMark;
-  }
 
   public log: ObservableLog = new ObservableLog();
 
@@ -606,14 +604,6 @@ export class HttpAgent implements Agent {
         responseBodyBytes.byteLength > 0 ? cbor.decode(responseBodyBytes) : null
       ) as SubmitResponse['response']['body'];
 
-      // Update the watermark with the latest time from consensus
-      if (responseBody && isV3ResponseBody(responseBody)) {
-        const time = await this.parseTimeFromResponse({
-          certificate: responseBody.certificate,
-        });
-        this.#waterMark = time;
-      }
-
       return {
         requestId,
         response: {
@@ -678,13 +668,8 @@ export class HttpAgent implements Agent {
 
     // If delay is null, the backoff strategy is exhausted due to a maximum number of retries, duration, or other reason
     if (delay === null) {
-      throw ProtocolError.fromCode(
-        new TimeoutWaitingForResponseErrorCode(
-          `Timestamp failed to pass the watermark after retrying the configured ${
-            this.#retryTimes
-          } times. We cannot guarantee the integrity of the response since it could be a replay attack.`,
-          requestId,
-        ),
+      throw TrustError.fromCode(
+        new CertificateOutdatedErrorCode(this.#maxIngressExpiryInMinutes, requestId, tries),
       );
     }
 
@@ -747,14 +732,13 @@ export class HttpAgent implements Agent {
       throw TransportError.fromCode(new HttpFetchErrorCode(error));
     }
 
-    const timestamp = response.signatures?.[0]?.timestamp;
-
-    // Skip watermark verification if the user has set verifyQuerySignatures to false
+    // Skip timestamp verification if the user has set verifyQuerySignatures to false
     if (!this.#verifyQuerySignatures) {
       return response;
     }
 
-    if (!timestamp) {
+    const timestampInNs = response.signatures?.[0]?.timestamp;
+    if (!timestampInNs) {
       throw ProtocolError.fromCode(
         new MalformedSignatureErrorCode(
           'Timestamp not found in query response. This suggests a malformed or malicious response.',
@@ -762,36 +746,21 @@ export class HttpAgent implements Agent {
       );
     }
 
-    // Convert the timestamp to milliseconds
-    const timeStampInMs = Number(BigInt(timestamp) / BigInt(1_000_000));
+    const timestampInMs = Number(BigInt(timestampInNs) / BigInt(NANOSECONDS_TO_MSECS));
 
-    this.log.print('watermark and timestamp', {
-      waterMark: this.waterMark,
-      timestamp: timeStampInMs,
-    });
-
-    // If the timestamp is less than the watermark, retry the request up to the retry limit
-    if (Number(this.waterMark) > timeStampInMs) {
-      const error = ProtocolError.fromCode(
-        new TimeoutWaitingForResponseErrorCode(
-          'Timestamp is below the watermark. Retrying query.',
-          requestId,
-        ),
-      );
-      this.log.error('Timestamp is below', error, {
-        timestamp,
-        waterMark: this.waterMark,
+    // If the timestamp is older than the max ingress expiry, retry the request up to the retry limit.
+    // We don't have to consider the #timeDiffMsecs here because the response comes from a single node,
+    // and hence it can be different from the network time.
+    if (Date.now() - timestampInMs > this.#maxIngressExpiryInMs) {
+      this.log.warn('Timestamp is older than the max ingress expiry. Retrying query.', {
+        requestId,
+        timestamp: timestampInMs,
       });
       if (tries < this.#retryTimes) {
         return await this.#requestAndRetryQuery({ ...args, tries: tries + 1 });
       }
-      throw ProtocolError.fromCode(
-        new TimeoutWaitingForResponseErrorCode(
-          `Timestamp failed to pass the watermark after retrying the configured ${
-            this.#retryTimes
-          } times. We cannot guarantee the integrity of the response since it could be a replay attack.`,
-          requestId,
-        ),
+      throw TrustError.fromCode(
+        new CertificateOutdatedErrorCode(this.#maxIngressExpiryInMinutes, requestId, tries),
       );
     }
 
@@ -826,11 +795,7 @@ export class HttpAgent implements Agent {
     // If delay is null, the backoff strategy is exhausted due to a maximum number of retries, duration, or other reason
     if (delay === null) {
       throw ProtocolError.fromCode(
-        new TimeoutWaitingForResponseErrorCode(
-          `Timestamp failed to pass the watermark after retrying the configured ${
-            this.#retryTimes
-          } times. We cannot guarantee the integrity of the response since it could be a replay attack.`,
-        ),
+        new TimeoutWaitingForResponseErrorCode(`Retry strategy exhausted after ${tries} attempts.`),
       );
     }
 
@@ -909,7 +874,6 @@ export class HttpAgent implements Agent {
     this.log.print(`canisterId ${canisterId.toString()}`);
 
     let transformedRequest: HttpAgentRequest | undefined;
-    let queryResult;
     const id = await (identity ?? this.#identity);
     if (!id) {
       throw ExternalError.fromCode(new IdentityInvalidErrorCode());
@@ -917,6 +881,10 @@ export class HttpAgent implements Agent {
 
     const canister = Principal.from(canisterId);
     const sender = id.getPrincipal();
+    const ingressExpiry = calculateIngressExpiry(
+      this.#maxIngressExpiryInMinutes,
+      this.#timeDiffMsecs,
+    );
 
     const request: QueryRequest = {
       request_type: ReadRequestType.Query,
@@ -924,9 +892,7 @@ export class HttpAgent implements Agent {
       method_name: fields.methodName,
       arg: fields.arg,
       sender,
-      ingress_expiry: Expiry.fromDeltaInMilliseconds(
-        this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS,
-      ),
+      ingress_expiry: ingressExpiry,
     };
 
     const requestId = requestIdOf(request);
@@ -944,7 +910,7 @@ export class HttpAgent implements Agent {
     });
 
     // Apply transform for identity.
-    transformedRequest = (await id?.transformRequest(transformedRequest)) as HttpAgentRequest;
+    transformedRequest = (await id.transformRequest(transformedRequest)) as HttpAgentRequest;
 
     const body = cbor.encode(transformedRequest.body);
 
@@ -964,7 +930,7 @@ export class HttpAgent implements Agent {
       };
     };
 
-    const getSubnetStatus = async (): Promise<SubnetStatus | void> => {
+    const getSubnetStatus = async (): Promise<SubnetStatus | undefined> => {
       if (!this.#verifyQuerySignatures) {
         return undefined;
       }
@@ -975,12 +941,11 @@ export class HttpAgent implements Agent {
       await this.fetchSubnetKeys(ecid.toString());
       return this.#subnetKeys.get(ecid.toString());
     };
+
     // Attempt to make the query i=retryTimes times
     // Make query and fetch subnet keys in parallel
-
     try {
-      const [_queryResult, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
-      queryResult = _queryResult;
+      const [queryResult, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
       const { requestDetails, query } = queryResult;
 
       const queryWithDetails = {
@@ -1035,7 +1000,7 @@ export class HttpAgent implements Agent {
    */
   #verifyQueryResponse = (
     queryResponse: ApiQueryResponse,
-    subnetStatus: SubnetStatus | void,
+    subnetStatus: SubnetStatus | undefined,
   ): ApiQueryResponse => {
     if (this.#verifyQuerySignatures === false) {
       // This should not be called if the user has disabled verification
@@ -1049,10 +1014,10 @@ export class HttpAgent implements Agent {
     for (const sig of signatures) {
       const { timestamp, identity } = sig;
       const nodeId = Principal.fromUint8Array(identity).toText();
-      let hash: Uint8Array;
 
       // Hash is constructed differently depending on the status
-      if (status === 'replied') {
+      let hash: Uint8Array;
+      if (status === QueryResponseStatus.Replied) {
         const { reply } = queryResponse;
         hash = hashOfMap({
           status: status,
@@ -1060,7 +1025,7 @@ export class HttpAgent implements Agent {
           timestamp: BigInt(timestamp),
           request_id: requestId,
         });
-      } else if (status === 'rejected') {
+      } else if (status === QueryResponseStatus.Rejected) {
         const { reject_code, reject_message, error_code } = queryResponse;
         hash = hashOfMap({
           status: status,
@@ -1077,16 +1042,12 @@ export class HttpAgent implements Agent {
       const separatorWithHash = concatBytes(IC_RESPONSE_DOMAIN_SEPARATOR, hash);
 
       // FIX: check for match without verifying N times
-      const pubKey = subnetStatus?.nodeKeys.get(nodeId);
+      const pubKey = subnetStatus.nodeKeys.get(nodeId);
       if (!pubKey) {
         throw ProtocolError.fromCode(new MalformedPublicKeyErrorCode());
       }
       const rawKey = Ed25519PublicKey.fromDer(pubKey).rawKey;
-      const valid = ed25519.verify(
-        sig.signature,
-        new Uint8Array(separatorWithHash),
-        new Uint8Array(rawKey),
-      );
+      const valid = ed25519.verify(sig.signature, separatorWithHash, rawKey);
       if (valid) return queryResponse;
 
       throw TrustError.fromCode(new QuerySignatureVerificationFailedErrorCode(nodeId));
@@ -1119,9 +1080,7 @@ export class HttpAgent implements Agent {
         request_type: ReadRequestType.ReadState,
         paths: fields.paths,
         sender,
-        ingress_expiry: Expiry.fromDeltaInMilliseconds(
-          this.#maxIngressExpiryInMinutes * MINUTE_TO_MSECS,
-        ),
+        ingress_expiry: Expiry.fromDeltaInMilliseconds(this.#maxIngressExpiryInMs),
       },
     });
 
@@ -1193,11 +1152,6 @@ export class HttpAgent implements Agent {
       const decodedResponse: ReadStateResponse = cbor.decode(responseBodyBytes);
 
       this.log.print('Read state response:', decodedResponse);
-      const parsedTime = await this.parseTimeFromResponse(decodedResponse);
-      if (parsedTime > 0) {
-        this.log.print('Read state response time:', parsedTime);
-        this.#waterMark = parsedTime;
-      }
 
       return decodedResponse;
     } catch (error) {
@@ -1219,7 +1173,7 @@ export class HttpAgent implements Agent {
     }
   }
 
-  public async parseTimeFromResponse(response: { certificate: Uint8Array }): Promise<number> {
+  public parseTimeFromResponse(response: { certificate: Uint8Array }): number {
     let tree: HashTree;
     if (response.certificate) {
       const decoded = cbor.decode<{ tree: HashTree } | undefined>(response.certificate);
