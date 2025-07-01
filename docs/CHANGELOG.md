@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- feat: removes the watermark checks when checking query responses.
+
 ## [3.0.0-beta.1] - 2025-06-19
 
 ### Changed
@@ -23,7 +27,6 @@
 - feat!: removes the unused `defaultAgent` global concept and the `getDefaultAgent` function. The `HttpAgent` constructor is now the only way to create an agent.
 - feat!: removes the `ProxyAgent` class.
 - feat!: removes the following errors in favor of the new `AgentError`:
-
   - `AgentHTTPResponseError`
   - `AgentCallError`
   - `AgentQueryError`
