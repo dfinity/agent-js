@@ -52,50 +52,58 @@
   "exports": {
     ".": {
       "types": "./lib/esm/index.d.ts",
-      "import": "./lib/esm/index.js",
+      "node": "./lib/cjs/index.js",
       "require": "./lib/cjs/index.js",
+      "import": "./lib/esm/index.js",
       "default": "./lib/esm/index.js"
     },
     "./agent": {
       "types": "./lib/esm/agent/index.d.ts",
-      "import": "./lib/esm/agent/index.js",
+      "node": "./lib/cjs/agent/index.js",
       "require": "./lib/cjs/agent/index.js",
+      "import": "./lib/esm/agent/index.js",
       "default": "./lib/esm/agent/index.js"
     },
     "./assets": {
       "types": "./lib/esm/assets/index.d.ts",
-      "import": "./lib/esm/assets/index.js",
+      "node": "./lib/cjs/assets/index.js",
       "require": "./lib/cjs/assets/index.js",
+      "import": "./lib/esm/assets/index.js",
       "default": "./lib/esm/assets/index.js"
     },
     "./auth-client": {
       "types": "./lib/esm/auth-client/index.d.ts",
-      "import": "./lib/esm/auth-client/index.js",
+      "node": "./lib/cjs/auth-client/index.js",
       "require": "./lib/cjs/auth-client/index.js",
+      "import": "./lib/esm/auth-client/index.js",
       "default": "./lib/esm/auth-client/index.js"
     },
     "./candid": {
       "types": "./lib/esm/candid/index.d.ts",
-      "import": "./lib/esm/candid/index.js",
+      "node": "./lib/cjs/candid/index.js",
       "require": "./lib/cjs/candid/index.js",
+      "import": "./lib/esm/candid/index.js",
       "default": "./lib/esm/candid/index.js"
     },
     "./identity": {
       "types": "./lib/esm/identity/index.d.ts",
-      "import": "./lib/esm/identity/index.js",
+      "node": "./lib/cjs/identity/index.js",
       "require": "./lib/cjs/identity/index.js",
+      "import": "./lib/esm/identity/index.js",
       "default": "./lib/esm/identity/index.js"
     },
     "./identity-secp256k1": {
       "types": "./lib/esm/identity-secp256k1/index.d.ts",
-      "import": "./lib/esm/identity-secp256k1/index.js",
+      "node": "./lib/cjs/identity-secp256k1/index.js",
       "require": "./lib/cjs/identity-secp256k1/index.js",
+      "import": "./lib/esm/identity-secp256k1/index.js",
       "default": "./lib/esm/identity-secp256k1/index.js"
     },
     "./principal": {
       "types": "./lib/esm/principal/index.d.ts",
-      "import": "./lib/esm/principal/index.js",
+      "node": "./lib/cjs/principal/index.js",
       "require": "./lib/cjs/principal/index.js",
+      "import": "./lib/esm/principal/index.js",
       "default": "./lib/esm/principal/index.js"
     }
   }
