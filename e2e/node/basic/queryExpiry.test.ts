@@ -5,15 +5,15 @@ import {
   prepareV2ReadStateSubnetResponse,
   prepareV2ReadStateTimeResponse,
 } from '../utils/mock-replica';
-import { IDL } from '@dfinity/icp/candid';
-import { Principal } from '@dfinity/icp/principal';
+import { IDL } from '@icp-sdk/core/candid';
+import { Principal } from '@icp-sdk/core/principal';
 import { KeyPair, randomIdentity, randomKeyPair } from '../utils/identity';
 import {
   CertificateOutdatedErrorCode,
   HttpAgent,
   requestIdOf,
   TrustError,
-} from '@dfinity/icp/agent';
+} from '@icp-sdk/core/agent';
 import { createActor } from '../canisters/counter';
 
 const SECOND_TO_MSECS = 1000;

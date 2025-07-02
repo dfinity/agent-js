@@ -119,9 +119,9 @@ importers:
       '@dfinity/agent':
         specifier: workspace:*
         version: link:../../packages/agent
-      '@dfinity/icp':
+      '@icp-sdk/core':
         specifier: workspace:*
-        version: link:../../packages/icp
+        version: link:../../packages/core
     devDependencies:
       '@noble/curves':
         specifier: ^1.9.2
@@ -207,7 +207,7 @@ importers:
         specifier: workspace:*
         version: link:../principal
 
-  packages/icp:
+  packages/core:
     dependencies:
       '@dfinity/agent':
         specifier: workspace:*

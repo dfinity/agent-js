@@ -22,9 +22,9 @@ import {
   IC_RESPONSE_DOMAIN_SEPARATOR,
   QueryResponseStatus,
   ReadRequestType,
-} from '@dfinity/icp/agent';
-import { Principal } from '@dfinity/icp/principal';
-import { Ed25519KeyIdentity } from '@dfinity/icp/identity';
+} from '@icp-sdk/core/agent';
+import { Principal } from '@icp-sdk/core/principal';
+import { Ed25519KeyIdentity } from '@icp-sdk/core/identity';
 import { Mock, vi } from 'vitest';
 import { createReplyTree, createSubnetTree, createTimeTree } from './tree';
 import { randomKeyPair, signBls, KeyPair } from './identity';

@@ -10,7 +10,7 @@
     "setup": "dfx killall; dfx start --background --clean; dfx deploy; dfx canister call assets authorize '(principal \"n7obp-cx27z-e4ytc-ipt7n-urffz-txqa5-el2vn-7vpqc-jjoh3-wrob6-bqe\")'"
   },
   "dependencies": {
-    "@dfinity/icp": "workspace:*",
+    "@icp-sdk/core": "workspace:*",
     "@dfinity/agent": "workspace:*"
   },
   "devDependencies": {

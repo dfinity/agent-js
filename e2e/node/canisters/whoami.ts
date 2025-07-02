@@ -1,6 +1,6 @@
-import { Actor } from '@dfinity/icp/agent';
-import { IDL } from '@dfinity/icp/candid';
-import { Principal } from '@dfinity/icp/principal';
+import { Actor } from '@icp-sdk/core/agent';
+import { IDL } from '@icp-sdk/core/candid';
+import { Principal } from '@icp-sdk/core/principal';
 import agent from '../utils/agent';
 import { getCanisterId } from '../utils/canisterid';
 
