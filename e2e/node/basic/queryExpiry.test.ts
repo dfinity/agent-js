@@ -22,7 +22,7 @@ const MINUTE_TO_MSECS = 60 * SECOND_TO_MSECS;
 const ICP_LEDGER = 'ryjl3-tyaaa-aaaaa-aaaba-cai';
 
 describe('queryExpiry', () => {
-  const date = new Date('2025-05-01T12:34:56.789Z');
+  const now = new Date('2025-05-01T12:34:56.789Z');
   const canisterId = Principal.fromText('uxrrr-q7777-77774-qaaaq-cai');
 
   const greetMethodName = 'queryGreet';
@@ -40,7 +40,7 @@ describe('queryExpiry', () => {
   beforeEach(async () => {
     mockReplica = await MockReplica.create();
 
-    vi.setSystemTime(date);
+    vi.setSystemTime(now);
   });
 
   it('should not retry if the timestamp is within the max ingress expiry', async () => {
@@ -60,7 +60,7 @@ describe('queryExpiry', () => {
       reply: greetReply,
       ingressExpiryInMinutes: 5,
       nodeIdentity,
-      date,
+      date: now,
     });
     mockReplica.setV2QuerySpyImplOnce(canisterId.toString(), (_req, res) => {
       res.status(200).send(responseBody);
@@ -104,7 +104,7 @@ describe('queryExpiry', () => {
       reply: greetReply,
       ingressExpiryInMinutes: 5,
       nodeIdentity,
-      date,
+      date: now,
     });
     mockReplica.setV2QuerySpyImplOnce(canisterId.toString(), (_req, res) => {
       res.status(200).send(responseBody);
@@ -117,7 +117,7 @@ describe('queryExpiry', () => {
       nodeIdentity,
       canisterRanges: [[canisterId.toUint8Array(), canisterId.toUint8Array()]],
       keyPair: subnetKeyPair,
-      date,
+      date: now,
     });
     mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
       res.status(200).send(subnetResponseBody);
@@ -154,7 +154,7 @@ describe('queryExpiry', () => {
       reply: greetReply,
       ingressExpiryInMinutes: 5,
       nodeIdentity,
-      date,
+      date: now,
     });
     mockReplica.setV2QuerySpyImplOnce(canisterId.toString(), (_req, res) => {
       res.status(200).send(responseBody);
@@ -176,7 +176,7 @@ describe('queryExpiry', () => {
       nodeIdentity,
       canisterRanges: [[canisterId.toUint8Array(), canisterId.toUint8Array()]],
       keyPair: subnetKeyPair,
-      date,
+      date: now,
     });
     mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
       res.status(200).send(subnetResponseBody);
@@ -215,7 +215,7 @@ describe('queryExpiry', () => {
       reply: greetReply,
       ingressExpiryInMinutes,
       nodeIdentity,
-      date,
+      date: now,
     });
     mockReplica.setV2QuerySpyImplOnce(canisterId.toString(), (_req, res) => {
       res.status(200).send(responseBody);
@@ -236,9 +236,9 @@ describe('queryExpiry', () => {
   });
 
   it('should account for local clock drift (more than 30 seconds)', async () => {
-    const timeDiffMsecs = 10 * MINUTE_TO_MSECS;
+    const timeDiffMsecs = 6 * MINUTE_TO_MSECS;
 
-    const replicaDate = new Date(date.getTime() + timeDiffMsecs);
+    const replicaDate = new Date(now.getTime() + timeDiffMsecs);
     await mockSyncTimeResponse({ mockReplica, keyPair: subnetKeyPair, date: replicaDate });
 
     const agent = await HttpAgent.create({
@@ -288,7 +288,7 @@ describe('queryExpiry', () => {
   it('should account for local clock drift (less than 30 seconds)', async () => {
     const timeDiffMsecs = 20 * SECOND_TO_MSECS;
 
-    const replicaDate = new Date(date.getTime() + timeDiffMsecs);
+    const replicaDate = new Date(now.getTime() + timeDiffMsecs);
     await mockSyncTimeResponse({ mockReplica, keyPair: subnetKeyPair, date: replicaDate });
 
     const agent = await HttpAgent.create({
@@ -307,7 +307,7 @@ describe('queryExpiry', () => {
       sender,
       reply: greetReply,
       nodeIdentity,
-      timeDiffMsecs: 0, //
+      timeDiffMsecs: 0, // no clock drift in this case
       date: replicaDate,
     });
     mockReplica.setV2QuerySpyImplOnce(canisterId.toString(), (_req, res) => {
