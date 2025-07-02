@@ -668,8 +668,11 @@ export class HttpAgent implements Agent {
 
     // If delay is null, the backoff strategy is exhausted due to a maximum number of retries, duration, or other reason
     if (delay === null) {
-      throw TrustError.fromCode(
-        new CertificateOutdatedErrorCode(this.#maxIngressExpiryInMinutes, requestId, tries),
+      throw UnknownError.fromCode(
+        new TimeoutWaitingForResponseErrorCode(
+          `Backoff strategy exhausted after ${tries} attempts.`,
+          requestId,
+        ),
       );
     }
 
