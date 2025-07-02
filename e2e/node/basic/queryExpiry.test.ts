@@ -3,10 +3,11 @@ import {
   MockReplica,
   prepareV2QueryResponse,
   prepareV2ReadStateSubnetResponse,
+  prepareV2ReadStateTimeResponse,
 } from '../utils/mock-replica';
 import { IDL } from '@dfinity/icp/candid';
 import { Principal } from '@dfinity/icp/principal';
-import { randomIdentity, randomKeyPair } from '../utils/identity';
+import { KeyPair, randomIdentity, randomKeyPair } from '../utils/identity';
 import {
   CertificateOutdatedErrorCode,
   HttpAgent,
@@ -15,7 +16,10 @@ import {
 } from '@dfinity/icp/agent';
 import { createActor } from '../canisters/counter';
 
-const MILLISECONDS_PER_MINUTE = 60 * 1000;
+const SECOND_TO_MSECS = 1000;
+const MINUTE_TO_MSECS = 60 * SECOND_TO_MSECS;
+
+const ICP_LEDGER = 'ryjl3-tyaaa-aaaaa-aaaba-cai';
 
 describe('queryExpiry', () => {
   const date = new Date('2025-05-01T12:34:56.789Z');
@@ -44,7 +48,6 @@ describe('queryExpiry', () => {
       host: mockReplica.address,
       rootKey: subnetKeyPair.publicKeyDer,
       identity,
-      shouldSyncTime: false,
     });
     const actor = await createActor(canisterId, { agent });
     const sender = identity.getPrincipal();
@@ -87,7 +90,6 @@ describe('queryExpiry', () => {
       host: mockReplica.address,
       rootKey: subnetKeyPair.publicKeyDer,
       identity,
-      shouldSyncTime: false,
       ingressExpiryInMinutes: 5,
       retryTimes: 0,
     });
@@ -109,7 +111,7 @@ describe('queryExpiry', () => {
     });
 
     // advance to go over the max ingress expiry (5 minutes)
-    advanceTimeByMilliseconds(6 * MILLISECONDS_PER_MINUTE);
+    advanceTimeByMilliseconds(6 * MINUTE_TO_MSECS);
 
     const { responseBody: subnetResponseBody } = await prepareV2ReadStateSubnetResponse({
       nodeIdentity,
@@ -138,7 +140,6 @@ describe('queryExpiry', () => {
       host: mockReplica.address,
       rootKey: subnetKeyPair.publicKeyDer,
       identity,
-      shouldSyncTime: false,
       ingressExpiryInMinutes: 5,
       retryTimes: 3,
     });
@@ -169,7 +170,7 @@ describe('queryExpiry', () => {
     });
 
     // advance to go over the max ingress expiry (5 minutes)
-    advanceTimeByMilliseconds(6 * MILLISECONDS_PER_MINUTE);
+    advanceTimeByMilliseconds(6 * MINUTE_TO_MSECS);
 
     const { responseBody: subnetResponseBody } = await prepareV2ReadStateSubnetResponse({
       nodeIdentity,
@@ -201,7 +202,6 @@ describe('queryExpiry', () => {
       identity,
       ingressExpiryInMinutes,
       retryTimes: 3,
-      shouldSyncTime: false,
       verifyQuerySignatures: false,
     });
     const actor = await createActor(canisterId, { agent });
@@ -222,13 +222,54 @@ describe('queryExpiry', () => {
     });
 
     // advance to go over the max ingress expiry (5 minutes)
-    advanceTimeByMilliseconds(6 * MILLISECONDS_PER_MINUTE);
+    advanceTimeByMilliseconds(6 * MINUTE_TO_MSECS);
+
+    mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
+      res.status(200).send('Should not be called');
+    });
+
+    const actorResponse = await actor[greetMethodName](greetReq);
+
+    expect(actorResponse).toEqual(greetRes);
+    expect(mockReplica.getV2QuerySpy(canisterId.toString())).toHaveBeenCalledTimes(1);
+    expect(mockReplica.getV2ReadStateSpy(canisterId.toString())).toHaveBeenCalledTimes(0);
+  });
+
+  it('should account for local clock drift (more than 30 seconds)', async () => {
+    const timeDiffMsecs = 10 * MINUTE_TO_MSECS;
+
+    const replicaDate = new Date(date.getTime() + timeDiffMsecs);
+    await mockSyncTimeResponse({ mockReplica, keyPair: subnetKeyPair, date: replicaDate });
+
+    const agent = await HttpAgent.create({
+      host: mockReplica.address,
+      rootKey: subnetKeyPair.publicKeyDer,
+      identity,
+      shouldSyncTime: true,
+      retryTimes: 0,
+    });
+    const actor = await createActor(canisterId, { agent });
+    const sender = identity.getPrincipal();
+
+    const { responseBody, requestId } = await prepareV2QueryResponse({
+      canisterId,
+      methodName: greetMethodName,
+      arg: greetArgs,
+      sender,
+      reply: greetReply,
+      nodeIdentity,
+      timeDiffMsecs,
+      date: replicaDate,
+    });
+    mockReplica.setV2QuerySpyImplOnce(canisterId.toString(), (_req, res) => {
+      res.status(200).send(responseBody);
+    });
 
     const { responseBody: subnetResponseBody } = await prepareV2ReadStateSubnetResponse({
       nodeIdentity,
       canisterRanges: [[canisterId.toUint8Array(), canisterId.toUint8Array()]],
       keyPair: subnetKeyPair,
-      date,
+      date: replicaDate,
     });
     mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
       res.status(200).send(subnetResponseBody);
@@ -238,7 +279,59 @@ describe('queryExpiry', () => {
 
     expect(actorResponse).toEqual(greetRes);
     expect(mockReplica.getV2QuerySpy(canisterId.toString())).toHaveBeenCalledTimes(1);
-    expect(mockReplica.getV2ReadStateSpy(canisterId.toString())).toHaveBeenCalledTimes(0);
+    expect(mockReplica.getV2ReadStateSpy(canisterId.toString())).toHaveBeenCalledTimes(1);
+
+    const req = mockReplica.getV2QueryReq(canisterId.toString(), 0);
+    expect(requestIdOf(req.content)).toEqual(requestId);
+  });
+
+  it('should account for local clock drift (less than 30 seconds)', async () => {
+    const timeDiffMsecs = 20 * SECOND_TO_MSECS;
+
+    const replicaDate = new Date(date.getTime() + timeDiffMsecs);
+    await mockSyncTimeResponse({ mockReplica, keyPair: subnetKeyPair, date: replicaDate });
+
+    const agent = await HttpAgent.create({
+      host: mockReplica.address,
+      rootKey: subnetKeyPair.publicKeyDer,
+      identity,
+      shouldSyncTime: true,
+    });
+    const actor = await createActor(canisterId, { agent });
+    const sender = identity.getPrincipal();
+
+    const { responseBody, requestId } = await prepareV2QueryResponse({
+      canisterId,
+      methodName: greetMethodName,
+      arg: greetArgs,
+      sender,
+      reply: greetReply,
+      nodeIdentity,
+      timeDiffMsecs: 0, //
+      date: replicaDate,
+    });
+    mockReplica.setV2QuerySpyImplOnce(canisterId.toString(), (_req, res) => {
+      res.status(200).send(responseBody);
+    });
+
+    const { responseBody: subnetResponseBody } = await prepareV2ReadStateSubnetResponse({
+      nodeIdentity,
+      canisterRanges: [[canisterId.toUint8Array(), canisterId.toUint8Array()]],
+      keyPair: subnetKeyPair,
+      date: replicaDate,
+    });
+    mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
+      res.status(200).send(subnetResponseBody);
+    });
+
+    const actorResponse = await actor[greetMethodName](greetReq);
+
+    expect(actorResponse).toEqual(greetRes);
+    expect(mockReplica.getV2QuerySpy(canisterId.toString())).toHaveBeenCalledTimes(1);
+    expect(mockReplica.getV2ReadStateSpy(canisterId.toString())).toHaveBeenCalledTimes(1);
+
+    const req = mockReplica.getV2QueryReq(canisterId.toString(), 0);
+    expect(requestIdOf(req.content)).toEqual(requestId);
   });
 });
 
@@ -252,4 +345,31 @@ function expectCertificateOutdatedError(e: unknown) {
   const err = e as TrustError;
   expect(err.cause.code).toBeInstanceOf(CertificateOutdatedErrorCode);
   expect(err.message).toContain('Certificate is stale');
+}
+
+async function mockSyncTimeResponse({
+  mockReplica,
+  keyPair,
+  date,
+  canisterId,
+}: {
+  mockReplica: MockReplica;
+  keyPair: KeyPair;
+  date?: Date;
+  canisterId?: Principal | string;
+}) {
+  canisterId = Principal.from(canisterId ?? ICP_LEDGER).toText();
+  const { responseBody: timeResponseBody } = await prepareV2ReadStateTimeResponse({
+    keyPair,
+    date,
+  });
+  mockReplica.setV2ReadStateSpyImplOnce(canisterId, (_req, res) => {
+    res.status(200).send(timeResponseBody);
+  });
+  mockReplica.setV2ReadStateSpyImplOnce(canisterId, (_req, res) => {
+    res.status(200).send(timeResponseBody);
+  });
+  mockReplica.setV2ReadStateSpyImplOnce(canisterId, (_req, res) => {
+    res.status(200).send(timeResponseBody);
+  });
 }

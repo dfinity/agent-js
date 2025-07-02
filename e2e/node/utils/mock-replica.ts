@@ -22,7 +22,6 @@ import {
   IC_RESPONSE_DOMAIN_SEPARATOR,
   QueryResponseStatus,
   ReadRequestType,
-  Expiry,
 } from '@dfinity/icp/agent';
 import { Principal } from '@dfinity/icp/principal';
 import { Ed25519KeyIdentity } from '@dfinity/icp/identity';
@@ -30,6 +29,8 @@ import { Mock, vi } from 'vitest';
 import { createReplyTree, createSubnetTree, createTimeTree } from './tree';
 import { randomKeyPair, signBls, KeyPair } from './identity';
 import { concatBytes, toBytes } from '@noble/hashes/utils';
+
+const NANOSECONDS_TO_MSECS = 1_000_000;
 
 export enum MockReplicaSpyType {
   CallV3 = 'CallV3',
@@ -396,6 +397,7 @@ interface V2QueryResponseOptions {
   sender: Principal | string;
   nodeIdentity: Ed25519KeyIdentity;
   ingressExpiryInMinutes?: number;
+  timeDiffMsecs?: number;
   reply?: string | Uint8Array;
   date?: Date;
 }
@@ -414,6 +416,7 @@ interface V2QueryResponse {
  * @param {string} options.sender - The principal ID of the sender.
  * @param {Ed25519KeyIdentity} options.nodeIdentity - The identity of the node.
  * @param {number} options.ingressExpiryInMinutes - The ingress expiry time in minutes.
+ * @param {number} options.timeDiffMsecs - The time difference in milliseconds.
  * @param {Uint8Array} options.reply - The reply payload.
  * @param {Date} options.date - The date for the response.
  * @returns {Promise<V2QueryResponse>} A promise that resolves to the prepared response.
@@ -425,16 +428,18 @@ export async function prepareV2QueryResponse({
   sender,
   nodeIdentity,
   ingressExpiryInMinutes,
+  timeDiffMsecs,
   reply,
   date,
 }: V2QueryResponseOptions): Promise<V2QueryResponse> {
   canisterId = Principal.from(canisterId);
   sender = Principal.from(sender);
   ingressExpiryInMinutes = ingressExpiryInMinutes ?? 5;
+  timeDiffMsecs = timeDiffMsecs ?? 0;
   const coercedReply = reply ? toBytes(reply) : new Uint8Array();
   date = date ?? new Date();
 
-  const ingressExpiry = Expiry.fromDeltaInMilliseconds(ingressExpiryInMinutes * 60 * 1000);
+  const ingressExpiry = calculateIngressExpiry(ingressExpiryInMinutes, timeDiffMsecs);
   const queryRequest: QueryRequest = {
     request_type: ReadRequestType.Query,
     canister_id: canisterId,
@@ -445,7 +450,7 @@ export async function prepareV2QueryResponse({
   };
 
   const requestId = requestIdOf(queryRequest);
-  const timestamp = BigInt(date.getTime() * 1_000_000);
+  const timestamp = BigInt(date.getTime()) * BigInt(NANOSECONDS_TO_MSECS);
 
   const message = createQueryReplyMessage({
     requestId,

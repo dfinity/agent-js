@@ -750,11 +750,11 @@ export class HttpAgent implements Agent {
     }
 
     const timestampInMs = Number(BigInt(timestampInNs) / BigInt(NANOSECONDS_TO_MSECS));
+    const ingressExpiryInMs =
+      this.#maxIngressExpiryInMs +
+      (mustReconcileTime(this.#timeDiffMsecs) ? this.#timeDiffMsecs : 0);
 
-    // If the timestamp is older than the max ingress expiry, retry the request up to the retry limit.
-    // We don't have to consider the #timeDiffMsecs here because the response comes from a single node,
-    // and hence it can be different from the network time.
-    if (Date.now() - timestampInMs > this.#maxIngressExpiryInMs) {
+    if (Math.abs(Date.now() - timestampInMs) > ingressExpiryInMs) {
       if (tries < this.#retryTimes) {
         this.log.warn('Timestamp is older than the max ingress expiry. Retrying query.', {
           requestId,
@@ -884,9 +884,10 @@ export class HttpAgent implements Agent {
 
     const canister = Principal.from(canisterId);
     const sender = id.getPrincipal();
-    // No need to adjust the time here because the query response comes from a single node,
-    // and hence it can be different from the synced network time.
-    const ingressExpiry = Expiry.fromDeltaInMilliseconds(this.#maxIngressExpiryInMs);
+    const ingressExpiry = calculateIngressExpiry(
+      this.#maxIngressExpiryInMinutes,
+      this.#timeDiffMsecs,
+    );
 
     const request: QueryRequest = {
       request_type: ReadRequestType.Query,
@@ -1394,11 +1395,21 @@ export function calculateIngressExpiry(
   timeDiffMsecs: number,
 ): Expiry {
   // If the value is off by more than 30 seconds, reconcile system time with the network
-  if (Math.abs(timeDiffMsecs) > 1_000 * 30) {
+  if (mustReconcileTime(timeDiffMsecs)) {
     return Expiry.fromDeltaInMilliseconds(
       maxIngressExpiryInMinutes * MINUTE_TO_MSECS + timeDiffMsecs,
     );
   }
 
   return Expiry.fromDeltaInMilliseconds(maxIngressExpiryInMinutes * MINUTE_TO_MSECS);
+}
+
+/**
+ * Determines if the time should be reconciled with the network:
+ * if the time difference is more than 30 seconds, we need to reconcile the time.
+ * @param timeDiffMsecs - The time difference in milliseconds.
+ * @returns True if the time should be reconciled with the network, false otherwise.
+ */
+function mustReconcileTime(timeDiffMsecs: number): boolean {
+  return Math.abs(timeDiffMsecs) > 1_000 * 30;
 }
