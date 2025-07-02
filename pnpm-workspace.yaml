@@ -4,7 +4,7 @@ packages:
   - packages/assets
   - packages/auth-client
   - packages/candid
-  - packages/icp
+  - packages/core
   - packages/identity
   - packages/identity-secp256k1
   - packages/principal

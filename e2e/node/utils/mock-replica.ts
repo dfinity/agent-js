@@ -16,8 +16,8 @@ import {
   Signed,
   UnSigned,
   ReadStateRequest,
-} from '@dfinity/icp/agent';
-import { Principal } from '@dfinity/icp/principal';
+} from '@icp-sdk/core/agent';
+import { Principal } from '@icp-sdk/core/principal';
 import { Mock, vi } from 'vitest';
 import { createReplyTree, createTimeTree } from './tree';
 import { randomKeyPair, signBls, KeyPair } from './identity';

@@ -99,8 +99,8 @@
       "limit": "15 kb"
     },
     {
-      "name": "@dfinity/icp",
-      "path": "./packages/icp/dist/index.js",
+      "name": "@icp-sdk/core",
+      "path": "./packages/core/dist/index.js",
       "limit": "250 b"
     },
     {
