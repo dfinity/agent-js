@@ -752,11 +752,11 @@ export class HttpAgent implements Agent {
     // We don't have to consider the #timeDiffMsecs here because the response comes from a single node,
     // and hence it can be different from the network time.
     if (Date.now() - timestampInMs > this.#maxIngressExpiryInMs) {
-      this.log.warn('Timestamp is older than the max ingress expiry. Retrying query.', {
-        requestId,
-        timestamp: timestampInMs,
-      });
       if (tries < this.#retryTimes) {
+        this.log.warn('Timestamp is older than the max ingress expiry. Retrying query.', {
+          requestId,
+          timestamp: timestampInMs,
+        });
         return await this.#requestAndRetryQuery({ ...args, tries: tries + 1 });
       }
       throw TrustError.fromCode(
