@@ -12,6 +12,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "verbatimModuleSyntax": false,
+    "isolatedModules": true,
 
     /* Linting */
     "strict": true,
