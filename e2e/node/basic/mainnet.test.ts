@@ -8,10 +8,10 @@ import {
   requestIdOf,
   TrustError,
   MissingSignatureErrorCode,
-} from '@dfinity/icp/agent';
-import { IDL } from '@dfinity/icp/candid';
-import { Ed25519KeyIdentity } from '@dfinity/icp/identity';
-import { Principal } from '@dfinity/icp/principal';
+} from '@icp-sdk/core/agent';
+import { IDL } from '@icp-sdk/core/candid';
+import { Ed25519KeyIdentity } from '@icp-sdk/core/identity';
+import { Principal } from '@icp-sdk/core/principal';
 import { describe, it, expect, vi, test } from 'vitest';
 import { makeAgent } from '../utils/agent';
 import { hexToBytes } from '@noble/hashes/utils';

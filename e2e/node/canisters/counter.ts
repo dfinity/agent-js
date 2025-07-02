@@ -1,9 +1,9 @@
-import { Actor, ActorSubclass, HttpAgentOptions, Agent, ActorConfig } from '@dfinity/icp/agent';
+import { Actor, ActorSubclass, HttpAgentOptions, Agent, ActorConfig } from '@icp-sdk/core/agent';
 import { makeAgent } from '../utils/agent';
 import { type _SERVICE } from './declarations/counter/counter.did';
 import { getCanisterId } from '../utils/canisterid';
-import { IDL } from '@dfinity/icp/candid';
-import { Principal } from '@dfinity/icp/principal';
+import { IDL } from '@icp-sdk/core/candid';
+import { Principal } from '@icp-sdk/core/principal';
 
 export const idl: IDL.InterfaceFactory = ({ IDL }) => {
   return IDL.Service({

@@ -1,10 +1,10 @@
 import { existsSync, readFileSync, unlinkSync } from 'fs';
 import path from 'path';
 import { makeAgent } from '../utils/agent';
-import { Principal } from '@dfinity/icp/principal';
-import { AssetManager } from '@dfinity/icp/assets';
+import { Principal } from '@icp-sdk/core/principal';
+import { AssetManager } from '@icp-sdk/core/assets';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { Ed25519KeyIdentity } from '@dfinity/icp/identity';
+import { Ed25519KeyIdentity } from '@icp-sdk/core/identity';
 import { utf8ToBytes } from '@noble/hashes/utils';
 import { getCanisterId } from '../utils/canisterid';
 
