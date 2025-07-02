@@ -1,6 +1,6 @@
 # Contribution guidelines
 
-Directions to set up your project are available in the [README](./README.md).
+Directions to set up your project are available in the [README](../README.md).
 
 Before you make your changes, check to see if an [issue exists](https://github.com/dfinity/agent-js/issues). If there isn't one, you can [create one](https://github.com/dfinity/agent-js/issues/new/choose) to discuss your proposed changes.
 
@@ -30,7 +30,7 @@ additional detail if necessary
 
 This will automatically link your commit to the GitHub issue, and automatically close it when the pull request is merged.
 
-Please document your changes in the [CHANGELOG.md](./docs/CHANGELOG.md) file.
+Please document your changes in the [CHANGELOG.md](../CHANGELOG.md) file.
 
 ## Formatting
 
@@ -46,17 +46,17 @@ Changes will have to pass automated tests before they can be merged. If your cha
 We use GitHub Actions for Continuous Integration. As part of this, we have a workflow for releasing the package. This workflow is triggered manually and includes steps for checking out the code, setting up Node.js, installing dependencies, and running the release script.
 To trigger the release workflow, go to the "Actions" tab in the GitHub repository, select the "Release" workflow, and click on "Run workflow".
 
-GitHub Actions for this repo are configured in [./.github/workflows](./.github/workflows).
+GitHub Actions for this repo are configured in [./workflows](./workflows).
 
-- [conventional-commits.yml](./.github/workflows/.yml) - checks the title of pull requests to ensure they follow a specified format. It is triggered when a pull request is opened, reopened, edited, or synchronized.
-- [e2e-tests.yml](./.github/workflows/.yml) - runs end-to-end tests for the project. It is triggered when a pull request is opened, reopened, edited, or synchronized.
-- [lint.yml](./.github/workflows/.yml) - checks the code for linting errors. It is triggered when a pull request is opened, reopened, edited, or synchronized.
-- [mitm.yml](./.github/workflows/.yml) - sets up a Man-in-the-Middle (MITM) proxy for testing purposes. It is triggered when a pull request is opened, reopened, edited, or synchronized.
-- [prepare-release.yml](./.github/workflows/prepare-release.yml) - prepares a release by creating a pull request and a GitHub release. It is triggered manually through a workflow dispatch event. The user needs to specify the next SemVer version as an input when triggering the workflow.
-- [prettier.yml](./.github/workflows/.yml) - checks the formatting of the code using Prettier. It is triggered when a pull request is opened, reopened, edited, or synchronized.
-- [publish.yml](./.github/workflows/.yml) - used to publish and release a new version of the project. It is triggered when a pull request is closed and merged into the main branch, and the pull request's head branch starts with `release/`.
-- [size-limit.yml](./.github/workflows/.yml) - uses the `andresz1/size-limit-action` action to calculate the size of the project.
-- [unit-tests.yml](./.github/workflows/.yml) - runs unit tests for the project. It is triggered when a pull request is opened, reopened, edited, or synchronized.
+- [conventional-commits.yml](./workflows/conventional-commits.yml) - checks the title of pull requests to ensure they follow a specified format. It is triggered when a pull request is opened, reopened, edited, or synchronized.
+- [e2e-tests.yml](./workflows/e2e-tests.yml) - runs end-to-end tests for the project. It is triggered when a pull request is opened, reopened, edited, or synchronized.
+- [lint.yml](./workflows/lint.yml) - checks the code for linting errors. It is triggered when a pull request is opened, reopened, edited, or synchronized.
+- [mitm.yml](./workflows/mitm.yml) - sets up a Man-in-the-Middle (MITM) proxy for testing purposes. It is triggered when a pull request is opened, reopened, edited, or synchronized.
+- [prepare-release.yml](./workflows/prepare-release.yml) - prepares a release by creating a pull request and a GitHub release. It is triggered manually through a workflow dispatch event. The user needs to specify the next SemVer version as an input when triggering the workflow.
+- [prettier.yml](./workflows/prettier.yml) - checks the formatting of the code using Prettier. It is triggered when a pull request is opened, reopened, edited, or synchronized.
+- [publish.yml](./workflows/publish.yml) - used to publish and release a new version of the project. It is triggered when a pull request is closed and merged into the main branch, and the pull request's head branch starts with `release/`.
+- [size-limit.yml](./workflows/size-limit.yml) - uses the `andresz1/size-limit-action` action to calculate the size of the project.
+- [unit-tests.yml](./workflows/unit-tests.yml) - runs unit tests for the project. It is triggered when a pull request is opened, reopened, edited, or synchronized.
 
 ## Reviewing
 
@@ -104,7 +104,7 @@ Start the process by initiating the GitHub Action Workflow `prepare-release.yml`
 The `prepare-release.yml` GitHub Actions workflow checks out the code, sets up Node.js, installs dependencies, and runs the release script via `release-it`. The process, defined in our `package.json` file, includes the following tasks:
 
 - version bump,
-- roll version in [CHANGELOG.md](./docs/CHANGELOG.md),
+- roll version in [CHANGELOG.md](../CHANGELOG.md),
 - new release branch creation,
 - git tag creation and push,
 - suitable GitHub Release summary creation based on commit history,

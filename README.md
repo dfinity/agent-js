@@ -78,7 +78,7 @@ Monorepo-related scripts run in this order, but are usually invoked by `pnpm i`:
 
 ## Contributing
 
-Contributions are welcome! Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md), where you can find more details about:
+Contributions are welcome! Please refer to the [CONTRIBUTING.md](.github/CONTRIBUTING.md), where you can find more details about:
 
 - Setting up the repository, making changes, documenting these changes, adherence to automated formatting like prettier, and Continuous Integration, which is facilitated by GitHub Actions.
 - Information about our review process.
