@@ -82,8 +82,11 @@ export enum RequestStatusResponseStatus {
   Done = 'done',
 }
 
-const MINUTE_TO_MSECS = 60 * 1000;
+const SECOND_TO_MSECS = 1000;
+const MINUTE_TO_MSECS = 60 * SECOND_TO_MSECS;
 const NANOSECONDS_TO_MSECS = 1_000_000;
+
+const MIN_CLOCK_DRIFT_MSECS = 1_000 * 30;
 
 // Root public key for the IC, encoded as hex
 export const IC_ROOT_KEY =
@@ -740,8 +743,8 @@ export class HttpAgent implements Agent {
       return response;
     }
 
-    const timestampInNs = response.signatures?.[0]?.timestamp;
-    if (!timestampInNs) {
+    const signatureTimestampNs = response.signatures?.[0]?.timestamp;
+    if (!signatureTimestampNs) {
       throw ProtocolError.fromCode(
         new MalformedSignatureErrorCode(
           'Timestamp not found in query response. This suggests a malformed or malicious response.',
@@ -749,16 +752,16 @@ export class HttpAgent implements Agent {
       );
     }
 
-    const timestampInMs = Number(BigInt(timestampInNs) / BigInt(NANOSECONDS_TO_MSECS));
-    const ingressExpiryInMs =
-      this.#maxIngressExpiryInMs +
-      (mustReconcileTime(this.#timeDiffMsecs) ? this.#timeDiffMsecs : 0);
+    const signatureTimestampMs = Number(
+      BigInt(signatureTimestampNs) / BigInt(NANOSECONDS_TO_MSECS),
+    );
+    const currentTimestampInMs = Date.now() + reconcileTimeMs(this.#timeDiffMsecs);
 
-    if (Math.abs(Date.now() - timestampInMs) > ingressExpiryInMs) {
+    if (Math.abs(currentTimestampInMs - signatureTimestampMs) > this.#maxIngressExpiryInMs) {
       if (tries < this.#retryTimes) {
         this.log.warn('Timestamp is older than the max ingress expiry. Retrying query.', {
           requestId,
-          timestamp: timestampInMs,
+          signatureTimestampMs,
         });
         return await this.#requestAndRetryQuery({ ...args, tries: tries + 1 });
       }
@@ -1394,22 +1397,19 @@ export function calculateIngressExpiry(
   maxIngressExpiryInMinutes: number,
   timeDiffMsecs: number,
 ): Expiry {
-  // If the value is off by more than 30 seconds, reconcile system time with the network
-  if (mustReconcileTime(timeDiffMsecs)) {
-    return Expiry.fromDeltaInMilliseconds(
-      maxIngressExpiryInMinutes * MINUTE_TO_MSECS + timeDiffMsecs,
-    );
-  }
-
-  return Expiry.fromDeltaInMilliseconds(maxIngressExpiryInMinutes * MINUTE_TO_MSECS);
+  return Expiry.fromDeltaInMilliseconds(
+    maxIngressExpiryInMinutes * MINUTE_TO_MSECS + reconcileTimeMs(timeDiffMsecs),
+  );
 }
 
 /**
- * Determines if the time should be reconciled with the network:
- * if the time difference is more than 30 seconds, we need to reconcile the time.
+ * Determines the time difference in milliseconds by which to reconcile the local clock with the network clock.
  * @param timeDiffMsecs - The time difference in milliseconds.
- * @returns True if the time should be reconciled with the network, false otherwise.
+ * @returns `timeDiffMsecs` if `Math.abs(timeDiffMsecs)` is more than 30 seconds, 0 otherwise.
  */
-function mustReconcileTime(timeDiffMsecs: number): boolean {
-  return Math.abs(timeDiffMsecs) > 1_000 * 30;
+function reconcileTimeMs(timeDiffMsecs: number): number {
+  if (Math.abs(timeDiffMsecs) > MIN_CLOCK_DRIFT_MSECS) {
+    return timeDiffMsecs;
+  }
+  return 0;
 }
