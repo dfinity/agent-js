@@ -2,7 +2,8 @@
   "canisters": {
     "docs": {
       "type": "assets",
-      "source": ["docs"]
+      "source": ["docs"],
+      "build": "pnpm run -F docs build"
     },
     "counter": {
       "type": "motoko",

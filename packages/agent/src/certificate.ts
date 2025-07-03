@@ -179,7 +179,6 @@ export class Certificate {
 
   /**
    * Create a new instance of a certificate, automatically verifying it.
-   * @constructs  Certificate
    * @param {CreateCertificateOptions} options {@link CreateCertificateOptions}
    * @param {Uint8Array} options.certificate The bytes of the certificate
    * @param {Uint8Array} options.rootKey The root key to verify against

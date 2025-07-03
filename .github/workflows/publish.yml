@@ -40,8 +40,6 @@ jobs:
       # publish docs
       - name: Install dfx
         run: dfinity/setup-dfx@main
-      - name: Regenerate project's documentation
-        run: pnpm make:docs
       - name: Add new identity to dfx
         run: |
           echo ${{ secrets.DFX_IDENTITY_PEM }} > identity.pem

@@ -56,7 +56,6 @@ export class ECDSAKeyIdentity extends SignIdentity {
    * @param {CryptoKeyOptions['extractable']} options.extractable - whether the key should allow itself to be used. Set to false for maximum security.
    * @param {CryptoKeyOptions['keyUsages']} options.keyUsages - a list of key usages that the key can be used for
    * @param {CryptoKeyOptions['subtleCrypto']} options.subtleCrypto interface
-   * @constructs ECDSAKeyIdentity
    * @returns a {@link ECDSAKeyIdentity}
    */
   public static async generate(options?: CryptoKeyOptions): Promise<ECDSAKeyIdentity> {
