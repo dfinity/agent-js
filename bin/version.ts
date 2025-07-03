@@ -1,32 +1,35 @@
-// Bumps the version (@jsonpaths: .version, .dependencies, .peerDependencies, and .devDependencies
-// of each package's `package.json` in the monorepo.
+// Bumps the version (@jsonpaths: .version of each package's `package.json` in the monorepo.
 // TODO: to be replaced with @release-it/bumper when https://github.com/release-it/bumper/pull/35 is merged
 
 import fs from 'fs';
 import path from 'path';
 import prettier from 'prettier';
 import process from 'process';
+import yaml from 'yaml';
+
+import {fileURLToPath} from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+console.log(__filename)
 
 console.time('script duration');
 console.log('Updating package versions...');
 
 // Infer info about workspaces from package.json
-const rootPackage = JSON.parse(
-  fs.readFileSync(path.resolve(__dirname, '..', 'package.json')).toString(),
+const workspaceConfig = yaml.parse(
+  fs.readFileSync(path.resolve(__dirname, '..', 'pnpm-workspace.yaml')).toString(),
 );
 
-if (!rootPackage.name) throw new Error("Couldn't find root package.json");
-
-const newVersion = process.argv[2];
+console.log(process.argv)
+const newVersion = process.argv[process.argv.length - 1];
 console.log('New version will be: ' + newVersion);
 
+const excluded = ['e2e/node'];
 // Read workspaces from root package.json
-const workspaces: string[] = rootPackage.workspaces?.packages;
-
-// Identify packages in `/packages directory
-const packages = workspaces
-  .filter(workspace => workspace.includes('packages'))
-  .map(packagePath => packagePath.replace('packages', '@dfinity'));
+const workspaces = workspaceConfig.packages.filter(workspace => {
+  return !excluded.includes(workspace);
+});
 
 // Update version in root package.json
 workspaces.push('.');
@@ -39,17 +42,6 @@ workspaces.forEach(async workspace => {
   // Set version for package
   json.version = newVersion;
 
-  // Update references to any packages that being updated
-  if (json.peerDependencies) {
-    json.peerDependencies = updateDeps(json.peerDependencies);
-  }
-  if (json.dependencies) {
-    json.dependencies = updateDeps(json.dependencies);
-  }
-  if (json.devDependencies) {
-    json.devDependencies = updateDeps(json.devDependencies);
-  }
-
   const formatted = await prettier.format(JSON.stringify(json), {
     parser: 'json-stringify',
   });
@@ -57,14 +49,3 @@ workspaces.forEach(async workspace => {
   // Write file
   fs.writeFileSync(packagePath, formatted);
 });
-
-function updateDeps(dependencies: Record<string, string>) {
-  for (const dep in dependencies) {
-    if (Object.prototype.hasOwnProperty.call(dependencies, dep)) {
-      if (packages.includes(dep)) {
-        dependencies[dep] = '^' + newVersion;
-      }
-    }
-  }
-  return dependencies;
-}
