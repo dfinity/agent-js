@@ -82,8 +82,7 @@ export enum RequestStatusResponseStatus {
   Done = 'done',
 }
 
-const SECOND_TO_MSECS = 1000;
-const MINUTE_TO_MSECS = 60 * SECOND_TO_MSECS;
+const MINUTE_TO_MSECS = 60 * 1_000;
 const NANOSECONDS_TO_MSECS = 1_000_000;
 
 // Root public key for the IC, encoded as hex

@@ -16,8 +16,7 @@ import {
 } from '@icp-sdk/core/agent';
 import { createActor } from '../canisters/counter';
 
-const SECOND_TO_MSECS = 1000;
-const MINUTE_TO_MSECS = 60 * SECOND_TO_MSECS;
+const MINUTE_TO_MSECS = 60 * 1_000;
 
 const ICP_LEDGER = 'ryjl3-tyaaa-aaaaa-aaaba-cai';
 
