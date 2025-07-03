@@ -10,7 +10,6 @@
   "exclude": ["./src/**/*.test.ts"],
   "references": [
     { "path": "../agent" },
-    { "path": "../assets" },
     { "path": "../auth-client" },
     { "path": "../candid" },
     { "path": "../identity" },
