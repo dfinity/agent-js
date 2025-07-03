@@ -83,7 +83,7 @@ export enum RequestStatusResponseStatus {
 }
 
 const MINUTE_TO_MSECS = 60 * 1_000;
-const NANOSECONDS_TO_MSECS = 1_000_000;
+const MSECS_TO_NANOSECONDS = 1_000_000;
 
 // Root public key for the IC, encoded as hex
 export const IC_ROOT_KEY =
@@ -750,7 +750,7 @@ export class HttpAgent implements Agent {
     }
 
     const signatureTimestampMs = Number(
-      BigInt(signatureTimestampNs) / BigInt(NANOSECONDS_TO_MSECS),
+      BigInt(signatureTimestampNs) / BigInt(MSECS_TO_NANOSECONDS),
     );
     const currentTimestampInMs = Date.now() + this.#timeDiffMsecs;
 
@@ -1084,7 +1084,10 @@ export class HttpAgent implements Agent {
         request_type: ReadRequestType.ReadState,
         paths: fields.paths,
         sender,
-        ingress_expiry: Expiry.fromDeltaInMilliseconds(this.#maxIngressExpiryInMs),
+        ingress_expiry: calculateIngressExpiry(
+          this.#maxIngressExpiryInMinutes,
+          this.#timeDiffMsecs,
+        ),
       },
     });
 
