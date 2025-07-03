@@ -28,7 +28,6 @@ pnpm add @icp-sdk/core
 The `@icp-sdk/core` package re-exports modules from the following `@dfinity` packages:
 
 - [`@dfinity/agent`](../agent/README.md): Provides tools to interact with the Internet Computer, including creating actors and making calls.
-- [`@dfinity/assets`](../assets/README.md): Utilities for managing assets on the Internet Computer.
 - [`@dfinity/auth-client`](../auth-client/README.md): Handles authentication flows, including integration with Internet Identity.
 - [`@dfinity/candid`](../candid/README.md): Tools for working with Candid, the Internet Computer's interface definition language.
 - [`@dfinity/identity`](../identity/README.md): Identity management for signing and authentication.
@@ -40,7 +39,6 @@ The `@icp-sdk/core` package re-exports modules from the following `@dfinity` pac
 The package provides the following import paths for accessing the re-exported modules:
 
 - `@icp-sdk/core/agent`
-- `@icp-sdk/core/assets`
 - `@icp-sdk/core/auth-client`
 - `@icp-sdk/core/candid`
 - `@icp-sdk/core/identity`
@@ -71,7 +69,6 @@ console.log(principal.toText());
 For detailed usage and API documentation, refer to the respective documentation of the re-exported packages:
 
 - [@dfinity/agent Documentation](../agent/README.md)
-- [@dfinity/assets Documentation](../assets/README.md)
 - [@dfinity/auth-client Documentation](../auth-client/README.md)
 - [@dfinity/candid Documentation](../candid/README.md)
 - [@dfinity/identity Documentation](../identity/README.md)

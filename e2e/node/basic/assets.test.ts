@@ -2,7 +2,7 @@ import { existsSync, readFileSync, unlinkSync } from 'fs';
 import path from 'path';
 import { makeAgent } from '../utils/agent';
 import { Principal } from '@icp-sdk/core/principal';
-import { AssetManager } from '@icp-sdk/core/assets';
+import { AssetManager } from '@dfinity/assets';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Ed25519KeyIdentity } from '@icp-sdk/core/identity';
 import { utf8ToBytes } from '@noble/hashes/utils';

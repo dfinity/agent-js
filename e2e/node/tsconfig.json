@@ -12,6 +12,7 @@
   "exclude": [".dfx", "lib", "node_modules"],
   "references": [
     { "path": "../../packages/core" },
-    { "path": "../../packages/agent" }
+    { "path": "../../packages/agent" },
+    { "path": "../../packages/assets" }
   ]
 }

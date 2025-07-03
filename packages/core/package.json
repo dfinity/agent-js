@@ -41,13 +41,11 @@
   },
   "peerDependencies": {
     "@dfinity/agent": "workspace:*",
-    "@dfinity/assets": "workspace:*",
     "@dfinity/auth-client": "workspace:*",
     "@dfinity/candid": "workspace:*",
     "@dfinity/identity": "workspace:*",
     "@dfinity/identity-secp256k1": "workspace:*",
-    "@dfinity/principal": "workspace:*",
-    "@dfinity/use-auth-client": "workspace:*"
+    "@dfinity/principal": "workspace:*"
   },
   "exports": {
     ".": {
@@ -63,13 +61,6 @@
       "require": "./lib/cjs/agent/index.js",
       "import": "./lib/esm/agent/index.js",
       "default": "./lib/esm/agent/index.js"
-    },
-    "./assets": {
-      "types": "./lib/esm/assets/index.d.ts",
-      "node": "./lib/cjs/assets/index.js",
-      "require": "./lib/cjs/assets/index.js",
-      "import": "./lib/esm/assets/index.js",
-      "default": "./lib/esm/assets/index.js"
     },
     "./auth-client": {
       "types": "./lib/esm/auth-client/index.d.ts",
