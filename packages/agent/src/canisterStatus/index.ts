@@ -326,7 +326,7 @@ export const fetchNodeKeys = (
   const nodeKeys = new Map<string, DerEncodedPublicKey>();
 
   nodeForks.forEach(fork => {
-    const node_id = Principal.from(new Uint8Array(fork[1])).toText();
+    const node_id = Principal.from(fork[1]).toText();
     const publicKeyLookupResult = lookup_path(['public_key'], fork[2]);
     if (publicKeyLookupResult.status !== LookupPathStatus.Found) {
       throw ProtocolError.fromCode(

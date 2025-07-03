@@ -1,4 +1,4 @@
-import { Actor, HttpAgent, ActorMethod } from '@dfinity/agent';
+import { Actor, HttpAgent, ActorMethod } from '@icp-sdk/core/agent';
 import { counterActor, counter2Actor, counterCanisterId, idl } from '../canisters/counter';
 import { it, expect, describe, vi, beforeAll, beforeEach, afterAll } from 'vitest';
 

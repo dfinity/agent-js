@@ -3,7 +3,6 @@
   "compilerOptions": {
     "esModuleInterop": true,
     "verbatimModuleSyntax": false,
-    "isolatedModules": true,
     "skipLibCheck": true,
     "module": "CommonJS",
     "moduleResolution": "node10",

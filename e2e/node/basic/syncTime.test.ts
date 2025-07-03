@@ -9,9 +9,9 @@ import {
   Signature,
   Signed,
   UnSigned,
-} from '@dfinity/agent';
-import { Principal } from '@dfinity/principal';
-import { IDL } from '@dfinity/candid';
+} from '@icp-sdk/core/agent';
+import { Principal } from '@icp-sdk/core/principal';
+import { IDL } from '@icp-sdk/core/candid';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createActor } from '../canisters/counter';
 import {

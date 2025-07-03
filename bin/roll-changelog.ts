@@ -12,7 +12,7 @@ const formattedDate = `${now.getFullYear()}-${padNumber(now.getMonth() + 1)}-${p
   now.getDate(),
 )}`;
 
-const path: string = 'docs/CHANGELOG.md';
+const path: string = 'CHANGELOG.md';
 const pattern: string = '## [Unreleased]';
 const replacement: string = `## [Unreleased]
 

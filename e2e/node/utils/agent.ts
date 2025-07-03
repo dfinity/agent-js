@@ -1,5 +1,5 @@
-import { HttpAgent, HttpAgentOptions } from '@dfinity/agent';
-import { Ed25519KeyIdentity } from '@dfinity/identity';
+import { HttpAgent, HttpAgentOptions } from '@icp-sdk/core/agent';
+import { Ed25519KeyIdentity } from '@icp-sdk/core/identity';
 
 export const identity = Ed25519KeyIdentity.generate();
 export const principal = identity.getPrincipal();

@@ -5,6 +5,7 @@
   "description": "Use an Agent to interact with the Internet Computer from your JavaScript program.",
   "type": "module",
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.2",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.29.0",
     "@peculiar/webcrypto": "^1.5.0",
@@ -47,16 +48,17 @@
     "npm": "please use pnpm"
   },
   "scripts": {
-    "convert:changelog": "markdown-to-html --source docs/CHANGELOG.md --output docs/changelog.html",
     "build": "pnpm -r build",
     "bundle": "pnpm -r build && pnpm -r bundle",
     "e2e": "pnpm -r e2e",
     "test": "pnpm -r test",
     "publish": "pnpm -r publish",
     "version": "pnpm -r version",
+    "attw": "pnpm -r attw",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "make:docs": "pnpm -r make:docs/reference && pnpm run convert:changelog",
+    "convert:changelog": "markdown-to-html --source CHANGELOG.md --output docs/changelog.html",
     "release": "release-it",
     "size": "size-limit --json",
     "prepare": "husky install",
@@ -97,6 +99,11 @@
       "limit": "15 kb"
     },
     {
+      "name": "@icp-sdk/core",
+      "path": "./packages/core/dist/index.js",
+      "limit": "250 b"
+    },
+    {
       "name": "@dfinity/identity",
       "path": "./packages/identity/dist/index.js",
       "limit": "25 kB"
@@ -114,7 +121,7 @@
     {
       "name": "@dfinity/use-auth-client",
       "path": "./packages/use-auth-client/dist/index.js",
-      "limit": "5 kB"
+      "limit": "60 kB"
     }
   ],
   "release-it": {

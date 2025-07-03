@@ -1,6 +1,6 @@
-import { Certificate, LookupPathResultFound, LookupPathStatus } from '@dfinity/agent';
-import { IDL, PipeArrayBuffer } from '@dfinity/candid';
-import { Principal } from '@dfinity/principal';
+import { Certificate, LookupPathResultFound, LookupPathStatus } from '@icp-sdk/core/agent';
+import { IDL, PipeArrayBuffer } from '@icp-sdk/core/candid';
+import { Principal } from '@icp-sdk/core/principal';
 import agent from '../utils/agent';
 import { test, expect } from 'vitest';
 import { utf8ToBytes } from '@noble/hashes/utils';

@@ -39,8 +39,8 @@ There are two sets of e2e tests in this repository. They are located in `e2e/bro
 To run the e2e node tests, you can run
 
 ```bash
-pnpm -F @e2e/node setup
-pnpm -F @e2e/node e2e
+pnpm run -F @e2e/node setup
+pnpm run -F @e2e/node e2e
 ```
 
 We expect you to have the replica running on port `4943`. If you are using a different port, you can set an environment variable `REPLICA_PORT` to the port number.
@@ -50,8 +50,8 @@ We expect you to have the replica running on port `4943`. If you are using a dif
 To run the e2e browser tests, you can run
 
 ```bash
-pnpm -F @e2e/browser setup
-pnpm -F @e2e/browser e2e
+pnpm run -F @e2e/browser setup
+pnpm run -F @e2e/browser e2e
 ```
 
 #### Workspaces
@@ -78,7 +78,7 @@ Monorepo-related scripts run in this order, but are usually invoked by `pnpm i`:
 
 ## Contributing
 
-Contributions are welcome! Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md), where you can find more details about:
+Contributions are welcome! Please refer to the [CONTRIBUTING.md](.github/CONTRIBUTING.md), where you can find more details about:
 
 - Setting up the repository, making changes, documenting these changes, adherence to automated formatting like prettier, and Continuous Integration, which is facilitated by GitHub Actions.
 - Information about our review process.

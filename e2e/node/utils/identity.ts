@@ -1,13 +1,13 @@
-import { BLS12_381_G2_OID, SignIdentity, wrapDER } from '@dfinity/agent';
-import { Ed25519KeyIdentity } from '@dfinity/identity';
+import { BLS12_381_G2_OID, wrapDER } from '@icp-sdk/core/agent';
+import { Ed25519KeyIdentity } from '@icp-sdk/core/identity';
 import { randomBytes } from 'crypto';
 import { bls12_381 as bls } from '@noble/curves/bls12-381';
 
 /**
  * Generates a random identity using Ed25519KeyIdentity.
- * @returns {SignIdentity} A new random identity.
+ * @returns {Ed25519KeyIdentity} A new random identity.
  */
-export function randomIdentity(): SignIdentity {
+export function randomIdentity(): Ed25519KeyIdentity {
   return Ed25519KeyIdentity.generate(randomBytes(32));
 }
 
@@ -18,23 +18,23 @@ export interface KeyPair {
 }
 
 /**
- * Generates a random key pair.
+ * Generates a random BLS key pair.
  * @returns {KeyPair} A new random key pair.
  */
 export function randomKeyPair(): KeyPair {
   const privateKey = bls.utils.randomPrivateKey();
-  const publicKey = bls.getPublicKeyForShortSignatures(privateKey);
+  const publicKey = bls.shortSignatures.getPublicKey(privateKey).toBytes(true);
   const publicKeyDer = wrapDER(publicKey, BLS12_381_G2_OID);
 
   return { publicKey, privateKey, publicKeyDer };
 }
 
 /**
- * Signs a message using the provided private key.
+ * Signs a message using the provided BLS private key.
  * @param {Uint8Array} message - The message to sign.
- * @param {Uint8Array} privateKey - The private key to sign the message with.
+ * @param {Uint8Array} privateKey - The BLS private key to sign the message with.
  * @returns {Uint8Array} The signature of the message.
  */
 export function signBls(message: Uint8Array, privateKey: Uint8Array): Uint8Array {
-  return bls.signShortSignature(new Uint8Array(message), privateKey);
+  return bls.shortSignatures.sign(bls.shortSignatures.hash(message), privateKey).toBytes(true);
 }

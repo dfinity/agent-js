@@ -4,6 +4,5 @@
     "module": "commonjs",
     "moduleResolution": "node10",
     "verbatimModuleSyntax": false
-  },
-  "references": []
+  }
 }

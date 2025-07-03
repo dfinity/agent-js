@@ -5,10 +5,10 @@ import {
   HttpAgent,
   AgentError,
   CertifiedRejectErrorCode,
-} from '@dfinity/agent';
+} from '@icp-sdk/core/agent';
 import util from 'util';
 import exec from 'child_process';
-import { IDL } from '@dfinity/candid';
+import { IDL } from '@icp-sdk/core/candid';
 const execAsync = util.promisify(exec.exec);
 
 let stdout;

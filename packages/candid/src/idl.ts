@@ -24,7 +24,7 @@ import { iexp2 } from './utils/bigint-math';
  * as documented at https://github.com/dfinity/candid/blob/119703ba342d2fef6ab4972d2541b9fe36ae8e36/spec/Candid.md
  */
 
-const enum IDLTypeIds {
+enum IDLTypeIds {
   Null = -1,
   Bool = -2,
   Nat = -3,
