@@ -5,6 +5,7 @@
 ### Changed
 
 - feat: removes the watermark checks when checking query responses.
+- fix: always sync time with the IC
 
 ## [3.0.0-beta.1] - 2025-06-19
 
