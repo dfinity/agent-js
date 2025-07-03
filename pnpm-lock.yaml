@@ -119,6 +119,9 @@ importers:
       '@dfinity/agent':
         specifier: workspace:*
         version: link:../../packages/agent
+      '@dfinity/assets':
+        specifier: workspace:*
+        version: link:../../packages/assets
       '@icp-sdk/core':
         specifier: workspace:*
         version: link:../../packages/core

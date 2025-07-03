@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "@icp-sdk/core": "workspace:*",
-    "@dfinity/agent": "workspace:*"
+    "@dfinity/agent": "workspace:*",
+    "@dfinity/assets": "workspace:*"
   },
   "devDependencies": {
     "@noble/curves": "^1.9.2",
