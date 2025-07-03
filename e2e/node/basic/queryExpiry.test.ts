@@ -58,7 +58,6 @@ describe('queryExpiry', () => {
       arg: greetArgs,
       sender,
       reply: greetReply,
-      ingressExpiryInMinutes: 5,
       nodeIdentity,
       date: now,
     });
@@ -90,7 +89,6 @@ describe('queryExpiry', () => {
       host: mockReplica.address,
       rootKey: subnetKeyPair.publicKeyDer,
       identity,
-      ingressExpiryInMinutes: 5,
       retryTimes: 0,
     });
     const actor = await createActor(canisterId, { agent });
@@ -102,7 +100,6 @@ describe('queryExpiry', () => {
       arg: greetArgs,
       sender,
       reply: greetReply,
-      ingressExpiryInMinutes: 5,
       nodeIdentity,
       date: now,
     });
@@ -140,7 +137,6 @@ describe('queryExpiry', () => {
       host: mockReplica.address,
       rootKey: subnetKeyPair.publicKeyDer,
       identity,
-      ingressExpiryInMinutes: 5,
       retryTimes: 3,
     });
     const actor = await createActor(canisterId, { agent });
@@ -152,7 +148,6 @@ describe('queryExpiry', () => {
       arg: greetArgs,
       sender,
       reply: greetReply,
-      ingressExpiryInMinutes: 5,
       nodeIdentity,
       date: now,
     });
@@ -195,12 +190,10 @@ describe('queryExpiry', () => {
   });
 
   it('should not retry if the timestamp is outside the max ingress expiry (verifyQuerySignatures=false)', async () => {
-    const ingressExpiryInMinutes = 5;
     const agent = await HttpAgent.create({
       host: mockReplica.address,
       rootKey: subnetKeyPair.publicKeyDer,
       identity,
-      ingressExpiryInMinutes,
       retryTimes: 3,
       verifyQuerySignatures: false,
     });
@@ -213,7 +206,6 @@ describe('queryExpiry', () => {
       arg: greetArgs,
       sender,
       reply: greetReply,
-      ingressExpiryInMinutes,
       nodeIdentity,
       date: now,
     });
@@ -225,7 +217,7 @@ describe('queryExpiry', () => {
     advanceTimeByMilliseconds(6 * MINUTE_TO_MSECS);
 
     mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
-      res.status(200).send('Should not be called');
+      res.status(500).send('Should not be called');
     });
 
     const actorResponse = await actor[greetMethodName](greetReq);
@@ -239,7 +231,7 @@ describe('queryExpiry', () => {
     ['past', -(6 * MINUTE_TO_MSECS)],
     ['future', 6 * MINUTE_TO_MSECS],
   ])(
-    'should account for local clock drift (more than 30 seconds in the %s)',
+    'should account for local clock drift (more than 5 minutes in the %s)',
     async (_, timeDiffMsecs) => {
       const replicaDate = new Date(now.getTime() + timeDiffMsecs);
       await mockSyncTimeResponse({ mockReplica, keyPair: subnetKeyPair, date: replicaDate });
@@ -249,7 +241,6 @@ describe('queryExpiry', () => {
         rootKey: subnetKeyPair.publicKeyDer,
         identity,
         shouldSyncTime: true,
-        ingressExpiryInMinutes: 5,
         retryTimes: 0,
       });
       const actor = await createActor(canisterId, { agent });
@@ -290,114 +281,105 @@ describe('queryExpiry', () => {
     },
   );
 
-  it.each([
-    ['past', -(20 * SECOND_TO_MSECS)],
-    ['future', 20 * SECOND_TO_MSECS],
-  ])(
-    'should account for local clock drift (less than 30 seconds in the %s)',
-    async (_, timeDiffMsecs) => {
-      const replicaDate = new Date(now.getTime() + timeDiffMsecs);
-      await mockSyncTimeResponse({ mockReplica, keyPair: subnetKeyPair, date: replicaDate });
+  it('should fail if clock is drifted by more than 5 minutes in the past without syncing it', async () => {
+    const timeDiffMsecs = -(6 * MINUTE_TO_MSECS);
+    const replicaDate = new Date(now.getTime() + timeDiffMsecs);
 
-      const agent = await HttpAgent.create({
-        host: mockReplica.address,
-        rootKey: subnetKeyPair.publicKeyDer,
-        identity,
-        shouldSyncTime: true,
-      });
-      const actor = await createActor(canisterId, { agent });
-      const sender = identity.getPrincipal();
+    const agent = await HttpAgent.create({
+      host: mockReplica.address,
+      rootKey: subnetKeyPair.publicKeyDer,
+      identity,
+      shouldSyncTime: false,
+      retryTimes: 0,
+    });
+    const actor = await createActor(canisterId, { agent });
+    const sender = identity.getPrincipal();
 
-      const { responseBody, requestId } = await prepareV2QueryResponse({
-        canisterId,
-        methodName: greetMethodName,
-        arg: greetArgs,
-        sender,
-        reply: greetReply,
-        nodeIdentity,
-        timeDiffMsecs: 0, // no clock drift in this case
-        date: replicaDate,
-      });
-      mockReplica.setV2QuerySpyImplOnce(canisterId.toString(), (_req, res) => {
-        res.status(200).send(responseBody);
-      });
+    const { responseBody } = await prepareV2QueryResponse({
+      canisterId,
+      methodName: greetMethodName,
+      arg: greetArgs,
+      sender,
+      reply: greetReply,
+      nodeIdentity,
+      timeDiffMsecs: 0, // sync time is disabled
+      date: replicaDate,
+    });
+    mockReplica.setV2QuerySpyImplOnce(canisterId.toString(), (_req, res) => {
+      res.status(200).send(responseBody);
+    });
 
-      const { responseBody: subnetResponseBody } = await prepareV2ReadStateSubnetResponse({
-        nodeIdentity,
-        canisterRanges: [[canisterId.toUint8Array(), canisterId.toUint8Array()]],
-        keyPair: subnetKeyPair,
-        date: replicaDate,
-      });
-      mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
-        res.status(200).send(subnetResponseBody);
-      });
+    const { responseBody: subnetResponseBody } = await prepareV2ReadStateSubnetResponse({
+      nodeIdentity,
+      canisterRanges: [[canisterId.toUint8Array(), canisterId.toUint8Array()]],
+      keyPair: subnetKeyPair,
+      date: replicaDate,
+    });
+    mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
+      res.status(200).send(subnetResponseBody);
+    });
 
-      const actorResponse = await actor[greetMethodName](greetReq);
+    expect.assertions(4);
 
-      expect(actorResponse).toEqual(greetRes);
-      expect(mockReplica.getV2QuerySpy(canisterId.toString())).toHaveBeenCalledTimes(1);
-      expect(mockReplica.getV2ReadStateSpy(canisterId.toString())).toHaveBeenCalledTimes(1);
+    try {
+      await actor[greetMethodName](greetReq);
+    } catch (e) {
+      expectCertificateOutdatedError(e);
+    }
 
-      const req = mockReplica.getV2QueryReq(canisterId.toString(), 0);
-      expect(requestIdOf(req.content)).toEqual(requestId);
-    },
-  );
+    expect(mockReplica.getV2QuerySpy(canisterId.toString())).toHaveBeenCalledTimes(1);
+  });
 
-  it.each([
-    ['past', -(6 * MINUTE_TO_MSECS)],
-    ['future', 6 * MINUTE_TO_MSECS],
-  ])(
-    'should fail if clock is drifted without syncing it (more than 30 seconds in the %s)',
-    async (_, timeDiffMsecs) => {
-      const replicaDate = new Date(now.getTime() + timeDiffMsecs);
-      await mockSyncTimeResponse({ mockReplica, keyPair: subnetKeyPair, date: replicaDate });
+  it('should succeed if clock is drifted by more than 5 minutes in the future without syncing it', async () => {
+    const timeDiffMsecs = 6 * MINUTE_TO_MSECS;
+    const replicaDate = new Date(now.getTime() + timeDiffMsecs);
 
-      const agent = await HttpAgent.create({
-        host: mockReplica.address,
-        rootKey: subnetKeyPair.publicKeyDer,
-        identity,
-        shouldSyncTime: false,
-        ingressExpiryInMinutes: 5,
-        retryTimes: 0,
-      });
-      const actor = await createActor(canisterId, { agent });
-      const sender = identity.getPrincipal();
+    const agent = await HttpAgent.create({
+      host: mockReplica.address,
+      rootKey: subnetKeyPair.publicKeyDer,
+      identity,
+      shouldSyncTime: false,
+      retryTimes: 0,
+    });
+    const actor = await createActor(canisterId, { agent });
+    const sender = identity.getPrincipal();
 
-      const { responseBody } = await prepareV2QueryResponse({
-        canisterId,
-        methodName: greetMethodName,
-        arg: greetArgs,
-        sender,
-        reply: greetReply,
-        nodeIdentity,
-        timeDiffMsecs,
-        date: replicaDate,
-      });
-      mockReplica.setV2QuerySpyImplOnce(canisterId.toString(), (_req, res) => {
-        res.status(200).send(responseBody);
-      });
+    const { responseBody, requestId } = await prepareV2QueryResponse({
+      canisterId,
+      methodName: greetMethodName,
+      arg: greetArgs,
+      sender,
+      reply: greetReply,
+      nodeIdentity,
+      timeDiffMsecs: 0, // sync time is disabled
+      date: replicaDate,
+    });
+    mockReplica.setV2QuerySpyImplOnce(canisterId.toString(), (_req, res) => {
+      res.status(200).send(responseBody);
+    });
 
-      const { responseBody: subnetResponseBody } = await prepareV2ReadStateSubnetResponse({
-        nodeIdentity,
-        canisterRanges: [[canisterId.toUint8Array(), canisterId.toUint8Array()]],
-        keyPair: subnetKeyPair,
-        date: replicaDate,
-      });
-      mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
-        res.status(200).send(subnetResponseBody);
-      });
+    const { responseBody: subnetResponseBody } = await prepareV2ReadStateSubnetResponse({
+      nodeIdentity,
+      canisterRanges: [[canisterId.toUint8Array(), canisterId.toUint8Array()]],
+      keyPair: subnetKeyPair,
+      date: replicaDate,
+    });
+    mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
+      res.status(200).send(subnetResponseBody);
+    });
+    mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
+      res.status(200).send(subnetResponseBody);
+    });
 
-      expect.assertions(4);
+    const actorResponse = await actor[greetMethodName](greetReq);
 
-      try {
-        await actor[greetMethodName](greetReq);
-      } catch (e) {
-        expectCertificateOutdatedError(e);
-      }
+    expect(actorResponse).toEqual(greetRes);
+    expect(mockReplica.getV2QuerySpy(canisterId.toString())).toHaveBeenCalledTimes(1);
+    expect(mockReplica.getV2ReadStateSpy(canisterId.toString())).toHaveBeenCalledTimes(1);
 
-      expect(mockReplica.getV2QuerySpy(canisterId.toString())).toHaveBeenCalledTimes(1);
-    },
-  );
+    const req = mockReplica.getV2QueryReq(canisterId.toString(), 0);
+    expect(requestIdOf(req.content)).toEqual(requestId);
+  });
 });
 
 function advanceTimeByMilliseconds(milliseconds: number) {

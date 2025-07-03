@@ -86,8 +86,6 @@ const SECOND_TO_MSECS = 1000;
 const MINUTE_TO_MSECS = 60 * SECOND_TO_MSECS;
 const NANOSECONDS_TO_MSECS = 1_000_000;
 
-const MIN_CLOCK_DRIFT_MSECS = 1_000 * 30;
-
 // Root public key for the IC, encoded as hex
 export const IC_ROOT_KEY =
   '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100814' +
@@ -755,9 +753,10 @@ export class HttpAgent implements Agent {
     const signatureTimestampMs = Number(
       BigInt(signatureTimestampNs) / BigInt(NANOSECONDS_TO_MSECS),
     );
-    const currentTimestampInMs = Date.now() + reconcileTimeMs(this.#timeDiffMsecs);
+    const currentTimestampInMs = Date.now() + this.#timeDiffMsecs;
 
-    if (Math.abs(currentTimestampInMs - signatureTimestampMs) > this.#maxIngressExpiryInMs) {
+    // We don't need `Math.abs` here because we allow signatures in the future
+    if (currentTimestampInMs - signatureTimestampMs > this.#maxIngressExpiryInMs) {
       if (tries < this.#retryTimes) {
         this.log.warn('Timestamp is older than the max ingress expiry. Retrying query.', {
           requestId,
@@ -1398,18 +1397,6 @@ export function calculateIngressExpiry(
   timeDiffMsecs: number,
 ): Expiry {
   return Expiry.fromDeltaInMilliseconds(
-    maxIngressExpiryInMinutes * MINUTE_TO_MSECS + reconcileTimeMs(timeDiffMsecs),
+    maxIngressExpiryInMinutes * MINUTE_TO_MSECS + timeDiffMsecs,
   );
-}
-
-/**
- * Determines the time difference in milliseconds by which to reconcile the local clock with the network clock.
- * @param timeDiffMsecs - The time difference in milliseconds.
- * @returns `timeDiffMsecs` if `Math.abs(timeDiffMsecs)` is more than 30 seconds, 0 otherwise.
- */
-function reconcileTimeMs(timeDiffMsecs: number): number {
-  if (Math.abs(timeDiffMsecs) > MIN_CLOCK_DRIFT_MSECS) {
-    return timeDiffMsecs;
-  }
-  return 0;
 }
