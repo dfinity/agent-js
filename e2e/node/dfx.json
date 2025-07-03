@@ -13,18 +13,6 @@
       "type": "motoko",
       "main": "canisters/counter.mo"
     },
-    "watermark1": {
-      "type": "motoko",
-      "main": "canisters/counter.mo"
-    },
-    "watermark2": {
-      "type": "motoko",
-      "main": "canisters/counter.mo"
-    },
-    "watermark3": {
-      "type": "motoko",
-      "main": "canisters/counter.mo"
-    },
     "whoami": {
       "type": "custom",
       "wasm": "canisters/whoami.wasm",

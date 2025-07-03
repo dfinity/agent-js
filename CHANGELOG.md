@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- feat: removes the watermark checks when checking query responses. Now the agent checks if the node signature is not older than the `ingressExpiryInMinutes` option (taking into account the clock drift).
+- fix: always account for the clock drift when calculating the ingress expiry.
+
 ## [3.0.0-beta.1] - 2025-06-19
 
 ### Changed
@@ -23,7 +28,6 @@
 - feat!: removes the unused `defaultAgent` global concept and the `getDefaultAgent` function. The `HttpAgent` constructor is now the only way to create an agent.
 - feat!: removes the `ProxyAgent` class.
 - feat!: removes the following errors in favor of the new `AgentError`:
-
   - `AgentHTTPResponseError`
   - `AgentCallError`
   - `AgentQueryError`
