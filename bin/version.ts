@@ -21,7 +21,6 @@ const workspaceConfig = yaml.parse(
   fs.readFileSync(path.resolve(__dirname, '..', 'pnpm-workspace.yaml')).toString(),
 );
 
-console.log(process.argv)
 const newVersion = process.argv[process.argv.length - 1];
 console.log('New version will be: ' + newVersion);
 
