@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.0.0] - 2025-07-09
+
 ### Changed
 
 - chore: replaces ts-node with `pnpm dlx tsx` for version management scripts
