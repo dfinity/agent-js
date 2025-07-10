@@ -13,9 +13,6 @@ export type JsonnablePrincipal = {
   [JSON_KEY_PRINCIPAL]: string;
 };
 
-/**
- * @category Principal
- */
 export class Principal {
   public static anonymous(): Principal {
     return new this(new Uint8Array([ANONYMOUS_SUFFIX]));
