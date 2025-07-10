@@ -228,9 +228,8 @@ After publishing to NPM, go to https://github.com/dfinity/agent-js/releases/new,
   How to manually publish a new version of the documents (without utilizing `publish.yml` workflow)?
 </summary>
 
-1. Start with a fresh clone (or execute `git clean -dfx .`)
-2. Run `pnpm i`
-3. Execute `pnpm make:docs`
+1. Start with a fresh clone (or execute `git clean -dfx .`) to ensure no untracked files are present.
+2. Run `pnpm i` to install all dependencies.
 4. Deploy the docs using `dfx deploy --network ic`. Note: You may need to request for permissions as a controller for the wallet that owns the docs.
 
 </details>

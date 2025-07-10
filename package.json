@@ -57,8 +57,6 @@
     "attw": "pnpm -r attw",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "make:docs": "pnpm -r make:docs/reference && pnpm run convert:changelog",
-    "convert:changelog": "markdown-to-html --source CHANGELOG.md --output docs/changelog.html",
     "release": "release-it",
     "size": "size-limit --json",
     "prepare": "husky install",

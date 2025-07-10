@@ -22,7 +22,7 @@ jobs:
       - run: pnpm build
 
       - name: Generate docs
-        run: pnpm make:docs
+        run: pnpm run -F docs build
 
   aggregate:
     name: docs:required

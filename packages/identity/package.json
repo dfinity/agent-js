@@ -46,7 +46,6 @@
     "build": "tsc -b && tsc -p tsconfig.cjs.json",
     "build:watch": "tsc -b --watch",
     "bundle": "esbuild --bundle src/index.ts --outfile=dist/index.js --platform=browser",
-    "make:docs/reference": "typedoc src/index.ts --out ../../docs/identity",
     "attw": "attw --pack .",
     "test": "jest",
     "test:coverage": "jest --collectCoverage"
