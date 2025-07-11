@@ -25,5 +25,5 @@
     "moduleResolution": "node10",
     "target": "ES2022"
   },
-  "exclude": ["bin", "node_modules", "e2e", "**/*.test.ts", "**/*.test.tsx"]
+  "exclude": ["bin", "node_modules", "e2e", "**/*.{test,spec}.tsx?"]
 }
