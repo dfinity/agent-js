@@ -266,7 +266,7 @@ export class AuthClient {
         try {
           if (typeof maybeIdentityStorage === 'object') {
             if (keyType === ED25519_KEY_LABEL && typeof maybeIdentityStorage === 'string') {
-              key = await Ed25519KeyIdentity.fromJSON(maybeIdentityStorage);
+              key = Ed25519KeyIdentity.fromJSON(maybeIdentityStorage);
             } else {
               key = await ECDSAKeyIdentity.fromKeyPair(maybeIdentityStorage);
             }
@@ -330,7 +330,7 @@ export class AuthClient {
     if (!key) {
       // Create a new key (whether or not one was in storage).
       if (keyType === ED25519_KEY_LABEL) {
-        key = await Ed25519KeyIdentity.generate();
+        key = Ed25519KeyIdentity.generate();
         await storage.set(KEY_STORAGE_KEY, JSON.stringify((key as Ed25519KeyIdentity).toJSON()));
       } else {
         if (options.storage && keyType === ECDSA_KEY_LABEL) {
