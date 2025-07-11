@@ -203,6 +203,9 @@ importers:
         specifier: ^7.0.2
         version: 7.1.1
     devDependencies:
+      '@dfinity/candid':
+        specifier: workspace:*
+        version: link:../candid
       jest-environment-jsdom:
         specifier: ^29.7.0
         version: 29.7.0

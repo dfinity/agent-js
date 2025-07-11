@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { render, screen, cleanup } from '@testing-library/react';
 import { useAuthClient } from '../src/use-auth-client';
-import { describe, it, jest, afterEach, expect } from '@jest/globals';
 import { IDL } from '@dfinity/candid';
 
 interface GenericComponentProps {
