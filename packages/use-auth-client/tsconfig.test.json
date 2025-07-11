@@ -3,7 +3,7 @@
   "compilerOptions": {
     "lib": ["ESNext", "dom"],
     "jsx": "react-jsx",
-    "types": ["jest", "jsdom"]
+    "types": ["jest", "jest-environment-jsdom"]
   },
   "include": [
     "src/**/*.ts",
