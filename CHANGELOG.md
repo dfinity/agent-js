@@ -8,6 +8,7 @@
 - chore: updates the version script to work with new pnpm workspaces
 - feat: removes the watermark checks when checking query responses. Now the agent checks if the node signature is not older than the `ingressExpiryInMinutes` option (taking into account the clock drift).
 - fix: always account for the clock drift when calculating the ingress expiry.
+- fix: `AuthClient.create`'s options now have an additional `loginOptions` optional parameter, which is merged with the options passed to `login` when calling it.
 
 ## [3.0.0-beta.1] - 2025-06-19
 

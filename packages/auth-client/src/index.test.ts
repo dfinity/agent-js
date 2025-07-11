@@ -607,6 +607,61 @@ describe('Auth Client login', () => {
       ),
     ).rejects.toMatch(ERROR_USER_INTERRUPT);
   });
+
+  it('should use the loginOptions passed to the create method', async () => {
+    setup();
+    const client = await AuthClient.create({
+      loginOptions: {
+        identityProvider: 'http://my-local-website.localhost:8080',
+        maxTimeToLive: BigInt(1000),
+        customValues: { test: 'val' },
+      },
+    });
+
+    await client.login();
+
+    idpMock.ready('http://my-local-website.localhost:8080');
+
+    expect(idpWindow.postMessage).toHaveBeenCalledTimes(1);
+    const args = (idpWindow.postMessage as jest.Mock).mock.calls[0][0];
+
+    expect(global.open).toHaveBeenCalledWith(
+      'http://my-local-website.localhost:8080/#authorize',
+      'idpWindow',
+      undefined,
+    );
+    expect(args['maxTimeToLive']).toEqual(BigInt(1000));
+    expect(args['test']).toEqual('val');
+  });
+
+  it('should merge the loginOptions passed to the create method and the login method', async () => {
+    setup();
+    const client = await AuthClient.create({
+      loginOptions: {
+        identityProvider: 'http://my-local-website.localhost:8080',
+        derivationOrigin: 'http://another-local-website.localhost:8080',
+        customValues: { test: { inner: 'val' } },
+      },
+    });
+
+    await client.login({
+      identityProvider: 'http://replaced.localhost:8080',
+      customValues: { test: 'another-val' },
+    });
+
+    idpMock.ready('http://replaced.localhost:8080');
+
+    expect(idpWindow.postMessage).toHaveBeenCalledTimes(1);
+    const args = (idpWindow.postMessage as jest.Mock).mock.calls[0][0];
+
+    expect(global.open).toHaveBeenCalledWith(
+      'http://replaced.localhost:8080/#authorize',
+      'idpWindow',
+      undefined,
+    );
+    expect(args['test']).toEqual('another-val');
+    expect(args['derivationOrigin']).toEqual('http://another-local-website.localhost:8080');
+  });
 });
 
 describe('Migration from localstorage', () => {
