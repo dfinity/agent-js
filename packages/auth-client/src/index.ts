@@ -62,16 +62,17 @@ export interface AuthClientCreateOptions {
    */
   identity?: SignIdentity | PartialIdentity;
   /**
-   * {@link AuthClientStorage}
-   * @description Optional storage with get, set, and remove. Uses {@link IdbStorage} by default
+   * Optional storage with get, set, and remove. Uses {@link IdbStorage} by default.
+   * @see {@link AuthClientStorage}
    */
   storage?: AuthClientStorage;
 
   /**
-   * Type to use for the base key
-   * @default 'ECDSA'
+   * Type to use for the base key.
+   *
    * If you are using a custom storage provider that does not support CryptoKey storage,
-   * you should use 'Ed25519' as the key type, as it can serialize to a string
+   * you should use `Ed25519` as the key type, as it can serialize to a string.
+   * @default 'ECDSA'
    */
   keyType?: BaseKeyType;
 
