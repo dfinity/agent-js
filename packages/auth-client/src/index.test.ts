@@ -171,16 +171,16 @@ describe('Auth Client', () => {
 
     idpMock.ready();
 
-    expect(storage.set).toBeCalled();
-    expect(storage.remove).not.toBeCalled();
+    expect(storage.set).toHaveBeenCalled();
+    expect(storage.remove).not.toHaveBeenCalled();
 
     // simulate user being inactive for 10 minutes
     jest.advanceTimersByTime(10 * 60 * 1000);
 
     // Storage should be cleared by default after logging out
-    expect(storage.remove).toBeCalled();
+    expect(storage.remove).toHaveBeenCalled();
 
-    expect(window.location.reload).toBeCalled();
+    expect(window.location.reload).toHaveBeenCalled();
   });
   it('should not reload the page if the default callback is disabled', async () => {
     setup({
@@ -222,16 +222,16 @@ describe('Auth Client', () => {
     await test.login();
     idpMock.ready();
 
-    expect(storage.set).toBeCalled();
-    expect(storage.remove).not.toBeCalled();
+    expect(storage.set).toHaveBeenCalled();
+    expect(storage.remove).not.toHaveBeenCalled();
 
     // simulate user being inactive for 10 minutes
     jest.advanceTimersByTime(10 * 60 * 1000);
 
     // Storage should not be cleared
-    expect(storage.remove).not.toBeCalled();
+    expect(storage.remove).not.toHaveBeenCalled();
     // Page should not be reloaded
-    expect(window.location.reload).not.toBeCalled();
+    expect(window.location.reload).not.toHaveBeenCalled();
   });
   it('should not reload the page if a callback is provided', async () => {
     setup({
@@ -268,8 +268,8 @@ describe('Auth Client', () => {
     // simulate user being inactive for 10 minutes
     jest.advanceTimersByTime(10 * 60 * 1000);
 
-    expect(window.location.reload).not.toBeCalled();
-    expect(idleCb).toBeCalled();
+    expect(window.location.reload).not.toHaveBeenCalled();
+    expect(idleCb).toHaveBeenCalled();
   });
 
   /**
@@ -383,16 +383,16 @@ describe('Auth Client', () => {
       },
     });
 
-    expect(storage.set).toBeCalled();
-    expect(storage.remove).not.toBeCalled();
+    expect(storage.set).toHaveBeenCalled();
+    expect(storage.remove).not.toHaveBeenCalled();
 
     // simulate user being inactive for 10 minutes
     jest.advanceTimersByTime(10 * 60 * 1000);
 
     // Storage should not be cleared
-    expect(storage.remove).not.toBeCalled();
+    expect(storage.remove).not.toHaveBeenCalled();
     // Page should not be reloaded
-    expect(window.location.reload).not.toBeCalled();
+    expect(window.location.reload).not.toHaveBeenCalled();
   });
 });
 
@@ -808,7 +808,7 @@ describe('Migration from Ed25519Key', () => {
       ]
     `);
   });
-  it("should generate and store a Ed25519 if no key is stored and keyType is set to Ed25519, and load the same key from storage if it's found in storage", async () => {
+  it("should generate and store a Ed25519 if no key is stored and keyType is set to Ed25519, and load the same key if it's found in storage", async () => {
     const fakeStore: Record<any, any> = {};
     const storage = {
       remove: jest.fn(),
