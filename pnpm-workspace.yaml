@@ -1,4 +1,5 @@
 packages:
+  - docs
   - e2e/node
   - packages/agent
   - packages/assets
@@ -11,3 +12,4 @@ packages:
   - packages/use-auth-client
 onlyBuiltDependencies:
   - esbuild
+  - sharp

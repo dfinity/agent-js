@@ -333,7 +333,6 @@ export class PartialDelegationIdentity extends PartialIdentity {
    * Create a {@link PartialDelegationIdentity} from a {@link PublicKey} and a {@link DelegationChain}.
    * @param key The {@link PublicKey} to delegate to.
    * @param delegation a {@link DelegationChain} targeting the inner key.
-   * @constructs PartialDelegationIdentity
    */
   public static fromDelegation(key: PublicKey, delegation: DelegationChain) {
     return new PartialDelegationIdentity(key, delegation);

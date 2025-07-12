@@ -28,7 +28,7 @@ This command will compile the packages and generate the output under `lib` direc
 
 #### Unit Tests
 
-To run the unit tests for all packages, run `pnpm test`. You can run tests for a specific package by running `pnpm test` in the package directory or by running `pnpm -F <package-name> test` in the root directory.
+To run the unit tests for all packages, run `pnpm test`. You can run tests for a specific package by running `pnpm test` in the package directory or by running `pnpm run -F <package-name> test` in the root directory.
 
 #### E2E Tests
 
