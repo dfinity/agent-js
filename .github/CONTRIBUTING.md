@@ -169,8 +169,8 @@ You can execute the following commands:
 ```console
 # Ensure you are on main branch, and there are no uncommited files
 VERSION="0.20.0"
-ts-node bin/version.ts $VERSION
-ts-node bin/roll-changelog.ts $VERSION
+pnpm dlx tsx bin/version.ts $VERSION
+pnpm dlx tsx bin/roll-changelog.ts $VERSION
 
 git pull
 git checkout release/$VERSION 2>/dev/null || git checkout -b release/$VERSION

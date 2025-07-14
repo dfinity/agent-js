@@ -76,7 +76,7 @@ describe('Auth Client', () => {
     expect(test.idleManager).not.toBeDefined();
   });
   it('should initialize an idleManager if an identity is passed', async () => {
-    const test = await AuthClient.create({ identity: await Ed25519KeyIdentity.generate() });
+    const test = await AuthClient.create({ identity: Ed25519KeyIdentity.generate() });
     expect(test.idleManager).toBeDefined();
   });
   it('should be able to invalidate an identity after going idle', async () => {
@@ -109,7 +109,7 @@ describe('Auth Client', () => {
         idleTimeout: 1000,
       },
     });
-    const httpAgent = new HttpAgent({ fetch: mockFetch });
+    const httpAgent = await HttpAgent.create({ fetch: mockFetch });
     const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
 
     test.idleManager?.registerCallback(() => {
@@ -171,16 +171,16 @@ describe('Auth Client', () => {
 
     idpMock.ready();
 
-    expect(storage.set).toBeCalled();
-    expect(storage.remove).not.toBeCalled();
+    expect(storage.set).toHaveBeenCalled();
+    expect(storage.remove).not.toHaveBeenCalled();
 
     // simulate user being inactive for 10 minutes
     jest.advanceTimersByTime(10 * 60 * 1000);
 
     // Storage should be cleared by default after logging out
-    expect(storage.remove).toBeCalled();
+    expect(storage.remove).toHaveBeenCalled();
 
-    expect(window.location.reload).toBeCalled();
+    expect(window.location.reload).toHaveBeenCalled();
   });
   it('should not reload the page if the default callback is disabled', async () => {
     setup({
@@ -222,16 +222,16 @@ describe('Auth Client', () => {
     await test.login();
     idpMock.ready();
 
-    expect(storage.set).toBeCalled();
-    expect(storage.remove).not.toBeCalled();
+    expect(storage.set).toHaveBeenCalled();
+    expect(storage.remove).not.toHaveBeenCalled();
 
     // simulate user being inactive for 10 minutes
     jest.advanceTimersByTime(10 * 60 * 1000);
 
     // Storage should not be cleared
-    expect(storage.remove).not.toBeCalled();
+    expect(storage.remove).not.toHaveBeenCalled();
     // Page should not be reloaded
-    expect(window.location.reload).not.toBeCalled();
+    expect(window.location.reload).not.toHaveBeenCalled();
   });
   it('should not reload the page if a callback is provided', async () => {
     setup({
@@ -268,8 +268,8 @@ describe('Auth Client', () => {
     // simulate user being inactive for 10 minutes
     jest.advanceTimersByTime(10 * 60 * 1000);
 
-    expect(window.location.reload).not.toBeCalled();
-    expect(idleCb).toBeCalled();
+    expect(window.location.reload).not.toHaveBeenCalled();
+    expect(idleCb).toHaveBeenCalled();
   });
 
   /**
@@ -316,7 +316,7 @@ describe('Auth Client', () => {
         idleTimeout: 1000,
       },
     });
-    const httpAgent = new HttpAgent({ fetch: mockFetch });
+    const httpAgent = await HttpAgent.create({ fetch: mockFetch });
     const actor = Actor.createActor(actorInterface, { canisterId, agent: httpAgent });
 
     Actor.agentOf(actor)?.invalidateIdentity?.();
@@ -383,16 +383,16 @@ describe('Auth Client', () => {
       },
     });
 
-    expect(storage.set).toBeCalled();
-    expect(storage.remove).not.toBeCalled();
+    expect(storage.set).toHaveBeenCalled();
+    expect(storage.remove).not.toHaveBeenCalled();
 
     // simulate user being inactive for 10 minutes
     jest.advanceTimersByTime(10 * 60 * 1000);
 
     // Storage should not be cleared
-    expect(storage.remove).not.toBeCalled();
+    expect(storage.remove).not.toHaveBeenCalled();
     // Page should not be reloaded
-    expect(window.location.reload).not.toBeCalled();
+    expect(window.location.reload).not.toHaveBeenCalled();
   });
 });
 
@@ -447,17 +447,17 @@ describe('Auth Client login', () => {
     const client = await AuthClient.create();
     // Try without #authorize hash.
     await client.login({ identityProvider: 'http://127.0.0.1' });
-    expect(global.open).toBeCalledWith('http://127.0.0.1/#authorize', 'idpWindow', undefined);
+    expect(global.open).toHaveBeenCalledWith('http://127.0.0.1/#authorize', 'idpWindow', undefined);
 
     // Try with #authorize hash.
     global.open = jest.fn();
     await client.login({ identityProvider: 'http://127.0.0.1#authorize' });
-    expect(global.open).toBeCalledWith('http://127.0.0.1/#authorize', 'idpWindow', undefined);
+    expect(global.open).toHaveBeenCalledWith('http://127.0.0.1/#authorize', 'idpWindow', undefined);
 
     // Default url
     global.open = jest.fn();
     await client.login();
-    expect(global.open).toBeCalledWith(
+    expect(global.open).toHaveBeenCalledWith(
       'https://identity.internetcomputer.org/#authorize',
       'idpWindow',
       undefined,
@@ -468,7 +468,7 @@ describe('Auth Client login', () => {
     await client.login({
       windowOpenerFeatures: 'toolbar=0,location=0,menubar=0',
     });
-    expect(global.open).toBeCalledWith(
+    expect(global.open).toHaveBeenCalledWith(
       'https://identity.internetcomputer.org/#authorize',
       'idpWindow',
       'toolbar=0,location=0,menubar=0',
@@ -499,7 +499,7 @@ describe('Auth Client login', () => {
     idpMock.ready('bad origin');
 
     // No response to the IDP canister.
-    expect(idpWindow.postMessage).not.toBeCalled();
+    expect(idpWindow.postMessage).not.toHaveBeenCalled();
   });
 
   it('should respond to authorize-ready events with correct origin', async () => {
@@ -511,7 +511,7 @@ describe('Auth Client login', () => {
     idpMock.ready();
 
     // A response should be sent to the IDP.
-    expect(idpWindow.postMessage).toBeCalled();
+    expect(idpWindow.postMessage).toHaveBeenCalled();
   });
 
   it('should call onError and close the IDP window on failure', async () => {
@@ -530,8 +530,8 @@ describe('Auth Client login', () => {
 
     idpMock.ready();
 
-    expect(failureFunc).toBeCalledWith('mock error message');
-    expect(idpWindow.close).toBeCalled();
+    expect(failureFunc).toHaveBeenCalledWith('mock error message');
+    expect(idpWindow.close).toHaveBeenCalled();
   });
 
   it('should call onError if received an invalid success message', done => {
@@ -546,7 +546,7 @@ describe('Auth Client login', () => {
     AuthClient.create()
       .then(client => {
         const onError = () => {
-          expect(idpWindow.close).toBeCalled();
+          expect(idpWindow.close).toHaveBeenCalled();
 
           client.logout().then(done);
         };
@@ -581,7 +581,7 @@ describe('Auth Client login', () => {
     AuthClient.create()
       .then(client => {
         const onSuccess = () => {
-          expect(idpWindow.close).toBeCalled();
+          expect(idpWindow.close).toHaveBeenCalled();
 
           client.logout().then(done);
         };
@@ -620,7 +620,7 @@ describe('Migration from localstorage', () => {
     await AuthClient.create({ storage });
 
     // Key is stored during creation when none is provided
-    expect(storage.set as jest.Mock).toBeCalledTimes(1);
+    expect(storage.set as jest.Mock).toHaveBeenCalledTimes(1);
   });
   it('should not attempt to migrate if a delegation is already stored', async () => {
     const storage: AuthClientStorage = {
@@ -635,7 +635,7 @@ describe('Migration from localstorage', () => {
 
     await AuthClient.create({ storage });
 
-    expect(storage.set as jest.Mock).toBeCalledTimes(1);
+    expect(storage.set as jest.Mock).toHaveBeenCalledTimes(1);
   });
   it('should migrate storage from localstorage', async () => {
     const localStorage = new LocalStorage();
@@ -650,7 +650,7 @@ describe('Migration from localstorage', () => {
 
     await AuthClient.create({ storage });
 
-    expect(storage.set as jest.Mock).toBeCalledTimes(3);
+    expect(storage.set as jest.Mock).toHaveBeenCalledTimes(3);
   });
 });
 
@@ -666,7 +666,7 @@ describe('Migration from Ed25519Key', () => {
     // two days from now
     const expiration = new Date('2020-01-03T00:00:00.000Z');
 
-    const key = await Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
+    const key = Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
     const chain = DelegationChain.create(key, key.getPublicKey(), expiration);
     const storage: AuthClientStorage = {
       remove: jest.fn(),
@@ -680,7 +680,7 @@ describe('Migration from Ed25519Key', () => {
 
     const client = await AuthClient.create({ storage });
 
-    const identity = await client.getIdentity();
+    const identity = client.getIdentity();
     expect(identity).toMatchSnapshot();
   });
   it('should continue using an existing Ed25519Key with no delegation', async () => {
@@ -698,7 +698,7 @@ describe('Migration from Ed25519Key', () => {
 
     const client = await AuthClient.create({ storage });
 
-    const identity = await client.getIdentity();
+    const identity = client.getIdentity();
     expect(identity.getPrincipal().isAnonymous()).toBe(true);
   });
   it('should continue using an existing Ed25519Key with an expired delegation', async () => {
@@ -708,7 +708,7 @@ describe('Migration from Ed25519Key', () => {
     // two days ago
     const expiration = new Date('2019-12-30T00:00:00.000Z');
 
-    const key = await Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
+    const key = Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
 
     const chain = DelegationChain.create(key, key.getPublicKey(), expiration);
     const fakeStore: Record<any, any> = {};
@@ -727,11 +727,11 @@ describe('Migration from Ed25519Key', () => {
 
     const client = await AuthClient.create({ storage });
 
-    const identity = await client.getIdentity();
+    const identity = client.getIdentity();
     expect(identity.getPrincipal().isAnonymous()).toBe(true);
 
     // expect the delegation to be removed
-    expect(storage.remove as jest.Mock).toBeCalledTimes(3);
+    expect(storage.remove as jest.Mock).toHaveBeenCalledTimes(3);
     expect(fakeStore).toMatchInlineSnapshot(`{}`);
   });
   it('should generate and store a ECDSAKey if no key is stored', async () => {
@@ -753,7 +753,7 @@ describe('Migration from Ed25519Key', () => {
       ]
     `);
   });
-  it('should generate and store a ECDSAKey if no key is stored and keyType is set to Ed25519', async () => {
+  it("should generate and store a Ed25519 if no key is stored and keyType is set to Ed25519, and load the same key if it's found in storage", async () => {
     const fakeStore: Record<any, any> = {};
     const storage = {
       remove: jest.fn(),
@@ -763,26 +763,26 @@ describe('Migration from Ed25519Key', () => {
       }),
     };
 
-    // mock ED25519 generate method
+    // Mock the ED25519 generate method, only for the first auth client
     const generate = jest.spyOn(Ed25519KeyIdentity, 'generate');
-
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    generate.mockImplementationOnce(async (): Promise<Ed25519KeyIdentity> => {
-      const key = await Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
+    generate.mockImplementationOnce((): Ed25519KeyIdentity => {
+      const key = Ed25519KeyIdentity.fromJSON(JSON.stringify(testSecrets));
       return key;
     });
 
     const client1 = await AuthClient.create({ storage, keyType: 'Ed25519' });
+    const identity1 = client1.getIdentity();
 
-    const identity1 = await client1.getIdentity();
-
+    // This auth client should find the Ed25519 key in the storage,
+    // and not generate a new one
     const client2 = await AuthClient.create({ storage, keyType: 'Ed25519' });
+    const identity2 = client2.getIdentity();
 
-    const identity2 = await client2.getIdentity();
-
+    expect(generate).toHaveBeenCalledTimes(1);
     // It should have stored a cryptoKey
     expect(fakeStore[KEY_STORAGE_KEY]).toMatchSnapshot();
+    // The first identity, created from testSecrets, should be the same as the second identity,
+    // loaded from the storage
     expect(identity1.getPrincipal().toString()).toEqual(identity2.getPrincipal().toString());
   });
 });

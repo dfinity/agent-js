@@ -113,6 +113,9 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.1)(jiti@2.4.2)(jsdom@20.0.3)(yaml@2.8.0)
+      yaml:
+        specifier: ^2.8.0
+        version: 2.8.0
 
   e2e/node:
     dependencies:
@@ -200,6 +203,9 @@ importers:
         specifier: ^7.0.2
         version: 7.1.1
     devDependencies:
+      '@dfinity/candid':
+        specifier: workspace:*
+        version: link:../candid
       jest-environment-jsdom:
         specifier: ^29.7.0
         version: 29.7.0
