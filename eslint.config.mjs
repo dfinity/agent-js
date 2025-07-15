@@ -17,7 +17,7 @@ const compat = new FlatCompat({
 export default defineConfig([
   globalIgnores([
     'docs/',
-    '.dfx/',
+    '**/.dfx/',
     '**/lib/',
     '**/dist/',
     '**/__certificates__/',

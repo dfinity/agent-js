@@ -39,7 +39,8 @@
     "ts-jest": "^29.3.4",
     "typedoc": "^0.28.5",
     "typescript": "5.8.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "yaml": "^2.8.0"
   },
   "packageManager": "pnpm@10.10.0+sha512.d615db246fe70f25dcfea6d8d73dee782ce23e2245e3c4f6f888249fb568149318637dca73c2c5c8ef2a4ca0d5657fb9567188bfab47f566d1ee6ce987815c39",
   "engines": {
@@ -53,7 +54,7 @@
     "e2e": "pnpm -r e2e",
     "test": "pnpm -r test",
     "publish": "pnpm -r publish",
-    "version": "pnpm -r version",
+    "version": "pnpm dlx tsx bin/version.ts",
     "attw": "pnpm -r attw",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -63,7 +64,7 @@
     "prettier:check": "npx -p prettier -p pretty-quick pretty-quick --check --branch main",
     "prettier:format": "npx -p prettier -p pretty-quick pretty-quick --branch main",
     "postversion": "pnpm prettier:format",
-    "update-management-idl": "ts-node bin/update-management-idl.ts"
+    "update-management-idl": "pnpm dlx tsx bin/update-management-idl.ts"
   },
   "repository": {
     "type": "git",
@@ -125,8 +126,8 @@
   "release-it": {
     "hooks": {
       "after:bump": [
-        "ts-node bin/version.ts ${version}",
-        "ts-node bin/roll-changelog.ts ${version}"
+        "pnpm dlx tsx bin/version.ts ${version}",
+        "pnpm dlx tsx bin/roll-changelog.ts ${version}"
       ],
       "before:release": [
         "git pull",

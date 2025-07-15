@@ -44,9 +44,9 @@ export type UseAuthClientOptions = {
   /**
    * Options passed during the creation of the auth client
    */
-  createOptions?: AuthClientCreateOptions;
+  createOptions?: Omit<AuthClientCreateOptions, 'loginOptions'>;
   /**
-   * Options passed during the login of the auth client
+   * Options passed to the login method of the auth client
    */
   loginOptions?: AuthClientLoginOptions;
   /**
@@ -59,8 +59,8 @@ export type UseAuthClientOptions = {
  * React hook to set up the Internet Computer auth client
  * @param {UseAuthClientOptions} options configuration for the hook
  * @see {@link UseAuthClientOptions}
- * @param {AuthClientCreateOptions} options.createOptions  - options passed during the creation of the auth client
- * @param {AuthClientLoginOptions} options.loginOptions -
+ * @param {AuthClientCreateOptions} options.createOptions options passed during the creation of the auth client
+ * @param {AuthClientLoginOptions} options.loginOptions options passed to the login method of the auth client
  */
 export function useAuthClient(options?: UseAuthClientOptions) {
   const [authClient, setAuthClient] = React.useState<AuthClient | null>(null);
@@ -81,6 +81,7 @@ export function useAuthClient(options?: UseAuthClientOptions) {
             logout();
           }),
       },
+      loginOptions: options?.loginOptions,
     }).then(async client => {
       setAuthClient(client);
       setIdentity(client.getIdentity());

@@ -36,8 +36,14 @@ export {
 } from './storage';
 export { IdbKeyVal, type DBCreateOptions } from './db';
 
+const NANOSECONDS_PER_SECOND = BigInt(1_000_000_000);
+const SECONDS_PER_HOUR = BigInt(3_600);
+const NANOSECONDS_PER_HOUR = NANOSECONDS_PER_SECOND * SECONDS_PER_HOUR;
+
 const IDENTITY_PROVIDER_DEFAULT = 'https://identity.internetcomputer.org';
 const IDENTITY_PROVIDER_ENDPOINT = '#authorize';
+
+const DEFAULT_MAX_TIME_TO_LIVE = BigInt(8) * NANOSECONDS_PER_HOUR;
 
 const ECDSA_KEY_LABEL = 'ECDSA';
 const ED25519_KEY_LABEL = 'Ed25519';
@@ -52,26 +58,34 @@ export const ERROR_USER_INTERRUPT = 'UserInterrupt';
  */
 export interface AuthClientCreateOptions {
   /**
-   * An identity to use as the base
+   * An {@link SignIdentity} or {@link PartialIdentity} to authenticate via delegation.
    */
   identity?: SignIdentity | PartialIdentity;
   /**
-   * Optional storage with get, set, and remove. Uses {@link IdbStorage} by default
+   * Optional storage with get, set, and remove. Uses {@link IdbStorage} by default.
+   * @see {@link AuthClientStorage}
    */
   storage?: AuthClientStorage;
+
   /**
-   * type to use for the base key
-   * @default 'ECDSA'
+   * Type to use for the base key.
+   *
    * If you are using a custom storage provider that does not support CryptoKey storage,
-   * you should use 'Ed25519' as the key type, as it can serialize to a string
+   * you should use `Ed25519` as the key type, as it can serialize to a string.
+   * @default 'ECDSA'
    */
   keyType?: BaseKeyType;
 
   /**
    * Options to handle idle timeouts
-   * @default after 30 minutes, invalidates the identity
+   * @default after 10 minutes, invalidates the identity
    */
   idleOptions?: IdleOptions;
+
+  /**
+   * Options to handle login, passed to the login method
+   */
+  loginOptions?: AuthClientLoginOptions;
 }
 
 export interface IdleOptions extends IdleManagerOptions {
@@ -194,7 +208,7 @@ export class AuthClient {
    * @see {@link AuthClientCreateOptions}
    * @param options.identity Optional Identity to use as the base
    * @see {@link SignIdentity}
-   * @param options.storage Storage mechanism for delegration credentials
+   * @param options.storage Storage mechanism for delegation credentials
    * @see {@link AuthClientStorage}
    * @param options.keyType Type of key to use for the base key
    * @param {IdleOptions} options.idleOptions Configures an {@link IdleManager}
@@ -207,31 +221,7 @@ export class AuthClient {
    *   }
    * })
    */
-  public static async create(
-    options: {
-      /**
-       * An {@link SignIdentity} or {@link PartialIdentity} to authenticate via delegation.
-       */
-      identity?: SignIdentity | PartialIdentity;
-      /**
-       * {@link AuthClientStorage}
-       * @description Optional storage with get, set, and remove. Uses {@link IdbStorage} by default
-       */
-      storage?: AuthClientStorage;
-      /**
-       * type to use for the base key
-       * @default 'ECDSA'
-       * If you are using a custom storage provider that does not support CryptoKey storage,
-       * you should use 'Ed25519' as the key type, as it can serialize to a string
-       */
-      keyType?: BaseKeyType;
-      /**
-       * Options to handle idle timeouts
-       * @default after 10 minutes, invalidates the identity
-       */
-      idleOptions?: IdleOptions;
-    } = {},
-  ): Promise<AuthClient> {
+  public static async create(options: AuthClientCreateOptions = {}): Promise<AuthClient> {
     const storage = options.storage ?? new IdbStorage();
     const keyType = options.keyType ?? ECDSA_KEY_LABEL;
 
@@ -265,7 +255,7 @@ export class AuthClient {
         try {
           if (typeof maybeIdentityStorage === 'object') {
             if (keyType === ED25519_KEY_LABEL && typeof maybeIdentityStorage === 'string') {
-              key = await Ed25519KeyIdentity.fromJSON(maybeIdentityStorage);
+              key = Ed25519KeyIdentity.fromJSON(maybeIdentityStorage);
             } else {
               key = await ECDSAKeyIdentity.fromKeyPair(maybeIdentityStorage);
             }
@@ -329,7 +319,7 @@ export class AuthClient {
     if (!key) {
       // Create a new key (whether or not one was in storage).
       if (keyType === ED25519_KEY_LABEL) {
-        key = await Ed25519KeyIdentity.generate();
+        key = Ed25519KeyIdentity.generate();
         await storage.set(KEY_STORAGE_KEY, JSON.stringify((key as Ed25519KeyIdentity).toJSON()));
       } else {
         if (options.storage && keyType === ECDSA_KEY_LABEL) {
@@ -441,9 +431,8 @@ export class AuthClient {
   }
 
   /**
-   * AuthClient Login -
-   * Opens up a new window to authenticate with Internet Identity
-   * @param {AuthClientLoginOptions} options - Options for logging in
+   * AuthClient Login - Opens up a new window to authenticate with Internet Identity
+   * @param {AuthClientLoginOptions} options - Options for logging in, merged with the options set during creation if any. Note: we only perform a shallow merge for the `customValues` property.
    * @param options.identityProvider Identity provider
    * @param options.maxTimeToLive Expiration of the authentication in nanoseconds
    * @param options.allowPinAuthentication If present, indicates whether or not the Identity Provider should allow the user to authenticate and/or register using a temporary key/PIN identity. Authenticating dapps may want to prevent users from using Temporary keys/PIN identities because Temporary keys/PIN identities are less secure than Passkeys (webauthn credentials) and because Temporary keys/PIN identities generally only live in a browser database (which may get cleared by the browser/OS).
@@ -451,6 +440,7 @@ export class AuthClient {
    * @param options.windowOpenerFeatures Configures the opened authentication window
    * @param options.onSuccess Callback once login has completed
    * @param options.onError Callback in case authentication fails
+   * @param options.customValues Extra values to be passed in the login request during the authorize-ready phase. Note: we only perform a shallow merge for the `customValues` property.
    * @example
    * const authClient = await AuthClient.create();
    * authClient.login({
@@ -466,12 +456,15 @@ export class AuthClient {
    * });
    */
   public async login(options?: AuthClientLoginOptions): Promise<void> {
+    // Merge the passed options with the options set during creation
+    const loginOptions = mergeLoginOptions(this._createOptions?.loginOptions, options);
+
     // Set default maxTimeToLive to 8 hours
-    const defaultTimeToLive = /* hours */ BigInt(8) * /* nanoseconds */ BigInt(3_600_000_000_000);
+    const maxTimeToLive = loginOptions?.maxTimeToLive ?? DEFAULT_MAX_TIME_TO_LIVE;
 
     // Create the URL of the IDP. (e.g. https://XXXX/#authorize)
     const identityProviderUrl = new URL(
-      options?.identityProvider?.toString() || IDENTITY_PROVIDER_DEFAULT,
+      loginOptions?.identityProvider?.toString() || IDENTITY_PROVIDER_DEFAULT,
     );
     // Set the correct hash if it isn't already set.
     identityProviderUrl.hash = IDENTITY_PROVIDER_ENDPOINT;
@@ -483,22 +476,25 @@ export class AuthClient {
 
     // Add an event listener to handle responses.
     this._eventHandler = this._getEventHandler(identityProviderUrl, {
-      maxTimeToLive: options?.maxTimeToLive ?? defaultTimeToLive,
-      ...options,
+      maxTimeToLive,
+      ...loginOptions,
     });
     window.addEventListener('message', this._eventHandler);
 
     // Open a new window with the IDP provider.
     this._idpWindow =
-      window.open(identityProviderUrl.toString(), 'idpWindow', options?.windowOpenerFeatures) ??
-      undefined;
+      window.open(
+        identityProviderUrl.toString(),
+        'idpWindow',
+        loginOptions?.windowOpenerFeatures,
+      ) ?? undefined;
 
     // Check if the _idpWindow is closed by user.
     const checkInterruption = (): void => {
       // The _idpWindow is opened and not yet closed by the client
       if (this._idpWindow) {
         if (this._idpWindow.closed) {
-          this._handleFailure(ERROR_USER_INTERRUPT, options?.onError);
+          this._handleFailure(ERROR_USER_INTERRUPT, loginOptions?.onError);
         } else {
           setTimeout(checkInterruption, INTERRUPT_CHECK_INTERVAL);
         }
@@ -583,4 +579,27 @@ async function _deleteStorage(storage: AuthClientStorage) {
   await storage.remove(KEY_STORAGE_KEY);
   await storage.remove(KEY_STORAGE_DELEGATION);
   await storage.remove(KEY_VECTOR);
+}
+
+function mergeLoginOptions(
+  loginOptions: AuthClientLoginOptions | undefined,
+  otherLoginOptions: AuthClientLoginOptions | undefined,
+): AuthClientLoginOptions | undefined {
+  if (!loginOptions && !otherLoginOptions) {
+    return undefined;
+  }
+
+  const customValues =
+    loginOptions?.customValues || otherLoginOptions?.customValues
+      ? {
+          ...loginOptions?.customValues,
+          ...otherLoginOptions?.customValues,
+        }
+      : undefined;
+
+  return {
+    ...loginOptions,
+    ...otherLoginOptions,
+    customValues,
+  };
 }

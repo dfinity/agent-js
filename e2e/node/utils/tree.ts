@@ -11,8 +11,10 @@ import {
   PrunedHashTree,
   RequestId,
   RequestStatusResponseStatus,
+  Cbor,
 } from '@icp-sdk/core/agent';
 import { lebEncode } from '@icp-sdk/core/candid';
+import { Ed25519KeyIdentity } from '@icp-sdk/core/identity';
 import { hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
 
 /**
@@ -65,7 +67,12 @@ export function pruned(e: string): PrunedHashTree {
   return [NodeType.Pruned, hexToBytes(e) as NodeHash];
 }
 
-function time(date: Date): Uint8Array {
+/**
+ * Encodes a date into a LEB128 encoded Uint8Array.
+ * @param {Date} date - The date to encode.
+ * @returns {Uint8Array} A LEB128 encoded Uint8Array.
+ */
+export function time(date: Date): Uint8Array {
   return new Uint8Array(lebEncode(date.getTime() * 1_000_000));
 }
 
@@ -94,7 +101,7 @@ export function createReplyTree({ requestId, reply, date }: ReplyTreeOptions): H
         ),
       ),
     ),
-    labeled('time', leaf(time(date))),
+    createTimeTree(date),
   );
 }
 
@@ -105,4 +112,44 @@ export function createReplyTree({ requestId, reply, date }: ReplyTreeOptions): H
  */
 export function createTimeTree(date: Date): HashTree {
   return labeled('time', leaf(time(date)));
+}
+
+interface SubnetTreeOptions {
+  subnetId: Uint8Array;
+  nodeIdentity: Ed25519KeyIdentity;
+  canisterRanges: Array<[Uint8Array, Uint8Array]>;
+  date: Date;
+}
+
+/**
+ * Creates a subnet hash tree.
+ * @param {SubnetTreeOptions} options - The options for the subnet tree.
+ * @param {Uint8Array} options.subnetId - The ID of the subnet.
+ * @param {Ed25519KeyIdentity} options.nodeIdentity - The identity of the node.
+ * @param {Array<[Uint8Array, Uint8Array]>} options.canisterRanges - The canister ranges for the subnet.
+ * @param {Date} options.date - The timestamp for the tree.
+ * @returns {HashTree} A subnet hash tree.
+ */
+export function createSubnetTree({
+  subnetId,
+  nodeIdentity,
+  canisterRanges,
+  date,
+}: SubnetTreeOptions): HashTree {
+  // prettier-ignore
+  return fork(
+    labeled('subnet',
+      labeled(subnetId,
+        fork(
+          labeled('canister_ranges', leaf(Cbor.encode(canisterRanges))),
+          labeled('node',
+            labeled(nodeIdentity.getPrincipal().toUint8Array(),
+              labeled('public_key', leaf(nodeIdentity.getPublicKey().toDer())),
+            ),
+          ),
+        ),
+      ),
+    ),
+    createTimeTree(date),
+  );
 }

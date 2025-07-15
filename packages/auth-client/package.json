@@ -61,6 +61,7 @@
     "idb": "^7.0.2"
   },
   "devDependencies": {
+    "@dfinity/candid": "workspace:*",
     "jest-environment-jsdom": "^29.7.0"
   }
 }

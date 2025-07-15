@@ -433,6 +433,27 @@ export class TimeoutWaitingForResponseErrorCode extends ErrorCode {
   }
 }
 
+export class CertificateOutdatedErrorCode extends ErrorCode {
+  public name = 'CertificateOutdatedErrorCode';
+
+  constructor(
+    public readonly maxIngressExpiryInMinutes: number,
+    public readonly requestId: RequestId,
+    public readonly retryTimes?: number,
+  ) {
+    super();
+    Object.setPrototypeOf(this, CertificateOutdatedErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    let errorMessage = `Certificate is stale (over ${this.maxIngressExpiryInMinutes} minutes). Is the computer's clock synchronized?\n  Request ID: ${bytesToHex(this.requestId)}\n`;
+    if (this.retryTimes !== undefined) {
+      errorMessage += `  Retried ${this.retryTimes} times.`;
+    }
+    return errorMessage;
+  }
+}
+
 export class CertifiedRejectErrorCode extends ErrorCode {
   public name = 'CertifiedRejectErrorCode';
 
