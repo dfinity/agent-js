@@ -1,16 +1,5 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist"],
-  "references": [
-    { "path": "../packages/agent" },
-    { "path": "../packages/assets" },
-    { "path": "../packages/auth-client" },
-    { "path": "../packages/candid" },
-    { "path": "../packages/core" },
-    { "path": "../packages/identity" },
-    { "path": "../packages/identity-secp256k1" },
-    { "path": "../packages/principal" },
-    { "path": "../packages/use-auth-client" },
-  ]
+  "exclude": ["dist"]
 }

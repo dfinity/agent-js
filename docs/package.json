@@ -5,8 +5,8 @@
   "version": "0.0.1",
   "scripts": {
     "astro": "astro",
-    "start": "astro dev",
-    "build": "astro build",
+    "start": "tsc -b tsconfig.libs.json && astro dev",
+    "build": "tsc -b tsconfig.libs.json && astro build",
     "preview": "astro preview"
   },
   "devDependencies": {

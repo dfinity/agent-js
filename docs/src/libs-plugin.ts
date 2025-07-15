@@ -42,7 +42,7 @@ export interface LibsLoaderOpts {
 
 type RemarkPlugin = RemarkPlugins[number];
 
-const prettyPlugin: RemarkPlugin = ([_logger, outputDir]: [AstroIntegrationLogger, string]) => {
+const prettyUrlsPlugin: RemarkPlugin = ([_logger, outputDir]: [AstroIntegrationLogger, string]) => {
   return async (tree, file) => {
     const currentFileDir = path.dirname(file.path);
 
@@ -94,7 +94,7 @@ export function libsPlugin(opts: LibsLoaderOpts): StarlightPlugin {
                 markdown: {
                   remarkPlugins: [
                     ...config.markdown.remarkPlugins,
-                    [prettyPlugin, [logger, outDir]],
+                    [prettyUrlsPlugin, [logger, outDir]],
                   ],
                 },
               });
