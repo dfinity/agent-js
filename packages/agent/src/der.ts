@@ -3,8 +3,8 @@ import {
   DerDecodeLengthMismatchErrorCode,
   DerEncodeErrorCode,
   InputError,
-} from './errors';
-import { uint8Equals } from './utils/buffer';
+} from './errors.ts';
+import { uint8Equals } from './utils/buffer.ts';
 
 export const encodeLenBytes = (len: number): number => {
   if (len <= 0x7f) {

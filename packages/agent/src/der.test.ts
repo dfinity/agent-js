@@ -1,5 +1,5 @@
-import { encodeLenBytes, encodeLen, decodeLenBytes, decodeLen } from './der';
-import { uint8Equals } from './utils/buffer';
+import { encodeLenBytes, encodeLen, decodeLenBytes, decodeLen } from './der.ts';
+import { uint8Equals } from './utils/buffer.ts';
 
 describe('uint8Equals tests', () => {
   test('equal buffers', () => {

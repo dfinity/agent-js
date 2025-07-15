@@ -3,10 +3,10 @@
 /*
  * @jest-environment node
  */
-import * as IDL from './idl';
+import * as IDL from './idl.ts';
 import { Principal } from '@dfinity/principal';
 import { hexToBytes, bytesToHex } from '@noble/hashes/utils';
-import { idlLabelToId } from './utils/hash';
+import { idlLabelToId } from './utils/hash.ts';
 
 function testEncode(typ: IDL.Type, val: any, hex: string, _str: string) {
   expect(bytesToHex(IDL.encode([typ], [val]))).toEqual(hex);

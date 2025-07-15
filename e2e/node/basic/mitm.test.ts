@@ -1,12 +1,12 @@
-import { createActor } from '../canisters/declarations/counter';
+import { createActor } from '../canisters/declarations/counter/index.js';
 import { test, expect, TestAPI } from 'vitest';
-import { makeAgent } from '../utils/agent';
+import { makeAgent } from '../utils/agent.ts';
 import {
   CertificateVerificationErrorCode,
   QuerySignatureVerificationFailedErrorCode,
   TrustError,
 } from '@icp-sdk/core/agent';
-import { getCanisterId } from '../utils/canisterid';
+import { getCanisterId } from '../utils/canisterid.ts';
 
 let mitmTest: TestAPI | typeof test.skip = test;
 if (!process.env['MITM']) {

@@ -1,5 +1,5 @@
 import { DerEncodedPublicKey, PublicKey } from '@dfinity/agent';
-import { Ed25519KeyIdentity, Ed25519PublicKey } from './ed25519';
+import { Ed25519KeyIdentity, Ed25519PublicKey } from './ed25519.ts';
 import { hexToBytes, bytesToHex } from '@noble/hashes/utils';
 
 const testVectors: Array<[string, string]> = [

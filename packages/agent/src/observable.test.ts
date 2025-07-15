@@ -1,5 +1,5 @@
-import { UnexpectedErrorCode, UnknownError } from './errors';
-import { Observable, ObservableLog } from './observable';
+import { UnexpectedErrorCode, UnknownError } from './errors.ts';
+import { Observable, ObservableLog } from './observable.ts';
 
 describe('Observable', () => {
   it('should notify all observers', () => {

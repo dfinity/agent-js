@@ -1,5 +1,5 @@
 import { basename, resolve } from 'path';
-import { ReadablePath } from './readablePath';
+import { ReadablePath } from './readablePath.ts';
 import { readFileSync, statSync } from 'fs';
 
 describe('ReadablePath', () => {

@@ -1,4 +1,4 @@
-import { type Readable } from './readable';
+import { type Readable } from './readable.ts';
 import mime from 'mime/lite';
 
 export class ReadableBlob implements Readable {

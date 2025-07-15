@@ -1,8 +1,8 @@
-export { Ed25519KeyIdentity, Ed25519PublicKey } from './identity/ed25519';
-export * from './identity/ecdsa';
-export * from './identity/delegation';
-export * from './identity/partial';
-export { WebAuthnIdentity } from './identity/webauthn';
+export { Ed25519KeyIdentity, Ed25519PublicKey } from './identity/ed25519.ts';
+export * from './identity/ecdsa.ts';
+export * from './identity/delegation.ts';
+export * from './identity/partial.ts';
+export { WebAuthnIdentity } from './identity/webauthn.ts';
 export { wrapDER, unwrapDER, DER_COSE_OID, ED25519_OID } from '@dfinity/agent';
 
 /**

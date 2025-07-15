@@ -1,6 +1,6 @@
 import { Principal } from '@dfinity/principal';
-import { DelegationChain, DelegationIdentity, PartialDelegationIdentity } from './delegation';
-import { Ed25519KeyIdentity } from './ed25519';
+import { DelegationChain, DelegationIdentity, PartialDelegationIdentity } from './delegation.ts';
+import { Ed25519KeyIdentity } from './ed25519.ts';
 import { Ed25519PublicKey } from '@dfinity/agent';
 
 function createIdentity(seed: number): Ed25519KeyIdentity {

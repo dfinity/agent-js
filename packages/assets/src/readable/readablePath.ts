@@ -1,4 +1,4 @@
-import { type Readable } from './readable';
+import { type Readable } from './readable.ts';
 import mime from 'mime/lite';
 import fs from 'fs';
 import path from 'path';

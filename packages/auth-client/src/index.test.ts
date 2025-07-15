@@ -5,13 +5,13 @@ import { AgentError } from '@dfinity/agent';
 import { IDL } from '@dfinity/candid';
 import { DelegationChain, Ed25519KeyIdentity } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
-import { AuthClient, ERROR_USER_INTERRUPT, IdbStorage } from './index';
+import { AuthClient, ERROR_USER_INTERRUPT, IdbStorage } from './index.ts';
 import {
   type AuthClientStorage,
   KEY_STORAGE_DELEGATION,
   KEY_STORAGE_KEY,
   LocalStorage,
-} from './storage';
+} from './storage.ts';
 
 /**
  * A class for mocking the IDP service.

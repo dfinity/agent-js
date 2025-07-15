@@ -13,7 +13,9 @@
     "skipLibCheck": true,
     "verbatimModuleSyntax": false,
     "isolatedModules": true,
-
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,

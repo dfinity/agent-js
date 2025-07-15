@@ -1,6 +1,6 @@
-import { fetchCandid, HttpAgent } from '.';
+import { fetchCandid, HttpAgent } from './index.ts';
 import { IDL } from '@dfinity/candid';
-import * as cbor from './cbor';
+import * as cbor from './cbor.ts';
 
 test('simulate fetching a Candid interface', async () => {
   jest.useRealTimers();

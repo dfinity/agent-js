@@ -13,13 +13,13 @@ import {
 import { Principal } from '@icp-sdk/core/principal';
 import { IDL } from '@icp-sdk/core/candid';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createActor } from '../canisters/counter';
+import { createActor } from '../canisters/counter.ts';
 import {
   MockReplica,
   prepareV2ReadStateTimeResponse,
   prepareV3Response,
-} from '../utils/mock-replica';
-import { randomIdentity, randomKeyPair } from '../utils/identity';
+} from '../utils/mock-replica.ts';
+import { randomIdentity, randomKeyPair } from '../utils/identity.ts';
 import { concatBytes } from '@noble/hashes/utils';
 
 const INVALID_EXPIRY_ERROR =

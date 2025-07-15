@@ -1,8 +1,8 @@
 import { Principal } from '@dfinity/principal';
-import { RequestStatusResponseStatus } from '../agent';
-import { type PollStrategy } from './index';
-import { type RequestId } from '../request_id';
-import { ProtocolError, TimeoutWaitingForResponseErrorCode } from '../errors';
+import { RequestStatusResponseStatus } from '../agent/index.ts';
+import { type PollStrategy } from './index.ts';
+import { type RequestId } from '../request_id.ts';
+import { ProtocolError, TimeoutWaitingForResponseErrorCode } from '../errors.ts';
 
 export type Predicate<T> = (
   canisterId: Principal,

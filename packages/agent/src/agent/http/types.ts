@@ -1,6 +1,6 @@
 import type { Principal } from '@dfinity/principal';
-import { Expiry } from './transforms';
-import { randomNumber } from '../../utils/random';
+import { Expiry } from './transforms.ts';
+import { randomNumber } from '../../utils/random.ts';
 
 /**
  * @internal

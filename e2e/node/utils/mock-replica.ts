@@ -26,8 +26,8 @@ import {
 import { Principal } from '@icp-sdk/core/principal';
 import { Ed25519KeyIdentity } from '@icp-sdk/core/identity';
 import { Mock, vi } from 'vitest';
-import { createReplyTree, createSubnetTree, createTimeTree } from './tree';
-import { randomKeyPair, signBls, KeyPair } from './identity';
+import { createReplyTree, createSubnetTree, createTimeTree } from './tree.ts';
+import { randomKeyPair, signBls, KeyPair } from './identity.ts';
 import { concatBytes, toBytes } from '@noble/hashes/utils';
 
 const NANOSECONDS_TO_MSECS = 1_000_000;

@@ -16,7 +16,7 @@ import {
   PartialIdentity,
 } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
-import { IdleManager, type IdleManagerOptions } from './idleManager';
+import { IdleManager, type IdleManagerOptions } from './idleManager.ts';
 import {
   type AuthClientStorage,
   IdbStorage,
@@ -25,7 +25,7 @@ import {
   KEY_STORAGE_KEY,
   KEY_VECTOR,
   LocalStorage,
-} from './storage';
+} from './storage.ts';
 
 export {
   type AuthClientStorage,
@@ -33,8 +33,8 @@ export {
   LocalStorage,
   KEY_STORAGE_DELEGATION,
   KEY_STORAGE_KEY,
-} from './storage';
-export { IdbKeyVal, type DBCreateOptions } from './db';
+} from './storage.ts';
+export { IdbKeyVal, type DBCreateOptions } from './db.ts';
 
 const NANOSECONDS_PER_SECOND = BigInt(1_000_000_000);
 const SECONDS_PER_HOUR = BigInt(3_600);
@@ -102,7 +102,7 @@ export interface IdleOptions extends IdleManagerOptions {
   disableDefaultIdleCallback?: boolean;
 }
 
-export * from './idleManager';
+export * from './idleManager.ts';
 
 export type OnSuccessFunc =
   | (() => void | Promise<void>)

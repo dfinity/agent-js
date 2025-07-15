@@ -1,6 +1,6 @@
-import { type DerEncodedPublicKey, type PublicKey } from './auth';
-import { ED25519_OID, unwrapDER, wrapDER } from './der';
-import { DerDecodeErrorCode, InputError } from './errors';
+import { type DerEncodedPublicKey, type PublicKey } from './auth.ts';
+import { ED25519_OID, unwrapDER, wrapDER } from './der.ts';
+import { DerDecodeErrorCode, InputError } from './errors.ts';
 
 export class Ed25519PublicKey implements PublicKey {
   public static from(key: PublicKey): Ed25519PublicKey {

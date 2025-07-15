@@ -4,7 +4,7 @@ import {
   isV2ResponseBody,
   isV3ResponseBody,
   QueryResponseStatus,
-} from './agent';
+} from './agent/index.ts';
 import {
   CertifiedRejectErrorCode,
   ExternalError,
@@ -15,12 +15,12 @@ import {
   UncertifiedRejectErrorCode,
   UnexpectedErrorCode,
   UnknownError,
-} from './errors';
+} from './errors.ts';
 import { IDL } from '@dfinity/candid';
-import { pollForResponse, type PollingOptions, DEFAULT_POLLING_OPTIONS } from './polling';
+import { pollForResponse, type PollingOptions, DEFAULT_POLLING_OPTIONS } from './polling/index.ts';
 import { Principal } from '@dfinity/principal';
-import { Certificate, type CreateCertificateOptions, lookupResultToBuffer } from './certificate';
-import { HttpAgent } from './agent/http';
+import { Certificate, type CreateCertificateOptions, lookupResultToBuffer } from './certificate.ts';
+import { HttpAgent } from './agent/http/index.ts';
 import { utf8ToBytes } from '@noble/hashes/utils';
 
 /**

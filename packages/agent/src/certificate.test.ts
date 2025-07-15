@@ -3,13 +3,13 @@
  * an instance of ArrayBuffer).
  * @jest-environment node
  */
-import * as cbor from './cbor';
-import * as Cert from './certificate';
+import * as cbor from './cbor.ts';
+import * as Cert from './certificate.ts';
 import { Principal } from '@dfinity/principal';
-import { decodeTime } from './utils/leb';
+import { decodeTime } from './utils/leb.ts';
 import { readFileSync } from 'fs';
 import path from 'path';
-import { IC_ROOT_KEY } from './agent';
+import { IC_ROOT_KEY } from './agent/index.ts';
 import {
   CertificateHasTooManyDelegationsErrorCode,
   CertificateNotAuthorizedErrorCode,
@@ -18,9 +18,9 @@ import {
   ProtocolError,
   TrustError,
   UNREACHABLE_ERROR,
-} from './errors';
+} from './errors.ts';
 import { utf8ToBytes, hexToBytes, bytesToHex } from '@noble/hashes/utils';
-import { uint8Equals } from './utils/buffer';
+import { uint8Equals } from './utils/buffer.ts';
 
 function label(str: string): Cert.NodeLabel {
   return utf8ToBytes(str) as Cert.NodeLabel;

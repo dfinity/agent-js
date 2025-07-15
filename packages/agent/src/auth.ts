@@ -1,8 +1,8 @@
 import { Principal } from '@dfinity/principal';
-import { type HttpAgentRequest } from './agent/http/types';
-import { requestIdOf } from './request_id';
+import { type HttpAgentRequest } from './agent/http/types.ts';
+import { requestIdOf } from './request_id.ts';
 import { bytesToHex, concatBytes } from '@noble/hashes/utils';
-import { IC_REQUEST_DOMAIN_SEPARATOR } from './constants';
+import { IC_REQUEST_DOMAIN_SEPARATOR } from './constants.ts';
 /**
  * A Key Pair, containing a secret and public key.
  */

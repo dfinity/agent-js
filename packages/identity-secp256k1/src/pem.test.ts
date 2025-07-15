@@ -1,5 +1,5 @@
-import { pemToSecretKey } from './pem';
-import { Secp256k1KeyIdentity } from './secp256k1';
+import { pemToSecretKey } from './pem.ts';
+import { Secp256k1KeyIdentity } from './secp256k1.ts';
 
 const pem = `-----BEGIN EC PRIVATE KEY-----
 MHQCAQEEIGfKHuyoCCCbEXb0789MIdWiCIpZo1LaKApv95SSIaWPoAcGBSuBBAAK

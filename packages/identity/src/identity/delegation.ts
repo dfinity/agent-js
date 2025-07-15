@@ -10,7 +10,7 @@ import {
   ToCborValue,
 } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
-import { PartialIdentity } from './partial';
+import { PartialIdentity } from './partial.ts';
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
 
 function _parseBlob(value: unknown): Uint8Array {

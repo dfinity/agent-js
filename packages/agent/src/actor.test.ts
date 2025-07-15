@@ -1,13 +1,13 @@
 import { IDL } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
-import { HttpAgent, Nonce, SubmitResponse } from './agent';
-import { Expiry } from './agent/http/transforms';
-import { CallRequest, SubmitRequestType, UnSigned } from './agent/http/types';
-import * as cbor from './cbor';
-import { requestIdOf } from './request_id';
-import * as pollingImport from './polling';
-import { ActorConfig } from './actor';
-import { CertifiedRejectErrorCode, RejectError, UnexpectedErrorCode, UnknownError } from './errors';
+import { HttpAgent, Nonce, SubmitResponse } from './agent/index.ts';
+import { Expiry } from './agent/http/transforms.ts';
+import { CallRequest, SubmitRequestType, UnSigned } from './agent/http/types.ts';
+import * as cbor from './cbor.ts';
+import { requestIdOf } from './request_id.ts';
+import * as pollingImport from './polling/index.ts';
+import { ActorConfig } from './actor.ts';
+import { CertifiedRejectErrorCode, RejectError, UnexpectedErrorCode, UnknownError } from './errors.ts';
 
 const importActor = async (mockUpdatePolling?: () => void) => {
   jest.dontMock('./polling');

@@ -1,7 +1,7 @@
 import { lebEncode, compare } from '@dfinity/candid';
 import { Principal } from '@dfinity/principal';
-import { HashValueErrorCode, InputError } from './errors';
-import { uint8FromBufLike } from './utils/buffer';
+import { HashValueErrorCode, InputError } from './errors.ts';
+import { uint8FromBufLike } from './utils/buffer.ts';
 import { concatBytes } from '@noble/hashes/utils';
 import { sha256 } from '@noble/hashes/sha2';
 

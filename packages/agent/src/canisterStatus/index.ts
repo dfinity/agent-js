@@ -13,8 +13,8 @@ import {
   HashTreeDecodeErrorCode,
   UnexpectedErrorCode,
   InputError,
-} from '../errors';
-import { HttpAgent } from '../agent/http';
+} from '../errors.ts';
+import { HttpAgent } from '../agent/http/index.ts';
 import {
   type Cert,
   Certificate,
@@ -27,10 +27,10 @@ import {
   lookup_subtree,
   type LabeledHashTree,
   LookupSubtreeStatus,
-} from '../certificate';
-import * as cbor from '../cbor';
-import { decodeLeb128, decodeTime } from '../utils/leb';
-import { type DerEncodedPublicKey } from '../auth';
+} from '../certificate.ts';
+import * as cbor from '../cbor.ts';
+import { decodeLeb128, decodeTime } from '../utils/leb.ts';
+import { type DerEncodedPublicKey } from '../auth.ts';
 import { utf8ToBytes, bytesToHex } from '@noble/hashes/utils';
 
 /**

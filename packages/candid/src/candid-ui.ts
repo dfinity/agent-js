@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import * as IDL from './idl';
+import * as IDL from './idl.ts';
 import { Principal } from '@dfinity/principal';
-import * as UI from './candid-core';
+import * as UI from './candid-core.ts';
 
 type InputBox = UI.InputBox;
 

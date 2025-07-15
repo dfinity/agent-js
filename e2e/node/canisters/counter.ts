@@ -1,7 +1,7 @@
 import { Actor, ActorSubclass, HttpAgentOptions, Agent, ActorConfig } from '@icp-sdk/core/agent';
-import { makeAgent } from '../utils/agent';
-import { type _SERVICE } from './declarations/counter/counter.did';
-import { getCanisterId } from '../utils/canisterid';
+import { makeAgent } from '../utils/agent.ts';
+import { type _SERVICE } from './declarations/counter/counter.did.ts';
+import { getCanisterId } from '../utils/canisterid.ts';
 import { IDL } from '@icp-sdk/core/candid';
 import { Principal } from '@icp-sdk/core/principal';
 

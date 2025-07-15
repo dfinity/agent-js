@@ -1,4 +1,4 @@
-import { ReadableFile } from './readableFile';
+import { ReadableFile } from './readableFile.ts';
 
 describe('ReadableFile', () => {
   test('ReadableFile from File', async () => {
@@ -6,7 +6,7 @@ describe('ReadableFile', () => {
     const readable = new ReadableFile(file);
 
     expect(readable.fileName).toEqual(file.name);
-    // Differs between node.js versions
+    // Differs between node.ts versions
     if (readable.contentType) {
       expect(readable.contentType).toEqual('text/plain');
     }

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-this-alias */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import * as IDL from './idl';
+import * as IDL from './idl.ts';
 
 export interface ParseConfig {
   random?: boolean;

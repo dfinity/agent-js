@@ -1,4 +1,4 @@
-import { ilog2, iexp2 } from './bigint-math';
+import { ilog2, iexp2 } from './bigint-math.ts';
 
 test('ilog2', () => {
   for (let n = 1; n < 100; n++) {
