@@ -2,7 +2,13 @@
 
 The `@icp-sdk/core` package is a JavaScript and TypeScript library designed to interact with the Internet Computer. It acts as a meta-package that re-exports functionality from several other `@dfinity` packages, providing a convenient way to access multiple tools and utilities in one place.
 
+Visit the [Dfinity Forum](https://forum.dfinity.org/) and [SDK Documentation](https://sdk.dfinity.org/docs/index.html) for more information and support building on the Internet Computer.
+
+Additional API Documentation can be found [here](https://agent-js.icp.xyz/libs/identity/api).
+
 **Note:** This package requires the `node16` (or later) module resolution strategy to function correctly.
+
+---
 
 ## Installation
 
