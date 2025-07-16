@@ -4,9 +4,9 @@
 
 Simple interface to get your web application authenticated with the Internet Identity Service
 
-Visit the [Dfinity Forum](https://forum.dfinity.org/) and [SDK Documentation](https://sdk.dfinity.org/docs/index.html) for more information and support building on the Internet Computer.
+Do you want to know more about developing on the Internet Computer? Visit the [Developer Docs](https://internetcomputer.org/docs/home).
 
-Additional API Documentation can be found [here](https://agent-js.icp.xyz/auth-client/index.html).
+Additional API Documentation can be found [here](https://agent-js.icp.xyz/libs/auth-client/api).
 
 ---
 
@@ -14,25 +14,25 @@ Additional API Documentation can be found [here](https://agent-js.icp.xyz/auth-c
 
 Using AuthClient:
 
-```
+```shell
 npm i --save @dfinity/auth-client
 ```
 
 ### In the browser:
 
-```
-import { AuthClient } from "@dfinity/auth-client";
+```ts
+import { AuthClient } from '@dfinity/auth-client';
 ```
 
 To get started with auth client, run
 
-```js
+```ts
 const authClient = await AuthClient.create();
 ```
 
 The authClient can log in with
 
-```js
+```ts
 authClient.login({
   // 7 days in nanoseconds
   maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1000 * 1000 * 1000),
@@ -46,7 +46,7 @@ It opens an `identity.ic0.app` window, saves your delegation to localStorage, an
 
 Then, you can use that identity to make authenticated calls using the `@dfinity/agent` `Actor`.
 
-```js
+```ts
 const identity = await authClient.getIdentity();
 const actor = Actor.createActor(idlFactory, {
   agent: new HttpAgent({
@@ -115,7 +115,7 @@ If you pass an `onIdle` option, it will call that function when the user is idle
 
 The full set of options for the IdleManager is:
 
-```js
+```ts
   /**
    * Callback after the user has gone idle
    */
@@ -139,7 +139,7 @@ The full set of options for the IdleManager is:
 
 Additionally, the AuthClient accepts a couple additional flags to `idleOptions` to control the IdleManager:
 
-```js
+```ts
   /**
    * Disables idle functionality for {@link IdleManager}
    * @default false
@@ -155,7 +155,7 @@ Additionally, the AuthClient accepts a couple additional flags to `idleOptions` 
 
 ### IdleManager Example Usage
 
-```js
+```ts
 const authClient = await AuthClient.create({
   idleOptions: {
     idleTimeout: 1000 * 60 * 30, // set to 30 minutes

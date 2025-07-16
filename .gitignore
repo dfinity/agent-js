@@ -115,16 +115,3 @@ dist
 .code
 .idea
 .vscode
-
-# Generated Docs
-docs/agent
-docs/assets
-docs/auth-client
-docs/candid
-docs/icp
-docs/identity
-docs/identity-secp256k1
-docs/principal
-docs/use-auth-client
-
-docs/changelog.html

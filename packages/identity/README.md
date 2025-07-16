@@ -2,9 +2,9 @@
 
 JavaScript and TypeScript library to manage Identities and enable simple Web Authentication flows for applications on the [Internet Computer](https://dfinity.org/)
 
-Visit the [Dfinity Forum](https://forum.dfinity.org/) and [SDK Documentation](https://sdk.dfinity.org/docs/index.html) for more information and support building on the Internet Computer.
+Do you want to know more about developing on the Internet Computer? Visit the [Developer Docs](https://internetcomputer.org/docs/home).
 
-Additional API Documentation can be found [here](https://agent-js.icp.xyz/identity/index.html).
+Additional API Documentation can be found [here](https://agent-js.icp.xyz/libs/identity/api).
 
 ---
 
@@ -12,7 +12,7 @@ Additional API Documentation can be found [here](https://agent-js.icp.xyz/identi
 
 Using authentication:
 
-```
+```shell
 npm i --save @dfinity/identity
 ```
 
@@ -20,14 +20,14 @@ note: if you are using `Secp256k1KeyIdentity`, you will also need to install `cr
 
 ### In the browser:
 
-```
-import * as identity from "@dfinity/identity";
+```ts
+import * as identity from '@dfinity/identity';
 ```
 
 or using individual exports:
 
-```
-import { ECDSAKeyIdentity, DelegationIdentity } from "@dfinity/identity";
+```ts
+import { ECDSAKeyIdentity, DelegationIdentity } from '@dfinity/identity';
 ```
 
 ### ECDSAKeyIdentity

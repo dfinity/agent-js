@@ -204,7 +204,6 @@ type AuthResponse = AuthResponseSuccess | AuthResponseFailure;
 export class AuthClient {
   /**
    * Create an AuthClient to manage authentication and identity
-   * @constructs
    * @param {AuthClientCreateOptions} options - Options for creating an {@link AuthClient}
    * @see {@link AuthClientCreateOptions}
    * @param options.identity Optional Identity to use as the base

@@ -23,10 +23,8 @@ jobs:
         with:
           node_version_file: '.nvmrc'
 
-      - run: pnpm build
-
       - name: Generate docs
-        run: pnpm make:docs
+        run: pnpm run -F docs build
 
   aggregate:
     name: docs:required

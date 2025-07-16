@@ -20,7 +20,7 @@ Running tests is a good way to get a sense of what the features will do. We try 
 
 Before running tests, you need to compile the packages.
 
-```bash
+```shell
 pnpm build
 ```
 
@@ -28,7 +28,7 @@ This command will compile the packages and generate the output under `lib` direc
 
 #### Unit Tests
 
-To run the unit tests for all packages, run `pnpm test`. You can run tests for a specific package by running `pnpm test` in the package directory or by running `pnpm -F <package-name> test` in the root directory.
+To run the unit tests for all packages, run `pnpm test`. You can run tests for a specific package by running `pnpm test` in the package directory or by running `pnpm run -F <package-name> test` in the root directory.
 
 #### E2E Tests
 
@@ -38,7 +38,7 @@ There are two sets of e2e tests in this repository. They are located in `e2e/bro
 
 To run the e2e node tests, you can run
 
-```bash
+```shell
 pnpm run -F @e2e/node setup
 pnpm run -F @e2e/node e2e
 ```
@@ -49,7 +49,7 @@ We expect you to have the replica running on port `4943`. If you are using a dif
 
 To run the e2e browser tests, you can run
 
-```bash
+```shell
 pnpm run -F @e2e/browser setup
 pnpm run -F @e2e/browser e2e
 ```
