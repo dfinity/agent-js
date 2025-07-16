@@ -16,7 +16,7 @@ import {
   PartialIdentity,
 } from '@dfinity/identity';
 import { Principal } from '@dfinity/principal';
-import { IdleManager, type IdleManagerOptions } from './idleManager.ts';
+import { IdleManager, type IdleManagerOptions } from './idleManager';
 import {
   type AuthClientStorage,
   IdbStorage,

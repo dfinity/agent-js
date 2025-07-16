@@ -3,7 +3,7 @@ export * from './agent/index.ts';
 export * from './agent/http/transforms.ts';
 export * from './agent/http/types.ts';
 export * from './auth.ts';
-export * from './certificate.ts';
+export * from './certificate';
 export {
   IC_REQUEST_DOMAIN_SEPARATOR,
   IC_RESPONSE_DOMAIN_SEPARATOR,

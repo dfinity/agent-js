@@ -1,5 +1,5 @@
 import { decode, encode } from './utils/base32.ts';
-import { getCrc32 } from './utils/getCrc.ts';
+import { getCrc32 } from './utils/getCrc';
 import { sha224 } from '@noble/hashes/sha2';
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
 
