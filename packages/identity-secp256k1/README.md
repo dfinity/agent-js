@@ -52,4 +52,4 @@ const restoredIdentity = Secp256k1KeyIdentity.fromJson(json);
 ```
 
 References
-The Secp256k1KeyIdentity class extends the SignIdentity interface from the @dfinity/agent package. For more information about the SignIdentity interface and how to use it, see the [@dfinity/agent documentation](https://agent-js.icp.xyz/agent/classes/SignIdentity.html)
+The Secp256k1KeyIdentity class extends the SignIdentity interface from the @dfinity/agent package. For more information about the SignIdentity interface and how to use it, see the [@dfinity/agent documentation](https://agent-js.icp.xyz/libs/agent/api/classes/signidentity).

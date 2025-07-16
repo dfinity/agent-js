@@ -6,7 +6,7 @@ You can use it to manage your identity for you, or you can pass it an `idlFactor
 
 Visit the [Dfinity Forum](https://forum.dfinity.org/) and [SDK Documentation](https://sdk.dfinity.org/docs/index.html) for more information and support building on the Internet Computer.
 
-Additional API Documentation can be found [here](https://agent-js.icp.xyz/libs/identity/api).
+Additional API Documentation can be found [here](https://agent-js.icp.xyz/libs/use-auth-client/api).
 
 ---
 
@@ -67,5 +67,3 @@ const { actor1, actor2 } = actors;
 ```
 
 There is a live demo at https://5ibdo-haaaa-aaaab-qajia-cai.icp0.io/.
-
-Additional generated documentaion is available at https://agent-js.icp.xyz/use-auth-client/index.html.
