@@ -2,6 +2,12 @@
 
 The Secp256k1KeyIdentity package provides an implementation of the SignIdentity interface for the secp256k1 elliptic curve. It allows you to create and manage key pairs for signing and verification of messages.
 
+Do you want to know more about developing on the Internet Computer? Visit the [Developer Docs](https://internetcomputer.org/docs/home).
+
+Additional API Documentation can be found [here](https://agent-js.icp.xyz/libs/identity-secp256k1/api).
+
+---
+
 Example
 Here's an example of how to use the Secp256k1KeyIdentity class to generate a new key pair and sign and verify a message:
 
@@ -46,4 +52,4 @@ const restoredIdentity = Secp256k1KeyIdentity.fromJson(json);
 ```
 
 References
-The Secp256k1KeyIdentity class extends the SignIdentity interface from the @dfinity/agent package. For more information about the SignIdentity interface and how to use it, see the [@dfinity/agent documentation](https://agent-js.icp.xyz/agent/classes/SignIdentity.html)
+The Secp256k1KeyIdentity class extends the SignIdentity interface from the @dfinity/agent package. For more information about the SignIdentity interface and how to use it, see the [@dfinity/agent documentation](https://agent-js.icp.xyz/libs/agent/api/classes/signidentity).

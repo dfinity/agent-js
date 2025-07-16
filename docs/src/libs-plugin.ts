@@ -83,13 +83,19 @@ export type LibsLoaderTypeDocOptions = TypeDocMarkdownOptions & TypeDocOptions;
 type RemarkPlugin = RemarkPlugins[number];
 
 const prettyUrlsPlugin: RemarkPlugin =
-  ([logger, outDir]: [AstroIntegrationLogger, string]) =>
+  ([logger, docsDir, site]: [AstroIntegrationLogger, string, string]) =>
   async (tree, file) => {
     const currentFileDir = path.dirname(file.path);
 
     visit(tree, 'link', node => {
       const url = node.url;
 
+      // take full URLs to the current site and make them relative
+      if (url.startsWith(site)) {
+        node.url = new URL(url).pathname;
+      }
+
+      // skip any other full URLs
       if (
         url.startsWith('https://') ||
         url.startsWith('/') ||
@@ -101,9 +107,10 @@ const prettyUrlsPlugin: RemarkPlugin =
         return;
       }
 
+      // normalize all other relative URLs to the docs directory
       const absoluteLinkedFilePath = path.resolve(currentFileDir, url);
-      const relativeToDocs = path.relative(outDir, absoluteLinkedFilePath);
-      const normalizedUrl = relativeToDocs.replace(/(index)?\.mdx?$/, '').toLowerCase();
+      const relativeToDocs = path.relative(docsDir, absoluteLinkedFilePath);
+      const normalizedUrl = `/${relativeToDocs.replace(/(index)?\.mdx?$/, '').toLowerCase()}`;
       logger.debug(`Normalizing URL: ${url} -> ${normalizedUrl}`);
 
       node.url = normalizedUrl;
@@ -137,7 +144,7 @@ export function libsPlugin(opts: LibsLoaderOptions): StarlightPlugin {
                 markdown: {
                   remarkPlugins: [
                     ...config.markdown.remarkPlugins,
-                    [prettyUrlsPlugin, [logger, outDir]],
+                    [prettyUrlsPlugin, [logger, DOCS_DIR, site]],
                   ],
                 },
               });
@@ -167,14 +174,17 @@ export function libsPlugin(opts: LibsLoaderOptions): StarlightPlugin {
             recursive: true,
           });
           for (const file of files) {
-            if (file.isFile() && file.name.endsWith('.md') && !file.name.endsWith('README.md')) {
+            if (file.isFile() && file.name.endsWith('.md')) {
               const prefix = path.relative(apiSrcDir, file.parentPath);
-              const filePath = path.join(prefix, file.name);
+              const inputFileName = file.name;
+              const isReadme = inputFileName.endsWith('README.md');
+              const outputFileName = isReadme ? 'index.md' : inputFileName;
+              const title = isReadme ? 'Overview' : titleFromId(file.name.replace(/\.mdx?$/, ''));
 
               await processMarkdown({
-                inputPath: path.resolve(apiSrcDir, filePath),
-                outputPath: path.resolve(outputApiDir, filePath),
-                title: titleFromId(file.name.replace(/\.mdx?$/, '')),
+                inputPath: path.resolve(apiSrcDir, prefix, inputFileName),
+                outputPath: path.resolve(outputApiDir, prefix, outputFileName),
+                title,
               });
             }
           }
@@ -200,7 +210,7 @@ export function libsPlugin(opts: LibsLoaderOptions): StarlightPlugin {
         }
 
         ctx.updateConfig({
-          sidebar: [...(ctx.config.sidebar || []), { label: 'Libraries', items: sidebarItems }],
+          sidebar: [{ label: 'Libraries', items: sidebarItems }, ...(ctx.config.sidebar || [])],
         });
       },
     },

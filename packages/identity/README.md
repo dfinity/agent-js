@@ -2,9 +2,9 @@
 
 JavaScript and TypeScript library to manage Identities and enable simple Web Authentication flows for applications on the [Internet Computer](https://dfinity.org/)
 
-Visit the [Dfinity Forum](https://forum.dfinity.org/) and [SDK Documentation](https://sdk.dfinity.org/docs/index.html) for more information and support building on the Internet Computer.
+Do you want to know more about developing on the Internet Computer? Visit the [Developer Docs](https://internetcomputer.org/docs/home).
 
-Additional API Documentation can be found [here](https://agent-js.icp.xyz/identity/index.html).
+Additional API Documentation can be found [here](https://agent-js.icp.xyz/libs/identity/api).
 
 ---
 
