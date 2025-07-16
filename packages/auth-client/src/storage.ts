@@ -81,7 +81,7 @@ export class IdbStorage implements AuthClientStorage {
    * @param options.storeName - name for the indexeddb Data Store
    * @param options.version - version of the database. Increment to safely upgrade
    * @example
-   * ```typescript
+   * ```ts
    * const storage = new IdbStorage({ dbName: 'my-db', storeName: 'my-store', version: 2 });
    * ```
    */

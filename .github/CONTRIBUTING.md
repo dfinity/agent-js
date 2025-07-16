@@ -16,13 +16,13 @@ Once you have forked the repository, you can clone it to your local machine.
 
 Create a branch that is specific to the issue you are working on. If you have a GitHub Issue, use the issue number in the branch name. For example,
 
-```
+```text
 555-add-a-new-feature
 ```
 
 Once you have a branch, you can make your changes and commit them to your local repository. In your commit message, please include a reference to the GitHub issue you are working on, formatted using [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0-beta.2/#examples). For example,
 
-```
+```text
 feat: adds a new feature
 Closes #555
 additional detail if necessary
@@ -71,7 +71,7 @@ All commits in the master branch should come from squashed GitHub Pull Requests,
 > [!IMPORTANT]  
 > The 5-line script shared below should give you an overview of what you need to do to execute the process, however, it is **not recommended** to actually run it this way, because the script will approve and merge the PR - something you should do manually!
 >
-> ```
+> ```shell
 > gh workflow run "prepare-release.yml" -f "semverBump=major" && sleep 3
 > RUN_ID=$(gh run list --workflow=prepare-release.yml --status in_progress --json databaseId --jq '.[0].databaseId')
 > gh run watch $RUN_ID
@@ -88,11 +88,11 @@ Start the process by initiating the GitHub Action Workflow `prepare-release.yml`
 
 - Navigating to the GitHub web UI and clicking "Run workflow" at https://github.com/smallstepman/agent-js/actions/workflows/prepare-release.yml, or
 - Running this command from your console:
-  ```console
+  ```shell
   gh workflow run "prepare-release.yml" -f "semverBump=major"
   ```
   You can set `semverBump=...` to `prepatch`, `patch`, `preminor`, `minor`, `premajor`, `major`, or any valid SemVer like `0.31.3-beta.2`, `0.32.2-abcdef`, or `0.32.0`. View your workflow progress in the console with this command:
-  ```console
+  ```shell
   gh run watch $(gh run list --workflow=prepare-release.yml --status in_progress --json databaseId --jq '.[0].databaseId')`.
   ```
 
@@ -153,7 +153,7 @@ The commits with red square icon, indicate the moment when release process was t
 
 Yes, you can manually initiate the process. To do this, you must first install the GitHub CLI binary on your system and authenticate using `gh auth login`. After login, you can trigger the process using:
 
-```console
+```shell
 GITHUB_TOKEN="$(gh auth token)" pnpm release patch # or minor/major/etc
 ```
 
@@ -166,7 +166,7 @@ GITHUB_TOKEN="$(gh auth token)" pnpm release patch # or minor/major/etc
 
 You can execute the following commands:
 
-```console
+```shell
 # Ensure you are on main branch, and there are no uncommited files
 VERSION="0.20.0"
 pnpm dlx tsx bin/version.ts $VERSION
@@ -230,7 +230,7 @@ After publishing to NPM, go to https://github.com/dfinity/agent-js/releases/new,
 
 1. Start with a fresh clone (or execute `git clean -dfx .`) to ensure no untracked files are present.
 2. Run `pnpm i` to install all dependencies.
-4. Deploy the docs using `dfx deploy --network ic`. Note: You may need to request for permissions as a controller for the wallet that owns the docs.
+3. Deploy the docs using `dfx deploy --network ic`. Note: You may need to request for permissions as a controller for the wallet that owns the docs.
 
 </details>
 

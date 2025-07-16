@@ -10,11 +10,17 @@ export default defineConfig({
     starlight({
       title: 'ICP JS SDK Docs',
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/dfinity/agent-js' }],
-      plugins: [libsPlugin({ baseDir: '../packages', clean: false })],
+      plugins: [
+        libsPlugin({
+          baseDir: '../packages',
+          clean: false,
+          typeDoc: { exclude: ['../packages/core'] },
+        }),
+      ],
       sidebar: [
         {
-          label: 'Guides',
-          autogenerate: { directory: 'guides' },
+          label: 'Release Notes',
+          autogenerate: { directory: 'release-notes' },
         },
       ],
     }),

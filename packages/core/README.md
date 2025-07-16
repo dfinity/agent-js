@@ -9,17 +9,20 @@ The `@icp-sdk/core` package is a JavaScript and TypeScript library designed to i
 You can install the `@icp-sdk/core` package using your preferred package manager:
 
 ### npm
-```bash
+
+```shell
 npm install @icp-sdk/core
 ```
 
 ### yarn
-```bash
+
+```shell
 yarn add @icp-sdk/core
 ```
 
 ### pnpm
-```bash
+
+```shell
 pnpm add @icp-sdk/core
 ```
 
@@ -49,7 +52,7 @@ The package provides the following import paths for accessing the re-exported mo
 
 Here is an example of how to use the `@icp-sdk/core` package:
 
-```typescript
+```ts
 // Importing the HttpAgent from the agent module
 import { HttpAgent } from '@icp-sdk/core/agent';
 

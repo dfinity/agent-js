@@ -12,7 +12,7 @@ Additional API Documentation can be found [here](https://agent-js.icp.xyz/identi
 
 Using authentication:
 
-```
+```shell
 npm i --save @dfinity/identity
 ```
 
@@ -20,14 +20,14 @@ note: if you are using `Secp256k1KeyIdentity`, you will also need to install `cr
 
 ### In the browser:
 
-```
-import * as identity from "@dfinity/identity";
+```ts
+import * as identity from '@dfinity/identity';
 ```
 
 or using individual exports:
 
-```
-import { ECDSAKeyIdentity, DelegationIdentity } from "@dfinity/identity";
+```ts
+import { ECDSAKeyIdentity, DelegationIdentity } from '@dfinity/identity';
 ```
 
 ### ECDSAKeyIdentity

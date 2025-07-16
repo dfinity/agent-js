@@ -12,12 +12,12 @@ Additional API Documentation can be found [here](https://agent-js.icp.xyz/princi
 
 Using Principal:
 
-```
+```shell
 npm i --save @dfinity/principal
 ```
 
 ### In the browser:
 
-```
-import { Principal } from "@dfinity/principal";
+```ts
+import { Principal } from '@dfinity/principal';
 ```

@@ -12,12 +12,12 @@ Additional API Documentation can be found [here](https://agent-js.icp.xyz/candid
 
 Using Candid:
 
-```
+```shell
 npm i --save @dfinity/candid
 ```
 
 ### In the browser:
 
-```
-import { Candid } from "@dfinity/candid";
+```ts
+import { Candid } from '@dfinity/candid';
 ```

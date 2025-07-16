@@ -12,31 +12,31 @@ Additional API Documentation can be found [here](https://agent-js.icp.xyz/agent/
 
 Using agent:
 
-```
+```shell
 npm i --save @dfinity/agent
 ```
 
 ### In the browser:
 
-```
-import * as agent from "@dfinity/agent";
+```ts
+import * as agent from '@dfinity/agent';
 ```
 
 or using individual exports:
 
-```js
+```ts
 import { Actor, HttpAgent } from '@dfinity/agent';
 ```
 
 ### In Node.js
 
-```js
+```ts
 const DfinityAgent = require('@dfinity/agent');
 ```
 
 or using individual exports:
 
-```js
+```ts
 const { Actor, HttpAgent } = require('@dfinity/agent');
 ```
 
@@ -48,7 +48,7 @@ The agent is a low-level interface that the Actor uses to encode and decode mess
 
 The most common use for the agent is to create an actor. This is done by calling the `Actor.createActor` constructor:
 
-```
+```ts
 Actor.createActor(interfaceFactory: InterfaceFactory, configuration: ActorConfig): ActorSubclass<T>
 ```
 
@@ -56,7 +56,7 @@ The `interfaceFactory` is a function that returns a runtime interface that the A
 
 Actors can also be initialized to include the boundary node http headers, This is done by calling the `Actor.createActor` constructor:
 
-```
+```ts
 Actor.createActorWithHttpDetails(interfaceFactory: InterfaceFactory, configuration: ActorConfig): ActorSubclass<ActorMethodMappedWithHttpDetails<T>>
 ```
 
@@ -64,7 +64,7 @@ Actor.createActorWithHttpDetails(interfaceFactory: InterfaceFactory, configurati
 
 Use the `Actor.agentOf` method to get the agent of an actor:
 
-```
+```ts
 const defaultAgent = Actor.agentOf(defaultActor);
 ```
 
@@ -72,7 +72,7 @@ This is useful if you need to replace or invalidate the identity used by an acto
 
 For example, if you want to replace the identity of an actor's agent with a newly authenticated identity from [Internet Identity](https://identity.ic0.app), you can do so by calling the `Actor.replaceAgent` method:
 
-```
+```ts
 defaultAgent.replaceIdentity(await authClient.getIdentity());
 ```
 
@@ -82,7 +82,7 @@ The agent uses the browser `fetch` API to make calls to the Internet Computer. I
 
 For example,
 
-```js
+```ts
 import fetch from 'isomorphic-fetch';
 import { HttpAgent } from '@dfinity/agent';
 
@@ -95,7 +95,7 @@ You can also pass `fetchOptions` to the agent's constructor, which will be passe
 
 For example,
 
-```js
+```ts
 import fetch from 'isomorphic-fetch';
 import { HttpAgent } from '@dfinity/agent';
 
