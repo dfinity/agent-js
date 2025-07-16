@@ -412,7 +412,7 @@ class Asset {
   }
 
   /**
-   * Get asset content as unsigned 8-bit integer array, use `toBlob` (web) or `write` (Node.ts) for larger files
+   * Get asset content as unsigned 8-bit integer array, use `toBlob` (web) or `write` (Node.js) for larger files
    */
   public async toUint8Array(): Promise<Uint8Array> {
     const bytes = new Uint8Array(this.length);
@@ -421,7 +421,7 @@ class Asset {
   }
 
   /**
-   * Get asset content as number array, use `toBlob` (web) or `write` (Node.ts) for larger files
+   * Get asset content as number array, use `toBlob` (web) or `write` (Node.js) for larger files
    */
   public async toNumberArray(): Promise<number[]> {
     const chunks = Array.from<number[]>({ length: Math.ceil(this.length / this.chunkSize) });
@@ -430,7 +430,7 @@ class Asset {
   }
 
   /**
-   * Write asset content to file (Node.ts)
+   * Write asset content to file (Node.js)
    * @param path File path to write to
    */
   public async write(path: string): Promise<void> {

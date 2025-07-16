@@ -204,7 +204,7 @@ function getDefaultFetch(): typeof fetch {
     } else {
       throw ExternalError.fromCode(
         new HttpDefaultFetchErrorCode(
-          'Fetch implementation was not available. You appear to be in a Node.ts context, but global.fetch was not available.',
+          'Fetch implementation was not available. You appear to be in a Node.js context, but global.fetch was not available.',
         ),
       );
     }

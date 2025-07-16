@@ -5,7 +5,7 @@
 // a feature that JSDom doesn't.
 //
 // Note that we can use webpack configuration to make some features available to
-// Node.ts in a similar way.
+// Node.js in a similar way.
 
 import mime from 'mime';
 import { TextEncoder, TextDecoder } from 'text-encoding';

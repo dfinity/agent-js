@@ -6,7 +6,7 @@ describe('ReadableFile', () => {
     const readable = new ReadableFile(file);
 
     expect(readable.fileName).toEqual(file.name);
-    // Differs between node.ts versions
+    // Differs between node.js versions
     if (readable.contentType) {
       expect(readable.contentType).toEqual('text/plain');
     }
