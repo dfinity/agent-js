@@ -13,7 +13,6 @@ export default defineConfig({
       plugins: [
         libsPlugin({
           baseDir: '../packages',
-          clean: false,
           typeDoc: { exclude: ['../packages/core'] },
         }),
       ],

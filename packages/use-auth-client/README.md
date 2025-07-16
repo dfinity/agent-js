@@ -4,7 +4,7 @@
 
 You can use it to manage your identity for you, or you can pass it an `idlFactory` and `canisterId` and it will construct and manage your entire `Actor` for you.
 
-Visit the [Dfinity Forum](https://forum.dfinity.org/) and [SDK Documentation](https://sdk.dfinity.org/docs/index.html) for more information and support building on the Internet Computer.
+Do you want to know more about developing on the Internet Computer? Visit the [Developer Docs](https://internetcomputer.org/docs/home).
 
 Additional API Documentation can be found [here](https://agent-js.icp.xyz/libs/use-auth-client/api).
 

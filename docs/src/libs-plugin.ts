@@ -83,7 +83,7 @@ export type LibsLoaderTypeDocOptions = TypeDocMarkdownOptions & TypeDocOptions;
 type RemarkPlugin = RemarkPlugins[number];
 
 const prettyUrlsPlugin: RemarkPlugin =
-  ([logger, outDir, site]: [AstroIntegrationLogger, string, string]) =>
+  ([logger, docsDir, site]: [AstroIntegrationLogger, string, string]) =>
   async (tree, file) => {
     const currentFileDir = path.dirname(file.path);
 
@@ -109,8 +109,8 @@ const prettyUrlsPlugin: RemarkPlugin =
 
       // normalize all other relative URLs to the docs directory
       const absoluteLinkedFilePath = path.resolve(currentFileDir, url);
-      const relativeToDocs = path.relative(outDir, absoluteLinkedFilePath);
-      const normalizedUrl = relativeToDocs.replace(/(index)?\.mdx?$/, '').toLowerCase();
+      const relativeToDocs = path.relative(docsDir, absoluteLinkedFilePath);
+      const normalizedUrl = `/${relativeToDocs.replace(/(index)?\.mdx?$/, '').toLowerCase()}`;
       logger.debug(`Normalizing URL: ${url} -> ${normalizedUrl}`);
 
       node.url = normalizedUrl;
@@ -144,7 +144,7 @@ export function libsPlugin(opts: LibsLoaderOptions): StarlightPlugin {
                 markdown: {
                   remarkPlugins: [
                     ...config.markdown.remarkPlugins,
-                    [prettyUrlsPlugin, [logger, outDir, site]],
+                    [prettyUrlsPlugin, [logger, DOCS_DIR, site]],
                   ],
                 },
               });

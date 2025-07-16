@@ -2,8 +2,7 @@
 
 Manage assets on an Internet Computer assets canister.
 
-Visit the [Dfinity Forum](https://forum.dfinity.org/) and [SDK Documentation](https://sdk.dfinity.org/docs/index.html)
-for more information and support building on the Internet Computer.
+Do you want to know more about developing on the Internet Computer? Visit the [Developer Docs](https://internetcomputer.org/docs/home).
 
 Additional API Documentation can be found [here](https://agent-js.icp.xyz/libs/assets/api).
 
