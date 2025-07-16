@@ -337,7 +337,6 @@ describe('makeActor', () => {
     `);
     expect(replyUpdateWithHttpDetails.result).toEqual(canisterDecodedReturnValue);
 
-    // @ts-expect-error - `requestDetails` is not inside the type. TODO: fix this
     replyUpdateWithHttpDetails.httpDetails['requestDetails']['nonce'] = new Uint8Array() as Nonce;
 
     expect(replyUpdateWithHttpDetails.httpDetails).toMatchSnapshot();
