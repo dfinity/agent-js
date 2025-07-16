@@ -1,1 +1,1 @@
-export * from './use-auth-client';
+export * from './use-auth-client.ts';

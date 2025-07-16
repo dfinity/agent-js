@@ -12,7 +12,7 @@ import {
   LookupPathStatus,
 } from '@dfinity/agent';
 import { lebDecode, PipeArrayBuffer, compare } from '@dfinity/candid';
-import { type AssetsCanisterRecord, getAssetsCanister } from './canisters/assets';
+import { type AssetsCanisterRecord, getAssetsCanister } from './canisters/assets.ts';
 import { sha256 } from '@noble/hashes/sha2';
 import { type BatchOperationKind } from './canisters/assets_service.ts';
 import { isReadable, type Readable } from './readable/readable.ts';
