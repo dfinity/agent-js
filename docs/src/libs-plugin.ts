@@ -167,14 +167,17 @@ export function libsPlugin(opts: LibsLoaderOptions): StarlightPlugin {
             recursive: true,
           });
           for (const file of files) {
-            if (file.isFile() && file.name.endsWith('.md') && !file.name.endsWith('README.md')) {
+            if (file.isFile() && file.name.endsWith('.md')) {
               const prefix = path.relative(apiSrcDir, file.parentPath);
-              const filePath = path.join(prefix, file.name);
+              const inputFileName = file.name;
+              const isReadme = inputFileName.endsWith('README.md');
+              const outputFileName = isReadme ? 'index.md' : inputFileName;
+              const title = isReadme ? 'Overview' : titleFromId(file.name.replace(/\.mdx?$/, ''));
 
               await processMarkdown({
-                inputPath: path.resolve(apiSrcDir, filePath),
-                outputPath: path.resolve(outputApiDir, filePath),
-                title: titleFromId(file.name.replace(/\.mdx?$/, '')),
+                inputPath: path.resolve(apiSrcDir, prefix, inputFileName),
+                outputPath: path.resolve(outputApiDir, prefix, outputFileName),
+                title,
               });
             }
           }
@@ -200,7 +203,7 @@ export function libsPlugin(opts: LibsLoaderOptions): StarlightPlugin {
         }
 
         ctx.updateConfig({
-          sidebar: [...(ctx.config.sidebar || []), { label: 'Libraries', items: sidebarItems }],
+          sidebar: [{ label: 'Libraries', items: sidebarItems }, ...(ctx.config.sidebar || [])],
         });
       },
     },
