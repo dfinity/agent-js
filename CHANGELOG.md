@@ -10,6 +10,10 @@
 - fix: always account for the clock drift when calculating the ingress expiry.
 - fix: `AuthClient.create`'s options now have an additional `loginOptions` optional parameter, which is merged with the options passed to `login` when calling it.
 
+## Added
+
+- feat: Starlight documentation website, with custom plugin for typedoc
+
 ## [3.0.0-beta.1] - 2025-06-19
 
 ### Changed
@@ -48,11 +52,12 @@
 - feat!: replaces `hash` with `sha256` from `@noble/hashes/sha2` to take advantage of existing dependencies
 - chore!: drops support for Node.js v19 or lower, and Node.js v21
 
+- feat: replaces `borc` and `simple-cbor` with `@dfinity/cbor`.
 - chore: removes unused `bs58check` dependency from `@dfinity/identity-secp256k1`
 - fix: AuthClient `isAuthenticated` now correctly returns false if the delegation chain is invalid; eg: expired session
 - feat: introduces the `lookup_subtree` standalone function and `Certificate` class method.
 - chore: formatting files and changelog
-- test: removes backwards comatibility test for `Actor` with `v1` HttpAgent due to breaking interface changes.
+- test: removes backwards compatibility test for `Actor` with `v1` HttpAgent due to breaking interface changes.
 - fix: Check subtyping relationship when decoding function or service references
   - This means we now follow the Candid spec more closely, and reduces the risk of calling services with the wrong argument types
 - fix: retry requests that fail due to a malformed response body
