@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import js from '@eslint/js';
 import { FlatCompat } from '@eslint/eslintrc';
+import importPlugin from 'eslint-plugin-import';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,7 +34,7 @@ export default defineConfig([
       'plugin:jsdoc/recommended',
     ),
 
-    plugins: { '@typescript-eslint': typescriptEslint },
+    plugins: { '@typescript-eslint': typescriptEslint, 'import': importPlugin },
 
     languageOptions: { parser: tsParser },
 
@@ -48,6 +49,8 @@ export default defineConfig([
 
       'jsdoc/require-returns': 'off',
       'jsdoc/require-returns-description': 'warn',
+
+      'import/extensions': ['error', 'ignorePackages'],
     },
   },
 ]);

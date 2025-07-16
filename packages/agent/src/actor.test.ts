@@ -7,13 +7,18 @@ import * as cbor from './cbor.ts';
 import { requestIdOf } from './request_id.ts';
 import * as pollingImport from './polling/index.ts';
 import { ActorConfig } from './actor.ts';
-import { CertifiedRejectErrorCode, RejectError, UnexpectedErrorCode, UnknownError } from './errors.ts';
+import {
+  CertifiedRejectErrorCode,
+  RejectError,
+  UnexpectedErrorCode,
+  UnknownError,
+} from './errors.ts';
 
 const importActor = async (mockUpdatePolling?: () => void) => {
   jest.dontMock('./polling');
   mockUpdatePolling?.();
 
-  return await import('./actor');
+  return await import('./actor.ts');
 };
 
 const originalDateNowFn = global.Date.now;
