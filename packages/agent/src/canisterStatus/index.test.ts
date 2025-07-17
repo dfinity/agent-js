@@ -2,9 +2,8 @@ import { request, Path, fetchNodeKeys } from './index.ts';
 import { Principal } from '@dfinity/principal';
 import { HttpAgent } from '../agent/index.ts';
 import * as Cert from '../certificate.ts';
-import { hexToBytes } from '@noble/hashes/utils';
+import { hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
 import { goldenCertificates } from '../agent/http/__certificates__/goldenCertificates.ts';
-import { utf8ToBytes } from '@noble/hashes/utils';
 
 const IC_ROOT_KEY =
   '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100814' +

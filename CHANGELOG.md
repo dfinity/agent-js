@@ -10,6 +10,7 @@
 - fix: always account for the clock drift when calculating the ingress expiry.
 - fix: `AuthClient.create`'s options now have an additional `loginOptions` optional parameter, which is merged with the options passed to `login` when calling it.
 - fix: handle BigInt values when instantiating the buffer in `lebEncode` and `slebEncode` from `@dfinity/candid`. As a result, `@dfinity/candid` now correctly encodes large bigints as `Nat` values.
+- fix: make `.ts` extension required for all relative imports. This is required to avoid the "Module not found" error when importing the packages in Node.js (ESM).
 
 ## Added
 

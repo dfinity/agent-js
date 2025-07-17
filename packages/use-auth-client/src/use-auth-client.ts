@@ -57,10 +57,8 @@ export type UseAuthClientOptions = {
 
 /**
  * React hook to set up the Internet Computer auth client
- * @param {UseAuthClientOptions} options configuration for the hook
+ * @param options - configuration for the hook
  * @see {@link UseAuthClientOptions}
- * @param {AuthClientCreateOptions} options.createOptions options passed during the creation of the auth client
- * @param {AuthClientLoginOptions} options.loginOptions options passed to the login method of the auth client
  */
 export function useAuthClient(options?: UseAuthClientOptions) {
   const [authClient, setAuthClient] = React.useState<AuthClient | null>(null);
@@ -124,7 +122,7 @@ export function useAuthClient(options?: UseAuthClientOptions) {
   /**
    * Login through your configured identity provider
    * Wraps the onSuccess and onError callbacks with promises for convenience
-   * @returns {Promise<InternetIdentityAuthResponseSuccess | void>} - Returns a promise that resolves to the response from the identity provider
+   * @returns Returns a promise that resolves to the response from the identity provider
    */
   function login(): Promise<InternetIdentityAuthResponseSuccess | void> {
     return new Promise((resolve, reject) => {

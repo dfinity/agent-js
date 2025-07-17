@@ -9,7 +9,6 @@
 
 import { Crypto } from '@peculiar/webcrypto';
 global.crypto = new Crypto();
-import { TextEncoder } from 'text-encoding';
+import { TextEncoder, TextDecoder } from 'text-encoding';
 global.TextEncoder = TextEncoder;
-import { TextDecoder } from 'text-encoding';
 global.TextDecoder = TextDecoder;

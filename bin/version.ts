@@ -3,7 +3,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import prettier from 'prettier';
+import { format as prettierFormat } from 'prettier';
 import process from 'process';
 import yaml from 'yaml';
 
@@ -41,7 +41,7 @@ workspaces.forEach(async workspace => {
   // Set version for package
   json.version = newVersion;
 
-  const formatted = await prettier.format(JSON.stringify(json), {
+  const formatted = await prettierFormat(JSON.stringify(json), {
     parser: 'json-stringify',
   });
 

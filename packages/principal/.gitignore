@@ -2,8 +2,5 @@ node_modules/
 dist/
 lib/
 
-# ESM module declaration
-!lib/esm/package.json
-
 # generated docs
 /docs/reference
