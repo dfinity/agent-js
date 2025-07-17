@@ -6,6 +6,7 @@
 // TODO: The best solution would be to have our own buffer type around
 //       Uint8Array which is standard.
 import { PipeArrayBuffer as Pipe } from './buffer';
+import { ilog2 } from './bigint-math';
 
 function eob(): never {
   throw new Error('unexpected end of buffer');
@@ -49,7 +50,7 @@ export function lebEncode(value: bigint | number): Uint8Array {
     throw new Error('Cannot leb encode negative values.');
   }
 
-  const byteLength = (value === BigInt(0) ? 0 : Math.ceil(Math.log2(Number(value)))) + 1;
+  const byteLength = (value === BigInt(0) ? 0 : ilog2(value)) + 1;
   const pipe = new Pipe(new Uint8Array(byteLength), 0);
   while (true) {
     const i = Number(value & BigInt(0x7f));
@@ -98,7 +99,7 @@ export function slebEncode(value: bigint | number): Uint8Array {
   if (isNeg) {
     value = -value - BigInt(1);
   }
-  const byteLength = (value === BigInt(0) ? 0 : Math.ceil(Math.log2(Number(value)))) + 1;
+  const byteLength = (value === BigInt(0) ? 0 : ilog2(value)) + 1;
   const pipe = new Pipe(new Uint8Array(byteLength), 0);
   while (true) {
     const i = getLowerBytes(value);

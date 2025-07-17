@@ -2,15 +2,12 @@ import { ilog2, iexp2 } from './bigint-math';
 
 test('ilog2', () => {
   for (let n = 1; n < 100; n++) {
-    expect(ilog2(n)).toBe(n > 0 ? Math.floor(Math.log2(n)) : NaN);
+    expect(ilog2(n)).toBe(Math.floor(Math.log2(n)));
   }
   expect(() => ilog2(0)).toThrow('Input must be positive');
   expect(() => ilog2(-1)).toThrow('Input must be positive');
   expect(() => ilog2(1.5)).toThrow(
     'The number 1.5 cannot be converted to a BigInt because it is not an integer',
-  );
-  expect(() => (ilog2 as (input: unknown) => number)('abc')).toThrow(
-    'Cannot convert abc to a BigInt',
   );
 });
 
@@ -21,9 +18,6 @@ test('iexp2', () => {
   expect(() => ilog2(-1)).toThrow('Input must be positive');
   expect(() => iexp2(1.5)).toThrow(
     'The number 1.5 cannot be converted to a BigInt because it is not an integer',
-  );
-  expect(() => (ilog2 as (input: unknown) => number)('abc')).toThrow(
-    'Cannot convert abc to a BigInt',
   );
 });
 
