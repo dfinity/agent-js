@@ -32,7 +32,7 @@ To run the unit tests for all packages, run `pnpm test`. You can run tests for a
 
 #### E2E Tests
 
-There are two sets of e2e tests in this repository. They are located in `e2e/browser` and `e2e/node`. The browser tests are run in a headless browser, and the node tests are run in a node environment. The node tests are faster and require less setup, but the browser tests can simulate relevant environmental conditions.
+There is currently one set of e2e tests in this repository, located in the `e2e/node` directory.
 
 > **Important Note:** the e2e tests do not run from the TypeScript source code of projects and must be compiled. You should run `pnpm build` to compile the projects after your changes before running the tests.
 
@@ -41,17 +41,6 @@ To run the e2e node tests, you can run
 ```shell
 pnpm run -F @e2e/node setup
 pnpm run -F @e2e/node e2e
-```
-
-We expect you to have the replica running on port `4943`. If you are using a different port, you can set an environment variable `REPLICA_PORT` to the port number.
-
-> Note: browser tests have been temporarily removed pending a rewrite
-
-To run the e2e browser tests, you can run
-
-```shell
-pnpm run -F @e2e/browser setup
-pnpm run -F @e2e/browser e2e
 ```
 
 #### Workspaces
