@@ -44,7 +44,7 @@
   },
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
-  "homepage": "https://internetcomputer.org",
+  "homepage": "https://agent-js.icp.xyz/libs/use-auth-client",
   "repository": {
     "type": "git",
     "url": "https://github.com/dfinity/agent-js.git",

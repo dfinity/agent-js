@@ -4,6 +4,33 @@
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to manage Secp256k1KeyIdentities for use with the Internet Computer",
+  "homepage": "https://agent-js.icp.xyz/libs/identity-secp256k1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dfinity/agent-js.git",
+    "directory": "packages/identity-secp256k1"
+  },
+  "bugs": {
+    "url": "https://github.com/dfinity/agent-js/issues"
+  },
+  "keywords": [
+    "internet computer",
+    "ic",
+    "dfinity",
+    "canister",
+    "webauthn",
+    "identity",
+    "principal",
+    "dfx",
+    "candid",
+    "motoko",
+    "javascript",
+    "typescript",
+    "blockchain",
+    "crypto",
+    "distributed",
+    "api"
+  ],
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
   "default": "./lib/esm/index.js",

@@ -4,7 +4,7 @@
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to manage identity with the Internet Computer",
-  "homepage": "https://internetcomputer.org",
+  "homepage": "https://agent-js.icp.xyz/libs/identity",
   "repository": {
     "type": "git",
     "url": "https://github.com/dfinity/agent-js.git",

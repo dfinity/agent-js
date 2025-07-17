@@ -73,10 +73,6 @@
   },
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
-  "bugs": {
-    "url": "https://github.com/dfinity/agent-js/issues"
-  },
-  "homepage": "https://github.com/dfinity-lab/agent-js#readme",
   "size-limit": [
     {
       "name": "@dfinity/agent",
