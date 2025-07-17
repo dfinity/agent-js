@@ -1,8 +1,8 @@
 import { AgentError, CanisterStatus, HttpAgent } from '@icp-sdk/core/agent';
 import { Principal } from '@icp-sdk/core/principal';
-import { makeAgent } from '../utils/agent';
+import { makeAgent } from '../utils/agent.ts';
 import { describe, it, afterEach, expect } from 'vitest';
-import { getCanisterId } from '../utils/canisterid';
+import { getCanisterId } from '../utils/canisterid.ts';
 
 afterEach(async () => {
   await Promise.resolve();

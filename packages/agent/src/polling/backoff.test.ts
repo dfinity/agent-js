@@ -1,4 +1,4 @@
-import { exponentialBackoff } from './backoff';
+import { exponentialBackoff } from './backoff.ts';
 
 test('should do exponential backoff', async () => {
   const backoff = exponentialBackoff({

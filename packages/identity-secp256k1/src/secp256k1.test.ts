@@ -2,7 +2,7 @@ import { DerEncodedPublicKey, PublicKey } from '@dfinity/agent';
 import { randomBytes } from 'crypto';
 import { sha256 } from '@noble/hashes/sha2';
 import { secp256k1 } from '@noble/curves/secp256k1';
-import { Secp256k1KeyIdentity, Secp256k1PublicKey } from './secp256k1';
+import { Secp256k1KeyIdentity, Secp256k1PublicKey } from './secp256k1.ts';
 import { hexToBytes, bytesToHex } from '@noble/curves/abstract/utils';
 
 // DER KEY SECP256K1 PREFIX = 3056301006072a8648ce3d020106052b8104000a03420004

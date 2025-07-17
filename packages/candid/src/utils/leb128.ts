@@ -5,8 +5,8 @@
 //       actually return `new Buffer(pipe.buffer)`.
 // TODO: The best solution would be to have our own buffer type around
 //       Uint8Array which is standard.
-import { PipeArrayBuffer as Pipe } from './buffer';
-import { ilog2 } from './bigint-math';
+import { PipeArrayBuffer as Pipe } from './buffer.ts';
+import { ilog2 } from './bigint-math.ts';
 
 function eob(): never {
   throw new Error('unexpected end of buffer');

@@ -1,7 +1,7 @@
 import { Principal } from '@dfinity/principal';
 import * as cbor from '@dfinity/cbor';
-import { CborDecodeErrorCode, CborEncodeErrorCode, InputError } from './errors';
-import { Expiry } from './agent';
+import { CborDecodeErrorCode, CborEncodeErrorCode, InputError } from './errors.ts';
+import { Expiry } from './agent/index.ts';
 
 /**
  * Used to extend classes that need to provide a custom value for the CBOR encoding process.

@@ -1,6 +1,6 @@
 // https://github.com/dfinity-lab/dfinity/blob/5fef1450c9ab16ccf18381379149e504b11c8218/docs/spec/public/index.adoc#request-ids
 import { Principal } from '@dfinity/principal';
-import { hashValue, requestIdOf } from './request_id';
+import { hashValue, requestIdOf } from './request_id.ts';
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
 import { sha256 } from '@noble/hashes/sha256';
 

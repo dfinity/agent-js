@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Principal as PrincipalId } from '@dfinity/principal';
-import { type JsonValue } from './types';
-import { concat, PipeArrayBuffer as Pipe, uint8ToDataView } from './utils/buffer';
-import { idlLabelToId } from './utils/hash';
+import { type JsonValue } from './types.ts';
+import { concat, PipeArrayBuffer as Pipe, uint8ToDataView } from './utils/buffer.ts';
+import { idlLabelToId } from './utils/hash.ts';
 import {
   lebDecode,
   lebEncode,
@@ -15,8 +15,8 @@ import {
   slebEncode,
   writeIntLE,
   writeUIntLE,
-} from './utils/leb128';
-import { iexp2 } from './utils/bigint-math';
+} from './utils/leb128.ts';
+import { iexp2 } from './utils/bigint-math.ts';
 
 /**
  * This module provides a combinator library to create serializers/deserializers

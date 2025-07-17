@@ -1,4 +1,4 @@
-import { encodeLenBytes, encodeLen, decodeLenBytes, decodeLen } from './der';
+import { encodeLenBytes, encodeLen, decodeLenBytes, decodeLen } from './der.ts';
 
 describe('encodeLenBytes', () => {
   test('Length of up to 127', () => {

@@ -1,4 +1,4 @@
-import { PipeArrayBuffer as Pipe } from './buffer';
+import { PipeArrayBuffer as Pipe } from './buffer.ts';
 import { hexToBytes, bytesToHex } from '@noble/hashes/utils';
 import {
   lebDecode,
@@ -9,7 +9,7 @@ import {
   slebEncode,
   writeIntLE,
   writeUIntLE,
-} from './leb128';
+} from './leb128.ts';
 
 test('leb', () => {
   expect(bytesToHex(lebEncode(0))).toBe('00');

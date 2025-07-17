@@ -1,4 +1,4 @@
-import { ExpirableMap } from './expirableMap';
+import { ExpirableMap } from './expirableMap.ts';
 
 jest.useFakeTimers();
 describe('ExpirableMap', () => {

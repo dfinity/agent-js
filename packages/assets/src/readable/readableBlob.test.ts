@@ -1,4 +1,4 @@
-import { ReadableBlob } from './readableBlob';
+import { ReadableBlob } from './readableBlob.ts';
 
 describe('ReadableBlob', () => {
   test('ReadableBlob from Blob', async () => {

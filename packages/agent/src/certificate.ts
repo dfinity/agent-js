@@ -1,4 +1,4 @@
-import * as cbor from './cbor';
+import * as cbor from './cbor.ts';
 import {
   CertificateHasTooManyDelegationsErrorCode,
   CertificateNotAuthorizedErrorCode,
@@ -14,13 +14,13 @@ import {
   UNREACHABLE_ERROR,
   MalformedLookupFoundValueErrorCode,
   MissingLookupValueErrorCode,
-} from './errors';
+} from './errors.ts';
 import { Principal } from '@dfinity/principal';
-import * as bls from './utils/bls';
-import { decodeTime } from './utils/leb';
-import { MANAGEMENT_CANISTER_ID } from './agent';
+import * as bls from './utils/bls.ts';
+import { decodeTime } from './utils/leb.ts';
+import { MANAGEMENT_CANISTER_ID } from './agent/index.ts';
 import { bytesToHex, concatBytes, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
-import { uint8Equals } from './utils/buffer';
+import { uint8Equals } from './utils/buffer.ts';
 import { sha256 } from '@noble/hashes/sha2';
 
 export interface Cert {

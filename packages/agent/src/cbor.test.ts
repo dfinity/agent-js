@@ -1,6 +1,6 @@
 import { Principal } from '@dfinity/principal';
 import { bytesToHex } from '@noble/hashes/utils';
-import * as cbor from './cbor';
+import * as cbor from './cbor.ts';
 
 test('round trip', () => {
   interface Data {

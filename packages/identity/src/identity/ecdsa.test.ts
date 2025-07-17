@@ -1,4 +1,4 @@
-import { ECDSAKeyIdentity } from './ecdsa';
+import { ECDSAKeyIdentity } from './ecdsa.ts';
 import { Crypto } from '@peculiar/webcrypto';
 
 const subtle = new Crypto().subtle;

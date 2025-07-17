@@ -1,4 +1,4 @@
-import { type DBCreateOptions, IdbKeyVal } from './db';
+import { type DBCreateOptions, IdbKeyVal } from './db.ts';
 
 export const KEY_STORAGE_KEY = 'identity';
 export const KEY_STORAGE_DELEGATION = 'delegation';

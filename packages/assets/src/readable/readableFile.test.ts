@@ -1,4 +1,4 @@
-import { ReadableFile } from './readableFile';
+import { ReadableFile } from './readableFile.ts';
 
 describe('ReadableFile', () => {
   test('ReadableFile from File', async () => {

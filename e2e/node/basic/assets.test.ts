@@ -1,12 +1,12 @@
 import { existsSync, readFileSync, unlinkSync } from 'fs';
 import path from 'path';
-import { makeAgent } from '../utils/agent';
+import { makeAgent } from '../utils/agent.ts';
 import { Principal } from '@icp-sdk/core/principal';
 import { AssetManager } from '@dfinity/assets';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Ed25519KeyIdentity } from '@icp-sdk/core/identity';
 import { utf8ToBytes } from '@noble/hashes/utils';
-import { getCanisterId } from '../utils/canisterid';
+import { getCanisterId } from '../utils/canisterid.ts';
 
 /**
  * Create (pseudo) random bytes Readable

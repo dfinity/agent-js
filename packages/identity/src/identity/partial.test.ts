@@ -1,6 +1,6 @@
 import { HttpAgent } from '@dfinity/agent';
-import { Ed25519PublicKey } from '../identity/ed25519';
-import { PartialIdentity } from './partial';
+import { Ed25519PublicKey } from '../identity/ed25519.ts';
+import { PartialIdentity } from './partial.ts';
 describe('Partial Identity', () => {
   it('should create a partial identity from a public key', async () => {
     const key = Ed25519PublicKey.fromRaw(new Uint8Array(32).fill(0));

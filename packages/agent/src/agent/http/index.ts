@@ -26,10 +26,10 @@ import {
   AgentError,
   MalformedLookupFoundValueErrorCode,
   CertificateOutdatedErrorCode,
-} from '../../errors';
-import { AnonymousIdentity, type Identity } from '../../auth';
-import * as cbor from '../../cbor';
-import { type RequestId, hashOfMap, requestIdOf } from '../../request_id';
+} from '../../errors.ts';
+import { AnonymousIdentity, type Identity } from '../../auth.ts';
+import * as cbor from '../../cbor.ts';
+import { type RequestId, hashOfMap, requestIdOf } from '../../request_id.ts';
 import {
   QueryResponseStatus,
   type Agent,
@@ -39,8 +39,8 @@ import {
   type ReadStateOptions,
   type ReadStateResponse,
   type SubmitResponse,
-} from '../api';
-import { Expiry, httpHeadersTransform, makeNonceTransform } from './transforms';
+} from '../api.ts';
+import { Expiry, httpHeadersTransform, makeNonceTransform } from './transforms.ts';
 import {
   type CallRequest,
   Endpoint,
@@ -54,24 +54,24 @@ import {
   SubmitRequestType,
   type ReadStateRequest,
   type HttpHeaderField,
-} from './types';
-import { type SubnetStatus, request as canisterStatusRequest } from '../../canisterStatus';
-import { type HashTree, lookup_path, LookupPathStatus } from '../../certificate';
+} from './types.ts';
+import { type SubnetStatus, request as canisterStatusRequest } from '../../canisterStatus/index.ts';
+import { type HashTree, lookup_path, LookupPathStatus } from '../../certificate.ts';
 import { ed25519 } from '@noble/curves/ed25519';
-import { ExpirableMap } from '../../utils/expirableMap';
-import { Ed25519PublicKey } from '../../public_key';
-import { ObservableLog } from '../../observable';
+import { ExpirableMap } from '../../utils/expirableMap.ts';
+import { Ed25519PublicKey } from '../../public_key.ts';
+import { ObservableLog } from '../../observable.ts';
 import {
   type BackoffStrategy,
   type BackoffStrategyFactory,
   ExponentialBackoff,
-} from '../../polling/backoff';
-import { decodeTime } from '../../utils/leb';
+} from '../../polling/backoff.ts';
+import { decodeTime } from '../../utils/leb.ts';
 import { concatBytes, hexToBytes } from '@noble/hashes/utils';
-import { uint8Equals, uint8FromBufLike } from '../../utils/buffer';
-import { IC_RESPONSE_DOMAIN_SEPARATOR } from '../../constants';
-export * from './transforms';
-export { type Nonce, makeNonce } from './types';
+import { uint8Equals, uint8FromBufLike } from '../../utils/buffer.ts';
+import { IC_RESPONSE_DOMAIN_SEPARATOR } from '../../constants.ts';
+export * from './transforms.ts';
+export { type Nonce, makeNonce } from './types.ts';
 
 export enum RequestStatusResponseStatus {
   Received = 'received',

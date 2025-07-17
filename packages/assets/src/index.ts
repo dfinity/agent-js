@@ -12,16 +12,16 @@ import {
   LookupPathStatus,
 } from '@dfinity/agent';
 import { lebDecode, PipeArrayBuffer, compare } from '@dfinity/candid';
-import { type AssetsCanisterRecord, getAssetsCanister } from './canisters/assets';
+import { type AssetsCanisterRecord, getAssetsCanister } from './canisters/assets.ts';
 import { sha256 } from '@noble/hashes/sha2';
-import { type BatchOperationKind } from './canisters/assets_service';
-import { isReadable, type Readable } from './readable/readable';
-import { ReadableFile } from './readable/readableFile';
-import { ReadableBlob } from './readable/readableBlob';
-import { ReadablePath } from './readable/readablePath';
-import { ReadableBytes } from './readable/readableBytes';
-import { limit, type LimitFn } from './utils/limit';
-import { base64Decode } from './utils/base64';
+import { type BatchOperationKind } from './canisters/assets_service.ts';
+import { isReadable, type Readable } from './readable/readable.ts';
+import { ReadableFile } from './readable/readableFile.ts';
+import { ReadableBlob } from './readable/readableBlob.ts';
+import { ReadablePath } from './readable/readablePath.ts';
+import { ReadableBytes } from './readable/readableBytes.ts';
+import { limit, type LimitFn } from './utils/limit.ts';
+import { base64Decode } from './utils/base64.ts';
 import fs from 'fs';
 
 /**
