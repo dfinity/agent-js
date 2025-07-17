@@ -1,10 +1,10 @@
 {
   "name": "@dfinity/principal",
-  "version": "3.0.0-beta.4",
+  "version": "3.0.0",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to work with Internet Computer principals",
-  "homepage": "https://internetcomputer.org",
+  "homepage": "https://agent-js.icp.xyz/libs/principal",
   "repository": {
     "type": "git",
     "url": "https://github.com/dfinity/agent-js.git",

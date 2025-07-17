@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/agent-monorepo",
-  "version": "3.0.0-beta.4",
+  "version": "3.0.0",
   "private": true,
   "description": "Use an Agent to interact with the Internet Computer from your JavaScript program.",
   "type": "module",
@@ -73,10 +73,6 @@
   },
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
-  "bugs": {
-    "url": "https://github.com/dfinity/agent-js/issues"
-  },
-  "homepage": "https://github.com/dfinity-lab/agent-js#readme",
   "size-limit": [
     {
       "name": "@dfinity/agent",
