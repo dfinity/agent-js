@@ -1,4 +1,4 @@
-export * from './actor.ts';
+export * from './actor';
 export * from './agent/index.ts';
 export * from './agent/http/transforms.ts';
 export * from './agent/http/types.ts';
