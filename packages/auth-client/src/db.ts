@@ -65,7 +65,6 @@ export class IdbKeyVal {
    * @param {DBCreateOptions['storeName']} options.storeName name for the indexeddb Data Store
    * @default
    * @param {DBCreateOptions['version']} options.version version of the database. Increment to safely upgrade
-   * @constructs an {@link IdbKeyVal}
    */
   public static async create(options?: DBCreateOptions): Promise<IdbKeyVal> {
     const {

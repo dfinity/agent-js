@@ -254,7 +254,9 @@ export interface Agent {
    *
    * A use case for this would be - after authenticating using `@dfinity/auth-client`, you can replace the `AnonymousIdentity` of your `Actor` with a `DelegationIdentity`.
    *
-   * ```Actor.agentOf(defaultActor).replaceIdentity(await authClient.getIdentity());```
+   * ```ts
+   * Actor.agentOf(defaultActor).replaceIdentity(await authClient.getIdentity());
+   * ```
    */
   replaceIdentity?(identity: Identity): void;
 }
