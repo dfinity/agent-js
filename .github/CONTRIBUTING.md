@@ -215,7 +215,7 @@ Perform the following steps to manually publish a package to NPM:
 Once the changes are merged, you can publish to NPM by running:
 
 - `pnpm build`. Re-building for safety.
-- `pnpm publish`. To publish packages to NPM.
+- `pnpm publish:packages`. To publish packages to NPM.
   - To do this, you will need publishing authorization under our NPM organization. Contact IT if you require access.
   - You can include the `--dry-run` flag to verify the versions and packages before actual publishing.
 
@@ -243,7 +243,7 @@ To deprecate a package, follow these steps
 - Remove unnecessary content, dependencies, and metadata from the package.json
 - add a `"deprecation"` tag to the package.json with instructions you want users to follow in migrating
 - remove the package as a workspace from the root `package.json`
-- the next time that agent-js releases, manually publish a new version of newly deprecated packages by incrementing the patch version and running `pnpm publish`
+- the next time that agent-js releases, manually publish a new version of newly deprecated packages by incrementing the patch version and running `pnpm publish:packages`
 
 So far, the following packages were deprecated:
 

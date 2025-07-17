@@ -54,7 +54,7 @@
     "bundle": "pnpm build:packages && pnpm -r bundle",
     "e2e": "pnpm -r e2e",
     "test": "pnpm -r test",
-    "publish": "pnpm -r publish",
+    "publish:packages": "pnpm -r publish",
     "version": "pnpm dlx tsx bin/version.ts",
     "attw": "pnpm -r attw",
     "lint": "eslint .",
