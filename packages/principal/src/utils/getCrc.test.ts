@@ -1,4 +1,4 @@
-import { getCrc32 } from './getCrc';
+import { getCrc32 } from './getCrc.ts';
 
 describe('crc', () => {
   it('works', () => {

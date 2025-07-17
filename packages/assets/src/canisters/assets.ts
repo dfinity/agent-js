@@ -1,6 +1,6 @@
 import { Actor, type ActorConfig, type ActorSubclass } from '@dfinity/agent';
-import { idlFactory } from './assets_idl';
-import type _SERVICE from './assets_service';
+import { idlFactory } from './assets_idl.ts';
+import type _SERVICE from './assets_service.ts';
 
 export type AssetsCanisterRecord = _SERVICE;
 

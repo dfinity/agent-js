@@ -1,4 +1,4 @@
-import { base64Decode } from './base64';
+import { base64Decode } from './base64.ts';
 
 function stringToUint8Array(str: string) {
   return new TextEncoder().encode(str);

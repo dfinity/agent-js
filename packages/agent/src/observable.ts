@@ -1,4 +1,4 @@
-import { AgentError } from './errors';
+import { AgentError } from './errors.ts';
 
 export type ObserveFunction<T> = (data: T, ...rest: unknown[]) => void;
 

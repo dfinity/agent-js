@@ -10,8 +10,8 @@ import { sha256 } from '@noble/hashes/sha2';
 import { bytesToHex, hexToBytes, randomBytes } from '@noble/hashes/utils';
 import * as bip39 from '@scure/bip39';
 import { HDKey } from '@scure/bip32';
-import { SECP256K1_OID, unwrapDER, wrapDER } from './der';
-import { pemToSecretKey } from './pem';
+import { SECP256K1_OID, unwrapDER, wrapDER } from './der.ts';
+import { pemToSecretKey } from './pem.ts';
 import { uint8FromBufLike } from '@dfinity/candid';
 
 declare type PublicKeyHex = string;

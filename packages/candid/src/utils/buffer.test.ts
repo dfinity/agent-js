@@ -5,7 +5,7 @@ import {
   compare,
   uint8Equals,
   uint8ToDataView,
-} from './buffer';
+} from './buffer.ts';
 import { hexToBytes, bytesToHex } from '@noble/hashes/utils';
 
 describe('PipeArrayBuffer', () => {

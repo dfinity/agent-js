@@ -1,4 +1,4 @@
-import { ReadableBytes } from './readableBytes';
+import { ReadableBytes } from './readableBytes.ts';
 
 const transparentPixelGif = [
   71, 73, 70, 56, 57, 97, 1, 0, 1, 0, 0, 0, 0, 33, 249, 4, 1, 0, 0, 0, 0, 44, 0, 0, 0, 0, 1, 0, 1,

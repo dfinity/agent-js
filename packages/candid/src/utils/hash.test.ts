@@ -1,4 +1,4 @@
-import { idlLabelToId } from './hash';
+import { idlLabelToId } from './hash.ts';
 
 test('IDL label', () => {
   function testLabel(str: string, expected: number) {

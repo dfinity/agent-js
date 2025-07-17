@@ -4,17 +4,17 @@ import {
   prepareV2QueryResponse,
   prepareV2ReadStateSubnetResponse,
   prepareV2ReadStateTimeResponse,
-} from '../utils/mock-replica';
+} from '../utils/mock-replica.ts';
 import { IDL } from '@icp-sdk/core/candid';
 import { Principal } from '@icp-sdk/core/principal';
-import { KeyPair, randomIdentity, randomKeyPair } from '../utils/identity';
+import { KeyPair, randomIdentity, randomKeyPair } from '../utils/identity.ts';
 import {
   CertificateOutdatedErrorCode,
   HttpAgent,
   requestIdOf,
   TrustError,
 } from '@icp-sdk/core/agent';
-import { createActor } from '../canisters/counter';
+import { createActor } from '../canisters/counter.ts';
 
 const MINUTE_TO_MSECS = 60 * 1_000;
 

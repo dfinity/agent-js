@@ -13,7 +13,7 @@ import { IDL } from '@icp-sdk/core/candid';
 import { Ed25519KeyIdentity } from '@icp-sdk/core/identity';
 import { Principal } from '@icp-sdk/core/principal';
 import { describe, it, expect, vi, test } from 'vitest';
-import { makeAgent } from '../utils/agent';
+import { makeAgent } from '../utils/agent.ts';
 import { hexToBytes } from '@noble/hashes/utils';
 
 const { pollForResponse } = polling;

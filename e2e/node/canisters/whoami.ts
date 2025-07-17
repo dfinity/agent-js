@@ -1,8 +1,8 @@
 import { Actor } from '@icp-sdk/core/agent';
 import { IDL } from '@icp-sdk/core/candid';
 import { Principal } from '@icp-sdk/core/principal';
-import agent from '../utils/agent';
-import { getCanisterId } from '../utils/canisterid';
+import agent from '../utils/agent.ts';
+import { getCanisterId } from '../utils/canisterid.ts';
 
 let cache: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

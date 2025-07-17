@@ -1,4 +1,4 @@
-import { IdleManager } from './idleManager';
+import { IdleManager } from './idleManager.ts';
 
 jest.useFakeTimers();
 

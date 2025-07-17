@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { IdbKeyVal } from './db';
+import { IdbKeyVal } from './db.ts';
 
 let testCounter = 0;
 

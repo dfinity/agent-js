@@ -1,26 +1,26 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { HttpAgent, Nonce } from '../index';
-import * as cbor from '../../cbor';
-import { Expiry, httpHeadersTransform } from './transforms';
+import { HttpAgent, Nonce } from '../index.ts';
+import * as cbor from '../../cbor.ts';
+import { Expiry, httpHeadersTransform } from './transforms.ts';
 import {
   CallRequest,
   Envelope,
   HttpAgentRequestTransformFn,
   makeNonce,
   SubmitRequestType,
-} from './types';
+} from './types.ts';
 import { Principal } from '@dfinity/principal';
-import { RequestId, requestIdOf } from '../../request_id';
+import { RequestId, requestIdOf } from '../../request_id.ts';
 
 import { JSDOM } from 'jsdom';
-import { AnonymousIdentity, SignIdentity, Signature, uint8FromBufLike } from '../..';
+import { AnonymousIdentity, SignIdentity, Signature, uint8FromBufLike } from '../../index.ts';
 import { Ed25519KeyIdentity } from '@dfinity/identity';
 import {
   AgentError,
   HttpErrorCode,
   HttpFetchErrorCode,
   IdentityInvalidErrorCode,
-} from '../../errors';
+} from '../../errors.ts';
 import { utf8ToBytes, bytesToHex, hexToBytes } from '@noble/hashes/utils';
 
 const { window } = new JSDOM(`<!DOCTYPE html><p>Hello world</p>`);

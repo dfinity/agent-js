@@ -8,9 +8,9 @@ import {
   UnknownError,
   UncertifiedRejectErrorCode,
   CertifiedRejectErrorCode,
-} from './errors';
-import { Expiry, ReplicaRejectCode } from './agent';
-import { RequestId } from './request_id';
+} from './errors.ts';
+import { Expiry, ReplicaRejectCode } from './agent/index.ts';
+import { RequestId } from './request_id.ts';
 
 test('AgentError', () => {
   const errorCode = new UnexpectedErrorCode('message');

@@ -1,4 +1,4 @@
-import { randomNumber } from './random';
+import { randomNumber } from './random.ts';
 import { Crypto } from '@peculiar/webcrypto';
 import { randomInt } from 'node:crypto';
 

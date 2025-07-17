@@ -1,6 +1,6 @@
-import { type RequestId } from '../request_id';
-import { type CreateCertificateOptions, Certificate, lookupResultToBuffer } from '../certificate';
-import { type Agent, type ReadStateResponse } from '../agent/api';
+import { type RequestId } from '../request_id.ts';
+import { type CreateCertificateOptions, Certificate, lookupResultToBuffer } from '../certificate.ts';
+import { type Agent, type ReadStateResponse } from '../agent/api.ts';
 import { Principal } from '@dfinity/principal';
 import {
   CertifiedRejectErrorCode,
@@ -12,14 +12,14 @@ import {
   RequestStatusDoneNoReplyErrorCode,
   UnknownError,
   UNREACHABLE_ERROR,
-} from '../errors';
+} from '../errors.ts';
 
-export * as strategy from './strategy';
-import { defaultStrategy } from './strategy';
-import { ReadRequestType, type ReadStateRequest } from '../agent/http/types';
-import { RequestStatusResponseStatus } from '../agent';
+export * as strategy from './strategy.ts';
+import { defaultStrategy } from './strategy.ts';
+import { ReadRequestType, type ReadStateRequest } from '../agent/http/types.ts';
+import { RequestStatusResponseStatus } from '../agent/index.ts';
 import { utf8ToBytes } from '@noble/hashes/utils';
-export { defaultStrategy } from './strategy';
+export { defaultStrategy } from './strategy.ts';
 
 export type PollStrategy = (
   canisterId: Principal,

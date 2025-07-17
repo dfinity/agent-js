@@ -1,9 +1,9 @@
 import { Principal } from '@dfinity/principal';
-import { type HttpDetailsResponse, type NodeSignature, type ReplicaRejectCode } from './agent/api';
-import { type RequestId } from './request_id';
-import { type Expiry, type RequestStatusResponseStatus } from './agent/http';
-import { type HttpHeaderField } from './agent/http/types';
-import { LookupPathStatus, LookupSubtreeStatus } from './certificate';
+import { type HttpDetailsResponse, type NodeSignature, type ReplicaRejectCode } from './agent/api.ts';
+import { type RequestId } from './request_id.ts';
+import { type Expiry, type RequestStatusResponseStatus } from './agent/http/index.ts';
+import { type HttpHeaderField } from './agent/http/types.ts';
+import { LookupPathStatus, LookupSubtreeStatus } from './certificate.ts';
 import { bytesToHex } from '@noble/hashes/utils';
 
 export enum ErrorKindEnum {

@@ -1,7 +1,7 @@
-export * from './candid-ui';
-export * from './candid-core';
-export * as IDL from './idl';
-export * from './utils/hash';
-export * from './utils/leb128';
-export * from './utils/buffer';
-export * from './types';
+export * from './candid-ui.ts';
+export * from './candid-core.ts';
+export * as IDL from './idl.ts';
+export * from './utils/hash.ts';
+export * from './utils/leb128.ts';
+export * from './utils/buffer.ts';
+export * from './types.ts';

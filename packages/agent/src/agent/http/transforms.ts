@@ -6,8 +6,8 @@ import {
   type HttpHeaderField,
   makeNonce,
   type Nonce,
-} from './types';
-import { ExpiryJsonDeserializeErrorCode, InputError } from '../../errors';
+} from './types.ts';
+import { ExpiryJsonDeserializeErrorCode, InputError } from '../../errors.ts';
 
 export const JSON_KEY_EXPIRY = '__expiry__';
 const NANOSECONDS_PER_MILLISECOND = BigInt(1_000_000);

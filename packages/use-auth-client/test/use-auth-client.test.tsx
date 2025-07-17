@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { render, screen, cleanup } from '@testing-library/react';
-import { useAuthClient } from '../src/use-auth-client';
+import { useAuthClient } from '../src/use-auth-client.ts';
 import { IDL } from '@dfinity/candid';
 
 interface GenericComponentProps {

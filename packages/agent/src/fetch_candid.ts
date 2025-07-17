@@ -1,8 +1,8 @@
 import { Principal } from '@dfinity/principal';
-import * as CanisterStatus from './canisterStatus/index';
+import * as CanisterStatus from './canisterStatus/index.ts';
 import { IDL } from '@dfinity/candid';
-import { HttpAgent } from './agent/http';
-import { Actor, type ActorSubclass } from './actor';
+import { HttpAgent } from './agent/http/index.ts';
+import { Actor, type ActorSubclass } from './actor.ts';
 
 /**
  * Retrieves the Candid interface for the specified canister.

@@ -1,6 +1,6 @@
-import { ExpiryJsonDeserializeErrorCode } from '../../errors';
-import { InputError } from '../../errors';
-import { Expiry } from './transforms';
+import { ExpiryJsonDeserializeErrorCode } from '../../errors.ts';
+import { InputError } from '../../errors.ts';
+import { Expiry } from './transforms.ts';
 
 jest.useFakeTimers();
 test('it should round down to the nearest minute', () => {
