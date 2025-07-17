@@ -1,5 +1,5 @@
 import { type Readable } from './readable.ts';
-import mime from 'mime/lite';
+import mime from 'mime/lite.js';
 
 export class ReadableBlob implements Readable {
   public readonly fileName: string;
