@@ -36,8 +36,7 @@ jobs:
           node_version_file: '.nvmrc'
           
       - run: pnpm build
-      - run: pnpm audit
-      - run: pnpm publish
+      - run: pnpm publish:packages
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
