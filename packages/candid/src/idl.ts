@@ -172,10 +172,35 @@ export abstract class Visitor<D, R> {
   }
 }
 
+// we try to use hard to guess names to avoid collisions with other types
+enum IdlTypeName {
+  EmptyClass = '__IDL_EmptyClass__',
+  UnknownClass = '__IDL_UnknownClass__',
+  BoolClass = '__IDL_BoolClass__',
+  NullClass = '__IDL_NullClass__',
+  ReservedClass = '__IDL_ReservedClass__',
+  TextClass = '__IDL_TextClass__',
+  IntClass = '__IDL_IntClass__',
+  NatClass = '__IDL_NatClass__',
+  FloatClass = '__IDL_FloatClass__',
+  FixedIntClass = '__IDL_FixedIntClass__',
+  FixedNatClass = '__IDL_FixedNatClass__',
+  VecClass = '__IDL_VecClass__',
+  OptClass = '__IDL_OptClass__',
+  RecordClass = '__IDL_RecordClass__',
+  TupleClass = '__IDL_TupleClass__',
+  VariantClass = '__IDL_VariantClass__',
+  RecClass = '__IDL_RecClass__',
+  PrincipalClass = '__IDL_PrincipalClass__',
+  FuncClass = '__IDL_FuncClass__',
+  ServiceClass = '__IDL_ServiceClass__',
+}
+
 /**
  * Represents an IDL type.
  */
 export abstract class Type<T = any> {
+  public abstract readonly typeName: IdlTypeName;
   public abstract readonly name: string;
   public abstract accept<D, R>(v: Visitor<D, R>, d: D): R;
 
@@ -257,6 +282,14 @@ export abstract class ConstructType<T = any> extends Type<T> {
  * Result types like `Result<Text, Empty>` should always succeed.
  */
 export class EmptyClass extends PrimitiveType<never> {
+  get typeName() {
+    return IdlTypeName.EmptyClass;
+  }
+
+  static [Symbol.hasInstance](instance: any): instance is EmptyClass {
+    return instance.typeName === IdlTypeName.EmptyClass;
+  }
+
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitEmpty(this, d);
   }
@@ -294,6 +327,14 @@ export class EmptyClass extends PrimitiveType<never> {
  * Unknown cannot be serialized and attempting to do so will throw an error.
  */
 export class UnknownClass extends Type {
+  get typeName() {
+    return IdlTypeName.UnknownClass;
+  }
+
+  static [Symbol.hasInstance](instance: any): instance is UnknownClass {
+    return instance.typeName === IdlTypeName.UnknownClass;
+  }
+
   public checkType(_t: Type): Type {
     throw new Error('Method not implemented for unknown.');
   }
@@ -360,6 +401,14 @@ export class UnknownClass extends Type {
  * Represents an IDL Bool
  */
 export class BoolClass extends PrimitiveType<boolean> {
+  get typeName() {
+    return IdlTypeName.BoolClass;
+  }
+
+  static [Symbol.hasInstance](instance: any): instance is BoolClass {
+    return instance.typeName === IdlTypeName.BoolClass;
+  }
+
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitBool(this, d);
   }
@@ -398,6 +447,14 @@ export class BoolClass extends PrimitiveType<boolean> {
  * Represents an IDL Null
  */
 export class NullClass extends PrimitiveType<null> {
+  get typeName() {
+    return IdlTypeName.NullClass;
+  }
+
+  static [Symbol.hasInstance](instance: any): instance is NullClass {
+    return instance.typeName === IdlTypeName.NullClass;
+  }
+
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitNull(this, d);
   }
@@ -429,6 +486,14 @@ export class NullClass extends PrimitiveType<null> {
  * Represents an IDL Reserved
  */
 export class ReservedClass extends PrimitiveType<any> {
+  get typeName() {
+    return IdlTypeName.ReservedClass;
+  }
+
+  static [Symbol.hasInstance](instance: any): instance is ReservedClass {
+    return instance.typeName === IdlTypeName.ReservedClass;
+  }
+
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitReserved(this, d);
   }
@@ -461,6 +526,14 @@ export class ReservedClass extends PrimitiveType<any> {
  * Represents an IDL Text
  */
 export class TextClass extends PrimitiveType<string> {
+  get typeName() {
+    return IdlTypeName.TextClass;
+  }
+
+  static [Symbol.hasInstance](instance: any): instance is TextClass {
+    return instance.typeName === IdlTypeName.TextClass;
+  }
+
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitText(this, d);
   }
@@ -501,6 +574,14 @@ export class TextClass extends PrimitiveType<string> {
  * Represents an IDL Int
  */
 export class IntClass extends PrimitiveType<bigint> {
+  get typeName() {
+    return IdlTypeName.IntClass;
+  }
+
+  static [Symbol.hasInstance](instance: any): instance is IntClass {
+    return instance.typeName === IdlTypeName.IntClass;
+  }
+
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitInt(this, d);
   }
@@ -538,6 +619,14 @@ export class IntClass extends PrimitiveType<bigint> {
  * Represents an IDL Nat
  */
 export class NatClass extends PrimitiveType<bigint> {
+  get typeName() {
+    return IdlTypeName.NatClass;
+  }
+
+  static [Symbol.hasInstance](instance: any): instance is NatClass {
+    return instance.typeName === IdlTypeName.NatClass;
+  }
+
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitNat(this, d);
   }
@@ -575,6 +664,14 @@ export class NatClass extends PrimitiveType<bigint> {
  * Represents an IDL Float
  */
 export class FloatClass extends PrimitiveType<number> {
+  get typeName() {
+    return IdlTypeName.FloatClass;
+  }
+
+  static [Symbol.hasInstance](instance: any): instance is FloatClass {
+    return instance.typeName === IdlTypeName.FloatClass;
+  }
+
   constructor(public readonly _bits: number) {
     super();
     if (_bits !== 32 && _bits !== 64) {
@@ -630,6 +727,14 @@ export class FloatClass extends PrimitiveType<number> {
  * Represents an IDL fixed-width Int(n)
  */
 export class FixedIntClass extends PrimitiveType<bigint | number> {
+  get typeName() {
+    return IdlTypeName.FixedIntClass;
+  }
+
+  static [Symbol.hasInstance](instance: any): instance is FixedIntClass {
+    return instance.typeName === IdlTypeName.FixedIntClass;
+  }
+
   constructor(public readonly _bits: number) {
     super();
   }
@@ -687,6 +792,14 @@ export class FixedIntClass extends PrimitiveType<bigint | number> {
  * Represents an IDL fixed-width Nat(n)
  */
 export class FixedNatClass extends PrimitiveType<bigint | number> {
+  get typeName() {
+    return IdlTypeName.FixedNatClass;
+  }
+
+  static [Symbol.hasInstance](instance: any): instance is FixedNatClass {
+    return instance.typeName === IdlTypeName.FixedNatClass;
+  }
+
   constructor(public readonly _bits: number) {
     super();
   }
@@ -746,6 +859,14 @@ export class FixedNatClass extends PrimitiveType<bigint | number> {
  * @param {Type} t
  */
 export class VecClass<T> extends ConstructType<T[]> {
+  get typeName() {
+    return IdlTypeName.VecClass;
+  }
+
+  static [Symbol.hasInstance]<T>(instance: any): instance is VecClass<T> {
+    return instance.typeName === IdlTypeName.VecClass;
+  }
+
   // If true, this vector is really a blob and we can just use memcpy.
   //
   // NOTE:
@@ -942,6 +1063,14 @@ export class VecClass<T> extends ConstructType<T[]> {
  * @param {Type} t
  */
 export class OptClass<T> extends ConstructType<[T] | []> {
+  get typeName() {
+    return IdlTypeName.OptClass;
+  }
+
+  static [Symbol.hasInstance]<T>(instance: any): instance is OptClass<T> {
+    return instance.typeName === IdlTypeName.OptClass;
+  }
+
   constructor(public _type: Type<T>) {
     super();
   }
@@ -1069,6 +1198,14 @@ export class OptClass<T> extends ConstructType<[T] | []> {
  * @param {object} [fields] - mapping of function name to Type
  */
 export class RecordClass extends ConstructType<Record<string, any>> {
+  get typeName() {
+    return IdlTypeName.RecordClass;
+  }
+
+  static [Symbol.hasInstance](instance: any): instance is RecordClass {
+    return instance.typeName === IdlTypeName.RecordClass;
+  }
+
   public readonly _fields: Array<[string, Type]>;
 
   constructor(fields: Record<string, Type> = {}) {
@@ -1213,6 +1350,14 @@ export class RecordClass extends ConstructType<Record<string, any>> {
  * @param {Type} components
  */
 export class TupleClass<T extends any[]> extends RecordClass {
+  get typeName() {
+    return IdlTypeName.TupleClass;
+  }
+
+  static [Symbol.hasInstance]<T extends any[]>(instance: any): instance is TupleClass<T> {
+    return instance.typeName === IdlTypeName.TupleClass;
+  }
+
   protected readonly _components: Type[];
 
   constructor(_components: Type[]) {
@@ -1286,6 +1431,14 @@ export class TupleClass<T extends any[]> extends RecordClass {
  * @param {object} [fields] - mapping of function name to Type
  */
 export class VariantClass extends ConstructType<Record<string, any>> {
+  get typeName() {
+    return IdlTypeName.VariantClass;
+  }
+
+  static [Symbol.hasInstance](instance: any): instance is VariantClass {
+    return instance.typeName === IdlTypeName.VariantClass;
+  }
+
   public readonly _fields: Array<[string, Type]>;
 
   constructor(fields: Record<string, Type> = {}) {
@@ -1401,9 +1554,17 @@ export class VariantClass extends ConstructType<Record<string, any>> {
  * types.
  */
 export class RecClass<T = any> extends ConstructType<T> {
+  get typeName() {
+    return IdlTypeName.RecClass;
+  }
+
   private static _counter = 0;
   private _id = RecClass._counter++;
   private _type: ConstructType<T> | undefined;
+
+  static [Symbol.hasInstance](instance: any): instance is RecClass {
+    return instance.typeName === IdlTypeName.RecClass;
+  }
 
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     if (!this._type) {
@@ -1481,6 +1642,14 @@ function decodePrincipalId(b: Pipe): PrincipalId {
  * Represents an IDL principal reference
  */
 export class PrincipalClass extends PrimitiveType<PrincipalId> {
+  get typeName() {
+    return IdlTypeName.PrincipalClass;
+  }
+
+  static [Symbol.hasInstance](instance: any): instance is PrincipalClass {
+    return instance.typeName === IdlTypeName.PrincipalClass;
+  }
+
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitPrincipal(this, d);
   }
@@ -1519,6 +1688,14 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
  * @param annotations Function annotations.
  */
 export class FuncClass extends ConstructType<[PrincipalId, string]> {
+  get typeName() {
+    return IdlTypeName.FuncClass;
+  }
+
+  static [Symbol.hasInstance](instance: any): instance is FuncClass {
+    return instance.typeName === IdlTypeName.FuncClass;
+  }
+
   public static argsToString(types: Type[], v: any[]) {
     if (types.length !== v.length) {
       throw new Error('arity mismatch');
@@ -1621,6 +1798,14 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
 }
 
 export class ServiceClass extends ConstructType<PrincipalId> {
+  get typeName() {
+    return IdlTypeName.ServiceClass;
+  }
+
+  static [Symbol.hasInstance](instance: any): instance is ServiceClass {
+    return instance.typeName === IdlTypeName.ServiceClass;
+  }
+
   public readonly _fields: Array<[string, FuncClass]>;
   constructor(fields: Record<string, FuncClass>) {
     super();
