@@ -1203,7 +1203,10 @@ export class RecordClass extends ConstructType<Record<string, any>> {
   }
 
   static [Symbol.hasInstance](instance: any): instance is RecordClass {
-    return instance.typeName === IdlTypeName.RecordClass;
+    // TupleClass extends RecordClass, so we need to check both here
+    return (
+      instance.typeName === IdlTypeName.RecordClass || instance.typeName === IdlTypeName.TupleClass
+    );
   }
 
   public readonly _fields: Array<[string, Type]>;
