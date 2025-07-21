@@ -13,3 +13,5 @@ packages:
 onlyBuiltDependencies:
   - esbuild
   - sharp
+overrides:
+  '@eslint/plugin-kit@<0.3.3': '>=0.3.3'
