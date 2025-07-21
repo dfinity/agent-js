@@ -172,7 +172,7 @@ export abstract class Visitor<D, R> {
   }
 }
 
-// we try to use hard to guess names to avoid collisions with other types
+// We try to use hard-to-accidentally-pick names to avoid potential collisions with other types.
 enum IdlTypeName {
   EmptyClass = '__IDL_EmptyClass__',
   UnknownClass = '__IDL_UnknownClass__',
