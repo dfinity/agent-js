@@ -117,7 +117,7 @@
     {
       "name": "@dfinity/use-auth-client",
       "path": "./packages/use-auth-client/dist/index.js",
-      "limit": "60 kB"
+      "limit": "61 kB"
     }
   ],
   "release-it": {
