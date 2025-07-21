@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  '@eslint/plugin-kit@<0.3.3': '>=0.3.3'
+
 importers:
 
   .:
@@ -312,7 +315,7 @@ importers:
     devDependencies:
       '@dfinity/utils':
         specifier: ^2.0.0
-        version: 2.13.1(@dfinity/agent@3.0.0-beta.1(@dfinity/candid@3.0.0-beta.1(@dfinity/principal@3.0.0-beta.1))(@dfinity/principal@3.0.0-beta.1)(@noble/hashes@1.8.0))(@dfinity/candid@3.0.0-beta.1(@dfinity/principal@3.0.0-beta.1))(@dfinity/principal@3.0.0-beta.1)
+        version: 2.13.1(@dfinity/agent@3.0.0(@dfinity/candid@3.0.0(@dfinity/principal@3.0.0))(@dfinity/principal@3.0.0)(@noble/hashes@1.8.0))(@dfinity/candid@3.0.0(@dfinity/principal@3.0.0))(@dfinity/principal@3.0.0)
 
   packages/use-auth-client:
     dependencies:
@@ -580,23 +583,23 @@ packages:
     resolution: {integrity: sha512-WyOx8cJQ+FQus4Mm4uPIZA64gbk3Wxh0so5Lcii0aJifqwoVOlfFtorjLE0Hen4OYyHZMXDWqMmaQemBhgxFRQ==}
     engines: {node: '>=14'}
 
-  '@dfinity/agent@3.0.0-beta.1':
-    resolution: {integrity: sha512-XixBHGcyrhgeaJggbOtlR7CX3zw+Ytw4vwXvQkxDAztQW9cBF9AmZzHTtWYvjcfu5F21gZu3BhLA9vkOlOj0wA==}
+  '@dfinity/agent@3.0.0':
+    resolution: {integrity: sha512-Un3o1bArvrXNwM2R/eyeCLnbhPVCeU52FE2R8eU4F6icyIuOIOU1+sT+mW3EviGlcgY+x5xRtYdS9swRCqzgWw==}
     peerDependencies:
-      '@dfinity/candid': ^3.0.0-beta.1
-      '@dfinity/principal': ^3.0.0-beta.1
+      '@dfinity/candid': 3.0.0
+      '@dfinity/principal': 3.0.0
       '@noble/hashes': ^1.8.0
 
-  '@dfinity/candid@3.0.0-beta.1':
-    resolution: {integrity: sha512-VapzoXZab4tueBM8iigQZI44km2TtzeWW/YE/cH9nuQG6vs3nuChOh/RpqCPzyxhc/5JHCF47rLc1uVqKisOuQ==}
+  '@dfinity/candid@3.0.0':
+    resolution: {integrity: sha512-8xApar7gCe2DOzCnlirYGnP/fhItmKeypoF4Xbo2KAOX3GJ3G21ifB/ZX1tPPkHQOq8+B42o9r5zIZQLHNWc0g==}
     peerDependencies:
-      '@dfinity/principal': ^3.0.0-beta.1
+      '@dfinity/principal': 3.0.0
 
   '@dfinity/cbor@0.2.2':
     resolution: {integrity: sha512-GPJpH73kDEKbUBdUjY80lz7cq9l0vm1h/7ppejPV6O0ZTqCLrYspssYvqjRmK4aNnJ/SKXsP0rg9LYX7zpegaA==}
 
-  '@dfinity/principal@3.0.0-beta.1':
-    resolution: {integrity: sha512-lOWzep6K6PwnEbeuuupuYunnPZdrdLbNE5zWONo8NkYqLJBRM8nbAB37eiq8dkjAarIOwBapgS+q4erv3XrJ+w==}
+  '@dfinity/principal@3.0.0':
+    resolution: {integrity: sha512-qgWzxzZqC9s/4L/ITSkkeh+VGlTsiViQypqBiIDy1AEVnNhK/EINFke01ur4+a+GcGRrN410enaoQ6tPHYlnjQ==}
 
   '@dfinity/utils@2.13.1':
     resolution: {integrity: sha512-WJ2iYYncfAAWEJQYfUDOYw6e5EFmI8jlmRVOTki+EFVKWo5gmubVT3OguisEqEMCZfxoP1SZKs1DXrYSGYrxfw==}
@@ -784,8 +787,8 @@ packages:
     resolution: {integrity: sha512-qIbV0/JZr7iSDjqAc60IqbLdsj9GDt16xQtWD+B78d/HAlvysGdZZ6rpJHGAc2T0FQx1X6thsSPdnoiGKdNtdg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@eslint/core@0.15.0':
-    resolution: {integrity: sha512-b7ePw78tEWWkpgZCDYkbqDOP8dmM6qe+AOC6iuJqlq1R/0ahMAeH3qynpnqKFGkMltrp44ohV4ubGyvLX28tzw==}
+  '@eslint/core@0.15.1':
+    resolution: {integrity: sha512-bkOp+iumZCCbt1K1CmWf0R9pM5yKpDv+ZXtvSyQpudrI9kuFLp+bM2WOPXImuD/ceQuaa8f5pj93Y7zyECIGNA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
   '@eslint/eslintrc@3.3.1':
@@ -800,8 +803,8 @@ packages:
     resolution: {integrity: sha512-RBMg5FRL0I0gs51M/guSAj5/e14VQ4tpZnQNWwuDT66P14I43ItmPfIZRhO9fUVIPOAQXU47atlywZ/czoqFPA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@eslint/plugin-kit@0.3.2':
-    resolution: {integrity: sha512-4SaFZCNfJqvk/kenHpI8xvN42DMaoycy4PzKc5otHxRswww1kAt82OlBuwRVLofCACCTZEcla2Ydxv8scMXaTg==}
+  '@eslint/plugin-kit@0.3.3':
+    resolution: {integrity: sha512-1+WqvgNMhmlAambTvT3KPtCl/Ibr68VldY2XY40SL1CE0ZXiakFR/cbTspaF5HsnpDMvcYYoJHfl4980NBjGag==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
   '@expressive-code/core@0.41.2':
@@ -5993,29 +5996,29 @@ snapshots:
 
   '@ctrl/tinycolor@4.1.0': {}
 
-  '@dfinity/agent@3.0.0-beta.1(@dfinity/candid@3.0.0-beta.1(@dfinity/principal@3.0.0-beta.1))(@dfinity/principal@3.0.0-beta.1)(@noble/hashes@1.8.0)':
+  '@dfinity/agent@3.0.0(@dfinity/candid@3.0.0(@dfinity/principal@3.0.0))(@dfinity/principal@3.0.0)(@noble/hashes@1.8.0)':
     dependencies:
-      '@dfinity/candid': 3.0.0-beta.1(@dfinity/principal@3.0.0-beta.1)
+      '@dfinity/candid': 3.0.0(@dfinity/principal@3.0.0)
       '@dfinity/cbor': 0.2.2
-      '@dfinity/principal': 3.0.0-beta.1
+      '@dfinity/principal': 3.0.0
       '@noble/curves': 1.9.2
       '@noble/hashes': 1.8.0
 
-  '@dfinity/candid@3.0.0-beta.1(@dfinity/principal@3.0.0-beta.1)':
+  '@dfinity/candid@3.0.0(@dfinity/principal@3.0.0)':
     dependencies:
-      '@dfinity/principal': 3.0.0-beta.1
+      '@dfinity/principal': 3.0.0
 
   '@dfinity/cbor@0.2.2': {}
 
-  '@dfinity/principal@3.0.0-beta.1':
+  '@dfinity/principal@3.0.0':
     dependencies:
       '@noble/hashes': 1.8.0
 
-  '@dfinity/utils@2.13.1(@dfinity/agent@3.0.0-beta.1(@dfinity/candid@3.0.0-beta.1(@dfinity/principal@3.0.0-beta.1))(@dfinity/principal@3.0.0-beta.1)(@noble/hashes@1.8.0))(@dfinity/candid@3.0.0-beta.1(@dfinity/principal@3.0.0-beta.1))(@dfinity/principal@3.0.0-beta.1)':
+  '@dfinity/utils@2.13.1(@dfinity/agent@3.0.0(@dfinity/candid@3.0.0(@dfinity/principal@3.0.0))(@dfinity/principal@3.0.0)(@noble/hashes@1.8.0))(@dfinity/candid@3.0.0(@dfinity/principal@3.0.0))(@dfinity/principal@3.0.0)':
     dependencies:
-      '@dfinity/agent': 3.0.0-beta.1(@dfinity/candid@3.0.0-beta.1(@dfinity/principal@3.0.0-beta.1))(@dfinity/principal@3.0.0-beta.1)(@noble/hashes@1.8.0)
-      '@dfinity/candid': 3.0.0-beta.1(@dfinity/principal@3.0.0-beta.1)
-      '@dfinity/principal': 3.0.0-beta.1
+      '@dfinity/agent': 3.0.0(@dfinity/candid@3.0.0(@dfinity/principal@3.0.0))(@dfinity/principal@3.0.0)(@noble/hashes@1.8.0)
+      '@dfinity/candid': 3.0.0(@dfinity/principal@3.0.0)
+      '@dfinity/principal': 3.0.0
 
   '@emnapi/runtime@1.4.3':
     dependencies:
@@ -6124,7 +6127,7 @@ snapshots:
     dependencies:
       '@types/json-schema': 7.0.15
 
-  '@eslint/core@0.15.0':
+  '@eslint/core@0.15.1':
     dependencies:
       '@types/json-schema': 7.0.15
 
@@ -6146,9 +6149,9 @@ snapshots:
 
   '@eslint/object-schema@2.1.6': {}
 
-  '@eslint/plugin-kit@0.3.2':
+  '@eslint/plugin-kit@0.3.3':
     dependencies:
-      '@eslint/core': 0.15.0
+      '@eslint/core': 0.15.1
       levn: 0.4.1
 
   '@expressive-code/core@0.41.2':
@@ -8266,7 +8269,7 @@ snapshots:
       '@eslint/core': 0.14.0
       '@eslint/eslintrc': 3.3.1
       '@eslint/js': 9.29.0
-      '@eslint/plugin-kit': 0.3.2
+      '@eslint/plugin-kit': 0.3.3
       '@humanfs/node': 0.16.6
       '@humanwhocodes/module-importer': 1.0.1
       '@humanwhocodes/retry': 0.4.3
