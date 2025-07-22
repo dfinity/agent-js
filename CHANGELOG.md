@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.0.1] - 2025-07-22
+
 - fix: override `instanceof` in Candid IDL types to avoid issues when importing `IDL` from multiple locations.
 
 ## [3.0.0] - 2025-07-17
