@@ -7,10 +7,6 @@ on:
     types:
       - closed
 
-concurrency:
-  group: pr-${{ github.workflow }}-${{ github.head_ref }}
-  cancel-in-progress: true
-
 jobs:
   publish:
     if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')
@@ -34,7 +30,7 @@ jobs:
         uses: dfinity/ci-tools/actions/setup-pnpm@main
         with:
           node_version_file: '.nvmrc'
-          
+
       - run: pnpm build
       - run: pnpm publish:packages
         env:
@@ -42,16 +38,13 @@ jobs:
 
       # publish docs
       - name: Install dfx
-        run: dfinity/setup-dfx@main
+        uses: dfinity/setup-dfx@main
       - name: Add new identity to dfx
+        env:
+          DFX_IDENTITY_PEM: ${{ secrets.DFX_IDENTITY_PEM }}
         run: |
-          echo ${{ secrets.DFX_IDENTITY_PEM }} > identity.pem
-          dfx identity import docs-deployer identity.pem
+          echo "$DFX_IDENTITY_PEM" > ./identity.pem
+          dfx identity import --storage-mode plaintext docs-deployer ./identity.pem
           dfx identity use docs-deployer
       - name: Deploy docs
-        run: dfx deploy --network ic
-
-      - name: Delete release branch
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: git push origin --delete ${{ env.BRANCH }}
+        run: DFX_WARNING=-mainnet_plaintext_identity dfx deploy --ic docs
