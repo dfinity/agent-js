@@ -55,6 +55,16 @@ export class Expiry {
     return new Expiry(roundedExpirySeconds * SECONDS_TO_MILLISECONDS * MILLISECONDS_TO_NANOSECONDS);
   }
 
+  /**
+   * Adds a number value (in milliseconds) to this Expiry.
+   * @param valueInMs The number value in milliseconds to add.
+   * @returns {Expiry} A new Expiry object whose value is the sum of the current expiry and the provided value in milliseconds.
+   */
+  public addMilliseconds(valueInMs: number): Expiry {
+    const valueInNs = BigInt(valueInMs) * MILLISECONDS_TO_NANOSECONDS;
+    return new Expiry(this.__expiry__ + valueInNs);
+  }
+
   public toBigInt(): bigint {
     return this.__expiry__;
   }
