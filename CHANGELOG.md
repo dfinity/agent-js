@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- fix: canonicalizes record and variant labels during subtype checking
+
 ## [3.0.1] - 2025-07-22
 
 - fix: override `instanceof` in Candid IDL types to avoid issues when importing `IDL` from multiple locations.
