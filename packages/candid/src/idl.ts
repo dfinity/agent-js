@@ -1323,10 +1323,10 @@ export class RecordClass extends ConstructType<Record<string, any>> {
     return x;
   }
 
-  get fieldsAsObject(): Record<string, Type> {
-    const fields: Record<string, Type> = {};
+  get fieldsAsObject(): Record<number, Type> {
+    const fields: Record<number, Type> = {};
     for (const [name, ty] of this._fields) {
-      fields[name] = ty;
+      fields[idlLabelToId(name)] = ty;
     }
     return fields;
   }
@@ -1543,10 +1543,10 @@ export class VariantClass extends ConstructType<Record<string, any>> {
     throw new Error('Variant has no data: ' + x);
   }
 
-  get alternativesAsObject(): Record<string, Type> {
-    const alternatives: Record<string, Type> = {};
+  get alternativesAsObject(): Record<number, Type> {
+    const alternatives: Record<number, Type> = {};
     for (const [name, ty] of this._fields) {
-      alternatives[name] = ty;
+      alternatives[idlLabelToId(name)] = ty;
     }
     return alternatives;
   }
@@ -2438,8 +2438,8 @@ function subtype_(relations: Relations, t1: Type, t2: Type): boolean {
   if (t2 instanceof OptClass) return true;
   if (t1 instanceof RecordClass && t2 instanceof RecordClass) {
     const t1Object = t1.fieldsAsObject;
-    for (const [name, ty2] of t2._fields) {
-      const ty1 = t1Object[name];
+    for (const [label, ty2] of t2._fields) {
+      const ty1 = t1Object[idlLabelToId(label)];
       if (!ty1) {
         if (!canBeOmmitted(ty2)) return false;
       } else {
@@ -2472,8 +2472,8 @@ function subtype_(relations: Relations, t1: Type, t2: Type): boolean {
 
   if (t1 instanceof VariantClass && t2 instanceof VariantClass) {
     const t2Object = t2.alternativesAsObject;
-    for (const [name, ty1] of t1._fields) {
-      const ty2 = t2Object[name];
+    for (const [label, ty1] of t1._fields) {
+      const ty2 = t2Object[idlLabelToId(label)];
       if (!ty2) return false;
       if (!subtype_(relations, ty1, ty2)) return false;
     }
