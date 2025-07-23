@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- fix: do not subtract the replica permitted clock drift when calculating the ingress expiry.
+
 ## [3.0.2] - 2025-07-23
 
 - fix: canonicalizes record and variant labels during subtype checking
