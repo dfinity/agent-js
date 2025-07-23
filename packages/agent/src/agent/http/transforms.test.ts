@@ -76,3 +76,86 @@ test('isExpiry', () => {
   expect(Expiry.isExpiry('')).toBe(false);
   expect(Expiry.isExpiry(null)).toBe(false);
 });
+
+describe('addMilliseconds', () => {
+  test('should add positive milliseconds to expiry', () => {
+    const originalExpiry = Expiry.fromDeltaInMilliseconds(1000);
+    const originalValue = originalExpiry['__expiry__'];
+
+    const addedExpiry = originalExpiry.addMilliseconds(500);
+
+    expect(addedExpiry['__expiry__']).toEqual(
+      originalValue + BigInt(500) * NANOSECONDS_PER_MILLISECOND,
+    );
+    expect(addedExpiry).not.toBe(originalExpiry); // Should return a new instance
+  });
+
+  test('should add zero milliseconds correctly', () => {
+    const originalExpiry = Expiry.fromDeltaInMilliseconds(1000);
+    const originalValue = originalExpiry['__expiry__'];
+
+    const addedExpiry = originalExpiry.addMilliseconds(0);
+
+    expect(addedExpiry['__expiry__']).toEqual(originalValue);
+    expect(addedExpiry).not.toBe(originalExpiry); // Should still return a new instance
+  });
+
+  test('should handle negative milliseconds', () => {
+    const originalExpiry = Expiry.fromDeltaInMilliseconds(1000);
+    const originalValue = originalExpiry['__expiry__'];
+
+    const addedExpiry = originalExpiry.addMilliseconds(-300);
+
+    expect(addedExpiry['__expiry__']).toEqual(
+      originalValue - BigInt(300) * NANOSECONDS_PER_MILLISECOND,
+    );
+  });
+
+  test('should handle large millisecond values', () => {
+    const originalExpiry = Expiry.fromDeltaInMilliseconds(1000);
+    const originalValue = originalExpiry['__expiry__'];
+
+    const largeMs = Number.MAX_SAFE_INTEGER;
+    const addedExpiry = originalExpiry.addMilliseconds(largeMs);
+
+    expect(addedExpiry['__expiry__']).toEqual(
+      originalValue + BigInt(largeMs) * NANOSECONDS_PER_MILLISECOND,
+    );
+  });
+
+  test('should preserve expiry properties in returned object', () => {
+    const originalExpiry = Expiry.fromDeltaInMilliseconds(1000);
+
+    const addedExpiry = originalExpiry.addMilliseconds(500);
+
+    expect(addedExpiry._isExpiry).toEqual(true);
+    expect(typeof addedExpiry['__expiry__']).toEqual('bigint');
+    expect(Expiry.isExpiry(addedExpiry)).toEqual(true);
+  });
+
+  test('should work with chained calls', () => {
+    const originalExpiry = Expiry.fromDeltaInMilliseconds(1000);
+
+    const chainedExpiry = originalExpiry
+      .addMilliseconds(100)
+      .addMilliseconds(200)
+      .addMilliseconds(300);
+
+    const expectedValue =
+      originalExpiry['__expiry__'] + BigInt(100 + 200 + 300) * NANOSECONDS_PER_MILLISECOND;
+
+    expect(chainedExpiry['__expiry__']).toEqual(expectedValue);
+    expect(originalExpiry.toBigInt()).not.toEqual(chainedExpiry.toBigInt());
+    expect(chainedExpiry).not.toBe(originalExpiry); // Should return a new instance
+  });
+
+  test('should maintain immutability of original expiry', () => {
+    const originalExpiry = Expiry.fromDeltaInMilliseconds(1000);
+    const originalValue = originalExpiry['__expiry__'];
+
+    originalExpiry.addMilliseconds(500);
+
+    // Original expiry should remain unchanged
+    expect(originalExpiry['__expiry__']).toEqual(originalValue);
+  });
+});
