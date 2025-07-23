@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 - fix: do not subtract the replica permitted clock drift when calculating the ingress expiry.
+- fix: round the ingress expiry before applying any eventual clock drift.
+- feat: add `Expiry.addMilliseconds` method to add a number of milliseconds to an expiry.
 
 ## [3.0.2] - 2025-07-23
 
