@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.0.2] - 2025-07-23
+
 - fix: canonicalizes record and variant labels during subtype checking
 
 ## [3.0.1] - 2025-07-22
