@@ -10,11 +10,19 @@ import {
 import { ExpiryJsonDeserializeErrorCode, InputError } from '../../errors.ts';
 
 export const JSON_KEY_EXPIRY = '__expiry__';
-const NANOSECONDS_PER_MILLISECOND = BigInt(1_000_000);
-const NANOSECONDS_PER_SECOND = NANOSECONDS_PER_MILLISECOND * BigInt(1_000);
-const SECONDS_PER_MINUTE = BigInt(60);
+const SECONDS_TO_MILLISECONDS = BigInt(1_000);
+const MILLISECONDS_TO_NANOSECONDS = BigInt(1_000_000);
+const MINUTES_TO_SECONDS = BigInt(60);
 
-const REPLICA_PERMITTED_DRIFT_MILLISECONDS = 60 * 1000;
+const EXPIRY_DELTA_THRESHOLD_MILLISECONDS = BigInt(90) * SECONDS_TO_MILLISECONDS;
+
+function roundMillisToSeconds(millis: bigint): bigint {
+  return millis / SECONDS_TO_MILLISECONDS;
+}
+
+function roundMillisToMinutes(millis: bigint): bigint {
+  return roundMillisToSeconds(millis) / MINUTES_TO_SECONDS;
+}
 
 export type JsonnableExpiry = {
   [JSON_KEY_EXPIRY]: string;
@@ -27,35 +35,24 @@ export class Expiry {
 
   /**
    * Creates an Expiry object from a delta in milliseconds.
-   * If the delta is less than 90 seconds, it is rounded to the nearest second.
-   * Otherwise, the delta is rounded down to the nearest minute, with a
-   * replica permitted drift subtracted.
+   * If the delta is less than 90 seconds, the expiry is rounded down to the nearest second.
+   * Otherwise, the expiry is rounded down to the nearest minute.
    * @param deltaInMs The delta in milliseconds.
-   * @returns {Expiry} an Expiry object
+   * @returns {Expiry} The constructed Expiry object.
    */
   public static fromDeltaInMilliseconds(deltaInMs: number): Expiry {
-    // if ingress as seconds is less than 90, round to nearest second
-    if (deltaInMs < 90 * 1_000) {
-      // Raw value without subtraction of REPLICA_PERMITTED_DRIFT_MILLISECONDS
-      const raw_value = BigInt(Date.now() + deltaInMs) * NANOSECONDS_PER_MILLISECOND;
-      const ingress_as_seconds = raw_value / NANOSECONDS_PER_SECOND;
-      return new Expiry(ingress_as_seconds * NANOSECONDS_PER_SECOND);
+    const deltaMs = BigInt(deltaInMs);
+    const expiryMs = BigInt(Date.now()) + deltaMs;
+
+    let roundedExpirySeconds: bigint;
+    if (deltaMs < EXPIRY_DELTA_THRESHOLD_MILLISECONDS) {
+      roundedExpirySeconds = roundMillisToSeconds(expiryMs);
+    } else {
+      const roundedExpiryMinutes = roundMillisToMinutes(expiryMs);
+      roundedExpirySeconds = roundedExpiryMinutes * MINUTES_TO_SECONDS;
     }
 
-    // Use bigint because it can overflow the maximum number allowed in a double float.
-    const raw_value =
-      BigInt(Math.floor(Date.now() + deltaInMs - REPLICA_PERMITTED_DRIFT_MILLISECONDS)) *
-      NANOSECONDS_PER_MILLISECOND;
-
-    // round down to the nearest second
-    const ingress_as_seconds = raw_value / NANOSECONDS_PER_SECOND;
-
-    // round down to nearest minute
-    const ingress_as_minutes = ingress_as_seconds / SECONDS_PER_MINUTE;
-
-    const rounded_down_nanos = ingress_as_minutes * SECONDS_PER_MINUTE * NANOSECONDS_PER_SECOND;
-
-    return new Expiry(rounded_down_nanos);
+    return new Expiry(roundedExpirySeconds * SECONDS_TO_MILLISECONDS * MILLISECONDS_TO_NANOSECONDS);
   }
 
   public toBigInt(): bigint {
