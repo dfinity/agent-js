@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.0.3] - 2025-07-24
+
 - feat: export the `getCrc32` function from `@dfinity/principal`
 
 ## [3.0.2] - 2025-07-23
