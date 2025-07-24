@@ -13,13 +13,28 @@ export default defineConfig({
       plugins: [
         libsPlugin({
           baseDir: '../packages',
-          typeDoc: { exclude: ['../packages/core'] },
+          typeDoc: {
+            exclude: ['../packages/core'],
+          },
+          frontmatter: { editUrl: false, next: true, prev: true },
+          additionalFiles: [
+            {
+              path: '../CHANGELOG.md',
+              frontmatter: {
+                tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 2 },
+                pagefind: false,
+                editUrl: false,
+                next: false,
+                prev: false,
+              },
+            },
+          ],
         }),
       ],
       sidebar: [
         {
           label: 'Release Notes',
-          autogenerate: { directory: 'release-notes' },
+          autogenerate: { directory: 'release-notes', collapsed: true },
         },
       ],
     }),
