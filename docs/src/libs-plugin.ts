@@ -115,8 +115,7 @@ const prettyUrlsPlugin: RemarkPlugin =
         url.startsWith('https://') ||
         url.startsWith('/') ||
         url.startsWith('http://') ||
-        url.startsWith('mailto:') ||
-        url.startsWith('#')
+        url.startsWith('mailto:')
       ) {
         logger.debug(`Skipping URL: ${url}`);
         return;
@@ -125,7 +124,7 @@ const prettyUrlsPlugin: RemarkPlugin =
       // normalize all other relative URLs to the docs directory
       const absoluteLinkedFilePath = path.resolve(currentFileDir, url);
       const relativeToDocs = path.relative(docsDir, absoluteLinkedFilePath);
-      const normalizedUrl = `/${relativeToDocs.replace(/(index)?\.mdx?$/, '').toLowerCase()}`;
+      const normalizedUrl = `/${relativeToDocs.replace(/(index)?\.mdx?(#.*)?$/, '$2').toLowerCase()}`;
       logger.debug(`Normalizing URL: ${url} -> ${normalizedUrl}`);
 
       node.url = normalizedUrl;
