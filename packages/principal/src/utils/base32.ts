@@ -11,7 +11,7 @@ lookupTable['0'] = lookupTable.o;
 lookupTable['1'] = lookupTable.i;
 
 /**
- * @param input The input array to encode.
+ * @param input The Uint8Array to encode.
  * @returns A Base32 string encoding the input.
  */
 export function encode(input: Uint8Array): string {

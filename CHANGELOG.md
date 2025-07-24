@@ -6,6 +6,10 @@
 - fix: round the ingress expiry before applying any eventual clock drift.
 - feat: add `Expiry.addMilliseconds` method to add a number of milliseconds to an expiry.
 
+## [3.1.0] - 2025-07-24
+
+- feat: export the `getCrc32` function from `@dfinity/principal`
+
 ## [3.0.2] - 2025-07-23
 
 - fix: canonicalizes record and variant labels during subtype checking

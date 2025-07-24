@@ -37,7 +37,7 @@ const lookUpTable: Uint32Array = new Uint32Array([
 
 /**
  * Calculate the CRC32 of a Uint8Array.
- * @param buf The BufferLike to calculate the CRC32 of.
+ * @param buf The Uint8Array to calculate the CRC32 of.
  */
 export function getCrc32(buf: Uint8Array): number {
   let crc = -1;
