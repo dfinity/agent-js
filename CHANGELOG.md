@@ -30,7 +30,7 @@
 - fix: handle BigInt values when instantiating the buffer in `lebEncode` and `slebEncode` from `@dfinity/candid`. As a result, `@dfinity/candid` now correctly encodes large bigints as `Nat` values.
 - fix: make `.ts` extension required for all relative imports. This is required to avoid the "Module not found" error when importing the packages in Node.js (ESM).
 
-## Added
+### Added
 
 - feat: Starlight documentation website, with custom plugin for typedoc
 
