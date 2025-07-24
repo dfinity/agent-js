@@ -1398,6 +1398,6 @@ export function calculateIngressExpiry(
   maxIngressExpiryInMinutes: number,
   timeDiffMsecs: number,
 ): Expiry {
-  const roundedExpiry = Expiry.fromDeltaInMilliseconds(maxIngressExpiryInMinutes * MINUTE_TO_MSECS);
-  return roundedExpiry.addMilliseconds(timeDiffMsecs);
+  const ingressExpiryMs = maxIngressExpiryInMinutes * MINUTE_TO_MSECS;
+  return Expiry.fromDeltaInMilliseconds(ingressExpiryMs, timeDiffMsecs);
 }

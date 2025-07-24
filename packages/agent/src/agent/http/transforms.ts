@@ -37,32 +37,27 @@ export class Expiry {
    * Creates an Expiry object from a delta in milliseconds.
    * If the delta is less than 90 seconds, the expiry is rounded down to the nearest second.
    * Otherwise, the expiry is rounded down to the nearest minute.
-   * @param deltaInMs The delta in milliseconds.
+   * @param deltaInMs The milliseconds to add to the current time.
+   * @param deltaInMsAfterThresholdCheck The milliseconds to add to the current time after the 90 seconds threshold check. Defaults to `0` if not provided.
    * @returns {Expiry} The constructed Expiry object.
    */
-  public static fromDeltaInMilliseconds(deltaInMs: number): Expiry {
+  public static fromDeltaInMilliseconds(
+    deltaInMs: number,
+    deltaInMsAfterThresholdCheck: number = 0,
+  ): Expiry {
     const deltaMs = BigInt(deltaInMs);
+    const deltaMsAfterThresholdCheck = BigInt(deltaInMsAfterThresholdCheck);
     const expiryMs = BigInt(Date.now()) + deltaMs;
 
     let roundedExpirySeconds: bigint;
     if (deltaMs < EXPIRY_DELTA_THRESHOLD_MILLISECONDS) {
-      roundedExpirySeconds = roundMillisToSeconds(expiryMs);
+      roundedExpirySeconds = roundMillisToSeconds(expiryMs + deltaMsAfterThresholdCheck);
     } else {
-      const roundedExpiryMinutes = roundMillisToMinutes(expiryMs);
+      const roundedExpiryMinutes = roundMillisToMinutes(expiryMs + deltaMsAfterThresholdCheck);
       roundedExpirySeconds = roundedExpiryMinutes * MINUTES_TO_SECONDS;
     }
 
     return new Expiry(roundedExpirySeconds * SECONDS_TO_MILLISECONDS * MILLISECONDS_TO_NANOSECONDS);
-  }
-
-  /**
-   * Adds a number value (in milliseconds) to this Expiry.
-   * @param valueInMs The number value in milliseconds to add.
-   * @returns {Expiry} A new Expiry object whose value is the sum of the current expiry and the provided value in milliseconds.
-   */
-  public addMilliseconds(valueInMs: number): Expiry {
-    const valueInNs = BigInt(valueInMs) * MILLISECONDS_TO_NANOSECONDS;
-    return new Expiry(this.__expiry__ + valueInNs);
   }
 
   public toBigInt(): bigint {
