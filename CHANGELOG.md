@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- fix: do not subtract the replica permitted clock drift when calculating the ingress expiry.
+
 ## [3.1.0] - 2025-07-24
 
 - feat: export the `getCrc32` function from `@dfinity/principal`

@@ -7,7 +7,12 @@ import * as cbor from './cbor.ts';
 import { requestIdOf } from './request_id.ts';
 import * as pollingImport from './polling/index.ts';
 import { ActorConfig } from './actor.ts';
-import { CertifiedRejectErrorCode, RejectError, UnexpectedErrorCode, UnknownError } from './errors.ts';
+import {
+  CertifiedRejectErrorCode,
+  RejectError,
+  UnexpectedErrorCode,
+  UnknownError,
+} from './errors.ts';
 
 const importActor = async (mockUpdatePolling?: () => void) => {
   jest.dontMock('./polling');
@@ -323,7 +328,7 @@ describe('makeActor', () => {
             "__principal__": "2chl6-4hpzw-vqaaa-aaaaa-c",
           },
           "ingress_expiry": {
-            "__expiry__": "1200000000000",
+            "__expiry__": "1260000000000",
           },
           "method_name": "greet",
           "request_type": "query",
