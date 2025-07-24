@@ -2,6 +2,7 @@
 dist/
 src/content/tmp/
 src/content/docs/libs/
+src/content/docs/changelog.md
 
 # generated types
 .astro/
