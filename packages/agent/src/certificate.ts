@@ -241,7 +241,6 @@ export class Certificate {
     const sig = this.cert.signature;
     const key = extractDER(derKey);
     const msg = concatBytes(domain_sep('ic-state-root'), rootHash);
-    let sigVer = false;
 
     const lookupTime = lookupResultToBuffer(this.lookup_path(['time']));
     if (!lookupTime) {
@@ -273,14 +272,13 @@ export class Certificate {
     }
 
     try {
-      sigVer = await this._blsVerify(new Uint8Array(key), new Uint8Array(sig), new Uint8Array(msg));
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const sigVer = await this._blsVerify(key, sig, msg);
+      if (!sigVer) {
+        throw TrustError.fromCode(new CertificateVerificationErrorCode('Invalid signature'));
+      }
     } catch (err) {
-      sigVer = false;
-    }
-    if (!sigVer) {
       throw TrustError.fromCode(
-        new CertificateVerificationErrorCode('Signature verification failed'),
+        new CertificateVerificationErrorCode('Signature verification failed', err),
       );
     }
   }

@@ -1,5 +1,9 @@
 import { Principal } from '@dfinity/principal';
-import { type HttpDetailsResponse, type NodeSignature, type ReplicaRejectCode } from './agent/api.ts';
+import {
+  type HttpDetailsResponse,
+  type NodeSignature,
+  type ReplicaRejectCode,
+} from './agent/api.ts';
 import { type RequestId } from './request_id.ts';
 import { type Expiry, type RequestStatusResponseStatus } from './agent/http/index.ts';
 import { type HttpHeaderField } from './agent/http/types.ts';
@@ -191,13 +195,20 @@ export class UnknownError extends ErrorKind {
 export class CertificateVerificationErrorCode extends ErrorCode {
   public name = 'CertificateVerificationErrorCode';
 
-  constructor(public readonly reason: string) {
+  constructor(
+    public readonly reason: string,
+    public readonly error?: unknown,
+  ) {
     super();
     Object.setPrototypeOf(this, CertificateVerificationErrorCode.prototype);
   }
 
   public toErrorMessage(): string {
-    return `Certificate verification error: "${this.reason}"`;
+    let errorMessage = this.reason;
+    if (this.error) {
+      errorMessage += `: ${this.error instanceof Error && this.error.stack ? this.error.stack : this.error}`;
+    }
+    return `Certificate verification error: "${errorMessage}"`;
   }
 }
 
