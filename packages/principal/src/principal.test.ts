@@ -1,4 +1,4 @@
-import { Principal } from './index.ts';
+import { Principal } from './principal.ts';
 import { jsonReviver } from '@dfinity/utils';
 
 describe('Principal', () => {
