@@ -219,6 +219,7 @@ export class CertificateTimeErrorCode extends ErrorCode {
     public readonly maxAgeInMinutes: number,
     public readonly certificateTime: Date,
     public readonly currentTime: Date,
+    public readonly timeDiffMsecs: number,
     public readonly ageType: 'past' | 'future',
   ) {
     super();
@@ -226,7 +227,7 @@ export class CertificateTimeErrorCode extends ErrorCode {
   }
 
   public toErrorMessage(): string {
-    return `Certificate is signed more than ${this.maxAgeInMinutes} minutes in the ${this.ageType}. Certificate time: ${this.certificateTime.toISOString()} Current time: ${this.currentTime.toISOString()}`;
+    return `Certificate is signed more than ${this.maxAgeInMinutes} minutes in the ${this.ageType}. Certificate time: ${this.certificateTime.toISOString()} Current time: ${this.currentTime.toISOString()} Clock drift: ${this.timeDiffMsecs}ms`;
   }
 }
 

@@ -1,5 +1,9 @@
 import { type RequestId } from '../request_id.ts';
-import { type CreateCertificateOptions, Certificate, lookupResultToBuffer } from '../certificate.ts';
+import {
+  type CreateCertificateOptions,
+  Certificate,
+  lookupResultToBuffer,
+} from '../certificate.ts';
 import { type Agent, type ReadStateResponse } from '../agent/api.ts';
 import { Principal } from '@dfinity/principal';
 import {
@@ -17,7 +21,7 @@ import {
 export * as strategy from './strategy.ts';
 import { defaultStrategy } from './strategy.ts';
 import { ReadRequestType, type ReadStateRequest } from '../agent/http/types.ts';
-import { RequestStatusResponseStatus } from '../agent/index.ts';
+import { getTimeDiffMsecs, RequestStatusResponseStatus } from '../agent/index.ts';
 import { utf8ToBytes } from '@noble/hashes/utils';
 export { defaultStrategy } from './strategy.ts';
 
@@ -157,6 +161,7 @@ export async function pollForResponse(
     rootKey: agent.rootKey,
     canisterId: canisterId,
     blsVerify: options.blsVerify,
+    timeDiffMsecs: getTimeDiffMsecs(agent),
   });
 
   const maybeBuf = lookupResultToBuffer(cert.lookup_path([...path, utf8ToBytes('status')]));
