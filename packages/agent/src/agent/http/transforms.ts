@@ -37,12 +37,13 @@ export class Expiry {
    * Creates an Expiry object from a delta in milliseconds.
    * If the delta is less than 90 seconds, the expiry is rounded down to the nearest second.
    * Otherwise, the expiry is rounded down to the nearest minute.
-   * @param deltaInMs The delta in milliseconds.
+   * @param deltaInMs The milliseconds to add to the current time.
+   * @param clockDriftMs The milliseconds to add to the current time, typically the clock drift between the client and the IC network clock. Defaults to `0` if not provided.
    * @returns {Expiry} The constructed Expiry object.
    */
-  public static fromDeltaInMilliseconds(deltaInMs: number): Expiry {
+  public static fromDeltaInMilliseconds(deltaInMs: number, clockDriftMs: number = 0): Expiry {
     const deltaMs = BigInt(deltaInMs);
-    const expiryMs = BigInt(Date.now()) + deltaMs;
+    const expiryMs = BigInt(Date.now()) + deltaMs + BigInt(clockDriftMs);
 
     let roundedExpirySeconds: bigint;
     if (deltaMs < EXPIRY_DELTA_THRESHOLD_MILLISECONDS) {
