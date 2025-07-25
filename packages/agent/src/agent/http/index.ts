@@ -1390,6 +1390,7 @@ export class HttpAgent implements Agent {
 
 /**
  * Calculates the ingress expiry time based on the maximum allowed expiry in minutes and the time difference in milliseconds.
+ * The expiry is rounded down according to the {@link Expiry.fromDeltaInMilliseconds} method.
  * @param maxIngressExpiryInMinutes - The maximum ingress expiry time in minutes.
  * @param timeDiffMsecs - The time difference in milliseconds to adjust the expiry.
  * @returns The calculated ingress expiry as an Expiry object.
@@ -1398,7 +1399,6 @@ export function calculateIngressExpiry(
   maxIngressExpiryInMinutes: number,
   timeDiffMsecs: number,
 ): Expiry {
-  return Expiry.fromDeltaInMilliseconds(
-    maxIngressExpiryInMinutes * MINUTE_TO_MSECS + timeDiffMsecs,
-  );
+  const ingressExpiryMs = maxIngressExpiryInMinutes * MINUTE_TO_MSECS;
+  return Expiry.fromDeltaInMilliseconds(ingressExpiryMs, timeDiffMsecs);
 }
