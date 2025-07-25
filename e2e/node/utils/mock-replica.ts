@@ -504,3 +504,41 @@ async function signTree(tree: HashTree, keyPair: KeyPair): Promise<Uint8Array> {
   const msg = concatBytes(domain_sep('ic-state-root'), rootHash);
   return signBls(msg, keyPair.privateKey);
 }
+
+type MockSyncTimeResponseOptions = {
+  mockReplica: MockReplica;
+  keyPair: KeyPair;
+  canisterId: Principal | string;
+  date?: Date;
+};
+
+/**
+ * A shortcut to prepare the mock replica to respond to the sync time request.
+ * It mocks the read state endpoint 3 times.
+ * @param {MockSyncTimeResponseOptions} options - The options for preparing the response.
+ * @param {MockReplica} options.mockReplica - The mock replica to prepare.
+ * @param {KeyPair} options.keyPair - The key pair for signing.
+ * @param {string} options.canisterId - The ID of the canister.
+ * @param {Date} options.date - The date to use for the returned certificate `time` field. Optional.
+ */
+export async function mockSyncTimeResponse({
+  mockReplica,
+  keyPair,
+  date,
+  canisterId,
+}: MockSyncTimeResponseOptions) {
+  canisterId = Principal.from(canisterId).toText();
+  const { responseBody: timeResponseBody } = await prepareV2ReadStateTimeResponse({
+    keyPair,
+    date,
+  });
+  mockReplica.setV2ReadStateSpyImplOnce(canisterId, (_req, res) => {
+    res.status(200).send(timeResponseBody);
+  });
+  mockReplica.setV2ReadStateSpyImplOnce(canisterId, (_req, res) => {
+    res.status(200).send(timeResponseBody);
+  });
+  mockReplica.setV2ReadStateSpyImplOnce(canisterId, (_req, res) => {
+    res.status(200).send(timeResponseBody);
+  });
+}
