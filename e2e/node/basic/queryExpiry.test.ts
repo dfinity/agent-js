@@ -1,13 +1,13 @@
 import { beforeEach, describe, it, vi, expect } from 'vitest';
 import {
   MockReplica,
+  mockSyncTimeResponse,
   prepareV2QueryResponse,
   prepareV2ReadStateSubnetResponse,
-  prepareV2ReadStateTimeResponse,
 } from '../utils/mock-replica.ts';
 import { IDL } from '@icp-sdk/core/candid';
 import { Principal } from '@icp-sdk/core/principal';
-import { KeyPair, randomIdentity, randomKeyPair } from '../utils/identity.ts';
+import { randomIdentity, randomKeyPair } from '../utils/identity.ts';
 import {
   CertificateOutdatedErrorCode,
   HttpAgent,
@@ -233,7 +233,12 @@ describe('queryExpiry', () => {
     'should account for local clock drift (more than 5 minutes in the %s)',
     async (_, timeDiffMsecs) => {
       const replicaDate = new Date(now.getTime() + timeDiffMsecs);
-      await mockSyncTimeResponse({ mockReplica, keyPair: subnetKeyPair, date: replicaDate });
+      await mockSyncTimeResponse({
+        mockReplica,
+        keyPair: subnetKeyPair,
+        date: replicaDate,
+        canisterId: ICP_LEDGER,
+      });
 
       const agent = await HttpAgent.create({
         host: mockReplica.address,
@@ -391,31 +396,4 @@ function expectCertificateOutdatedError(e: unknown) {
   const err = e as TrustError;
   expect(err.cause.code).toBeInstanceOf(CertificateOutdatedErrorCode);
   expect(err.message).toContain('Certificate is stale');
-}
-
-async function mockSyncTimeResponse({
-  mockReplica,
-  keyPair,
-  date,
-  canisterId,
-}: {
-  mockReplica: MockReplica;
-  keyPair: KeyPair;
-  date?: Date;
-  canisterId?: Principal | string;
-}) {
-  canisterId = Principal.from(canisterId ?? ICP_LEDGER).toText();
-  const { responseBody: timeResponseBody } = await prepareV2ReadStateTimeResponse({
-    keyPair,
-    date,
-  });
-  mockReplica.setV2ReadStateSpyImplOnce(canisterId, (_req, res) => {
-    res.status(200).send(timeResponseBody);
-  });
-  mockReplica.setV2ReadStateSpyImplOnce(canisterId, (_req, res) => {
-    res.status(200).send(timeResponseBody);
-  });
-  mockReplica.setV2ReadStateSpyImplOnce(canisterId, (_req, res) => {
-    res.status(200).send(timeResponseBody);
-  });
 }

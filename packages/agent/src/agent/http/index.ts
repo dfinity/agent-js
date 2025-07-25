@@ -1208,8 +1208,8 @@ export class HttpAgent implements Agent {
       }
       const date = decodeTime(timeLookup.value);
       this.log.print('Time from response:', date);
-      this.log.print('Time from response in milliseconds:', Number(date));
-      return Number(date);
+      this.log.print('Time from response in milliseconds:', date.getTime());
+      return date.getTime();
     } else {
       this.log.warn('No certificate found in response');
     }
@@ -1241,6 +1241,7 @@ export class HttpAgent implements Agent {
             fetch: this.#fetch,
             retryTimes: 0,
             rootKey: this.rootKey ?? undefined,
+            shouldSyncTime: false,
           });
 
           const replicaTimes = await Promise.all(
@@ -1251,6 +1252,7 @@ export class HttpAgent implements Agent {
                   canisterId,
                   agent: anonymousAgent,
                   paths: ['time'],
+                  disableCertificateTimeVerification: true, // avoid recursive calls to syncTime
                 });
 
                 const date = status.get('time');
@@ -1264,8 +1266,8 @@ export class HttpAgent implements Agent {
             return typeof current === 'number' && current > max ? current : max;
           }, 0);
 
-          if (maxReplicaTime > BigInt(0)) {
-            this.#timeDiffMsecs = Number(maxReplicaTime) - Number(callTime);
+          if (maxReplicaTime > 0) {
+            this.#timeDiffMsecs = maxReplicaTime - callTime;
             this.log.notify({
               message: `Syncing time: offset of ${this.#timeDiffMsecs}`,
               level: 'info',
