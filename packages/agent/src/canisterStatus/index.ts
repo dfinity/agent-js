@@ -16,6 +16,7 @@ import {
   CertificateTimeErrorCode,
 } from '../errors.ts';
 import { getTimeDiffMsecs, HttpAgent } from '../agent/http/index.ts';
+import type { ReadStateResponse } from '../agent/api.ts';
 import {
   type Cert,
   Certificate,
@@ -123,21 +124,29 @@ export type CanisterStatusOptions = {
   blsVerify?: CreateCertificateOptions['blsVerify'];
 };
 
-const createCertificate = async (
+const fetchCertificate = async (
   agent: HttpAgent,
-  certificate: Uint8Array,
+  encodedPath: Uint8Array[],
   canisterId: Principal,
-): Promise<Certificate> => {
+  disableTimeVerification: boolean,
+): Promise<[Certificate, ReadStateResponse]> => {
+  const response = await agent.readState(canisterId, {
+    paths: [encodedPath],
+  });
+
   if (agent.rootKey == null) {
     throw ExternalError.fromCode(new MissingRootKeyErrorCode());
   }
 
-  return await Certificate.create({
-    certificate,
+  const certificate = await Certificate.create({
+    certificate: response.certificate,
     rootKey: agent.rootKey,
     canisterId,
+    disableTimeVerification,
     timeDiffMsecs: getTimeDiffMsecs(agent),
   });
+
+  return [certificate, response];
 };
 
 /**
@@ -147,6 +156,7 @@ const createCertificate = async (
  * @param {CanisterStatusOptions['canisterId']} options.canisterId {@link Principal}
  * @param {CanisterStatusOptions['agent']} options.agent {@link HttpAgent} optional authenticated agent to use to make the canister request. Useful for accessing private metadata under icp:private
  * @param {CanisterStatusOptions['paths']} options.paths {@link Path[]}
+ * @param {CanisterStatusOptions['disableCertificateTimeVerification']} options.disableCertificateTimeVerification {@link boolean} whether to disable the certificate freshness checks. Defaults to `false`.
  * @returns {Status} object populated with data from the requested paths
  * @example
  * const status = await canisterStatus({
@@ -160,8 +170,9 @@ export const request = async (options: {
   canisterId: Principal;
   agent: HttpAgent;
   paths?: Path[] | Set<Path>;
+  disableCertificateTimeVerification?: boolean;
 }): Promise<StatusMap> => {
-  const { agent, paths } = options;
+  const { agent, paths, disableCertificateTimeVerification = false } = options;
   const canisterId = Principal.from(options.canisterId);
 
   const uniquePaths = [...new Set(paths)];
@@ -172,21 +183,25 @@ export const request = async (options: {
 
     return (async () => {
       try {
-        const response = await agent.readState(canisterId, {
-          paths: [encodedPath],
-        });
+        let response: ReadStateResponse;
+        let certificate: Certificate;
 
-        let cert: Certificate;
         try {
-          cert = await createCertificate(agent, response.certificate, canisterId);
+          [certificate, response] = await fetchCertificate(
+            agent,
+            encodedPath,
+            canisterId,
+            disableCertificateTimeVerification,
+          );
         } catch (error) {
           if (error instanceof AgentError && error.hasCode(CertificateTimeErrorCode)) {
             // If the certificate freshness check fails, we try to sync the time with the network.
-            await agent.syncTime();
-            // If the certificate is still not fresh at this point, the creation will throw and interrupt the request.
-            cert = await createCertificate(agent, response.certificate, canisterId);
+            await agent.syncTime(canisterId);
+            // If the certificate is still not fresh at this point, we throw and interrupt the request.
+            [certificate, response] = await fetchCertificate(agent, encodedPath, canisterId, false);
+          } else {
+            throw error;
           }
-          throw error;
         }
 
         const lookup = (cert: Certificate, path: Path) => {
@@ -208,7 +223,7 @@ export const request = async (options: {
         };
 
         // must pass in the rootKey if we have no delegation
-        const { path, data } = lookup(cert, uniquePaths[index]);
+        const { path, data } = lookup(certificate, uniquePaths[index]);
         if (!data) {
           // Typically, the cert lookup will throw
           console.warn(`Expected to find result for path ${path}, but instead found nothing.`);
@@ -267,8 +282,12 @@ export const request = async (options: {
           }
         }
       } catch (error) {
-        // Break on signature verification errors
-        if (error instanceof AgentError && error.hasCode(CertificateVerificationErrorCode)) {
+        // Throw on certificate errors
+        if (
+          error instanceof AgentError &&
+          (error.hasCode(CertificateVerificationErrorCode) ||
+            error.hasCode(CertificateTimeErrorCode))
+        ) {
           throw error;
         }
         if (typeof path !== 'string' && 'key' in path && 'path' in path) {

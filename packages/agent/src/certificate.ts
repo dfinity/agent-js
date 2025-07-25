@@ -259,8 +259,8 @@ export class Certificate {
     // Certificate time verification checks
     if (!this.#disableTimeVerification) {
       const maxAgeInMsec = this._maxAgeInMinutes * MINUTES_TO_MSEC;
-      const now = Date.now();
-      const adjustedNow = now + timeDiffMsecs;
+      const now = new Date();
+      const adjustedNow = now.getTime() + timeDiffMsecs;
       const earliestCertificateTime = adjustedNow - maxAgeInMsec;
       const latestCertificateTime = adjustedNow + FIVE_MINUTES_IN_MSEC;
 
@@ -268,17 +268,11 @@ export class Certificate {
 
       if (certTime.getTime() < earliestCertificateTime) {
         throw TrustError.fromCode(
-          new CertificateTimeErrorCode(
-            this._maxAgeInMinutes,
-            certTime,
-            new Date(now),
-            timeDiffMsecs,
-            'past',
-          ),
+          new CertificateTimeErrorCode(this._maxAgeInMinutes, certTime, now, timeDiffMsecs, 'past'),
         );
       } else if (certTime.getTime() > latestCertificateTime) {
         throw TrustError.fromCode(
-          new CertificateTimeErrorCode(5, certTime, new Date(now), timeDiffMsecs, 'future'),
+          new CertificateTimeErrorCode(5, certTime, now, timeDiffMsecs, 'future'),
         );
       }
     }
