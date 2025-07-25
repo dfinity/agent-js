@@ -13,8 +13,9 @@ import {
   HashTreeDecodeErrorCode,
   UnexpectedErrorCode,
   InputError,
+  CertificateTimeErrorCode,
 } from '../errors.ts';
-import { HttpAgent } from '../agent/http/index.ts';
+import { getTimeDiffMsecs, HttpAgent } from '../agent/http/index.ts';
 import {
   type Cert,
   Certificate,
@@ -122,6 +123,23 @@ export type CanisterStatusOptions = {
   blsVerify?: CreateCertificateOptions['blsVerify'];
 };
 
+const createCertificate = async (
+  agent: HttpAgent,
+  certificate: Uint8Array,
+  canisterId: Principal,
+): Promise<Certificate> => {
+  if (agent.rootKey == null) {
+    throw ExternalError.fromCode(new MissingRootKeyErrorCode());
+  }
+
+  return await Certificate.create({
+    certificate,
+    rootKey: agent.rootKey,
+    canisterId,
+    timeDiffMsecs: getTimeDiffMsecs(agent),
+  });
+};
+
 /**
  * Request information in the request_status state tree for a given canister.
  * Can be used to request information about the canister's controllers, time, module hash, candid interface, and more.
@@ -157,16 +175,19 @@ export const request = async (options: {
         const response = await agent.readState(canisterId, {
           paths: [encodedPath],
         });
-        if (agent.rootKey == null) {
-          throw ExternalError.fromCode(new MissingRootKeyErrorCode());
-        }
 
-        const cert = await Certificate.create({
-          certificate: response.certificate,
-          rootKey: agent.rootKey,
-          canisterId: canisterId,
-          disableTimeVerification: true,
-        });
+        let cert: Certificate;
+        try {
+          cert = await createCertificate(agent, response.certificate, canisterId);
+        } catch (error) {
+          if (error instanceof AgentError && error.hasCode(CertificateTimeErrorCode)) {
+            // If the certificate freshness check fails, we try to sync the time with the network.
+            await agent.syncTime();
+            // If the certificate is still not fresh at this point, the creation will throw and interrupt the request.
+            cert = await createCertificate(agent, response.certificate, canisterId);
+          }
+          throw error;
+        }
 
         const lookup = (cert: Certificate, path: Path) => {
           if (path === 'subnet') {
