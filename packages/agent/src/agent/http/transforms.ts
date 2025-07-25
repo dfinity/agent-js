@@ -38,22 +38,18 @@ export class Expiry {
    * If the delta is less than 90 seconds, the expiry is rounded down to the nearest second.
    * Otherwise, the expiry is rounded down to the nearest minute.
    * @param deltaInMs The milliseconds to add to the current time.
-   * @param deltaInMsAfterThresholdCheck The milliseconds to add to the current time after the 90 seconds threshold check. Defaults to `0` if not provided.
+   * @param clockDriftMs The milliseconds to add to the current time, typically the clock drift between the client and the IC network clock. Defaults to `0` if not provided.
    * @returns {Expiry} The constructed Expiry object.
    */
-  public static fromDeltaInMilliseconds(
-    deltaInMs: number,
-    deltaInMsAfterThresholdCheck: number = 0,
-  ): Expiry {
+  public static fromDeltaInMilliseconds(deltaInMs: number, clockDriftMs: number = 0): Expiry {
     const deltaMs = BigInt(deltaInMs);
-    const deltaMsAfterThresholdCheck = BigInt(deltaInMsAfterThresholdCheck);
-    const expiryMs = BigInt(Date.now()) + deltaMs;
+    const expiryMs = BigInt(Date.now()) + deltaMs + BigInt(clockDriftMs);
 
     let roundedExpirySeconds: bigint;
     if (deltaMs < EXPIRY_DELTA_THRESHOLD_MILLISECONDS) {
-      roundedExpirySeconds = roundMillisToSeconds(expiryMs + deltaMsAfterThresholdCheck);
+      roundedExpirySeconds = roundMillisToSeconds(expiryMs);
     } else {
-      const roundedExpiryMinutes = roundMillisToMinutes(expiryMs + deltaMsAfterThresholdCheck);
+      const roundedExpiryMinutes = roundMillisToMinutes(expiryMs);
       roundedExpirySeconds = roundedExpiryMinutes * MINUTES_TO_SECONDS;
     }
 

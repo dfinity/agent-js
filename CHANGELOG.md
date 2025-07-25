@@ -3,8 +3,8 @@
 ## [Unreleased]
 
 - fix: do not subtract the replica permitted clock drift when calculating the ingress expiry.
-- fix: rounds the ingress expiry before applying any eventual clock drift.
-- feat: adds a `deltaInMsAfterThresholdCheck` optional parameter to `Expiry.fromDeltaInMilliseconds` to allow for adding a delta after the internal threshold check.
+- fix: pick the expiry rounding strategy based on the delta, without adding the clock drift to the delta.
+- feat: adds a `clockDriftMs` optional parameter to `Expiry.fromDeltaInMilliseconds` to add to the current time, typically used to specify the clock drift between the client's clock and the IC network clock.
 
 ## [3.1.0] - 2025-07-24
 
