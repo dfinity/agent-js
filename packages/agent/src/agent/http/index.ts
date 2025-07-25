@@ -1386,6 +1386,15 @@ export class HttpAgent implements Agent {
 
     return p;
   }
+
+  /**
+   * Returns the time difference in milliseconds between the client's clock and the IC network clock,
+   * after the clock has been synced using the {@link HttpAgent.syncTime} method
+   * or during agent creation if {@link HttpAgentOptions.shouldSyncTime} was set to `true`.
+   */
+  public getTimeDiffMsecs(): number {
+    return this.#timeDiffMsecs;
+  }
 }
 
 /**
@@ -1401,4 +1410,18 @@ export function calculateIngressExpiry(
 ): Expiry {
   const ingressExpiryMs = maxIngressExpiryInMinutes * MINUTE_TO_MSECS;
   return Expiry.fromDeltaInMilliseconds(ingressExpiryMs, timeDiffMsecs);
+}
+
+/**
+ * Retrieves the time different in milliseconds between the client's clock and the IC network clock.
+ * See {@link HttpAgent.getTimeDiffMsecs} for more details.
+ * @param agent The agent to retrieve the `timeDiffMsecs` property from.
+ * @returns The time different in milliseconds between the client's clock and the IC network clock,
+ * if the agent is an {@link HttpAgent} instance. `undefined` otherwise.
+ */
+export function getTimeDiffMsecs(agent: Agent | HttpAgent): number | undefined {
+  if ('getTimeDiffMsecs' in agent) {
+    return agent.getTimeDiffMsecs();
+  }
+  return undefined;
 }
