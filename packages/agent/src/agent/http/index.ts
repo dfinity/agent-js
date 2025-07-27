@@ -1391,6 +1391,8 @@ export class HttpAgent implements Agent {
    * Returns the time difference in milliseconds between the client's clock and the IC network clock,
    * after the clock has been synced using the {@link HttpAgent.syncTime} method
    * or during agent creation if {@link HttpAgentOptions.shouldSyncTime} was set to `true`.
+   *
+   * If the time has not been synced, returns `0`.
    */
   public getTimeDiffMsecs(): number {
     return this.#timeDiffMsecs;
@@ -1413,10 +1415,10 @@ export function calculateIngressExpiry(
 }
 
 /**
- * Retrieves the time different in milliseconds between the client's clock and the IC network clock.
+ * Retrieves the time difference in milliseconds between the client's clock and the IC network clock.
  * See {@link HttpAgent.getTimeDiffMsecs} for more details.
  * @param agent The agent to retrieve the `timeDiffMsecs` property from.
- * @returns The time different in milliseconds between the client's clock and the IC network clock,
+ * @returns The time difference in milliseconds between the client's clock and the IC network clock,
  * if the agent is an {@link HttpAgent} instance. `undefined` otherwise.
  */
 export function getTimeDiffMsecs(agent: Agent | HttpAgent): number | undefined {
