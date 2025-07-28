@@ -313,7 +313,7 @@ export class HttpAgent implements Agent {
   #updatePipeline: HttpAgentRequestTransformFn[] = [];
 
   #subnetKeys: ExpirableMap<string, SubnetStatus> = new ExpirableMap({
-    expirationTime: 5 * 60 * 1000, // 5 minutes
+    expirationTime: 5 * MINUTE_TO_MSECS, // 5 minutes
   });
   #verifyQuerySignatures = true;
 
@@ -934,7 +934,11 @@ export class HttpAgent implements Agent {
       };
     };
 
-    const getSubnetStatus = async (): Promise<SubnetStatus | undefined> => {
+    const getSubnetStatus = async ({
+      throwOnError,
+    }: {
+      throwOnError: boolean;
+    }): Promise<SubnetStatus | undefined> => {
       if (!this.#verifyQuerySignatures) {
         return undefined;
       }
@@ -942,14 +946,24 @@ export class HttpAgent implements Agent {
       if (subnetStatus) {
         return subnetStatus;
       }
-      await this.fetchSubnetKeys(ecid.toString());
-      return this.#subnetKeys.get(ecid.toString());
+      try {
+        await this.fetchSubnetKeys(ecid.toString());
+        return this.#subnetKeys.get(ecid.toString());
+      } catch (err) {
+        if (throwOnError) {
+          throw err;
+        }
+        return undefined;
+      }
     };
 
     // Attempt to make the query i=retryTimes times
     // Make query and fetch subnet keys in parallel
     try {
-      const [queryResult, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
+      const [queryResult, subnetStatus] = await Promise.all([
+        makeQuery(),
+        getSubnetStatus({ throwOnError: false }),
+      ]);
       const { requestDetails, query } = queryResult;
 
       const queryWithDetails = {
@@ -968,10 +982,8 @@ export class HttpAgent implements Agent {
       } catch {
         // In case the node signatures have changed, refresh the subnet keys and try again
         this.log.warn('Query response verification failed. Retrying with fresh subnet keys.');
-        this.#subnetKeys.delete(canisterId.toString());
-        await this.fetchSubnetKeys(ecid.toString());
-
-        const updatedSubnetStatus = this.#subnetKeys.get(canisterId.toString());
+        this.#subnetKeys.delete(ecid.toString());
+        const updatedSubnetStatus = await getSubnetStatus({ throwOnError: true });
         if (!updatedSubnetStatus) {
           throw TrustError.fromCode(new MissingSignatureErrorCode());
         }
