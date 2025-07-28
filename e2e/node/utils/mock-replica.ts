@@ -51,10 +51,12 @@ export interface MockReplicaSpies {
 }
 
 function fallbackSpyImpl(spyType: MockReplicaSpyType, canisterId: string): MockReplicaSpyImpl {
-  return (_req, res) => {
+  return (req, res) => {
     res
       .status(500)
-      .send(`No implementation defined for ${spyType} spy on canisterId: ${canisterId}.`);
+      .send(
+        `No implementation defined for ${spyType} spy on canisterId: ${canisterId}. Requested path: ${req.path}`,
+      );
   };
 }
 

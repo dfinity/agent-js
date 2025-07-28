@@ -84,6 +84,11 @@ describe('queryExpiry', () => {
   });
 
   it('should fail if the timestamp is outside the max ingress expiry (no retry)', async () => {
+    const timeDiffMsecs = 6 * MINUTE_TO_MSECS;
+
+    // advance to go over the max ingress expiry (5 minutes)
+    advanceTimeByMilliseconds(timeDiffMsecs);
+
     const agent = await HttpAgent.create({
       host: mockReplica.address,
       rootKey: subnetKeyPair.publicKeyDer,
@@ -106,20 +111,7 @@ describe('queryExpiry', () => {
       res.status(200).send(responseBody);
     });
 
-    // advance to go over the max ingress expiry (5 minutes)
-    advanceTimeByMilliseconds(6 * MINUTE_TO_MSECS);
-
-    const { responseBody: subnetResponseBody } = await prepareV2ReadStateSubnetResponse({
-      nodeIdentity,
-      canisterRanges: [[canisterId.toUint8Array(), canisterId.toUint8Array()]],
-      keyPair: subnetKeyPair,
-      date: now,
-    });
-    mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
-      res.status(200).send(subnetResponseBody);
-    });
-
-    expect.assertions(5);
+    expect.assertions(4);
 
     try {
       await actor[greetMethodName](greetReq);
@@ -128,10 +120,12 @@ describe('queryExpiry', () => {
     }
 
     expect(mockReplica.getV2QuerySpy(canisterId.toString())).toHaveBeenCalledTimes(1);
-    expect(mockReplica.getV2ReadStateSpy(canisterId.toString())).toHaveBeenCalledTimes(0);
   });
 
   it('should retry and fail if the timestamp is outside the max ingress expiry (with retry)', async () => {
+    const timeDiffMsecs = 6 * MINUTE_TO_MSECS;
+    const futureDate = new Date(now.getTime() + timeDiffMsecs);
+
     const agent = await HttpAgent.create({
       host: mockReplica.address,
       rootKey: subnetKeyPair.publicKeyDer,
@@ -164,7 +158,7 @@ describe('queryExpiry', () => {
     });
 
     // advance to go over the max ingress expiry (5 minutes)
-    advanceTimeByMilliseconds(6 * MINUTE_TO_MSECS);
+    advanceTimeByMilliseconds(timeDiffMsecs);
 
     const { responseBody: subnetResponseBody } = await prepareV2ReadStateSubnetResponse({
       nodeIdentity,
@@ -172,6 +166,19 @@ describe('queryExpiry', () => {
       keyPair: subnetKeyPair,
       date: now,
     });
+    // These calls are made in parallel, and we expect them to fail
+    // fetch subnet keys, fails for certificate freshness checks
+    mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
+      res.status(200).send(subnetResponseBody);
+    });
+    // sync time, keeping a date in the future to make sure the agent still has outdated time
+    await mockSyncTimeResponse({
+      mockReplica,
+      keyPair: subnetKeyPair,
+      date: futureDate,
+      canisterId,
+    });
+    // retry again after sync time and fail again for certificate freshness checks
     mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
       res.status(200).send(subnetResponseBody);
     });
@@ -185,7 +192,7 @@ describe('queryExpiry', () => {
     }
 
     expect(mockReplica.getV2QuerySpy(canisterId.toString())).toHaveBeenCalledTimes(4);
-    expect(mockReplica.getV2ReadStateSpy(canisterId.toString())).toHaveBeenCalledTimes(1);
+    expect(mockReplica.getV2ReadStateSpy(canisterId.toString())).toHaveBeenCalledTimes(5);
   });
 
   it('should not retry if the timestamp is outside the max ingress expiry (verifyQuerySignatures=false)', async () => {
@@ -313,16 +320,6 @@ describe('queryExpiry', () => {
       res.status(200).send(responseBody);
     });
 
-    const { responseBody: subnetResponseBody } = await prepareV2ReadStateSubnetResponse({
-      nodeIdentity,
-      canisterRanges: [[canisterId.toUint8Array(), canisterId.toUint8Array()]],
-      keyPair: subnetKeyPair,
-      date: replicaDate,
-    });
-    mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
-      res.status(200).send(subnetResponseBody);
-    });
-
     expect.assertions(4);
 
     try {
@@ -371,6 +368,15 @@ describe('queryExpiry', () => {
     mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
       res.status(200).send(subnetResponseBody);
     });
+    await mockSyncTimeResponse({
+      mockReplica,
+      keyPair: subnetKeyPair,
+      date: replicaDate,
+      canisterId,
+    });
+    mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
+      res.status(200).send(subnetResponseBody);
+    });
     mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
       res.status(200).send(subnetResponseBody);
     });
@@ -379,7 +385,7 @@ describe('queryExpiry', () => {
 
     expect(actorResponse).toEqual(greetRes);
     expect(mockReplica.getV2QuerySpy(canisterId.toString())).toHaveBeenCalledTimes(1);
-    expect(mockReplica.getV2ReadStateSpy(canisterId.toString())).toHaveBeenCalledTimes(1);
+    expect(mockReplica.getV2ReadStateSpy(canisterId.toString())).toHaveBeenCalledTimes(5);
 
     const req = mockReplica.getV2QueryReq(canisterId.toString(), 0);
     expect(requestIdOf(req.content)).toEqual(requestId);
