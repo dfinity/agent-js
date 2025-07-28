@@ -18,7 +18,6 @@ import {
 import { Principal } from '@dfinity/principal';
 import * as bls from './utils/bls.ts';
 import { decodeTime } from './utils/leb.ts';
-import { MANAGEMENT_CANISTER_ID } from './agent/index.ts';
 import { bytesToHex, concatBytes, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
 import { uint8Equals } from './utils/buffer.ts';
 import { sha256 } from '@noble/hashes/sha2';
@@ -304,25 +303,25 @@ export class Certificate {
 
     await cert.verify();
 
-    if (this._canisterId.toString() !== MANAGEMENT_CANISTER_ID) {
-      const canisterInRange = check_canister_ranges({
-        canisterId: this._canisterId,
-        subnetId: Principal.fromUint8Array(new Uint8Array(d.subnet_id)),
-        tree: cert.cert.tree,
-      });
-      if (!canisterInRange) {
-        throw TrustError.fromCode(
-          new CertificateNotAuthorizedErrorCode(this._canisterId, d.subnet_id),
-        );
-      }
+    const subnetIdBytes = d.subnet_id;
+    const subnetId = Principal.fromUint8Array(subnetIdBytes);
+
+    const canisterInRange = check_canister_ranges({
+      canisterId: this._canisterId,
+      subnetId,
+      tree: cert.cert.tree,
+    });
+    if (!canisterInRange) {
+      throw TrustError.fromCode(new CertificateNotAuthorizedErrorCode(this._canisterId, subnetId));
     }
+
     const publicKeyLookup = lookupResultToBuffer(
-      cert.lookup_path(['subnet', d.subnet_id, 'public_key']),
+      cert.lookup_path(['subnet', subnetIdBytes, 'public_key']),
     );
     if (!publicKeyLookup) {
       throw TrustError.fromCode(
         new MissingLookupValueErrorCode(
-          `Could not find subnet key for subnet 0x${bytesToHex(d.subnet_id)}`,
+          `Could not find subnet key for subnet ID ${subnetId.toText()}`,
         ),
       );
     }

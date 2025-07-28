@@ -1,5 +1,9 @@
 import { Principal } from '@dfinity/principal';
-import { type HttpDetailsResponse, type NodeSignature, type ReplicaRejectCode } from './agent/api.ts';
+import {
+  type HttpDetailsResponse,
+  type NodeSignature,
+  type ReplicaRejectCode,
+} from './agent/api.ts';
 import { type RequestId } from './request_id.ts';
 import { type Expiry, type RequestStatusResponseStatus } from './agent/http/index.ts';
 import { type HttpHeaderField } from './agent/http/types.ts';
@@ -237,14 +241,14 @@ export class CertificateNotAuthorizedErrorCode extends ErrorCode {
 
   constructor(
     public readonly canisterId: Principal,
-    public readonly subnetId: Uint8Array,
+    public readonly subnetId: Principal,
   ) {
     super();
     Object.setPrototypeOf(this, CertificateNotAuthorizedErrorCode.prototype);
   }
 
   public toErrorMessage(): string {
-    return `The certificate contains a delegation that does not include the canister ${this.canisterId.toText()} in the canister_ranges field. Subnet ID: 0x${bytesToHex(this.subnetId)}`;
+    return `The certificate contains a delegation that does not include the canister ${this.canisterId.toText()} in the canister_ranges field. Subnet ID: ${this.subnetId.toText()}`;
   }
 }
 
