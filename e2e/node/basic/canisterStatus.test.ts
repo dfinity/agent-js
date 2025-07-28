@@ -131,7 +131,7 @@ describe('canister status', () => {
       expect(mockReplica.getV2ReadStateSpy(canisterId.toString())).toHaveBeenCalledTimes(5);
     });
 
-    it.only('should sync time and succeed if the certificate is not fresh', async () => {
+    it('should sync time and succeed if the certificate is not fresh', async () => {
       const timeDiffMsecs = -(6 * MINUTE_TO_MSECS);
       const replicaDate = new Date(now.getTime() + timeDiffMsecs);
 
