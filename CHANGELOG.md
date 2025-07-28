@@ -8,6 +8,8 @@
 - fix: account for clock drift when verifying the certificate freshness.
 - feat: adds the `timeDiffMsecs` optional field to the `CreateCertificateOptions` interface, which allows you to adjust the current time when verifying the certificate freshness.
 - feat: adds the `getTimeDiffMsecs` function to the `HttpAgent` class, which returns the time difference in milliseconds between the client's clock and the IC network clock. It also adds the `getTimeDiffMsecs` function to handle the case where the agent is not an instance of `HttpAgent`.
+- fix: syncs local time with the IC network time when the certificate is not fresh in the `CanisterStatus.request` function, and retries the request once.
+- feat: adds the `disableCertificateTimeVerification` optional field to the `CanisterStatus.request` function argument, which allows you to control the `disableTimeVerification` option for the internal `Certificate.create` call.
 
 ## [3.1.0] - 2025-07-24
 
