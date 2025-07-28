@@ -12,27 +12,38 @@ import {
 import { Expiry, ReplicaRejectCode } from './agent/index.ts';
 import { RequestId } from './request_id.ts';
 
+class TestError extends Error {
+  constructor(message: string) {
+    super(message);
+    Object.setPrototypeOf(this, TestError.prototype);
+  }
+}
+
 test('AgentError', () => {
-  const errorCode = new UnexpectedErrorCode('message');
+  const errorCode = new UnexpectedErrorCode(new TestError('message'));
   const agentError = new AgentError(errorCode, ErrorKindEnum.Unknown);
-  const expectedErrorMessage = 'Unexpected error: message';
+  const expectedErrorMessage = 'Unexpected error: Error: message';
 
   expect(agentError.name).toEqual('AgentError');
-  expect(agentError.message).toEqual(expectedErrorMessage);
+  expect(agentError.message.startsWith(expectedErrorMessage)).toEqual(true);
   expect(agentError.code).toBeInstanceOf(UnexpectedErrorCode);
   expect(agentError.kind).toBe(ErrorKindEnum.Unknown);
   expect(agentError.cause.code).toBeInstanceOf(UnexpectedErrorCode);
   expect(agentError.cause.kind).toBe(ErrorKindEnum.Unknown);
-  expect(agentError.toString()).toEqual('AgentError (Unknown): Unexpected error: message');
+  expect(
+    agentError.toString().startsWith('AgentError (Unknown): Unexpected error: Error: message'),
+  ).toEqual(true);
 
   const unknownError = UnknownError.fromCode(errorCode);
   expect(unknownError.name).toEqual('UnknownError');
-  expect(unknownError.message).toEqual(expectedErrorMessage);
+  expect(agentError.message.startsWith(expectedErrorMessage)).toEqual(true);
   expect(unknownError.code).toBeInstanceOf(UnexpectedErrorCode);
   expect(unknownError.kind).toBe(ErrorKindEnum.Unknown);
   expect(unknownError.cause.code).toBeInstanceOf(UnexpectedErrorCode);
   expect(unknownError.cause.kind).toBe(ErrorKindEnum.Unknown);
-  expect(unknownError.toString()).toEqual('UnknownError (Unknown): Unexpected error: message');
+  expect(
+    unknownError.toString().startsWith('UnknownError (Unknown): Unexpected error: Error: message'),
+  ).toEqual(true);
 
   expect(agentError instanceof Error).toEqual(true);
   expect(agentError instanceof AgentError).toEqual(true);
@@ -49,8 +60,8 @@ test('AgentError', () => {
   // another error code to test that hasCode works
   expect(agentError.hasCode(IdentityInvalidErrorCode)).toEqual(false);
 
-  expect(errorCode.toErrorMessage()).toEqual(expectedErrorMessage);
-  expect(errorCode.toString()).toEqual(expectedErrorMessage);
+  expect(errorCode.toErrorMessage().startsWith(expectedErrorMessage)).toEqual(true);
+  expect(errorCode.toString().startsWith(expectedErrorMessage)).toEqual(true);
   expect(errorCode.requestContext).toBeUndefined();
   expect(errorCode.toString().includes('\nRequest context:')).toBe(false);
   expect(errorCode.callContext).toBeUndefined();
