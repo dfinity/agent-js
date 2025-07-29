@@ -177,11 +177,10 @@ export interface CreateCertificateOptions {
   disableTimeVerification?: boolean;
 
   /**
-   * The time difference in milliseconds between the client's clock and the IC network clock.
-   * This is used to adjust the current time when verifying the certificate freshness.
-   * @default 0
+   * The current time to use when verifying the certificate freshness.
+   * @default `new Date()`
    */
-  timeDiffMsecs?: number;
+  currentTime?: Date;
 }
 
 export class Certificate {
@@ -196,7 +195,7 @@ export class Certificate {
   public static async create(options: CreateCertificateOptions): Promise<Certificate> {
     const cert = Certificate.createUnverified(options);
 
-    await cert.verify(options.timeDiffMsecs ?? 0);
+    await cert.verify(options.currentTime ?? new Date());
     return cert;
   }
 
@@ -241,9 +240,9 @@ export class Certificate {
     return lookup_subtree(path, this.cert.tree);
   }
 
-  private async verify(timeDiffMsecs: number): Promise<void> {
+  private async verify(currentTime: Date): Promise<void> {
     const rootHash = await reconstruct(this.cert.tree);
-    const derKey = await this._checkDelegationAndGetKey(this.cert.delegation, timeDiffMsecs);
+    const derKey = await this._checkDelegationAndGetKey(this.cert.delegation, currentTime);
     const sig = this.cert.signature;
     const key = extractDER(derKey);
     const msg = concatBytes(domain_sep('ic-state-root'), rootHash);
@@ -259,10 +258,9 @@ export class Certificate {
     // Certificate time verification checks
     if (!this.#disableTimeVerification) {
       const maxAgeInMsec = this._maxAgeInMinutes * MINUTES_TO_MSEC;
-      const now = Date.now();
-      const adjustedNow = now + timeDiffMsecs;
-      const earliestCertificateTime = adjustedNow - maxAgeInMsec;
-      const latestCertificateTime = adjustedNow + FIVE_MINUTES_IN_MSEC;
+      const currentTimestamp = currentTime.getTime();
+      const earliestCertificateTime = currentTimestamp - maxAgeInMsec;
+      const latestCertificateTime = currentTimestamp + FIVE_MINUTES_IN_MSEC;
 
       const certTime = decodeTime(lookupTime);
 
@@ -271,14 +269,20 @@ export class Certificate {
           new CertificateTimeErrorCode(
             this._maxAgeInMinutes,
             certTime,
-            new Date(now),
-            timeDiffMsecs,
+            new Date(),
+            currentTimestamp - Date.now(),
             'past',
           ),
         );
       } else if (certTime.getTime() > latestCertificateTime) {
         throw TrustError.fromCode(
-          new CertificateTimeErrorCode(5, certTime, new Date(now), timeDiffMsecs, 'future'),
+          new CertificateTimeErrorCode(
+            5,
+            certTime,
+            new Date(),
+            currentTimestamp - Date.now(),
+            'future',
+          ),
         );
       }
     }
@@ -297,7 +301,7 @@ export class Certificate {
 
   private async _checkDelegationAndGetKey(
     d: Delegation | undefined,
-    timeDiffMsecs: number,
+    currentTime: Date,
   ): Promise<Uint8Array> {
     if (!d) {
       return this._rootKey;
@@ -315,7 +319,7 @@ export class Certificate {
       throw ProtocolError.fromCode(new CertificateHasTooManyDelegationsErrorCode());
     }
 
-    await cert.verify(timeDiffMsecs);
+    await cert.verify(currentTime);
 
     if (this._canisterId.toString() !== MANAGEMENT_CANISTER_ID) {
       const canisterInRange = check_canister_ranges({

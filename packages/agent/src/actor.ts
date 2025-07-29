@@ -20,7 +20,7 @@ import { IDL } from '@dfinity/candid';
 import { pollForResponse, type PollingOptions, DEFAULT_POLLING_OPTIONS } from './polling/index.ts';
 import { Principal } from '@dfinity/principal';
 import { Certificate, type CreateCertificateOptions, lookupResultToBuffer } from './certificate.ts';
-import { getTimeDiffMsecs, HttpAgent } from './agent/http/index.ts';
+import { getAdjustedCurrentTime, HttpAgent } from './agent/http/index.ts';
 import { utf8ToBytes } from '@noble/hashes/utils';
 
 /**
@@ -427,7 +427,7 @@ function _createActorMethod(
           rootKey: agent.rootKey,
           canisterId: Principal.from(canisterId),
           blsVerify,
-          timeDiffMsecs: getTimeDiffMsecs(agent),
+          currentTime: getAdjustedCurrentTime(agent),
         });
         const path = [utf8ToBytes('request_status'), requestId];
         const status = new TextDecoder().decode(

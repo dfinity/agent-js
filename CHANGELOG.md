@@ -6,8 +6,9 @@
 - fix: pick the expiry rounding strategy based on the delta, without adding the clock drift to the delta.
 - feat: adds a `clockDriftMs` optional parameter to `Expiry.fromDeltaInMilliseconds` to add to the current time, typically used to specify the clock drift between the client's clock and the IC network clock.
 - fix: account for clock drift when verifying the certificate freshness.
-- feat: adds the `timeDiffMsecs` optional field to the `CreateCertificateOptions` interface, which allows you to adjust the current time when verifying the certificate freshness.
-- feat: adds the `getTimeDiffMsecs` function to the `HttpAgent` class, which returns the time difference in milliseconds between the client's clock and the IC network clock. It also adds the `getTimeDiffMsecs` function to handle the case where the agent is not an instance of `HttpAgent`.
+- feat: adds the `currentTime` optional field to the `CreateCertificateOptions` interface, which allows you to override the current time when verifying the certificate freshness.
+- feat: adds the `getTimeDiffMsecs` function to the `HttpAgent` class, which returns the time difference in milliseconds between the client's clock and the IC network clock.
+- feat: adds the `getAdjustedCurrentTime` to compute the current time adjusted by the input agent's time difference in milliseconds, if the agent is an instance of `HttpAgent`.
 
 ## [3.1.0] - 2025-07-24
 
