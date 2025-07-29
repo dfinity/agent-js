@@ -15,7 +15,7 @@ import {
   InputError,
   CertificateTimeErrorCode,
 } from '../errors.ts';
-import { getTimeDiffMsecs, HttpAgent } from '../agent/http/index.ts';
+import { getAdjustedCurrentTime, HttpAgent } from '../agent/http/index.ts';
 import type { ReadStateResponse } from '../agent/api.ts';
 import {
   type Cert,
@@ -143,7 +143,7 @@ const fetchCertificate = async (
     rootKey: agent.rootKey,
     canisterId,
     disableTimeVerification,
-    timeDiffMsecs: getTimeDiffMsecs(agent),
+    currentTime: getAdjustedCurrentTime(agent),
   });
 
   return [certificate, response];
