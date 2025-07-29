@@ -1420,10 +1420,10 @@ export function calculateIngressExpiry(
  * @returns The current time adjusted by the agent's time difference in milliseconds. If the agent is not an {@link HttpAgent} instance, fallbacks to the system's current timestamp.
  */
 export function getAdjustedCurrentTime(agent: Agent | HttpAgent): Date {
-  let timestamp = Date.now();
+  let timestampMs = Date.now();
   if ('getTimeDiffMsecs' in agent) {
     const timeDiffMsecs = agent.getTimeDiffMsecs();
-    timestamp += timeDiffMsecs;
+    timestampMs += timeDiffMsecs;
   }
-  return new Date(timestamp);
+  return new Date(timestampMs);
 }
