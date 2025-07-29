@@ -934,11 +934,7 @@ export class HttpAgent implements Agent {
       };
     };
 
-    const getSubnetStatus = async ({
-      throwOnError,
-    }: {
-      throwOnError: boolean;
-    }): Promise<SubnetStatus | undefined> => {
+    const getSubnetStatus = async (): Promise<SubnetStatus | undefined> => {
       if (!this.#verifyQuerySignatures) {
         return undefined;
       }
@@ -946,15 +942,8 @@ export class HttpAgent implements Agent {
       if (subnetStatus) {
         return subnetStatus;
       }
-      try {
-        await this.fetchSubnetKeys(ecid.toString());
-        return this.#subnetKeys.get(ecid.toString());
-      } catch (err) {
-        if (throwOnError) {
-          throw err;
-        }
-        return undefined;
-      }
+      await this.fetchSubnetKeys(ecid.toString());
+      return this.#subnetKeys.get(ecid.toString());
     };
 
     // Attempt to make the query i=retryTimes times
@@ -962,7 +951,10 @@ export class HttpAgent implements Agent {
     try {
       const [queryResult, subnetStatus] = await Promise.all([
         makeQuery(),
-        getSubnetStatus({ throwOnError: false }),
+        getSubnetStatus().catch(err => {
+          this.log.warn('Failed to fetch subnet keys. Error:', err);
+          return undefined;
+        }),
       ]);
       const { requestDetails, query } = queryResult;
 
@@ -983,7 +975,7 @@ export class HttpAgent implements Agent {
         // In case the node signatures have changed, refresh the subnet keys and try again
         this.log.warn('Query response verification failed. Retrying with fresh subnet keys.');
         this.#subnetKeys.delete(ecid.toString());
-        const updatedSubnetStatus = await getSubnetStatus({ throwOnError: true });
+        const updatedSubnetStatus = await getSubnetStatus();
         if (!updatedSubnetStatus) {
           throw TrustError.fromCode(new MissingSignatureErrorCode());
         }
