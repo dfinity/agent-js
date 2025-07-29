@@ -19,7 +19,7 @@
     "@typescript-eslint/parser": "^8.32.1",
     "dotenv": "^16.5.0",
     "esbuild": "^0.25.5",
-    "eslint": "^9.8.0",
+    "eslint": "^9.32.0",
     "eslint-plugin-jsdoc": "^48.11.0",
     "eslint-plugin-prettier": "^5.2.1",
     "fake-indexeddb": "^6.0.1",
