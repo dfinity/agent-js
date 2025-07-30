@@ -4,7 +4,7 @@ JavaScript and TypeScript library to work with Internet Computer Principals
 
 Do you want to know more about developing on the Internet Computer? Visit the [Developer Docs](https://internetcomputer.org/docs/home).
 
-Additional API Documentation can be found [here](https://agent-js.icp.xyz/libs/principal/api).
+Additional API Documentation can be found [here](https://js.icp.build/core/libs/principal/api).
 
 ---
 

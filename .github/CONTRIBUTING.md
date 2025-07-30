@@ -230,7 +230,7 @@ After publishing to NPM, go to https://github.com/dfinity/agent-js/releases/new,
 
 1. Start with a fresh clone (or execute `git clean -dfx .`) to ensure no untracked files are present.
 2. Run `pnpm i` to install all dependencies.
-3. Deploy the docs using `dfx deploy --network ic`. Note: You may need to request for permissions as a controller for the wallet that owns the docs.
+3. Deploy the docs using `juno deploy --mode production`. Note: You may need to request for permissions as a controller for the [Juno](https://juno.build) satellite that owns the docs.
 
 </details>
 

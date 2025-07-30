@@ -98,7 +98,7 @@ export type LibsLoaderTypeDocOptions = TypeDocMarkdownOptions & TypeDocOptions;
 type RemarkPlugin = RemarkPlugins[number];
 
 const prettyUrlsPlugin: RemarkPlugin =
-  ([logger, docsDir, site]: [AstroIntegrationLogger, string, string]) =>
+  ([logger, docsDir, site, baseUrl]: [AstroIntegrationLogger, string, string, string]) =>
   async (tree, file) => {
     const currentFileDir = path.dirname(file.path);
 
@@ -108,6 +108,7 @@ const prettyUrlsPlugin: RemarkPlugin =
       // take full URLs to the current site and make them relative
       if (url.startsWith(site)) {
         node.url = new URL(url).pathname;
+        return;
       }
 
       // skip any other full URLs
@@ -115,7 +116,8 @@ const prettyUrlsPlugin: RemarkPlugin =
         url.startsWith('https://') ||
         url.startsWith('/') ||
         url.startsWith('http://') ||
-        url.startsWith('mailto:')
+        url.startsWith('mailto:') ||
+        url.startsWith('#')
       ) {
         logger.debug(`Skipping URL: ${url}`);
         return;
@@ -124,7 +126,7 @@ const prettyUrlsPlugin: RemarkPlugin =
       // normalize all other relative URLs to the docs directory
       const absoluteLinkedFilePath = path.resolve(currentFileDir, url);
       const relativeToDocs = path.relative(docsDir, absoluteLinkedFilePath);
-      const normalizedUrl = `/${relativeToDocs.replace(/(index)?\.mdx?(#.*)?$/, '$2').toLowerCase()}`;
+      const normalizedUrl = `${baseUrl}${relativeToDocs.replace(/(index)?\.mdx?(#.*)?$/, '$2').toLowerCase()}`;
       logger.debug(`Normalizing URL: ${url} -> ${normalizedUrl}`);
 
       node.url = normalizedUrl;
@@ -158,7 +160,7 @@ export function libsPlugin(opts: LibsLoaderOptions): StarlightPlugin {
                 markdown: {
                   remarkPlugins: [
                     ...config.markdown.remarkPlugins,
-                    [prettyUrlsPlugin, [logger, DOCS_DIR, site]],
+                    [prettyUrlsPlugin, [logger, DOCS_DIR, site, ctx.astroConfig.base]],
                   ],
                 },
               });
