@@ -64,7 +64,19 @@ A member of the team will review your changes. Once the member has reviewed your
 
 ## Main Branch Conventions
 
-All commits in the master branch should come from squashed GitHub Pull Requests, and those commit messages should follow the [conventionalcommits.org](https://conventionalcommits.org) syntax.
+All commits in the main branch should come from squashed GitHub Pull Requests, and those commit messages should follow the [conventionalcommits.org](https://conventionalcommits.org) syntax.
+
+## Documentation
+
+The documentation website is built using [Starlight](https://starlight.astro.build) and deployed to [Juno](https://juno.build).
+
+To test the documentation website locally, you can run the following commands:
+
+```shell
+pnpm start
+# or
+pnpm preview
+```
 
 # Release new version and Publish it to NPM
 
@@ -189,7 +201,7 @@ git checkout main
 
 </details>
 
-## Publishing to NPM and Document Updates
+## Publishing Packages to NPM and Publishing Documentation
 
 Once you've initiated a release process, the resulting pull request from the `release/...` branch to the `main` branch needs to be reviewed. Upon merging, it automatically triggers the `publish.yml` workflow, which handles publishing the new version to NPM, along with updating documentation and changelog.
 
@@ -230,7 +242,7 @@ After publishing to NPM, go to https://github.com/dfinity/agent-js/releases/new,
 
 1. Start with a fresh clone (or execute `git clean -dfx .`) to ensure no untracked files are present.
 2. Run `pnpm i` to install all dependencies.
-3. Deploy the docs using `juno deploy --mode production`. Note: You may need to request for permissions as a controller for the [Juno](https://juno.build) satellite that owns the docs.
+3. Deploy the docs using `juno deploy --mode production`. Note: You may need to request for permissions as an Administrator for the [Juno](https://juno.build) satellite that owns the docs.
 
 </details>
 
