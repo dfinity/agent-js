@@ -4,7 +4,7 @@
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to manage Secp256k1KeyIdentities for use with the Internet Computer",
-  "homepage": "https://agent-js.icp.xyz/libs/identity-secp256k1",
+  "homepage": "https://js.icp.build/core/libs/identity-secp256k1",
   "repository": {
     "type": "git",
     "url": "https://github.com/dfinity/agent-js.git",
