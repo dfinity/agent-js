@@ -4,7 +4,7 @@ Manage assets on an Internet Computer assets canister.
 
 Do you want to know more about developing on the Internet Computer? Visit the [Developer Docs](https://internetcomputer.org/docs/home).
 
-Additional API Documentation can be found [here](https://agent-js.icp.xyz/libs/assets/api).
+Additional API Documentation can be found [here](https://js.icp.build/core/libs/assets/api).
 
 ---
 
