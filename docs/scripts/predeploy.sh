@@ -7,3 +7,6 @@ pnpm run build
 # move all content to /core directory
 mkdir -p dist/core
 mv dist/* dist/core/ 2>/dev/null || true
+
+# copy the 404 file to the root
+cp dist/core/404.html dist/404.html
