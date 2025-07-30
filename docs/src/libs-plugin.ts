@@ -174,7 +174,7 @@ export function libsPlugin(opts: LibsLoaderOptions): StarlightPlugin {
           const id = name.startsWith('@') ? name.split('/')[1] : name;
           const outputRootDir = path.resolve(outDir, id);
           const outputApiDir = path.resolve(outputRootDir, 'api');
-          const title = titleFromId(id);
+          const title = titleFromIdCapitalized(id);
 
           await processMarkdown({
             inputPath: path.resolve(baseDir, id, 'README.md'),
@@ -233,7 +233,7 @@ export function libsPlugin(opts: LibsLoaderOptions): StarlightPlugin {
         for (const file of opts.additionalFiles || []) {
           const fileName = path.basename(file.path).toLowerCase();
           const id = idFromFilename(fileName);
-          const title = titleFromId(id);
+          const title = titleFromIdCapitalized(id);
 
           await processMarkdown({
             inputPath: path.resolve(file.path),
@@ -276,7 +276,11 @@ function titleFromFilename(fileName: string): string {
 }
 
 function titleFromId(id: string): string {
-  return id.replace(/-/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
+  return id.replace(/-/g, ' ');
+}
+
+function titleFromIdCapitalized(id: string): string {
+  return titleFromId(id).replace(/\b\w/g, char => char.toUpperCase());
 }
 
 interface ProcessMarkdownOpts {
