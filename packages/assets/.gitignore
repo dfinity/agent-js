@@ -1,6 +1,3 @@
 node_modules/
 dist/
 lib/
-
-# generated docs
-/docs/reference

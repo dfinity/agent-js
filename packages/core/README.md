@@ -4,7 +4,7 @@ The `@icp-sdk/core` package is a JavaScript and TypeScript library designed to i
 
 Do you want to know more about developing on the Internet Computer? Visit the [Developer Docs](https://internetcomputer.org/docs/home).
 
-Additional API Documentation can be found [here](https://agent-js.icp.xyz/libs/core/api).
+Additional API Documentation can be found [here](https://js.icp.build/core/libs/core/api).
 
 **Note:** This package requires the `node16` (or later) module resolution strategy to function correctly.
 

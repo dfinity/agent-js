@@ -36,15 +36,10 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      # publish docs
-      - name: Install dfx
-        uses: dfinity/setup-dfx@main
-      - name: Add new identity to dfx
+      - name: Deploy Docs to Juno satellite
+        uses: junobuild/juno-action@main
+        with:
+          args: deploy --mode production --immediate
         env:
-          DFX_IDENTITY_PEM: ${{ secrets.DFX_IDENTITY_PEM }}
-        run: |
-          echo "$DFX_IDENTITY_PEM" > ./identity.pem
-          dfx identity import --storage-mode plaintext docs-deployer ./identity.pem
-          dfx identity use docs-deployer
-      - name: Deploy docs
-        run: DFX_WARNING=-mainnet_plaintext_identity dfx deploy --ic docs
+          JUNO_TOKEN: ${{ secrets.JUNO_TOKEN }}
+          PROJECT_PATH: docs

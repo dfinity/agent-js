@@ -5,13 +5,15 @@ import { libsPlugin } from './src/libs-plugin';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://agent-js.icp.xyz/',
+  site: 'https://js.icp.build/',
+  base: '/core/',
   integrations: [
     starlight({
       title: 'ICP JS SDK Docs',
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/dfinity/agent-js' }],
       plugins: [
         libsPlugin({
+          clean: true,
           baseDir: '../packages',
           typeDoc: {
             exclude: ['../packages/core'],
