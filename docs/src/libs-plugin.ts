@@ -98,7 +98,7 @@ export type LibsLoaderTypeDocOptions = TypeDocMarkdownOptions & TypeDocOptions;
 type RemarkPlugin = RemarkPlugins[number];
 
 const prettyUrlsPlugin: RemarkPlugin =
-  ([logger, docsDir, site]: [AstroIntegrationLogger, string, string]) =>
+  ([logger, docsDir, site, baseUrl]: [AstroIntegrationLogger, string, string, string]) =>
   async (tree, file) => {
     const currentFileDir = path.dirname(file.path);
 
@@ -108,6 +108,7 @@ const prettyUrlsPlugin: RemarkPlugin =
       // take full URLs to the current site and make them relative
       if (url.startsWith(site)) {
         node.url = new URL(url).pathname;
+        return;
       }
 
       // skip any other full URLs
@@ -115,7 +116,8 @@ const prettyUrlsPlugin: RemarkPlugin =
         url.startsWith('https://') ||
         url.startsWith('/') ||
         url.startsWith('http://') ||
-        url.startsWith('mailto:')
+        url.startsWith('mailto:') ||
+        url.startsWith('#')
       ) {
         logger.debug(`Skipping URL: ${url}`);
         return;
@@ -124,7 +126,7 @@ const prettyUrlsPlugin: RemarkPlugin =
       // normalize all other relative URLs to the docs directory
       const absoluteLinkedFilePath = path.resolve(currentFileDir, url);
       const relativeToDocs = path.relative(docsDir, absoluteLinkedFilePath);
-      const normalizedUrl = `/${relativeToDocs.replace(/(index)?\.mdx?(#.*)?$/, '$2').toLowerCase()}`;
+      const normalizedUrl = `${baseUrl}${relativeToDocs.replace(/(index)?\.mdx?(#.*)?$/, '$2').toLowerCase()}`;
       logger.debug(`Normalizing URL: ${url} -> ${normalizedUrl}`);
 
       node.url = normalizedUrl;
@@ -158,7 +160,7 @@ export function libsPlugin(opts: LibsLoaderOptions): StarlightPlugin {
                 markdown: {
                   remarkPlugins: [
                     ...config.markdown.remarkPlugins,
-                    [prettyUrlsPlugin, [logger, DOCS_DIR, site]],
+                    [prettyUrlsPlugin, [logger, DOCS_DIR, site, ctx.astroConfig.base]],
                   ],
                 },
               });
@@ -174,7 +176,7 @@ export function libsPlugin(opts: LibsLoaderOptions): StarlightPlugin {
           const id = name.startsWith('@') ? name.split('/')[1] : name;
           const outputRootDir = path.resolve(outDir, id);
           const outputApiDir = path.resolve(outputRootDir, 'api');
-          const title = titleFromId(id);
+          const title = titleFromIdCapitalized(id);
 
           await processMarkdown({
             inputPath: path.resolve(baseDir, id, 'README.md'),
@@ -233,7 +235,7 @@ export function libsPlugin(opts: LibsLoaderOptions): StarlightPlugin {
         for (const file of opts.additionalFiles || []) {
           const fileName = path.basename(file.path).toLowerCase();
           const id = idFromFilename(fileName);
-          const title = titleFromId(id);
+          const title = titleFromIdCapitalized(id);
 
           await processMarkdown({
             inputPath: path.resolve(file.path),
@@ -276,7 +278,11 @@ function titleFromFilename(fileName: string): string {
 }
 
 function titleFromId(id: string): string {
-  return id.replace(/-/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
+  return id.replace(/-/g, ' ');
+}
+
+function titleFromIdCapitalized(id: string): string {
+  return titleFromId(id).replace(/\b\w/g, char => char.toUpperCase());
 }
 
 interface ProcessMarkdownOpts {
