@@ -1684,13 +1684,19 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
   }
 }
 
+type GenericFuncArgs = [Type, ...Type[]] | [];
+type GenericFuncRets = [Type, ...Type[]] | [];
+
 /**
  * Represents an IDL function reference.
  * @param argTypes Argument types.
  * @param retTypes Return types.
  * @param annotations Function annotations.
  */
-export class FuncClass extends ConstructType<[PrincipalId, string]> {
+export class FuncClass<
+  Args extends GenericFuncArgs = GenericFuncArgs,
+  Rets extends GenericFuncRets = GenericFuncRets,
+> extends ConstructType<[PrincipalId, string]> {
   get typeName() {
     return IdlTypeName.FuncClass;
   }
@@ -1707,8 +1713,8 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
   }
 
   constructor(
-    public argTypes: Type[],
-    public retTypes: Type[],
+    public argTypes: Args,
+    public retTypes: Rets,
     public annotations: string[] = [],
   ) {
     super();
@@ -1800,7 +1806,12 @@ export class FuncClass extends ConstructType<[PrincipalId, string]> {
   }
 }
 
-export class ServiceClass extends ConstructType<PrincipalId> {
+type GenericServiceFields = Record<string, FuncClass>;
+
+export class ServiceClass<
+  K extends string = string,
+  Fields extends GenericServiceFields = GenericServiceFields,
+> extends ConstructType<PrincipalId> {
   get typeName() {
     return IdlTypeName.ServiceClass;
   }
@@ -1809,8 +1820,8 @@ export class ServiceClass extends ConstructType<PrincipalId> {
     return instance.typeName === IdlTypeName.ServiceClass;
   }
 
-  public readonly _fields: Array<[string, FuncClass]>;
-  constructor(fields: Record<string, FuncClass>) {
+  public readonly _fields: Array<[K, Fields[K]]>;
+  constructor(fields: Fields) {
     super();
     this._fields = Object.entries(fields).sort((a, b) => {
       if (a[0] < b[0]) {
@@ -1820,7 +1831,7 @@ export class ServiceClass extends ConstructType<PrincipalId> {
         return 1;
       }
       return 0;
-    });
+    }) as Array<[K, Fields[K]]>;
   }
   public accept<D, R>(v: Visitor<D, R>, d: D): R {
     return v.visitService(this, d);
@@ -1867,8 +1878,8 @@ export class ServiceClass extends ConstructType<PrincipalId> {
     return `service "${x.toText()}"`;
   }
 
-  public fieldsAsObject() {
-    const fields: Record<string, Type> = {};
+  public fieldsAsObject(): Fields {
+    const fields = {} as Fields;
     for (const [name, ty] of this._fields) {
       fields[name] = ty;
     }
@@ -2315,7 +2326,10 @@ export function Rec(): RecClass {
  * @param annotations array of strings, [] by default
  * @returns new FuncClass
  */
-export function Func(args: Type[], ret: Type[], annotations: string[] = []): FuncClass {
+export function Func<
+  Args extends GenericFuncArgs = GenericFuncArgs,
+  Ret extends GenericFuncRets = GenericFuncRets,
+>(args: Args, ret: Ret, annotations: string[] = []): FuncClass<Args, Ret> {
   return new FuncClass(args, ret, annotations);
 }
 
@@ -2324,7 +2338,10 @@ export function Func(args: Type[], ret: Type[], annotations: string[] = []): Fun
  * @param t Record of string and FuncClass
  * @returns ServiceClass
  */
-export function Service(t: Record<string, FuncClass>): ServiceClass {
+export function Service<
+  K extends string = string,
+  Fields extends GenericServiceFields = GenericServiceFields,
+>(t: Fields): ServiceClass<K, Fields> {
   return new ServiceClass(t);
 }
 
