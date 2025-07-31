@@ -8,6 +8,10 @@
 - fix: add declaration maps and typescript source code to published packages
 - feat: enables type inference for the arguments and return types of `FuncClass`.
 - feat: enables type inference for the fields of `ServiceClass`.
+- fix: account for clock drift when verifying the certificate freshness.
+- feat: adds the `currentTime` optional field to the `CreateCertificateOptions` interface, which allows you to override the current time when verifying the certificate freshness.
+- feat: adds the `getTimeDiffMsecs` function to the `HttpAgent` class, which returns the time difference in milliseconds between the client's clock and the IC network clock.
+- feat: adds the `getAdjustedCurrentTime` to compute the current time adjusted by the input agent's time difference in milliseconds, if the agent is an instance of `HttpAgent`.
 
 ## [3.1.0] - 2025-07-24
 

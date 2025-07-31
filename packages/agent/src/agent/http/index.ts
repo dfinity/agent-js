@@ -1386,6 +1386,17 @@ export class HttpAgent implements Agent {
 
     return p;
   }
+
+  /**
+   * Returns the time difference in milliseconds between the client's clock and the IC network clock,
+   * after the clock has been synced using the {@link HttpAgent.syncTime} method
+   * or during agent creation if {@link HttpAgentOptions.shouldSyncTime} was set to `true`.
+   *
+   * If the time has not been synced, returns `0`.
+   */
+  public getTimeDiffMsecs(): number {
+    return this.#timeDiffMsecs;
+  }
 }
 
 /**
@@ -1401,4 +1412,18 @@ export function calculateIngressExpiry(
 ): Expiry {
   const ingressExpiryMs = maxIngressExpiryInMinutes * MINUTE_TO_MSECS;
   return Expiry.fromDeltaInMilliseconds(ingressExpiryMs, timeDiffMsecs);
+}
+
+/**
+ * Computes the current time adjusted by the time difference in milliseconds returned by {@link HttpAgent.getTimeDiffMsecs}.
+ * @param agent The agent to retrieve the `timeDiffMsecs` property from.
+ * @returns The current time adjusted by the agent's time difference in milliseconds. If the agent is not an {@link HttpAgent} instance, fallbacks to the system's current timestamp.
+ */
+export function getAdjustedCurrentTime(agent: Agent | HttpAgent): Date {
+  let timestampMs = Date.now();
+  if ('getTimeDiffMsecs' in agent) {
+    const timeDiffMsecs = agent.getTimeDiffMsecs();
+    timestampMs += timeDiffMsecs;
+  }
+  return new Date(timestampMs);
 }

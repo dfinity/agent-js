@@ -23,6 +23,9 @@ import { bytesToHex, concatBytes, hexToBytes, utf8ToBytes } from '@noble/hashes/
 import { uint8Equals } from './utils/buffer.ts';
 import { sha256 } from '@noble/hashes/sha2';
 
+const MINUTES_TO_MSEC = 60 * 1000;
+const FIVE_MINUTES_IN_MSEC = 5 * MINUTES_TO_MSEC;
+
 export interface Cert {
   tree: HashTree;
   signature: Uint8Array;
@@ -161,16 +164,23 @@ export interface CreateCertificateOptions {
 
   /**
    * The maximum age of the certificate in minutes. Default is 5 minutes.
-   * @default 5
    * This is used to verify the time the certificate was signed, particularly for validating Delegation certificates, which can live for longer than the default window of +/- 5 minutes. If the certificate is
    * older than the specified age, it will fail verification.
+   * @default 5
    */
   maxAgeInMinutes?: number;
 
   /**
    * Overrides the maxAgeInMinutes setting and skips comparing the client's time against the certificate. Used for scenarios where the machine's clock is known to be out of sync, or for inspecting expired certificates.
+   * @default false
    */
   disableTimeVerification?: boolean;
+
+  /**
+   * The current time to use when verifying the certificate freshness.
+   * @default `new Date()`
+   */
+  currentTime?: Date;
 }
 
 export class Certificate {
@@ -180,16 +190,12 @@ export class Certificate {
   /**
    * Create a new instance of a certificate, automatically verifying it.
    * @param {CreateCertificateOptions} options {@link CreateCertificateOptions}
-   * @param {Uint8Array} options.certificate The bytes of the certificate
-   * @param {Uint8Array} options.rootKey The root key to verify against
-   * @param {Principal} options.canisterId The effective or signing canister ID
-   * @param {number} options.maxAgeInMinutes The maximum age of the certificate in minutes. Default is 5 minutes.
-   * @throws if the certificate cannot be verified
+   * @throws if the verification of the certificate fails
    */
   public static async create(options: CreateCertificateOptions): Promise<Certificate> {
     const cert = Certificate.createUnverified(options);
 
-    await cert.verify();
+    await cert.verify(options.currentTime ?? new Date());
     return cert;
   }
 
@@ -209,7 +215,6 @@ export class Certificate {
     private _rootKey: Uint8Array,
     private _canisterId: Principal,
     private _blsVerify: VerifyFunc,
-    // Default to 5 minutes
     private _maxAgeInMinutes: number = 5,
     disableTimeVerification: boolean = false,
   ) {
@@ -235,13 +240,12 @@ export class Certificate {
     return lookup_subtree(path, this.cert.tree);
   }
 
-  private async verify(): Promise<void> {
+  private async verify(currentTime: Date): Promise<void> {
     const rootHash = await reconstruct(this.cert.tree);
-    const derKey = await this._checkDelegationAndGetKey(this.cert.delegation);
+    const derKey = await this._checkDelegationAndGetKey(this.cert.delegation, currentTime);
     const sig = this.cert.signature;
     const key = extractDER(derKey);
     const msg = concatBytes(domain_sep('ic-state-root'), rootHash);
-    let sigVer = false;
 
     const lookupTime = lookupResultToBuffer(this.lookup_path(['time']));
     if (!lookupTime) {
@@ -253,39 +257,52 @@ export class Certificate {
 
     // Certificate time verification checks
     if (!this.#disableTimeVerification) {
-      const FIVE_MINUTES_IN_MSEC = 5 * 60 * 1000;
-      const MAX_AGE_IN_MSEC = this._maxAgeInMinutes * 60 * 1000;
-      const now = Date.now();
-      const earliestCertificateTime = now - MAX_AGE_IN_MSEC;
-      const fiveMinutesFromNow = now + FIVE_MINUTES_IN_MSEC;
+      const maxAgeInMsec = this._maxAgeInMinutes * MINUTES_TO_MSEC;
+      const currentTimestamp = currentTime.getTime();
+      const earliestCertificateTime = currentTimestamp - maxAgeInMsec;
+      const latestCertificateTime = currentTimestamp + FIVE_MINUTES_IN_MSEC;
 
       const certTime = decodeTime(lookupTime);
 
       if (certTime.getTime() < earliestCertificateTime) {
         throw TrustError.fromCode(
-          new CertificateTimeErrorCode(this._maxAgeInMinutes, certTime, new Date(now), 'past'),
+          new CertificateTimeErrorCode(
+            this._maxAgeInMinutes,
+            certTime,
+            new Date(),
+            currentTimestamp - Date.now(),
+            'past',
+          ),
         );
-      } else if (certTime.getTime() > fiveMinutesFromNow) {
+      } else if (certTime.getTime() > latestCertificateTime) {
         throw TrustError.fromCode(
-          new CertificateTimeErrorCode(5, certTime, new Date(now), 'future'),
+          new CertificateTimeErrorCode(
+            5,
+            certTime,
+            new Date(),
+            currentTimestamp - Date.now(),
+            'future',
+          ),
         );
       }
     }
 
     try {
-      sigVer = await this._blsVerify(new Uint8Array(key), new Uint8Array(sig), new Uint8Array(msg));
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const sigVer = await this._blsVerify(key, sig, msg);
+      if (!sigVer) {
+        throw TrustError.fromCode(new CertificateVerificationErrorCode('Invalid signature'));
+      }
     } catch (err) {
-      sigVer = false;
-    }
-    if (!sigVer) {
       throw TrustError.fromCode(
-        new CertificateVerificationErrorCode('Signature verification failed'),
+        new CertificateVerificationErrorCode('Signature verification failed', err),
       );
     }
   }
 
-  private async _checkDelegationAndGetKey(d?: Delegation): Promise<Uint8Array> {
+  private async _checkDelegationAndGetKey(
+    d: Delegation | undefined,
+    currentTime: Date,
+  ): Promise<Uint8Array> {
     if (!d) {
       return this._rootKey;
     }
@@ -302,7 +319,7 @@ export class Certificate {
       throw ProtocolError.fromCode(new CertificateHasTooManyDelegationsErrorCode());
     }
 
-    await cert.verify();
+    await cert.verify(currentTime);
 
     if (this._canisterId.toString() !== MANAGEMENT_CANISTER_ID) {
       const canisterInRange = check_canister_ranges({
