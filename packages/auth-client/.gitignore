@@ -1,9 +1,3 @@
-build_info.json
-node_modules/
 dist/
-**/*.js
-**/*.js.map
-**/*.d.ts
-
-# Cannot ignore .d.ts files in types/
-!types/**/*.d.ts
+lib/
+node_modules/
