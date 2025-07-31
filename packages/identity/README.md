@@ -16,8 +16,6 @@ Using authentication:
 npm i --save @dfinity/identity
 ```
 
-note: if you are using `Secp256k1KeyIdentity`, you will also need to install `crypto-browserify` as a PeerDependency. It is left out of project dependencies to keep `@dfinity/identity` smaller.
-
 ### In the browser:
 
 ```ts

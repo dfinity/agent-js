@@ -2,10 +2,15 @@
 # that are.
 **
 
-!lib/**
-!types/**/*.d.ts
 !package.json
 !README.md
+!LICENSE
 
-# The following line further removes all test files (which matches .js and .d.ts).
+!src/**/*.ts
+src/**/*.test.ts
+src/package.json
+
+!lib/**
 lib/**/*.test.*
+lib/**/*.tsbuildinfo
+ 
