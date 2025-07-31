@@ -313,7 +313,7 @@ export class HttpAgent implements Agent {
   #updatePipeline: HttpAgentRequestTransformFn[] = [];
 
   #subnetKeys: ExpirableMap<string, SubnetStatus> = new ExpirableMap({
-    expirationTime: 5 * 60 * 1000, // 5 minutes
+    expirationTime: 5 * MINUTE_TO_MSECS, // 5 minutes
   });
   #verifyQuerySignatures = true;
 
@@ -949,7 +949,13 @@ export class HttpAgent implements Agent {
     // Attempt to make the query i=retryTimes times
     // Make query and fetch subnet keys in parallel
     try {
-      const [queryResult, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
+      const [queryResult, subnetStatus] = await Promise.all([
+        makeQuery(),
+        getSubnetStatus().catch(err => {
+          this.log.warn('Failed to fetch subnet keys. Error:', err);
+          return undefined;
+        }),
+      ]);
       const { requestDetails, query } = queryResult;
 
       const queryWithDetails = {
@@ -968,10 +974,8 @@ export class HttpAgent implements Agent {
       } catch {
         // In case the node signatures have changed, refresh the subnet keys and try again
         this.log.warn('Query response verification failed. Retrying with fresh subnet keys.');
-        this.#subnetKeys.delete(canisterId.toString());
-        await this.fetchSubnetKeys(ecid.toString());
-
-        const updatedSubnetStatus = this.#subnetKeys.get(canisterId.toString());
+        this.#subnetKeys.delete(ecid.toString());
+        const updatedSubnetStatus = await getSubnetStatus();
         if (!updatedSubnetStatus) {
           throw TrustError.fromCode(new MissingSignatureErrorCode());
         }
@@ -1208,8 +1212,8 @@ export class HttpAgent implements Agent {
       }
       const date = decodeTime(timeLookup.value);
       this.log.print('Time from response:', date);
-      this.log.print('Time from response in milliseconds:', Number(date));
-      return Number(date);
+      this.log.print('Time from response in milliseconds:', date.getTime());
+      return date.getTime();
     } else {
       this.log.warn('No certificate found in response');
     }
@@ -1241,6 +1245,7 @@ export class HttpAgent implements Agent {
             fetch: this.#fetch,
             retryTimes: 0,
             rootKey: this.rootKey ?? undefined,
+            shouldSyncTime: false,
           });
 
           const replicaTimes = await Promise.all(
@@ -1251,6 +1256,7 @@ export class HttpAgent implements Agent {
                   canisterId,
                   agent: anonymousAgent,
                   paths: ['time'],
+                  disableCertificateTimeVerification: true, // avoid recursive calls to syncTime
                 });
 
                 const date = status.get('time');
@@ -1264,8 +1270,8 @@ export class HttpAgent implements Agent {
             return typeof current === 'number' && current > max ? current : max;
           }, 0);
 
-          if (maxReplicaTime > BigInt(0)) {
-            this.#timeDiffMsecs = Number(maxReplicaTime) - Number(callTime);
+          if (maxReplicaTime > 0) {
+            this.#timeDiffMsecs = maxReplicaTime - callTime;
             this.log.notify({
               message: `Syncing time: offset of ${this.#timeDiffMsecs}`,
               level: 'info',

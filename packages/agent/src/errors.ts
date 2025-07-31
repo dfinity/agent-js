@@ -206,7 +206,7 @@ export class CertificateVerificationErrorCode extends ErrorCode {
   public toErrorMessage(): string {
     let errorMessage = this.reason;
     if (this.error) {
-      errorMessage += `: ${this.error instanceof Error && this.error.stack ? this.error.stack : this.error}`;
+      errorMessage += `: ${formatUnknownError(this.error)}`;
     }
     return `Certificate verification error: "${errorMessage}"`;
   }
@@ -388,7 +388,7 @@ export class CborDecodeErrorCode extends ErrorCode {
   }
 
   public toErrorMessage(): string {
-    return `Failed to decode CBOR: ${this.error}, input: ${bytesToHex(this.input)}`;
+    return `Failed to decode CBOR: ${formatUnknownError(this.error)}, input: ${bytesToHex(this.input)}`;
   }
 }
 
@@ -404,7 +404,7 @@ export class CborEncodeErrorCode extends ErrorCode {
   }
 
   public toErrorMessage(): string {
-    return `Failed to encode CBOR: ${this.error}, input: ${this.value}`;
+    return `Failed to encode CBOR: ${formatUnknownError(this.error)}, input: ${this.value}`;
   }
 }
 
@@ -676,7 +676,7 @@ export class UnexpectedErrorCode extends ErrorCode {
   }
 
   public toErrorMessage(): string {
-    return `Unexpected error: ${this.error}`;
+    return `Unexpected error: ${formatUnknownError(this.error)}`;
   }
 }
 
@@ -740,7 +740,7 @@ export class HttpFetchErrorCode extends ErrorCode {
   }
 
   public toErrorMessage(): string {
-    return `Failed to fetch HTTP request: ${this.error}`;
+    return `Failed to fetch HTTP request: ${formatUnknownError(this.error)}`;
   }
 }
 
@@ -780,6 +780,17 @@ export class ExpiryJsonDeserializeErrorCode extends ErrorCode {
 
   public toErrorMessage(): string {
     return `Failed to deserialize expiry: ${this.error}`;
+  }
+}
+
+function formatUnknownError(error: unknown): string {
+  if (error instanceof Error) {
+    return error.stack ?? error.message;
+  }
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
   }
 }
 
