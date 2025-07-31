@@ -11,6 +11,5 @@ src/**/__certificates__
 src/package.json
 
 !lib/**
-lib/**/*.test.*
 lib/**/*.tsbuildinfo
  

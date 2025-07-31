@@ -10,6 +10,5 @@ src/**/*.test.ts
 src/package.json
 
 !lib/**
-lib/**/*.test.*
 lib/**/*.tsbuildinfo
  
