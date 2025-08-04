@@ -187,7 +187,7 @@ export interface HttpAgentOptions {
   /**
    * The time difference in milliseconds between the client's clock and the IC network clock.
    * This is used to adjust the current time when verifying the certificate freshness.
-   * If a value != `0` or `undefined` is provided, the {@link HttpAgent.syncTime} method will not be called during construction,
+   * If a value different from `0` or `undefined` is provided, the {@link HttpAgent.syncTime} method will not be called during construction,
    * even if {@link HttpAgentOptions.shouldSyncTime} is set to `true`.
    * @default 0
    */
