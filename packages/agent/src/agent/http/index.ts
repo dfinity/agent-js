@@ -187,7 +187,7 @@ export interface HttpAgentOptions {
   /**
    * The time difference in milliseconds between the client's clock and the IC network clock.
    * This is used to adjust the current time when verifying the certificate freshness.
-   * If a value > `0` is provided, the {@link HttpAgent.syncTime} method will not be called during construction,
+   * If a value != `0` or `undefined` is provided, the {@link HttpAgent.syncTime} method will not be called during construction,
    * even if {@link HttpAgentOptions.shouldSyncTime} is set to `true`.
    * @default 0
    */
@@ -298,6 +298,7 @@ export class HttpAgent implements Agent {
   readonly #shouldFetchRootKey: boolean = false;
 
   #timeDiffMsecs = DEFAULT_TIME_DIFF_MSECS;
+  #hasSyncedTime = false;
   #syncTimePromise: Promise<void> | null = null;
   readonly #shouldSyncTime: boolean = false;
 
@@ -1284,6 +1285,7 @@ export class HttpAgent implements Agent {
 
           if (maxReplicaTime > 0) {
             this.#timeDiffMsecs = maxReplicaTime - callTime;
+            this.#hasSyncedTime = true;
             this.log.notify({
               message: `Syncing time: offset of ${this.#timeDiffMsecs}`,
               level: 'info',
@@ -1420,8 +1422,7 @@ export class HttpAgent implements Agent {
    * Returns `true` if the time has been synced at least once with the IC network, `false` otherwise.
    */
   public hasSyncedTime(): boolean {
-    // It's really unlikely that the clock drift is still 0 after the time has been synced
-    return this.#timeDiffMsecs !== DEFAULT_TIME_DIFF_MSECS;
+    return this.#hasSyncedTime;
   }
 }
 
