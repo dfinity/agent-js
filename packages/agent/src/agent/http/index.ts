@@ -183,15 +183,6 @@ export interface HttpAgentOptions {
    * Whether or not to sync the time with the network during construction. Defaults to false.
    */
   shouldSyncTime?: boolean;
-
-  /**
-   * The time difference in milliseconds: IC network time - local time.
-   * This is used to adjust the current time when verifying the certificate freshness.
-   * If a value different from `0` or `undefined` is provided, the {@link HttpAgent.syncTime} method will not be called during construction,
-   * even if {@link HttpAgentOptions.shouldSyncTime} is set to `true`.
-   * @default 0
-   */
-  timeDiffMsecs?: number;
 }
 
 function getDefaultFetch(): typeof fetch {
@@ -340,7 +331,6 @@ export class HttpAgent implements Agent {
     this.#callOptions = options.callOptions;
     this.#shouldFetchRootKey = options.shouldFetchRootKey ?? false;
     this.#shouldSyncTime = options.shouldSyncTime ?? false;
-    this.#timeDiffMsecs = options.timeDiffMsecs ?? DEFAULT_TIME_DIFF_MSECS;
 
     // Use provided root key, otherwise fall back to IC_ROOT_KEY for mainnet or null if the key needs to be fetched
     if (options.rootKey) {
@@ -1259,13 +1249,13 @@ export class HttpAgent implements Agent {
             retryTimes: 0,
             rootKey: this.rootKey ?? undefined,
             shouldSyncTime: false,
-            timeDiffMsecs: this.#timeDiffMsecs,
           });
 
           const replicaTimes = await Promise.all(
             Array(3)
               .fill(null)
               .map(async () => {
+                // TODO: disable certificate freshness check for this request
                 const status = await canisterStatusRequest({
                   canisterId,
                   agent: anonymousAgent,
