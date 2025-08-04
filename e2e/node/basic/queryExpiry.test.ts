@@ -166,7 +166,6 @@ describe('queryExpiry', () => {
       keyPair: subnetKeyPair,
       date: now,
     });
-    // These calls are made in parallel, and we expect them to fail
     // fetch subnet keys, fails for certificate freshness checks
     mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
       res.status(200).send(subnetResponseBody);
