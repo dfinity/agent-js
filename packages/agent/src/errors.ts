@@ -215,19 +215,23 @@ export class CertificateVerificationErrorCode extends ErrorCode {
 export class CertificateTimeErrorCode extends ErrorCode {
   public name = 'CertificateTimeErrorCode';
 
+  public readonly systemTime: Date;
+  public readonly timeDiffMsecs: number;
+
   constructor(
     public readonly maxAgeInMinutes: number,
     public readonly certificateTime: Date,
     public readonly currentTime: Date,
-    public readonly timeDiffMsecs: number,
     public readonly ageType: 'past' | 'future',
   ) {
     super();
     Object.setPrototypeOf(this, CertificateTimeErrorCode.prototype);
+    this.systemTime = new Date();
+    this.timeDiffMsecs = this.systemTime.getTime() - this.currentTime.getTime();
   }
 
   public toErrorMessage(): string {
-    return `Certificate is signed more than ${this.maxAgeInMinutes} minutes in the ${this.ageType}. Certificate time: ${this.certificateTime.toISOString()} Current time: ${this.currentTime.toISOString()} Clock drift: ${this.timeDiffMsecs}ms`;
+    return `Certificate is signed more than ${this.maxAgeInMinutes} minutes in the ${this.ageType}. Certificate time: ${this.certificateTime.toISOString()} Adjusted current time: ${this.currentTime.toISOString()} System time: ${this.systemTime.toISOString()} Clock drift: ${this.timeDiffMsecs}ms`;
   }
 }
 
