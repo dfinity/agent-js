@@ -94,6 +94,7 @@ describe('syncTime', () => {
         },
         'V3 call body',
       );
+      expect(agent.hasSyncedTime()).toBe(false);
     });
 
     it('should sync time when the local time does not match the subnet time', async () => {
@@ -179,6 +180,7 @@ describe('syncTime', () => {
         },
         'V3 read state body three',
       );
+      expect(agent.hasSyncedTime()).toBe(true);
     });
   });
 
@@ -197,7 +199,7 @@ describe('syncTime', () => {
         res.status(200).send(readStateResponse);
       });
 
-      await HttpAgent.create({
+      const agent = await HttpAgent.create({
         host: mockReplica.address,
         rootKey: keyPair.publicKeyDer,
         shouldSyncTime: true,
@@ -225,6 +227,7 @@ describe('syncTime', () => {
         },
         'V3 read state body three',
       );
+      expect(agent.hasSyncedTime()).toBe(true);
     });
 
     it('should not sync time by default', async () => {
@@ -235,7 +238,7 @@ describe('syncTime', () => {
         res.status(200).send(readStateResponse);
       });
 
-      await HttpAgent.create({
+      const agent = await HttpAgent.create({
         host: mockReplica.address,
         rootKey: keyPair.publicKeyDer,
         shouldSyncTime: false,
@@ -243,6 +246,7 @@ describe('syncTime', () => {
       });
 
       expect(mockReplica.getV2ReadStateSpy(ICP_LEDGER)).toHaveBeenCalledTimes(0);
+      expect(agent.hasSyncedTime()).toBe(false);
     });
 
     it('should not sync time when explicitly disabled', async () => {
@@ -253,7 +257,7 @@ describe('syncTime', () => {
         res.status(200).send(readStateResponse);
       });
 
-      await HttpAgent.create({
+      const agent = await HttpAgent.create({
         host: mockReplica.address,
         rootKey: keyPair.publicKeyDer,
         shouldSyncTime: false,
@@ -261,6 +265,7 @@ describe('syncTime', () => {
       });
 
       expect(mockReplica.getV2ReadStateSpy(ICP_LEDGER)).toHaveBeenCalledTimes(0);
+      expect(agent.hasSyncedTime()).toBe(false);
     });
   });
 
@@ -340,6 +345,7 @@ describe('syncTime', () => {
         },
         'V3 read state body three',
       );
+      expect(agent.hasSyncedTime()).toBe(true);
     });
 
     it('should not sync time by default', async () => {
@@ -389,6 +395,7 @@ describe('syncTime', () => {
       );
 
       expect(mockReplica.getV2ReadStateSpy(canisterId.toString())).toHaveBeenCalledTimes(0);
+      expect(agent.hasSyncedTime()).toBe(false);
     });
 
     it('should not sync time when explicitly disabled', async () => {
@@ -440,6 +447,7 @@ describe('syncTime', () => {
       );
 
       expect(mockReplica.getV2ReadStateSpy(canisterId.toString())).toHaveBeenCalledTimes(0);
+      expect(agent.hasSyncedTime()).toBe(false);
     });
   });
 });

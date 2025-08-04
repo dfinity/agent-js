@@ -249,14 +249,14 @@ export class CertificateNotAuthorizedErrorCode extends ErrorCode {
 
   constructor(
     public readonly canisterId: Principal,
-    public readonly subnetId: Uint8Array,
+    public readonly subnetId: Principal,
   ) {
     super();
     Object.setPrototypeOf(this, CertificateNotAuthorizedErrorCode.prototype);
   }
 
   public toErrorMessage(): string {
-    return `The certificate contains a delegation that does not include the canister ${this.canisterId.toText()} in the canister_ranges field. Subnet ID: 0x${bytesToHex(this.subnetId)}`;
+    return `The certificate contains a delegation that does not include the canister ${this.canisterId.toText()} in the canister_ranges field. Subnet ID: ${this.subnetId.toText()}`;
   }
 }
 

@@ -9,7 +9,7 @@ import { Principal } from '@dfinity/principal';
 import { decodeTime } from './utils/leb.ts';
 import { readFileSync } from 'fs';
 import path from 'path';
-import { IC_ROOT_KEY } from './agent/index.ts';
+import { type Agent, HttpAgent, IC_ROOT_KEY } from './agent/index.ts';
 import {
   CertificateHasTooManyDelegationsErrorCode,
   CertificateNotAuthorizedErrorCode,
@@ -17,6 +17,8 @@ import {
   CertificateVerificationErrorCode,
   ProtocolError,
   TrustError,
+  UnexpectedErrorCode,
+  UnknownError,
   UNREACHABLE_ERROR,
 } from './errors.ts';
 import { utf8ToBytes, hexToBytes, bytesToHex } from '@noble/hashes/utils';
@@ -656,7 +658,49 @@ test('certificate verification fails if the time of the certificate is > 5 minut
   }
 });
 
-test('certificate verification passes if the time of the certificate is > 5 minutes in the past, but clock drift is provided', async () => {
+test('certificate creation passes if the time of the certificate is > 5 minutes in the past, but time check is disabled', async () => {
+  const tenMinutesFuture = parseTimeFromCert(SAMPLE_CERT_BYTES).getTime() + 10 * MINUTES_TO_MSEC;
+  jest.setSystemTime(new Date(tenMinutesFuture));
+
+  const agent = HttpAgent.createSync({
+    fetch: jest.fn(),
+  });
+  agent.getTimeDiffMsecs = jest.fn();
+  agent.hasSyncedTime = jest.fn();
+  agent.syncTime = jest.fn();
+
+  const cert = await Cert.Certificate.create({
+    certificate: SAMPLE_CERT_BYTES,
+    rootKey: hexToBytes(IC_ROOT_KEY),
+    canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
+    blsVerify: async () => true,
+    disableTimeVerification: true,
+  });
+  expect(cert).toBeInstanceOf(Cert.Certificate);
+  expect(agent.getTimeDiffMsecs).toHaveBeenCalledTimes(0);
+  expect(agent.hasSyncedTime).toHaveBeenCalledTimes(0);
+  expect(agent.syncTime).toHaveBeenCalledTimes(0);
+});
+
+test('certificate creation fails if the time of the certificate is > 5 minutes in the past, non-HttpAgent agent is provided', async () => {
+  const tenMinutesFuture = parseTimeFromCert(SAMPLE_CERT_BYTES).getTime() + 10 * MINUTES_TO_MSEC;
+  jest.setSystemTime(new Date(tenMinutesFuture));
+  expect.assertions(2);
+  try {
+    await Cert.Certificate.create({
+      certificate: SAMPLE_CERT_BYTES,
+      rootKey: hexToBytes(IC_ROOT_KEY),
+      canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
+      blsVerify: async () => true,
+      agent: {} as Agent,
+    });
+  } catch (error) {
+    expect(error).toBeInstanceOf(TrustError);
+    expect((error as TrustError).cause.code).toBeInstanceOf(CertificateTimeErrorCode);
+  }
+});
+
+test('certificate creation passes if the time of the certificate is > 5 minutes in the past, but agent is provided', async () => {
   const tenMinutesFuture = parseTimeFromCert(SAMPLE_CERT_BYTES).getTime() + 10 * MINUTES_TO_MSEC;
   jest.setSystemTime(new Date(tenMinutesFuture));
   // Simulate a clock drift of 6 minutes in the past, in order to test the clock drift compensation.
@@ -664,17 +708,88 @@ test('certificate verification passes if the time of the certificate is > 5 minu
   // which is within the default 5 minute max certificate age window.
   const timeDiffMsecs = -6 * MINUTES_TO_MSEC;
 
+  const agent = HttpAgent.createSync({
+    fetch: jest.fn(),
+  });
+  agent.getTimeDiffMsecs = jest
+    .fn()
+    .mockImplementationOnce(() => 0)
+    .mockImplementationOnce(() => timeDiffMsecs);
+  agent.hasSyncedTime = jest.fn(() => false);
+  agent.syncTime = jest.fn();
+
   const cert = await Cert.Certificate.create({
     certificate: SAMPLE_CERT_BYTES,
     rootKey: hexToBytes(IC_ROOT_KEY),
     canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
     blsVerify: async () => true,
-    currentTime: new Date(Date.now() + timeDiffMsecs),
+    agent,
   });
   expect(cert).toBeInstanceOf(Cert.Certificate);
+  expect(agent.getTimeDiffMsecs).toHaveBeenCalledTimes(2);
+  expect(agent.hasSyncedTime).toHaveBeenCalledTimes(1);
+  expect(agent.syncTime).toHaveBeenCalledTimes(1);
 });
 
-test('certificate verification fails if the time of the certificate is > max age minutes in the past (clock drift provided)', async () => {
+test('certificate creation passes if the time of the certificate is > 5 minutes in the past, but agent with an already synced time is provided', async () => {
+  const tenMinutesFuture = parseTimeFromCert(SAMPLE_CERT_BYTES).getTime() + 10 * MINUTES_TO_MSEC;
+  jest.setSystemTime(new Date(tenMinutesFuture));
+  // Simulate a clock drift of 6 minutes in the past, in order to test the clock drift compensation.
+  // As a result, we expect the current adjusted time to be only 4 minutes in the future compared to the certificate time,
+  // which is within the default 5 minute max certificate age window.
+  const timeDiffMsecs = -6 * MINUTES_TO_MSEC;
+
+  const agent = HttpAgent.createSync({
+    fetch: jest.fn(),
+  });
+  agent.getTimeDiffMsecs = jest.fn().mockImplementationOnce(() => timeDiffMsecs);
+  agent.hasSyncedTime = jest.fn();
+  agent.syncTime = jest.fn();
+
+  const cert = await Cert.Certificate.create({
+    certificate: SAMPLE_CERT_BYTES,
+    rootKey: hexToBytes(IC_ROOT_KEY),
+    canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
+    blsVerify: async () => true,
+    agent,
+  });
+  expect(cert).toBeInstanceOf(Cert.Certificate);
+  expect(agent.getTimeDiffMsecs).toHaveBeenCalledTimes(1);
+  expect(agent.hasSyncedTime).toHaveBeenCalledTimes(0);
+  expect(agent.syncTime).toHaveBeenCalledTimes(0);
+});
+
+test('certificate creation fails if the time of the certificate is > 5 minutes in the past, but agent with an already synced time that is too far in the past is provided', async () => {
+  const tenMinutesFuture = parseTimeFromCert(SAMPLE_CERT_BYTES).getTime() + 10 * MINUTES_TO_MSEC;
+  jest.setSystemTime(new Date(tenMinutesFuture));
+  const timeDiffMsecs = -3 * MINUTES_TO_MSEC;
+
+  const agent = HttpAgent.createSync({
+    fetch: jest.fn(),
+  });
+  agent.getTimeDiffMsecs = jest.fn().mockImplementationOnce(() => timeDiffMsecs);
+  agent.hasSyncedTime = jest.fn(() => true);
+  agent.syncTime = jest.fn();
+
+  expect.assertions(5);
+  try {
+    await Cert.Certificate.create({
+      certificate: SAMPLE_CERT_BYTES,
+      rootKey: hexToBytes(IC_ROOT_KEY),
+      canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
+      blsVerify: async () => true,
+      agent,
+    });
+  } catch (error) {
+    expect(error).toBeInstanceOf(TrustError);
+    expect((error as TrustError).cause.code).toBeInstanceOf(CertificateTimeErrorCode);
+    expect(agent.getTimeDiffMsecs).toHaveBeenCalledTimes(1);
+    expect(agent.hasSyncedTime).toHaveBeenCalledTimes(1);
+    expect(agent.syncTime).toHaveBeenCalledTimes(0);
+  }
+});
+
+test('certificate creation fails if the time of the certificate is > max age minutes in the past (agent provided)', async () => {
   const tenMinutesFuture = parseTimeFromCert(SAMPLE_CERT_BYTES).getTime() + 10 * MINUTES_TO_MSEC;
   jest.setSystemTime(new Date(tenMinutesFuture));
   const maxAgeInMinutes = 1;
@@ -683,7 +798,20 @@ test('certificate verification fails if the time of the certificate is > max age
   // which is still outside the 1 minute max certificate age window.
   const timeDiffMsecs = -6 * MINUTES_TO_MSEC;
 
-  expect.assertions(2);
+  const agent = HttpAgent.createSync({
+    fetch: jest.fn(),
+  });
+  agent.getTimeDiffMsecs = jest
+    .fn()
+    .mockImplementationOnce(() => 0)
+    .mockImplementationOnce(() => timeDiffMsecs);
+  agent.hasSyncedTime = jest
+    .fn()
+    .mockImplementationOnce(() => false)
+    .mockImplementationOnce(() => true);
+  agent.syncTime = jest.fn();
+
+  expect.assertions(5);
   try {
     await Cert.Certificate.create({
       certificate: SAMPLE_CERT_BYTES,
@@ -691,11 +819,14 @@ test('certificate verification fails if the time of the certificate is > max age
       canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
       blsVerify: async () => true,
       maxAgeInMinutes,
-      currentTime: new Date(Date.now() + timeDiffMsecs),
+      agent,
     });
   } catch (error) {
     expect(error).toBeInstanceOf(TrustError);
     expect((error as TrustError).cause.code).toBeInstanceOf(CertificateTimeErrorCode);
+    expect(agent.getTimeDiffMsecs).toHaveBeenCalledTimes(2);
+    expect(agent.hasSyncedTime).toHaveBeenCalledTimes(2);
+    expect(agent.syncTime).toHaveBeenCalledTimes(1);
   }
 });
 
@@ -716,7 +847,39 @@ test('certificate verification fails if the time of the certificate is > 5 minut
   }
 });
 
-test('certificate verification fails if the time of the certificate is > 5 minutes in the future, but clock drift is provided', async () => {
+test('certificate creation passes if the time of the certificate is > 5 minutes in the future, but time check is disabled', async () => {
+  const tenMinutesPast = parseTimeFromCert(SAMPLE_CERT_BYTES).getTime() - 10 * MINUTES_TO_MSEC;
+  jest.setSystemTime(new Date(tenMinutesPast));
+
+  const cert = await Cert.Certificate.create({
+    certificate: SAMPLE_CERT_BYTES,
+    rootKey: hexToBytes(IC_ROOT_KEY),
+    canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
+    blsVerify: async () => true,
+    disableTimeVerification: true,
+  });
+  expect(cert).toBeInstanceOf(Cert.Certificate);
+});
+
+test('certificate verification fails if the time of the certificate is > 5 minutes in the future, non-HttpAgent agent is provided', async () => {
+  const tenMinutesPast = parseTimeFromCert(SAMPLE_CERT_BYTES).getTime() - 10 * MINUTES_TO_MSEC;
+  jest.setSystemTime(new Date(tenMinutesPast));
+  expect.assertions(2);
+  try {
+    await Cert.Certificate.create({
+      certificate: SAMPLE_CERT_BYTES,
+      rootKey: hexToBytes(IC_ROOT_KEY),
+      canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
+      blsVerify: async () => true,
+      agent: {} as Agent,
+    });
+  } catch (error) {
+    expect(error).toBeInstanceOf(TrustError);
+    expect((error as TrustError).cause.code).toBeInstanceOf(CertificateTimeErrorCode);
+  }
+});
+
+test('certificate creation passes if the time of the certificate is > 5 minutes in the future, but agent is provided', async () => {
   const tenMinutesFuture = parseTimeFromCert(SAMPLE_CERT_BYTES).getTime() - 10 * MINUTES_TO_MSEC;
   jest.setSystemTime(new Date(tenMinutesFuture));
   // Simulate a clock drift of 6 minutes in the future, in order to test the clock drift compensation.
@@ -724,14 +887,88 @@ test('certificate verification fails if the time of the certificate is > 5 minut
   // which is within the default 5 minute max certificate age window.
   const timeDiffMsecs = 6 * MINUTES_TO_MSEC;
 
+  const agent = HttpAgent.createSync({
+    fetch: jest.fn(),
+  });
+  agent.getTimeDiffMsecs = jest
+    .fn()
+    .mockImplementationOnce(() => 0)
+    .mockImplementationOnce(() => timeDiffMsecs);
+  agent.hasSyncedTime = jest.fn(() => false);
+  agent.syncTime = jest.fn();
+
   const cert = await Cert.Certificate.create({
     certificate: SAMPLE_CERT_BYTES,
     rootKey: hexToBytes(IC_ROOT_KEY),
     canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
     blsVerify: async () => true,
-    currentTime: new Date(Date.now() + timeDiffMsecs),
+    agent,
   });
   expect(cert).toBeInstanceOf(Cert.Certificate);
+  expect(agent.getTimeDiffMsecs).toHaveBeenCalledTimes(2);
+  expect(agent.hasSyncedTime).toHaveBeenCalledTimes(1);
+  expect(agent.syncTime).toHaveBeenCalledTimes(1);
+});
+
+test('certificate creation passes if the time of the certificate is > 5 minutes in the future, but agent with an already synced time is provided', async () => {
+  const tenMinutesFuture = parseTimeFromCert(SAMPLE_CERT_BYTES).getTime() - 10 * MINUTES_TO_MSEC;
+  jest.setSystemTime(new Date(tenMinutesFuture));
+  // Simulate a clock drift of 6 minutes in the future, in order to test the clock drift compensation.
+  // As a result, we expect the current adjusted time to be only 4 minutes in the past compared to the certificate time,
+  // which is within the default 5 minute max certificate age window.
+  const timeDiffMsecs = 6 * MINUTES_TO_MSEC;
+
+  const agent = HttpAgent.createSync({
+    fetch: jest.fn(),
+  });
+  agent.getTimeDiffMsecs = jest.fn(() => timeDiffMsecs);
+  agent.hasSyncedTime = jest.fn();
+  agent.syncTime = jest.fn();
+
+  const cert = await Cert.Certificate.create({
+    certificate: SAMPLE_CERT_BYTES,
+    rootKey: hexToBytes(IC_ROOT_KEY),
+    canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
+    blsVerify: async () => true,
+    agent,
+  });
+  expect(cert).toBeInstanceOf(Cert.Certificate);
+  expect(agent.getTimeDiffMsecs).toHaveBeenCalledTimes(1);
+  expect(agent.hasSyncedTime).toHaveBeenCalledTimes(0);
+  expect(agent.syncTime).toHaveBeenCalledTimes(0);
+});
+
+test('certificate creation fails if the time of the certificate is > 5 minutes in the future, but agent with an already synced time that is too far in the future is provided', async () => {
+  const tenMinutesFuture = parseTimeFromCert(SAMPLE_CERT_BYTES).getTime() - 10 * MINUTES_TO_MSEC;
+  jest.setSystemTime(new Date(tenMinutesFuture));
+  // Simulate a clock drift of 6 minutes in the future, in order to test the clock drift compensation.
+  // As a result, we expect the current adjusted time to be only 4 minutes in the past compared to the certificate time,
+  // which is within the default 5 minute max certificate age window.
+  const timeDiffMsecs = 3 * MINUTES_TO_MSEC;
+
+  const agent = HttpAgent.createSync({
+    fetch: jest.fn(),
+  });
+  agent.getTimeDiffMsecs = jest.fn(() => timeDiffMsecs);
+  agent.hasSyncedTime = jest.fn(() => true);
+  agent.syncTime = jest.fn();
+
+  expect.assertions(5);
+  try {
+    await Cert.Certificate.create({
+      certificate: SAMPLE_CERT_BYTES,
+      rootKey: hexToBytes(IC_ROOT_KEY),
+      canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
+      blsVerify: async () => true,
+      agent,
+    });
+  } catch (error) {
+    expect(error).toBeInstanceOf(UnknownError);
+    expect((error as UnknownError).cause.code).toBeInstanceOf(UnexpectedErrorCode);
+    expect(agent.getTimeDiffMsecs).toHaveBeenCalledTimes(1);
+    expect(agent.hasSyncedTime).toHaveBeenCalledTimes(2);
+    expect(agent.syncTime).toHaveBeenCalledTimes(0);
+  }
 });
 
 test('certificate verification fails on nested delegations', async () => {

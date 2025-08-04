@@ -348,9 +348,7 @@ export const fetchNodeKeys = (
 
   const canisterInRange = check_canister_ranges({ canisterId, subnetId, tree });
   if (!canisterInRange) {
-    throw TrustError.fromCode(
-      new CertificateNotAuthorizedErrorCode(canisterId, delegation.subnet_id),
-    );
+    throw TrustError.fromCode(new CertificateNotAuthorizedErrorCode(canisterId, subnetId));
   }
 
   const subnetLookupResult = lookup_subtree(['subnet', delegation.subnet_id, 'node'], tree);

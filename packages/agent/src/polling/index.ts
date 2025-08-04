@@ -21,7 +21,7 @@ import {
 export * as strategy from './strategy.ts';
 import { defaultStrategy } from './strategy.ts';
 import { ReadRequestType, type ReadStateRequest } from '../agent/http/types.ts';
-import { getAdjustedCurrentTime, RequestStatusResponseStatus } from '../agent/index.ts';
+import { RequestStatusResponseStatus } from '../agent/index.ts';
 import { utf8ToBytes } from '@noble/hashes/utils';
 export { defaultStrategy } from './strategy.ts';
 
@@ -161,7 +161,7 @@ export async function pollForResponse(
     rootKey: agent.rootKey,
     canisterId: canisterId,
     blsVerify: options.blsVerify,
-    currentTime: getAdjustedCurrentTime(agent),
+    agent,
   });
 
   const maybeBuf = lookupResultToBuffer(cert.lookup_path([...path, utf8ToBytes('status')]));

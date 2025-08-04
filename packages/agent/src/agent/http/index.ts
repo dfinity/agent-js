@@ -85,6 +85,8 @@ export enum RequestStatusResponseStatus {
 const MINUTE_TO_MSECS = 60 * 1_000;
 const MSECS_TO_NANOSECONDS = 1_000_000;
 
+const DEFAULT_TIME_DIFF_MSECS = 0;
+
 // Root public key for the IC, encoded as hex
 export const IC_ROOT_KEY =
   '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100814' +
@@ -286,7 +288,8 @@ export class HttpAgent implements Agent {
   #rootKeyPromise: Promise<Uint8Array> | null = null;
   readonly #shouldFetchRootKey: boolean = false;
 
-  #timeDiffMsecs = 0;
+  #timeDiffMsecs = DEFAULT_TIME_DIFF_MSECS;
+  #hasSyncedTime = false;
   #syncTimePromise: Promise<void> | null = null;
   readonly #shouldSyncTime: boolean = false;
 
@@ -313,7 +316,7 @@ export class HttpAgent implements Agent {
   #updatePipeline: HttpAgentRequestTransformFn[] = [];
 
   #subnetKeys: ExpirableMap<string, SubnetStatus> = new ExpirableMap({
-    expirationTime: 5 * MINUTE_TO_MSECS, // 5 minutes
+    expirationTime: 5 * MINUTE_TO_MSECS,
   });
   #verifyQuerySignatures = true;
 
@@ -1272,6 +1275,7 @@ export class HttpAgent implements Agent {
 
           if (maxReplicaTime > 0) {
             this.#timeDiffMsecs = maxReplicaTime - callTime;
+            this.#hasSyncedTime = true;
             this.log.notify({
               message: `Syncing time: offset of ${this.#timeDiffMsecs}`,
               level: 'info',
@@ -1347,7 +1351,7 @@ export class HttpAgent implements Agent {
   }
 
   async #syncTimeGuard(canisterIdOverride?: Principal): Promise<void> {
-    if (this.#shouldSyncTime && this.#timeDiffMsecs === 0) {
+    if (this.#shouldSyncTime && !this.hasSyncedTime()) {
       await this.syncTime(canisterIdOverride);
     }
   }
@@ -1394,14 +1398,20 @@ export class HttpAgent implements Agent {
   }
 
   /**
-   * Returns the time difference in milliseconds between the client's clock and the IC network clock,
-   * after the clock has been synced using the {@link HttpAgent.syncTime} method
-   * or during agent creation if {@link HttpAgentOptions.shouldSyncTime} was set to `true`.
+   * Returns the time difference in milliseconds between the IC network clock and the client's clock,
+   * after the clock has been synced.
    *
    * If the time has not been synced, returns `0`.
    */
   public getTimeDiffMsecs(): number {
     return this.#timeDiffMsecs;
+  }
+
+  /**
+   * Returns `true` if the time has been synced at least once with the IC network, `false` otherwise.
+   */
+  public hasSyncedTime(): boolean {
+    return this.#hasSyncedTime;
   }
 }
 
@@ -1418,18 +1428,4 @@ export function calculateIngressExpiry(
 ): Expiry {
   const ingressExpiryMs = maxIngressExpiryInMinutes * MINUTE_TO_MSECS;
   return Expiry.fromDeltaInMilliseconds(ingressExpiryMs, timeDiffMsecs);
-}
-
-/**
- * Computes the current time adjusted by the time difference in milliseconds returned by {@link HttpAgent.getTimeDiffMsecs}.
- * @param agent The agent to retrieve the `timeDiffMsecs` property from.
- * @returns The current time adjusted by the agent's time difference in milliseconds. If the agent is not an {@link HttpAgent} instance, fallbacks to the system's current timestamp.
- */
-export function getAdjustedCurrentTime(agent: Agent | HttpAgent): Date {
-  let timestampMs = Date.now();
-  if ('getTimeDiffMsecs' in agent) {
-    const timeDiffMsecs = agent.getTimeDiffMsecs();
-    timestampMs += timeDiffMsecs;
-  }
-  return new Date(timestampMs);
 }

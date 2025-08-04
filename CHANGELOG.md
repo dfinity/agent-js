@@ -8,10 +8,11 @@
 - fix: add declaration maps and typescript source code to published packages
 - feat: enables type inference for the arguments and return types of `FuncClass`.
 - feat: enables type inference for the fields of `ServiceClass`.
-- fix: account for clock drift when verifying the certificate freshness.
-- feat: adds the `currentTime` optional field to the `CreateCertificateOptions` interface, which allows you to override the current time when verifying the certificate freshness.
-- feat: adds the `getAdjustedCurrentTime` to compute the current time adjusted by the input agent's time difference in milliseconds, if the agent is an instance of `HttpAgent`.
-- fix: syncs local time with the IC network time when the certificate is not fresh in the `CanisterStatus.request` function, and retries the request once.
+- fix: perform the canister range checks unconditionally for delegations when constructing a `Certificate` instance.
+- fix: account for clock drift when verifying the certificate freshness, and syncs time with the IC network if the certificate fails the freshness check and the agent's time is not already synced.
+- feat: adds the `agent` optional field to the `CreateCertificateOptions` interface, which is used to sync time with the IC network if the certificate fails the freshness check, if provided.
+- feat: adds the `getTimeDiffMsecs` method to the `HttpAgent` class, which returns the time difference in milliseconds between the client's clock and the IC network clock.
+- feat: adds the `hasSyncedTime` method to the `HttpAgent` class, which returns `true` if the time has been synced at least once with the IC network, `false` otherwise.
 - feat: adds the `disableCertificateTimeVerification` optional field to the `CanisterStatus.request` function argument, which allows you to control the `disableTimeVerification` option for the internal `Certificate.create` call.
 
 ## [3.1.0] - 2025-07-24
