@@ -85,6 +85,8 @@ export enum RequestStatusResponseStatus {
 const MINUTE_TO_MSECS = 60 * 1_000;
 const MSECS_TO_NANOSECONDS = 1_000_000;
 
+const DEFAULT_TIME_DIFF_MSECS = 0;
+
 // Root public key for the IC, encoded as hex
 export const IC_ROOT_KEY =
   '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100814' +
@@ -181,6 +183,15 @@ export interface HttpAgentOptions {
    * Whether or not to sync the time with the network during construction. Defaults to false.
    */
   shouldSyncTime?: boolean;
+
+  /**
+   * The time difference in milliseconds between the client's clock and the IC network clock.
+   * This is used to adjust the current time when verifying the certificate freshness.
+   * If a value > `0` is provided, the {@link HttpAgent.syncTime} method will not be called during construction,
+   * even if {@link HttpAgentOptions.shouldSyncTime} is set to `true`.
+   * @default 0
+   */
+  timeDiffMsecs?: number;
 }
 
 function getDefaultFetch(): typeof fetch {
@@ -286,7 +297,7 @@ export class HttpAgent implements Agent {
   #rootKeyPromise: Promise<Uint8Array> | null = null;
   readonly #shouldFetchRootKey: boolean = false;
 
-  #timeDiffMsecs = 0;
+  #timeDiffMsecs = DEFAULT_TIME_DIFF_MSECS;
   #syncTimePromise: Promise<void> | null = null;
   readonly #shouldSyncTime: boolean = false;
 
@@ -313,7 +324,7 @@ export class HttpAgent implements Agent {
   #updatePipeline: HttpAgentRequestTransformFn[] = [];
 
   #subnetKeys: ExpirableMap<string, SubnetStatus> = new ExpirableMap({
-    expirationTime: 5 * 60 * 1000, // 5 minutes
+    expirationTime: 5 * MINUTE_TO_MSECS,
   });
   #verifyQuerySignatures = true;
 
@@ -328,6 +339,7 @@ export class HttpAgent implements Agent {
     this.#callOptions = options.callOptions;
     this.#shouldFetchRootKey = options.shouldFetchRootKey ?? false;
     this.#shouldSyncTime = options.shouldSyncTime ?? false;
+    this.#timeDiffMsecs = options.timeDiffMsecs ?? DEFAULT_TIME_DIFF_MSECS;
 
     // Use provided root key, otherwise fall back to IC_ROOT_KEY for mainnet or null if the key needs to be fetched
     if (options.rootKey) {
@@ -949,7 +961,13 @@ export class HttpAgent implements Agent {
     // Attempt to make the query i=retryTimes times
     // Make query and fetch subnet keys in parallel
     try {
-      const [queryResult, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
+      const [queryResult, subnetStatus] = await Promise.all([
+        makeQuery(),
+        getSubnetStatus().catch(err => {
+          this.log.warn('Failed to fetch subnet keys. Error:', err);
+          return undefined;
+        }),
+      ]);
       const { requestDetails, query } = queryResult;
 
       const queryWithDetails = {
@@ -968,10 +986,8 @@ export class HttpAgent implements Agent {
       } catch {
         // In case the node signatures have changed, refresh the subnet keys and try again
         this.log.warn('Query response verification failed. Retrying with fresh subnet keys.');
-        this.#subnetKeys.delete(canisterId.toString());
-        await this.fetchSubnetKeys(ecid.toString());
-
-        const updatedSubnetStatus = this.#subnetKeys.get(canisterId.toString());
+        this.#subnetKeys.delete(ecid.toString());
+        const updatedSubnetStatus = await getSubnetStatus();
         if (!updatedSubnetStatus) {
           throw TrustError.fromCode(new MissingSignatureErrorCode());
         }
@@ -1208,8 +1224,8 @@ export class HttpAgent implements Agent {
       }
       const date = decodeTime(timeLookup.value);
       this.log.print('Time from response:', date);
-      this.log.print('Time from response in milliseconds:', Number(date));
-      return Number(date);
+      this.log.print('Time from response in milliseconds:', date.getTime());
+      return date.getTime();
     } else {
       this.log.warn('No certificate found in response');
     }
@@ -1241,6 +1257,8 @@ export class HttpAgent implements Agent {
             fetch: this.#fetch,
             retryTimes: 0,
             rootKey: this.rootKey ?? undefined,
+            shouldSyncTime: false,
+            timeDiffMsecs: this.#timeDiffMsecs,
           });
 
           const replicaTimes = await Promise.all(
@@ -1264,8 +1282,8 @@ export class HttpAgent implements Agent {
             return typeof current === 'number' && current > max ? current : max;
           }, 0);
 
-          if (maxReplicaTime > BigInt(0)) {
-            this.#timeDiffMsecs = Number(maxReplicaTime) - Number(callTime);
+          if (maxReplicaTime > 0) {
+            this.#timeDiffMsecs = maxReplicaTime - callTime;
             this.log.notify({
               message: `Syncing time: offset of ${this.#timeDiffMsecs}`,
               level: 'info',
@@ -1341,7 +1359,7 @@ export class HttpAgent implements Agent {
   }
 
   async #syncTimeGuard(canisterIdOverride?: Principal): Promise<void> {
-    if (this.#shouldSyncTime && this.#timeDiffMsecs === 0) {
+    if (this.#shouldSyncTime && !this.hasSyncedTime()) {
       await this.syncTime(canisterIdOverride);
     }
   }
@@ -1397,6 +1415,14 @@ export class HttpAgent implements Agent {
   public getTimeDiffMsecs(): number {
     return this.#timeDiffMsecs;
   }
+
+  /**
+   * Returns `true` if the time has been synced at least once with the IC network, `false` otherwise.
+   */
+  public hasSyncedTime(): boolean {
+    // It's really unlikely that the clock drift is still 0 after the time has been synced
+    return this.#timeDiffMsecs !== DEFAULT_TIME_DIFF_MSECS;
+  }
 }
 
 /**
@@ -1412,18 +1438,4 @@ export function calculateIngressExpiry(
 ): Expiry {
   const ingressExpiryMs = maxIngressExpiryInMinutes * MINUTE_TO_MSECS;
   return Expiry.fromDeltaInMilliseconds(ingressExpiryMs, timeDiffMsecs);
-}
-
-/**
- * Retrieves the time difference in milliseconds between the client's clock and the IC network clock.
- * See {@link HttpAgent.getTimeDiffMsecs} for more details.
- * @param agent The agent to retrieve the `timeDiffMsecs` property from.
- * @returns The time difference in milliseconds between the client's clock and the IC network clock,
- * if the agent is an {@link HttpAgent} instance. `undefined` otherwise.
- */
-export function getTimeDiffMsecs(agent: Agent | HttpAgent): number | undefined {
-  if ('getTimeDiffMsecs' in agent) {
-    return agent.getTimeDiffMsecs();
-  }
-  return undefined;
 }

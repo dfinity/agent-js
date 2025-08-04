@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Agent, getTimeDiffMsecs, HttpAgent, Nonce } from '../index.ts';
+import { HttpAgent, Nonce } from '../index.ts';
 import * as cbor from '../../cbor.ts';
 import { Expiry, httpHeadersTransform } from './transforms.ts';
 import {
@@ -1321,46 +1321,6 @@ describe('error logs for bad signature', () => {
     expect(logs[0].error).toBeInstanceOf(AgentError);
     expect(logs[0].error.cause.code).toBeInstanceOf(HttpErrorCode);
     expect(logs[0].error.cause.code.requestContext).toBeDefined();
-  });
-});
-
-describe('getTimeDiffMsecs', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    jest.useFakeTimers();
-  });
-
-  it('should return the current time adjusted by the time difference in milliseconds', () => {
-    const now = new Date('2025-07-29T12:00:00.000Z');
-    jest.setSystemTime(now);
-
-    const mockFetch: jest.Mock = jest.fn();
-    const agent = HttpAgent.createSync({
-      shouldFetchRootKey: false,
-      shouldSyncTime: false,
-      fetch: mockFetch,
-    });
-    const currentTime = getTimeDiffMsecs(agent);
-    expect(currentTime).toBe(0);
-
-    // simulate syncTime has happened and the time difference is 1 second in the future
-    jest.spyOn(agent, 'getTimeDiffMsecs').mockReturnValue(1_000);
-    const currentTime2 = getTimeDiffMsecs(agent);
-    expect(currentTime2).toBe(1_000);
-
-    // simulate syncTime has happened and the time difference is 1 second in the past
-    jest.spyOn(agent, 'getTimeDiffMsecs').mockReturnValue(-1_000);
-    const currentTime3 = getTimeDiffMsecs(agent);
-    expect(currentTime3).toBe(-1_000);
-  });
-
-  it('should return the system current time if the agent is not an instance of HttpAgent', () => {
-    const now = new Date();
-    jest.setSystemTime(now);
-
-    // just simulate an instance of Agent that doesn't have the getTimeDiffMsecs method
-    const currentTime = getTimeDiffMsecs({} as Agent);
-    expect(currentTime).toBeUndefined();
   });
 });
 

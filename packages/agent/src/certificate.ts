@@ -14,6 +14,7 @@ import {
   UNREACHABLE_ERROR,
   MalformedLookupFoundValueErrorCode,
   MissingLookupValueErrorCode,
+  UnexpectedErrorCode,
 } from './errors.ts';
 import { Principal } from '@dfinity/principal';
 import * as bls from './utils/bls.ts';
@@ -21,6 +22,8 @@ import { decodeTime } from './utils/leb.ts';
 import { bytesToHex, concatBytes, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
 import { uint8Equals } from './utils/buffer.ts';
 import { sha256 } from '@noble/hashes/sha2';
+import type { HttpAgent } from './agent/http/index.ts';
+import type { Agent } from './agent/api.ts';
 
 const MINUTES_TO_MSEC = 60 * 1000;
 const FIVE_MINUTES_IN_MSEC = 5 * MINUTES_TO_MSEC;
@@ -176,16 +179,19 @@ export interface CreateCertificateOptions {
   disableTimeVerification?: boolean;
 
   /**
-   * The time difference in milliseconds between the client's clock and the IC network clock.
-   * This is used to adjust the current time when verifying the certificate freshness.
-   * @default 0
+   * The agent used to sync time with the IC network, if the certificate fails the freshness check.
+   * If the agent does not implement the {@link HttpAgent.getTimeDiffMsecs}, {@link HttpAgent.hasSyncedTime} and {@link HttpAgent.syncTime} methods,
+   * time will not be synced in case of a freshness check failure.
+   * @default undefined
    */
-  timeDiffMsecs?: number;
+  agent?: Agent;
 }
 
 export class Certificate {
   public cert: Cert;
   #disableTimeVerification: boolean = false;
+  #agent: Pick<HttpAgent, 'getTimeDiffMsecs' | 'hasSyncedTime' | 'syncTime'> | undefined =
+    undefined;
 
   /**
    * Create a new instance of a certificate, automatically verifying it.
@@ -195,7 +201,7 @@ export class Certificate {
   public static async create(options: CreateCertificateOptions): Promise<Certificate> {
     const cert = Certificate.createUnverified(options);
 
-    await cert.verify(options.timeDiffMsecs ?? 0);
+    await cert.verify();
     return cert;
   }
 
@@ -207,6 +213,7 @@ export class Certificate {
       options.blsVerify ?? bls.blsVerify,
       options.maxAgeInMinutes,
       options.disableTimeVerification,
+      options.agent,
     );
   }
 
@@ -217,9 +224,14 @@ export class Certificate {
     private _blsVerify: VerifyFunc,
     private _maxAgeInMinutes: number = 5,
     disableTimeVerification: boolean = false,
+    agent?: Agent,
   ) {
     this.#disableTimeVerification = disableTimeVerification;
     this.cert = cbor.decode(certificate);
+
+    if (agent && 'getTimeDiffMsecs' in agent && 'hasSyncedTime' in agent && 'syncTime' in agent) {
+      this.#agent = agent as Pick<HttpAgent, 'getTimeDiffMsecs' | 'hasSyncedTime' | 'syncTime'>;
+    }
   }
 
   /**
@@ -240,9 +252,9 @@ export class Certificate {
     return lookup_subtree(path, this.cert.tree);
   }
 
-  private async verify(timeDiffMsecs: number): Promise<void> {
+  private async verify(): Promise<void> {
     const rootHash = await reconstruct(this.cert.tree);
-    const derKey = await this._checkDelegationAndGetKey(this.cert.delegation, timeDiffMsecs);
+    const derKey = await this._checkDelegationAndGetKey(this.cert.delegation);
     const sig = this.cert.signature;
     const key = extractDER(derKey);
     const msg = concatBytes(domain_sep('ic-state-root'), rootHash);
@@ -257,6 +269,7 @@ export class Certificate {
 
     // Certificate time verification checks
     if (!this.#disableTimeVerification) {
+      const timeDiffMsecs = this.#agent?.getTimeDiffMsecs() ?? 0;
       const maxAgeInMsec = this._maxAgeInMinutes * MINUTES_TO_MSEC;
       const now = new Date();
       const adjustedNow = now.getTime() + timeDiffMsecs;
@@ -265,11 +278,31 @@ export class Certificate {
 
       const certTime = decodeTime(lookupTime);
 
-      if (certTime.getTime() < earliestCertificateTime) {
+      const isCertificateTimePast = certTime.getTime() < earliestCertificateTime;
+      const isCertificateTimeFuture = certTime.getTime() > latestCertificateTime;
+
+      if (
+        (isCertificateTimePast || isCertificateTimeFuture) &&
+        this.#agent &&
+        !this.#agent.hasSyncedTime()
+      ) {
+        await this.#agent.syncTime();
+        return await this.verify();
+      }
+
+      if (isCertificateTimePast) {
         throw TrustError.fromCode(
           new CertificateTimeErrorCode(this._maxAgeInMinutes, certTime, now, timeDiffMsecs, 'past'),
         );
-      } else if (certTime.getTime() > latestCertificateTime) {
+      } else if (isCertificateTimeFuture) {
+        if (this.#agent?.hasSyncedTime()) {
+          // This case should never happen, and it signals a bug in either the replica or the local system.
+          throw UnknownError.fromCode(
+            new UnexpectedErrorCode(
+              'System time has been synced with the IC network, but certificate is still too far in the future.',
+            ),
+          );
+        }
         throw TrustError.fromCode(
           new CertificateTimeErrorCode(5, certTime, now, timeDiffMsecs, 'future'),
         );
@@ -288,10 +321,7 @@ export class Certificate {
     }
   }
 
-  private async _checkDelegationAndGetKey(
-    d: Delegation | undefined,
-    timeDiffMsecs: number,
-  ): Promise<Uint8Array> {
+  private async _checkDelegationAndGetKey(d: Delegation | undefined): Promise<Uint8Array> {
     if (!d) {
       return this._rootKey;
     }
@@ -308,7 +338,7 @@ export class Certificate {
       throw ProtocolError.fromCode(new CertificateHasTooManyDelegationsErrorCode());
     }
 
-    await cert.verify(timeDiffMsecs);
+    await cert.verify();
 
     const subnetIdBytes = d.subnet_id;
     const subnetId = Principal.fromUint8Array(subnetIdBytes);
