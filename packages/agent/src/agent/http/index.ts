@@ -1399,8 +1399,7 @@ export class HttpAgent implements Agent {
 
   /**
    * Returns the time difference in milliseconds between the client's clock and the IC network clock,
-   * after the clock has been synced using the {@link HttpAgent.syncTime} method
-   * or during agent creation if {@link HttpAgentOptions.shouldSyncTime} was set to `true`.
+   * after the clock has been synced.
    *
    * If the time has not been synced, returns `0`.
    */
