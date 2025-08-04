@@ -15,8 +15,7 @@ import {
   InputError,
   CertificateTimeErrorCode,
 } from '../errors.ts';
-import { getAdjustedCurrentTime, HttpAgent } from '../agent/http/index.ts';
-import type { ReadStateResponse } from '../agent/api.ts';
+import { HttpAgent } from '../agent/http/index.ts';
 import {
   type Cert,
   Certificate,
@@ -124,31 +123,6 @@ export type CanisterStatusOptions = {
   blsVerify?: CreateCertificateOptions['blsVerify'];
 };
 
-const fetchCertificate = async (
-  agent: HttpAgent,
-  encodedPath: Uint8Array[],
-  canisterId: Principal,
-  disableTimeVerification: boolean,
-): Promise<[Certificate, ReadStateResponse]> => {
-  const response = await agent.readState(canisterId, {
-    paths: [encodedPath],
-  });
-
-  if (agent.rootKey == null) {
-    throw ExternalError.fromCode(new MissingRootKeyErrorCode());
-  }
-
-  const certificate = await Certificate.create({
-    certificate: response.certificate,
-    rootKey: agent.rootKey,
-    canisterId,
-    disableTimeVerification,
-    currentTime: getAdjustedCurrentTime(agent),
-  });
-
-  return [certificate, response];
-};
-
 /**
  * Request information in the request_status state tree for a given canister.
  * Can be used to request information about the canister's controllers, time, module hash, candid interface, and more.
@@ -183,30 +157,25 @@ export const request = async (options: {
 
     return (async () => {
       try {
-        let response: ReadStateResponse;
-        let certificate: Certificate;
-
-        try {
-          [certificate, response] = await fetchCertificate(
-            agent,
-            encodedPath,
-            canisterId,
-            disableCertificateTimeVerification,
-          );
-        } catch (error) {
-          if (error instanceof AgentError && error.hasCode(CertificateTimeErrorCode)) {
-            // If the certificate freshness check fails, we try to sync the time with the network.
-            await agent.syncTime(canisterId);
-            // If the certificate is still not fresh at this point, we throw and interrupt the request.
-            [certificate, response] = await fetchCertificate(agent, encodedPath, canisterId, false);
-          } else {
-            throw error;
-          }
+        if (agent.rootKey === null) {
+          throw ExternalError.fromCode(new MissingRootKeyErrorCode());
         }
+
+        const response = await agent.readState(canisterId, {
+          paths: [encodedPath],
+        });
+
+        const certificate = await Certificate.create({
+          certificate: response.certificate,
+          rootKey: agent.rootKey,
+          canisterId,
+          disableTimeVerification: disableCertificateTimeVerification,
+          agent,
+        });
 
         const lookup = (cert: Certificate, path: Path) => {
           if (path === 'subnet') {
-            if (agent.rootKey == null) {
+            if (agent.rootKey === null) {
               throw ExternalError.fromCode(new MissingRootKeyErrorCode());
             }
             const data = fetchNodeKeys(response.certificate, canisterId, agent.rootKey);
