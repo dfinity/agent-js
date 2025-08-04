@@ -266,10 +266,24 @@ export class Certificate {
 
       if (certTime.getTime() < earliestCertificateTime) {
         throw TrustError.fromCode(
-          new CertificateTimeErrorCode(this._maxAgeInMinutes, certTime, currentTime, 'past'),
+          new CertificateTimeErrorCode(
+            this._maxAgeInMinutes,
+            certTime,
+            new Date(),
+            currentTimestamp - Date.now(),
+            'past',
+          ),
         );
       } else if (certTime.getTime() > latestCertificateTime) {
-        throw TrustError.fromCode(new CertificateTimeErrorCode(5, certTime, currentTime, 'future'));
+        throw TrustError.fromCode(
+          new CertificateTimeErrorCode(
+            5,
+            certTime,
+            new Date(),
+            currentTimestamp - Date.now(),
+            'future',
+          ),
+        );
       }
     }
 
