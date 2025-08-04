@@ -9,9 +9,9 @@
 - feat: enables type inference for the arguments and return types of `FuncClass`.
 - feat: enables type inference for the fields of `ServiceClass`.
 - fix: perform the canister range checks unconditionally for delegations when constructing a `Certificate` instance.
-- fix: account for clock drift when verifying the certificate freshness.
+- fix: account for clock drift when verifying the certificate freshness, and syncs time with the IC network if the certificate fails the freshness check and the agent's time is not already synced.
 - feat: adds the `agent` optional field to the `CreateCertificateOptions` interface, which is used to sync time with the IC network if the certificate fails the freshness check, if provided.
-- feat: adds the `getTimeDiffMsecs` method to the `HttpAgent` class, which returns the time difference in milliseconds between the client's clock and the IC network clock
+- feat: adds the `getTimeDiffMsecs` method to the `HttpAgent` class, which returns the time difference in milliseconds between the client's clock and the IC network clock.
 - feat: adds the `hasSyncedTime` method to the `HttpAgent` class, which returns `true` if the time has been synced at least once with the IC network, `false` otherwise.
 
 ## [3.1.0] - 2025-07-24
