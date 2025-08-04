@@ -949,7 +949,13 @@ export class HttpAgent implements Agent {
     // Attempt to make the query i=retryTimes times
     // Make query and fetch subnet keys in parallel
     try {
-      const [queryResult, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
+      const [queryResult, subnetStatus] = await Promise.all([
+        makeQuery(),
+        getSubnetStatus().catch(err => {
+          this.log.warn('Failed to fetch subnet keys. Error:', err);
+          return undefined;
+        }),
+      ]);
       const { requestDetails, query } = queryResult;
 
       const queryWithDetails = {
@@ -963,15 +969,17 @@ export class HttpAgent implements Agent {
         return queryWithDetails;
       }
 
+      if (!subnetStatus) {
+        throw TrustError.fromCode(new MissingSignatureErrorCode());
+      }
+
       try {
         return this.#verifyQueryResponse(queryWithDetails, subnetStatus);
       } catch {
         // In case the node signatures have changed, refresh the subnet keys and try again
         this.log.warn('Query response verification failed. Retrying with fresh subnet keys.');
-        this.#subnetKeys.delete(canisterId.toString());
-        await this.fetchSubnetKeys(ecid.toString());
-
-        const updatedSubnetStatus = this.#subnetKeys.get(canisterId.toString());
+        this.#subnetKeys.delete(ecid.toString());
+        const updatedSubnetStatus = await getSubnetStatus();
         if (!updatedSubnetStatus) {
           throw TrustError.fromCode(new MissingSignatureErrorCode());
         }
@@ -1004,14 +1012,11 @@ export class HttpAgent implements Agent {
    */
   #verifyQueryResponse = (
     queryResponse: ApiQueryResponse,
-    subnetStatus: SubnetStatus | undefined,
+    subnetStatus: SubnetStatus,
   ): ApiQueryResponse => {
     if (this.#verifyQuerySignatures === false) {
       // This should not be called if the user has disabled verification
       return queryResponse;
-    }
-    if (!subnetStatus) {
-      throw TrustError.fromCode(new MissingSignatureErrorCode());
     }
     const { status, signatures = [], requestId } = queryResponse;
 
