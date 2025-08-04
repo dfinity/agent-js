@@ -1415,15 +1415,15 @@ export function calculateIngressExpiry(
 }
 
 /**
- * Computes the current time adjusted by the time difference in milliseconds returned by {@link HttpAgent.getTimeDiffMsecs}.
+ * Retrieves the time difference in milliseconds between the client's clock and the IC network clock.
+ * See {@link HttpAgent.getTimeDiffMsecs} for more details.
  * @param agent The agent to retrieve the `timeDiffMsecs` property from.
- * @returns The current time adjusted by the agent's time difference in milliseconds. If the agent is not an {@link HttpAgent} instance, fallbacks to the system's current timestamp.
+ * @returns The time difference in milliseconds between the client's clock and the IC network clock,
+ * if the agent is an {@link HttpAgent} instance. `undefined` otherwise.
  */
-export function getAdjustedCurrentTime(agent: Agent | HttpAgent): Date {
-  let timestampMs = Date.now();
+export function getTimeDiffMsecs(agent: Agent | HttpAgent): number | undefined {
   if ('getTimeDiffMsecs' in agent) {
-    const timeDiffMsecs = agent.getTimeDiffMsecs();
-    timestampMs += timeDiffMsecs;
+    return agent.getTimeDiffMsecs();
   }
-  return new Date(timestampMs);
+  return undefined;
 }

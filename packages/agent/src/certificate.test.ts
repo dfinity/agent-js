@@ -669,7 +669,7 @@ test('certificate verification passes if the time of the certificate is > 5 minu
     rootKey: hexToBytes(IC_ROOT_KEY),
     canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
     blsVerify: async () => true,
-    currentTime: new Date(Date.now() + timeDiffMsecs),
+    timeDiffMsecs,
   });
   expect(cert).toBeInstanceOf(Cert.Certificate);
 });
@@ -691,7 +691,7 @@ test('certificate verification fails if the time of the certificate is > max age
       canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
       blsVerify: async () => true,
       maxAgeInMinutes,
-      currentTime: new Date(Date.now() + timeDiffMsecs),
+      timeDiffMsecs,
     });
   } catch (error) {
     expect(error).toBeInstanceOf(TrustError);
@@ -729,7 +729,7 @@ test('certificate verification fails if the time of the certificate is > 5 minut
     rootKey: hexToBytes(IC_ROOT_KEY),
     canisterId: Principal.fromText('ivg37-qiaaa-aaaab-aaaga-cai'),
     blsVerify: async () => true,
-    currentTime: new Date(Date.now() + timeDiffMsecs),
+    timeDiffMsecs,
   });
   expect(cert).toBeInstanceOf(Cert.Certificate);
 });
