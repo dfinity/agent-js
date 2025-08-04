@@ -161,13 +161,15 @@ export const request = async (options: {
           throw ExternalError.fromCode(new MissingRootKeyErrorCode());
         }
 
+        const rootKey = agent.rootKey;
+
         const response = await agent.readState(canisterId, {
           paths: [encodedPath],
         });
 
         const certificate = await Certificate.create({
           certificate: response.certificate,
-          rootKey: agent.rootKey,
+          rootKey,
           canisterId,
           disableTimeVerification: disableCertificateTimeVerification,
           agent,
@@ -175,10 +177,7 @@ export const request = async (options: {
 
         const lookup = (cert: Certificate, path: Path) => {
           if (path === 'subnet') {
-            if (agent.rootKey === null) {
-              throw ExternalError.fromCode(new MissingRootKeyErrorCode());
-            }
-            const data = fetchNodeKeys(response.certificate, canisterId, agent.rootKey);
+            const data = fetchNodeKeys(response.certificate, canisterId, rootKey);
             return {
               path,
               data,
