@@ -1,6 +1,11 @@
 /* Available props: https://github.com/withastro/starlight/blob/main/packages/starlight/style/props.css */
 
 :root {
+  --sl-font-system:
+    'CircularXX', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', 'Noto Color Emoji';
+
   --dfn-color-black: hsl(259, 0%, 13%);
   --dfn-color-gray-7: hsl(259, 4%, 13%);
   --dfn-color-gray-6: hsl(259, 4%, 17%);
