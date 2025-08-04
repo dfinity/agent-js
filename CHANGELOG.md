@@ -9,6 +9,7 @@
 - feat: enables type inference for the arguments and return types of `FuncClass`.
 - feat: enables type inference for the fields of `ServiceClass`.
 - fix: perform the canister range checks unconditionally for delegations when constructing a `Certificate` instance.
+- fix: use the effective canister id to delete the node keys from the local cache.
 
 ## [3.1.0] - 2025-07-24
 
