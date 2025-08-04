@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Agent, getAdjustedCurrentTime, HttpAgent, Nonce } from '../index.ts';
+import { Agent, getTimeDiffMsecs, HttpAgent, Nonce } from '../index.ts';
 import * as cbor from '../../cbor.ts';
 import { Expiry, httpHeadersTransform } from './transforms.ts';
 import {
@@ -1324,7 +1324,7 @@ describe('error logs for bad signature', () => {
   });
 });
 
-describe('getAdjustedCurrentTime', () => {
+describe('getTimeDiffMsecs', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
@@ -1341,28 +1341,27 @@ describe('getAdjustedCurrentTime', () => {
       shouldSyncTime: false,
       fetch: mockFetch,
     });
-    const currentTime = getAdjustedCurrentTime(agent);
-    expect(currentTime.getTime()).toBe(currentTimestamp);
+    const currentTime = getTimeDiffMsecs(agent);
+    expect(currentTime).toBe(0);
 
     // simulate syncTime has happened and the time difference is 1 second in the future
     jest.spyOn(agent, 'getTimeDiffMsecs').mockReturnValue(1_000);
-    const currentTime2 = getAdjustedCurrentTime(agent);
-    expect(currentTime2.getTime()).toBe(currentTimestamp + 1_000);
+    const currentTime2 = getTimeDiffMsecs(agent);
+    expect(currentTime2).toBe(1_000);
 
     // simulate syncTime has happened and the time difference is 1 second in the past
     jest.spyOn(agent, 'getTimeDiffMsecs').mockReturnValue(-1_000);
-    const currentTime3 = getAdjustedCurrentTime(agent);
-    expect(currentTime3.getTime()).toBe(currentTimestamp - 1_000);
+    const currentTime3 = getTimeDiffMsecs(agent);
+    expect(currentTime3).toBe(-1_000);
   });
 
   it('should return the system current time if the agent is not an instance of HttpAgent', () => {
     const now = new Date();
-    const currentTimestamp = now.getTime();
     jest.setSystemTime(now);
 
     // just simulate an instance of Agent that doesn't have the getTimeDiffMsecs method
-    const currentTime = getAdjustedCurrentTime({} as Agent);
-    expect(currentTime.getTime()).toBe(currentTimestamp);
+    const currentTime = getTimeDiffMsecs({} as Agent);
+    expect(currentTime).toBeUndefined();
   });
 });
 
