@@ -1332,7 +1332,6 @@ describe('getTimeDiffMsecs', () => {
 
   it('should return the current time adjusted by the time difference in milliseconds', () => {
     const now = new Date('2025-07-29T12:00:00.000Z');
-    const currentTimestamp = now.getTime();
     jest.setSystemTime(now);
 
     const mockFetch: jest.Mock = jest.fn();
