@@ -185,7 +185,7 @@ export interface HttpAgentOptions {
   shouldSyncTime?: boolean;
 
   /**
-   * The time difference in milliseconds between the client's clock and the IC network clock.
+   * The time difference in milliseconds: IC network time - local time.
    * This is used to adjust the current time when verifying the certificate freshness.
    * If a value different from `0` or `undefined` is provided, the {@link HttpAgent.syncTime} method will not be called during construction,
    * even if {@link HttpAgentOptions.shouldSyncTime} is set to `true`.
