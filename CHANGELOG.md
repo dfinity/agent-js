@@ -8,6 +8,7 @@
 - fix: add declaration maps and typescript source code to published packages
 - feat: enables type inference for the arguments and return types of `FuncClass`.
 - feat: enables type inference for the fields of `ServiceClass`.
+- fix: perform the canister range checks unconditionally for delegations when constructing a `Certificate` instance.
 - fix: account for clock drift when verifying the certificate freshness.
 - feat: adds the `timeDiffMsecs` optional field to the `CreateCertificateOptions` interface, which allows you to adjust the current time when verifying the certificate freshness.
 - feat: adds the `getTimeDiffMsecs` function to the `HttpAgent` class, which returns the time difference in milliseconds between the client's clock and the IC network clock. It also adds the `getTimeDiffMsecs` function to handle the case where the agent is not an instance of `HttpAgent`.
