@@ -195,13 +195,20 @@ export class UnknownError extends ErrorKind {
 export class CertificateVerificationErrorCode extends ErrorCode {
   public name = 'CertificateVerificationErrorCode';
 
-  constructor(public readonly reason: string) {
+  constructor(
+    public readonly reason: string,
+    public readonly error?: unknown,
+  ) {
     super();
     Object.setPrototypeOf(this, CertificateVerificationErrorCode.prototype);
   }
 
   public toErrorMessage(): string {
-    return `Certificate verification error: "${this.reason}"`;
+    let errorMessage = this.reason;
+    if (this.error) {
+      errorMessage += `: ${this.error instanceof Error && this.error.stack ? this.error.stack : this.error}`;
+    }
+    return `Certificate verification error: "${errorMessage}"`;
   }
 }
 
@@ -212,6 +219,7 @@ export class CertificateTimeErrorCode extends ErrorCode {
     public readonly maxAgeInMinutes: number,
     public readonly certificateTime: Date,
     public readonly currentTime: Date,
+    public readonly timeDiffMsecs: number,
     public readonly ageType: 'past' | 'future',
   ) {
     super();
@@ -219,7 +227,7 @@ export class CertificateTimeErrorCode extends ErrorCode {
   }
 
   public toErrorMessage(): string {
-    return `Certificate is signed more than ${this.maxAgeInMinutes} minutes in the ${this.ageType}. Certificate time: ${this.certificateTime.toISOString()} Current time: ${this.currentTime.toISOString()}`;
+    return `Certificate is signed more than ${this.maxAgeInMinutes} minutes in the ${this.ageType}. Certificate time: ${this.certificateTime.toISOString()} Current time: ${this.currentTime.toISOString()} Clock drift: ${this.timeDiffMsecs}ms`;
   }
 }
 

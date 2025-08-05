@@ -1,5 +1,9 @@
 import { type RequestId } from '../request_id.ts';
-import { type CreateCertificateOptions, Certificate, lookupResultToBuffer } from '../certificate.ts';
+import {
+  type CreateCertificateOptions,
+  Certificate,
+  lookupResultToBuffer,
+} from '../certificate.ts';
 import { type Agent, type ReadStateResponse } from '../agent/api.ts';
 import { Principal } from '@dfinity/principal';
 import {
@@ -157,6 +161,7 @@ export async function pollForResponse(
     rootKey: agent.rootKey,
     canisterId: canisterId,
     blsVerify: options.blsVerify,
+    agent,
   });
 
   const maybeBuf = lookupResultToBuffer(cert.lookup_path([...path, utf8ToBytes('status')]));
