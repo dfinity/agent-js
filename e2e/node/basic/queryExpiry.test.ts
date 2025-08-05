@@ -10,6 +10,7 @@ import { Principal } from '@icp-sdk/core/principal';
 import { randomIdentity, randomKeyPair } from '../utils/identity.ts';
 import {
   CertificateOutdatedErrorCode,
+  CertificateTimeErrorCode,
   HttpAgent,
   requestIdOf,
   TrustError,
@@ -157,15 +158,6 @@ describe('queryExpiry', () => {
     mockReplica.setV2QuerySpyImplOnce(canisterId.toString(), (_req, res) => {
       res.status(200).send(responseBody);
     });
-    mockReplica.setV2QuerySpyImplOnce(canisterId.toString(), (_req, res) => {
-      res.status(200).send(responseBody);
-    });
-    mockReplica.setV2QuerySpyImplOnce(canisterId.toString(), (_req, res) => {
-      res.status(200).send(responseBody);
-    });
-    mockReplica.setV2QuerySpyImplOnce(canisterId.toString(), (_req, res) => {
-      res.status(200).send(responseBody);
-    });
 
     // advance to go over the max ingress expiry (5 minutes)
     advanceTimeByMilliseconds(timeDiffMsecs);
@@ -193,10 +185,13 @@ describe('queryExpiry', () => {
     try {
       await actor[greetMethodName](greetReq);
     } catch (e) {
-      expectCertificateOutdatedError(e);
+      expect(e).toBeInstanceOf(TrustError);
+      const err = e as TrustError;
+      expect(err.cause.code).toBeInstanceOf(CertificateTimeErrorCode);
+      expect(err.message).toContain('Certificate is signed more than 5 minutes in the past.');
     }
 
-    expect(mockReplica.getV2QuerySpy(canisterId.toString())).toHaveBeenCalledTimes(4);
+    expect(mockReplica.getV2QuerySpy(canisterId.toString())).toHaveBeenCalledTimes(1);
     expect(mockReplica.getV2ReadStateSpy(canisterId.toString())).toHaveBeenCalledTimes(4);
   });
 
