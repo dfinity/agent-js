@@ -469,20 +469,20 @@ function _createActorMethod(
           }
         }
       } else if (isV2ResponseBody(response.body)) {
-        // handle v2 response errors by throwing an UpdateCallRejectedError object
         const { reject_code, reject_message, error_code } = response.body;
-        const certifiedRejectErrorCode = new CertifiedRejectErrorCode(
+        const errorCode = new UncertifiedRejectErrorCode(
           requestId,
           reject_code,
           reject_message,
           error_code,
+          undefined,
         );
-        certifiedRejectErrorCode.callContext = {
+        errorCode.callContext = {
           canisterId: cid,
           methodName,
           httpDetails: response,
         };
-        throw RejectError.fromCode(certifiedRejectErrorCode);
+        throw RejectError.fromCode(errorCode);
       }
 
       // Fall back to polling if we receive an Accepted response code
