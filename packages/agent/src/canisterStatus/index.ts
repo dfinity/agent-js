@@ -19,7 +19,6 @@ import { HttpAgent } from '../agent/http/index.ts';
 import {
   type Cert,
   Certificate,
-  type CreateCertificateOptions,
   flatten_forks,
   check_canister_ranges,
   LookupPathStatus,
@@ -117,21 +116,32 @@ export type Path =
 export type StatusMap = Map<Path | string, Status>;
 
 export type CanisterStatusOptions = {
+  /**
+   * The effective canister ID to use in the underlying {@link HttpAgent.readState} call.
+   */
   canisterId: Principal;
+  /**
+   * The agent to use to make the canister request. Must be authenticated.
+   */
   agent: HttpAgent;
+  /**
+   * The paths to request.
+   * @default []
+   */
   paths?: Path[] | Set<Path>;
-  blsVerify?: CreateCertificateOptions['blsVerify'];
+  /**
+   * Whether to disable the certificate freshness checks.
+   * @default false
+   */
+  disableCertificateTimeVerification?: boolean;
 };
 
 /**
- * Request information in the request_status state tree for a given canister.
+ * Requests information from a canister's `read_state` endpoint.
  * Can be used to request information about the canister's controllers, time, module hash, candid interface, and more.
- * @param {CanisterStatusOptions} options {@link CanisterStatusOptions}
- * @param {CanisterStatusOptions['canisterId']} options.canisterId {@link Principal}
- * @param {CanisterStatusOptions['agent']} options.agent {@link HttpAgent} optional authenticated agent to use to make the canister request. Useful for accessing private metadata under icp:private
- * @param {CanisterStatusOptions['paths']} options.paths {@link Path[]}
- * @param {CanisterStatusOptions['disableCertificateTimeVerification']} options.disableCertificateTimeVerification {@link boolean} whether to disable the certificate freshness checks. Defaults to `false`.
- * @returns {Status} object populated with data from the requested paths
+ * @param {CanisterStatusOptions} options The configuration for the canister status request.
+ * @see {@link CanisterStatusOptions} for detailed options.
+ * @returns {Promise<StatusMap>} A map populated with data from the requested paths. Each path is a key in the map, and the value is the data obtained from the certificate for that path.
  * @example
  * const status = await canisterStatus({
  *   paths: ['controllers', 'candid'],
@@ -140,12 +150,7 @@ export type CanisterStatusOptions = {
  *
  * const controllers = status.get('controllers');
  */
-export const request = async (options: {
-  canisterId: Principal;
-  agent: HttpAgent;
-  paths?: Path[] | Set<Path>;
-  disableCertificateTimeVerification?: boolean;
-}): Promise<StatusMap> => {
+export const request = async (options: CanisterStatusOptions): Promise<StatusMap> => {
   const { agent, paths, disableCertificateTimeVerification = false } = options;
   const canisterId = Principal.from(options.canisterId);
 
