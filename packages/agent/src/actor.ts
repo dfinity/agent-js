@@ -13,6 +13,7 @@ import {
   MissingRootKeyErrorCode,
   RejectError,
   UncertifiedRejectErrorCode,
+  UncertifiedRejectUpdateErrorCode,
   UnexpectedErrorCode,
   UnknownError,
 } from './errors.ts';
@@ -470,12 +471,11 @@ function _createActorMethod(
         }
       } else if (isV2ResponseBody(response.body)) {
         const { reject_code, reject_message, error_code } = response.body;
-        const errorCode = new UncertifiedRejectErrorCode(
+        const errorCode = new UncertifiedRejectUpdateErrorCode(
           requestId,
           reject_code,
           reject_message,
           error_code,
-          undefined,
         );
         errorCode.callContext = {
           canisterId: cid,

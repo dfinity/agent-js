@@ -515,6 +515,30 @@ export class UncertifiedRejectErrorCode extends ErrorCode {
   }
 }
 
+export class UncertifiedRejectUpdateErrorCode extends ErrorCode {
+  public name = 'UncertifiedRejectUpdateErrorCode';
+
+  constructor(
+    public readonly requestId: RequestId,
+    public readonly rejectCode: ReplicaRejectCode,
+    public readonly rejectMessage: string,
+    public readonly rejectErrorCode: string | undefined,
+  ) {
+    super();
+    Object.setPrototypeOf(this, UncertifiedRejectUpdateErrorCode.prototype);
+  }
+
+  public toErrorMessage(): string {
+    return (
+      `The replica returned a rejection error:\n` +
+      `  Request ID: ${bytesToHex(this.requestId)}\n` +
+      `  Reject code: ${this.rejectCode}\n` +
+      `  Reject text: ${this.rejectMessage}\n` +
+      `  Error code: ${this.rejectErrorCode}\n`
+    );
+  }
+}
+
 export class RequestStatusDoneNoReplyErrorCode extends ErrorCode {
   public name = 'RequestStatusDoneNoReplyErrorCode';
 
