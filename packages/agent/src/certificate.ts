@@ -26,7 +26,10 @@ import type { HttpAgent } from './agent/http/index.ts';
 import type { Agent } from './agent/api.ts';
 
 const MINUTES_TO_MSEC = 60 * 1000;
-const FIVE_MINUTES_IN_MSEC = 5 * MINUTES_TO_MSEC;
+const DEFAULT_CERTIFICATE_MAX_MINUTES_IN_FUTURE = 5;
+// Replicas update their delegation every 10 minutes,
+// see https://github.com/dfinity/ic/blob/d890a928d9a171d8d3b49eff374bcfb3bdaeebbf/rs/http_endpoints/public/src/nns_delegation_manager.rs#L47
+const DEFAULT_CERTIFICATE_DELEGATION_MAX_AGE_IN_MINUTES = 10;
 
 export interface Cert {
   tree: HashTree;
@@ -274,7 +277,8 @@ export class Certificate {
       const now = new Date();
       const adjustedNow = now.getTime() + timeDiffMsecs;
       const earliestCertificateTime = adjustedNow - maxAgeInMsec;
-      const latestCertificateTime = adjustedNow + FIVE_MINUTES_IN_MSEC;
+      const latestCertificateTime =
+        adjustedNow + DEFAULT_CERTIFICATE_MAX_MINUTES_IN_FUTURE * MINUTES_TO_MSEC;
 
       const certTime = decodeTime(lookupTime);
 
@@ -331,7 +335,8 @@ export class Certificate {
       rootKey: this._rootKey,
       canisterId: this._canisterId,
       blsVerify: this._blsVerify,
-      disableTimeVerification: true,
+      maxAgeInMinutes: DEFAULT_CERTIFICATE_DELEGATION_MAX_AGE_IN_MINUTES,
+      agent: this.#agent as HttpAgent,
     });
 
     if (cert.cert.delegation) {
