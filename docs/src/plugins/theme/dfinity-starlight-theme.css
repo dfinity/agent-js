@@ -1,0 +1,57 @@
+/* Available props: https://github.com/withastro/starlight/blob/main/packages/starlight/style/props.css */
+
+:root {
+  --sl-font-system:
+    'CircularXX', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', 'Noto Color Emoji';
+
+  --dfn-color-black: hsl(259, 0%, 13%);
+  --dfn-color-gray-7: hsl(259, 4%, 13%);
+  --dfn-color-gray-6: hsl(259, 4%, 17%);
+  --dfn-color-gray-5: hsl(259, 4%, 40%);
+  --dfn-color-gray-4: hsl(259, 4%, 46%);
+  --dfn-color-gray-3: hsl(259, 4%, 56%);
+  --dfn-color-gray-2: hsl(259, 4%, 80%);
+  --dfn-color-gray-1: hsl(259, 4%, 93%);
+  --dfn-color-white: hsl(259, 0%, 100%);
+
+  --dfn-pink: hsl(312, 100%, 45%);
+  --dfn-purple: hsl(250, 100%, 81%);
+  --dfn-dark-purple: hsl(259, 100%, 36%);
+
+  --dfn-color-bg-navbar: var(--dfn-color-black);
+  --dfn-color-bg-sidebar: var(--dfn-color-black);
+
+  --sl-color-accent: var(--dfn-dark-purple);
+  --sl-color-accent-low: var(--dfn-color-black);
+  --sl-color-accent-high: var(--dfn-purple);
+
+  --sl-color-bg-nav: var(--dfn-color-bg-navbar);
+  --sl-color-bg-sidebar: var(--dfn-color-bg-sidebar);
+
+  --sl-color-white: var(--dfn-color-white);
+  --sl-color-gray-1: var(--dfn-color-gray-1);
+  --sl-color-gray-2: var(--dfn-color-gray-2);
+  --sl-color-gray-3: var(--dfn-color-gray-3);
+  --sl-color-gray-4: var(--dfn-color-gray-4);
+  --sl-color-gray-5: var(--dfn-color-gray-5);
+  --sl-color-gray-6: var(--dfn-color-gray-6);
+  --sl-color-gray-7: var(--dfn-color-gray-7);
+  --sl-color-black: var(--dfn-color-black);
+}
+
+:root[data-theme='light'] {
+  --dfn-color-bg-navbar: #e8e4ed;
+  --dfn-color-bg-sidebar: #f1eef5;
+
+  --sl-color-white: var(--dfn-color-black);
+  --sl-color-gray-1: var(--dfn-color-gray-7);
+  --sl-color-gray-2: var(--dfn-color-gray-6);
+  --sl-color-gray-3: var(--dfn-color-gray-5);
+  --sl-color-gray-4: var(--dfn-color-gray-4);
+  --sl-color-gray-5: var(--dfn-color-gray-3);
+  --sl-color-gray-6: var(--dfn-color-gray-2);
+  --sl-color-gray-7: var(--dfn-color-gray-1);
+  --sl-color-black: var(--dfn-color-white);
+}
