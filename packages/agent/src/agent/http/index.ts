@@ -1255,6 +1255,7 @@ export class HttpAgent implements Agent {
             Array(3)
               .fill(null)
               .map(async () => {
+                // TODO: disable certificate freshness check for this request
                 const status = await canisterStatusRequest({
                   canisterId,
                   agent: anonymousAgent,
