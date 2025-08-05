@@ -1,7 +1,8 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
-import { libsPlugin } from './src/libs-plugin';
+import { libsPlugin } from './src/plugins/libs';
+import { dfinityStarlightTheme } from './src/plugins/theme';
 
 // https://astro.build/config
 export default defineConfig({
@@ -9,9 +10,10 @@ export default defineConfig({
   base: '/core/',
   integrations: [
     starlight({
-      title: 'ICP JS SDK Docs',
+      title: 'ICP JS SDK Core',
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/dfinity/agent-js' }],
       plugins: [
+        dfinityStarlightTheme(),
         libsPlugin({
           clean: true,
           baseDir: '../packages',
