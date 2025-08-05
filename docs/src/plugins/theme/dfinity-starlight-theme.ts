@@ -7,8 +7,8 @@ export function dfinityStarlightTheme(): StarlightPlugin {
       'config:setup': ctx => {
         ctx.updateConfig({
           logo: {
-            src: './src/plugins/theme/dfinity.svg',
-            alt: 'DFINITY Logo',
+            src: './src/plugins/theme/icp.svg',
+            alt: 'Internet Computer Logo',
           },
           customCss: [
             ...(ctx.config.customCss || []),
