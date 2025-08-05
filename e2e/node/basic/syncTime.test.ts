@@ -3,6 +3,8 @@ import {
   CallRequest,
   HttpAgent,
   IC_REQUEST_DOMAIN_SEPARATOR,
+  IngressExpiryInvalidErrorCode,
+  InputError,
   makeNonce,
   Nonce,
   ReadStateRequest,
@@ -16,6 +18,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createActor } from '../canisters/counter.ts';
 import {
   MockReplica,
+  mockSyncTimeResponse,
   prepareV2ReadStateTimeResponse,
   prepareV3Response,
 } from '../utils/mock-replica.ts';
@@ -110,17 +113,10 @@ describe('syncTime', () => {
         res.status(400).send(new TextEncoder().encode(INVALID_EXPIRY_ERROR));
       });
 
-      const { responseBody: readStateResponse } = await prepareV2ReadStateTimeResponse({
+      await mockSyncTimeResponse({
+        mockReplica,
         keyPair,
-      });
-      mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
-        res.status(200).send(readStateResponse);
-      });
-      mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
-        res.status(200).send(readStateResponse);
-      });
-      mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
-        res.status(200).send(readStateResponse);
+        canisterId,
       });
 
       const { responseBody: callResponse, requestId } = await prepareV3Response({
@@ -180,6 +176,46 @@ describe('syncTime', () => {
         },
         'V3 read state body three',
       );
+      expect(agent.hasSyncedTime()).toBe(true);
+    });
+
+    it('should not sync time twice when the local time does not match the subnet time', async () => {
+      const agent = await HttpAgent.create({
+        host: mockReplica.address,
+        rootKey: keyPair.publicKeyDer,
+        identity,
+      });
+      const actor = await createActor(canisterId, { agent });
+
+      mockReplica.setV3CallSpyImplOnce(canisterId.toString(), (_req, res) => {
+        res.status(400).send(new TextEncoder().encode(INVALID_EXPIRY_ERROR));
+      });
+
+      await mockSyncTimeResponse({
+        mockReplica,
+        keyPair,
+        canisterId,
+      });
+
+      mockReplica.setV3CallSpyImplOnce(canisterId.toString(), (_req, res) => {
+        res.status(400).send(new TextEncoder().encode(INVALID_EXPIRY_ERROR));
+      });
+
+      expect.assertions(6);
+
+      try {
+        await actor.greet(greetReq);
+      } catch (e) {
+        expect(e).toBeInstanceOf(InputError);
+        const err = e as InputError;
+        expect(err.cause.code).toBeInstanceOf(IngressExpiryInvalidErrorCode);
+        expect(err.message).toBe(
+          `${INVALID_EXPIRY_ERROR}. Provided ingress expiry time is 5 minutes.`,
+        );
+      }
+
+      expect(mockReplica.getV3CallSpy(canisterId.toString())).toHaveBeenCalledTimes(2);
+      expect(mockReplica.getV2ReadStateSpy(canisterId.toString())).toHaveBeenCalledTimes(3);
       expect(agent.hasSyncedTime()).toBe(true);
     });
   });
