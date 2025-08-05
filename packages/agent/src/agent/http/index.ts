@@ -963,13 +963,13 @@ export class HttpAgent implements Agent {
       const [queryWithDetails, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
 
       try {
-        return this.#verifyQueryResponse(queryWithDetails, subnetStatus!);
+        return this.#verifyQueryResponse(queryWithDetails, subnetStatus);
       } catch {
         // In case the node signatures have changed, refresh the subnet keys and try again
         this.log.warn('Query response verification failed. Retrying with fresh subnet keys.');
         this.#subnetKeys.delete(ecid.toString());
         const updatedSubnetStatus = await getSubnetStatus();
-        return this.#verifyQueryResponse(queryWithDetails, updatedSubnetStatus!);
+        return this.#verifyQueryResponse(queryWithDetails, updatedSubnetStatus);
       }
     } catch (error) {
       let queryError: AgentError;
