@@ -427,6 +427,7 @@ function _createActorMethod(
           rootKey: agent.rootKey,
           canisterId: Principal.from(canisterId),
           blsVerify,
+          agent,
         });
         const path = [utf8ToBytes('request_status'), requestId];
         const status = new TextDecoder().decode(
