@@ -941,24 +941,22 @@ export class HttpAgent implements Agent {
       if (!this.#verifyQuerySignatures) {
         return undefined;
       }
-      const subnetStatus = this.#subnetKeys.get(ecid.toString());
-      if (subnetStatus) {
-        return subnetStatus;
+      const cachedSubnetStatus = this.#subnetKeys.get(ecid.toString());
+      if (cachedSubnetStatus) {
+        return cachedSubnetStatus;
       }
       await this.fetchSubnetKeys(ecid.toString());
-      return this.#subnetKeys.get(ecid.toString());
+      const subnetStatus = this.#subnetKeys.get(ecid.toString());
+      if (!subnetStatus) {
+        throw TrustError.fromCode(new MissingSignatureErrorCode());
+      }
+      return subnetStatus;
     };
 
     // Attempt to make the query i=retryTimes times
     // Make query and fetch subnet keys in parallel
     try {
-      const [queryResult, subnetStatus] = await Promise.all([
-        makeQuery(),
-        getSubnetStatus().catch(err => {
-          this.log.warn('Failed to fetch subnet keys. Error:', err);
-          return undefined;
-        }),
-      ]);
+      const [queryResult, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
       const { requestDetails, query } = queryResult;
 
       const queryWithDetails = {
@@ -972,21 +970,14 @@ export class HttpAgent implements Agent {
         return queryWithDetails;
       }
 
-      if (!subnetStatus) {
-        throw TrustError.fromCode(new MissingSignatureErrorCode());
-      }
-
       try {
-        return this.#verifyQueryResponse(queryWithDetails, subnetStatus);
+        return this.#verifyQueryResponse(queryWithDetails, subnetStatus!);
       } catch {
         // In case the node signatures have changed, refresh the subnet keys and try again
         this.log.warn('Query response verification failed. Retrying with fresh subnet keys.');
         this.#subnetKeys.delete(ecid.toString());
         const updatedSubnetStatus = await getSubnetStatus();
-        if (!updatedSubnetStatus) {
-          throw TrustError.fromCode(new MissingSignatureErrorCode());
-        }
-        return this.#verifyQueryResponse(queryWithDetails, updatedSubnetStatus);
+        return this.#verifyQueryResponse(queryWithDetails, updatedSubnetStatus!);
       }
     } catch (error) {
       let queryError: AgentError;
