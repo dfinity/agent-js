@@ -13,6 +13,7 @@
 - feat: adds the `agent` optional field to the `CreateCertificateOptions` interface, which is used to sync time with the IC network if the certificate fails the freshness check, if provided.
 - feat: adds the `getTimeDiffMsecs` method to the `HttpAgent` class, which returns the time difference in milliseconds between the IC network clock and the client's clock.
 - feat: adds the `hasSyncedTime` method to the `HttpAgent` class, which returns `true` if the time has been synced at least once with the IC network, `false` otherwise.
+- fix: use the effective canister id to delete the node keys from the local cache.
 - feat: adds the `disableCertificateTimeVerification` optional field to the `CanisterStatus.request` function argument, which allows you to control the `disableTimeVerification` option for the internal `Certificate.create` call.
 
 ## [3.1.0] - 2025-07-24
