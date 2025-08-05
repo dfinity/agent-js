@@ -85,6 +85,7 @@ describe('queryExpiry', () => {
 
   it('should fail if the timestamp is outside the max ingress expiry (no retry)', async () => {
     const timeDiffMsecs = 6 * MINUTE_TO_MSECS;
+    const futureDate = new Date(now.getTime() + timeDiffMsecs);
 
     // advance to go over the max ingress expiry (5 minutes)
     advanceTimeByMilliseconds(timeDiffMsecs);
@@ -109,6 +110,15 @@ describe('queryExpiry', () => {
     });
     mockReplica.setV2QuerySpyImplOnce(canisterId.toString(), (_req, res) => {
       res.status(200).send(responseBody);
+    });
+    const { responseBody: subnetResponseBody } = await prepareV2ReadStateSubnetResponse({
+      nodeIdentity,
+      canisterRanges: [[canisterId.toUint8Array(), canisterId.toUint8Array()]],
+      keyPair: subnetKeyPair,
+      date: futureDate, // make sure the certificate is fresh for this call
+    });
+    mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
+      res.status(200).send(subnetResponseBody);
     });
 
     expect.assertions(4);
@@ -177,10 +187,6 @@ describe('queryExpiry', () => {
       date: futureDate,
       canisterId,
     });
-    // retry again after sync time and fail again for certificate freshness checks
-    mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
-      res.status(200).send(subnetResponseBody);
-    });
 
     expect.assertions(5);
 
@@ -191,7 +197,7 @@ describe('queryExpiry', () => {
     }
 
     expect(mockReplica.getV2QuerySpy(canisterId.toString())).toHaveBeenCalledTimes(4);
-    expect(mockReplica.getV2ReadStateSpy(canisterId.toString())).toHaveBeenCalledTimes(5);
+    expect(mockReplica.getV2ReadStateSpy(canisterId.toString())).toHaveBeenCalledTimes(4);
   });
 
   it('should not retry if the timestamp is outside the max ingress expiry (verifyQuerySignatures=false)', async () => {
@@ -376,15 +382,12 @@ describe('queryExpiry', () => {
     mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
       res.status(200).send(subnetResponseBody);
     });
-    mockReplica.setV2ReadStateSpyImplOnce(canisterId.toString(), (_req, res) => {
-      res.status(200).send(subnetResponseBody);
-    });
 
     const actorResponse = await actor[greetMethodName](greetReq);
 
     expect(actorResponse).toEqual(greetRes);
     expect(mockReplica.getV2QuerySpy(canisterId.toString())).toHaveBeenCalledTimes(1);
-    expect(mockReplica.getV2ReadStateSpy(canisterId.toString())).toHaveBeenCalledTimes(5);
+    expect(mockReplica.getV2ReadStateSpy(canisterId.toString())).toHaveBeenCalledTimes(4);
 
     const req = mockReplica.getV2QueryReq(canisterId.toString(), 0);
     expect(requestIdOf(req.content)).toEqual(requestId);
