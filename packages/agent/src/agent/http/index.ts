@@ -930,17 +930,17 @@ export class HttpAgent implements Agent {
       backoff,
       tries: 0,
     };
+
     const makeQuery = async () => {
+      // Attempt to make the query i=retryTimes times
+      const query = await this.#requestAndRetryQuery(args);
       return {
         requestDetails: request,
-        query: await this.#requestAndRetryQuery(args),
+        ...query,
       };
     };
 
-    const getSubnetStatus = async (): Promise<SubnetStatus | undefined> => {
-      if (!this.#verifyQuerySignatures) {
-        return undefined;
-      }
+    const getSubnetStatus = async (): Promise<SubnetStatus> => {
       const cachedSubnetStatus = this.#subnetKeys.get(ecid.toString());
       if (cachedSubnetStatus) {
         return cachedSubnetStatus;
@@ -953,22 +953,14 @@ export class HttpAgent implements Agent {
       return subnetStatus;
     };
 
-    // Attempt to make the query i=retryTimes times
-    // Make query and fetch subnet keys in parallel
     try {
-      const [queryResult, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
-      const { requestDetails, query } = queryResult;
-
-      const queryWithDetails = {
-        ...query,
-        requestDetails,
-      };
-
-      this.log.print('Query response:', queryWithDetails);
-      // Skip verification if the user has disabled it
       if (!this.#verifyQuerySignatures) {
-        return queryWithDetails;
+        // Skip verification if the user has disabled it
+        return await makeQuery();
       }
+
+      // Make query and fetch subnet keys in parallel
+      const [queryWithDetails, subnetStatus] = await Promise.all([makeQuery(), getSubnetStatus()]);
 
       try {
         return this.#verifyQueryResponse(queryWithDetails, subnetStatus!);
