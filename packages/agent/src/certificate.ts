@@ -286,7 +286,7 @@ export class Certificate {
         this.#agent &&
         !this.#agent.hasSyncedTime()
       ) {
-        await this.#agent.syncTime();
+        await this.#agent.syncTime(this._canisterId);
         return await this.verify();
       }
 
