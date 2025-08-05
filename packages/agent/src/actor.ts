@@ -519,19 +519,9 @@ function _createActorMethod(
           };
         }
         return decodeReturnValue(func.retTypes, reply);
-      } else if (func.retTypes.length === 0) {
-        const errorCode = new UnexpectedErrorCode(
-          'Call was returned undefined, and the method has no return type. We cannot determine if the call was successful or not.',
-        );
-        errorCode.callContext = {
-          canisterId: cid,
-          methodName,
-          httpDetails,
-        };
-        throw UnknownError.fromCode(errorCode);
       } else {
         const errorCode = new UnexpectedErrorCode(
-          `Call was returned undefined, but type [${func.retTypes.map(t => t.display()).join(',')}].`,
+          `Call was returned undefined. We cannot determine if the call was successful or not. Return types: [${func.retTypes.map(t => t.display()).join(',')}].`,
         );
         errorCode.callContext = {
           canisterId: cid,
