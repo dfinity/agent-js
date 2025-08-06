@@ -1,25 +1,25 @@
 name: Publish docs
-description: Push static docs assets to the icp-pages branch and triggers the pull-project-docs workflow on the docs repo
+description: Push static docs assets to the `icp-pages` branch and triggers the `pull-project-docs` workflow on the docs repo
 
 inputs:
   docs_output_dir:
     description: The directory containing the static docs assets to publish
     required: true
   docs_version:
-    description: The version of the docs to publish. Allowed values: vX | vX.Y | vX.Y.Z | beta | dev | next | nightly (where X, Y, Z are numbers)
+    description: The version of the docs to publish. Allowed values are `vX` | `vX.Y` | `vX.Y.Z` | `beta` | `dev` | `next` | `nightly` (where `X`, `Y`, `Z` are numbers)
     required: true
   docs_version_label:
-    description: The label to use for the docs version. If not provided, the docs_version will be used.
+    description: The label to use for the docs version. If not provided, the `docs_version` will be used
     required: false
   docs_repo:
     description: The repository to trigger the workflow on to publish the docs
     required: false
     default: 'dfinity/icp-sdk-js-docs'
   is_latest:
-    description: Whether the docs version is the latest version. If true, the docs_version will be symlinked to the latest version of the published docs.
+    description: Whether the docs version is the latest version. If true, the `docs_version` will be symlinked to the latest version of the published docs
     required: true
   github_token:
-    description: The GitHub token to use for pushing to the icp-pages branch
+    description: The GitHub token to use for pushing to the `icp-pages` branch
     required: true
 
 runs:
