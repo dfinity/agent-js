@@ -1,5 +1,5 @@
 # TODO: remove this workflow once the action works
-name: Publish and Release
+name: Tmp publish docs
 
 on:
   pull_request:
