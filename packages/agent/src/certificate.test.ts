@@ -583,6 +583,7 @@ test('delegation time lookup', async () => {
 });
 
 test('delegation works for canisters within the subnet range', async () => {
+  jest.setSystemTime(parseTimeFromCert(SAMPLE_CERT_BYTES));
   // The certificate specifies the range from
   // 0x00000000002000000101
   // to
@@ -591,7 +592,6 @@ test('delegation works for canisters within the subnet range', async () => {
   const rangeInterior = Principal.fromHex('000000000020000C0101');
   const rangeEnd = Principal.fromHex('00000000002FFFFF0101');
   async function verifies(canisterId: Principal) {
-    jest.setSystemTime(parseTimeFromCert(SAMPLE_CERT_BYTES));
     await expect(
       Cert.Certificate.create({
         certificate: SAMPLE_CERT_BYTES,
@@ -607,6 +607,7 @@ test('delegation works for canisters within the subnet range', async () => {
 });
 
 test('delegation check fails for canisters outside of the subnet range', async () => {
+  jest.setSystemTime(parseTimeFromCert(SAMPLE_CERT_BYTES));
   // Use a different principal than the happy path, which isn't in the delegation ranges.
   // The certificate specifies the range from
   // 0x00000000002000000101
@@ -632,6 +633,8 @@ test('delegation check fails for canisters outside of the subnet range', async (
 });
 
 test('certificate verification fails for an invalid signature', async () => {
+  jest.setSystemTime(parseTimeFromCert(SAMPLE_CERT_BYTES));
+
   const badCert = cbor.decode<Cert.Cert>(SAMPLE_CERT_BYTES);
   badCert.signature = new Uint8Array(badCert.signature.byteLength); // replace the signature with an empty bytes array
   const badCertEncoded = cbor.encode(badCert);
@@ -722,6 +725,8 @@ test('certificate creation passes if the time of the certificate is > 5 minutes 
   agent.getTimeDiffMsecs = jest
     .fn()
     .mockImplementationOnce(() => 0)
+    .mockImplementationOnce(() => 0)
+    .mockImplementationOnce(() => 0)
     .mockImplementationOnce(() => timeDiffMsecs);
   agent.hasSyncedTime = jest.fn(() => false);
   agent.syncTime = jest.fn();
@@ -734,7 +739,7 @@ test('certificate creation passes if the time of the certificate is > 5 minutes 
     agent,
   });
   expect(cert).toBeInstanceOf(Cert.Certificate);
-  expect(agent.getTimeDiffMsecs).toHaveBeenCalledTimes(2);
+  expect(agent.getTimeDiffMsecs).toHaveBeenCalledTimes(4);
   expect(agent.hasSyncedTime).toHaveBeenCalledTimes(1);
   expect(agent.syncTime).toHaveBeenCalledTimes(1);
 });
@@ -750,8 +755,8 @@ test('certificate creation passes if the time of the certificate is > 5 minutes 
   const agent = HttpAgent.createSync({
     fetch: jest.fn(),
   });
-  agent.getTimeDiffMsecs = jest.fn().mockImplementationOnce(() => timeDiffMsecs);
-  agent.hasSyncedTime = jest.fn();
+  agent.getTimeDiffMsecs = jest.fn(() => timeDiffMsecs);
+  agent.hasSyncedTime = jest.fn(() => true);
   agent.syncTime = jest.fn();
 
   const cert = await Cert.Certificate.create({
@@ -762,7 +767,7 @@ test('certificate creation passes if the time of the certificate is > 5 minutes 
     agent,
   });
   expect(cert).toBeInstanceOf(Cert.Certificate);
-  expect(agent.getTimeDiffMsecs).toHaveBeenCalledTimes(1);
+  expect(agent.getTimeDiffMsecs).toHaveBeenCalledTimes(2);
   expect(agent.hasSyncedTime).toHaveBeenCalledTimes(0);
   expect(agent.syncTime).toHaveBeenCalledTimes(0);
 });
@@ -775,7 +780,7 @@ test('certificate creation fails if the time of the certificate is > 5 minutes i
   const agent = HttpAgent.createSync({
     fetch: jest.fn(),
   });
-  agent.getTimeDiffMsecs = jest.fn().mockImplementationOnce(() => timeDiffMsecs);
+  agent.getTimeDiffMsecs = jest.fn(() => timeDiffMsecs);
   agent.hasSyncedTime = jest.fn(() => true);
   agent.syncTime = jest.fn();
 
@@ -791,7 +796,7 @@ test('certificate creation fails if the time of the certificate is > 5 minutes i
   } catch (error) {
     expect(error).toBeInstanceOf(TrustError);
     expect((error as TrustError).cause.code).toBeInstanceOf(CertificateTimeErrorCode);
-    expect(agent.getTimeDiffMsecs).toHaveBeenCalledTimes(1);
+    expect(agent.getTimeDiffMsecs).toHaveBeenCalledTimes(2);
     expect(agent.hasSyncedTime).toHaveBeenCalledTimes(1);
     expect(agent.syncTime).toHaveBeenCalledTimes(0);
   }
@@ -811,6 +816,8 @@ test('certificate creation fails if the time of the certificate is > max age min
   });
   agent.getTimeDiffMsecs = jest
     .fn()
+    .mockImplementationOnce(() => 0)
+    .mockImplementationOnce(() => 0)
     .mockImplementationOnce(() => 0)
     .mockImplementationOnce(() => timeDiffMsecs);
   agent.hasSyncedTime = jest
@@ -832,7 +839,7 @@ test('certificate creation fails if the time of the certificate is > max age min
   } catch (error) {
     expect(error).toBeInstanceOf(TrustError);
     expect((error as TrustError).cause.code).toBeInstanceOf(CertificateTimeErrorCode);
-    expect(agent.getTimeDiffMsecs).toHaveBeenCalledTimes(2);
+    expect(agent.getTimeDiffMsecs).toHaveBeenCalledTimes(4);
     expect(agent.hasSyncedTime).toHaveBeenCalledTimes(2);
     expect(agent.syncTime).toHaveBeenCalledTimes(1);
   }
@@ -901,6 +908,8 @@ test('certificate creation passes if the time of the certificate is > 5 minutes 
   agent.getTimeDiffMsecs = jest
     .fn()
     .mockImplementationOnce(() => 0)
+    .mockImplementationOnce(() => 0)
+    .mockImplementationOnce(() => 0)
     .mockImplementationOnce(() => timeDiffMsecs);
   agent.hasSyncedTime = jest.fn(() => false);
   agent.syncTime = jest.fn();
@@ -913,7 +922,7 @@ test('certificate creation passes if the time of the certificate is > 5 minutes 
     agent,
   });
   expect(cert).toBeInstanceOf(Cert.Certificate);
-  expect(agent.getTimeDiffMsecs).toHaveBeenCalledTimes(2);
+  expect(agent.getTimeDiffMsecs).toHaveBeenCalledTimes(4);
   expect(agent.hasSyncedTime).toHaveBeenCalledTimes(1);
   expect(agent.syncTime).toHaveBeenCalledTimes(1);
 });
@@ -941,7 +950,7 @@ test('certificate creation passes if the time of the certificate is > 5 minutes 
     agent,
   });
   expect(cert).toBeInstanceOf(Cert.Certificate);
-  expect(agent.getTimeDiffMsecs).toHaveBeenCalledTimes(1);
+  expect(agent.getTimeDiffMsecs).toHaveBeenCalledTimes(2);
   expect(agent.hasSyncedTime).toHaveBeenCalledTimes(0);
   expect(agent.syncTime).toHaveBeenCalledTimes(0);
 });
@@ -973,7 +982,7 @@ test('certificate creation fails if the time of the certificate is > 5 minutes i
   } catch (error) {
     expect(error).toBeInstanceOf(UnknownError);
     expect((error as UnknownError).cause.code).toBeInstanceOf(UnexpectedErrorCode);
-    expect(agent.getTimeDiffMsecs).toHaveBeenCalledTimes(1);
+    expect(agent.getTimeDiffMsecs).toHaveBeenCalledTimes(2);
     expect(agent.hasSyncedTime).toHaveBeenCalledTimes(2);
     expect(agent.syncTime).toHaveBeenCalledTimes(0);
   }

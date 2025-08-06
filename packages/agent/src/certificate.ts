@@ -26,10 +26,14 @@ import type { HttpAgent } from './agent/http/index.ts';
 import type { Agent } from './agent/api.ts';
 
 const MINUTES_TO_MSEC = 60 * 1000;
+const HOURS_TO_MINUTES = 60;
+const DAYS_TO_MINUTES = 24 * HOURS_TO_MINUTES;
+
+const DEFAULT_CERTIFICATE_MAX_AGE_IN_MINUTES = 5;
 const DEFAULT_CERTIFICATE_MAX_MINUTES_IN_FUTURE = 5;
-// Replicas update their delegation every 10 minutes,
-// see https://github.com/dfinity/ic/blob/d890a928d9a171d8d3b49eff374bcfb3bdaeebbf/rs/http_endpoints/public/src/nns_delegation_manager.rs#L47
-const DEFAULT_CERTIFICATE_DELEGATION_MAX_AGE_IN_MINUTES = 10;
+// For now, we don't want to set a timeout on the certificate delegation freshness,
+// so we set the max age really far in the past.
+const DEFAULT_CERTIFICATE_DELEGATION_MAX_AGE_IN_MINUTES = 30 * DAYS_TO_MINUTES;
 
 export interface Cert {
   tree: HashTree;
@@ -225,7 +229,7 @@ export class Certificate {
     private _rootKey: Uint8Array,
     private _canisterId: Principal,
     private _blsVerify: VerifyFunc,
-    private _maxAgeInMinutes: number = 5,
+    private _maxAgeInMinutes: number = DEFAULT_CERTIFICATE_MAX_AGE_IN_MINUTES,
     disableTimeVerification: boolean = false,
     agent?: Agent,
   ) {
@@ -335,6 +339,7 @@ export class Certificate {
       rootKey: this._rootKey,
       canisterId: this._canisterId,
       blsVerify: this._blsVerify,
+      disableTimeVerification: this.#disableTimeVerification,
       maxAgeInMinutes: DEFAULT_CERTIFICATE_DELEGATION_MAX_AGE_IN_MINUTES,
       agent: this.#agent as HttpAgent,
     });
