@@ -16,7 +16,7 @@ jobs:
         with:
           node_version_file: '.nvmrc'
 
-      - run: pnpm build -F docs
+      - run: pnpm -F docs build
 
       - name: Publish docs
         uses: ./.github/actions/publish-docs
