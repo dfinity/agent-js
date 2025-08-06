@@ -26,7 +26,15 @@ import type { HttpAgent } from './agent/http/index.ts';
 import type { Agent } from './agent/api.ts';
 
 const MINUTES_TO_MSEC = 60 * 1000;
-const FIVE_MINUTES_IN_MSEC = 5 * MINUTES_TO_MSEC;
+const HOURS_TO_MINUTES = 60;
+const DAYS_TO_HOURS = 24;
+const DAYS_TO_MINUTES = DAYS_TO_HOURS * HOURS_TO_MINUTES;
+
+const DEFAULT_CERTIFICATE_MAX_AGE_IN_MINUTES = 5;
+const DEFAULT_CERTIFICATE_MAX_MINUTES_IN_FUTURE = 5;
+// For now, we don't want to set a strict timeout on the certificate delegation freshness,
+// so we set the max age really far in the past.
+const DEFAULT_CERTIFICATE_DELEGATION_MAX_AGE_IN_MINUTES = 30 * DAYS_TO_MINUTES;
 
 export interface Cert {
   tree: HashTree;
@@ -222,7 +230,7 @@ export class Certificate {
     private _rootKey: Uint8Array,
     private _canisterId: Principal,
     private _blsVerify: VerifyFunc,
-    private _maxAgeInMinutes: number = 5,
+    private _maxAgeInMinutes: number = DEFAULT_CERTIFICATE_MAX_AGE_IN_MINUTES,
     disableTimeVerification: boolean = false,
     agent?: Agent,
   ) {
@@ -274,7 +282,8 @@ export class Certificate {
       const now = new Date();
       const adjustedNow = now.getTime() + timeDiffMsecs;
       const earliestCertificateTime = adjustedNow - maxAgeInMsec;
-      const latestCertificateTime = adjustedNow + FIVE_MINUTES_IN_MSEC;
+      const latestCertificateTime =
+        adjustedNow + DEFAULT_CERTIFICATE_MAX_MINUTES_IN_FUTURE * MINUTES_TO_MSEC;
 
       const certTime = decodeTime(lookupTime);
 
@@ -331,7 +340,9 @@ export class Certificate {
       rootKey: this._rootKey,
       canisterId: this._canisterId,
       blsVerify: this._blsVerify,
-      disableTimeVerification: true,
+      disableTimeVerification: this.#disableTimeVerification,
+      maxAgeInMinutes: DEFAULT_CERTIFICATE_DELEGATION_MAX_AGE_IN_MINUTES,
+      agent: this.#agent as HttpAgent,
     });
 
     if (cert.cert.delegation) {

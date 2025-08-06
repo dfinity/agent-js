@@ -17,6 +17,7 @@
 - docs: add DFINITY Starlight theme to the docs
 - feat: adds the `disableCertificateTimeVerification` optional field to the `CanisterStatus.request` function argument, which allows you to control the `disableTimeVerification` option for the internal `Certificate.create` call.
 - fix: avoid bigint overflow when decoding the time from the certificate.
+- fix: enable certificate freshness checks for delegation certificates.
 - feat: adds the `UncertifiedRejectUpdateErrorCode` error code.
 - fix: changes error code to `UncertifiedRejectUpdateErrorCode` when throwing an error in v2 responses.
 - fix: avoid syncing time indefinitely in case of an ingress expiry error.
