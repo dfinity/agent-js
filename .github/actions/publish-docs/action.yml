@@ -94,7 +94,7 @@ runs:
 
     - name: Add or update the latest version in versions.json
       shell: bash
-      if: ${{ inputs.is_latest }} == 'true' && ${{ env.STABLE_VERSION != '' }}
+      if: ${{ inputs.is_latest == 'true' && env.STABLE_VERSION != '' }}
       working-directory: icp-pages
       run: |
         VERSION_LABEL="$(jq -r --arg version "$STABLE_VERSION" '.[] | select(.path == $version) | .label' versions.json)"
