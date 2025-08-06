@@ -1,4 +1,0 @@
-service: {
-    whoami: () -> (principal);
-    whoami_query: () -> (principal) query;
-}

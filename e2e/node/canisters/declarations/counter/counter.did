@@ -1,8 +1,0 @@
-service : {
-  greet : (text) -> (text);
-  inc : () -> ();
-  inc_read : () -> (nat);
-  queryGreet : (text) -> (text) query;
-  read : () -> (nat) query;
-  write : (nat) -> ();
-};

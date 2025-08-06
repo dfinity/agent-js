@@ -1,6 +1,0 @@
-CHANGELOG.md
-package.json
-package-lock.json
-packages/*/package.json
-demos/*/package.json
-e2e/*/package.json
