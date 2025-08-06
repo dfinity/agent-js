@@ -495,7 +495,6 @@ export class HttpAgent implements Agent {
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
-    // TODO - restore this value
     const callSync = options.callSync ?? true;
     const id = await (identity ?? this.#identity);
     if (!id) {
@@ -630,8 +629,9 @@ export class HttpAgent implements Agent {
             },
             identity,
           );
-        } else if (error.hasCode(IngressExpiryInvalidErrorCode)) {
-          // if there is an ingress expiry error, sync time with the network and try again
+        } else if (error.hasCode(IngressExpiryInvalidErrorCode) && !this.#hasSyncedTime) {
+          // if there is an ingress expiry error and the time has not been synced yet,
+          // sync time with the network and try again
           await this.syncTime(canister);
           return this.call(canister, options, identity);
         } else {

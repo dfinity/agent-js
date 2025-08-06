@@ -13,6 +13,7 @@ import {
   MissingRootKeyErrorCode,
   RejectError,
   UncertifiedRejectErrorCode,
+  UncertifiedRejectUpdateErrorCode,
   UnexpectedErrorCode,
   UnknownError,
 } from './errors.ts';
@@ -469,20 +470,19 @@ function _createActorMethod(
           }
         }
       } else if (isV2ResponseBody(response.body)) {
-        // handle v2 response errors by throwing an UpdateCallRejectedError object
         const { reject_code, reject_message, error_code } = response.body;
-        const certifiedRejectErrorCode = new CertifiedRejectErrorCode(
+        const errorCode = new UncertifiedRejectUpdateErrorCode(
           requestId,
           reject_code,
           reject_message,
           error_code,
         );
-        certifiedRejectErrorCode.callContext = {
+        errorCode.callContext = {
           canisterId: cid,
           methodName,
           httpDetails: response,
         };
-        throw RejectError.fromCode(certifiedRejectErrorCode);
+        throw RejectError.fromCode(errorCode);
       }
 
       // Fall back to polling if we receive an Accepted response code
@@ -519,19 +519,16 @@ function _createActorMethod(
           };
         }
         return decodeReturnValue(func.retTypes, reply);
-      } else if (func.retTypes.length === 0) {
-        return shouldIncludeHttpDetails
-          ? {
-              httpDetails: response,
-              result: undefined,
-            }
-          : undefined;
       } else {
-        throw UnknownError.fromCode(
-          new UnexpectedErrorCode(
-            `Call was returned undefined, but type [${func.retTypes.map(t => t.display()).join(',')}].`,
-          ),
+        const errorCode = new UnexpectedErrorCode(
+          `Call was returned undefined. We cannot determine if the call was successful or not. Return types: [${func.retTypes.map(t => t.display()).join(',')}].`,
         );
+        errorCode.callContext = {
+          canisterId: cid,
+          methodName,
+          httpDetails,
+        };
+        throw UnknownError.fromCode(errorCode);
       }
     };
   }
