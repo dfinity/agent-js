@@ -109,12 +109,19 @@ runs:
 
         mv versions.json.tmp versions.json
 
-    - name: Commit and push the changes
+    - name: Commit changes
       shell: bash
       working-directory: icp-pages
       run: |
-        git config user.name "GitHub Actions"
-        git config user.email "github-actions@github.com"
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
         git add .
         git commit -m "Update static docs assets for version: $STABLE_VERSION"
+
+    - name: Push changes
+      shell: bash
+      working-directory: icp-pages
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+      run: |
         git push origin icp-pages
