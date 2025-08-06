@@ -31,7 +31,7 @@ const DAYS_TO_MINUTES = 24 * HOURS_TO_MINUTES;
 
 const DEFAULT_CERTIFICATE_MAX_AGE_IN_MINUTES = 5;
 const DEFAULT_CERTIFICATE_MAX_MINUTES_IN_FUTURE = 5;
-// For now, we don't want to set a timeout on the certificate delegation freshness,
+// For now, we don't want to set a strict timeout on the certificate delegation freshness,
 // so we set the max age really far in the past.
 const DEFAULT_CERTIFICATE_DELEGATION_MAX_AGE_IN_MINUTES = 30 * DAYS_TO_MINUTES;
 
