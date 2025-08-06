@@ -481,7 +481,6 @@ export class HttpAgent implements Agent {
    * @param options.effectiveCanisterId - (Optional) The effective canister ID, if different from the target canister ID.
    * @param options.callSync - (Optional) Whether to use synchronous call mode. Defaults to true.
    * @param options.nonce - (Optional) A unique nonce for the request. If provided, it will override any nonce set by transforms.
-   * @param options.throwOnIngressExpiryError - (Optional) Whether to throw an error if the ingress expiry is invalid. If `false`, retries the request after syncing time with the IC network. Default `false`.
    * @param identity - (Optional) The identity to use for the call. If not provided, the agent's current identity will be used.
    * @returns A promise that resolves to the response of the call, including the request ID and response details.
    */
@@ -493,12 +492,10 @@ export class HttpAgent implements Agent {
       effectiveCanisterId?: Principal | string;
       callSync?: boolean;
       nonce?: Uint8Array | Nonce;
-      throwOnIngressExpiryError?: boolean;
     },
     identity?: Identity | Promise<Identity>,
   ): Promise<SubmitResponse> {
     const callSync = options.callSync ?? true;
-    const throwOnIngressExpiryError = options.throwOnIngressExpiryError ?? false;
     const id = await (identity ?? this.#identity);
     if (!id) {
       throw ExternalError.fromCode(new IdentityInvalidErrorCode());
@@ -632,17 +629,11 @@ export class HttpAgent implements Agent {
             },
             identity,
           );
-        } else if (error.hasCode(IngressExpiryInvalidErrorCode) && !throwOnIngressExpiryError) {
-          // if there is an ingress expiry error, sync time with the network and try again
+        } else if (error.hasCode(IngressExpiryInvalidErrorCode) && !this.#hasSyncedTime) {
+          // if there is an ingress expiry error and the time has not been synced yet,
+          // sync time with the network and try again
           await this.syncTime(canister);
-          return this.call(
-            canister,
-            {
-              ...options,
-              throwOnIngressExpiryError: true,
-            },
-            identity,
-          );
+          return this.call(canister, options, identity);
         } else {
           // override the error code to include the request details
           error.code.requestContext = {
