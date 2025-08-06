@@ -59,7 +59,7 @@ runs:
     - name: Symlink the zip file to the latest version
       shell: bash
       working-directory: icp-pages
-      if: ${{ inputs.is_latest }} == 'true'
+      if: ${{ inputs.is_latest == 'true' }}
       run: |
         # Remove existing symlink if it exists, then create new one
         rm -f latest.zip
