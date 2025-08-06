@@ -96,7 +96,7 @@ runs:
       if: ${{ inputs.is_latest }} == 'true' && ${{ env.STABLE_VERSION }} != ''
       working-directory: icp-pages
       run: |
-        VERSION_LABEL="$(jq -r '.[] | select(.path == "$STABLE_VERSION") | .label' versions.json)"
+        VERSION_LABEL="$(jq -r --arg version "$STABLE_VERSION" '.[] | select(.path == $version) | .label' versions.json)"
         LATEST_LABEL="latest ($VERSION_LABEL)"
 
         # Upsert the latest version to versions.json
@@ -116,7 +116,7 @@ runs:
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git add .
-        git commit -m "Update static docs assets for version: $STABLE_VERSION"
+        git commit -m "Update static docs assets for version: ${{ inputs.docs_version }}"
 
     - name: Push changes
       shell: bash
