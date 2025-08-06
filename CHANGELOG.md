@@ -16,6 +16,7 @@
 - fix: use the effective canister id to delete the node keys from the local cache.
 - docs: add DFINITY Starlight theme to the docs
 - feat: adds the `disableCertificateTimeVerification` optional field to the `CanisterStatus.request` function argument, which allows you to control the `disableTimeVerification` option for the internal `Certificate.create` call.
+- fix: avoid bigint overflow when decoding the time from the certificate.
 
 ## [3.1.0] - 2025-07-24
 
