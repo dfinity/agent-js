@@ -1,0 +1,110 @@
+name: Publish docs
+description: Push static docs assets to the `icp-pages` branch and triggers the `pull-project-docs` workflow on the docs repo
+
+inputs:
+  docs_output_dir:
+    description: The directory containing the static docs assets to publish
+    required: true
+  docs_version:
+    description: The version of the docs to publish. Allowed values: `vX | vX.Y | vX.Y.Z | beta | dev | next | nightly` (where `X`, `Y`, `Z` are numbers)
+    required: true
+  docs_version_label:
+    description: The label to use for the docs version. If not provided, the `docs_version` will be used.
+    required: false
+  docs_repo:
+    description: The repository to trigger the workflow on to publish the docs
+    required: false
+    default: 'dfinity/icp-sdk-js-docs'
+  is_latest:
+    description: Whether the docs version is the latest version. If `true`, the `docs_version` will be symlinked to the `latest` version of the published docs.
+    required: true
+  github_token:
+    description: The GitHub token to use for authentication to the destination repository
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        ref: icp-pages
+        path: icp-pages
+
+    - name: Check if the docs version is valid
+      shell: bash
+      id: check-docs-version
+      run: |
+        if [[ ${{ inputs.docs_version }} =~ ^v[0-9]+(\.[0-9]+)?(\.[0-9]+)?$ ]]; then
+          echo "STABLE_VERSION=${{ inputs.docs_version }}" >> $GITHUB_ENV
+        elif [[ ! ${{ inputs.docs_version }} =~ ^beta|dev|next|nightly$ ]]; then
+          echo "Not a stable version, versions.json will not be updated"
+          echo "STABLE_VERSION=" >> $GITHUB_ENV
+        else
+          echo "Invalid docs version: ${{ inputs.docs_version }}"
+          exit 1
+        fi
+
+    - name: Zip files from the docs output directory
+      shell: bash
+      id: zip-files
+      run: |
+        ZIP_FILE_NAME=${{ inputs.docs_version }}.zip
+        zip -r $ZIP_FILE_NAME ${{ inputs.docs_output_dir }}
+        echo "ZIP_FILE_NAME=$ZIP_FILE_NAME" >> $GITHUB_ENV
+
+    - name: Copy zip to the icp-pages branch
+      shell: bash
+      run: |
+        cp $ZIP_FILE_NAME icp-pages/
+
+    - name: Symlink the zip file to the latest version
+      shell: bash
+      working-directory: icp-pages
+      if: ${{ inputs.is_latest }} == 'true'
+      run: |
+        ln -s $ZIP_FILE_NAME latest.zip
+
+    - name: Create versions.json if it doesn't exist
+      shell: bash
+      working-directory: icp-pages
+      run: |
+        if [ ! -f versions.json ]; then
+          echo "[]" > versions.json
+        fi
+
+    - name: Add or update the version in versions.json
+      shell: bash
+      working-directory: icp-pages
+      if: ${{ env.STABLE_VERSION }} != ''
+      env:
+        DOCS_VERSION_LABEL: ${{ inputs.docs_version_label }}
+      run: |
+        # Upsert the docs_version: if it exists, update the label; if not, add it
+        jq --arg version "$STABLE_VERSION" --arg label "$DOCS_VERSION_LABEL" '
+          if any(.path == $version) then
+            # Update existing version with new label, if the label is provided
+            map(if ((.path == $version) and ($label != "")) then .label = $label else . end)
+          else
+            # Add new version with the provided label, or fallback to the version for the label
+            . + [{"path": $version, "label": (if $label != "" then $label else $version end)}]
+          end' versions.json > versions.json.tmp
+
+        mv versions.json.tmp versions.json
+
+    - name: Add or update the latest version in versions.json
+      shell: bash
+      if: ${{ inputs.is_latest }} == 'true' && ${{ env.STABLE_VERSION }} != ''
+      working-directory: icp-pages
+      run: |
+        VERSION_LABEL="$(jq -r '.[] | select(.path == "$STABLE_VERSION") | .label' versions.json)"
+        LATEST_LABEL="latest ($VERSION_LABEL)"
+
+        # Upsert the latest version to versions.json
+        jq --arg version "latest" --arg label "$LATEST_LABEL" '
+          if any(.path == $version) then
+            map(if .path == $version then .label = $label else . end)
+          else
+            [{"path": $version, "label": $label}] + .
+          end' versions.json > versions.json.tmp
+
+        mv versions.json.tmp versions.json
