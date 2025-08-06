@@ -23,5 +23,5 @@ jobs:
         with:
           docs_output_dir: 'docs/dist'
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          docs_version: v3
-          is_latest: true
+          docs_version: beta
+          is_latest: false
