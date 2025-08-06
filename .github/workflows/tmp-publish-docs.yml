@@ -23,6 +23,6 @@ jobs:
         with:
           docs_output_dir: 'docs/dist'
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          docs_version: v3
-          docs_version_label: 'Version 3'
+          docs_version: v4
+          docs_version_label: 'Version 4'
           is_latest: true
