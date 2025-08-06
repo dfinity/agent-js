@@ -62,6 +62,8 @@ runs:
       working-directory: icp-pages
       if: ${{ inputs.is_latest }} == 'true'
       run: |
+        # Remove existing symlink if it exists, then create new one
+        rm -f latest.zip
         ln -s $ZIP_FILE_NAME latest.zip
 
     - name: Create versions.json if it doesn't exist
