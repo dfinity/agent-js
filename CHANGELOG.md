@@ -17,6 +17,7 @@
 - docs: add DFINITY Starlight theme to the docs
 - feat: adds the `disableCertificateTimeVerification` optional field to the `CanisterStatus.request` function argument, which allows you to control the `disableTimeVerification` option for the internal `Certificate.create` call.
 - fix: avoid bigint overflow when decoding the time from the certificate.
+- fix: enable certificate freshness checks for delegation certificates.
 
 ## [3.1.0] - 2025-07-24
 
