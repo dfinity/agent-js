@@ -45,7 +45,6 @@ runs:
 
     - name: Zip files from the docs output directory
       shell: bash
-      id: zip-files
       run: |
         ZIP_FILE_NAME=${{ inputs.docs_version }}.zip
         zip -r $ZIP_FILE_NAME ${{ inputs.docs_output_dir }}
@@ -58,8 +57,8 @@ runs:
 
     - name: Symlink the zip file to the latest version
       shell: bash
-      working-directory: icp-pages
       if: ${{ inputs.is_latest == 'true' }}
+      working-directory: icp-pages
       run: |
         # Remove existing symlink if it exists, then create new one
         rm -f latest.zip
@@ -75,8 +74,8 @@ runs:
 
     - name: Add or update the version in versions.json
       shell: bash
-      working-directory: icp-pages
       if: ${{ env.STABLE_VERSION != '' }}
+      working-directory: icp-pages
       env:
         DOCS_VERSION_LABEL: ${{ inputs.docs_version_label }}
       run: |
@@ -100,7 +99,7 @@ runs:
         VERSION_LABEL="$(jq -r --arg version "$STABLE_VERSION" '.[] | select(.path == $version) | .label' versions.json)"
         LATEST_LABEL="latest ($VERSION_LABEL)"
 
-        # Upsert the latest version to versions.json
+        # Upsert the latest version into versions.json
         jq --arg version "latest" --arg label "$LATEST_LABEL" '
           if any(.path == $version) then
             map(if .path == $version then .label = $label else . end)
