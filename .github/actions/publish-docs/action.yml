@@ -109,19 +109,26 @@ runs:
 
         mv versions.json.tmp versions.json
 
-    - name: Commit changes
+    - name: Check for git changes
+      id: git_diff
       shell: bash
       working-directory: icp-pages
+      run: |
+        if [ -z "$(git status --porcelain)" ]; then
+          echo "is_dirty=false" >> $GITHUB_OUTPUT
+        else
+          echo "is_dirty=true" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Commit and push changes
+      shell: bash
+      if: steps.git_diff.outputs.is_dirty == 'true'
+      working-directory: icp-pages
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git add .
         git commit -m "Update static docs assets for version: ${{ inputs.docs_version }}"
-
-    - name: Push changes
-      shell: bash
-      working-directory: icp-pages
-      env:
-        GITHUB_TOKEN: ${{ inputs.github_token }}
-      run: |
         git push origin icp-pages
