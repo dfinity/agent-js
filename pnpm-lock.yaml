@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  form-data@>=4.0.0 <4.0.4: '>=4.0.4'
+  tmp@<=0.2.3: '>=0.2.4'
 
 importers:
 
@@ -4205,10 +4205,6 @@ packages:
     resolution: {integrity: sha512-zBd1G8HkewNd2A8oQ8c6BN/f/c9EId7rSUueOLGu28govmUctXmM+3765GwsByv9nYUdrLqHphXlYIc86saYsg==}
     engines: {node: '>=18'}
 
-  os-tmpdir@1.0.2:
-    resolution: {integrity: sha512-D2FR03Vir7FIu45XBY20mTb+/ZSWB00sjU9jdQXt83gDrI4Ztz5Fs7/yy74g2N5SVQY4xY1qDr4rNddwYRVX0g==}
-    engines: {node: '>=0.10.0'}
-
   out-of-character@1.2.4:
     resolution: {integrity: sha512-2/wkZ8i3b1jLeYbHI+jFZBunMQsbBjMZEOlfi/oFtgDuYz7k7etEL3PSa6ZEJKSaJ9RWZpOp8eLnMgovAYTj5w==}
     engines: {node: '>=6.0.0'}
@@ -5047,9 +5043,9 @@ packages:
     resolution: {integrity: sha512-t2T/WLB2WRgZ9EpE4jgPJ9w+i66UZfDc8wHh0xrwiRNN+UwH98GIJkTeZqX9rg0i0ptwzqW+uYeIF0T4F8LR7A==}
     engines: {node: '>=14.0.0'}
 
-  tmp@0.0.33:
-    resolution: {integrity: sha512-jRCJlojKnZ3addtTOjdIqoRuPEKBvNXcGYqzO6zWZX8KfKEpnGY5jfggJQ3EjKuu8D4bJRr0y+cYJFmYbImXGw==}
-    engines: {node: '>=0.6.0'}
+  tmp@0.2.4:
+    resolution: {integrity: sha512-UdiSoX6ypifLmrfQ/XfiawN6hkjSBpCjhKxxZcWlUUmoXLaCKQU0bx4HF/tdDK2uzRuchf1txGvrWBzYREssoQ==}
+    engines: {node: '>=14.14'}
 
   tmpl@1.0.5:
     resolution: {integrity: sha512-3f0uOEAQwIqGuWW2MVzYg8fV/QNnc/IpuJNG837rLuczAaLVHslWHZQj4IGiEl5Hs3kkbhwL9Ab7Hrsmuj+Smw==}
@@ -8464,7 +8460,7 @@ snapshots:
     dependencies:
       chardet: 0.7.0
       iconv-lite: 0.4.24
-      tmp: 0.0.33
+      tmp: 0.2.4
 
   fake-indexeddb@6.0.1: {}
 
@@ -10478,8 +10474,6 @@ snapshots:
       macos-release: 3.4.0
       windows-release: 6.1.0
 
-  os-tmpdir@1.0.2: {}
-
   out-of-character@1.2.4:
     dependencies:
       colorette: 2.0.20
@@ -11566,9 +11560,7 @@ snapshots:
 
   tinyspy@4.0.3: {}
 
-  tmp@0.0.33:
-    dependencies:
-      os-tmpdir: 1.0.2
+  tmp@0.2.4: {}
 
   tmpl@1.0.5: {}
 
