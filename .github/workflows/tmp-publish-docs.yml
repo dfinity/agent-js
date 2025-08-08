@@ -16,12 +16,28 @@ jobs:
         with:
           node_version_file: '.nvmrc'
 
-      - run: pnpm -F docs build
+      - uses: dfinity/ci-tools/actions/extract-version@luca/extract-version-action
+        id: ver
+        with:
+          file: 'package.json'
 
-      - name: Publish docs
-        uses: ./.github/actions/publish-docs
+      - name: Build docs for version
+        working-directory: docs
+        env:
+          BASE_PATH: /core/${{ steps.ver.outputs.major }}/
+        run: pnpm build --outDir dist/${{ steps.ver.outputs.major }}
+
+      - name: Build docs for latest
+        working-directory: docs
+        env:
+          BASE_PATH: /core/latest/
+        run: pnpm build --outDir dist/latest
+
+      - name: Assemble docs
+        uses: dfinity/ci-tools/actions/assemble-docs@luca/assemble-docs-action
         with:
           docs_output_dir: 'docs/dist'
+          docs_version: v${{ steps.ver.outputs.major }}
+          docs_version_label: v${{ steps.ver.outputs.major }}
+          latest_version: v${{ steps.ver.outputs.major }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          docs_version: v4.0.3
-          is_latest: false
