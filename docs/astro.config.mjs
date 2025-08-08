@@ -7,7 +7,7 @@ import { dfinityStarlightTheme } from './src/plugins/theme';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://js.icp.build/',
-  base: '/core/',
+  base: process.env.BASE_PATH ?? '/core/local/',
   integrations: [
     starlight({
       title: 'ICP JS SDK Core',
