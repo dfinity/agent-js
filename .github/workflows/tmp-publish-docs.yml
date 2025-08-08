@@ -24,8 +24,8 @@ jobs:
       - name: Build docs for version
         working-directory: docs
         env:
-          BASE_PATH: /core/${{ steps.ver.outputs.major }}/
-        run: pnpm build --outDir dist/${{ steps.ver.outputs.major }}
+          BASE_PATH: /core/v${{ steps.ver.outputs.major }}/
+        run: pnpm build --outDir dist/v${{ steps.ver.outputs.major }}
 
       - name: Build docs for latest
         working-directory: docs
