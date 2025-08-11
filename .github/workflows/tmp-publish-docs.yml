@@ -42,7 +42,7 @@ jobs:
         uses: dfinity/ci-tools/actions/assemble-docs@b1731b162e1677d5c7a89cf667b77e2b1109baf6
         with:
           docs_output_dir: 'docs/dist'
-          docs_version: v${{ steps.ver.outputs.major }}
-          docs_version_label: v${{ steps.ver.outputs.major }}
-          latest_version: v${{ steps.ver.outputs.major }}
+          docs_version: ${{ steps.ver.outputs.version }}
+          docs_version_label: ${{ steps.ver.outputs.version }}
+          latest_version: ${{ steps.ver.outputs.version }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
