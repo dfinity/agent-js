@@ -6,5 +6,9 @@
   {
     "path": "v3",
     "label": "v3"
+  },
+  {
+    "path": "beta",
+    "label": "Beta"
   }
 ]
