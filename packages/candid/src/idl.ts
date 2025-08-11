@@ -1684,8 +1684,8 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
   }
 }
 
-type GenericFuncArgs = [Type, ...Type[]] | [];
-type GenericFuncRets = [Type, ...Type[]] | [];
+export type GenericIdlFuncArgs = [Type, ...Type[]] | [];
+export type GenericIdlFuncRets = [Type, ...Type[]] | [];
 
 /**
  * Represents an IDL function reference.
@@ -1694,8 +1694,8 @@ type GenericFuncRets = [Type, ...Type[]] | [];
  * @param annotations Function annotations.
  */
 export class FuncClass<
-  Args extends GenericFuncArgs = GenericFuncArgs,
-  Rets extends GenericFuncRets = GenericFuncRets,
+  Args extends GenericIdlFuncArgs = GenericIdlFuncArgs,
+  Rets extends GenericIdlFuncRets = GenericIdlFuncRets,
 > extends ConstructType<[PrincipalId, string]> {
   get typeName() {
     return IdlTypeName.FuncClass;
@@ -1806,11 +1806,11 @@ export class FuncClass<
   }
 }
 
-type GenericServiceFields = Record<string, FuncClass>;
+export type GenericIdlServiceFields = Record<string, FuncClass>;
 
 export class ServiceClass<
   K extends string = string,
-  Fields extends GenericServiceFields = GenericServiceFields,
+  Fields extends GenericIdlServiceFields = GenericIdlServiceFields,
 > extends ConstructType<PrincipalId> {
   get typeName() {
     return IdlTypeName.ServiceClass;
@@ -2327,8 +2327,8 @@ export function Rec(): RecClass {
  * @returns new FuncClass
  */
 export function Func<
-  Args extends GenericFuncArgs = GenericFuncArgs,
-  Ret extends GenericFuncRets = GenericFuncRets,
+  Args extends GenericIdlFuncArgs = GenericIdlFuncArgs,
+  Ret extends GenericIdlFuncRets = GenericIdlFuncRets,
 >(args: Args, ret: Ret, annotations: string[] = []): FuncClass<Args, Ret> {
   return new FuncClass(args, ret, annotations);
 }
@@ -2340,7 +2340,7 @@ export function Func<
  */
 export function Service<
   K extends string = string,
-  Fields extends GenericServiceFields = GenericServiceFields,
+  Fields extends GenericIdlServiceFields = GenericIdlServiceFields,
 >(t: Fields): ServiceClass<K, Fields> {
   return new ServiceClass(t);
 }
