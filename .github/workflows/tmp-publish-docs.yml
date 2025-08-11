@@ -45,7 +45,7 @@ jobs:
           path: icp-pages
 
       - name: Assemble docs
-        uses: dfinity/ci-tools/actions/assemble-docs@62c77c0025a556278392c17d5a9d7f013113e5a6
+        uses: dfinity/ci-tools/actions/assemble-docs@ac005ed55ab9ff680da042b3b9b3a9041d2598ab
         with:
           docs_output_dir: 'docs/dist'
           docs_version: ${{ steps.ver.outputs.version }}
