@@ -45,10 +45,11 @@ jobs:
           path: icp-pages
 
       - name: Assemble docs
-        uses: dfinity/ci-tools/actions/assemble-docs@965d31562a9430df7062e3de160980171de75e9f
+        uses: dfinity/ci-tools/actions/assemble-docs@62c77c0025a556278392c17d5a9d7f013113e5a6
         with:
           docs_output_dir: 'docs/dist'
           docs_version: ${{ steps.ver.outputs.version }}
           docs_version_label: ${{ steps.ver.outputs.version }}
           latest_version: ${{ steps.ver.outputs.version }}
+          icp_pages_dir: 'icp-pages'
           github_token: ${{ secrets.GITHUB_TOKEN }}
