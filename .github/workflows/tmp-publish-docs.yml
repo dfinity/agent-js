@@ -63,4 +63,6 @@ jobs:
       - name: Submit Documentation
         uses: dfinity/ci-tools/actions/submit-docs@luca/submit-docs-action
         with:
+          destination_repo: 'dfinity/icp-js-sdk-docs'
+          source_branch: 'icp-pages'
           token: ${{ steps.generate_token.outputs.token }}
