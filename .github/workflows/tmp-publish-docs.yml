@@ -34,7 +34,7 @@ jobs:
         run: pnpm build --outDir dist/latest
 
       - name: Assemble docs
-        uses: dfinity/ci-tools/actions/assemble-docs@luca/assemble-docs-action
+        uses: dfinity/ci-tools/actions/assemble-docs@be75dec96ed874f1a9c47b9df76994ebfdec5ab3
         with:
           docs_output_dir: 'docs/dist'
           docs_version: v${{ steps.ver.outputs.major }}
