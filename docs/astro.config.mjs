@@ -3,6 +3,7 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import { libsPlugin } from './src/plugins/libs';
 import { dfinityStarlightTheme } from './src/plugins/theme';
+import { versionsPlugin } from './src/plugins/versions';
 
 // https://astro.build/config
 export default defineConfig({
@@ -34,6 +35,7 @@ export default defineConfig({
             },
           ],
         }),
+        versionsPlugin(),
       ],
       sidebar: [
         {
