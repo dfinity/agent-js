@@ -1,0 +1,10 @@
+[
+  {
+    "path": "latest",
+    "label": "latest (v3)"
+  },
+  {
+    "path": "v3",
+    "label": "v3"
+  }
+]
