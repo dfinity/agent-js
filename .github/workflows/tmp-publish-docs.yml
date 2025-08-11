@@ -38,11 +38,11 @@ jobs:
       #     BASE_PATH: /core/latest/
       #   run: pnpm build --outDir dist/latest
 
-      - name: Build docs for version beta
+      - name: Build docs for version next
         working-directory: docs
         env:
-          BASE_PATH: /core/beta/
-        run: pnpm build --outDir dist/beta
+          BASE_PATH: /core/next/
+        run: pnpm build --outDir dist/next
 
       - name: Checkout icp-pages branch
         uses: actions/checkout@v4
@@ -51,10 +51,10 @@ jobs:
           path: icp-pages
 
       - name: Assemble docs
-        uses: dfinity/ci-tools/actions/assemble-docs@1457f3e283537f907cc593a76fa92ede21f22a0e
+        uses: dfinity/ci-tools/actions/assemble-docs@1f4ceaa7a105c2f13ebe79126cc026a992b43648
         with:
           docs_output_dir: 'docs/dist'
-          docs_version: beta
+          docs_version: next
           docs_version_label: Beta
           icp_pages_dir: 'icp-pages'
           github_token: ${{ secrets.GITHUB_TOKEN }}
