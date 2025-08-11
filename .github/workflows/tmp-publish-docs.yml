@@ -61,7 +61,7 @@ jobs:
           icp_pages_dir: 'icp-pages'
 
       - name: Submit Documentation
-        uses: dfinity/ci-tools/actions/submit-docs@luca/submit-docs-action
+        uses: dfinity/ci-tools/actions/submit-docs@3e21d03bce30d70e2c13748e70ae05086107b1b1
         with:
           destination_repo: 'dfinity/icp-js-sdk-docs'
           source_branch: 'icp-pages'
