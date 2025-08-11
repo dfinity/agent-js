@@ -18,10 +18,14 @@ const BASE_URL = import.meta.env.BASE_URL;
 
         const currentBase = BASE_URL.endsWith('/') ? BASE_URL : BASE_URL + '/';
 
-        const versionsUrl = `${BASE_URL}versions.json`;
-        let versions = [{ path: 'local', label: 'local' }];
+        let versions = [];
         if (!IS_DEV) {
             try {
+                const versionsUrl = document.getElementsByName('versions-json-path')[0]?.getAttribute('content');
+                if (!versionsUrl) {
+                    console.error('No versions.json path found');
+                    return;
+                }
                 const res = await fetch(versionsUrl, { cache: 'no-store' });
                 if (res.ok) {
                     const data = await res.json();
@@ -29,7 +33,11 @@ const BASE_URL = import.meta.env.BASE_URL;
                         versions = data;
                     }
                 }
-            } catch {}
+            } catch (e) {
+                console.error('Error fetching versions.json', e);
+            }
+        } else {
+            versions = [{ path: 'local', label: 'local' }];
         }
     
         const currentVersion = (currentBase.replace(/\/$/, '').split('/').pop() || '').toLowerCase();

@@ -5,10 +5,13 @@ import { libsPlugin } from './src/plugins/libs';
 import { dfinityStarlightTheme } from './src/plugins/theme';
 import { versionsPlugin } from './src/plugins/versions';
 
+const BASE_DOCS_PATH = '/core';
+const docsVersion = process.env.DOCS_VERSION ?? 'local';
+
 // https://astro.build/config
 export default defineConfig({
   site: 'https://js.icp.build/',
-  base: process.env.BASE_PATH ?? '/core/local/',
+  base: `${BASE_DOCS_PATH}/${docsVersion}/`,
   integrations: [
     starlight({
       title: 'ICP JS SDK Core',
@@ -35,7 +38,9 @@ export default defineConfig({
             },
           ],
         }),
-        versionsPlugin(),
+        versionsPlugin({
+          versionsJsonPath: `${BASE_DOCS_PATH}/versions.json`,
+        }),
       ],
       sidebar: [
         {
