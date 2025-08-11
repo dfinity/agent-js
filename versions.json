@@ -1,15 +1,19 @@
 [
   {
     "path": "latest",
-    "label": "latest (v5.1)"
+    "label": "latest (v3)"
   },
   {
     "path": "v3",
-    "label": "Version 3"
+    "label": "v3"
   },
   {
     "path": "v4",
     "label": "Version 4"
+  },
+  {
+    "path": "v4.0.3",
+    "label": "v4.0.3"
   },
   {
     "path": "v5",
@@ -18,9 +22,5 @@
   {
     "path": "v5.1",
     "label": "v5.1"
-  },
-  {
-    "path": "v4.0.3",
-    "label": "v4.0.3"
   }
 ]
