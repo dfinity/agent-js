@@ -9,6 +9,13 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.head_ref == 'luca/SDK-2264-push-docs' }}
     steps:
+      - name: Create GitHub App Token
+        uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e # v2.0.6
+        id: generate_token
+        with:
+          app-id: ${{ vars.PR_AUTOMATION_BOT_PUBLIC_APP_ID }}
+          private-key: ${{ secrets.PR_AUTOMATION_BOT_PUBLIC_PRIVATE_KEY }}
+
       - uses: actions/checkout@v4
 
       - name: Setup PNPM
@@ -52,3 +59,8 @@ jobs:
           docs_version_label: ${{ steps.ver.outputs.version }}
           latest_version: ${{ steps.ver.outputs.version }}
           icp_pages_dir: 'icp-pages'
+
+      - name: Submit Documentation
+        uses: dfinity/ci-tools/actions/submit-docs@luca/submit-docs-action
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
