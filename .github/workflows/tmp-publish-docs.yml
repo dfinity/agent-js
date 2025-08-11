@@ -26,23 +26,17 @@ jobs:
         run: |
           echo "version=v${{ steps.extract-version.outputs.major }}" >> $GITHUB_OUTPUT
 
-      # - name: Build docs for version ${{ steps.ver.outputs.version }}
-      #   working-directory: docs
-      #   env:
-      #     BASE_PATH: /core/${{ steps.ver.outputs.version }}/
-      #   run: pnpm build --outDir dist/${{ steps.ver.outputs.version }}
-
-      # - name: Build docs for version latest
-      #   working-directory: docs
-      #   env:
-      #     BASE_PATH: /core/latest/
-      #   run: pnpm build --outDir dist/latest
-
-      - name: Build docs for version next
+      - name: Build docs for version ${{ steps.ver.outputs.version }}
         working-directory: docs
         env:
-          BASE_PATH: /core/next/
-        run: pnpm build --outDir dist/next
+          BASE_PATH: /core/${{ steps.ver.outputs.version }}/
+        run: pnpm build --outDir dist/${{ steps.ver.outputs.version }}
+
+      - name: Build docs for version latest
+        working-directory: docs
+        env:
+          BASE_PATH: /core/latest/
+        run: pnpm build --outDir dist/latest
 
       - name: Checkout icp-pages branch
         uses: actions/checkout@v4
@@ -51,10 +45,10 @@ jobs:
           path: icp-pages
 
       - name: Assemble docs
-        uses: dfinity/ci-tools/actions/assemble-docs@1f4ceaa7a105c2f13ebe79126cc026a992b43648
+        uses: dfinity/ci-tools/actions/assemble-docs@luca/assemble-docs-action
         with:
           docs_output_dir: 'docs/dist'
-          docs_version: next
-          docs_version_label: Beta
+          docs_version: ${{ steps.ver.outputs.version }}
+          docs_version_label: ${{ steps.ver.outputs.version }}
+          latest_version: ${{ steps.ver.outputs.version }}
           icp_pages_dir: 'icp-pages'
-          github_token: ${{ secrets.GITHUB_TOKEN }}
