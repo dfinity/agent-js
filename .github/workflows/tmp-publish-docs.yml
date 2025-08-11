@@ -38,8 +38,14 @@ jobs:
           BASE_PATH: /core/latest/
         run: pnpm build --outDir dist/latest
 
+      - name: Checkout icp-pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: icp-pages
+          path: icp-pages
+
       - name: Assemble docs
-        uses: dfinity/ci-tools/actions/assemble-docs@b1731b162e1677d5c7a89cf667b77e2b1109baf6
+        uses: dfinity/ci-tools/actions/assemble-docs@965d31562a9430df7062e3de160980171de75e9f
         with:
           docs_output_dir: 'docs/dist'
           docs_version: ${{ steps.ver.outputs.version }}
