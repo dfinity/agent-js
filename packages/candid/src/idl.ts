@@ -1684,7 +1684,14 @@ export class PrincipalClass extends PrimitiveType<PrincipalId> {
   }
 }
 
+/**
+ * The generic type of the arguments of an {@link Func|IDL Function}.
+ */
 export type GenericIdlFuncArgs = [Type, ...Type[]] | [];
+
+/**
+ * The generic type of the return values of an {@link Func|IDL Function}.
+ */
 export type GenericIdlFuncRets = [Type, ...Type[]] | [];
 
 /**
@@ -1806,6 +1813,9 @@ export class FuncClass<
   }
 }
 
+/**
+ * The generic type of the fields of an {@link Service|IDL Service}.
+ */
 export type GenericIdlServiceFields = Record<string, FuncClass>;
 
 export class ServiceClass<
