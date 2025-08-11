@@ -17,24 +17,29 @@ jobs:
           node_version_file: '.nvmrc'
 
       - uses: dfinity/ci-tools/actions/extract-version@luca/extract-version-action
-        id: ver
+        id: extract-version
         with:
           file: 'package.json'
 
-      - name: Build docs for version
+      - name: Prepare version
+        id: ver
+        run: |
+          echo "version=v${{ steps.extract-version.outputs.major }}" >> $GITHUB_OUTPUT
+
+      - name: Build docs for version ${{ steps.ver.outputs.version }}
         working-directory: docs
         env:
-          BASE_PATH: /core/v${{ steps.ver.outputs.major }}/
-        run: pnpm build --outDir dist/v${{ steps.ver.outputs.major }}
+          BASE_PATH: /core/${{ steps.ver.outputs.version }}/
+        run: pnpm build --outDir dist/${{ steps.ver.outputs.version }}
 
-      - name: Build docs for latest
+      - name: Build docs for version latest
         working-directory: docs
         env:
           BASE_PATH: /core/latest/
         run: pnpm build --outDir dist/latest
 
       - name: Assemble docs
-        uses: dfinity/ci-tools/actions/assemble-docs@e7a23b307ec728909594191295a533de7d03114a
+        uses: dfinity/ci-tools/actions/assemble-docs@b1731b162e1677d5c7a89cf667b77e2b1109baf6
         with:
           docs_output_dir: 'docs/dist'
           docs_version: v${{ steps.ver.outputs.major }}
