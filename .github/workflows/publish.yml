@@ -36,6 +36,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      # TODO: remove this step once we migrate to the new docs deployment workflow
       - name: Deploy Docs to Juno satellite
         uses: junobuild/juno-action@main
         with:
@@ -44,6 +45,8 @@ jobs:
           JUNO_TOKEN: ${{ secrets.JUNO_TOKEN }}
           PROJECT_PATH: docs
 
+  # For now, this job only runs in parallel to test the new docs deployment workflow
+  # TODO: make it depend on the publish job once we remove the docs deployment step from the publish job
   publish-docs:
     if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')
     runs-on: ubuntu-latest
