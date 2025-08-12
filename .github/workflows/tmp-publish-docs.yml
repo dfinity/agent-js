@@ -57,7 +57,7 @@ jobs:
           docs_output_dir: 'docs/dist'
           docs_version: ${{ steps.ver.outputs.version }}
           docs_version_label: ${{ steps.ver.outputs.version }}
-          latest_version: ${{ steps.ver.outputs.version }}
+          latest_version_label: 'latest (${{ steps.ver.outputs.version }})'
           icp_pages_dir: 'icp-pages'
 
       - name: Submit Documentation
