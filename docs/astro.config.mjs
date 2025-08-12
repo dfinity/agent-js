@@ -5,7 +5,7 @@ import { libsPlugin } from './src/plugins/libs';
 import { dfinityStarlightTheme } from './src/plugins/theme';
 import { versionsPlugin } from './src/plugins/versions';
 
-const BASE_DOCS_PATH = '/core';
+const BASE_DOCS_PATH = '/agent';
 const docsVersion = process.env.DOCS_VERSION ?? 'local';
 
 // https://astro.build/config
@@ -14,7 +14,7 @@ export default defineConfig({
   base: `${BASE_DOCS_PATH}/${docsVersion}/`,
   integrations: [
     starlight({
-      title: 'ICP JS SDK Core',
+      title: 'ICP JS SDK Agent',
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/dfinity/agent-js' }],
       plugins: [
         dfinityStarlightTheme(),
