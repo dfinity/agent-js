@@ -254,6 +254,7 @@ export function libsPlugin(opts: LibsLoaderOptions): StarlightPlugin {
 
         ctx.updateConfig({
           sidebar: [
+            { label: 'Overview', link: '/' },
             { label: 'Libraries', items: librarySidebarItems },
             ...(ctx.config.sidebar || []),
             ...sidebarItems,

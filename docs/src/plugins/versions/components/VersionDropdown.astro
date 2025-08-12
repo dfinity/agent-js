@@ -47,8 +47,8 @@ const BASE_URL = import.meta.env.BASE_URL;
 
         select.innerHTML = '';
         for (const v of versions) {
-            const newBase = currentBase.replace(/([^/]+)\/$/, `${v.path}/`);
-            const href = pathname.replace(currentBase, newBase) + search + hash;
+            const newBase = BASE_URL.replace(/([^/]+)\/$/, `${v.path}/`);
+            const href = pathname.replace(BASE_URL, newBase) + search + hash;
             const opt = document.createElement('option');
             opt.value = href;
             opt.textContent = v.label;
