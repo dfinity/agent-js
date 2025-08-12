@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- fix: export the `GenericIdlFuncArgs`, `GenericIdlFuncRets`, and `GenericIdlServiceFields` types from `@dfinity/candid`.
+
 ## [3.2.0] - 2025-08-07
 
 - fix: do not subtract the replica permitted clock drift when calculating the ingress expiry.
