@@ -1,6 +1,6 @@
 {
   "name": "@dfinity/use-auth-client",
-  "version": "3.2.0",
+  "version": "3.2.1",
   "description": "React hooks for using the auth client",
   "type": "module",
   "browser": "./lib/esm/index.js",
