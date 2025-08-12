@@ -16,8 +16,6 @@ const BASE_URL = import.meta.env.BASE_URL;
             return;
         }
 
-        const currentBase = BASE_URL.endsWith('/') ? BASE_URL : BASE_URL + '/';
-
         let versions = [];
         if (!IS_DEV) {
             try {
@@ -36,13 +34,17 @@ const BASE_URL = import.meta.env.BASE_URL;
             } catch (e) {
                 console.error('Error fetching versions.json', e);
             }
-        } else {
-            versions = [{ path: 'local', label: 'local' }];
         }
-    
-        const currentVersion = (currentBase.replace(/\/$/, '').split('/').pop() || '').toLowerCase();
+
+        const currentVersion = (BASE_URL.replace(/\/$/, '').split('/').pop() || '').toLowerCase();
         const { pathname, search, hash } = window.location;
-    
+
+        // If the current URL's base segment doesn't match any known versions,
+        // add a synthetic option so users can see/select the current build.
+        if (!versions.some(v => v.path.toLowerCase() === currentVersion)) {
+            versions.unshift({ path: currentVersion, label: currentVersion });
+        }
+
         select.innerHTML = '';
         for (const v of versions) {
             const newBase = currentBase.replace(/([^/]+)\/$/, `${v.path}/`);
@@ -55,7 +57,7 @@ const BASE_URL = import.meta.env.BASE_URL;
             }
             select.appendChild(opt);
         }
-    
+
         select.addEventListener('change', () => {
             const href = select.value;
             const current = pathname + search + hash;
