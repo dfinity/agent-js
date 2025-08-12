@@ -43,3 +43,66 @@ jobs:
         env:
           JUNO_TOKEN: ${{ secrets.JUNO_TOKEN }}
           PROJECT_PATH: docs
+
+  publish-docs:
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create GitHub App Token
+        uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e # v2.0.6
+        id: generate_token
+        with:
+          app-id: ${{ vars.PR_AUTOMATION_BOT_PUBLIC_APP_ID }}
+          private-key: ${{ secrets.PR_AUTOMATION_BOT_PUBLIC_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: icp-js-sdk-docs
+
+      - uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: dfinity/ci-tools/actions/setup-pnpm@main
+        with:
+          node_version_file: '.nvmrc'
+
+      - uses: dfinity/ci-tools/actions/extract-version@luca/extract-version-action
+        id: extract-version
+        with:
+          file: 'package.json'
+
+      - name: Prepare version
+        id: ver
+        run: |
+          echo "version=v${{ steps.extract-version.outputs.major }}" >> $GITHUB_OUTPUT
+
+      - name: Build docs for version ${{ steps.ver.outputs.version }}
+        working-directory: docs
+        env:
+          DOCS_VERSION: ${{ steps.ver.outputs.version }}
+        run: pnpm build --outDir dist/${{ steps.ver.outputs.version }}
+
+      - name: Build docs for version latest
+        working-directory: docs
+        env:
+          DOCS_VERSION: latest
+        run: pnpm build --outDir dist/latest
+
+      - name: Checkout icp-pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: icp-pages
+          path: icp-pages
+
+      - name: Assemble docs
+        uses: dfinity/ci-tools/actions/assemble-docs@luca/assemble-docs-action
+        with:
+          docs_output_dir: 'docs/dist'
+          docs_version: ${{ steps.ver.outputs.version }}
+          docs_version_label: ${{ steps.ver.outputs.version }}
+          latest_version_label: 'latest (${{ steps.ver.outputs.version }})'
+          icp_pages_dir: 'icp-pages'
+
+      - name: Submit Documentation
+        uses: dfinity/ci-tools/actions/submit-docs@luca/submit-docs-action
+        with:
+          destination_repo: 'dfinity/icp-js-sdk-docs'
+          token: ${{ steps.generate_token.outputs.token }}
