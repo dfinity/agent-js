@@ -25,7 +25,7 @@ jobs:
         with:
           node_version_file: '.nvmrc'
 
-      - uses: dfinity/ci-tools/actions/extract-version@luca/assemble-docs-action
+      - uses: dfinity/ci-tools/actions/extract-version@main
         id: extract-version
         with:
           file: 'package.json'
@@ -54,7 +54,7 @@ jobs:
           path: icp-pages
 
       - name: Assemble docs
-        uses: dfinity/ci-tools/actions/assemble-docs@luca/assemble-docs-action
+        uses: dfinity/ci-tools/actions/assemble-docs@main
         with:
           assets_dir: 'docs/dist/${{ steps.ver.outputs.version }}'
           version: ${{ steps.ver.outputs.version }}
@@ -62,7 +62,7 @@ jobs:
           version_label: 'Version ${{ steps.ver.outputs.version }}'
 
       - name: Assemble docs
-        uses: dfinity/ci-tools/actions/assemble-docs@luca/assemble-docs-action
+        uses: dfinity/ci-tools/actions/assemble-docs@main
         with:
           assets_dir: 'docs/dist/latest'
           version: 'latest'
@@ -70,7 +70,7 @@ jobs:
           version_label: 'Latest (${{ steps.ver.outputs.version }})'
 
       - name: Submit Documentation
-        uses: dfinity/ci-tools/actions/submit-docs@luca/assemble-docs-action
+        uses: dfinity/ci-tools/actions/submit-docs@main
         with:
           destination_repo: 'dfinity/icp-js-sdk-docs'
           token: ${{ steps.generate_token.outputs.token }}
