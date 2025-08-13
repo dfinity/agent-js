@@ -56,14 +56,21 @@ jobs:
       - name: Assemble docs
         uses: dfinity/ci-tools/actions/assemble-docs@luca/assemble-docs-action
         with:
-          docs_output_dir: 'docs/dist'
-          docs_version: ${{ steps.ver.outputs.version }}
-          docs_version_label: ${{ steps.ver.outputs.version }}
-          latest_version_label: 'latest (${{ steps.ver.outputs.version }})'
-          icp_pages_dir: 'icp-pages'
+          assets_dir: 'docs/dist/${{ steps.ver.outputs.version }}'
+          version: ${{ steps.ver.outputs.version }}
+          target_dir: 'icp-pages'
+          version_label: 'Version ${{ steps.ver.outputs.version }}'
+
+      - name: Assemble docs
+        uses: dfinity/ci-tools/actions/assemble-docs@luca/assemble-docs-action
+        with:
+          assets_dir: 'docs/dist/latest'
+          version: 'latest'
+          target_dir: 'icp-pages'
+          version_label: 'Latest (${{ steps.ver.outputs.version }})'
 
       - name: Submit Documentation
-        uses: dfinity/ci-tools/actions/submit-docs@main
+        uses: dfinity/ci-tools/actions/submit-docs@luca/assemble-docs-action
         with:
           destination_repo: 'dfinity/icp-js-sdk-docs'
           token: ${{ steps.generate_token.outputs.token }}
