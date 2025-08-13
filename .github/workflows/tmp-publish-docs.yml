@@ -25,7 +25,7 @@ jobs:
         with:
           node_version_file: '.nvmrc'
 
-      - uses: dfinity/ci-tools/actions/extract-version@luca/extract-version-action
+      - uses: dfinity/ci-tools/actions/extract-version@luca/assemble-docs-action
         id: extract-version
         with:
           file: 'package.json'
@@ -74,3 +74,4 @@ jobs:
         with:
           destination_repo: 'dfinity/icp-js-sdk-docs'
           token: ${{ steps.generate_token.outputs.token }}
+          target_dir: 'icp-pages'
