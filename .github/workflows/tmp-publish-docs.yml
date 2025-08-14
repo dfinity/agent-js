@@ -33,13 +33,14 @@ jobs:
       - name: Prepare version
         id: ver
         run: |
-          echo "version=v${{ steps.extract-version.outputs.major }}" >> $GITHUB_OUTPUT
+          echo "major_version=v${{ steps.extract-version.outputs.major }}" >> $GITHUB_OUTPUT
+          echo "major_minor_patch_version=v${{ steps.extract-version.outputs.major }}.${{ steps.extract-version.outputs.minor }}.${{ steps.extract-version.outputs.patch }}" >> $GITHUB_OUTPUT
 
-      - name: Build docs for version ${{ steps.ver.outputs.version }}
+      - name: Build docs for version ${{ steps.ver.outputs.major_version }}
         working-directory: docs
         env:
-          DOCS_VERSION: ${{ steps.ver.outputs.version }}
-        run: pnpm build --outDir dist/${{ steps.ver.outputs.version }}
+          DOCS_VERSION: ${{ steps.ver.outputs.major_version }}
+        run: pnpm build --outDir dist/${{ steps.ver.outputs.major_version }}
 
       - name: Build docs for version latest
         working-directory: docs
@@ -56,10 +57,10 @@ jobs:
       - name: Assemble docs
         uses: dfinity/ci-tools/actions/assemble-docs@main
         with:
-          assets_dir: 'docs/dist/${{ steps.ver.outputs.version }}'
-          version: ${{ steps.ver.outputs.version }}
+          assets_dir: 'docs/dist/${{ steps.ver.outputs.major_version }}'
+          version: ${{ steps.ver.outputs.major_version }}
           target_dir: 'icp-pages'
-          version_label: 'Version ${{ steps.ver.outputs.version }}'
+          version_label: '${{ steps.ver.outputs.major_version }}.x'
 
       - name: Assemble docs
         uses: dfinity/ci-tools/actions/assemble-docs@main
@@ -67,7 +68,7 @@ jobs:
           assets_dir: 'docs/dist/latest'
           version: 'latest'
           target_dir: 'icp-pages'
-          version_label: 'Latest (${{ steps.ver.outputs.version }})'
+          version_label: 'Latest (${{ steps.ver.outputs.major_minor_patch_version }})'
 
       - name: Submit Documentation
         uses: dfinity/ci-tools/actions/submit-docs@main
