@@ -9,6 +9,18 @@ const BASE_URL = import.meta.env.BASE_URL;
 </div>
 
 <script define:vars={{ IS_DEV, BASE_URL }} is:inline>
+    const BASE_URL_NO_TRAILING_SLASH = BASE_URL.replace(/\/$/, '');
+
+    function removeBaseUrlFromPath(pathname) {
+        const relative = pathname.startsWith(BASE_URL)
+            ? pathname.slice(BASE_URL.length)
+            : pathname.startsWith(BASE_URL_NO_TRAILING_SLASH)
+                ? pathname.slice(BASE_URL_NO_TRAILING_SLASH.length)
+                : pathname;
+
+        return relative.startsWith('/') ? relative.slice(1) : relative;
+    }
+
     async function initVersionDropdown() {
         const select = document.getElementById('sidebar-version-select');
         if (!select || !(select instanceof HTMLSelectElement)) {
@@ -48,7 +60,8 @@ const BASE_URL = import.meta.env.BASE_URL;
         select.innerHTML = '';
         for (const v of versions) {
             const newBase = BASE_URL.replace(/([^/]+)\/$/, `${v.path}/`);
-            const href = pathname.replace(BASE_URL, newBase) + search + hash;
+            const relative = removeBaseUrlFromPath(pathname);
+            const href = newBase + relative + search + hash;
             const opt = document.createElement('option');
             opt.value = href;
             opt.textContent = v.label;
