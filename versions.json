@@ -4,6 +4,10 @@
     "label": "Latest (v3.2.1)"
   },
   {
+    "path": "v3.2",
+    "label": "v3.2"
+  },
+  {
     "path": "v3",
     "label": "v3.x"
   }
