@@ -1,10 +1,13 @@
 ---
 const IS_DEV = import.meta.env.DEV;
 const BASE_URL = import.meta.env.BASE_URL;
+const DOCS_VERSIONS_DROPDOWN_TITLE_VERSION = import.meta.env.DOCS_VERSIONS_DROPDOWN_TITLE_VERSION;
 ---
 
 <div>
-  <label for="sidebar-version-select" class="sidebar-version-select-label">Version</label>
+  <label for="sidebar-version-select" class="sidebar-version-select-label">
+    Version{DOCS_VERSIONS_DROPDOWN_TITLE_VERSION ? ` (${DOCS_VERSIONS_DROPDOWN_TITLE_VERSION})` : ''}
+  </label>
   <select id="sidebar-version-select" aria-label="Select documentation version"></select>
 </div>
 

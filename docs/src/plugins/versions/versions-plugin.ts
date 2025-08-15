@@ -10,6 +10,24 @@ interface VersionsPluginOptions {
   versionsJsonPath: string;
 }
 
+/**
+ * You can set the `DOCS_VERSIONS_DROPDOWN_TITLE_VERSION` environment variable to show a version above the versions dropdown.
+ *
+ * @example
+ * ```bash
+ * DOCS_VERSIONS_DROPDOWN_TITLE_VERSION=v3.2.1 pnpm build
+ * ```
+ *
+ * This will result in:
+ * ```html
+ * <div>
+ *   <label for="sidebar-version-select">Version (v3.2.1)</label>
+ *   <select id="sidebar-version-select" aria-label="Select documentation version">
+ *     <!-- options from {opts.versionsJsonPath} file -->
+ *   </select>
+ * </div>
+ * ```
+ */
 export function versionsPlugin(opts: VersionsPluginOptions): StarlightPlugin {
   return {
     name: 'versions-starlight-plugin',
@@ -17,6 +35,7 @@ export function versionsPlugin(opts: VersionsPluginOptions): StarlightPlugin {
       'config:setup': ctx => {
         ctx.updateConfig({
           head: [
+            ...(ctx.config.head ?? []),
             {
               tag: 'meta',
               attrs: {
@@ -26,6 +45,7 @@ export function versionsPlugin(opts: VersionsPluginOptions): StarlightPlugin {
             },
           ],
           components: {
+            ...ctx.config.components,
             Sidebar: './src/plugins/versions/components/VersionedSidebar.astro',
           },
         });
