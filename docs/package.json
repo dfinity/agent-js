@@ -9,15 +9,12 @@
     "build": "tsc -b tsconfig.libs.json && astro build",
     "preview": "astro preview"
   },
+  "dependencies": {
+    "@junobuild/config": "^0.4.3"
+  },
   "devDependencies": {
     "@astrojs/starlight": "^0.34.4",
     "astro": "^5.12.9",
-    "sharp": "^0.34.2",
-    "typedoc-plugin-frontmatter": "^1.3.0",
-    "typedoc-plugin-markdown": "^4.7.0",
-    "unist-util-visit": "^5.0.0"
-  },
-  "dependencies": {
-    "@junobuild/config": "^0.4.3"
+    "@dfinity/starlight": "workspace:*"
   }
 }
