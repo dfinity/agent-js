@@ -2,9 +2,10 @@
 
 :root {
   --sl-font-system:
-    'CircularXX', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-    'Segoe UI Symbol', 'Noto Color Emoji';
+    "CircularXX", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    "Noto Color Emoji";
 
   --dfn-color-black: hsl(259, 0%, 13%);
   --dfn-color-gray-7: hsl(259, 4%, 13%);
@@ -41,7 +42,7 @@
   --sl-color-black: var(--dfn-color-black);
 }
 
-:root[data-theme='light'] {
+:root[data-theme="light"] {
   --dfn-color-bg-navbar: #e8e4ed;
   --dfn-color-bg-sidebar: #f1eef5;
 
