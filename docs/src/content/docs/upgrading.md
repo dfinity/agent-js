@@ -1,5 +1,9 @@
 # How to upgrade to @icp-sdk/core
 
+The new `@icp-sdk/core` package is made up of multiple submodules, each of which contains the functionality of the old `@dfinity/...` package.
+
+Tree-shaking is supported, so you can only import the submodules you need.
+
 ## Automatic
 
 We provide a CLI tool to automatically upgrade your code to use the new package.
