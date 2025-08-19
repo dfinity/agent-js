@@ -18,7 +18,7 @@ export default defineConfig({
           clean: true,
           baseDir: '../packages',
           typeDoc: {
-            exclude: ['../packages/core'],
+            exclude: ['../packages/core', '../packages/migrate'],
           },
           frontmatter: { editUrl: false, next: true, prev: true },
           additionalFiles: [
