@@ -1,8 +1,12 @@
-# How to upgrade to @icp-sdk/core
+---
+title: Upgrading to @icp-sdk/core
+description: Upgrading guide for the new @icp-sdk/core package
+next:
+  label: Overview
+  link: /core/latest/
+---
 
-The new `@icp-sdk/core` package is made up of multiple submodules, each of which contains the functionality of the old `@dfinity/...` package.
-
-Tree-shaking is supported, so you can only import the submodules you need.
+The new `@icp-sdk/core` package is made up of multiple submodules, each of which contains the functionality of the respective old `@dfinity/...` package.
 
 ## Automatic
 
@@ -137,3 +141,15 @@ Follow these steps to upgrade:
    - import { Principal } from '@dfinity/principal';
    + import { Principal } from '@icp-sdk/core/principal';
    ```
+
+## FAQ
+
+### Workspaces
+
+If you're using a workspace, you must run the migration tool for each package in the workspace that has any `@dfinity/*` dependencies.
+
+A similar approach can be used for monorepos.
+
+### Tree-shaking
+
+Tree-shaking is supported, so you can import only the submodules you need and your bundler will automatically remove the unused code.
