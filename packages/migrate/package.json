@@ -1,6 +1,6 @@
 {
   "name": "@icp-sdk/core-migrate",
-  "version": "0.0.1-beta.1",
+  "version": "0.0.1-beta.2",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "CLI tool to migrate from agent-js to @icp-sdk/core",
@@ -39,8 +39,7 @@
   ],
   "bin": "./dist/cli.js",
   "scripts": {
-    "build": "tsc && esbuild src/index.ts --bundle --outfile=dist/cli.js --platform=node",
-    "dev": "esbuild src/index.ts --bundle --outfile=dist/cli.js --platform=node --watch"
+    "build": "tsc && esbuild src/index.ts --bundle --outfile=dist/cli.js --platform=node && chmod +x dist/cli.js"
   },
   "dependencies": {
     "chalk": "^5.6.0",
