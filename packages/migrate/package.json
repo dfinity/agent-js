@@ -32,6 +32,11 @@
     "api",
     "sdk"
   ],
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
   "bin": "./dist/cli.js",
   "scripts": {
     "build": "tsc && esbuild src/index.ts --bundle --outfile=dist/cli.js --platform=node",
