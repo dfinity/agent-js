@@ -23,8 +23,10 @@ export const DEPENDENCY_MAPPINGS: DependencyMapping[] = [
   },
 ];
 
+// TODO: update to @icp-sdk/core once the package is published
 export const NEW_CORE_PACKAGE = '@icp-sdk/core@beta';
 
+// TODO: update path to /core/v3.2/release-notes/v300/ once the new docs are published
 export const V3_MIGRATION_GUIDE_URL = 'https://js.icp.build/core/release-notes/v300/';
 
 export const DEFAULT_FILES_PATTERNS = [
