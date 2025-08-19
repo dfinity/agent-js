@@ -15,10 +15,10 @@ We provide a CLI tool to automatically upgrade your code to use the new package.
 Simply run the following command in the root of your project:
 
 ```bash
-npx @icp-sdk/migrate@latest
+npx @icp-sdk/core-migrate@latest
 ```
 
-For more migration options, run `npx @icp-sdk/migrate@latest --help`.
+For more migration options, run `npx @icp-sdk/core-migrate@latest --help`.
 
 ## Manual
 
@@ -143,6 +143,18 @@ Follow these steps to upgrade:
    ```
 
 ## FAQ
+
+### TypeScript `moduleResolution`
+
+If you're using TypeScript, you need to set the [`moduleResolution`](https://www.typescriptlang.org/tsconfig/#moduleResolution) to either `node16`, `nodenext` or `bundler` in your `tsconfig.json` file.
+
+```json
+{
+  "compilerOptions": {
+    "moduleResolution": "node16"
+  }
+}
+```
 
 ### Workspaces
 

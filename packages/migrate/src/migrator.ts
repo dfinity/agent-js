@@ -85,11 +85,11 @@ export class Migrator {
 
       // Step 1: Remove old dependencies
       console.log(chalk.blue('Step 1: Removing old @dfinity dependencies...'));
-      this.dependencyManager.removeDependencies(dependenciesToRemove.map(([depName]) => depName));
+      this.dependencyManager.removeDependencies(dependenciesToRemove.map(dep => dep.name));
 
       // Step 2: Add new core package
       console.log(chalk.blue('\nStep 2: Adding @icp-sdk/core package...'));
-      this.dependencyManager.addCorePackage();
+      this.dependencyManager.addCorePackage(dependenciesToRemove);
 
       // Step 3: Migrate source code
       console.log(chalk.blue('\nStep 3: Migrating source code imports...'));

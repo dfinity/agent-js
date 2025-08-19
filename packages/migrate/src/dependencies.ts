@@ -1,31 +1,65 @@
 /* eslint-disable jsdoc/require-jsdoc */
 
 import { DEPENDENCY_MAPPINGS } from './constants.ts';
-import type { GenericPackageJson } from './types.ts';
+import type { GenericPackageJson, DependencyInfo } from './types.ts';
 
-type DependencyWithVersion = [string, string];
-
-export function getDependenciesToRemove(
-  packageJson: GenericPackageJson,
-): Array<DependencyWithVersion> {
-  const allDeps = {
-    ...packageJson.dependencies,
-    ...packageJson.devDependencies,
-    ...packageJson.peerDependencies,
-  };
-
-  return Object.entries(allDeps).filter(
-    ([depName]) =>
-      depName.startsWith('@dfinity/') &&
-      DEPENDENCY_MAPPINGS.find(mapping => mapping.oldPackage === depName),
+function shouldRemoveDependency(depName: string): boolean {
+  return (
+    depName.startsWith('@dfinity/') &&
+    DEPENDENCY_MAPPINGS.some(mapping => mapping.oldPackage === depName)
   );
+}
+
+export function getDependenciesToRemove(packageJson: GenericPackageJson): DependencyInfo[] {
+  const result: DependencyInfo[] = [];
+
+  // Check dependencies (highest priority)
+  if (packageJson.dependencies) {
+    for (const [depName, depVersion] of Object.entries(packageJson.dependencies)) {
+      if (shouldRemoveDependency(depName)) {
+        result.push({
+          name: depName,
+          version: depVersion,
+          type: 'dependencies',
+        });
+      }
+    }
+  }
+
+  // Check peerDependencies (medium priority)
+  if (packageJson.peerDependencies) {
+    for (const [depName, depVersion] of Object.entries(packageJson.peerDependencies)) {
+      if (shouldRemoveDependency(depName) && !result.find(dep => dep.name === depName)) {
+        result.push({
+          name: depName,
+          version: depVersion,
+          type: 'peerDependencies',
+        });
+      }
+    }
+  }
+
+  // Check devDependencies (lowest priority)
+  if (packageJson.devDependencies) {
+    for (const [depName, depVersion] of Object.entries(packageJson.devDependencies)) {
+      if (shouldRemoveDependency(depName) && !result.find(dep => dep.name === depName)) {
+        result.push({
+          name: depName,
+          version: depVersion,
+          type: 'devDependencies',
+        });
+      }
+    }
+  }
+
+  return result;
 }
 
 export function hasDfinityDependencies(packageJson: GenericPackageJson): boolean {
   return getDependenciesToRemove(packageJson).length > 0;
 }
 
-export function isV2Version(version: string): boolean {
+function isV2Version(version: string): boolean {
   // Remove range operators and extract the major version
   // Handle operators like ^, ~, >=, <=, >, <, =, etc.
   const cleanVersion = version.replace(/^[\^~>=<]+\s*/, '');
@@ -33,10 +67,10 @@ export function isV2Version(version: string): boolean {
   return majorVersion === 2;
 }
 
-export function hasV2Dependencies(parsedDependencies: Array<DependencyWithVersion>): boolean {
-  return parsedDependencies.some(([, depVersion]) => isV2Version(depVersion));
+export function hasV2Dependencies(dependencies: DependencyInfo[]): boolean {
+  return dependencies.some(dep => isV2Version(dep.version));
 }
 
-export function printDependency([depName, depVersion]: DependencyWithVersion): string {
-  return `${depName}@${depVersion}`;
+export function printDependency(dep: DependencyInfo): string {
+  return `${dep.name}@${dep.version}`;
 }

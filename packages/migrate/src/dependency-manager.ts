@@ -1,5 +1,5 @@
 import { execSync } from 'child_process';
-import type { ProjectInfo } from './types.ts';
+import type { ProjectInfo, DependencyInfo } from './types.ts';
 import { NEW_CORE_PACKAGE } from './constants.ts';
 
 export class DependencyManager {
@@ -23,9 +23,26 @@ export class DependencyManager {
     }
   }
 
-  addCorePackage(): void {
-    const command = this.buildAddCommand([NEW_CORE_PACKAGE]);
-    console.log(`Adding ${NEW_CORE_PACKAGE} dependency`);
+  addCorePackage(removedDependencies: DependencyInfo[]): void {
+    // Determine the best dependency type to use based on removed dependencies
+    // Priority: dependencies -> peerDependencies -> devDependencies
+    let targetType: 'dependencies' | 'peerDependencies' | 'devDependencies' = 'dependencies';
+
+    for (const dep of removedDependencies) {
+      if (dep.type === 'dependencies') {
+        targetType = 'dependencies';
+        break;
+      } else if (dep.type === 'peerDependencies') {
+        targetType = 'peerDependencies';
+        break;
+      } else {
+        targetType = 'devDependencies';
+        break;
+      }
+    }
+
+    const command = this.buildAddCommand([NEW_CORE_PACKAGE], targetType);
+    console.log(`Adding ${NEW_CORE_PACKAGE} as ${targetType}`);
 
     try {
       execSync(command, {
@@ -52,16 +69,36 @@ export class DependencyManager {
     }
   }
 
-  private buildAddCommand(dependencies: string[]): string {
+  private buildAddCommand(
+    dependencies: string[],
+    depType: 'dependencies' | 'peerDependencies' | 'devDependencies',
+  ): string {
+    const depFlag = this.getDependencyFlag(depType);
+
     switch (this.projectInfo.packageManager) {
       case 'npm':
-        return `npm install ${dependencies.join(' ')}`;
+        return `npm install ${depFlag} ${dependencies.join(' ')}`;
       case 'yarn':
-        return `yarn add ${dependencies.join(' ')}`;
+        return `yarn add ${depFlag} ${dependencies.join(' ')}`;
       case 'pnpm':
-        return `pnpm add ${dependencies.join(' ')}`;
+        return `pnpm add ${depFlag} ${dependencies.join(' ')}`;
       default:
         throw new Error(`Unsupported package manager: ${this.projectInfo.packageManager}`);
+    }
+  }
+
+  private getDependencyFlag(
+    depType: 'dependencies' | 'peerDependencies' | 'devDependencies',
+  ): string {
+    switch (depType) {
+      case 'dependencies':
+        return '';
+      case 'peerDependencies':
+        return '--save-peer';
+      case 'devDependencies':
+        return '--save-dev';
+      default:
+        return '';
     }
   }
 }

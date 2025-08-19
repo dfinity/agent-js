@@ -15,6 +15,12 @@ export type GenericPackageJson = {
   peerDependencies: Record<string, string>;
 };
 
+export interface DependencyInfo {
+  name: string;
+  version: string;
+  type: keyof GenericPackageJson;
+}
+
 export interface ProjectInfo {
   packageManager: PackageManager;
   rootDir: string;
@@ -25,7 +31,7 @@ export interface MigrationResult {
   success: boolean;
   filesProcessed: number;
   importsReplaced: number;
-  dependenciesRemoved: Array<[string, string]>;
+  dependenciesRemoved: DependencyInfo[];
   dependenciesAdded: string[];
   errors: string[];
 }

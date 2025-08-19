@@ -1,4 +1,4 @@
-# @icp-sdk/migrate
+# @icp-sdk/core-migrate
 
 CLI tool to automatically migrate your project from `agent-js` packages to `@icp-sdk/core`.
 
@@ -28,13 +28,13 @@ Run the migration tool in your project directory.
 With `npm`:
 
 ```bash
-npx @icp-sdk/migrate@latest
+npx @icp-sdk/core-migrate@latest
 ```
 
 With `pnpm`:
 
 ```bash
-pnpm dlx @icp-sdk/migrate@latest
+pnpm dlx @icp-sdk/core-migrate@latest
 ```
 
-For more options, run `npx @icp-sdk/migrate@latest --help`.
+For more options, run `npx @icp-sdk/core-migrate@latest --help`.

@@ -8,7 +8,7 @@ import chalk from 'chalk';
 import { PackageManager } from './types.ts';
 import { detectPackageManager } from './package-manager.ts';
 
-const CLI_TOOL_NAME = '@icp-sdk/migrate';
+const CLI_TOOL_NAME = '@icp-sdk/core-migrate';
 const CLI_TOOL_VERSION = '1.0.0-beta.0';
 
 type CliOptions = {
