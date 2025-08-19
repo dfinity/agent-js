@@ -261,22 +261,19 @@ importers:
   packages/core:
     dependencies:
       '@dfinity/agent':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../agent
-      '@dfinity/auth-client':
-        specifier: workspace:*
-        version: link:../auth-client
       '@dfinity/candid':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../candid
       '@dfinity/identity':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../identity
       '@dfinity/identity-secp256k1':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../identity-secp256k1
       '@dfinity/principal':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../principal
 
   packages/identity:
