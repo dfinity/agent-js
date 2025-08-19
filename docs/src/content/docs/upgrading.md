@@ -14,6 +14,8 @@ Simply run the following command in the root of your project:
 npx @icp-sdk/migrate@latest
 ```
 
+For more migration options, run `npx @icp-sdk/migrate@latest --help`.
+
 ## Manual
 
 ### From `@dfinity/agent`

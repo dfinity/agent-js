@@ -1,8 +1,13 @@
 import { DependencyManager } from './dependency-manager.ts';
 import { CodeMigrator } from './code-migrator.ts';
 import { readPackageJson, hasPackageJson } from './package-manager.ts';
-import { DEPENDENCY_MAPPINGS, NEW_CORE_PACKAGE, V3_MIGRATION_GUIDE_URL } from './constants.ts';
-import type { MigrationResult, PackageManager } from './types.ts';
+import {
+  DEPENDENCY_MAPPINGS,
+  NEW_CORE_PACKAGE,
+  V3_RELEASE_NOTES_URL,
+  V4_UPGRADING_GUIDE_URL,
+} from './constants.ts';
+import { type MigrationResult, PackageManager } from './types.ts';
 import chalk from 'chalk';
 import {
   getDependenciesToRemove,
@@ -62,7 +67,7 @@ export class Migrator {
           console.log(chalk.red(`  - ${printDependency(dep)}`));
         });
         console.log(chalk.red('\nTo upgrade to v3, please follow the migration guide:'));
-        console.log(chalk.blue(V3_MIGRATION_GUIDE_URL));
+        console.log(chalk.blue(V3_RELEASE_NOTES_URL));
         console.log(chalk.red('\nNote: This check includes only direct dependencies.'));
         console.log(
           chalk.red(
@@ -115,6 +120,13 @@ export class Migrator {
       };
 
       console.error(chalk.red(`\n❌ Migration failed: ${error}`));
+      console.log(chalk.yellow('\n💡 Need help?'));
+      console.log(
+        chalk.yellow(
+          "If you're experiencing issues with the migration, please refer to the upgrading guide:",
+        ),
+      );
+      console.log(chalk.blue(V4_UPGRADING_GUIDE_URL));
       return errorResult;
     }
   }

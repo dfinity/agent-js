@@ -2,19 +2,19 @@
 
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
-import type { GenericPackageJson } from './types.ts';
+import { type GenericPackageJson, PackageManager } from './types.ts';
 
-export function detectPackageManager(rootDir: string): 'npm' | 'yarn' | 'pnpm' {
+export function detectPackageManager(rootDir: string): PackageManager {
   if (existsSync(join(rootDir, 'pnpm-lock.yaml'))) {
-    return 'pnpm';
+    return PackageManager.PNPM;
   }
   if (existsSync(join(rootDir, 'yarn.lock'))) {
-    return 'yarn';
+    return PackageManager.YARN;
   }
   if (existsSync(join(rootDir, 'package-lock.json'))) {
-    return 'npm';
+    return PackageManager.NPM;
   }
-  return 'npm'; // default fallback
+  return PackageManager.NPM; // default fallback
 }
 
 export function readPackageJson(rootDir: string): GenericPackageJson {

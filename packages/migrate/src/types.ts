@@ -3,7 +3,11 @@ export interface DependencyMapping {
   newSubmodule: string;
 }
 
-export type PackageManager = 'npm' | 'yarn' | 'pnpm';
+export enum PackageManager {
+  NPM = 'npm',
+  YARN = 'yarn',
+  PNPM = 'pnpm',
+}
 
 export type GenericPackageJson = {
   dependencies: Record<string, string>;

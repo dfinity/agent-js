@@ -5,7 +5,7 @@ import { Migrator } from './migrator.ts';
 import { DEFAULT_FILES_PATTERNS, DEFAULT_IGNORE_PATTERNS } from './constants.ts';
 import { readGitignorePatterns } from './gitignore.ts';
 import chalk from 'chalk';
-import type { PackageManager } from './types.ts';
+import { PackageManager } from './types.ts';
 import { detectPackageManager } from './package-manager.ts';
 
 const CLI_TOOL_NAME = '@icp-sdk/migrate';
@@ -30,7 +30,7 @@ program
   )
   .option(
     '-m, --package-manager <manager>',
-    `package manager to use. Defaults to the package manager used according to the lock file in the project directory.`,
+    `package manager to use. Supported values: ${Object.values(PackageManager).join(', ')}. Defaults to the package manager used according to the lock file in the project directory.`,
   )
   .action(async (directory: string, options: CliOptions) => {
     try {
