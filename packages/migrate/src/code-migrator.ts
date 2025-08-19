@@ -1,7 +1,6 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { glob } from 'glob';
 import type { DependencyMapping, MigrationResult } from './types.ts';
-import { escapeRegex } from './utils.ts';
 
 export class CodeMigrator {
   constructor(
@@ -80,26 +79,15 @@ export class CodeMigrator {
 
     // Replace imports for each dependency mapping
     for (const mapping of this.dependencyMappings) {
-      const importRegex = this.buildImportRegex(mapping.oldPackage);
-      const matches = newContent.match(importRegex);
+      // Handle all import types by looking for the package name in various contexts
+      const packageRegex = this.buildPackageRegex(mapping.oldPackage);
 
-      if (matches) {
-        newContent = newContent.replace(importRegex, (match, importType, importPath, rest) => {
-          importsReplaced++;
+      newContent = newContent.replace(packageRegex, match => {
+        importsReplaced++;
 
-          // Handle different import patterns
-          if (importPath === '*') {
-            // import * as X from '@dfinity/package'
-            return `${importType} * as ${rest} from '${mapping.newSubmodule}'`;
-          } else if (importPath.includes('{') && importPath.includes('}')) {
-            // import { X, Y } from '@dfinity/package'
-            return `${importType} { ${importPath} } from '${mapping.newSubmodule}'`;
-          } else {
-            // import X from '@dfinity/package'
-            return `${importType} ${importPath} from '${mapping.newSubmodule}'`;
-          }
-        });
-      }
+        // Replace the package name with the new submodule
+        return match.replace(mapping.oldPackage, mapping.newSubmodule);
+      });
     }
 
     // Only write if content changed
@@ -111,19 +99,15 @@ export class CodeMigrator {
     return { importsReplaced };
   }
 
-  private buildImportRegex(packageName: string): RegExp {
-    const escapedPackage = escapeRegex(packageName);
-
-    // Matches various import patterns:
-    // import X from '@dfinity/package'
-    // import { X, Y } from '@dfinity/package'
-    // import * as X from '@dfinity/package'
-    // const X = require('@dfinity/package')
+  private buildPackageRegex(packageName: string): RegExp {
+    // Matches package names in import-related contexts:
+    // from '@dfinity/package'
+    // require('@dfinity/package')
     // import('@dfinity/package')
     return new RegExp(
-      `(import)\\s+([^'"]*)\\s+from\\s+['"]${escapedPackage}['"]|` +
-        `(const|let|var)\\s+([^=]*)=\\s+require\\s*\\(\\s*['"]${escapedPackage}['"]\\s*\\)|` +
-        `(import)\\s*\\(\\s*['"]${escapedPackage}['"]\\s*\\)`,
+      `(?:from\\s+['"]${packageName}['"]|` +
+        `require\\s*\\(\\s*['"]${packageName}['"]\\s*\\)|` +
+        `import\\s*\\(\\s*['"]${packageName}['"]\\s*\\))`,
       'g',
     );
   }

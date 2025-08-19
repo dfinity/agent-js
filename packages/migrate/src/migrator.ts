@@ -1,14 +1,15 @@
 import { DependencyManager } from './dependency-manager.ts';
 import { CodeMigrator } from './code-migrator.ts';
-import {
-  readPackageJson,
-  getDependenciesToRemove,
-  hasDfinityDependencies,
-  hasPackageJson,
-} from './utils.ts';
-import { DEPENDENCY_MAPPINGS, NEW_CORE_PACKAGE } from './constants.ts';
+import { readPackageJson, hasPackageJson } from './package-manager.ts';
+import { DEPENDENCY_MAPPINGS, NEW_CORE_PACKAGE, V3_MIGRATION_GUIDE_URL } from './constants.ts';
 import type { MigrationResult, PackageManager } from './types.ts';
 import chalk from 'chalk';
+import {
+  getDependenciesToRemove,
+  hasDfinityDependencies,
+  hasV2Dependencies,
+  printDependency,
+} from './dependencies.ts';
 
 export class Migrator {
   private dependencyManager: DependencyManager;
@@ -53,15 +54,33 @@ export class Migrator {
       }
 
       const dependenciesToRemove = getDependenciesToRemove(packageJson);
+      if (hasV2Dependencies(dependenciesToRemove)) {
+        console.log(chalk.red('❌ Migration blocked: Found agent-js v2 dependencies'));
+        console.log(chalk.red('Please upgrade to agent-js v3 before migrating to @icp-sdk/core'));
+        console.log(chalk.red('\nV2 dependencies found:'));
+        dependenciesToRemove.forEach(dep => {
+          console.log(chalk.red(`  - ${printDependency(dep)}`));
+        });
+        console.log(chalk.red('\nTo upgrade to v3, please follow the migration guide:'));
+        console.log(chalk.blue(V3_MIGRATION_GUIDE_URL));
+        console.log(chalk.red('\nNote: This check includes only direct dependencies.'));
+        console.log(
+          chalk.red(
+            'If you continue to see v2 dependencies after upgrading, check your lock file and/or your dependency tree.',
+          ),
+        );
+        process.exit(1);
+      }
+
       console.log(
         chalk.cyan(
-          `📦 Found @dfinity dependencies to migrate: ${dependenciesToRemove.join(', ')}\n`,
+          `📦 Found @dfinity dependencies to migrate: ${dependenciesToRemove.map(printDependency).join(', ')}\n`,
         ),
       );
 
       // Step 1: Remove old dependencies
       console.log(chalk.blue('Step 1: Removing old @dfinity dependencies...'));
-      this.dependencyManager.removeDependencies(dependenciesToRemove);
+      this.dependencyManager.removeDependencies(dependenciesToRemove.map(([depName]) => depName));
 
       // Step 2: Add new core package
       console.log(chalk.blue('\nStep 2: Adding @icp-sdk/core package...'));
@@ -101,11 +120,12 @@ export class Migrator {
   }
 
   private printSummary(result: MigrationResult): void {
-    console.log(chalk.green('\n🎉 Migration completed successfully!'));
     console.log(chalk.cyan('\n📊 Summary:'));
     console.log(`   • Files processed: ${result.filesProcessed}`);
     console.log(`   • Imports replaced: ${result.importsReplaced}`);
-    console.log(`   • Dependencies removed: ${result.dependenciesRemoved.join(', ')}`);
+    console.log(
+      `   • Dependencies removed: ${result.dependenciesRemoved.map(printDependency).join(', ')}`,
+    );
     console.log(`   • Dependencies added: ${result.dependenciesAdded.join(', ')}`);
 
     if (result.errors.length > 0) {
@@ -118,5 +138,6 @@ export class Migrator {
     console.log('   2. Run your tests to ensure everything works correctly');
     console.log('   3. Update any documentation that references the old packages');
     console.log('   4. Commit your changes');
+    console.log(chalk.green('\n✨ Migration completed successfully!'));
   }
 }

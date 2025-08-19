@@ -3,9 +3,10 @@ import { resolve } from 'path';
 import { existsSync } from 'fs';
 import { Migrator } from './migrator.ts';
 import { DEFAULT_FILES_PATTERNS, DEFAULT_IGNORE_PATTERNS } from './constants.ts';
-import { detectPackageManager, readGitignorePatterns } from './utils.ts';
+import { readGitignorePatterns } from './gitignore.ts';
 import chalk from 'chalk';
 import type { PackageManager } from './types.ts';
+import { detectPackageManager } from './package-manager.ts';
 
 const CLI_TOOL_NAME = '@icp-sdk/migrate';
 const CLI_TOOL_VERSION = '1.0.0-beta.0';
@@ -70,8 +71,6 @@ program
         );
         process.exit(1);
       }
-
-      console.log(chalk.green('\n✨ Migration completed successfully!'));
     } catch (error) {
       console.error(chalk.red(`\n❌ Unexpected error: ${error}`));
       console.error(chalk.red(error instanceof Error && error.stack ? error.stack : String(error)));

@@ -1,10 +1,15 @@
 export interface DependencyMapping {
   oldPackage: string;
   newSubmodule: string;
-  description: string;
 }
 
 export type PackageManager = 'npm' | 'yarn' | 'pnpm';
+
+export type GenericPackageJson = {
+  dependencies: Record<string, string>;
+  devDependencies: Record<string, string>;
+  peerDependencies: Record<string, string>;
+};
 
 export interface ProjectInfo {
   packageManager: PackageManager;
@@ -16,7 +21,7 @@ export interface MigrationResult {
   success: boolean;
   filesProcessed: number;
   importsReplaced: number;
-  dependenciesRemoved: string[];
+  dependenciesRemoved: Array<[string, string]>;
   dependenciesAdded: string[];
   errors: string[];
 }

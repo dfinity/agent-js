@@ -34,7 +34,7 @@
   ],
   "bin": "./dist/cli.js",
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --outfile=dist/cli.js --platform=node",
+    "build": "tsc && esbuild src/index.ts --bundle --outfile=dist/cli.js --platform=node",
     "dev": "esbuild src/index.ts --bundle --outfile=dist/cli.js --platform=node --watch"
   },
   "dependencies": {
