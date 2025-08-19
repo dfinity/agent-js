@@ -4,6 +4,7 @@ import { DEPENDENCY_MAPPINGS } from './constants.ts';
 import type { GenericPackageJson } from './types.ts';
 
 type DependencyWithVersion = [string, string];
+
 export function getDependenciesToRemove(
   packageJson: GenericPackageJson,
 ): Array<DependencyWithVersion> {
