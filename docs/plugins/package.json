@@ -1,0 +1,45 @@
+{
+  "name": "@dfinity/starlight",
+  "version": "0.0.0",
+  "author": "DFINITY Stiftung <sdk@dfinity.org>",
+  "license": "Apache-2.0",
+  "description": "DFINITY plugins for Starlight.",
+  "homepage": "https://github.com/dfinity/starlight-plugins/README.md",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dfinity/starlight-plugins.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dfinity/starlight-plugins/issues"
+  },
+  "keywords": [
+    "dfinity",
+    "starlight",
+    "plugins",
+    "theme"
+  ],
+  "peerDependencies": {
+    "@astrojs/starlight": "^0.35.2",
+    "astro": "^5.12.9"
+  },
+  "dependencies": {
+    "typedoc": "^0.28.10",
+    "typedoc-plugin-markdown": "^4.8.1",
+    "yaml": "^2.8.1",
+    "unist-util-visit": "^5.0.0"
+  },
+  "devDependencies": {
+    "@astrojs/starlight": "^0.35.2",
+    "astro": "^5.12.9"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./src/mod.ts",
+    "./assets/icp.svg": "./src/assets/icp.svg",
+    "./assets/theme.css": "./src/assets/theme.css",
+    "./additional-files": "./src/additional-files.ts",
+    "./libs": "./src/libs.ts",
+    "./markdown-urls": "./src/markdown-urls.ts",
+    "./theme": "./src/theme.ts"
+  }
+}

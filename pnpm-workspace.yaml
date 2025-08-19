@@ -1,6 +1,6 @@
 packages:
   - docs
-  - packages/migrate
+  - docs/plugins
   - e2e/node
   - packages/agent
   - packages/assets
@@ -9,6 +9,7 @@ packages:
   - packages/core
   - packages/identity
   - packages/identity-secp256k1
+  - packages/migrate
   - packages/principal
   - packages/use-auth-client
 onlyBuiltDependencies:

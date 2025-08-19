@@ -1,8 +1,10 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
-import { libsPlugin } from './src/plugins/libs';
-import { dfinityStarlightTheme } from './src/plugins/theme';
+import { additionalFilesPlugin } from '@dfinity/starlight/additional-files';
+import { markdownUrlsPlugin } from '@dfinity/starlight/markdown-urls';
+import { dfinityStarlightTheme } from '@dfinity/starlight/theme';
+import { libsPlugin } from '@dfinity/starlight/libs';
 
 // https://astro.build/config
 export default defineConfig({
@@ -14,6 +16,7 @@ export default defineConfig({
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/dfinity/agent-js' }],
       plugins: [
         dfinityStarlightTheme(),
+        markdownUrlsPlugin(),
         libsPlugin({
           clean: true,
           baseDir: '../packages',
@@ -21,6 +24,8 @@ export default defineConfig({
             exclude: ['../packages/core', '../packages/migrate'],
           },
           frontmatter: { editUrl: false, next: true, prev: true },
+        }),
+        additionalFilesPlugin({
           additionalFiles: [
             {
               path: '../CHANGELOG.md',
