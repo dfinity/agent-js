@@ -1,0 +1,9 @@
+@layer overrides {
+  .sl-link-button {
+    border-radius: var(--dfn-border-radius);
+  }
+
+  .card {
+    border-radius: var(--dfn-border-radius);
+  }
+}
