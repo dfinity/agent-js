@@ -14,7 +14,7 @@ We provide a CLI tool to automatically upgrade your code to use the new package.
 
 Simply run the following command in the root of your project:
 
-```bash
+```shell
 npx @icp-sdk/core-migrate@latest
 ```
 
@@ -22,124 +22,44 @@ For more migration options, run `npx @icp-sdk/core-migrate@latest --help`.
 
 ## Manual
 
-### From `@dfinity/agent`
+Everything previously exported from the individual `@dfinity/*` packages is now
+exported from a `@icp-sdk/core/*` submodule.
 
-Everything that was previously exported from `@dfinity/agent` is now exported from the `@icp-sdk/core/agent` submodule.
+1. Remove the following packages, if present:
 
-Follow these steps to upgrade:
+   - `@dfinity/agent`
+   - `@dfinity/candid`
+   - `@dfinity/identity`
+   - `@dfinity/identity-secp256k1`
+   - `@dfinity/principal`
 
-1. Remove the `@dfinity/agent` dependency from your project:
+   E.g.
 
-   ```bash
-   npm remove @dfinity/agent
+   ```shell
+   npm remove @dfinity/{agent,candid,identity,identity-secp256k1,principal}
    ```
 
-2. Add the `@icp-sdk/core` dependency to your project:
+2. Install the new `@icp-sdk/core` package:
 
-   ```bash
+   ```shell
    npm i @icp-sdk/core
    ```
 
-3. Replace all the `@dfinity/agent` imports with `@icp-sdk/core/agent` in your code. For example:
+3. Replace old imports with new imports, if present:
+
+   | Old Import                    | New Import                         |
+   | ----------------------------- | ---------------------------------- |
+   | `@dfinity/agent`              | `@icp-sdk/core/agent`              |
+   | `@dfinity/candid`             | `@icp-sdk/core/candid`             |
+   | `@dfinity/identity`           | `@icp-sdk/core/identity`           |
+   | `@dfinity/identity-secp256k1` | `@icp-sdk/core/identity-secp256k1` |
+   | `@dfinity/principal`          | `@icp-sdk/core/principal`          |
+
+   E.g.
+
    ```ts
    - import { HttpAgent } from '@dfinity/agent';
    + import { HttpAgent } from '@icp-sdk/core/agent';
-   ```
-
-### From `@dfinity/candid`
-
-Everything that was previously exported from `@dfinity/candid` is now exported from the `@icp-sdk/core/candid` submodule.
-
-Follow these steps to upgrade:
-
-1. Remove the `@dfinity/candid` dependency from your project:
-
-   ```bash
-   npm remove @dfinity/candid
-   ```
-
-2. Add the `@icp-sdk/core` dependency to your project:
-
-   ```bash
-   npm i @icp-sdk/core
-   ```
-
-3. Replace all the `@dfinity/candid` imports with `@icp-sdk/core/candid` in your code. For example:
-   ```ts
-   - import { IDL } from '@dfinity/candid';
-   + import { IDL } from '@icp-sdk/core/candid';
-   ```
-
-### From `@dfinity/identity`
-
-Everything that was previously exported from `@dfinity/identity` is now exported from the `@icp-sdk/core/identity` submodule.
-
-Follow these steps to upgrade:
-
-1. Remove the `@dfinity/identity` dependency from your project:
-
-   ```bash
-   npm remove @dfinity/identity
-   ```
-
-2. Add the `@icp-sdk/core` dependency to your project:
-
-   ```bash
-   npm i @icp-sdk/core
-   ```
-
-3. Replace all the `@dfinity/identity` imports with `@icp-sdk/core/identity` in your code. For example:
-   ```ts
-   - import { Ed25519Identity } from '@dfinity/identity';
-   + import { Ed25519Identity } from '@icp-sdk/core/identity';
-   ```
-
-### From `@dfinity/identity-secp256k1`
-
-Everything that was previously exported from `@dfinity/identity-secp256k1` is now exported from the `@icp-sdk/core/identity-secp256k1` submodule.
-
-Follow these steps to upgrade:
-
-1. Remove the `@dfinity/identity-secp256k1` dependency from your project:
-
-   ```bash
-   npm remove @dfinity/identity-secp256k1
-   ```
-
-2. Add the `@icp-sdk/core` dependency to your project:
-
-   ```bash
-   npm i @icp-sdk/core
-   ```
-
-3. Replace all the `@dfinity/identity-secp256k1` imports with `@icp-sdk/core/identity-secp256k1` in your code. For example:
-   ```ts
-   - import { Secp256k1Identity } from '@dfinity/identity-secp256k1';
-   + import { Secp256k1Identity } from '@icp-sdk/core/identity-secp256k1';
-   ```
-
-### From `@dfinity/principal`
-
-Everything that was previously exported from `@dfinity/principal` is now exported from the `@icp-sdk/core/principal` submodule.
-
-Follow these steps to upgrade:
-
-1. Remove the `@dfinity/principal` dependency from your project:
-
-   ```bash
-   npm remove @dfinity/principal
-   ```
-
-2. Add the `@icp-sdk/core` dependency to your project:
-
-   ```bash
-   npm i @icp-sdk/core
-   ```
-
-3. Replace all the `@dfinity/principal` imports with `@icp-sdk/core/principal` in your code. For example:
-   ```ts
-   - import { Principal } from '@dfinity/principal';
-   + import { Principal } from '@icp-sdk/core/principal';
    ```
 
 ## FAQ

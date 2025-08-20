@@ -27,13 +27,13 @@ Run the migration tool in your project directory.
 
 With `npm`:
 
-```bash
+```shell
 npx @icp-sdk/core-migrate@latest
 ```
 
 With `pnpm`:
 
-```bash
+```shell
 pnpm dlx @icp-sdk/core-migrate@latest
 ```
 
