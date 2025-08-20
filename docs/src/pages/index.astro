@@ -26,7 +26,7 @@ import icpSvg from '@dfinity/starlight/assets/icp.svg';
   }}
 >
   <section>
-    <h3>Libraries</h3>
+    <h3>Modules</h3>
 
     <CardGrid>
       <Card title="Agent">
@@ -34,23 +34,7 @@ import icpSvg from '@dfinity/starlight/assets/icp.svg';
         other JavaScript runtimes.
 
         <LinkButton href="libs/agent" variant="minimal" icon="right-caret" iconPlacement="start">
-          See <code class="dfn-text-highlight">@dfinity/agent</code> docs
-        </LinkButton>
-      </Card>
-
-      <Card title="Assets">
-        Manage assets on an Internet Computer assets canister.
-
-        <LinkButton href="libs/assets" variant="minimal" icon="right-caret" iconPlacement="start">
-          See <code class="dfn-text-highlight">@dfinity/assets</code> docs
-        </LinkButton>
-      </Card>
-
-      <Card title="Auth Client">
-        Simple interface to get your web application authenticated with the Internet Identity Service.
-
-        <LinkButton href="libs/auth-client" variant="minimal" icon="right-caret" iconPlacement="start">
-          See <code class="dfn-text-highlight">@dfinity/auth-client</code> docs
+          See <code class="dfn-text-highlight">@icp-sdk/core/agent</code> docs
         </LinkButton>
       </Card>
 
@@ -58,7 +42,7 @@ import icpSvg from '@dfinity/starlight/assets/icp.svg';
         JavaScript and TypeScript library to work with Candid interfaces.
 
         <LinkButton href="libs/candid" variant="minimal" icon="right-caret" iconPlacement="start">
-          See <code class="dfn-text-highlight">@dfinity/candid</code> docs
+          See <code class="dfn-text-highlight">@icp-sdk/core/candid</code> docs
         </LinkButton>
       </Card>
 
@@ -66,15 +50,7 @@ import icpSvg from '@dfinity/starlight/assets/icp.svg';
         JavaScript and TypeScript library to manage Identities and enable simple Web Authentication flows.
 
         <LinkButton href="libs/identity" variant="minimal" icon="right-caret" iconPlacement="start">
-          See <code class="dfn-text-highlight">@dfinity/identity</code> docs
-        </LinkButton>
-      </Card>
-
-      <Card title="Identity Secp256k1">
-        The `Secp256k1KeyIdentity` package provides an implementation of the `SignIdentity` interface for the `secp256k1` elliptic curve.
-
-        <LinkButton href="libs/identity-secp256k1" variant="minimal" icon="right-caret" iconPlacement="start">
-          See <code class="dfn-text-highlight">@dfinity/identity-secp256k1</code> docs
+          See <code class="dfn-text-highlight">@icp-sdk/core/identity</code> docs
         </LinkButton>
       </Card>
 
@@ -87,24 +63,35 @@ import icpSvg from '@dfinity/starlight/assets/icp.svg';
           icon="right-caret"
           iconPlacement="start"
         >
-          See <code class="dfn-text-highlight">@dfinity/principal</code> docs
+          See <code class="dfn-text-highlight">@icp-sdk/core/principal</code> docs
         </LinkButton>
       </Card>
 
-      <Card title="Use Auth Client">
-        A package for Internet Computer React developers, making it easier to integrate the auth-client with your React application.
-
-        <LinkButton href="libs/use-auth-client" variant="minimal" icon="right-caret" iconPlacement="start">
-          See <code class="dfn-text-highlight">@dfinity/use-auth-client</code> docs
-        </LinkButton>
-      </Card>
     </CardGrid>
   </section>
 
   <section>
     <h3>Upgrading</h3>
 
-      <Card title="v3">
+    <CardGrid>
+      <Card title="ICP JS SDK Core">
+        <p>
+          If you're using <code>@dfinity/agent</code> version 3.x, you can migrate to
+          <code>@icp-sdk/core</code> with the help of our automated migration tools or manual migration
+          guide.
+        </p>
+
+        <LinkButton
+          href="upgrading/v4"
+          variant="minimal"
+          icon="right-caret"
+          iconPlacement="start"
+        >
+          Migrate to <code class="dfn-text-highlight">@icp-sdk/core</code>
+        </LinkButton>
+      </Card>
+
+      <Card title="Agent JS v3">
         <p>
           If you're still using <code>@dfinity/agent</code> version 2.x, you can migrate to 3.x with
           the help of our migration guide.

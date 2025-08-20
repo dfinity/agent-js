@@ -10,9 +10,6 @@ import { versionedSidebarPlugin } from '@dfinity/starlight/versioned-sidebar';
 const BASE_DOCS_PATH = '/core';
 const docsVersion = process.env.DOCS_VERSION ?? 'local';
 
-const UPGRADE_BANNER_CONTENT =
-  'Still using <code>@dfinity/agent</code>? Migrate to <a href="/core/latest/upgrading/v4">@icp-sdk/core</a>!';
-
 // https://astro.build/config
 export default defineConfig({
   site: 'https://js.icp.build/',
@@ -37,9 +34,6 @@ export default defineConfig({
             editUrl: false,
             next: true,
             prev: true,
-            banner: {
-              content: UPGRADE_BANNER_CONTENT,
-            },
           },
         }),
         additionalFilesPlugin({
@@ -52,9 +46,6 @@ export default defineConfig({
                 editUrl: false,
                 next: false,
                 prev: false,
-                banner: {
-                  content: UPGRADE_BANNER_CONTENT,
-                },
               },
             },
           ],
