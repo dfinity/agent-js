@@ -42,8 +42,8 @@ export default defineConfig({
       ],
       sidebar: [
         {
-          label: 'Release Notes',
-          autogenerate: { directory: 'release-notes', collapsed: true },
+          label: 'Upgrading',
+          autogenerate: { directory: 'upgrading', collapsed: true },
         },
       ],
     }),
