@@ -7,7 +7,7 @@ import {
   Ed25519KeyIdentity,
   ECDSAKeyIdentity,
 } from '@icp-sdk/core/identity';
-import { Secp256k1KeyIdentity } from '@icp-sdk/core/identity-secp256k1';
+import { Secp256k1KeyIdentity } from '@icp-sdk/core/identity/secp256k1';
 import agent, { makeAgent } from '../utils/agent.ts';
 import whoamiCanister from '../canisters/whoami.ts';
 import { test, expect } from 'vitest';
