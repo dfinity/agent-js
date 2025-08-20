@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "@astrojs/starlight": "^0.34.4",
-    "astro": "^5.12.9",
-    "@dfinity/starlight": "workspace:*"
+    "@dfinity/starlight": "workspace:*",
+    "astro": "^5.13.2"
   }
 }
