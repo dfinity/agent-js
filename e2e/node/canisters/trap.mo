@@ -1,7 +1,7 @@
 import Debug "mo:base/Debug";
 import Error "mo:base/Error";
 
-actor {
+persistent actor {
 
   func doTrap (n:Nat) {
      if (n <= 0)
