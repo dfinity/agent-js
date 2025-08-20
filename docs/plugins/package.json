@@ -20,17 +20,17 @@
   ],
   "peerDependencies": {
     "@astrojs/starlight": "^0.35.2",
-    "astro": "^5.12.9"
+    "astro": "^5.13.2"
   },
   "dependencies": {
     "typedoc": "^0.28.10",
     "typedoc-plugin-markdown": "^4.8.1",
-    "yaml": "^2.8.1",
-    "unist-util-visit": "^5.0.0"
+    "unist-util-visit": "^5.0.0",
+    "yaml": "^2.8.1"
   },
   "devDependencies": {
     "@astrojs/starlight": "^0.35.2",
-    "astro": "^5.12.9"
+    "astro": "^5.13.2"
   },
   "type": "module",
   "exports": {
