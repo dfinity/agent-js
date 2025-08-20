@@ -5,7 +5,7 @@ import { additionalFilesPlugin } from '@dfinity/starlight/additional-files';
 import { markdownUrlsPlugin } from '@dfinity/starlight/markdown-urls';
 import { dfinityStarlightTheme } from '@dfinity/starlight/theme';
 import { libsPlugin } from '@dfinity/starlight/libs';
-import { versionsPlugin } from './src/plugins/versions';
+import { versionedSidebarPlugin } from '@dfinity/starlight/versioned-sidebar';
 
 const BASE_DOCS_PATH = '/agent';
 const docsVersion = process.env.DOCS_VERSION ?? 'local';
@@ -43,7 +43,7 @@ export default defineConfig({
             },
           ],
         }),
-        versionsPlugin({
+        versionedSidebarPlugin({
           versionsJsonPath: `${BASE_DOCS_PATH}/versions.json`,
         }),
       ],

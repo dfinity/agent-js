@@ -3,7 +3,7 @@ import type { StarlightPlugin } from '@astrojs/starlight/types';
 /**
  * Options for the VersionsPlugin.
  */
-interface VersionsPluginOptions {
+interface VersionedSidebarPluginOptions {
   /**
    * The path at which the `versions.json` file is served in production.
    */
@@ -28,7 +28,7 @@ interface VersionsPluginOptions {
  * </div>
  * ```
  */
-export function versionsPlugin(opts: VersionsPluginOptions): StarlightPlugin {
+export function versionedSidebarPlugin(opts: VersionedSidebarPluginOptions): StarlightPlugin {
   return {
     name: 'versions-starlight-plugin',
     hooks: {
@@ -46,7 +46,7 @@ export function versionsPlugin(opts: VersionsPluginOptions): StarlightPlugin {
           ],
           components: {
             ...ctx.config.components,
-            Sidebar: './src/plugins/versions/components/VersionedSidebar.astro',
+            Sidebar: '@dfinity/starlight/versioned-sidebar/components/VersionedSidebar.astro',
           },
         });
       },
