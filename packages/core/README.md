@@ -49,7 +49,7 @@ The package provides the following import paths for accessing the re-exported mo
 - `@icp-sdk/core/agent`
 - `@icp-sdk/core/candid`
 - `@icp-sdk/core/identity`
-- `@icp-sdk/core/identity-secp256k1`
+  - `@icp-sdk/core/identity/secp256k1`
 - `@icp-sdk/core/principal`
 
 ## Usage Example

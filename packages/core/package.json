@@ -74,12 +74,12 @@
       "require": "./lib/cjs/identity/index.js",
       "default": "./lib/esm/identity/index.js"
     },
-    "./identity-secp256k1": {
-      "types": "./lib/esm/identity-secp256k1/index.d.ts",
-      "import": "./lib/esm/identity-secp256k1/index.js",
-      "node": "./lib/cjs/identity-secp256k1/index.js",
-      "require": "./lib/cjs/identity-secp256k1/index.js",
-      "default": "./lib/esm/identity-secp256k1/index.js"
+    "./identity/secp256k1": {
+      "types": "./lib/esm/identity/secp256k1/index.d.ts",
+      "import": "./lib/esm/identity/secp256k1/index.js",
+      "node": "./lib/cjs/identity/secp256k1/index.js",
+      "require": "./lib/cjs/identity/secp256k1/index.js",
+      "default": "./lib/esm/identity/secp256k1/index.js"
     },
     "./principal": {
       "types": "./lib/esm/principal/index.d.ts",
