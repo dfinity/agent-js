@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- fix: add `bigint` to the `JsonValue` types in `@dfinity/candid`.
+
 ## [3.2.1] - 2025-08-12
 
 - fix: export the `GenericIdlFuncArgs`, `GenericIdlFuncRets`, and `GenericIdlServiceFields` types from `@dfinity/candid`.
