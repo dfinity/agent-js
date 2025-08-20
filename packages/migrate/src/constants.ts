@@ -15,7 +15,7 @@ export const DEPENDENCY_MAPPINGS: DependencyMapping[] = [
   },
   {
     oldPackage: '@dfinity/identity-secp256k1',
-    newSubmodule: '@icp-sdk/core/identity-secp256k1',
+    newSubmodule: '@icp-sdk/core/identity/secp256k1',
   },
   {
     oldPackage: '@dfinity/principal',

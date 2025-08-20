@@ -51,7 +51,7 @@ exported from a `@icp-sdk/core/*` submodule.
    | `@dfinity/agent`              | `@icp-sdk/core/agent`              |
    | `@dfinity/candid`             | `@icp-sdk/core/candid`             |
    | `@dfinity/identity`           | `@icp-sdk/core/identity`           |
-   | `@dfinity/identity-secp256k1` | `@icp-sdk/core/identity-secp256k1` |
+   | `@dfinity/identity-secp256k1` | `@icp-sdk/core/identity/secp256k1` |
    | `@dfinity/principal`          | `@icp-sdk/core/principal`          |
 
    E.g.
@@ -108,7 +108,7 @@ The `@dfinity/assets` and `@dfinity/auth-client` packages are not included in `@
 
 ### `@dfinity/use-auth-client`
 
-The `@dfinity/use-auth-client` package is not included in `@icp-sdk/core` and will be deprecated soon. Please consider using other libraries instead. Recommended alternatives:
+The `@dfinity/use-auth-client` package is not included in `@icp-sdk/core` and **will be deprecated soon**. Please consider using other libraries instead. Recommended alternatives:
 
 - [ic-use-internet-identity](https://www.npmjs.com/package/ic-use-internet-identity)
 - [@ic-reactor/react](https://www.npmjs.com/package/@ic-reactor/react)
