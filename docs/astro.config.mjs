@@ -1,5 +1,5 @@
 // @ts-check
-import { defineConfig } from 'astro/config';
+import { defineConfig, passthroughImageService } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import { additionalFilesPlugin } from '@dfinity/starlight/additional-files';
 import { markdownUrlsPlugin } from '@dfinity/starlight/markdown-urls';
@@ -14,6 +14,9 @@ const docsVersion = process.env.DOCS_VERSION ?? 'local';
 export default defineConfig({
   site: 'https://js.icp.build/',
   base: `${BASE_DOCS_PATH}/${docsVersion}/`,
+  image: {
+    service: passthroughImageService(),
+  },
   integrations: [
     starlight({
       title: 'ICP JS SDK Core',

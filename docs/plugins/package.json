@@ -36,7 +36,10 @@
   "exports": {
     ".": "./src/mod.ts",
     "./assets/icp.svg": "./src/assets/icp.svg",
+    "./assets/layers.css": "./src/assets/layers.css",
     "./assets/theme.css": "./src/assets/theme.css",
+    "./assets/overrides.css": "./src/assets/overrides.css",
+    "./assets/elements.css": "./src/assets/elements.css",
     "./additional-files": "./src/additional-files.ts",
     "./libs": "./src/libs.ts",
     "./markdown-urls": "./src/markdown-urls.ts",
