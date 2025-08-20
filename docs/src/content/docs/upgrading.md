@@ -88,3 +88,27 @@ A similar approach can be used for monorepos.
 ### Tree-shaking
 
 Tree-shaking is supported, so you can import only the submodules you need and your bundler will automatically remove the unused code.
+
+### Using `@dfinity/*` packages in other places than imports
+
+The `@icp-sdk/core-migrate` CLI tool only replaces the `@dfinity/*` occurrences in imports. If you are using `@dfinity/*` packages somewhere else in your code, e.g. in tests mocks, you will need to find and replace the occurrences **manually**.
+
+E.g.
+
+```diff
+- vi.mock('@dfinity/agent', () => ({
++ vi.mock('@icp-sdk/core/agent', () => ({
+  ...
+}));
+```
+
+### `@dfinity/assets` and `@dfinity/auth-client`
+
+The `@dfinity/assets` and `@dfinity/auth-client` packages are not included in `@icp-sdk/core`. They will be included in other `@icp-sdk/*` packages in the near future. For now, you can still use them.
+
+### `@dfinity/use-auth-client`
+
+The `@dfinity/use-auth-client` package is not included in `@icp-sdk/core` and will be deprecated soon. Please consider using other libraries instead. Recommended alternatives:
+
+- [ic-use-internet-identity](https://www.npmjs.com/package/ic-use-internet-identity)
+- [@ic-reactor/react](https://www.npmjs.com/package/@ic-reactor/react)

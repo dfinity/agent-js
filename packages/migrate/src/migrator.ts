@@ -147,9 +147,12 @@ export class Migrator {
 
     console.log(chalk.blue('\n📝 Next steps:'));
     console.log('   1. Review the changes made to your source files');
-    console.log('   2. Run your tests to ensure everything works correctly');
-    console.log('   3. Update any documentation that references the old packages');
-    console.log('   4. Commit your changes');
+    console.log(
+      '   2. Find and replace any remaining @dfinity/* occurrences (e.g. in tests mocks)',
+    );
+    console.log('   3. Run your tests to ensure everything works correctly');
+    console.log('   4. Update any documentation that references the old packages');
+    console.log('   5. Commit your changes');
     console.log(chalk.green('\n✨ Migration completed successfully!'));
   }
 }

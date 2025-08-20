@@ -14,6 +14,7 @@ This tool automatically performs the migration steps described in the [upgrading
    - `@dfinity/principal`
 2. **Adds new dependency**: Installs `@icp-sdk/core` package
 3. **Updates imports**: Finds and replaces all import statements in your source code to use the new `@icp-sdk/core` package.
+   > Note: this tool only replaces the `@dfinity/*` imports. If you are using `@dfinity/*` packages somewhere else in your code, e.g. in tests mocks, you will need to find and replace the occurrences manually.
 
 ### Supported package managers
 
