@@ -1,6 +1,12 @@
 import { execSync } from 'child_process';
-import type { ProjectInfo, DependencyInfo } from './types.ts';
+import { type ProjectInfo, type DependencyInfo, PackageManager } from './types.ts';
 import { NEW_CORE_PACKAGE } from './constants.ts';
+
+enum DependencyType {
+  Dependencies = 'dependencies',
+  PeerDependencies = 'peerDependencies',
+  DevDependencies = 'devDependencies',
+}
 
 export class DependencyManager {
   constructor(private projectInfo: ProjectInfo) {}
@@ -26,17 +32,17 @@ export class DependencyManager {
   addCorePackage(removedDependencies: DependencyInfo[]): void {
     // Determine the best dependency type to use based on removed dependencies
     // Priority: dependencies -> peerDependencies -> devDependencies
-    let targetType: 'dependencies' | 'peerDependencies' | 'devDependencies' = 'dependencies';
+    let targetType: DependencyType = DependencyType.Dependencies;
 
     for (const dep of removedDependencies) {
-      if (dep.type === 'dependencies') {
-        targetType = 'dependencies';
+      if (dep.type === DependencyType.Dependencies) {
+        targetType = DependencyType.Dependencies;
         break;
-      } else if (dep.type === 'peerDependencies') {
-        targetType = 'peerDependencies';
+      } else if (dep.type === DependencyType.PeerDependencies) {
+        targetType = DependencyType.PeerDependencies;
         break;
       } else {
-        targetType = 'devDependencies';
+        targetType = DependencyType.DevDependencies;
         break;
       }
     }
@@ -57,22 +63,10 @@ export class DependencyManager {
   }
 
   private buildRemoveCommand(dependencies: string[]): string {
-    switch (this.projectInfo.packageManager) {
-      case 'npm':
-        return `npm remove ${dependencies.join(' ')}`;
-      case 'yarn':
-        return `yarn remove ${dependencies.join(' ')}`;
-      case 'pnpm':
-        return `pnpm remove ${dependencies.join(' ')}`;
-      default:
-        throw new Error(`Unsupported package manager: ${this.projectInfo.packageManager}`);
-    }
+    return `${this.projectInfo.packageManager} remove ${dependencies.join(' ')}`;
   }
 
-  private buildAddCommand(
-    dependencies: string[],
-    depType: 'dependencies' | 'peerDependencies' | 'devDependencies',
-  ): string {
+  private buildAddCommand(dependencies: string[], depType: DependencyType): string {
     const depFlag = this.getDependencyFlag(depType);
 
     switch (this.projectInfo.packageManager) {
@@ -87,18 +81,19 @@ export class DependencyManager {
     }
   }
 
-  private getDependencyFlag(
-    depType: 'dependencies' | 'peerDependencies' | 'devDependencies',
-  ): string {
+  private getDependencyFlag(depType: DependencyType): string {
     switch (depType) {
-      case 'dependencies':
+      case DependencyType.Dependencies:
         return '';
-      case 'peerDependencies':
+      case DependencyType.PeerDependencies:
+        if (this.projectInfo.packageManager === PackageManager.YARN) {
+          return '--peer';
+        }
         return '--save-peer';
-      case 'devDependencies':
-        return '--save-dev';
+      case DependencyType.DevDependencies:
+        return '-D';
       default:
-        return '';
+        throw new Error(`Unsupported dependency type: ${depType}`);
     }
   }
 }
