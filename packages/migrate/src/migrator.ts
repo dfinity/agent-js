@@ -1,6 +1,6 @@
 import { DependencyManager } from './dependency-manager.ts';
 import { CodeMigrator } from './code-migrator.ts';
-import { readPackageJson, hasPackageJson } from './package-manager.ts';
+import { readPackageJson } from './package-manager.ts';
 import {
   DEPENDENCY_MAPPINGS,
   NEW_CORE_PACKAGE,
@@ -29,7 +29,6 @@ export class Migrator {
     const projectInfo = {
       packageManager,
       rootDir,
-      hasPackageJson: hasPackageJson(rootDir),
     };
     this.dependencyManager = new DependencyManager(projectInfo);
     this.codeMigrator = new CodeMigrator(

@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { glob } from 'glob';
 import type { DependencyMapping, MigrationResult } from './types.ts';
 
@@ -69,10 +69,6 @@ export class CodeMigrator {
   }
 
   private async migrateFile(filePath: string): Promise<{ importsReplaced: number }> {
-    if (!existsSync(filePath)) {
-      throw new Error(`File not found: ${filePath}`);
-    }
-
     const content = readFileSync(filePath, 'utf-8');
     let newContent = content;
     let importsReplaced = 0;

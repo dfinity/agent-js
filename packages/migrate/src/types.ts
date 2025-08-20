@@ -24,7 +24,6 @@ export interface DependencyInfo {
 export interface ProjectInfo {
   packageManager: PackageManager;
   rootDir: string;
-  hasPackageJson: boolean;
 }
 
 export interface MigrationResult {

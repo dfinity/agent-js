@@ -1,14 +1,10 @@
 /* eslint-disable jsdoc/require-jsdoc */
 
-import { existsSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 
 export function readGitignorePatterns(rootDir: string): string[] {
   const gitignorePath = join(rootDir, '.gitignore');
-
-  if (!existsSync(gitignorePath)) {
-    return [];
-  }
 
   try {
     const content = readFileSync(gitignorePath, 'utf-8');

@@ -19,14 +19,6 @@ export function detectPackageManager(rootDir: string): PackageManager {
 
 export function readPackageJson(rootDir: string): GenericPackageJson {
   const packageJsonPath = join(rootDir, 'package.json');
-  if (!existsSync(packageJsonPath)) {
-    throw new Error('package.json not found in the specified directory');
-  }
-
   const content = readFileSync(packageJsonPath, 'utf-8');
   return JSON.parse(content);
-}
-
-export function hasPackageJson(rootDir: string): boolean {
-  return existsSync(join(rootDir, 'package.json'));
 }
