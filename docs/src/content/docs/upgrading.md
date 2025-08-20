@@ -156,9 +156,13 @@ If you're using TypeScript, you need to set the [`moduleResolution`](https://www
 }
 ```
 
+### Using agent-js v2
+
+If you're using agent-js v2, you need to upgrade to v3 before upgrading to `@icp-sdk/core`. You can find the release notes [here](https://js.icp.build/core/release-notes/v300/).
+
 ### Workspaces
 
-If you're using a workspace, you must run the migration tool for each package in the workspace that has any `@dfinity/*` dependencies.
+If you're using a workspace, you must run the migration tool for each package in the workspace that has any `@dfinity/*` dependencies. You may need to first uninstall the `@dfinity/*` packages manually from all the packages in the workspace before running the migration tool, to avoid version conflicts.
 
 A similar approach can be used for monorepos.
 
