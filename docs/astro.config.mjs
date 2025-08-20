@@ -7,7 +7,7 @@ import { dfinityStarlightTheme } from '@dfinity/starlight/theme';
 import { libsPlugin } from '@dfinity/starlight/libs';
 import { versionedSidebarPlugin } from '@dfinity/starlight/versioned-sidebar';
 
-const BASE_DOCS_PATH = '/agent';
+const BASE_DOCS_PATH = '/core';
 const docsVersion = process.env.DOCS_VERSION ?? 'local';
 
 // https://astro.build/config
@@ -16,7 +16,7 @@ export default defineConfig({
   base: `${BASE_DOCS_PATH}/${docsVersion}/`,
   integrations: [
     starlight({
-      title: 'ICP JS SDK Agent',
+      title: 'ICP JS SDK Core',
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/dfinity/agent-js' }],
       plugins: [
         dfinityStarlightTheme(),
@@ -49,8 +49,8 @@ export default defineConfig({
       ],
       sidebar: [
         {
-          label: 'Release Notes',
-          autogenerate: { directory: 'release-notes', collapsed: true },
+          label: 'Upgrading',
+          autogenerate: { directory: 'upgrading', collapsed: true },
         },
       ],
     }),
