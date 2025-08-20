@@ -26,7 +26,6 @@ Everything previously exported from the individual `@dfinity/*` packages is now
 exported from a `@icp-sdk/core/*` submodule.
 
 1. Remove the following packages, if present:
-
    - `@dfinity/agent`
    - `@dfinity/candid`
    - `@dfinity/identity`
