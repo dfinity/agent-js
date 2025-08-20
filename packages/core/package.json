@@ -39,12 +39,11 @@
     "attw": "attw --pack . --profile node16"
   },
   "peerDependencies": {
-    "@dfinity/agent": "workspace:*",
-    "@dfinity/auth-client": "workspace:*",
-    "@dfinity/candid": "workspace:*",
-    "@dfinity/identity": "workspace:*",
-    "@dfinity/identity-secp256k1": "workspace:*",
-    "@dfinity/principal": "workspace:*"
+    "@dfinity/agent": "workspace:^",
+    "@dfinity/candid": "workspace:^",
+    "@dfinity/identity": "workspace:^",
+    "@dfinity/identity-secp256k1": "workspace:^",
+    "@dfinity/principal": "workspace:^"
   },
   "exports": {
     ".": {
@@ -60,13 +59,6 @@
       "node": "./lib/cjs/agent/index.js",
       "require": "./lib/cjs/agent/index.js",
       "default": "./lib/esm/agent/index.js"
-    },
-    "./auth-client": {
-      "types": "./lib/esm/auth-client/index.d.ts",
-      "import": "./lib/esm/auth-client/index.js",
-      "node": "./lib/cjs/auth-client/index.js",
-      "require": "./lib/cjs/auth-client/index.js",
-      "default": "./lib/esm/auth-client/index.js"
     },
     "./candid": {
       "types": "./lib/esm/candid/index.d.ts",
