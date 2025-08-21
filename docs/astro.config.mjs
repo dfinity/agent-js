@@ -28,7 +28,13 @@ export default defineConfig({
           clean: true,
           baseDir: '../packages',
           typeDoc: {
-            exclude: ['../packages/core', '../packages/migrate'],
+            exclude: [
+              '../packages/core',
+              '../packages/migrate',
+              '../packages/assets',
+              '../packages/auth-client',
+              '../packages/use-auth-client',
+            ],
           },
           frontmatter: {
             editUrl: false,
