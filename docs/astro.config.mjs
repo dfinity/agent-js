@@ -5,11 +5,18 @@ import { additionalFilesPlugin } from '@dfinity/starlight/additional-files';
 import { markdownUrlsPlugin } from '@dfinity/starlight/markdown-urls';
 import { dfinityStarlightTheme } from '@dfinity/starlight/theme';
 import { libsPlugin } from '@dfinity/starlight/libs';
+import { versionedSidebarPlugin } from '@dfinity/starlight/versioned-sidebar';
+
+const BASE_DOCS_PATH = '/core';
+const docsVersion = process.env.DOCS_VERSION ?? 'local';
+
+const UPGRADE_BANNER_CONTENT =
+  'Still using <code>@dfinity/agent</code>? Migrate to <a href="/core/latest/upgrading/v4">@icp-sdk/core</a>!';
 
 // https://astro.build/config
 export default defineConfig({
   site: 'https://js.icp.build/',
-  base: '/core/',
+  base: `${BASE_DOCS_PATH}/${docsVersion}/`,
   image: {
     service: passthroughImageService(),
   },
@@ -26,7 +33,14 @@ export default defineConfig({
           typeDoc: {
             exclude: ['../packages/core', '../packages/migrate'],
           },
-          frontmatter: { editUrl: false, next: true, prev: true },
+          frontmatter: {
+            editUrl: false,
+            next: true,
+            prev: true,
+            banner: {
+              content: UPGRADE_BANNER_CONTENT,
+            },
+          },
         }),
         additionalFilesPlugin({
           additionalFiles: [
@@ -38,9 +52,15 @@ export default defineConfig({
                 editUrl: false,
                 next: false,
                 prev: false,
+                banner: {
+                  content: UPGRADE_BANNER_CONTENT,
+                },
               },
             },
           ],
+        }),
+        versionedSidebarPlugin({
+          versionsJsonPath: `${BASE_DOCS_PATH}/versions.json`,
         }),
       ],
       sidebar: [
