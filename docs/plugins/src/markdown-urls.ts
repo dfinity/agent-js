@@ -40,9 +40,11 @@ const markdownUrlsRemarkPlugin: RemarkPlugin = (
       return;
     }
 
-    // normalize all other relative URLs to the docs directory
+    // if the url is a cross-package link, go back one level and add the api directory
     const normalizedUrl = url.replace(crossPackageUrlRegex, '../../$1/api');
     const absoluteLinkedFilePath = path.resolve(currentFileDir, normalizedUrl);
+
+    // normalize all other relative URLs to the docs directory
     const relativeToDocs = path.relative(docsDir, absoluteLinkedFilePath);
     const nodeUrl = `${baseUrl}${
       relativeToDocs.replace(/(index)?\.mdx?(#.*)?$/, "$2").toLowerCase()
