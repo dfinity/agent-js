@@ -8,12 +8,12 @@ import icpSvg from '@dfinity/starlight/assets/icp.svg';
 <StarlightPage
   frontmatter={{
     title: 'ICP JavaScript SDK Core',
-    template: 'splash',
     banner: {
       content: `Still using <code>@dfinity/agent</code>? Migrate to <a href="/core/latest/upgrading/v4">@icp-sdk/core</a>!`,
     },
     next: false,
     prev: false,
+    tableOfContents: false,
     hero: {
       title: `ICP JavaScript SDK <span class="dfn-text-gradient">Core</span>`,
       tagline:
@@ -23,6 +23,16 @@ import icpSvg from '@dfinity/starlight/assets/icp.svg';
         alt: 'Internet Computer Logo',
       },
     },
+    head: [
+      {
+        tag: 'style',
+        content: `
+          .sl-container {
+            max-width: 70rem;
+          }
+        `
+      }
+    ]
   }}
 >
   <section>

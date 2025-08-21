@@ -1,5 +1,7 @@
 # @dfinity/identity-secp256k1
 
+> Still using `@dfinity/identity-secp256k1`? Migrate to [`@icp-sdk/core`](https://js.icp.build/core/latest/upgrading/v4)!
+
 The Secp256k1KeyIdentity package provides an implementation of the SignIdentity interface for the secp256k1 elliptic curve. It allows you to create and manage key pairs for signing and verification of messages.
 
 Do you want to know more about developing on the Internet Computer? Visit the [Developer Docs](https://internetcomputer.org/docs/home).
