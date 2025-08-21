@@ -6,7 +6,7 @@ You can use it to manage your identity for you, or you can pass it an `idlFactor
 
 Do you want to know more about developing on the Internet Computer? Visit the [Developer Docs](https://internetcomputer.org/docs/home).
 
-Additional API Documentation can be found [here](https://js.icp.build/core/libs/use-auth-client/api).
+Additional API Documentation can be found [here](https://js.icp.build/core/v3.2/libs/use-auth-client/api).
 
 ---
 
