@@ -9,6 +9,7 @@ import { versionedSidebarPlugin } from '@dfinity/starlight/versioned-sidebar';
 
 const BASE_DOCS_PATH = '/core';
 const docsVersion = process.env.DOCS_VERSION ?? 'local';
+const packagesDir = '../packages';
 
 const UPGRADE_BANNER_CONTENT =
   'Still using <code>@dfinity/agent</code>? Migrate to <a href="/core/latest/upgrading/v4">@icp-sdk/core</a>!';
@@ -26,12 +27,17 @@ export default defineConfig({
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/dfinity/agent-js' }],
       plugins: [
         dfinityStarlightTheme(),
-        markdownUrlsPlugin(),
+        markdownUrlsPlugin({
+          packagesDir,
+        }),
         libsPlugin({
           clean: true,
-          baseDir: '../packages',
+          baseDir: packagesDir,
           typeDoc: {
-            exclude: ['../packages/core', '../packages/migrate'],
+            exclude: [
+              `${packagesDir}/core`,
+              `${packagesDir}/migrate`,
+            ],
           },
           frontmatter: {
             editUrl: false,
