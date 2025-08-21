@@ -1,5 +1,6 @@
 {
   "name": "@icp-sdk/core-migrate",
+  "private": true,
   "version": "0.0.1-beta.5",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
