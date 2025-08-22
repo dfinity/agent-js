@@ -1,6 +1,21 @@
 # Changelog
 
-## [Unreleased]
+## [4.0.0] - 2025-08-22
+
+Publishes the new `@icp-sdk/core` package.
+
+This package unifies the following packages:
+- `@dfinity/agent`
+- `@dfinity/candid`
+- `@dfinity/identity`
+- `@dfinity/identity-secp256k1`
+- `@dfinity/principal`
+
+and re-exports them as `@icp-sdk/core/*` submodules.
+
+The `@icp-sdk/core` package does not contain any other changes.
+
+See the [upgrading guide](https://js.icp.build/core/latest/upgrading/v4/) for more information.
 
 ## [3.2.2] - 2025-08-21
 
