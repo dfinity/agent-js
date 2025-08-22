@@ -7,24 +7,32 @@ import { format as prettierFormat } from 'prettier';
 import process from 'process';
 import yaml from 'yaml';
 
-import {fileURLToPath} from 'url';
+import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-console.log(__filename)
+type PartialPnpmWorkspaceConfig = { packages: string[] };
+
+const fileName = fileURLToPath(import.meta.url);
+const dirName = path.dirname(fileName);
+console.log(fileName);
 
 console.time('script duration');
 console.log('Updating package versions...');
 
 // Infer info about workspaces from package.json
-const workspaceConfig = yaml.parse(
-  fs.readFileSync(path.resolve(__dirname, '..', 'pnpm-workspace.yaml')).toString(),
+const workspaceConfig: PartialPnpmWorkspaceConfig = yaml.parse(
+  fs.readFileSync(path.resolve(dirName, '..', 'pnpm-workspace.yaml')).toString(),
 );
 
 const newVersion = process.argv[process.argv.length - 1];
 console.log('New version will be: ' + newVersion);
 
-const excluded = ['e2e/node'];
+const excluded = [
+  'docs',
+  'docs/plugins',
+  'e2e/node',
+  'packages/core',
+  'packages/migrate',
+];
 // Read workspaces from root package.json
 const workspaces = workspaceConfig.packages.filter(workspace => {
   return !excluded.includes(workspace);
@@ -34,7 +42,7 @@ const workspaces = workspaceConfig.packages.filter(workspace => {
 workspaces.push('.');
 
 workspaces.forEach(async workspace => {
-  const packagePath = path.resolve(__dirname, '..', workspace, 'package.json');
+  const packagePath = path.resolve(dirName, '..', workspace, 'package.json');
   console.log(packagePath);
   const json = JSON.parse(fs.readFileSync(packagePath).toString());
 
