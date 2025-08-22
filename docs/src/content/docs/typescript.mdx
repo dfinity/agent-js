@@ -1,0 +1,22 @@
+---
+title: Typescript
+description: Typescript guide for the @icp-sdk/core package.
+next:
+  label: Agent Module
+---
+
+This guide covers the basics of using TypeScript with the `@icp-sdk/core` package.
+
+## Configure the `moduleResolution`
+
+You must configure your TypeScript compiler to use the a modern [`moduleResolution`](https://www.typescriptlang.org/tsconfig#moduleResolution) strategy.
+
+In your `tsconfig.json` file, set the `moduleResolution` to either `node16`, `nodenext`, or `bundler`:
+
+```json
+{
+  "compilerOptions": {
+    "moduleResolution": "node16"
+  }
+}
+```

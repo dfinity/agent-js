@@ -1,25 +1,16 @@
-# @dfinity/principal
+# @icp-sdk/core/principal
 
-> Still using `@dfinity/principal`? Migrate to [`@icp-sdk/core`](https://js.icp.build/core/latest/upgrading/v4)!
+JavaScript and TypeScript module to work with Internet Computer Principals.
 
-JavaScript and TypeScript library to work with Internet Computer Principals
-
-Do you want to know more about developing on the Internet Computer? Visit the [Developer Docs](https://internetcomputer.org/docs/home).
-
-Additional API Documentation can be found [here](https://js.icp.build/core/v3.2/libs/principal/api).
-
----
-
-## Installation
-
-Using Principal:
-
-```shell
-npm i --save @dfinity/principal
-```
-
-### In the browser:
+## Usage
 
 ```ts
-import { Principal } from '@dfinity/principal';
+import { Principal } from '@icp-sdk/core/principal';
+
+const canisterId = Principal.fromText('uqqxf-5h777-77774-qaaaa-cai');
+const anonymousPrincipal = Principal.anonymous();
 ```
+
+## API Reference
+
+Additional API Documentation can be found [here](https://js.icp.build/core/latest/libs/principal/api/).

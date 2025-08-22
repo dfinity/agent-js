@@ -11,9 +11,6 @@ const BASE_DOCS_PATH = '/core';
 const docsVersion = process.env.DOCS_VERSION ?? 'local';
 const packagesDir = '../packages';
 
-const UPGRADE_BANNER_CONTENT =
-  'Still using <code>@dfinity/agent</code>? Migrate to <a href="/core/latest/upgrading/v4">@icp-sdk/core</a>!';
-
 // https://astro.build/config
 export default defineConfig({
   site: 'https://js.icp.build/',
@@ -37,16 +34,33 @@ export default defineConfig({
             exclude: [
               `${packagesDir}/core`,
               `${packagesDir}/migrate`,
+              `${packagesDir}/assets`,
+              `${packagesDir}/auth-client`,
+              `${packagesDir}/use-auth-client`,
             ],
           },
           frontmatter: {
             editUrl: false,
             next: true,
             prev: true,
-            banner: {
-              content: UPGRADE_BANNER_CONTENT,
-            },
           },
+          prependSidebar: [
+            {
+              label: 'Getting Started',
+              items: [
+                { label: 'Overview', link: '/' },
+                { label: 'Installation', link: '/installation' },
+                { label: 'Quick Start', link: '/quick-start' },
+                { label: 'Typescript', link: '/typescript' },
+              ],
+            },
+          ],
+          appendSidebar: [
+            {
+              label: 'Upgrading',
+              autogenerate: { directory: 'upgrading', collapsed: true },
+            },
+          ],
         }),
         additionalFilesPlugin({
           additionalFiles: [
@@ -58,9 +72,6 @@ export default defineConfig({
                 editUrl: false,
                 next: false,
                 prev: false,
-                banner: {
-                  content: UPGRADE_BANNER_CONTENT,
-                },
               },
             },
           ],
@@ -68,12 +79,6 @@ export default defineConfig({
         versionedSidebarPlugin({
           versionsJsonPath: `${BASE_DOCS_PATH}/versions.json`,
         }),
-      ],
-      sidebar: [
-        {
-          label: 'Upgrading',
-          autogenerate: { directory: 'upgrading', collapsed: true },
-        },
       ],
     }),
   ],

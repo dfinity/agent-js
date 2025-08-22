@@ -1,52 +1,26 @@
-# @dfinity/agent
+# @icp-sdk/core/agent
 
-> Still using `@dfinity/agent`? Migrate to [`@icp-sdk/core`](https://js.icp.build/core/latest/upgrading/v4)!
+JavaScript and TypeScript module to interact with the [Internet Computer](https://internetcomputer.org/) for Node.js and browser applications.
 
-JavaScript and TypeScript library to interact with the [Internet Computer](https://dfinity.org/) for Node.js and browser applications.
-
-Do you want to know more about developing on the Internet Computer? Visit the [Developer Docs](https://internetcomputer.org/docs/home).
-
-Additional API Documentation can be found [here](https://js.icp.build/core/v3.2/libs/agent/api).
-
----
-
-## Installation
-
-Using agent:
-
-```shell
-npm i --save @dfinity/agent
-```
-
-### In the browser:
+## Usage
 
 ```ts
-import * as agent from '@dfinity/agent';
+import { HttpAgent } from '@icp-sdk/core/agent';
+
+const agent = await HttpAgent.create({
+  host: 'https://icp-api.io',
+});
+
+agent.call(..) // Send an update call to the canister
+agent.query(..) // Send a query call to the canister
+agent.readState(..) // Read the state of the canister
 ```
 
-or using individual exports:
-
-```ts
-import { Actor, HttpAgent } from '@dfinity/agent';
-```
-
-### In Node.js
-
-```ts
-const DfinityAgent = require('@dfinity/agent');
-```
-
-or using individual exports:
-
-```ts
-const { Actor, HttpAgent } = require('@dfinity/agent');
-```
-
-## Using an Agent
+### Using an Agent
 
 The agent is a low-level interface that the Actor uses to encode and decode messages to the Internet Computer. It provides `call`, `query` and `readState` methods to the Actor, as well as a few additional utilities. For the most part, calls through the agent are intended to be structured through an Actor, configured with a canister interface that can be automatically generated from a [Candid](https://github.com/dfinity/candid) interface.
 
-## Initializing an Actor
+### Initializing an Actor
 
 The most common use for the agent is to create an actor. This is done by calling the `Actor.createActor` constructor:
 
@@ -72,7 +46,7 @@ const defaultAgent = Actor.agentOf(defaultActor);
 
 This is useful if you need to replace or invalidate the identity used by an actor's agent.
 
-For example, if you want to replace the identity of an actor's agent with a newly authenticated identity from [Internet Identity](https://identity.ic0.app), you can do so by calling the `Actor.replaceAgent` method:
+For example, if you want to replace the identity of an actor's agent with a newly authenticated identity from [Internet Identity](https://identity.internetcomputer.org), you can do so by calling the `Actor.replaceAgent` method:
 
 ```ts
 defaultAgent.replaceIdentity(await authClient.getIdentity());
@@ -86,7 +60,7 @@ For example,
 
 ```ts
 import fetch from 'isomorphic-fetch';
-import { HttpAgent } from '@dfinity/agent';
+import { HttpAgent } from '@icp-sdk/core/agent';
 
 const host = process.env.DFX_NETWORK === 'local' ? 'http://127.0.0.1:4943' : 'https://icp-api.io';
 
@@ -99,7 +73,7 @@ For example,
 
 ```ts
 import fetch from 'isomorphic-fetch';
-import { HttpAgent } from '@dfinity/agent';
+import { HttpAgent } from '@icp-sdk/core/agent';
 
 const host = process.env.DFX_NETWORK === 'local' ? 'http://127.0.0.1:4943' : 'https://ic0.app';
 
@@ -114,3 +88,7 @@ const fetchOptions = {
 
 const agent = new HttpAgent({ fetch, host, fetchOptions });
 ```
+
+## API Reference
+
+Additional API Documentation can be found [here](https://js.icp.build/core/latest/libs/agent/api).
