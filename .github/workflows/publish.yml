@@ -53,10 +53,9 @@ jobs:
       - run: pnpm build:packages
 
       - name: Publish core package
-        working-directory: packages/core
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: pnpm publish
+        run: pnpm publish:core-package --access public
 
       - name: Mark as Latest Release in GitHub Releases
         env:
