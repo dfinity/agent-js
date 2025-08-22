@@ -8,24 +8,11 @@ on:
       - closed
 
 jobs:
-  publish-packages:
+  publish-dfinity-packages:
     if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-
-      - name: Extract version from branch name
-        run: |
-          BRANCH="${{ github.event.pull_request.head.ref }}"
-          VERSION="${BRANCH#release/}"
-          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
-          echo "VERSION_TAG=v$VERSION" >> $GITHUB_ENV
-
-      - name: Mark as Latest Release in GitHub Releases
-        env:
-          GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
-        run: |
-          gh release edit "${{ env.VERSION_TAG }}" --draft=false --prerelease=false --latest=true
 
       - name: Setup PNPM
         uses: dfinity/ci-tools/actions/setup-pnpm@main
@@ -34,12 +21,51 @@ jobs:
 
       - run: pnpm build:packages
 
-      - run: pnpm publish:packages
+      - run: pnpm publish:dfinity-packages
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+  publish-core-package:
+    needs: publish-dfinity-packages
+    runs-on: ubuntu-latest
+    outputs:
+      major_minor_patch_version: ${{ steps.ver.outputs.major_minor_patch_version }}
+      major_minor_version: ${{ steps.ver.outputs.major_minor_version }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: dfinity/ci-tools/actions/extract-version@main
+        id: extract-version
+        with:
+          file: 'packages/core/package.json'
+
+      - name: Prepare version
+        id: ver
+        run: |
+          echo "major_minor_version=v${{ steps.extract-version.outputs.major }}.${{ steps.extract-version.outputs.minor }}" >> $GITHUB_OUTPUT
+          echo "major_minor_patch_version=v${{ steps.extract-version.outputs.major }}.${{ steps.extract-version.outputs.minor }}.${{ steps.extract-version.outputs.patch }}" >> $GITHUB_OUTPUT
+
+      - name: Setup PNPM
+        uses: dfinity/ci-tools/actions/setup-pnpm@main
+        with:
+          node_version_file: '.nvmrc'
+
+      - run: pnpm build:packages
+
+      - name: Publish core package
+        working-directory: packages/core
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm publish
+
+      - name: Mark as Latest Release in GitHub Releases
+        env:
+          GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+        run: |
+          gh release edit "${{ steps.ver.outputs.major_minor_patch_version }}" --draft=false --prerelease=false --latest=true
+
   publish-docs:
-    needs: publish-packages
+    needs: publish-core-package
     runs-on: ubuntu-latest
     steps:
       - name: Create GitHub App Token
@@ -58,29 +84,18 @@ jobs:
         with:
           node_version_file: '.nvmrc'
 
-      - uses: dfinity/ci-tools/actions/extract-version@main
-        id: extract-version
-        with:
-          file: 'package.json'
-
-      - name: Prepare version
-        id: ver
-        run: |
-          echo "major_minor_version=v${{ steps.extract-version.outputs.major }}.${{ steps.extract-version.outputs.minor }}" >> $GITHUB_OUTPUT
-          echo "major_minor_patch_version=v${{ steps.extract-version.outputs.major }}.${{ steps.extract-version.outputs.minor }}.${{ steps.extract-version.outputs.patch }}" >> $GITHUB_OUTPUT
-
-      - name: Build docs for version ${{ steps.ver.outputs.major_minor_version }}
+      - name: Build docs for version ${{ needs.publish-core-package.outputs.major_minor_version }}
         working-directory: docs
         env:
-          DOCS_VERSION: ${{ steps.ver.outputs.major_minor_version }}
-          DOCS_VERSIONS_DROPDOWN_TITLE_VERSION: ${{ steps.ver.outputs.major_minor_patch_version }}
-        run: pnpm build --outDir dist/${{ steps.ver.outputs.major_minor_version }}
+          DOCS_VERSION: ${{ needs.publish-core-package.outputs.major_minor_version }}
+          DOCS_VERSIONS_DROPDOWN_TITLE_VERSION: ${{ needs.publish-core-package.outputs.major_minor_patch_version }}
+        run: pnpm build --outDir dist/${{ needs.publish-core-package.outputs.major_minor_version }}
 
       - name: Build docs for version latest
         working-directory: docs
         env:
           DOCS_VERSION: latest
-          DOCS_VERSIONS_DROPDOWN_TITLE_VERSION: ${{ steps.ver.outputs.major_minor_patch_version }}
+          DOCS_VERSIONS_DROPDOWN_TITLE_VERSION: ${{ needs.publish-core-package.outputs.major_minor_patch_version }}
         run: pnpm build --outDir dist/latest
 
       - name: Checkout icp-pages branch
@@ -92,10 +107,10 @@ jobs:
       - name: Assemble docs
         uses: dfinity/ci-tools/actions/assemble-docs@main
         with:
-          assets_dir: 'docs/dist/${{ steps.ver.outputs.major_minor_version }}'
-          version: ${{ steps.ver.outputs.major_minor_version }}
+          assets_dir: 'docs/dist/${{ needs.publish-core-package.outputs.major_minor_version }}'
+          version: ${{ needs.publish-core-package.outputs.major_minor_version }}
           target_dir: 'icp-pages'
-          version_label: ${{ steps.ver.outputs.major_minor_version }}
+          version_label: ${{ needs.publish-core-package.outputs.major_minor_version }}
 
       - name: Assemble docs
         uses: dfinity/ci-tools/actions/assemble-docs@main
@@ -103,7 +118,7 @@ jobs:
           assets_dir: 'docs/dist/latest'
           version: 'latest'
           target_dir: 'icp-pages'
-          version_label: 'Latest (${{ steps.ver.outputs.major_minor_patch_version }})'
+          version_label: 'Latest (${{ needs.publish-core-package.outputs.major_minor_patch_version }})'
 
       - name: Submit Documentation
         uses: dfinity/ci-tools/actions/submit-docs@main
