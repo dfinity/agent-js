@@ -68,7 +68,7 @@ All commits in the main branch should come from squashed GitHub Pull Requests, a
 
 ## Documentation
 
-The documentation website is built using [Starlight](https://starlight.astro.build) and deployed to [Juno](https://juno.build).
+The documentation website is built using [Starlight](https://starlight.astro.build) and deployed to the [ICP JS SDK Docs](https://github.com/dfinity/icp-js-sdk-docs).
 
 To test the documentation website locally, you can run the following commands:
 
@@ -201,9 +201,9 @@ git checkout main
 
 </details>
 
-## Publishing Packages to NPM and Publishing Documentation
+## Publishing Packages to NPM
 
-Once you've initiated a release process, the resulting pull request from the `release/...` branch to the `main` branch needs to be reviewed. Upon merging, it automatically triggers the `publish.yml` workflow, which handles publishing the new version to NPM, along with updating documentation and changelog.
+Once you've initiated a release process, the resulting pull request from the `release/...` branch to the `main` branch needs to be reviewed. Upon merging, it automatically triggers the [`publish.yml`](../.github/workflows/publish.yml) workflow, which handles publishing the new version to NPM, along with updating documentation and changelog.
 
 <details>
 <summary>
@@ -235,6 +235,10 @@ After publishing to NPM, go to https://github.com/dfinity/agent-js/releases/new,
 
 </details>
 
+## Publishing Documentation
+
+Docs are built and published in the `publish-docs` step of the [`publish.yml`](../.github/workflows/publish.yml) workflow.
+
 <details>
 <summary>
   How to manually publish a new version of the documents (without utilizing `publish.yml` workflow)?
@@ -242,7 +246,18 @@ After publishing to NPM, go to https://github.com/dfinity/agent-js/releases/new,
 
 1. Start with a fresh clone (or execute `git clean -dfx .`) to ensure no untracked files are present.
 2. Run `pnpm i` to install all dependencies.
-3. Deploy the docs using `juno deploy --mode production`. Note: You may need to request for permissions as an Administrator for the [Juno](https://juno.build) satellite that owns the docs.
+3. Move to the [`docs`](../docs/) directory.
+4. Build the docs setting the proper environment variables:
+  ```shell
+  DOCS_VERSION=v3.2 DOCS_VERSIONS_DROPDOWN_TITLE_VERSION=v3.2.2 pnpm build --outDir dist/v3.2
+  ```
+5. Zip the `dist/v3.2` directory:
+  ```shell
+  cd dist/v3.2
+  zip -r v3.2.zip .
+  ```
+6. Push the zip file to the `icp-pages` branch.
+7. Trigger the [`pull-project-docs.yml`](https://github.com/dfinity/icp-js-sdk-docs/blob/main/.github/workflows/pull-project-docs.yml) workflow on the [ICP JS SDK Docs](https://github.com/dfinity/icp-js-sdk-docs) repository.
 
 </details>
 

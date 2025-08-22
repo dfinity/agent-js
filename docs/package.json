@@ -9,9 +9,6 @@
     "build": "tsc -b tsconfig.libs.json && astro build",
     "preview": "astro preview"
   },
-  "dependencies": {
-    "@junobuild/config": "^0.4.3"
-  },
   "devDependencies": {
     "@astrojs/starlight": "^0.34.4",
     "@dfinity/starlight": "workspace:*",
