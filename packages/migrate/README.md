@@ -4,7 +4,7 @@ CLI tool to automatically migrate your project from `agent-js` packages to `@icp
 
 ## What it does
 
-This tool automatically performs the migration steps described in the [upgrading guide](https://js.icp.build/core/latest/upgrading):
+This tool automatically performs the migration steps described in the [upgrading guide](https://js.icp.build/core/latest/upgrading/v4/):
 
 1. **Removes old dependencies**: Automatically removes the following `agent-js` packages from your project:
    - `@dfinity/agent`
