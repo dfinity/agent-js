@@ -1,0 +1,29 @@
+---
+title: Installation
+description: How to install the @icp-sdk/core package.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+The `@icp-sdk/core` is a single, unified package that contains all the modules you need to interact with the Internet Computer.
+
+<Tabs>
+  <TabItem label="npm" icon="npm">
+    ```shell npm install @icp-sdk/core ```
+  </TabItem>
+  <TabItem label="pnpm" icon="pnpm">
+    ```shell pnpm add @icp-sdk/core ```
+  </TabItem>
+  <TabItem label="bun" icon="bun">
+    ```shell bun add @icp-sdk/core ```
+  </TabItem>
+  <TabItem label="yarn" icon="seti:yarn">
+    ```shell yarn add @icp-sdk/core ```
+  </TabItem>
+</Tabs>
+
+## CDN
+
+We do not recommend using the CDN distribution of the `@icp-sdk/core` package for **production** applications.
+
+It can constitute a security risk, because the CDN can potentially serve a different IC mainnet [root key](https://internetcomputer.org/docs/references/ic-interface-spec/#root-of-trust).

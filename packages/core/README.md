@@ -4,9 +4,7 @@ The `@icp-sdk/core` package is a JavaScript and TypeScript library designed to i
 
 Do you want to know more about developing on the Internet Computer? Visit the [Developer Docs](https://internetcomputer.org/docs/home).
 
-Additional API Documentation can be found [here](https://js.icp.build/core/libs/core/api).
-
-**Note:** This package requires the `node16` (or later) module resolution strategy to function correctly.
+> Still using `@dfinity/agent`? Migrate to [`@icp-sdk/core`](https://js.icp.build/core/latest/upgrading/v4)!
 
 ---
 
@@ -32,16 +30,6 @@ yarn add @icp-sdk/core
 pnpm add @icp-sdk/core
 ```
 
-## Package Structure
-
-The `@icp-sdk/core` package re-exports modules from the following `@dfinity` packages:
-
-- [`@dfinity/agent`](../agent/README.md): Provides tools to interact with the Internet Computer, including creating actors and making calls.
-- [`@dfinity/candid`](../candid/README.md): Tools for working with Candid, the Internet Computer's interface definition language.
-- [`@dfinity/identity`](../identity/README.md): Identity management for signing and authentication.
-- [`@dfinity/identity-secp256k1`](../identity-secp256k1/README.md): Identity management using secp256k1 cryptography.
-- [`@dfinity/principal`](../principal/README.md): Utilities for working with principals on the Internet Computer.
-
 ## Import Paths
 
 The package provides the following import paths for accessing the re-exported modules:
@@ -60,26 +48,39 @@ Here is an example of how to use the `@icp-sdk/core` package:
 // Importing the HttpAgent from the agent module
 import { HttpAgent } from '@icp-sdk/core/agent';
 
+// Importing the Identity utility
+import { Ed25519KeyIdentity } from '@icp-sdk/core/identity';
+
+// Importing the Candid utility
+import { IDL } from '@icp-sdk/core/candid';
+
 // Importing the Principal utility
 import { Principal } from '@icp-sdk/core/principal';
 
-// Create an HttpAgent instance
-const agent = new HttpAgent({ host: 'https://ic0.app' });
+// Create a new identity
+const identity = Ed25519KeyIdentity.generate();
 
 // Create a Principal from a string
-const principal = Principal.fromText('aaaaa-aa');
+const canisterId = Principal.fromText('uqqxf-5h777-77774-qaaaa-cai');
 
-// Log the Principal
-console.log(principal.toText());
+// Create an HttpAgent instance
+const agent = await HttpAgent.create({
+  host: 'https://icp-api.io',
+  identity,
+});
+
+// Call a canister
+const response = await agent.call(canisterId, {
+  methodName: 'greet',
+  arg: IDL.encode([IDL.Text], ['world']),
+});
+
+console.log(response);
 ```
 
-For detailed usage and API documentation, refer to the respective documentation of the re-exported packages:
+**Note:** If you are using TypeScript, this package requires the `node16` (or later) [`moduleResolution`](https://www.typescriptlang.org/tsconfig#moduleResolution) strategy to function correctly.
 
-- [@dfinity/agent Documentation](../agent/README.md)
-- [@dfinity/candid Documentation](../candid/README.md)
-- [@dfinity/identity Documentation](../identity/README.md)
-- [@dfinity/identity-secp256k1 Documentation](../identity-secp256k1/README.md)
-- [@dfinity/principal Documentation](../principal/README.md)
+Additional API Documentation can be found [here](https://js.icp.build/core/latest/).
 
 ## Contributing
 

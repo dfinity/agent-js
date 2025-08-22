@@ -44,6 +44,23 @@ export default defineConfig({
             next: true,
             prev: true,
           },
+          prependSidebar: [
+            {
+              label: 'Getting Started',
+              items: [
+                { label: 'Overview', link: '/' },
+                { label: 'Installation', link: '/installation' },
+                { label: 'Quick Start', link: '/quick-start' },
+                { label: 'Typescript', link: '/typescript' },
+              ],
+            },
+          ],
+          appendSidebar: [
+            {
+              label: 'Upgrading',
+              autogenerate: { directory: 'upgrading', collapsed: true },
+            },
+          ],
         }),
         additionalFilesPlugin({
           additionalFiles: [
@@ -62,12 +79,6 @@ export default defineConfig({
         versionedSidebarPlugin({
           versionsJsonPath: `${BASE_DOCS_PATH}/versions.json`,
         }),
-      ],
-      sidebar: [
-        {
-          label: 'Upgrading',
-          autogenerate: { directory: 'upgrading', collapsed: true },
-        },
       ],
     }),
   ],
