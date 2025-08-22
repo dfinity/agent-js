@@ -3,15 +3,17 @@ import { visit } from "unist-util-visit";
 import path from "node:path";
 import { type StarlightPlugin } from "@astrojs/starlight/types";
 import { DOCS_DIR } from "./utils/constants.ts";
+import { readdirSync } from "node:fs";
 
 type RemarkPlugin = RemarkPlugins[number];
 
 const markdownUrlsRemarkPlugin: RemarkPlugin = (
-  [logger, docsDir, site, baseUrl]: [
+  [logger, docsDir, site, baseUrl, crossPackageUrlRegex]: [
     AstroIntegrationLogger,
     string,
     string,
     string,
+    RegExp,
   ],
 ) =>
 (tree, file) => {
@@ -38,24 +40,35 @@ const markdownUrlsRemarkPlugin: RemarkPlugin = (
       return;
     }
 
+    // if the url is a cross-package link, go back one level and add the api directory
+    const normalizedUrl = url.replace(crossPackageUrlRegex, '../../$1/api');
+    const absoluteLinkedFilePath = path.resolve(currentFileDir, normalizedUrl);
+
     // normalize all other relative URLs to the docs directory
-    const absoluteLinkedFilePath = path.resolve(currentFileDir, url);
     const relativeToDocs = path.relative(docsDir, absoluteLinkedFilePath);
-    const normalizedUrl = `${baseUrl}${
+    const nodeUrl = `${baseUrl}${
       relativeToDocs.replace(/(index)?\.mdx?(#.*)?$/, "$2").toLowerCase()
     }`;
-    logger.debug(`Normalizing URL: ${url} -> ${normalizedUrl}`);
+    logger.debug(`Normalizing URL: ${url} -> ${nodeUrl}`);
 
-    node.url = normalizedUrl;
+    node.url = nodeUrl;
   });
 };
 
-export function markdownUrlsPlugin(): StarlightPlugin {
+interface MarkdownUrlsPluginOptions { 
+  packagesDir: string;
+}
+
+export function markdownUrlsPlugin({ packagesDir }: MarkdownUrlsPluginOptions): StarlightPlugin {
   return {
     name: "@dfinity/starlight/markdown-urls",
     hooks: {
       "config:setup": (ctx) => {
         const site = ctx.astroConfig.site;
+
+        // get all the packages in the packagesDir
+        const packages = readdirSync(packagesDir);
+        const crossPackageUrlRegex = new RegExp(`\\.\\.\\/(${packages.join('|')})`);
 
         ctx.addIntegration({
           name: "libs-astro-plugin",
@@ -70,6 +83,7 @@ export function markdownUrlsPlugin(): StarlightPlugin {
                       DOCS_DIR,
                       site,
                       ctx.astroConfig.base,
+                      crossPackageUrlRegex,
                     ]],
                   ],
                 },

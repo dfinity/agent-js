@@ -1,10 +1,12 @@
 # @dfinity/identity-secp256k1
 
+> Still using `@dfinity/identity-secp256k1`? Migrate to [`@icp-sdk/core`](https://js.icp.build/core/latest/upgrading/v4)!
+
 The Secp256k1KeyIdentity package provides an implementation of the SignIdentity interface for the secp256k1 elliptic curve. It allows you to create and manage key pairs for signing and verification of messages.
 
 Do you want to know more about developing on the Internet Computer? Visit the [Developer Docs](https://internetcomputer.org/docs/home).
 
-Additional API Documentation can be found [here](https://js.icp.build/core/libs/identity-secp256k1/api).
+Additional API Documentation can be found [here](https://js.icp.build/core/v3.2/libs/identity-secp256k1/api).
 
 ---
 
@@ -52,4 +54,4 @@ const restoredIdentity = Secp256k1KeyIdentity.fromJson(json);
 ```
 
 References
-The Secp256k1KeyIdentity class extends the SignIdentity interface from the @dfinity/agent package. For more information about the SignIdentity interface and how to use it, see the [@dfinity/agent documentation](https://js.icp.build/core/libs/agent/api/classes/signidentity).
+The Secp256k1KeyIdentity class extends the SignIdentity interface from the @dfinity/agent package. For more information about the SignIdentity interface and how to use it, see the [@dfinity/agent documentation](https://js.icp.build/core/v3.2/libs/agent/api/classes/signidentity).

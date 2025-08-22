@@ -1,5 +1,6 @@
 {
   "name": "@dfinity/starlight",
+  "private": true,
   "version": "0.0.0",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",

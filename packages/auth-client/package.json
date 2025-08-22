@@ -1,10 +1,10 @@
 {
   "name": "@dfinity/auth-client",
-  "version": "3.2.1",
+  "version": "3.2.2",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to provide a simple integration with an IC Internet Identity",
-  "homepage": "https://js.icp.build/core/libs/auth-client",
+  "homepage": "https://js.icp.build/core/v3.2/libs/auth-client",
   "repository": {
     "type": "git",
     "url": "https://github.com/dfinity/agent-js.git",

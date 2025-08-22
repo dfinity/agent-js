@@ -8,9 +8,9 @@ import icpSvg from '@dfinity/starlight/assets/icp.svg';
 <StarlightPage
   frontmatter={{
     title: 'ICP JavaScript SDK Core',
-    template: 'splash',
     next: false,
     prev: false,
+    tableOfContents: false,
     hero: {
       title: `ICP JavaScript SDK <span class="dfn-text-gradient">Core</span>`,
       tagline:
@@ -20,6 +20,16 @@ import icpSvg from '@dfinity/starlight/assets/icp.svg';
         alt: 'Internet Computer Logo',
       },
     },
+    head: [
+      {
+        tag: 'style',
+        content: `
+          .sl-container {
+            max-width: 70rem;
+          }
+        `
+      }
+    ]
   }}
 >
   <section>
@@ -30,7 +40,7 @@ import icpSvg from '@dfinity/starlight/assets/icp.svg';
         Build applications that interact with the Internet Computer from browsers, Node.js, and
         other JavaScript runtimes.
 
-        <LinkButton href="libs/agent" variant="minimal" icon="right-caret" iconPlacement="start">
+        <LinkButton href="/core/latest/libs/agent" variant="minimal" icon="right-caret" iconPlacement="start">
           See <code class="dfn-text-highlight">@icp-sdk/core/agent</code> docs
         </LinkButton>
       </Card>
@@ -38,7 +48,7 @@ import icpSvg from '@dfinity/starlight/assets/icp.svg';
       <Card title="Candid">
         JavaScript and TypeScript module to work with Candid interfaces.
 
-        <LinkButton href="libs/candid" variant="minimal" icon="right-caret" iconPlacement="start">
+        <LinkButton href="/core/latest/libs/candid" variant="minimal" icon="right-caret" iconPlacement="start">
           See <code class="dfn-text-highlight">@icp-sdk/core/candid</code> docs
         </LinkButton>
       </Card>
@@ -46,7 +56,7 @@ import icpSvg from '@dfinity/starlight/assets/icp.svg';
       <Card title="Identity">
         JavaScript and TypeScript module to manage Identities and enable simple Web Authentication flows.
 
-        <LinkButton href="libs/identity" variant="minimal" icon="right-caret" iconPlacement="start">
+        <LinkButton href="/core/latest/libs/identity" variant="minimal" icon="right-caret" iconPlacement="start">
           See <code class="dfn-text-highlight">@icp-sdk/core/identity</code> docs
         </LinkButton>
       </Card>
@@ -55,7 +65,7 @@ import icpSvg from '@dfinity/starlight/assets/icp.svg';
         JavaScript and TypeScript module to work with Internet Computer Principals.
 
         <LinkButton
-          href="libs/principal"
+          href="/core/latest/libs/principal"
           variant="minimal"
           icon="right-caret"
           iconPlacement="start"
@@ -79,7 +89,7 @@ import icpSvg from '@dfinity/starlight/assets/icp.svg';
         </p>
 
         <LinkButton
-          href="upgrading/v4"
+          href="/core/latest/upgrading/v4"
           variant="minimal"
           icon="right-caret"
           iconPlacement="start"
@@ -95,7 +105,7 @@ import icpSvg from '@dfinity/starlight/assets/icp.svg';
         </p>
 
         <LinkButton
-          href="upgrading/v3"
+          href="/core/v3.2/upgrading/v3"
           variant="minimal"
           icon="right-caret"
           iconPlacement="start"

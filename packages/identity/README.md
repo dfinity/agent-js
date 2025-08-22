@@ -1,10 +1,12 @@
 # @dfinity/identity
 
+> Still using `@dfinity/identity`? Migrate to [`@icp-sdk/core`](https://js.icp.build/core/latest/upgrading/v4)!
+
 JavaScript and TypeScript library to manage Identities and enable simple Web Authentication flows for applications on the [Internet Computer](https://dfinity.org/)
 
 Do you want to know more about developing on the Internet Computer? Visit the [Developer Docs](https://internetcomputer.org/docs/home).
 
-Additional API Documentation can be found [here](https://js.icp.build/core/libs/identity/api).
+Additional API Documentation can be found [here](https://js.icp.build/core/v3.2/libs/identity/api).
 
 ---
 

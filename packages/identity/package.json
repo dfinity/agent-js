@@ -1,10 +1,10 @@
 {
   "name": "@dfinity/identity",
-  "version": "3.2.1",
+  "version": "3.2.2",
   "author": "DFINITY Stiftung <sdk@dfinity.org>",
   "license": "Apache-2.0",
   "description": "JavaScript and TypeScript library to manage identity with the Internet Computer",
-  "homepage": "https://js.icp.build/core/libs/identity",
+  "homepage": "https://js.icp.build/core/v3.2/libs/identity",
   "repository": {
     "type": "git",
     "url": "https://github.com/dfinity/agent-js.git",

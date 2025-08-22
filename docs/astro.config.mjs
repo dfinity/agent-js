@@ -9,6 +9,7 @@ import { versionedSidebarPlugin } from '@dfinity/starlight/versioned-sidebar';
 
 const BASE_DOCS_PATH = '/core';
 const docsVersion = process.env.DOCS_VERSION ?? 'local';
+const packagesDir = '../packages';
 
 // https://astro.build/config
 export default defineConfig({
@@ -23,17 +24,19 @@ export default defineConfig({
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/dfinity/agent-js' }],
       plugins: [
         dfinityStarlightTheme(),
-        markdownUrlsPlugin(),
+        markdownUrlsPlugin({
+          packagesDir,
+        }),
         libsPlugin({
           clean: true,
-          baseDir: '../packages',
+          baseDir: packagesDir,
           typeDoc: {
             exclude: [
-              '../packages/core',
-              '../packages/migrate',
-              '../packages/assets',
-              '../packages/auth-client',
-              '../packages/use-auth-client',
+              `${packagesDir}/core`,
+              `${packagesDir}/migrate`,
+              `${packagesDir}/assets`,
+              `${packagesDir}/auth-client`,
+              `${packagesDir}/use-auth-client`,
             ],
           },
           frontmatter: {
