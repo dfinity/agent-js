@@ -118,10 +118,6 @@ importers:
         version: 2.8.1
 
   docs:
-    dependencies:
-      '@junobuild/config':
-        specifier: ^0.4.3
-        version: 0.4.3(@dfinity/zod-schemas@1.0.0(@dfinity/principal@3.2.1)(zod@3.25.67))(zod@3.25.67)
     devDependencies:
       '@astrojs/starlight':
         specifier: ^0.34.4
@@ -338,7 +334,7 @@ importers:
     devDependencies:
       '@dfinity/utils':
         specifier: ^2.0.0
-        version: 2.13.2(@dfinity/agent@3.2.1(@dfinity/candid@3.2.1(@dfinity/principal@3.2.1))(@dfinity/principal@3.2.1)(@noble/hashes@1.8.0))(@dfinity/candid@3.2.1(@dfinity/principal@3.2.1))(@dfinity/principal@3.2.1)
+        version: 2.13.2(@dfinity/agent@3.2.2(@dfinity/candid@3.2.2(@dfinity/principal@3.2.2))(@dfinity/principal@3.2.2)(@noble/hashes@1.8.0))(@dfinity/candid@3.2.2(@dfinity/principal@3.2.2))(@dfinity/principal@3.2.2)
 
   packages/use-auth-client:
     dependencies:
@@ -630,23 +626,23 @@ packages:
     resolution: {integrity: sha512-WyOx8cJQ+FQus4Mm4uPIZA64gbk3Wxh0so5Lcii0aJifqwoVOlfFtorjLE0Hen4OYyHZMXDWqMmaQemBhgxFRQ==}
     engines: {node: '>=14'}
 
-  '@dfinity/agent@3.2.1':
-    resolution: {integrity: sha512-itPAqee2sal3vn5UJcLEt6TfVgvacDt82x9i8E/EASJQy2q5yPZ4FUvPENAybBs3+jKaEFYV8DRseUGsff6glw==}
+  '@dfinity/agent@3.2.2':
+    resolution: {integrity: sha512-2kISpJ89OYOKASyUuS3f0Sq3HiEWxK0hfEa43cFk5PKXvuHSY+As8LB5HP1KZzur8HSoeu8qxTeKx/Urk1CZ8A==}
     peerDependencies:
-      '@dfinity/candid': 3.2.1
-      '@dfinity/principal': 3.2.1
+      '@dfinity/candid': 3.2.2
+      '@dfinity/principal': 3.2.2
       '@noble/hashes': ^1.8.0
 
-  '@dfinity/candid@3.2.1':
-    resolution: {integrity: sha512-fKrkW7TAx2MX+1XPfSE6cQPeFsNs3c4g0JdoL7uw2JONqPT7eOV1o7Oqr/I+4coITvD3hIDZcnD4IxiIjQF+NQ==}
+  '@dfinity/candid@3.2.2':
+    resolution: {integrity: sha512-paxpJIjCRBB8YUYJm9GG/nB8qGPvkRqt2Z4vudQtjcKuKnKPohuIbXAJ1UT9TrXRTMdYev1UgbbBbOg/BeE7+A==}
     peerDependencies:
-      '@dfinity/principal': 3.2.1
+      '@dfinity/principal': 3.2.2
 
   '@dfinity/cbor@0.2.2':
     resolution: {integrity: sha512-GPJpH73kDEKbUBdUjY80lz7cq9l0vm1h/7ppejPV6O0ZTqCLrYspssYvqjRmK4aNnJ/SKXsP0rg9LYX7zpegaA==}
 
-  '@dfinity/principal@3.2.1':
-    resolution: {integrity: sha512-W2otaFOeyqWNMi/E+vaxpp7CcGTkxol9FYqUMtdoLg27QMZvUgQ72ljLkkxXrUlGPrORTzkR5DMCCrkziB7MVw==}
+  '@dfinity/principal@3.2.2':
+    resolution: {integrity: sha512-e5tHOYfpMvUkCOdJn9H+7iJk+eYJ8xpHNKMOCQQTSRMo9BZOU0SBxDBk+4gpKaI42KSd9TbnxEJ/+1/zE2pemA==}
 
   '@dfinity/utils@2.13.2':
     resolution: {integrity: sha512-D9Gkvtj59NQavSClOJjr7xp5cBEahK4ekrTFCFKfdm51V7HHbOnoyTx5vjcWg5x4vdi9dRD6EtEO9UoCp3b7gQ==}
@@ -654,12 +650,6 @@ packages:
       '@dfinity/agent': ^2.0.0
       '@dfinity/candid': ^2.0.0
       '@dfinity/principal': ^2.0.0
-
-  '@dfinity/zod-schemas@1.0.0':
-    resolution: {integrity: sha512-5ApkpRO8hqTb7B9GH4H8FljY/r6hh3zpA/HFeeozIHieyebAzB748+4T9/oL6T7udkvlfWPMulbmjSHerm3B9A==}
-    peerDependencies:
-      '@dfinity/principal': ^2.0.0
-      zod: ^3.25
 
   '@emnapi/runtime@1.4.3':
     resolution: {integrity: sha512-pBPWdu6MLKROBX05wSNKcNb++m5Er+KQ9QkB+WVM+pW2Kx9hoSrVTnu3BdkI5eBLZoKu/J6mW/B6i6bJB2ytXQ==}
@@ -1232,12 +1222,6 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.25':
     resolution: {integrity: sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==}
-
-  '@junobuild/config@0.4.3':
-    resolution: {integrity: sha512-S+DdH4Mrcb9Jp1yVyt1DFH0GhK46lCYWBvQK0LR+DPAywnCsIAOJOlfBE2WkYcFzcyRyvR/wIIL5rscwNjj8Kw==}
-    peerDependencies:
-      '@dfinity/zod-schemas': ^1.0.0
-      zod: ^3.25
 
   '@loaderkit/resolve@1.0.4':
     resolution: {integrity: sha512-rJzYKVcV4dxJv+vW6jlvagF8zvGxHJ2+HTr1e2qOejfmGhAApgJHl8Aog4mMszxceTRiKTTbnpgmTO1bEZHV/A==}
@@ -6059,34 +6043,29 @@ snapshots:
 
   '@ctrl/tinycolor@4.1.0': {}
 
-  '@dfinity/agent@3.2.1(@dfinity/candid@3.2.1(@dfinity/principal@3.2.1))(@dfinity/principal@3.2.1)(@noble/hashes@1.8.0)':
+  '@dfinity/agent@3.2.2(@dfinity/candid@3.2.2(@dfinity/principal@3.2.2))(@dfinity/principal@3.2.2)(@noble/hashes@1.8.0)':
     dependencies:
-      '@dfinity/candid': 3.2.1(@dfinity/principal@3.2.1)
+      '@dfinity/candid': 3.2.2(@dfinity/principal@3.2.2)
       '@dfinity/cbor': 0.2.2
-      '@dfinity/principal': 3.2.1
+      '@dfinity/principal': 3.2.2
       '@noble/curves': 1.9.6
       '@noble/hashes': 1.8.0
 
-  '@dfinity/candid@3.2.1(@dfinity/principal@3.2.1)':
+  '@dfinity/candid@3.2.2(@dfinity/principal@3.2.2)':
     dependencies:
-      '@dfinity/principal': 3.2.1
+      '@dfinity/principal': 3.2.2
 
   '@dfinity/cbor@0.2.2': {}
 
-  '@dfinity/principal@3.2.1':
+  '@dfinity/principal@3.2.2':
     dependencies:
       '@noble/hashes': 1.8.0
 
-  '@dfinity/utils@2.13.2(@dfinity/agent@3.2.1(@dfinity/candid@3.2.1(@dfinity/principal@3.2.1))(@dfinity/principal@3.2.1)(@noble/hashes@1.8.0))(@dfinity/candid@3.2.1(@dfinity/principal@3.2.1))(@dfinity/principal@3.2.1)':
+  '@dfinity/utils@2.13.2(@dfinity/agent@3.2.2(@dfinity/candid@3.2.2(@dfinity/principal@3.2.2))(@dfinity/principal@3.2.2)(@noble/hashes@1.8.0))(@dfinity/candid@3.2.2(@dfinity/principal@3.2.2))(@dfinity/principal@3.2.2)':
     dependencies:
-      '@dfinity/agent': 3.2.1(@dfinity/candid@3.2.1(@dfinity/principal@3.2.1))(@dfinity/principal@3.2.1)(@noble/hashes@1.8.0)
-      '@dfinity/candid': 3.2.1(@dfinity/principal@3.2.1)
-      '@dfinity/principal': 3.2.1
-
-  '@dfinity/zod-schemas@1.0.0(@dfinity/principal@3.2.1)(zod@3.25.67)':
-    dependencies:
-      '@dfinity/principal': 3.2.1
-      zod: 3.25.67
+      '@dfinity/agent': 3.2.2(@dfinity/candid@3.2.2(@dfinity/principal@3.2.2))(@dfinity/principal@3.2.2)(@noble/hashes@1.8.0)
+      '@dfinity/candid': 3.2.2(@dfinity/principal@3.2.2)
+      '@dfinity/principal': 3.2.2
 
   '@emnapi/runtime@1.4.3':
     dependencies:
@@ -6667,11 +6646,6 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
-
-  '@junobuild/config@0.4.3(@dfinity/zod-schemas@1.0.0(@dfinity/principal@3.2.1)(zod@3.25.67))(zod@3.25.67)':
-    dependencies:
-      '@dfinity/zod-schemas': 1.0.0(@dfinity/principal@3.2.1)(zod@3.25.67)
-      zod: 3.25.67
 
   '@loaderkit/resolve@1.0.4':
     dependencies:
