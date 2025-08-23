@@ -78,6 +78,12 @@ class TypeTable {
       throw new Error('Missing type index for ' + knot);
     }
     this._typs[idx] = this._typs[knotIdx];
+
+    // Safe compaction: only remove if the knot is the last entry.
+    if (knotIdx === this._typs.length - 1) {
+      this._typs.pop();
+      this._idx.delete(knot);
+    }
   }
 
   public encode(): Uint8Array {
