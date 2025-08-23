@@ -78,10 +78,6 @@ class TypeTable {
       throw new Error('Missing type index for ' + knot);
     }
     this._typs[idx] = this._typs[knotIdx];
-
-    // Delete the type.
-    this._typs.splice(knotIdx, 1);
-    this._idx.delete(knot);
   }
 
   public encode(): Uint8Array {
