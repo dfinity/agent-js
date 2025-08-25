@@ -205,6 +205,21 @@ git checkout main
 
 Once you've initiated a release process, the resulting pull request from the `release/...` branch to the `main` branch needs to be reviewed. Upon merging, it automatically triggers the [`publish.yml`](../.github/workflows/publish.yml) workflow, which handles publishing the new version to NPM, along with updating documentation and changelog.
 
+### Package Publishing Strategy
+
+The publish workflow handles two types of releases:
+
+1. **Core-only releases**: When only `@icp-sdk/core` needs updates (at the moment, mainly documentation and configuration), you can release just the core package by bumping only its version in `packages/core/package.json`.
+
+2. **Full releases**: When `@dfinity/*` packages are updated, you **must also release** `@icp-sdk/core` since it has peer dependencies on those packages. This ensures compatibility and prevents version mismatches.
+
+**Release patterns:**
+- **Core-only**: Bump only `@icp-sdk/core` version -> only core package gets published
+- **Full release**: Bump both `@dfinity/*` and `@icp-sdk/core` versions -> all packages get published
+- **Dependencies-only**: Never bump only `@dfinity/*` versions without also updating `@icp-sdk/core`
+
+The [`publish.yml`](../.github/workflows/publish.yml) workflow always runs both `publish:dfinity-packages` and `publish:core-package` commands, but npm/pnpm automatically skips packages whose versions haven't changed.
+
 <details>
 <summary>
   How to manually publish to NPM (without utilizing `publish.yml` workflow)?
