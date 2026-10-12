@@ -9,7 +9,12 @@ minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - '@dfinity/cbor'
   - '@dfinity/pic'
-  - 'brace-expansion' # temporary for 5.0.9, remove this afterwards
+  - 'handlebars' # temporary for 4.7.10 (released 2026-10-05), remove this afterwards
+
+auditConfig:
+  ignoreGhsas:
+    # braces has no patched release; only reached via tsc-alias at build time on our own globs
+    - GHSA-vfj7-8cjw-p6xm
 
 onlyBuiltDependencies:
   - '@dfinity/pic'
@@ -24,20 +29,24 @@ overrides:
   '@vitest/mocker@>=2.1.0 <4.1.11': '>=4.1.11 <5'
   baseline-browser-mapping@>=2.0.0 <2.11.0: '>=2.11.0'
   body-parser@>=2.0.0 <2.3.0: '>=2.3.0'
-  brace-expansion: '>=5.0.9'
+  brace-expansion: '>=5.0.12'
   browserslist@<=4.28.6: '>=4.28.7'
   esbuild@>=0.27.3 <0.28.1: '>=0.28.1'
   fflate@>=0.8.0 <0.8.3: '>=0.8.3'
-  js-yaml: '>=5.2.2'
+  handlebars@>=4.0.0 <=4.7.9: '>=4.7.10'
+  js-yaml: '>=5.4.1'
   # linkify-it 6 dropped its default export, which markdown-it 14 imports
   linkify-it: '>=5.0.2 <6'
-  markdown-it@<=14.1.1: '>=14.2.0'
+  # stay on markdown-it 14; 15 breaks typedoc together with the linkify-it cap above
+  markdown-it@<14.3.1: '>=14.3.1 <15'
   nanoid: '>=5.1.16'
   postcss@<=8.5.17: '>=8.5.18'
+  proxy-addr@>=1.1.0 <2.0.8: '>=2.0.8'
   qs@>=2.2.5 <6.16.0: '>=6.16.0'
   qs@>=6.14.2 <=6.15.3: '>=6.16.0'
-  undici@>=7.0.0 <7.28.0: '>=7.29.0 <8'
-  undici@>=7.23.0 <7.28.0: '>=7.29.0 <8'
+  source-map-js@>=1.0.0 <1.2.2: '>=1.2.2'
+  # undici 8 requires node >=22.19; CI still runs node 20
+  undici@>=7.0.0 <7.29.1: '>=7.29.1 <8'
   vite@>=8.0.0 <=8.0.15: '>=8.0.16'
   # stay on the vitest 4 line; 5 drops describe.sequential used by the e2e suite
   vitest@>=2.1.0 <4.1.11: '>=4.1.11 <5'
